@@ -15,8 +15,6 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
-import com.yahoo.vespa.hosted.node.admin.containerdata.ConfigServerContainerData;
-import com.yahoo.vespa.hosted.node.admin.containerdata.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -714,21 +712,6 @@ public class NodeAgentImplTest {
                         .withDockerImage(dockerImage)
                         .withVespaVersion(vespaVersion));
         inOrder.verify(orchestrator).resume(hostName);
-
-        // Files written in createContainerData()
-        assertFileExists(containerName, tempDirectory, "node-repository-config.xml");
-        assertFileExists(containerName, tempDirectory, "configserver-config.xml");
-    }
-
-    private void assertFileExists(ContainerName containerName, Path tempDirectory, String filename) {
-        File file = tempDirectory
-                .resolve(containerName.asString())
-                .resolve(Paths.get("/").relativize(ContainerData.containerDataPath))
-                .resolve(ConfigServerContainerData.configServerAppDir)
-                .resolve(filename)
-                .toAbsolutePath()
-                .toFile();
-        assertTrue("File " + file + " does not exist", file.exists());
     }
 
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
