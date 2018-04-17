@@ -129,8 +129,6 @@
       <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart</binding>
       <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/log</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/log</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/converge</binding>
       <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/converge</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge</binding>
