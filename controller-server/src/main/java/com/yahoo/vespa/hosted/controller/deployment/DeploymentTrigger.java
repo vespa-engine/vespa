@@ -271,7 +271,7 @@ public class DeploymentTrigger {
             }
             // TODO jvenstad: Replace with completion of individual parts of Change.
             if (completedAt.isPresent())
-                applications().lockOrThrow(id, lockedApplication -> applications().store(lockedApplication.withChange(Change.empty())));
+                applications().lockIfPresent(id, lockedApplication -> applications().store(lockedApplication.withChange(Change.empty())));
         });
         return jobs;
     }
