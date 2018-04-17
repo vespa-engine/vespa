@@ -76,7 +76,8 @@ public class DockerOperationsImpl implements DockerOperations {
                     containerName,
                     node.hostname)
                     .withManagedBy(MANAGER_NAME)
-                    .withEnvironment("CONFIG_SERVER_ADDRESS", configServers) // TODO: Remove when all images support CONTAINER_ENVIRONMENT_SETTINGS
+                    .withEnvironment("CONFIG_SERVER_ADDRESS", configServers) // TODO: Remove when all images support VESPA_CONFIGSERVERS
+                    .withEnvironment("VESPA_CONFIGSERVERS", configServers)
                     .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
                                      environment.getContainerEnvironmentResolver().createSettings(environment, node))
                     .withUlimit("nofile", 262_144, 262_144)
