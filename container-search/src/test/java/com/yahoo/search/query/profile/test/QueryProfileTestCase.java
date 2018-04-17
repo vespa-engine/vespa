@@ -9,24 +9,32 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * Tests untyped query profiles
  *
  * @author bratseth
  */
-public class QueryProfileTestCase extends junit.framework.TestCase {
+public class QueryProfileTestCase {
 
+    @Test
     public void testBasics() {
-        QueryProfile profile=new QueryProfile("test");
-        profile.set("a","a-value", (QueryProfileRegistry)null);
-        profile.set("b.c","b.c-value", (QueryProfileRegistry)null);
-        profile.set("d.e.f","d.e.f-value", (QueryProfileRegistry)null);
+        QueryProfile profile = new QueryProfile("test");
+        profile.set("a","a-value", null);
+        profile.set("b.c","b.c-value", null);
+        profile.set("d.e.f","d.e.f-value", null);
 
         CompiledQueryProfile cprofile = profile.compile(null);
 
@@ -42,10 +50,11 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
     }
 
     /** Tests cloning, with wrappers used in production in place */
+    @Test
     public void testCloning() {
         QueryProfile classProfile=new QueryProfile("test");
-        classProfile.set("a","aValue", (QueryProfileRegistry)null);
-        classProfile.set("b",3, (QueryProfileRegistry)null);
+        classProfile.set("a","aValue", null);
+        classProfile.set("b",3, null);
 
         Properties properties = new QueryProfileProperties(classProfile.compile(null));
 
@@ -57,11 +66,12 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("aValue",propertiesClone.get("a"));
     }
 
+    @Test
     public void testFreezing() {
         QueryProfile profile=new QueryProfile("test");
-        profile.set("a","a-value", (QueryProfileRegistry)null);
-        profile.set("b.c","b.c-value", (QueryProfileRegistry)null);
-        profile.set("d.e.f","d.e.f-value", (QueryProfileRegistry)null);
+        profile.set("a","a-value", null);
+        profile.set("b.c","b.c-value", null);
+        profile.set("d.e.f","d.e.f-value", null);
 
         assertFalse(profile.isFrozen());
         assertEquals("a-value",profile.get("a"));
@@ -73,7 +83,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertTrue(((QueryProfile)profile.lookup("d.e",null)).isFrozen());
 
         try {
-            profile.set("a","value", (QueryProfileRegistry)null);
+            profile.set("a","value", null);
             fail("Expected exception");
         }
         catch (IllegalStateException e) {
@@ -89,6 +99,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testGetSubObjects() {
         QueryProfile barn=new QueryProfile("barn");
         QueryProfile mor=new QueryProfile("mor");
@@ -101,11 +112,11 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         far.addInherited(farfar);
         barn.addInherited(mor);
         barn.addInherited(far);
-        mormor.set("a.mormor","a.mormor", (QueryProfileRegistry)null);
-        barn.set("a.barn","a.barn", (QueryProfileRegistry)null);
-        mor.set("b.mor", "b.mor", (QueryProfileRegistry)null);
-        far.set("b.far", "b.far", (QueryProfileRegistry)null);
-        far.set("a.far","a.far", (QueryProfileRegistry)null);
+        mormor.set("a.mormor","a.mormor", null);
+        barn.set("a.barn","a.barn", null);
+        mor.set("b.mor", "b.mor", null);
+        far.set("b.far", "b.far", null);
+        far.set("a.far","a.far", null);
         CompiledQueryProfile cbarn = barn.compile(null);
 
         assertSameObjects(cbarn, "a", Arrays.asList("mormor","far","barn"));
@@ -114,6 +125,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("b.far", cbarn.get("b.far"));
     }
 
+    @Test
     public void testInheritance() {
         QueryProfile barn=new QueryProfile("barn");
         QueryProfile mor=new QueryProfile("mor");
@@ -127,24 +139,24 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         mor.addInherited(morfar);
         far.addInherited(farfar);
 
-        morfar.set("a","morfar-a", (QueryProfileRegistry)null);
-        mormor.set("a","mormor-a", (QueryProfileRegistry)null);
-        farfar.set("a","farfar-a", (QueryProfileRegistry)null);
-        mor.set("a","mor-a", (QueryProfileRegistry)null);
-        far.set("a","far-a", (QueryProfileRegistry)null);
-        barn.set("a","barn-a", (QueryProfileRegistry)null);
+        morfar.set("a","morfar-a", null);
+        mormor.set("a","mormor-a", null);
+        farfar.set("a","farfar-a", null);
+        mor.set("a","mor-a", null);
+        far.set("a","far-a", null);
+        barn.set("a","barn-a", null);
 
-        mormor.set("b","mormor-b", (QueryProfileRegistry)null);
-        far.set("b","far-b", (QueryProfileRegistry)null);
+        mormor.set("b","mormor-b", null);
+        far.set("b","far-b", null);
 
-        mor.set("c","mor-c", (QueryProfileRegistry)null);
-        far.set("c","far-c", (QueryProfileRegistry)null);
+        mor.set("c","mor-c", null);
+        far.set("c","far-c", null);
 
-        mor.set("d.a","mor-d.a", (QueryProfileRegistry)null);
-        barn.set("d.b","barn-d.b", (QueryProfileRegistry)null);
+        mor.set("d.a","mor-d.a", null);
+        barn.set("d.b","barn-d.b", null);
 
         QueryProfile annetBarn=new QueryProfile("annetBarn");
-        annetBarn.set("venn",barn, (QueryProfileRegistry)null);
+        annetBarn.set("venn",barn, null);
 
         CompiledQueryProfile cbarn = barn.compile(null);
         CompiledQueryProfile cannetBarn = annetBarn.compile(null);
@@ -161,6 +173,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("mor-d.a", cbarn.get("d.a"));
     }
 
+    @Test
     public void testInheritance2Level() {
         QueryProfile barn=new QueryProfile("barn");
         QueryProfile mor=new QueryProfile("mor");
@@ -174,24 +187,24 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         mor.addInherited(morfar);
         far.addInherited(farfar);
 
-        morfar.set("a.x","morfar-a", (QueryProfileRegistry)null);
-        mormor.set("a.x","mormor-a", (QueryProfileRegistry)null);
-        farfar.set("a.x","farfar-a", (QueryProfileRegistry)null);
-        mor.set("a.x","mor-a", (QueryProfileRegistry)null);
-        far.set("a.x","far-a", (QueryProfileRegistry)null);
-        barn.set("a.x","barn-a", (QueryProfileRegistry)null);
+        morfar.set("a.x","morfar-a", null);
+        mormor.set("a.x","mormor-a", null);
+        farfar.set("a.x","farfar-a", null);
+        mor.set("a.x","mor-a", null);
+        far.set("a.x","far-a", null);
+        barn.set("a.x","barn-a", null);
 
-        mormor.set("b.x","mormor-b", (QueryProfileRegistry)null);
-        far.set("b.x","far-b", (QueryProfileRegistry)null);
+        mormor.set("b.x","mormor-b", null);
+        far.set("b.x","far-b", null);
 
-        mor.set("c.x","mor-c", (QueryProfileRegistry)null);
-        far.set("c.x","far-c", (QueryProfileRegistry)null);
+        mor.set("c.x","mor-c", null);
+        far.set("c.x","far-c", null);
 
-        mor.set("d.a.x","mor-d.a", (QueryProfileRegistry)null);
-        barn.set("d.b.x","barn-d.b", (QueryProfileRegistry)null);
+        mor.set("d.a.x","mor-d.a", null);
+        barn.set("d.b.x","barn-d.b", null);
 
         QueryProfile annetBarn=new QueryProfile("annetBarn");
-        annetBarn.set("venn",barn, (QueryProfileRegistry)null);
+        annetBarn.set("venn",barn, null);
 
         CompiledQueryProfile cbarn = barn.compile(null);
         CompiledQueryProfile cannetBarn = annetBarn.compile(null);
@@ -208,6 +221,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("mor-d.a", cbarn.get("d.a.x"));
     }
 
+    @Test
     public void testInheritance3Level() {
         QueryProfile barn=new QueryProfile("barn");
         QueryProfile mor=new QueryProfile("mor");
@@ -221,24 +235,24 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         mor.addInherited(morfar);
         far.addInherited(farfar);
 
-        morfar.set("y.a.x","morfar-a", (QueryProfileRegistry)null);
-        mormor.set("y.a.x","mormor-a", (QueryProfileRegistry)null);
-        farfar.set("y.a.x","farfar-a", (QueryProfileRegistry)null);
-        mor.set("y.a.x","mor-a", (QueryProfileRegistry)null);
-        far.set("y.a.x","far-a", (QueryProfileRegistry)null);
-        barn.set("y.a.x","barn-a", (QueryProfileRegistry)null);
+        morfar.set("y.a.x","morfar-a", null);
+        mormor.set("y.a.x","mormor-a", null);
+        farfar.set("y.a.x","farfar-a", null);
+        mor.set("y.a.x","mor-a", null);
+        far.set("y.a.x","far-a", null);
+        barn.set("y.a.x","barn-a", null);
 
-        mormor.set("y.b.x","mormor-b", (QueryProfileRegistry)null);
-        far.set("y.b.x","far-b", (QueryProfileRegistry)null);
+        mormor.set("y.b.x","mormor-b", null);
+        far.set("y.b.x","far-b", null);
 
-        mor.set("y.c.x","mor-c", (QueryProfileRegistry)null);
-        far.set("y.c.x","far-c", (QueryProfileRegistry)null);
+        mor.set("y.c.x","mor-c", null);
+        far.set("y.c.x","far-c", null);
 
-        mor.set("y.d.a.x","mor-d.a", (QueryProfileRegistry)null);
-        barn.set("y.d.b.x","barn-d.b", (QueryProfileRegistry)null);
+        mor.set("y.d.a.x","mor-d.a", null);
+        barn.set("y.d.b.x","barn-d.b", null);
 
         QueryProfile annetBarn=new QueryProfile("annetBarn");
-        annetBarn.set("venn",barn, (QueryProfileRegistry)null);
+        annetBarn.set("venn",barn, null);
 
         CompiledQueryProfile cbarn = barn.compile(null);
         CompiledQueryProfile cannetBarn = annetBarn.compile(null);
@@ -255,6 +269,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("mor-d.a", cbarn.get("y.d.a.x"));
     }
 
+    @Test
     public void testListProperties() {
         QueryProfile barn=new QueryProfile("barn");
         QueryProfile mor=new QueryProfile("mor");
@@ -268,18 +283,18 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         mor.addInherited(morfar);
         far.addInherited(farfar);
 
-        morfar.set("a","morfar-a", (QueryProfileRegistry)null);
-        morfar.set("model.b","morfar-model.b", (QueryProfileRegistry)null);
-        mormor.set("a","mormor-a", (QueryProfileRegistry)null);
-        mormor.set("model.b","mormor-model.b", (QueryProfileRegistry)null);
-        farfar.set("a","farfar-a", (QueryProfileRegistry)null);
-        mor.set("a","mor-a", (QueryProfileRegistry)null);
-        far.set("a","far-a", (QueryProfileRegistry)null);
-        barn.set("a","barn-a", (QueryProfileRegistry)null);
-        mormor.set("b","mormor-b", (QueryProfileRegistry)null);
-        far.set("b","far-b", (QueryProfileRegistry)null);
-        mor.set("c","mor-c", (QueryProfileRegistry)null);
-        far.set("c","far-c", (QueryProfileRegistry)null);
+        morfar.set("a","morfar-a", null);
+        morfar.set("model.b","morfar-model.b", null);
+        mormor.set("a","mormor-a", null);
+        mormor.set("model.b","mormor-model.b", null);
+        farfar.set("a","farfar-a", null);
+        mor.set("a","mor-a", null);
+        far.set("a","far-a", null);
+        barn.set("a","barn-a", null);
+        mormor.set("b","mormor-b", null);
+        far.set("b","far-b", null);
+        mor.set("c","mor-c", null);
+        far.set("c","far-c", null);
 
         CompiledQueryProfile cbarn = barn.compile(null);
 
@@ -308,9 +323,10 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
     }
 
     /** Tests that dots are followed when setting overridability */
+    @Test
     public void testInstanceOverridable() {
         QueryProfile profile=new QueryProfile("root/unoverridableIndex");
-        profile.set("model.defaultIndex","default", (QueryProfileRegistry)null);
+        profile.set("model.defaultIndex","default", null);
         profile.setOverridable("model.defaultIndex",false,null);
 
         assertFalse(profile.isDeclaredOverridable("model.defaultIndex",null).booleanValue());
@@ -326,10 +342,11 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
     }
 
     /** Tests that dots are followed when setting overridability...also with variants */
+    @Test
     public void testInstanceOverridableWithVariants() {
         QueryProfile profile=new QueryProfile("root/unoverridableIndex");
         profile.setDimensions(new String[] {"x"});
-        profile.set("model.defaultIndex","default", (QueryProfileRegistry)null);
+        profile.set("model.defaultIndex","default", null);
         profile.setOverridable("model.defaultIndex",false,null);
 
         assertFalse(profile.isDeclaredOverridable("model.defaultIndex",null));
@@ -344,10 +361,11 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("de",query.getModel().getLanguage().languageCode());
     }
 
+    @Test
     public void testSimpleInstanceOverridableWithVariants1() {
         QueryProfile profile=new QueryProfile("test");
         profile.setDimensions(new String[] {"x"});
-        profile.set("a","original", (QueryProfileRegistry)null);
+        profile.set("a","original", null);
         profile.setOverridable("a",false,null);
 
         assertFalse(profile.isDeclaredOverridable("a",null));
@@ -356,6 +374,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("original",query.properties().get("a"));
     }
 
+    @Test
     public void testSimpleInstanceOverridableWithVariants2() {
         QueryProfile profile=new QueryProfile("test");
         profile.setDimensions(new String[] {"x"});
@@ -369,39 +388,43 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
     }
 
     /** Tests having both an explicit reference and an override */
+    @Test
     public void testExplicitReferenceOverride() {
         QueryProfile a1=new QueryProfile("a1");
-        a1.set("b","a1.b", (QueryProfileRegistry)null);
+        a1.set("b","a1.b", null);
         QueryProfile profile=new QueryProfile("test");
-        profile.set("a",a1, (QueryProfileRegistry)null);
-        profile.set("a.b","a.b", (QueryProfileRegistry)null);
+        profile.set("a",a1, null);
+        profile.set("a.b","a.b", null);
         assertEquals("a.b",profile.compile(null).get("a.b"));
     }
 
+    @Test
     public void testSettingNonLeaf1() {
         QueryProfile p=new QueryProfile("test");
-        p.set("a","a-value", (QueryProfileRegistry)null);
-        p.set("a.b","a.b-value", (QueryProfileRegistry)null);
+        p.set("a","a-value", null);
+        p.set("a.b","a.b-value", null);
 
         QueryProfileProperties cp = new QueryProfileProperties(p.compile(null));
         assertEquals("a-value", cp.get("a"));
         assertEquals("a.b-value", cp.get("a.b"));
     }
 
+    @Test
     public void testSettingNonLeaf2() {
         QueryProfile p=new QueryProfile("test");
-        p.set("a.b","a.b-value", (QueryProfileRegistry)null);
-        p.set("a","a-value", (QueryProfileRegistry)null);
+        p.set("a.b","a.b-value", null);
+        p.set("a","a-value", null);
 
         QueryProfileProperties cp = new QueryProfileProperties(p.compile(null));
         assertEquals("a-value", cp.get("a"));
         assertEquals("a.b-value", cp.get("a.b"));
     }
 
+    @Test
     public void testSettingNonLeaf3a() {
         QueryProfile p=new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
-        p.set("a.b","a.b-value", (QueryProfileRegistry)null);
+        p.set("a.b","a.b-value", null);
         p.set("a","a-value",new String[] {"x1"}, null);
 
         QueryProfileProperties cp = new QueryProfileProperties(p.compile(null));
@@ -412,11 +435,12 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("a.b-value", cp.get("a.b", new String[] {"x1"}));
     }
 
+    @Test
     public void testSettingNonLeaf3b() {
         QueryProfile p=new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
         p.set("a","a-value",new String[] {"x1"}, null);
-        p.set("a.b","a.b-value", (QueryProfileRegistry)null);
+        p.set("a.b","a.b-value", null);
 
         QueryProfileProperties cp = new QueryProfileProperties(p.compile(null));
 
@@ -426,11 +450,12 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("a.b-value", cp.get("a.b",new String[] {"x1"}));
     }
 
+    @Test
     public void testSettingNonLeaf4a() {
         QueryProfile p=new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
         p.set("a.b","a.b-value",new String[] {"x1"}, null);
-        p.set("a","a-value", (QueryProfileRegistry)null);
+        p.set("a","a-value", null);
 
         QueryProfileProperties cp = new QueryProfileProperties(p.compile(null));
 
@@ -454,6 +479,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("a.b-value", cp.get("a.b", QueryProfileVariantsTestCase.toMap(p, new String[] {"x1"})));
     }
 
+    @Test
     public void testSettingNonLeaf5() {
         QueryProfile p=new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
@@ -468,20 +494,22 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("a.b-value", cp.get("a.b", QueryProfileVariantsTestCase.toMap(p, new String[] {"x1"})));
     }
 
+    @Test
     public void testListingWithNonLeafs() {
         QueryProfile p=new QueryProfile("test");
-        p.set("a","a-value", (QueryProfileRegistry)null);
-        p.set("a.b","a.b-value", (QueryProfileRegistry)null);
+        p.set("a","a-value", null);
+        p.set("a.b","a.b-value", null);
         Map<String,Object> values = p.compile(null).listValues("a");
         assertEquals(1,values.size());
         assertEquals("a.b-value",values.get("b"));
     }
 
+    @Test
     public void testRankTypeNames() {
          QueryProfile p=new QueryProfile("test");
-         p.set("a.$b","foo", (QueryProfileRegistry)null);
-         p.set("a.query(b)","bar", (QueryProfileRegistry)null);
-         p.set("a.b.default-index","fuu", (QueryProfileRegistry)null);
+         p.set("a.$b","foo", null);
+         p.set("a.query(b)","bar", null);
+         p.set("a.b.default-index","fuu", null);
          CompiledQueryProfile cp = p.compile(null);
 
          assertEquals("foo", cp.get("a.$b"));
@@ -499,9 +527,10 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
          assertEquals("fuu", p2.get("b.default-index"));
     }
 
+    @Test
     public void testQueryProfileInlineValueReassignment() {
         QueryProfile p=new QueryProfile("test");
-        p.set("source.rel.params.query","%{model.queryString}", (QueryProfileRegistry)null);
+        p.set("source.rel.params.query","%{model.queryString}", null);
         p.freeze();
         Query q = new Query(HttpRequest.createTestRequest("?query=foo", Method.GET), p.compile(null));
         assertEquals("foo",q.properties().get("source.rel.params.query"));
@@ -511,9 +540,10 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("foo",q.properties().listProperties().get("source.rel.params.query")); // Is still foo because model variables are not supported with the list function
     }
 
+    @Test
     public void testQueryProfileInlineValueReassignmentSimpleName() {
         QueryProfile p=new QueryProfile("test");
-        p.set("key","%{model.queryString}", (QueryProfileRegistry)null);
+        p.set("key","%{model.queryString}", null);
         p.freeze();
         Query q = new Query(HttpRequest.createTestRequest("?query=foo", Method.GET), p.compile(null));
         assertEquals("foo",q.properties().get("key"));
@@ -523,9 +553,10 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("foo",q.properties().listProperties().get("key")); // Is still bar because model variables are not supported with the list function
     }
 
+    @Test
     public void testQueryProfileInlineValueReassignmentSimpleNameGenericProperty() {
         QueryProfile p=new QueryProfile("test");
-        p.set("key","%{value}", (QueryProfileRegistry)null);
+        p.set("key","%{value}", null);
         p.freeze();
         Query q = new Query(HttpRequest.createTestRequest("?query=test&value=foo", Method.GET), p.compile(null));
         assertEquals("foo",q.properties().get("key"));
@@ -535,6 +566,7 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("bar",q.properties().listProperties().get("key"));
     }
 
+    @Test
     public void testQueryProfileModelValueListing() {
         QueryProfile p=new QueryProfile("test");
         p.freeze();
@@ -546,11 +578,12 @@ public class QueryProfileTestCase extends junit.framework.TestCase {
         assertEquals("bar",q.properties().listProperties().get("model.queryString")); // Is still bar because model variables are not supported with the list function
     }
 
+    @Test
     public void testEmptyBoolean() {
         QueryProfile p=new QueryProfile("test");
         p.setDimensions(new String[] {"x","y"});
-        p.set("clustering.something","bar", (QueryProfileRegistry)null);
-        p.set("clustering.something","bar",new String[] {"x1","y1"}, null);
+        p.set("clustering.something","bar", null);
+        p.set("clustering.something","bar", new String[] {"x1","y1"}, null);
         p.freeze();
         Query q = new Query(HttpRequest.createTestRequest("?x=x1&y=y1&query=bar&clustering.timeline.kano=tur&" +
                                                           "clustering.enable=true&clustering.timeline.bucketspec=-" +

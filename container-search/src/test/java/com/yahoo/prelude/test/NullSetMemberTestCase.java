@@ -5,10 +5,14 @@ import org.junit.Test;
 
 import java.util.HashSet;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests null members in HashSet
  */
-public class NullSetMemberTestCase extends junit.framework.TestCase {
+public class NullSetMemberTestCase {
 
     @Test
     public void testNullMember() {
