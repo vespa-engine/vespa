@@ -27,7 +27,10 @@ public interface ConfigServerClient {
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication prepare(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
+    // TODO: Deprecated, remove when implementations have been removed
+    default PreparedApplication prepare(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content) {
+        return deploy(applicationInstance, deployOptions, rotationCnames, rotationNames, content);
+    }
 
     PreparedApplication deploy(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
 
