@@ -85,7 +85,7 @@ public class FailureRedeployerTest {
         // Production job fails again, and is retried
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
         tester.readyJobTrigger().maintain();
-        assertEquals("Job is retried", Collections.singletonList(new BuildService.BuildJob(app.deploymentJobs().projectId().get(), productionUsEast3.jobName())), tester.buildService().jobs());
+        assertEquals("Job is retried", Collections.singletonList(new BuildService.BuildJob(app.deploymentJobs().projectId().getAsLong(), productionUsEast3.jobName())), tester.buildService().jobs());
 
         // Production job finally succeeds
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
@@ -125,10 +125,7 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
-        boolean result;
-        synchronized (tester.buildService()) {
-            result = tester.buildService().removeJob((long) 1, systemTest.jobName());
-        }
+        tester.buildService().removeJob((long) 1, systemTest.jobName());
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());

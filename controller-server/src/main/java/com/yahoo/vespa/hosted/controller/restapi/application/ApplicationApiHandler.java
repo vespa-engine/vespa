@@ -275,7 +275,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             if ( ! application.deploymentJobs().projectId().isPresent()) continue;
 
             Cursor pipelineObject = pipelinesArray.addObject();
-            pipelineObject.setString("screwdriverId", String.valueOf(application.deploymentJobs().projectId().get()));
+            pipelineObject.setString("screwdriverId", String.valueOf(application.deploymentJobs().projectId().getAsLong()));
             pipelineObject.setString("tenant", application.id().tenant().value());
             pipelineObject.setString("application", application.id().application().value());
             pipelineObject.setString("instance", application.id().instance().value());
@@ -469,8 +469,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
-        controller.applications().get(deploymentId.applicationId()).flatMap(application -> application.deploymentJobs().projectId())
-                .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
+        controller.applications().require(deploymentId.applicationId()).deploymentJobs().projectId()
+                  .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
         // Cost

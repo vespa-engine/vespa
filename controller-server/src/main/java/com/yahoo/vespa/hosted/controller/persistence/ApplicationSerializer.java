@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * Serializes applications to/from slime.
@@ -340,12 +341,12 @@ public class ApplicationSerializer {
 
     private ApplicationVersion applicationVersionFromSlime(Inspector object) {
         if ( ! object.valid()) return ApplicationVersion.unknown;
-        Optional<Long> applicationBuildNumber = optionalLong(object.field(applicationBuildNumberField));
+        OptionalLong applicationBuildNumber = optionalLong(object.field(applicationBuildNumberField));
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
         if (!sourceRevision.isPresent() || !applicationBuildNumber.isPresent()) {
             return ApplicationVersion.unknown;
         }
-        return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.get());
+        return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {
@@ -356,7 +357,7 @@ public class ApplicationSerializer {
     }
 
     private DeploymentJobs deploymentJobsFromSlime(Inspector object) {
-        Optional<Long> projectId = optionalLong(object.field(projectIdField));
+        OptionalLong projectId = optionalLong(object.field(projectIdField));
         List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
         Optional<IssueId> issueId = optionalString(object.field(issueIdField)).map(IssueId::from);
 
@@ -409,8 +410,8 @@ public class ApplicationSerializer {
         return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
     }
 
-    private Optional<Long> optionalLong(Inspector field) {
-        return field.valid() ? Optional.of(field.asLong()) : Optional.empty();
+    private OptionalLong optionalLong(Inspector field) {
+        return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
     }
 
     private Optional<String> optionalString(Inspector field) {

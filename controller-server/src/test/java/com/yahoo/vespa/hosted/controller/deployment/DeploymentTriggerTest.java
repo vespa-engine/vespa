@@ -78,9 +78,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
 
         // staging-test times out and is retried
-        synchronized (tester.buildService()) {
-            tester.buildService().clear();
-        }
+        tester.buildService().clear();
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.readyJobTrigger().maintain();
         assertEquals("Retried dead job", 1, tester.buildService().jobs().size());
@@ -326,7 +324,7 @@ public class DeploymentTriggerTest {
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
         tester.deploymentTrigger().triggerReadyJobs(); // Schedules the blocked production job(s)
-        assertEquals(singletonList(new BuildService.BuildJob(app.deploymentJobs().projectId().get(), "production-us-west-1")),
+        assertEquals(singletonList(new BuildService.BuildJob(app.deploymentJobs().projectId().getAsLong(), "production-us-west-1")),
                      tester.buildService().jobs());
     }
 

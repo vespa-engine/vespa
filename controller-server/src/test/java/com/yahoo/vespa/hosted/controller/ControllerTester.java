@@ -44,6 +44,7 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertNotNull;
@@ -217,7 +218,7 @@ public final class ControllerTester {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken));
         controller().applications().lockOrThrow(applicationId, lockedApplication ->
-                controller().applications().store(lockedApplication.withProjectId(Optional.of(projectId))));
+                controller().applications().store(lockedApplication.withProjectId(OptionalLong.of(projectId))));
         return controller().applications().require(applicationId);
     }
 
@@ -234,7 +235,7 @@ public final class ControllerTester {
     }
 
     public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
-        ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().get()));
+        ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().getAsLong()));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
         controller().applications().deployApplication(application.id(),
                                                       zone,
