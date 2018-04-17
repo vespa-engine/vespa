@@ -16,7 +16,7 @@ class CloudConfigInstallVariables extends CloudConfigOptions {
   import CloudConfigInstallVariables._
 
   override val rpcPort = optionalInstallVar[Integer]("port_configserver_rpc", "services")
-  override val allConfigServers = installVar("addr_configserver", "services") withDefault Array[ConfigServer]()
+  override val allConfigServers = getConfigservers
   override val multiTenant = optionalInstallVar[java.lang.Boolean]("multitenant")
 
   override val zookeeperBarrierTimeout = optionalInstallVar[java.lang.Long]("zookeeper_barrier_timeout")
@@ -37,6 +37,12 @@ class CloudConfigInstallVariables extends CloudConfigOptions {
   override val hostedVespa = optionalInstallVar[java.lang.Boolean]("hosted_vespa")
   override val numParallelTenantLoaders = optionalInstallVar[java.lang.Integer]("num_parallel_tenant_loaders")
   override val loadBalancerAddress = optionalInstallVar[java.lang.String]("load_balancer_address")
+
+  private def getConfigservers = {
+    val newVar = installVar("VESPA_CONFIGSERVERS", "services") withDefault Array[ConfigServer]()
+    val oldVar = installVar("addr_configserver", "services") withDefault Array[ConfigServer]()
+    if (newVar.nonEmpty) newVar else oldVar
+  }
 }
 
 object CloudConfigInstallVariables {

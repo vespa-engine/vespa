@@ -310,13 +310,13 @@ sub get_configsource_url {
 
   my $configsource_url = shift(@configsources);
   if (!$configsource_url) {
-    die "Could not get url to config server, make sure that VESPA_HOME and services.addr_configserver is set\n";
+    die "Could not get url to config server, make sure that VESPA_HOME and VESPA_CONFIGSERVERS are set\n";
   }
   chomp($configsource_url);
   my @temp = split(':', $configsource_url, 3);
   $configsource_url = $temp[0] . ":" . $temp[1] . ":" . $port;
   if (!$configsource_url) {
-    print "Could not get url to config server, make sure that services.addr_configserver is set\n";
+    print "Could not get url to config server, make sure that VESPA_CONFIGSERVERS is set\n";
     exit 1;
   }
 

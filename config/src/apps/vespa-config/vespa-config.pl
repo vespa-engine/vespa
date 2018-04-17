@@ -76,7 +76,6 @@ my $myHostname = `vespa-print-default hostname`;
 chomp $myHostname;
 my $default_configproxy_port = "19090";
 my $default_configserver_port = "19070";
-my $zk_client_port;
 
 my $base_cfg_dir = $VESPA_HOME . "/conf/vespa";
 
@@ -84,9 +83,6 @@ my $base_cfg_dir = $VESPA_HOME . "/conf/vespa";
 # of in environment variables
 my $lookupInConfig = 0;
 
-sub vespa_base_env {
-    $zk_client_port = getCCSVar('zookeeper_clientPort', 2181);
-}
 
 sub getValue {
     my ($varname, $prefix) = @_;
@@ -131,11 +127,12 @@ sub getCCSVar {
     return $default;
 }
 
-sub getVar {
+sub getServicesVar {
     my ($varname, $default, $warn) = @_;
     # print "GET var '$varname'\n";
     my $cloud = getValue($varname, "services");
     my $vespa = getValue($varname, "vespa_base");
+    my $plain = $ENV{$varname};
     if (defined($cloud) && defined($vespa)) {
         print STDERR "Found settings for both services.$varname and vespa_base.$varname, using settings from services\n";
     }
@@ -143,22 +140,32 @@ sub getVar {
         return $cloud;
     } elsif (defined($vespa)) {
         return $vespa;
+    } elsif (defined($plain)) {
+        return $plain;
     } elsif ($warn > 0) {
         print STDERR "No value found for 'services.$varname' or 'vespa_base.$varname'; using '$default'\n";
     }
     return $default;
 }
 
+sub getConfigServerPort {
+    my $port = getServicesVar('port_configserver_rpc', $default_configserver_port, 0);
+    return $port;
+}
+
 sub printConfigServerPort {
-    my $port = getVar('port_configserver_rpc', $default_configserver_port, 0);
+    my $port = getConfigServerPort();
     print "$port\n";
 }
 
 sub getConfigServers {
     my @ret;
 
-    my $addr = getVar('addr_configserver', $myHostname, 1);
-    my $port = getVar('port_configserver_rpc', $default_configserver_port, 0);
+    my $addr = $ENV{'VESPA_CONFIGSERVERS'};
+    if (! defined($addr)) {
+        $addr = getServicesVar('addr_configserver', $myHostname, 1);
+    }
+    my $port = getConfigServerPort();
 
     my $h;
     foreach $h (split(/,|\s+/, $addr)) {
@@ -171,7 +178,12 @@ sub getConfigServers {
     return @ret;
 }
 
+sub getZKPort {
+    my $zk_client_port = getCCSVar('zookeeper_clientPort', 2181);
+    return $zk_client_port;
+}
 sub getZKString {
+    my $zk_client_port = getZKPort();
     my $out;
     my $addr;
     foreach $addr (getConfigServers()) {
@@ -188,8 +200,8 @@ sub printZKString {
 }
 
 sub printAllConfigSourcesWithPort {
-    my $cfport = getVar('port_configserver_rpc', $default_configserver_port, 0);
-    my $cpport = getVar('port_configproxy_rpc',  $default_configproxy_port,  0);
+    my $cfport = getConfigServerPort();
+    my $cpport = getServicesVar('port_configproxy_rpc',  $default_configproxy_port,  0);
     my $addr = "localhost";
     my $out = "tcp/${addr}:${cpport}";
     foreach $addr (getConfigServers()) {
@@ -279,39 +291,33 @@ if ( @ARGV == 0 ) {
 }
 
 if ( $ARGV[0] eq "-allconfigsources" ) {
-    vespa_base_env();
     printAllConfigSourcesWithPort();
     exit 0;
 }
 if ( $ARGV[0] eq "-configsources" ) {
-    vespa_base_env();
     printConfigSources();
     exit 0;
 }
 if ( $ARGV[0] eq "-confighttpsources" ) {
     $lookupInConfig = 1;
-    vespa_base_env();
     printConfigHttpSources();
     exit 0;
 }
 if ( $ARGV[0] eq "-zkstring" ) {
-    vespa_base_env();
     printZKString();
     exit 0;
 }
 if ( $ARGV[0] eq "-configserverport" ) {
     $lookupInConfig = 1;
-    vespa_base_env();
     printConfigServerPort();
     exit 0;
 }
 if ( $ARGV[0] eq "-zkclientport" ) {
-    vespa_base_env();
+    my $zk_client_port = getZKPort();
     print "$zk_client_port\n";
     exit 0;
 }
 if ( $ARGV[0] eq "-isthisaconfigserver" ) {
-    vespa_base_env();
     isThisAConfigServer();
     exit 0;
 }
