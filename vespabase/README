@@ -1,2 +1,1 @@
-This CVS module will hold some vespa-base related stuff,
-such as monitoring and startup scripts.
+This module holds some vespa-base related stuff, such as startup scripts.
