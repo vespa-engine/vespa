@@ -12,7 +12,6 @@ import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
-import org.apache.commons.lang.StringUtils;
 
 import java.net.URI;
 import java.security.Principal;
@@ -45,7 +44,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
                         Stream.concat(
                                 Stream.of(HostName.getLocalhost()),
                                 Stream.of(nodeRepositoryConfig.hostnameWhitelist().split(","))
-                        ).filter(StringUtils::isNotEmpty).collect(Collectors.toSet())),
+                        ).filter(hostname -> !hostname.isEmpty()).collect(Collectors.toSet())),
                 AuthorizationFilter::logAndReject
         );
     }
