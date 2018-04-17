@@ -335,15 +335,9 @@ public class ApplicationController {
             // Carry out deployment
             options = withVersion(platformVersion, options);
 
-            ConfigServerClient.PreparedApplication preparedApplication;
             DeploymentId deploymentId = new DeploymentId(applicationId, zone);
-            // TODO: Using deploy() only in CD and in AWS for now
-            if (controller.system().equals(SystemName.cd) || deploymentId.zoneId().region().value().equals("aws-us-east-1a")) {
-                preparedApplication = configServer.deploy(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
-            } else {
-                preparedApplication = configServer.prepare(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
-                preparedApplication.activate();
-            }
+            ConfigServerClient.PreparedApplication preparedApplication =
+                    configServer.deploy(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
             // TODO: Set new deployment after convergence, rather than after deployment call, succeeds.
             application = application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant());
 
