@@ -14,7 +14,6 @@ public class NodeAttributes {
     private Long restartGeneration = null;
     private Long rebootGeneration = null;
     private DockerImage dockerImage = null;
-    private String vespaVersion = null;
     private String hardwareDivergence = null;
 
     public NodeAttributes() { }
@@ -31,11 +30,6 @@ public class NodeAttributes {
 
     public NodeAttributes withDockerImage(DockerImage dockerImage) {
         this.dockerImage = dockerImage;
-        return this;
-    }
-
-    public NodeAttributes withVespaVersion(String vespaVersion) {
-        this.vespaVersion = vespaVersion;
         return this;
     }
 
@@ -57,17 +51,13 @@ public class NodeAttributes {
         return dockerImage;
     }
 
-    public String getVespaVersion() {
-        return vespaVersion;
-    }
-
     public String getHardwareDivergence() {
         return hardwareDivergence;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion, hardwareDivergence);
+        return Objects.hash(restartGeneration, rebootGeneration, dockerImage, hardwareDivergence);
     }
 
     @Override
@@ -80,7 +70,6 @@ public class NodeAttributes {
         return Objects.equals(restartGeneration, other.restartGeneration)
                 && Objects.equals(rebootGeneration, other.rebootGeneration)
                 && Objects.equals(dockerImage, other.dockerImage)
-                && Objects.equals(vespaVersion, other.vespaVersion)
                 && Objects.equals(hardwareDivergence, other.hardwareDivergence);
     }
 
@@ -90,7 +79,6 @@ public class NodeAttributes {
                 "restartGeneration=" + restartGeneration +
                 ", rebootGeneration=" + rebootGeneration +
                 ", dockerImage=" + dockerImage.asString() +
-                ", vespaVersion='" + vespaVersion + '\'' +
                 ", hardwareDivergence='" + hardwareDivergence + '\'' +
                 '}';
     }

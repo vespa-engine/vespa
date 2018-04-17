@@ -138,16 +138,15 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public void updateNodeAttributes(final String hostName, final NodeAttributes nodeAttributes) {
-        UpdateNodeAttributesResponse response = configServerApi.patch(
+    public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) {
+        NodeMessageResponse response = configServerApi.patch(
                 "/nodes/v2/node/" + hostName,
-                new UpdateNodeAttributesRequestBody(nodeAttributes),
-                UpdateNodeAttributesResponse.class);
+                nodeRepositoryNodeFromNodeAttributes(nodeAttributes),
+                NodeMessageResponse.class);
 
-        if (response.errorCode == null || response.errorCode.isEmpty()) {
-            return;
+        if (!Strings.isNullOrEmpty(response.errorCode)) {
+            throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
         }
-        throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -228,6 +227,15 @@ public class RealNodeRepository implements NodeRepository {
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;
         node.additionalIpAddresses = addNode.additionalIpAddresses;
+        return node;
+    }
+
+    private static NodeRepositoryNode nodeRepositoryNodeFromNodeAttributes(NodeAttributes nodeAttributes) {
+        NodeRepositoryNode node = new NodeRepositoryNode();
+        node.currentDockerImage = Optional.ofNullable(nodeAttributes.getDockerImage()).map(DockerImage::asString).orElse(null);
+        node.currentRestartGeneration = nodeAttributes.getRestartGeneration();
+        node.currentRebootGeneration = nodeAttributes.getRebootGeneration();
+        node.hardwareDivergence = nodeAttributes.getHardwareDivergence();
         return node;
     }
 }

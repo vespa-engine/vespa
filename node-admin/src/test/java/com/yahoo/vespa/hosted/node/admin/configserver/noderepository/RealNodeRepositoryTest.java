@@ -140,8 +140,7 @@ public class RealNodeRepositoryTest {
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1L)
-                        .withDockerImage(new DockerImage("image-1:6.2.3"))
-                        .withVespaVersion("6.2.3"));
+                        .withDockerImage(new DockerImage("image-1:6.2.3")));
     }
 
     @Test(expected = RuntimeException.class)
@@ -151,8 +150,7 @@ public class RealNodeRepositoryTest {
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1L)
-                        .withDockerImage(new DockerImage("image-1"))
-                        .withVespaVersion("6.2.3\n"));
+                        .withDockerImage(new DockerImage("image-1")));
     }
 
     @Test

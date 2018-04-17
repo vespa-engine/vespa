@@ -196,8 +196,7 @@ public class NodeAgentImplTest {
                 hostName, new NodeAttributes()
                         .withRestartGeneration(restartGeneration)
                         .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
+                        .withDockerImage(dockerImage));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -434,8 +433,7 @@ public class NodeAgentImplTest {
                 any(String.class), eq(new NodeAttributes()
                         .withRestartGeneration(wantedRestartGeneration.orElse(null))
                         .withRebootGeneration(0L)
-                        .withDockerImage(new DockerImage(""))
-                        .withVespaVersion("")));
+                        .withDockerImage(new DockerImage(""))));
     }
 
     @Test
@@ -710,8 +708,7 @@ public class NodeAgentImplTest {
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
                         .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
+                        .withDockerImage(dockerImage));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
