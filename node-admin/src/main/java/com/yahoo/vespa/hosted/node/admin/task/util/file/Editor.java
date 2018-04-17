@@ -31,21 +31,25 @@ public class Editor {
     private final String name;
     private final LineEditor editor;
 
+    /**
+     * Read the file which must be encoded in UTF-8, use the LineEditor to edit it,
+     * and any modifications were done write it back and return true.
+     */
     public Editor(Path path, LineEditor editor) {
         this(path.toString(),
                 () -> uncheck(() -> Files.readAllLines(path, ENCODING)),
-                (newLines) ->  uncheck(() -> Files.write(path, newLines, ENCODING)),
+                (newLines) -> uncheck(() -> Files.write(path, newLines, ENCODING)),
                 editor);
     }
 
     /**
-     * @param name The name of what is being edited - used in logging
+     * @param name     The name of what is being edited - used in logging
      * @param supplier Supplies the editor with a list of lines to edit
      * @param consumer Consumes the lines to presist if any changes is detected
-     * @param editor The line operations to execute on the lines supplied
+     * @param editor   The line operations to execute on the lines supplied
      */
     public Editor(String name,
-            Supplier<List<String>> supplier,
+                  Supplier<List<String>> supplier,
                   Consumer<List<String>> consumer,
                   LineEditor editor) {
         this.supplier = supplier;
@@ -76,7 +80,8 @@ public class Editor {
                 case NONE:
                     newLines.add(line);
                     break;
-                default: throw new IllegalArgumentException("Unknown EditType " + edit.getType());
+                default:
+                    throw new IllegalArgumentException("Unknown EditType " + edit.getType());
             }
 
             if (!edit.appendLines().isEmpty()) {
