@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
@@ -16,12 +15,8 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.containerdata.ContainerData;
-import com.yahoo.vespa.hosted.node.admin.containerdata.MotdContainerData;
-import com.yahoo.vespa.hosted.node.admin.containerdata.PromptContainerData;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
-import com.yahoo.vespa.hosted.node.admin.containerdata.ConfigServerContainerData;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
@@ -29,7 +24,6 @@ import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.io.UncheckedIOException;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
@@ -277,7 +271,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainer(NodeSpec node) {
-        createContainerData(node);
+        createContainerData(environment, node);
         dockerOperations.createContainer(containerName, node);
         dockerOperations.startContainer(containerName, node);
         lastCpuMetric = new CpuUsageReporter();
@@ -737,25 +731,5 @@ public class NodeAgentImpl implements NodeAgent {
         orchestrator.suspend(hostname);
     }
 
-    private void createContainerData(NodeSpec node) {
-        ContainerData containerData = ContainerData.createClean(environment, ContainerName.fromHostname(node.hostname));
-
-        // ContainerData only works when root, which is the case only for HostAdmin so far -- config nodes are only used under HostAdmin.
-        // If this fails, however, we should fail the start-up, as the config server won't work without it. Thus, no catch here.
-        if (node.nodeType == NodeType.config) {
-            logger.info("Creating files needed by config server");
-            new ConfigServerContainerData(environment, node.hostname).writeTo(containerData);
-        }
-
-        // ContainerData only works when root, which is the case only for HostAdmin so far. Allow this to fail, since it's not critical.
-        try {
-            logger.info("Creating files for message of the day and the bash prompt");
-            new MotdContainerData(node, environment).writeTo(containerData);
-            new PromptContainerData(environment).writeTo(containerData);
-        }
-        catch (UncheckedIOException e) {
-            logger.info("Failed creating files for message of the day and the bash prompt", e);
-        }
-    }
-
+    protected void createContainerData(Environment environment, NodeSpec node) { }
 }
