@@ -57,8 +57,8 @@ public class Environment {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    public Environment(ConfigServerConfig configServerConfig) {
-        this(configServerConfig,
+    public Environment(ConfigServerInfo configServerInfo) {
+        this(configServerInfo,
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
              getEnvironmentVariable(SYSTEM),
@@ -73,7 +73,11 @@ public class Environment {
              new DefaultContainerEnvironmentResolver());
     }
 
-    private Environment(ConfigServerConfig configServerConfig,
+    public Environment(ConfigServerConfig configServerConfig) {
+        this(new ConfigServerInfo(configServerConfig));
+    }
+
+    private Environment(ConfigServerInfo configServerInfo,
                         String environment,
                         String region,
                         String system,
@@ -86,14 +90,13 @@ public class Environment {
                         String defaultFlavor,
                         String cloud,
                         ContainerEnvironmentResolver containerEnvironmentResolver) {
-        Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
         Objects.requireNonNull(environment, "environment cannot be null");
         Objects.requireNonNull(region, "region cannot be null");
         Objects.requireNonNull(system, "system cannot be null");
         Objects.requireNonNull(defaultFlavor, "default flavor cannot be null");
         Objects.requireNonNull(cloud, "cloud cannot be null");
 
-        this.configServerInfo = new ConfigServerInfo(configServerConfig);
+        this.configServerInfo = configServerInfo;
         this.environment = environment;
         this.region = region;
         this.system = system;
@@ -228,7 +231,7 @@ public class Environment {
     }
 
     public static class Builder {
-        private ConfigServerConfig configServerConfig;
+        private ConfigServerInfo configServerInfo;
         private String environment;
         private String region;
         private String system;
@@ -242,9 +245,13 @@ public class Environment {
         private String cloud;
         private ContainerEnvironmentResolver containerEnvironmentResolver;
 
-        public Builder configServerConfig(ConfigServerConfig configServerConfig) {
-            this.configServerConfig = configServerConfig;
+        public Builder configServerInfo(ConfigServerInfo configServerInfo) {
+            this.configServerInfo = configServerInfo;
             return this;
+        }
+
+        public Builder configServerConfig(ConfigServerConfig configServerConfig) {
+            return configServerInfo(new ConfigServerInfo(configServerConfig));
         }
 
         public Builder environment(String environment) {
@@ -308,7 +315,7 @@ public class Environment {
         }
 
         public Environment build() {
-            return new Environment(configServerConfig,
+            return new Environment(configServerInfo,
                                    environment,
                                    region,
                                    system,
