@@ -3,8 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.AddNode;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.Acl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Mock with some simple logic
@@ -34,6 +33,9 @@ public class NodeRepoMock implements NodeRepository {
     public NodeRepoMock(CallOrderVerifier callOrderVerifier) {
         this.callOrderVerifier = callOrderVerifier;
     }
+
+    @Override
+    public void addNodes(List<AddNode> nodes) { }
 
     @Override
     public List<NodeSpec> getNodes(String baseHostName) {

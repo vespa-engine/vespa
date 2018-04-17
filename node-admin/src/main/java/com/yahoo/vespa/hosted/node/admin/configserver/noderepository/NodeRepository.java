@@ -10,12 +10,13 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author stiankri
  */
 public interface NodeRepository {
+
+    void addNodes(List<AddNode> nodes);
 
     List<NodeSpec> getNodes(String baseHostName);
 

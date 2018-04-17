@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
+import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -37,6 +38,18 @@ public class RealNodeRepository implements NodeRepository {
 
     public RealNodeRepository(ConfigServerApi configServerApi) {
         this.configServerApi = configServerApi;
+    }
+
+    @Override
+    public void addNodes(List<AddNode> nodes) {
+        List<NodeRepositoryNode> nodesToPost = nodes.stream()
+                .map(RealNodeRepository::nodeRepositoryNodeFromAddNode)
+                .collect(Collectors.toList());
+
+        NodeMessageResponse response = configServerApi.post("/nodes/v2/node", nodesToPost, NodeMessageResponse.class);
+        if (!Strings.isNullOrEmpty(response.errorCode)) {
+            throw new RuntimeException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
+        }
     }
 
     @Override
@@ -205,5 +218,17 @@ public class RealNodeRepository implements NodeRepository {
                 node.ipAddresses,
                 Optional.ofNullable(node.hardwareDivergence),
                 Optional.ofNullable(node.parentHostname));
+    }
+
+    private static NodeRepositoryNode nodeRepositoryNodeFromAddNode(AddNode addNode) {
+        NodeRepositoryNode node = new NodeRepositoryNode();
+        node.openStackId = "fake-" + addNode.hostname;
+        node.hostname = addNode.hostname;
+        node.parentHostname = addNode.parentHostname.orElse(null);
+        node.flavor = addNode.nodeFlavor;
+        node.type = addNode.nodeType.name();
+        node.ipAddresses = addNode.ipAddresses;
+        node.additionalIpAddresses = addNode.additionalIpAddresses;
+        return node;
     }
 }
