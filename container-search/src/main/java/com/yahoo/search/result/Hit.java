@@ -403,13 +403,16 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     //TODO Should it be deprecated ?
     public final Map<String,Object> fields() { return getUnmodifiableFieldMap(); }
 
-    /** Aallocate room for the given number of fields to avoid resizing. */
+    /**
+     * Will preallocate in order to avoid resizing.
+     * @param minSize The minimum size to reserve
+     */
     public void reserve(int minSize) {
         getFieldMap(minSize);
     }
 
     /**
-     * Returns an iterator over the fields of this
+     * Fields
      * 
      * @return an iterator for traversing the fields of this hit
      */
@@ -660,7 +663,9 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         if (p == null) {
             return null;
         } else if (p instanceof HitField) {
-            return ((HitField)p).quotedContent(false);
+            HitField hf = (HitField) p;
+
+            return hf.quotedContent(false);
         } else if (p instanceof StructuredData) {
             return p.toString();
         } else if (p instanceof XMLString || p instanceof JSONString) {
@@ -738,10 +743,9 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /**
-     * For internal use only.
+     * For vespa internal use only.
      * Gives access to the modifiable backing set of filled summaries.
      * This set might be unmodifiable if the size is less than or equal to 1
-     *
      * @return the set of filled summaries.
      */
     protected final Set<String> getFilledInternal() {
@@ -751,7 +755,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private Map<String,Object> getFieldMap() {
         return getFieldMap(16);
     }
-
     private Map<String,Object> getFieldMap(int minSize) {
         if (fields == null) {
             // Compensate for loadfactor and then some, rounded up....

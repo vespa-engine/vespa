@@ -12,10 +12,9 @@ import com.yahoo.search.result.NanNumber;
 import com.yahoo.data.access.Inspector;
 
 /**
- * @author Bjørn Borud
+ * @author  <a href="mailto:borud@yahoo-inc.com">Bj\u00f8rn Borud</a>
  */
 public class IntegerField extends DocsumField {
-
     static final int EMPTY_VALUE = Integer.MIN_VALUE;
 
     public IntegerField(String name) {
@@ -26,23 +25,20 @@ public class IntegerField extends DocsumField {
         if (value == EMPTY_VALUE) {
             return NanNumber.NaN;
         } else {
-            return value;
+            return Integer.valueOf(value);
         }
     }
 
-    @Override
     public Object decode(ByteBuffer b) {
         return convert(b.getInt());
     }
 
-    @Override
     public Object decode(ByteBuffer b, FastHit hit) {
         Object field = decode(b);
         hit.setField(name, field);
         return field;
     }
 
-    @Override
     public String toString() {
         return "field " + getName() + " type int";
     }
@@ -57,5 +53,4 @@ public class IntegerField extends DocsumField {
     public Object convert(Inspector value) {
         return convert((int)value.asLong(EMPTY_VALUE));
     }
-
 }

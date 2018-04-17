@@ -4,14 +4,14 @@ package com.yahoo.search.result;
 /**
  * A class representing unset or undefined numeric values.
  *
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 @SuppressWarnings("serial")
 public final class NanNumber extends Number {
-
     public static final NanNumber NaN = new NanNumber();
 
-    private NanNumber() { }
+    private NanNumber() {
+    }
 
     @Override
     public double doubleValue() {
