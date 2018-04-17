@@ -99,30 +99,25 @@ Requires: gdb
 Requires: net-tools
 %if 0%{?centos}
 Requires: llvm3.9
-Requires: vespa-boost >= 1.59.0-6
-%define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib
+%define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-cppunit/lib
 %define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-cppunit/include
 %endif
 %if 0%{?fedora}
 %if 0%{?fc25}
 Requires: llvm-libs >= 3.9.1
-Requires: boost >= 1.60
 %endif
 %if 0%{?fc26}
 Requires: llvm-libs >= 4.0
-Requires: boost >= 1.63
 %define _vespa_llvm_version 4.0
 %endif
 %if 0%{?fc27}
 Requires: llvm4.0-libs >= 4.0
-Requires: boost >= 1.64
 %define _vespa_llvm_version 4.0
 %define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
 %define _vespa_llvm_include_directory /usr/include/llvm4.0
 %endif
 %if 0%{?fc28}
 Requires: llvm4.0-libs >= 4.0
-Requires: boost >= 1.64
 %define _vespa_llvm_version 4.0
 %define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
 %define _vespa_llvm_include_directory /usr/include/llvm4.0
@@ -130,7 +125,6 @@ Requires: boost >= 1.64
 Requires: zookeeper >= 3.4.9
 %define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}
 %define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}
-%define _vespa_boost_lib_suffix %{nil}
 %endif
 Requires: java-1.8.0-openjdk
 Requires: openssl
@@ -163,7 +157,6 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
        -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
        %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
-       %{?_vespa_boost_lib_suffix:-DVESPA_BOOST_LIB_SUFFIX="%{_vespa_boost_lib_suffix}"} \
        .
 
 make %{_smp_mflags}
