@@ -23,11 +23,9 @@ public class Yum {
     private static final Pattern UNKNOWN_PACKAGE_PATTERN = Pattern.compile(
             "(?dm)^No package ([^ ]+) available\\.$");
 
-    private final TaskContext taskContext;
     private final Terminal terminal;
 
-    public Yum(TaskContext taskContext, Terminal terminal) {
-        this.taskContext = taskContext;
+    public Yum(Terminal terminal) {
         this.terminal = terminal;
     }
 
@@ -50,7 +48,6 @@ public class Yum {
                                             String[] packages,
                                             Pattern noopPattern) {
         return new GenericYumCommand(
-                taskContext,
                 terminal,
                 yumCommand,
                 Arrays.asList(packages),
@@ -58,19 +55,16 @@ public class Yum {
     }
 
     public static class GenericYumCommand {
-        private final TaskContext taskContext;
         private final Terminal terminal;
         private final String yumCommand;
         private final List<String> packages;
         private final Pattern commandOutputNoopPattern;
         private Optional<String> enabledRepo = Optional.empty();
 
-        private GenericYumCommand(TaskContext taskContext,
-                                  Terminal terminal,
+        private GenericYumCommand(Terminal terminal,
                                   String yumCommand,
                                   List<String> packages,
                                   Pattern commandOutputNoopPattern) {
-            this.taskContext = taskContext;
             this.terminal = terminal;
             this.yumCommand = yumCommand;
             this.packages = packages;
@@ -87,7 +81,7 @@ public class Yum {
             return this;
         }
 
-        public boolean converge() {
+        public boolean converge(TaskContext taskContext) {
             CommandLine commandLine = terminal.newCommandLine(taskContext);
             commandLine.add("yum", yumCommand, "--assumeyes");
             enabledRepo.ifPresent(repo -> commandLine.add("--enablerepo=" + repo));
