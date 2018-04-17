@@ -16,7 +16,7 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit.Type.NON
  */
 @Immutable
 public class LineEdit {
-    enum Type { NONE, REPLACE }
+    public enum Type { NONE, REPLACE }
 
     public static LineEdit none() { return insert(Collections.emptyList(), Collections.emptyList()); }
     public static LineEdit remove() { return replaceWith(Collections.emptyList()); }

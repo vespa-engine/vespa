@@ -7,11 +7,17 @@ import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -51,21 +57,14 @@ public class AclMaintainer implements Runnable {
 
     private void applyRedirect(Container container, InetAddress address) {
         IPVersion ipVersion = IPVersion.get(address);
-
-        String redirectStatements = String.join("\n"
-                , "-P PREROUTING ACCEPT"
-                , "-P INPUT ACCEPT"
-                , "-P OUTPUT ACCEPT"
-                , "-P POSTROUTING ACCEPT"
-                , "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT");
-
-        IPTablesRestore.syncTableLogOnError(dockerOperations, container.name, ipVersion, "nat", redirectStatements);
+        String redirectRule = "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT";
+        IPTablesEditor.editLogOnError(dockerOperations, container.name, ipVersion, "nat", NatTableLineEditor.from(redirectRule));
     }
 
     private void apply(Container container, Acl acl) {
         // Apply acl to the filter table
-        IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", acl.toRules(IPVersion.IPv6));
-        IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", acl.toRules(IPVersion.IPv4));
+        IPTablesEditor.editFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", FilterTableLineEditor.from(acl, IPVersion.IPv6));
+        IPTablesEditor.editFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", FilterTableLineEditor.from(acl, IPVersion.IPv4));
 
         // Apply redirect to the nat table
         if (this.environment.getCloud().equals("AWS")) {
@@ -91,6 +90,83 @@ public class AclMaintainer implements Runnable {
             configureAcls();
         } catch (Throwable t) {
             log.error("Failed to configure ACLs", t);
+        }
+    }
+
+    /**
+     * An editor that assumes all lines are exactly as the the wanted rules
+     */
+    private static class FilterTableLineEditor implements LineEditor {
+
+        private final List<String> wantedRules;
+        private boolean removeRemaining = false;
+
+        FilterTableLineEditor(List<String> wantedRules) {
+            this.wantedRules = new ArrayList<>(wantedRules);
+        }
+
+        static FilterTableLineEditor from(Acl acl, IPVersion ipVersion) {
+            List<String> rules = Arrays.asList(acl.toRules(ipVersion).split("\n"));
+            return new FilterTableLineEditor(rules);
+        }
+
+        @Override
+        public LineEdit edit(String line) {
+            if (removeRemaining) {
+                return LineEdit.remove();
+            }
+            if (wantedRules.indexOf(line) == 0) {
+                wantedRules.remove(line);
+                return LineEdit.none();
+            } else {
+                removeRemaining = true;
+                return LineEdit.remove();
+            }
+        }
+
+        @Override
+        public List<String> onComplete() {
+            return this.wantedRules;
+        }
+    }
+
+    /**
+     * An editor that only cares about the REDIRECT statement
+     */
+    private static class NatTableLineEditor implements LineEditor {
+
+        private final String redirectRule;
+        private boolean redirectExists;
+
+        NatTableLineEditor(String redirectRule) {
+            this.redirectRule = redirectRule;
+        }
+
+        static NatTableLineEditor from(String redirectRule) {
+            return new NatTableLineEditor(redirectRule);
+        }
+
+        @Override
+        public LineEdit edit(String line) {
+            if (line.endsWith("REDIRECT")) {
+                if (redirectExists) {
+                    // Only allow one redirect rule
+                    return LineEdit.remove();
+                } else {
+                    redirectExists = true;
+                    if (line.equals(redirectRule)) {
+                        return LineEdit.none();
+                    } else {
+                        return LineEdit.replaceWith(redirectRule);
+                    }
+                }
+            } else return LineEdit.none();
+        }
+
+        @Override
+        public List<String> onComplete() {
+            if (redirectExists) return new ArrayList<>();
+            return Collections.singletonList(redirectRule);
         }
     }
 }
