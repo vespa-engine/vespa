@@ -20,10 +20,7 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -70,6 +67,10 @@ public class X509CertificateUtils {
 
     public static List<String> getSubjectCommonNames(X509Certificate certificate) {
         return getCommonNames(certificate.getSubjectX500Principal());
+    }
+
+    public static List<String> getIssuerCommonNames(X509Certificate certificate) {
+        return getCommonNames(certificate.getIssuerX500Principal());
     }
 
     public static List<String> getCommonNames(X500Principal subject) {
