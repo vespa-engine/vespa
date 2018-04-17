@@ -192,11 +192,6 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
         return root;
     }
 
-    @Override
-    public JsonNode grabLog(DeploymentId applicationInstance) {
-        return new ObjectNode(JsonNodeFactory.instance);
-    }
-
     // Returns a canned example response
     @Override
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,

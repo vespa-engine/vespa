@@ -297,10 +297,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart?hostname=host1", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Requested restart of tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
-        // POST a 'log' command
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/log", POST)
-                                      .screwdriverIdentity(SCREWDRIVER_ID),
-                              new File("log-response.json")); // Proxied to config server, not sure about the expected return format
         // GET (wait for) convergence
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/converge", GET)
                                       .userIdentity(USER_ID),
