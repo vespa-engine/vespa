@@ -12,12 +12,9 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.*;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.Acl;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
-import org.apache.commons.lang.StringUtils;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,31 +50,12 @@ public class RealNodeRepository implements NodeRepository {
 
     @Override
     public List<NodeSpec> getNodes(String baseHostName) {
-        return getNodes(Optional.of(baseHostName), Collections.emptyList());
-    }
-
-    private List<NodeSpec> getNodes(Optional<String> baseHostName, List<NodeType> nodeTypeList) {
-        Optional<String> nodeTypes = Optional
-                .of(nodeTypeList.stream().map(NodeType::name).collect(Collectors.joining(",")))
-                .filter(StringUtils::isNotEmpty);
-
-        String path = "/nodes/v2/node/?recursive=true" +
-                baseHostName.map(base -> "&parentHost=" + base).orElse("") +
-                nodeTypes.map(types -> "&type=" + types).orElse("");
+        String path = "/nodes/v2/node/?recursive=true&parentHost=" + baseHostName;
         final GetNodesResponse nodesForHost = configServerApi.get(path, GetNodesResponse.class);
 
         return nodesForHost.nodes.stream()
                 .map(RealNodeRepository::createNodeSpec)
                 .collect(Collectors.toList());
-    }
-
-
-    @Override
-    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
-        if (nodeTypes.length == 0)
-            throw new IllegalArgumentException("Must specify at least 1 node type");
-
-        return getNodes(Optional.empty(), Arrays.asList(nodeTypes));
     }
 
     @Override
