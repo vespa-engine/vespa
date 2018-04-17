@@ -4,7 +4,6 @@ package com.yahoo.prelude.fastsearch.test;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.fs4.mplex.*;
 import com.yahoo.fs4.test.QueryTestCase;
@@ -15,7 +14,6 @@ import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.container.protect.Error;
 import com.yahoo.fs4.*;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockBackend;
-import com.yahoo.prelude.fastsearch.test.fs4mock.MockFS4ResourcePool;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockFSChannel;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.search.Query;
@@ -113,45 +111,30 @@ public class FastSearcherTestCase {
                         .summaryclass(new DocumentdbInfoConfig.Documentdb.Summaryclass.Builder().name("simple").id(7))
                         .rankprofile(new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder()
                                 .name("simpler").hasRankFeatures(false).hasSummaryFeatures(false))));
-
-        List<SearchCluster.Node> nodes = new ArrayList<>();
-        nodes.add(new SearchCluster.Node("host1", 5000, 0));
-        nodes.add(new SearchCluster.Node("host2", 5000, 0));
-
-        MockFS4ResourcePool mockFs4ResourcePool = new MockFS4ResourcePool();
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
-                mockFs4ResourcePool,
-                new MockDispatcher(nodes, mockFs4ResourcePool, 1, new VipStatus()),
+                new FS4ResourcePool(1),
+                new MockDispatcher(Collections.emptyList()),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
-                new CacheParams(0, 0),
+                new CacheParams(100, 1e64),
                 documentdbConfigWithOneDb);
 
-        { // No direct.summaries
-            String query = "?query=sddocname:a&summary=simple";
-            Result result = doSearch(fastSearcher, new Query(query), 0, 10);
-            doFill(fastSearcher, result);
-            ErrorMessage error = result.hits().getError();
-            assertNull("Since we don't route to the dispatcher we hit the mock backend, so no error", error);
-        }
+        String query = "?query=sddocname:a&dispatch.summaries";
+        Result result = doSearch(fastSearcher,new Query(query), 0, 10);
+        ErrorMessage message = result.hits().getError();
 
-        { // direct.summaries due to query cache
-            String query = "?query=sddocname:a&ranking.queryCache";
-            Result result = doSearch(fastSearcher, new Query(query), 0, 10);
-            doFill(fastSearcher, result);
-            ErrorMessage error = result.hits().getError();
-            assertEquals("Since we don't actually run summary backends we get this error when the Dispatcher is used",
-                         "Error response from rpc node connection to host1:0: Connection error", error.getDetailedMessage());
-        }
+        assertNotNull("Got error", message);
+        assertEquals("Invalid query parameter", message.getMessage());
+        assertEquals("When using dispatch.summaries and your summary/rankprofile require the query,  you need to enable ranking.queryCache.", message.getDetailedMessage());
+        assertEquals(Error.INVALID_QUERY_PARAMETER.code, message.getCode());
 
-        { // direct.summaries due to no summary features
-            String query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler";
-            Result result = doSearch(fastSearcher, new Query(query), 0, 10);
-            doFill(fastSearcher, result);
-            ErrorMessage error = result.hits().getError();
-            assertEquals("Since we don't actually run summary backends we get this error when the Dispatcher is used",
-                         "Error response from rpc node connection to host1:0: Connection error", error.getDetailedMessage());
-        }
+        query = "?query=sddocname:a&dispatch.summaries&ranking.queryCache";
+        result = doSearch(fastSearcher,new Query(query), 0, 10);
+        assertNull(result.hits().getError());
+
+        query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler";
+        result = doSearch(fastSearcher,new Query(query), 0, 10);
+        assertNull(result.hits().getError());
     }
 
     @Test
@@ -298,7 +281,7 @@ public class FastSearcherTestCase {
 
         assertEquals(100, fastSearcher.getCacheControl().capacity()); // Default cache =100MB
 
-        Query query = new Query("?query=ignored&dispatch.summaries=false");
+        Query query = new Query("?query=ignored");
         query.getRanking().setQueryCache(true);
         Result result = doSearch(fastSearcher, query, 0, 10);
 
@@ -338,6 +321,7 @@ public class FastSearcherTestCase {
         answer.flip();
         answer.get(expected);
 
+        assertEquals(expected.length, actual.length);
         for (int i = 0; i < expected.length; ++i) {
             if (expected[i] == IGNORE) {
                 actual[i] = IGNORE;
