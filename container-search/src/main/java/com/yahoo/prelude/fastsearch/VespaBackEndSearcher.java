@@ -118,8 +118,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         DocumentDatabase documentDb = getDocumentDatabase(query);
 
         // Needed to generate a dynamic summary?
-        DocsumDefinition docsumDefinition = documentDb.getDocsumDefinitionSet().getDocsumDefinition(query.getPresentation().getSummary());
-        if (docsumDefinition == null) return true; // stay safe
+        DocsumDefinition docsumDefinition = documentDb.getDocsumDefinitionSet().getDocsum(query.getPresentation().getSummary());
         if (docsumDefinition.isDynamic()) return true;
 
         // Needed to generate ranking features?

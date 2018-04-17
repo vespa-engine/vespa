@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
@@ -266,7 +265,7 @@ public class Dispatcher extends AbstractComponent {
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
                 if (summary.fieldCount() != 0) {
-                    hits.get(i).addSummary(documentDb.getDocsumDefinitionSet().getDocsumDefinition(summaryClass), summary);
+                    hits.get(i).addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
                 } else {
                     skippedHits++;
                 }

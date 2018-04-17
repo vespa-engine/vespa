@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -54,15 +53,21 @@ public final class DocsumDefinitionSet {
     LegacyEmulationConfig legacyEmulationConfig() { return emulationConfig; }
 
     /**
-     * Returns a docsum definition by name, or null if not found
+     * Returns the summary definition of the given name, or the default if not found.
      *
-     * @param name the name of the summary class to use, or null to use the name "default"
-     * @return the summary class found, or null if none
+     * @throws ConfigurationException if the requested summary class is not found and there is none called "default"
      */
-    public final DocsumDefinition getDocsumDefinition(String name) {
-        if (name == null)
-            name="default";
-        return definitionsByName.get(name);
+    public DocsumDefinition getDocsum(String summaryClass) {
+        DocsumDefinition ds = definitionsByName.get(summaryClass);
+        if (ds == null) {
+            ds = definitionsByName.get("default");
+        }
+        if (ds == null) {
+            throw new ConfigurationException("Fetched hit with summary class " + summaryClass +
+                                             ", but this summary class is not in current summary config (" + toString() + ")" +
+                                             " (that is, you asked for something unknown, and no default was found)");
+        }
+        return ds;
     }
 
     /**
@@ -81,7 +86,7 @@ public final class DocsumDefinitionSet {
         if (docsumClassId != SLIME_MAGIC_ID) {
             throw new IllegalArgumentException("Only expecting SchemaLess docsums - summary class:" + summaryClass + " hit:" + hit);
         }
-        DocsumDefinition docsumDefinition = lookupDocsum(summaryClass);
+        DocsumDefinition docsumDefinition = getDocsum(summaryClass);
         Slime value = BinaryFormat.decode(buffer.array(), buffer.arrayOffset()+buffer.position(), buffer.remaining());
         Inspector docsum = new SlimeAdapter(value.get());
         if (docsum.type() != OBJECT) {
@@ -89,19 +94,6 @@ public final class DocsumDefinitionSet {
         }
         hit.addSummary(docsumDefinition, docsum);
         return null;
-    }
-
-    private DocsumDefinition lookupDocsum(String summaryClass) {
-        DocsumDefinition ds = definitionsByName.get(summaryClass);
-        if (ds == null) {
-            ds = definitionsByName.get("default");
-        }
-        if (ds == null) {
-            throw new ConfigurationException("Fetched hit with summary class " + summaryClass +
-                    ", but this summary class is not in current summary config (" + toString() + ")" +
-                    " (that is, you asked for something unknown, and no default was found)");
-        }
-        return ds;
     }
 
     public String toString() {
