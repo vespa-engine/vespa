@@ -168,12 +168,6 @@ public class Controller extends AbstractComponent {
                                                   serviceName, restPath);
     }
 
-    // TODO: Model the response properly
-    // TODO: What is this -- I believe it fetches, and purges, errors from some log server
-    public JsonNode grabLog(DeploymentId deploymentId) {
-        return configServer.grabLog(deploymentId);
-    }
-
     public GitHub gitHub() {
         return gitHub;
     }

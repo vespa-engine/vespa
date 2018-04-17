@@ -39,8 +39,6 @@ public interface ConfigServerClient {
 
     JsonNode waitForConfigConverge(DeploymentId applicationInstance, long timeoutInSeconds);
 
-    JsonNode grabLog(DeploymentId applicationInstance);
-
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
     
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);

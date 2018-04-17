@@ -85,14 +85,6 @@ public interface EnvironmentResource {
                                    @PathParam("instanceId") InstanceId instanceId,
                                    @QueryParam("timeout") long timeoutInSeconds);
 
-    @POST
-    @Path("{environmentId}/region/{regionId}/instance/{instanceId}/log")
-    JsonNode grabLog(@PathParam("tenantId") TenantId tenantId,
-                     @PathParam("applicationId") ApplicationId applicationId,
-                     @PathParam("environmentId") EnvironmentId environmentId,
-                     @PathParam("regionId") RegionId regionId,
-                     @PathParam("instanceId") InstanceId instanceId);
-
     @Path("{environmentId}/region/{regionId}/instance/{instanceId}/service")
     ServiceViewResource service();
 }

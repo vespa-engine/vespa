@@ -200,7 +200,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/log")) return log(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote")) return promoteApplicationDeployment(path.get("tenant"), path.get("application"), path.get("environment"), path.get("region"), path.get("instance"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
@@ -715,25 +714,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  EnvironmentResource.API_PATH, environment,
                                                                  "region", region,
                                                                  "instance", instanceName));
-    }
-
-    /**
-     * This returns and deletes recent error logs from this deployment, which is used by tenant deployment jobs to verify that
-     * the application is working. It is called for all production zones, also those in which the application is not present,
-     * and possibly before it is present, so failures are normal and expected.
-     */
-    private HttpResponse log(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
-        try {
-            DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                         ZoneId.from(environment, region));
-
-            return new JacksonJsonResponse(controller.grabLog(deploymentId));
-        }
-        catch (RuntimeException e) {
-            Slime slime = new Slime();
-            slime.setObject();
-            return new SlimeJsonResponse(slime);
-        }
     }
 
     private HttpResponse deploy(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
