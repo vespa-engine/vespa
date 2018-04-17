@@ -6,7 +6,6 @@ common runtime Vespa components.
 Runtime libraries for c++ and java:
 
     * vespa_gcc3 vespa_gcc_runtime:  C++ runtime
-    * vespa_boost:                   Boost shared libraries for runtime use
     * libiconv:                      Iconv shared library.
 
 General utilities:
