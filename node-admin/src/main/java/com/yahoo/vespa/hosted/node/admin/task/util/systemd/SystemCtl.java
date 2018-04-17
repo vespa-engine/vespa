@@ -101,7 +101,7 @@ public class SystemCtl {
         }
     }
 
-    private abstract class SystemCtlCommand {
+    public abstract class SystemCtlCommand {
         private final String command;
         private final String unit;
 

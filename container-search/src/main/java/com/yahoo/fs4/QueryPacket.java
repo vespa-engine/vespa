@@ -15,7 +15,6 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-
 /**
  * An "extended query" packet. This is the query packets used today,
  * they allow more flexible sets of parameters to be shipped with queries.
@@ -26,12 +25,13 @@ import java.util.List;
  */
 public class QueryPacket extends Packet {
 
-    final private Query query;
+    private final Query query;
+
     private QueryPacketData queryPacketData;
-    int sessionOffset = 0; // Start of sessionKey ignore section for cache key
-    int sessionSize = 0; // Length of sessionKey ignore section for cache key
-    int ignoreableOffset = 0; // Start of (hits/offset/timestamp) ignore section for cache key
-    int ignoreableSize = 0;  // Length of (hits/offset/timestamp) ignore section for cache key
+    private int sessionOffset = 0; // Start of sessionKey ignore section for cache key
+    private int sessionSize = 0; // Length of sessionKey ignore section for cache key
+    private int ignoreableOffset = 0; // Start of (hits/offset/timestamp) ignore section for cache key
+    private int ignoreableSize = 0;  // Length of (hits/offset/timestamp) ignore section for cache key
 
     private QueryPacket(Query query) {
         this.query = query;
@@ -80,6 +80,7 @@ public class QueryPacket extends Packet {
     private int getSessionKeySkipLength() {
         return (sessionSize > 0) ? sessionSize + 4 : 0;
     }
+
     /**
      * Returns an opaque cache key for the query represented by this
      * (pre-serialized) packet.
@@ -191,14 +192,14 @@ public class QueryPacket extends Packet {
 
     /**
      * feature bits, taken from searchlib/common/transport.h
-     **/
-    static final int QF_PARSEDQUERY     = 0x00000002;
-    static final int QF_RANKP           = 0x00000004;
-    static final int QF_SORTSPEC        = 0x00000080;
-    static final int QF_LOCATION        = 0x00000800;
-    static final int QF_PROPERTIES      = 0x00100000;
-    static final int QF_GROUPSPEC       = 0x00400000;
-    static final int QF_SESSIONID       = 0x00800000;
+     */
+    private static final int QF_PARSEDQUERY     = 0x00000002;
+    private static final int QF_RANKP           = 0x00000004;
+    private static final int QF_SORTSPEC        = 0x00000080;
+    private static final int QF_LOCATION        = 0x00000800;
+    private static final int QF_PROPERTIES      = 0x00100000;
+    private static final int QF_GROUPSPEC       = 0x00400000;
+    private static final int QF_SESSIONID       = 0x00800000;
 
     private int getFeatureInt(boolean sendSessionId) {
         int features = QF_PARSEDQUERY | QF_RANKP; // this bitmask means "parsed query" in query packet.
@@ -215,27 +216,27 @@ public class QueryPacket extends Packet {
 
     /**
      * query flag bits, taken from searchlib/common/transport.h
-     **/
-    static final int QFLAG_EXTENDED_COVERAGE    = 0x00000001;
-    static final int QFLAG_COVERAGE_NODES       = 0x00000002;
-    static final int QFLAG_ESTIMATE             = 0x00000080;
-    static final int QFLAG_DROP_SORTDATA        = 0x00004000;
-    static final int QFLAG_NO_RESULTCACHE       = 0x00010000;
-    static final int QFLAG_DUMP_FEATURES        = 0x00040000;
+     */
+    private static final int QFLAG_EXTENDED_COVERAGE    = 0x00000001;
+    private static final int QFLAG_COVERAGE_NODES       = 0x00000002;
+    private static final int QFLAG_ESTIMATE             = 0x00000080;
+    private static final int QFLAG_DROP_SORTDATA        = 0x00004000;
+    private static final int QFLAG_NO_RESULTCACHE       = 0x00010000;
+    private static final int QFLAG_DUMP_FEATURES        = 0x00040000;
 
     private int getFlagInt() {
         int flags = getQueryFlags(query);
         queryPacketData.setQueryFlags(flags);
 
-        /**
+        /*
          * QFLAG_DROP_SORTDATA
          * SORTDATA is a mangling of data from the attribute vectors
          * which were used in the search which is byte comparable in
          * such a way the comparing SORTDATA for two different hits
          * will reproduce the order in which the data were returned when
-         * using sortspec.  For now we simple drop these, but if they
-         * should be necessary at later date, QueryResultPacket must be
-         * updated to be able to parse result packets correctly.
+         * using sortspec.  For now we simply drop these. If they
+         * become necessar, QueryResultPacket must be
+         * updated to be able to read the sort data.
          */
         flags |= QFLAG_DROP_SORTDATA;
         return flags;
@@ -264,13 +265,12 @@ public class QueryPacket extends Packet {
      * creating a summary request.
      *
      * @return wrapper object suitable for creating a summary fetch packet
-     * @throws IllegalStateException
-     *             if no wrapper has been generated
+     * @throws IllegalStateException if no wrapper has been generated
      */
     public QueryPacketData getQueryPacketData() {
-        if (queryPacketData == null) {
+        if (queryPacketData == null)
             throw new IllegalStateException("Trying to fetch a hit tag without having encoded the packet first.");
-        }
         return queryPacketData;
     }
+
 }

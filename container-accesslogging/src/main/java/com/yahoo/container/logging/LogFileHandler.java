@@ -266,13 +266,12 @@ public class LogFileHandler extends StreamHandler {
         }
     }
 
-    private void triggerCompression(String oldFileName) throws InterruptedException {
+    private void triggerCompression(String oldFileName) {
         try {
             Runtime r = Runtime.getRuntime();
             Process p = r.exec(new String[] { "gzip", oldFileName });
             // Detonator pattern: Think of all the fun we can have if gzip isn't what we
             // think it is, if it doesn't return, etc, etc
-            p.waitFor();
         } catch (IOException e) {
             // little we can do...
         }

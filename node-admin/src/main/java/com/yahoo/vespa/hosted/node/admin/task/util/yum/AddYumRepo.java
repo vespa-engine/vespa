@@ -60,7 +60,7 @@ public class AddYumRepo {
     }
 
     // For testing
-    AddYumRepo(String repositoryId,
+    public AddYumRepo(String repositoryId,
                String name,
                String baseurl,
                boolean enabled,

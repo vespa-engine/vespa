@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/systemstate/systemstatehandle.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/network/identity.h>
 #include <vespa/messagebus/network/inetwork.h>
@@ -190,12 +189,6 @@ public:
      */
     mbus::Receptor &getReceptor() { return _handler; }
 
-    /**
-     * Returns the system state from contained document protocol.
-     *
-     * @return Handle to the system state.
-     */
-    documentapi::SystemStateHandle getSystemState();
     void handleReply(mbus::Reply::UP reply) override;
 };
 

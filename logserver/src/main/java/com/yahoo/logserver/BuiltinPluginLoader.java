@@ -5,7 +5,6 @@ import java.util.logging.Logger;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.logserver.handlers.archive.ArchiverPlugin;
-import com.yahoo.logserver.handlers.lasterrorsholder.LastErrorsHolderPlugin;
 import com.yahoo.logserver.handlers.logmetrics.LogMetricsPlugin;
 import com.yahoo.logserver.handlers.replicator.ReplicatorPlugin;
 
@@ -23,7 +22,6 @@ public class BuiltinPluginLoader extends AbstractPluginLoader {
         loadFromClass(ArchiverPlugin.class);
         loadFromClass(ReplicatorPlugin.class);
         loadFromClass(LogMetricsPlugin.class);
-        loadFromClass(LastErrorsHolderPlugin.class);
 
         log.log(LogLevel.DEBUG, "done loading builtin plugins");
     }

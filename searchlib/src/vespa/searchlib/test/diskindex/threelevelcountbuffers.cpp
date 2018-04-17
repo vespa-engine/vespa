@@ -35,6 +35,7 @@ ThreeLevelCountWriteBuffers(EC &sse, EC &spe, EC &pe)
     assert(_pe.getWriteOffset() == 0);
 }
 
+ThreeLevelCountWriteBuffers::~ThreeLevelCountWriteBuffers() = default;
 
 void
 ThreeLevelCountWriteBuffers::flush()
@@ -110,6 +111,6 @@ ThreeLevelCountReadBuffers::ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd)
     pd.setReadContext(&_rcpd);
 }
 
-ThreeLevelCountReadBuffers::~ThreeLevelCountReadBuffers() {}
+ThreeLevelCountReadBuffers::~ThreeLevelCountReadBuffers() = default;
 
 }

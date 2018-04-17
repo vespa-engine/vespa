@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.restapi.v2.filter.FilterTester.Request;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
@@ -45,8 +46,10 @@ public class AuthorizationFilterTest {
 
     private static FilterTester filterTester(SystemName system) {
         Zone zone = new Zone(system, Environment.prod, RegionName.defaultName());
-        return new FilterTester(new AuthorizationFilter(zone, new MockNodeRepository(new MockCurator(),
-                                                                                     new MockNodeFlavors())));
+        return new FilterTester(new AuthorizationFilter(
+                zone,
+                new MockNodeRepository(new MockCurator(), new MockNodeFlavors()),
+                new NodeRepositoryConfig(new NodeRepositoryConfig.Builder())));
     }
 
 }

@@ -16,16 +16,12 @@ import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 /**
@@ -104,12 +100,9 @@ public class ApplicationHandler extends HttpHandler {
     @Override
     public HttpResponse handlePOST(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
-        Tenant tenant = verifyTenantAndApplication(applicationId);
         if (request.getUri().getPath().endsWith("restart"))
             return restart(request, applicationId);
-        if (request.getUri().getPath().endsWith("log"))
-            return grabLog(request, applicationId, tenant);
-        throw new NotFoundException("Illegal POST request '" + request.getUri() + "': Must end by /restart or /log");
+        throw new NotFoundException("Illegal POST request '" + request.getUri() + "': Must end with /restart");
     }
 
     private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {
@@ -118,24 +111,6 @@ public class ApplicationHandler extends HttpHandler {
                                         "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );
         applicationRepository.restart(applicationId, hostFilterFrom(request));
         return new JSONResponse(Response.Status.OK); // return empty
-    }
-
-    private HttpResponse grabLog(HttpRequest request, ApplicationId applicationId, Tenant tenant) {
-        if (getBindingMatch(request).groupCount() != 7)
-            throw new NotFoundException("Illegal POST log request '" + request.getUri() +
-                    "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );
-        final String response = applicationRepository.grabLog(tenant, applicationId);
-        return new HttpResponse(200) {
-            @Override
-            public void render(OutputStream outputStream) throws IOException {
-                outputStream.write(response.getBytes(StandardCharsets.UTF_8));
-            }
-
-            @Override
-            public String getContentType() {
-                return HttpConfigResponse.JSON_CONTENT_TYPE;
-            }
-        };
     }
 
     private HostFilter hostFilterFrom(HttpRequest request) {
@@ -157,7 +132,6 @@ public class ApplicationHandler extends HttpHandler {
         return HttpConfigRequests.getBindingMatch(request,
                 // WARNING: UPDATE src/main/resources/configserver-app/services.xml IF YOU MAKE ANY CHANGES TO THESE BINDINGS!
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/log",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",

@@ -258,7 +258,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
 
     @Override
-    public void validateXML() throws IOException {
+    public void validateXML() {
         if (failOnValidateXml) {
             throw new IllegalArgumentException("Error in application package");
         } else {

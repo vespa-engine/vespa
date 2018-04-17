@@ -4,13 +4,13 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
-
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,7 +63,9 @@ public class RealNodeRepositoryTest {
             try {
                 final int port = findRandomOpenPort();
                 container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
-                configServerApi = new ConfigServerApiImpl(Collections.singleton(URI.create("http://127.0.0.1:" + port)));
+                configServerApi = ConfigServerApiImpl.createWithSocketFactory(
+                        Collections.singletonList(URI.create("http://127.0.0.1:" + port)),
+                        SSLConnectionSocketFactory.getSocketFactory());
                 return;
             } catch (RuntimeException e) {
                 lastException = e;

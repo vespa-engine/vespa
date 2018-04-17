@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "prioritizedbucket.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/distributor/maintenance/prioritizedbucket.h>
 #include <boost/iterator/iterator_facade.hpp>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class BucketPriorityDatabase
 {
@@ -69,7 +68,4 @@ public:
 };
 
 }
-}
-
-
 

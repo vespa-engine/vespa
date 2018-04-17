@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/documentapi/messagebus/systemstate/systemstate.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/iprotocol.h>
 #include <vespa/messagebus/reply.h>
 #include <vespa/messagebus/routing/routingcontext.h>
+#include <vespa/documentapi/common.h>
 
 namespace vespalib {
     class VersionSpecification;
@@ -28,7 +28,6 @@ class DocumentProtocol final : public mbus::IProtocol {
 private:
     std::unique_ptr<RoutingPolicyRepository>    _routingPolicyRepository;
     std::unique_ptr<RoutableRepository>         _routableRepository;
-    std::unique_ptr<SystemState>                _systemState;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
 
 public:
@@ -295,13 +294,6 @@ public:
      */
     static bool hasOnlyErrorsOfType(const mbus::Reply &reply, uint32_t errCode);
 
-    /**
-     * Returns the curren state of the system, as observed by this protocol. This state object may be freely
-     * modified by the caller.
-     *
-     * @return The system state.
-     */
-    SystemState &getSystemState() { return *_systemState; }
     const mbus::string &getName() const override { return NAME; }
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string &name, const mbus::string &param) const override;
     mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override;

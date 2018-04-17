@@ -27,15 +27,12 @@ public:
     uint64_t _pFileBitSize;
 
     ThreeLevelCountWriteBuffers(EC &sse, EC &spe, EC &pe);
+    ~ThreeLevelCountWriteBuffers();
 
-    void
-    flush();
+    void flush();
 
     // unit test method.  Just pads without writing proper header
-    void
-    startPad(uint32_t ssHeaderLen,
-             uint32_t spHeaderLen,
-             uint32_t pHeaderLen);
+    void startPad(uint32_t ssHeaderLen, uint32_t spHeaderLen, uint32_t pHeaderLen);
 };
 
 

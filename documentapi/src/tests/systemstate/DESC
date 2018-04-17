@@ -1,3 +1,0 @@
-This is a unit test for the system state parser and the corresponding NodeState class. It mirrors the
-StateParserTestCase available in the java implementation of message bus. It consists of tests that verify that parsing
-works, pathing works, encoding/decoding works, and finally that the NodeState class works as intended.

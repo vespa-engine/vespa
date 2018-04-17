@@ -13,6 +13,7 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.net.HostName;
+import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.IndexFacts;

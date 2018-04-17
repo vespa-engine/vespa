@@ -72,7 +72,7 @@ public class ConfigServerApiImplTest {
 
             return response;
         });
-        executor = new ConfigServerApiImpl(configServers, httpMock);
+        executor = ConfigServerApiImpl.createForTestingWithClient(configServers, httpMock);
     }
 
     @Test

@@ -10,7 +10,6 @@ vespa_install_script(src/start-cbinaries.sh vespa-transactionlog-inspect bin)
 vespa_install_script(src/start-cbinaries.sh vespa-vds-disktool bin)
 vespa_install_script(src/start-cbinaries.sh vespa-distributord sbin)
 vespa_install_script(src/start-cbinaries.sh vespa-dispatch sbin)
-vespa_install_script(src/start-cbinaries.sh vespa-filedistributor sbin)
 vespa_install_script(src/start-cbinaries.sh vespa-proton sbin)
 vespa_install_script(src/start-cbinaries.sh vespa-storaged sbin)
 

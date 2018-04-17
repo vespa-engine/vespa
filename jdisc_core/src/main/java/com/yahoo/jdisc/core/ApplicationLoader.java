@@ -15,6 +15,7 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.application.OsgiHeader;
 import com.yahoo.jdisc.service.ContainerNotReadyException;
 import com.yahoo.jdisc.service.CurrentContainer;
+import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -40,6 +41,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     private final AtomicReference<ActiveContainer> containerRef = new AtomicReference<>();
     private final Object appLock = new Object();
     private final List<Bundle> appBundles = new ArrayList<>();
+    private final ContainerWatchdog watchdog = new ContainerWatchdog();
     private Application application;
     private ApplicationInUseTracker applicationInUseTracker;
 
@@ -68,6 +70,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
                 next.retainReference(applicationInUseTracker);
             }
 
+            watchdog.onContainerActivation(next);
             prev = containerRef.getAndSet(next);
             if (prev == null) {
                 return null;
@@ -193,8 +196,9 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     public void destroy() {
         log.finer("Destroying application loader.");
         try {
+            watchdog.close();
             osgiFramework.stop();
-        } catch (BundleException e) {
+        } catch (BundleException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -203,6 +207,10 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
         synchronized (appLock) {
             return application;
         }
+    }
+
+    public ContainerWatchdogMetrics getContainerWatchdogMetrics() {
+        return watchdog;
     }
 
     public OsgiFramework osgiFramework() {

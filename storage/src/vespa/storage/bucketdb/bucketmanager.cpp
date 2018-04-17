@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmanager.h"
-#include "distribution_hash_normalizer.h"
 #include "minimumusedbitstracker.h"
 #include "lockablemap.hpp"
 #include <iomanip>
@@ -522,10 +521,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     lib::ClusterState::CSP clusterState(clusterStateBundle->getDerivedClusterState(bucketSpace));
     assert(clusterState.get());
 
-    DistributionHashNormalizer normalizer;
-
-    const auto our_hash = normalizer.normalize(
-            distribution->getNodeGraph().getDistributionConfigHash());
+    const auto our_hash = distribution->getNodeGraph().getDistributionConfigHash();
 
     LOG(debug, "Processing %" PRIu64 " queued request bucket info commands. "
         "Using cluster state '%s' and distribution hash '%s'",
@@ -537,8 +533,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     for (auto it = reqs.rbegin(); it != reqs.rend(); ++it) {
         // Currently small requests should not be forwarded to worker thread
         assert((*it)->hasSystemState());
-        const auto their_hash = normalizer.normalize(
-                (*it)->getDistributionHash());
+        const auto their_hash = (*it)->getDistributionHash();
 
         std::ostringstream error;
         if ((*it)->getSystemState().getVersion() > _lastClusterStateSeen) {
@@ -570,8 +565,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         
     	// If we get here, message should be failed
         auto reply = std::make_shared<api::RequestBucketInfoReply>(**it);
-        reply->setResult(api::ReturnCode(
-                    api::ReturnCode::REJECTED, error.str()));
+        reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, error.str()));
         LOG(debug, "Rejecting request from distributor %u: %s",
             (*it)->getDistributor(),
             error.str().c_str());
