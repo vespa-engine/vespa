@@ -1357,47 +1357,108 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testSharedNodesNotHosted() {
+        String hosts =
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                "<hosts>\n" +
+                "  <host name=\"vespa-1\">\n" +
+                "    <alias>vespa-1</alias>\n" +
+                "  </host>\n" +
+                "  <host name=\"vespa-2\">\n" +
+                "    <alias>vespa-2</alias>\n" +
+                "  </host>\n" +
+                "  <host name=\"vespa-3\">\n" +
+                "    <alias>vespa-3</alias>\n" +
+                "  </host>\n" +
+                "</hosts>";
+        String services =
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                "<services version=\"1.0\">\n" +
+                "\n" +
+                "  <admin version=\"2.0\">\n" +
+                "    <adminserver hostalias=\"vespa-1\"/>\n" +
+                "    <configservers>\n" +
+                "      <configserver hostalias=\"vespa-1\"/>\n" +
+                "    </configservers>\n" +
+                "  </admin>\n" +
+                "\n" +
+                "  <container id=\"container\" version=\"1.0\">\n" +
+                "    <document-processing/>\n" +
+                "    <document-api/>\n" +
+                "    <search/>\n" +
+                "    <nodes jvmargs=\"-Xms512m -Xmx512m\">\n" +
+                "      <node hostalias=\"vespa-1\"/>\n" +
+                "      <node hostalias=\"vespa-2\"/>\n" +
+                "      <node hostalias=\"vespa-3\"/>\n" +
+                "    </nodes>\n" +
+                "  </container>\n" +
+                "\n" +
+                "  <content id=\"storage\" version=\"1.0\">\n" +
+                "    <search>\n" +
+                "      <visibility-delay>1.0</visibility-delay>\n" +
+                "    </search>\n" +
+                "    <redundancy>2</redundancy>\n" +
+                "    <documents>\n" +
+                "      <document type=\"type1\" mode=\"index\"/>\n" +
+                "      <document-processing cluster=\"container\"/>\n" +
+                "    </documents>\n" +
+                "    <nodes>\n" +
+                "      <node hostalias=\"vespa-1\" distribution-key=\"0\"/>\n" +
+                "      <node hostalias=\"vespa-2\" distribution-key=\"1\"/>\n" +
+                "      <node hostalias=\"vespa-3\" distribution-key=\"2\"/>\n" +
+                "    </nodes>\n" +
+                "  </content>\n" +
+                "\n" +
+                "</services>";
+
+        VespaModel model = createNonProvisionedModel(false, hosts, services);
+        assertEquals(3, model.getRoot().getHostSystem().getHosts().size());
+        ContentCluster content = model.getContentClusters().get("storage");
+        assertEquals(3, content.getRootGroup().getNodes().size());
+    }
+
+    @Test
     public void testMultitenantButNotHostedSharedContentNode() {
         String services =
-        "<?xml version='1.0' encoding='UTF-8' ?>" +
-        "<services version='1.0'>" +
-        "  <admin version='2.0'>" +
-        "    <adminserver hostalias='node1'/>" +
-        "  </admin>"  +
-        "   <jdisc id='default' version='1.0'>" +
-        "     <search/>" +
-        "     <nodes>" +
-        "       <node hostalias='node1'/>" +
-        "     </nodes>" +
-        "   </jdisc>" +
-        "   <content id='storage' version='1.0'>" +
-        "     <redundancy>2</redundancy>" +
-        "     <group>" +
-        "       <node distribution-key='0' hostalias='node1'/>" +
-        "       <node distribution-key='1' hostalias='node1'/>" +
-        "     </group>" +
-        "     <tuning>" +
-        "       <cluster-controller>" +
-        "         <transition-time>0</transition-time>" +
-        "       </cluster-controller>" +
-        "     </tuning>" +
-        "     <documents>" +
-        "       <document mode='store-only' type='type1'/>" +
-        "     </documents>" +
-        "     <engine>" +
-        "       <proton/>" +
-        "     </engine>" +
-        "   </content>" +
-        "   <content id='search' version='1.0'>" +
-        "     <redundancy>2</redundancy>" +
-        "     <group>" +
-        "       <node distribution-key='0' hostalias='node1'/>" +
-        "     </group>" +
-        "     <documents>" +
-        "       <document type='type1'/>" +
-        "     </documents>" +
-        "   </content>" +
-        " </services>";
+                "<?xml version='1.0' encoding='UTF-8' ?>" +
+                "<services version='1.0'>" +
+                "  <admin version='2.0'>" +
+                "    <adminserver hostalias='node1'/>" +
+                "  </admin>"  +
+                "   <jdisc id='default' version='1.0'>" +
+                "     <search/>" +
+                "     <nodes>" +
+                "       <node hostalias='node1'/>" +
+                "     </nodes>" +
+                "   </jdisc>" +
+                "   <content id='storage' version='1.0'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <group>" +
+                "       <node distribution-key='0' hostalias='node1'/>" +
+                "       <node distribution-key='1' hostalias='node1'/>" +
+                "     </group>" +
+                "     <tuning>" +
+                "       <cluster-controller>" +
+                "         <transition-time>0</transition-time>" +
+                "       </cluster-controller>" +
+                "     </tuning>" +
+                "     <documents>" +
+                "       <document mode='store-only' type='type1'/>" +
+                "     </documents>" +
+                "     <engine>" +
+                "       <proton/>" +
+                "     </engine>" +
+                "   </content>" +
+                "   <content id='search' version='1.0'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <group>" +
+                "       <node distribution-key='0' hostalias='node1'/>" +
+                "     </group>" +
+                "     <documents>" +
+                "       <document type='type1'/>" +
+                "     </documents>" +
+                "   </content>" +
+                " </services>";
 
         VespaModel model = createNonProvisionedMultitenantModel(services);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(1));
@@ -1408,10 +1469,14 @@ public class ModelProvisioningTest {
     }
 
     private VespaModel createNonProvisionedMultitenantModel(String services) {
-        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
+        return createNonProvisionedModel(true, null, services);
+    }
+
+    private VespaModel createNonProvisionedModel(boolean multitenant, String hosts, String services) {
+        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
         DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).
-                properties((new DeployProperties.Builder()).multitenant(true).build()).
+                properties((new DeployProperties.Builder()).multitenant(multitenant).build()).
                 build(true);
         return modelCreatorWithMockPkg.create(false, deployState);
     }
