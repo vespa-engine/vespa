@@ -480,7 +480,7 @@ public final class ContainerCluster
     @NonNull
     public DocprocChains getDocprocChains() {
         if (containerDocproc == null)
-            throw new IllegalStateException("Search components not found in container cluster '" + getSubId() +
+            throw new IllegalStateException("Document processing components not found in container cluster '" + getSubId() +
                                             "': Add <document-processing/> to the cluster in services.xml");
         return containerDocproc.getChains();
     }
