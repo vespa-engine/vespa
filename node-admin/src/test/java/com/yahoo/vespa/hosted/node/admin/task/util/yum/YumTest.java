@@ -14,8 +14,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 public class YumTest {
-    TaskContext taskContext = mock(TaskContext.class);
-    TestTerminal terminal = new TestTerminal();
+    private TaskContext taskContext = mock(TaskContext.class);
+    private TestTerminal terminal = new TestTerminal();
 
     @Before
     public void tearDown() {
@@ -29,11 +29,11 @@ public class YumTest {
                 0,
                 "foobar\nNothing to do\n");
 
-        Yum yum = new Yum(taskContext, terminal);
+        Yum yum = new Yum(terminal);
         assertFalse(yum
                 .install("package-1", "package-2")
                 .enableRepo("repo-name")
-                .converge());
+                .converge(taskContext));
     }
 
     @Test
@@ -43,9 +43,9 @@ public class YumTest {
                 0,
                 "foobar\nNo packages marked for update\n");
 
-        assertFalse(new Yum(taskContext, terminal)
+        assertFalse(new Yum(terminal)
                 .upgrade("package-1", "package-2")
-                .converge());
+                .converge(taskContext));
     }
 
     @Test
@@ -55,9 +55,9 @@ public class YumTest {
                 0,
                 "foobar\nNo Packages marked for removal\n");
 
-        assertFalse(new Yum(taskContext, terminal)
+        assertFalse(new Yum(terminal)
                 .remove("package-1", "package-2")
-                .converge());
+                .converge(taskContext));
     }
 
     @Test
@@ -67,10 +67,10 @@ public class YumTest {
                 0,
                 "installing, installing");
 
-        Yum yum = new Yum(taskContext, terminal);
+        Yum yum = new Yum(terminal);
         assertTrue(yum
                 .install("package-1", "package-2")
-                .converge());
+                .converge(taskContext));
     }
 
     @Test
@@ -80,11 +80,11 @@ public class YumTest {
                 0,
                 "installing, installing");
 
-        Yum yum = new Yum(taskContext, terminal);
+        Yum yum = new Yum(terminal);
         assertTrue(yum
                 .install("package-1", "package-2")
                 .enableRepo("repo-name")
-                .converge());
+                .converge(taskContext));
     }
 
     @Test(expected = ChildProcessFailureException.class)
@@ -94,10 +94,10 @@ public class YumTest {
                 1,
                 "error");
 
-        Yum yum = new Yum(taskContext, terminal);
+        Yum yum = new Yum(terminal);
         yum.install("package-1", "package-2")
                 .enableRepo("repo-name")
-                .converge();
+                .converge(taskContext);
         fail();
     }
 
@@ -112,11 +112,11 @@ public class YumTest {
                         "No package package-2 available.\n" +
                         "Nothing to do\n");
 
-        Yum yum = new Yum(taskContext, terminal);
+        Yum yum = new Yum(terminal);
         Yum.GenericYumCommand install = yum.install("package-1", "package-2", "package-3");
 
         try {
-            install.converge();
+            install.converge(taskContext);
             fail();
         } catch (Exception e) {
             assertTrue(e.getCause() != null);
