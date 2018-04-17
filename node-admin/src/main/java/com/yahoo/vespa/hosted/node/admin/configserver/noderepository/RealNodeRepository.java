@@ -13,14 +13,14 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.Acl;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.net.InetAddress;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -81,38 +81,35 @@ public class RealNodeRepository implements NodeRepository {
      */
     @Override
     public Map<String, Acl> getAcls(String hostName) {
-        Map<String, Acl> acls = new HashMap<>();
         try {
             final String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
             final GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
 
             // Group ports by container hostname that trusts them
-            Map<String, List<GetAclResponse.Port>> trustedPorts = response.trustedPorts.stream()
-                    .collect(Collectors.groupingBy(GetAclResponse.Port::getTrustedBy));
+            Map<String, List<Integer>> trustedPorts = response.trustedPorts.stream()
+                    .collect(Collectors.groupingBy(
+                            GetAclResponse.Port::getTrustedBy,
+                            Collectors.mapping(port -> port.port, Collectors.toList())));
 
-            // Group nodes by container hostname that trusts them
-            Map<String, List<GetAclResponse.Node>> trustedNodes = response.trustedNodes.stream()
-                    .collect(Collectors.groupingBy(GetAclResponse.Node::getTrustedBy));
+            // Group node ip-addresses by container hostname that trusts them
+            Map<String, List<InetAddress>> trustedNodes = response.trustedNodes.stream()
+                    .collect(Collectors.groupingBy(
+                            GetAclResponse.Node::getTrustedBy,
+                            Collectors.mapping(node -> InetAddresses.forString(node.ipAddress), Collectors.toList())));
+
 
             // For each hostname create an ACL
-            Stream.of(trustedNodes.keySet(), trustedPorts.keySet())
+            return Stream.of(trustedNodes.keySet(), trustedPorts.keySet())
                     .flatMap(Set::stream)
                     .distinct()
-                    .forEach(hostname -> acls.put(hostname,
-                            new Acl(
-                                    trustedPorts.getOrDefault(hostname, new ArrayList<>())
-                                            .stream().map(port -> port.port)
-                                            .collect(Collectors.toList()),
-
-                                    trustedNodes.getOrDefault(hostname, new ArrayList<>())
-                                            .stream().map(node -> InetAddresses.forString(node.ipAddress))
-                                            .collect(Collectors.toList()))));
-
+                    .collect(Collectors.toMap(
+                            Function.identity(),
+                            hostname -> new Acl(trustedPorts.get(hostname), trustedNodes.get(hostname))));
         } catch (HttpException.NotFoundException e) {
             NODE_ADMIN_LOGGER.warning("Failed to fetch ACLs for " + hostName + " No ACL will be applied");
         }
 
-        return acls;
+        return Collections.emptyMap();
     }
 
     @Override
