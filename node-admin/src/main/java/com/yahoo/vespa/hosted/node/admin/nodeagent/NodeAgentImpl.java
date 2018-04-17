@@ -141,7 +141,12 @@ public class NodeAgentImpl implements NodeAgent {
         this.lastConverge = clock.instant();
 
         this.loopThread = new Thread(() -> {
-            while (!terminated.get()) tick();
+            try {
+                while (!terminated.get()) tick();
+            } catch (Throwable t) {
+                logger.error("Unhandled throwable, taking down system.", t);
+                System.exit(234);
+            }
         });
         this.loopThread.setName("tick-" + hostname);
     }
@@ -416,11 +421,15 @@ public class NodeAgentImpl implements NodeAgent {
             isFrozenCopy = isFrozen;
         }
 
+        doAtTickStart(isFrozen);
+        boolean converged = false;
+
         if (isFrozenCopy) {
             addDebugMessage("tick: isFrozen");
         } else {
             try {
                 converge();
+                converged = true;
             } catch (OrchestratorException e) {
                 logger.info(e.getMessage());
                 addDebugMessage(e.getMessage());
@@ -431,11 +440,10 @@ public class NodeAgentImpl implements NodeAgent {
                 numberOfUnhandledException++;
                 logger.error("Unhandled exception, ignoring.", e);
                 addDebugMessage(e.getMessage());
-            } catch (Throwable t) {
-                logger.error("Unhandled throwable, taking down system.", t);
-                System.exit(234);
             }
         }
+
+        doAtTickEnd(converged);
     }
 
     // Public for testing
@@ -492,6 +500,9 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 runLocalResumeScriptIfNeeded(node);
+
+                doBeforeConverge(node);
+
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes
                 // but before resume, the app may go through the tenant pipeline but will halt in prod.
@@ -525,6 +536,39 @@ public class NodeAgentImpl implements NodeAgent {
                 throw new RuntimeException("UNKNOWN STATE " + node.nodeState.name());
         }
     }
+
+    /**
+     * Execute at start of tick
+     *
+     * WARNING: MUST NOT throw an exception
+     *
+     * @param frozen whether the agent is frozen
+     */
+    protected void doAtTickStart(boolean frozen) {}
+
+    /**
+     * Execute at end of tick
+     *
+     * WARNING: MUST NOT throw an exception
+     *
+     * @param converged Whether the tick converged: converge() was called without exception
+     */
+    protected void doAtTickEnd(boolean converged) {}
+
+    /**
+     * Execute at end of a (so far) successful converge of an active node
+     *
+     * Method a subclass can override to execute code:
+     *  - Called right before the node repo is updated with converged attributes, and
+     *    Orchestrator resume() is called
+     *  - The only way to avoid a successful converge and the update to the node repo
+     *    and Orchestrator is to throw an exception
+     *  - The method is only called in a tick if the node is active, not frozen, and
+     *    there are no prior phases of the converge that fails
+     *
+     * @throws RuntimeException to fail the convergence
+     */
+    protected void doBeforeConverge(NodeSpec node) {}
 
     private void stopFilebeatSchedulerIfNeeded() {
         if (currentFilebeatRestarter.isPresent()) {
