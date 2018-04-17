@@ -3,13 +3,16 @@ package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
+import org.apache.commons.lang.StringUtils;
 
 import java.net.URI;
 import java.security.Principal;
@@ -18,6 +21,8 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Authorization filter for all paths in config server.
@@ -32,8 +37,17 @@ public class AuthorizationFilter implements SecurityRequestFilter {
     private final BiConsumer<ErrorResponse, ResponseHandler> rejectAction;
 
     @Inject
-    public AuthorizationFilter(Zone zone, NodeRepository nodeRepository) {
-        this(new Authorizer(zone.system(), nodeRepository), AuthorizationFilter::logAndReject);
+    public AuthorizationFilter(Zone zone, NodeRepository nodeRepository, NodeRepositoryConfig nodeRepositoryConfig) {
+        this(
+                new Authorizer(
+                        zone.system(),
+                        nodeRepository,
+                        Stream.concat(
+                                Stream.of(HostName.getLocalhost()),
+                                Stream.of(nodeRepositoryConfig.hostnameWhitelist().split(","))
+                        ).filter(StringUtils::isNotEmpty).collect(Collectors.toSet())),
+                AuthorizationFilter::logAndReject
+        );
     }
 
     AuthorizationFilter(BiPredicate<Principal, URI> authorizer,
