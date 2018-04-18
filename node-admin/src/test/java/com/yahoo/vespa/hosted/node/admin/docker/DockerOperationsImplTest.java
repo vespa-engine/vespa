@@ -34,7 +34,6 @@ public class DockerOperationsImplTest {
             .region("us-east-1")
             .environment("prod")
             .system("main")
-            .defaultFlavor("d-2-8-50")
             .cloud("mycloud")
             .build();
     private final Docker docker = mock(Docker.class);

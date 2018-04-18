@@ -14,7 +14,8 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -246,16 +247,14 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeAttributes currentNodeAttributes = new NodeAttributes()
                 .withRestartGeneration(node.currentRestartGeneration.orElse(null))
                 .withRebootGeneration(node.currentRebootGeneration)
-                .withDockerImage(node.currentDockerImage.orElse(new DockerImage("")))
-                .withVespaVersion(node.vespaVersion.orElse(""));
+                .withDockerImage(node.currentDockerImage.orElse(new DockerImage("")));
 
         final NodeAttributes wantedNodeAttributes = new NodeAttributes()
                 .withRestartGeneration(node.wantedRestartGeneration.orElse(null))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
                 .withRebootGeneration(node.wantedRebootGeneration)
-                .withDockerImage(node.wantedDockerImage.filter(n -> containerState == UNKNOWN).orElse(new DockerImage("")))
-                .withVespaVersion(node.wantedVespaVersion.filter(n -> containerState == UNKNOWN).orElse(""));
+                .withDockerImage(node.wantedDockerImage.filter(n -> containerState == UNKNOWN).orElse(new DockerImage("")));
 
         publishStateToNodeRepoIfChanged(currentNodeAttributes, wantedNodeAttributes);
     }

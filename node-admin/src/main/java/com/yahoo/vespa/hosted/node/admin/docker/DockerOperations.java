@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 
 import java.util.List;
 import java.util.Optional;

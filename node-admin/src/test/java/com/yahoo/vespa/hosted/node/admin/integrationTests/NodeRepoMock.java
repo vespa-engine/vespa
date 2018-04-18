@@ -1,22 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-
-import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.AddNode;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.Acl;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Mock with some simple logic
@@ -36,6 +32,9 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
+    public void addNodes(List<AddNode> nodes) { }
+
+    @Override
     public List<NodeSpec> getNodes(String baseHostName) {
         synchronized (monitor) {
             return new ArrayList<>(nodeRepositoryNodesByHostname.values());
@@ -47,11 +46,6 @@ public class NodeRepoMock implements NodeRepository {
         synchronized (monitor) {
             return Optional.ofNullable(nodeRepositoryNodesByHostname.get(hostName));
         }
-    }
-
-    @Override
-    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
-        return Collections.emptyList();
     }
 
     @Override

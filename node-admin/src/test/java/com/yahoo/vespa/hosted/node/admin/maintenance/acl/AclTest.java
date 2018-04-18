@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import org.junit.Assert;
 import org.junit.Test;

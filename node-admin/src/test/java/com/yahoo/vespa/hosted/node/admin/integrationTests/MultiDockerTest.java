@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -55,10 +55,10 @@ public class MultiDockerTest {
                     "DeleteContainerStorage with ContainerName { name=host2 }");
 
             dockerTester.callOrderVerifier.assertInOrder(
-                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion='1.2.3', hardwareDivergence='null'}",
-                    "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion='1.2.3', hardwareDivergence='null'}",
+                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, hardwareDivergence='null'}",
+                    "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, hardwareDivergence='null'}",
                     "setNodeState host2.test.yahoo.com to ready",
-                    "updateNodeAttributes with HostName: host3.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion='1.2.3', hardwareDivergence='null'}");
+                    "updateNodeAttributes with HostName: host3.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, hardwareDivergence='null'}");
         }
     }
 

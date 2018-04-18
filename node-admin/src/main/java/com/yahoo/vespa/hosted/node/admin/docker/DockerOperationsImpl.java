@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;

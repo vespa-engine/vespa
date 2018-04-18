@@ -1,30 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
+import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.*;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.Acl;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
-import org.apache.commons.lang.StringUtils;
 
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.net.InetAddress;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,43 +35,36 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public List<NodeSpec> getNodes(String baseHostName) {
-        return getNodes(Optional.of(baseHostName), Collections.emptyList());
+    public void addNodes(List<AddNode> nodes) {
+        List<NodeRepositoryNode> nodesToPost = nodes.stream()
+                .map(RealNodeRepository::nodeRepositoryNodeFromAddNode)
+                .collect(Collectors.toList());
+
+        NodeMessageResponse response = configServerApi.post("/nodes/v2/node", nodesToPost, NodeMessageResponse.class);
+        if (!Strings.isNullOrEmpty(response.errorCode)) {
+            throw new RuntimeException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
+        }
     }
 
-    private List<NodeSpec> getNodes(Optional<String> baseHostName, List<NodeType> nodeTypeList) {
-        Optional<String> nodeTypes = Optional
-                .of(nodeTypeList.stream().map(NodeType::name).collect(Collectors.joining(",")))
-                .filter(StringUtils::isNotEmpty);
-
-        String path = "/nodes/v2/node/?recursive=true" +
-                baseHostName.map(base -> "&parentHost=" + base).orElse("") +
-                nodeTypes.map(types -> "&type=" + types).orElse("");
+    @Override
+    public List<NodeSpec> getNodes(String baseHostName) {
+        String path = "/nodes/v2/node/?recursive=true&parentHost=" + baseHostName;
         final GetNodesResponse nodesForHost = configServerApi.get(path, GetNodesResponse.class);
 
         return nodesForHost.nodes.stream()
-                .map(RealNodeRepository::createNodeRepositoryNode)
+                .map(RealNodeRepository::createNodeSpec)
                 .collect(Collectors.toList());
-    }
-
-
-    @Override
-    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
-        if (nodeTypes.length == 0)
-            throw new IllegalArgumentException("Must specify at least 1 node type");
-
-        return getNodes(Optional.empty(), Arrays.asList(nodeTypes));
     }
 
     @Override
     public Optional<NodeSpec> getNode(String hostName) {
         try {
-            GetNodesResponse.Node nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
-                    GetNodesResponse.Node.class);
+            NodeRepositoryNode nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
+                    NodeRepositoryNode.class);
             if (nodeResponse == null) {
                 return Optional.empty();
             }
-            return Optional.of(createNodeRepositoryNode(nodeResponse));
+            return Optional.of(createNodeSpec(nodeResponse));
         } catch (HttpException.NotFoundException | HttpException.ForbiddenException e) {
             // Return empty on 403 in addition to 404 as it likely means we're trying to access a node that
             // has been deleted. When a node is deleted, the parent-child relationship no longer exists and
@@ -92,51 +79,76 @@ public class RealNodeRepository implements NodeRepository {
      */
     @Override
     public Map<String, Acl> getAcls(String hostName) {
-        Map<String, Acl> acls = new HashMap<>();
         try {
             final String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
             final GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
 
             // Group ports by container hostname that trusts them
-            Map<String, List<GetAclResponse.Port>> trustedPorts = response.trustedPorts.stream()
-                    .collect(Collectors.groupingBy(GetAclResponse.Port::getTrustedBy));
+            Map<String, List<Integer>> trustedPorts = response.trustedPorts.stream()
+                    .collect(Collectors.groupingBy(
+                            GetAclResponse.Port::getTrustedBy,
+                            Collectors.mapping(port -> port.port, Collectors.toList())));
 
-            // Group nodes by container hostname that trusts them
-            Map<String, List<GetAclResponse.Node>> trustedNodes = response.trustedNodes.stream()
-                    .collect(Collectors.groupingBy(GetAclResponse.Node::getTrustedBy));
+            // Group node ip-addresses by container hostname that trusts them
+            Map<String, List<InetAddress>> trustedNodes = response.trustedNodes.stream()
+                    .collect(Collectors.groupingBy(
+                            GetAclResponse.Node::getTrustedBy,
+                            Collectors.mapping(node -> InetAddresses.forString(node.ipAddress), Collectors.toList())));
+
 
             // For each hostname create an ACL
-            Stream.of(trustedNodes.keySet(), trustedPorts.keySet())
+            return Stream.of(trustedNodes.keySet(), trustedPorts.keySet())
                     .flatMap(Set::stream)
                     .distinct()
-                    .forEach(hostname -> acls.put(hostname,
-                            new Acl(
-                                    trustedPorts.getOrDefault(hostname, new ArrayList<>())
-                                            .stream().map(port -> port.port)
-                                            .collect(Collectors.toList()),
-
-                                    trustedNodes.getOrDefault(hostname, new ArrayList<>())
-                                            .stream().map(node -> InetAddresses.forString(node.ipAddress))
-                                            .collect(Collectors.toList()))));
-
+                    .collect(Collectors.toMap(
+                            Function.identity(),
+                            hostname -> new Acl(trustedPorts.get(hostname), trustedNodes.get(hostname))));
         } catch (HttpException.NotFoundException e) {
             NODE_ADMIN_LOGGER.warning("Failed to fetch ACLs for " + hostName + " No ACL will be applied");
         }
 
-        return acls;
+        return Collections.emptyMap();
     }
 
-    private static NodeSpec createNodeRepositoryNode(GetNodesResponse.Node node)
-            throws IllegalArgumentException, NullPointerException {
-        Objects.requireNonNull(node.nodeType, "Unknown node type");
-        NodeType nodeType = NodeType.valueOf(node.nodeType);
+    @Override
+    public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) {
+        NodeMessageResponse response = configServerApi.patch(
+                "/nodes/v2/node/" + hostName,
+                nodeRepositoryNodeFromNodeAttributes(nodeAttributes),
+                NodeMessageResponse.class);
 
-        Objects.requireNonNull(node.nodeState, "Unknown node state");
-        Node.State nodeState = Node.State.valueOf(node.nodeState);
+        if (!Strings.isNullOrEmpty(response.errorCode)) {
+            throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
+        }
+    }
+
+    @Override
+    public void setNodeState(String hostName, Node.State nodeState) {
+        String state = nodeState.name();
+        NodeMessageResponse response = configServerApi.put(
+                "/nodes/v2/state/" + state + "/" + hostName,
+                Optional.empty(), /* body */
+                NodeMessageResponse.class);
+        NODE_ADMIN_LOGGER.info(response.message);
+
+        if (response.errorCode == null || response.errorCode.isEmpty()) {
+            return;
+        }
+        throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
+    }
+
+
+    private static NodeSpec createNodeSpec(NodeRepositoryNode node)
+            throws IllegalArgumentException, NullPointerException {
+        Objects.requireNonNull(node.type, "Unknown node type");
+        NodeType nodeType = NodeType.valueOf(node.type);
+
+        Objects.requireNonNull(node.state, "Unknown node state");
+        Node.State nodeState = Node.State.valueOf(node.state);
         if (nodeState == Node.State.active) {
             Objects.requireNonNull(node.wantedVespaVersion, "Unknown vespa version for active node");
             Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
-            Objects.requireNonNull(node.wantedRestartGeneration, "Unknown wantedRestartGeneration for active node");
+            Objects.requireNonNull(node.restartGeneration, "Unknown restartGeneration for active node");
             Objects.requireNonNull(node.currentRestartGeneration, "Unknown currentRestartGeneration for active node");
         }
 
@@ -159,16 +171,16 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.currentDockerImage).map(DockerImage::new),
                 nodeState,
                 nodeType,
-                node.nodeFlavor,
-                node.nodeCanonicalFlavor,
+                node.flavor,
+                node.canonicalFlavor,
                 Optional.ofNullable(node.wantedVespaVersion),
                 Optional.ofNullable(node.vespaVersion),
                 Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(owner),
                 Optional.ofNullable(membership),
-                Optional.ofNullable(node.wantedRestartGeneration),
+                Optional.ofNullable(node.restartGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
-                node.wantedRebootGeneration,
+                node.rebootGeneration,
                 node.currentRebootGeneration,
                 node.minCpuCores,
                 node.minMainMemoryAvailableGb,
@@ -179,31 +191,24 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.parentHostname));
     }
 
-    @Override
-    public void updateNodeAttributes(final String hostName, final NodeAttributes nodeAttributes) {
-        UpdateNodeAttributesResponse response = configServerApi.patch(
-                "/nodes/v2/node/" + hostName,
-                new UpdateNodeAttributesRequestBody(nodeAttributes),
-                UpdateNodeAttributesResponse.class);
-
-        if (response.errorCode == null || response.errorCode.isEmpty()) {
-            return;
-        }
-        throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
+    private static NodeRepositoryNode nodeRepositoryNodeFromAddNode(AddNode addNode) {
+        NodeRepositoryNode node = new NodeRepositoryNode();
+        node.openStackId = "fake-" + addNode.hostname;
+        node.hostname = addNode.hostname;
+        node.parentHostname = addNode.parentHostname.orElse(null);
+        node.flavor = addNode.nodeFlavor;
+        node.type = addNode.nodeType.name();
+        node.ipAddresses = addNode.ipAddresses;
+        node.additionalIpAddresses = addNode.additionalIpAddresses;
+        return node;
     }
 
-    @Override
-    public void setNodeState(String hostName, Node.State nodeState) {
-        String state = nodeState.name();
-        NodeMessageResponse response = configServerApi.put(
-                "/nodes/v2/state/" + state + "/" + hostName,
-                Optional.empty(), /* body */
-                NodeMessageResponse.class);
-        NODE_ADMIN_LOGGER.info(response.message);
-
-        if (response.errorCode == null || response.errorCode.isEmpty()) {
-            return;
-        }
-        throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
+    private static NodeRepositoryNode nodeRepositoryNodeFromNodeAttributes(NodeAttributes nodeAttributes) {
+        NodeRepositoryNode node = new NodeRepositoryNode();
+        node.currentDockerImage = Optional.ofNullable(nodeAttributes.getDockerImage()).map(DockerImage::asString).orElse(null);
+        node.currentRestartGeneration = nodeAttributes.getRestartGeneration();
+        node.currentRebootGeneration = nodeAttributes.getRebootGeneration();
+        node.hardwareDivergence = nodeAttributes.getHardwareDivergence();
+        return node;
     }
 }

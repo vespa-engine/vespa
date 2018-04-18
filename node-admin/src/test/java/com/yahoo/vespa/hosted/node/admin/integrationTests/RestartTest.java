@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -32,7 +32,7 @@ public class RestartTest {
             // Check that the container is started and NodeRepo has received the PATCH update
             dockerTester.callOrderVerifier.assertInOrder(
                     "createContainerCommand with DockerImage { imageId=image:1.2.3 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image:1.2.3, vespaVersion='1.2.3', hardwareDivergence='null'}");
+                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image:1.2.3, hardwareDivergence='null'}");
 
             wantedRestartGeneration = 2;
             currentRestartGeneration = 1;

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;

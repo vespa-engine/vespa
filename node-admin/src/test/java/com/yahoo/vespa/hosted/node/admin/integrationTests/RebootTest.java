@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;

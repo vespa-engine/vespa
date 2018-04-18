@@ -4,10 +4,10 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -19,13 +19,17 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -36,7 +40,7 @@ import static org.junit.Assert.fail;
  */
 public class RealNodeRepositoryTest {
     private JDisc container;
-    private ConfigServerApiImpl configServerApi;
+    private NodeRepository nodeRepositoryApi;
 
 
     private int findRandomOpenPort() throws IOException {
@@ -63,9 +67,10 @@ public class RealNodeRepositoryTest {
             try {
                 final int port = findRandomOpenPort();
                 container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
-                configServerApi = ConfigServerApiImpl.createWithSocketFactory(
+                ConfigServerApi configServerApi = ConfigServerApiImpl.createWithSocketFactory(
                         Collections.singletonList(URI.create("http://127.0.0.1:" + port)),
                         SSLConnectionSocketFactory.getSocketFactory());
+                waitForJdiscContainerToServe(configServerApi);
                 return;
             } catch (RuntimeException e) {
                 lastException = e;
@@ -74,9 +79,9 @@ public class RealNodeRepositoryTest {
         throw new RuntimeException("Failed to bind a port in three attempts, giving up", lastException);
     }
 
-    private void waitForJdiscContainerToServe() throws InterruptedException {
+    private void waitForJdiscContainerToServe(ConfigServerApi configServerApi) throws InterruptedException {
         Instant start = Instant.now();
-        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
+        nodeRepositoryApi = new RealNodeRepository(configServerApi);
         while (Instant.now().minusSeconds(120).isBefore(start)) {
             try {
                 nodeRepositoryApi.getNodes("foobar");
@@ -97,8 +102,6 @@ public class RealNodeRepositoryTest {
 
     @Test
     public void testGetContainersToRunApi() throws InterruptedException {
-        waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
         final List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
@@ -115,9 +118,7 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    public void testGetContainer() throws InterruptedException, IOException {
-        waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
+    public void testGetContainer() {
         String hostname = "host4.yahoo.com";
         Optional<NodeSpec> node = nodeRepositoryApi.getNode(hostname);
         assertThat(node.isPresent(), is(true));
@@ -125,45 +126,34 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    public void testGetContainerForNonExistingNode() throws InterruptedException, IOException {
-        waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
+    public void testGetContainerForNonExistingNode() {
         String hostname = "host-that-does-not-exist";
         Optional<NodeSpec> node = nodeRepositoryApi.getNode(hostname);
         assertFalse(node.isPresent());
     }
 
     @Test
-    public void testUpdateNodeAttributes() throws InterruptedException, IOException {
-        waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
+    public void testUpdateNodeAttributes() {
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1L)
-                        .withDockerImage(new DockerImage("image-1:6.2.3"))
-                        .withVespaVersion("6.2.3"));
+                        .withDockerImage(new DockerImage("image-1:6.2.3")));
     }
 
     @Test(expected = RuntimeException.class)
-    public void testUpdateNodeAttributesWithBadValue() throws InterruptedException, IOException {
-        waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
+    public void testUpdateNodeAttributesWithBadValue() {
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1L)
-                        .withDockerImage(new DockerImage("image-1"))
-                        .withVespaVersion("6.2.3\n"));
+                        .withDockerImage(new DockerImage("image-1")));
     }
 
     @Test
-    public void testMarkAsReady() throws InterruptedException, IOException {
-        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
-        waitForJdiscContainerToServe();
-
+    public void testMarkAsReady() {
         nodeRepositoryApi.setNodeState("host5.yahoo.com", Node.State.dirty);
         nodeRepositoryApi.setNodeState("host5.yahoo.com", Node.State.ready);
 
@@ -180,5 +170,27 @@ public class RealNodeRepositoryTest {
         } catch (RuntimeException ignored) {
             // expected
         }
+    }
+
+    @Test
+    public void testAddNodes() {
+        AddNode host = new AddNode("host123.domain.tld", "default", NodeType.confighost,
+                Collections.singleton("::1"), new HashSet<>(Arrays.asList("::2", "::3")));
+
+        AddNode node = new AddNode("host123-1.domain.tld", "host123.domain.tld", "docker", NodeType.config,
+                new HashSet<>(Arrays.asList("::2", "::3")));
+
+        List<AddNode> nodesToAdd = Arrays.asList(host, node);
+
+        assertFalse(nodeRepositoryApi.getNode("host123.domain.tld").isPresent());
+        nodeRepositoryApi.addNodes(nodesToAdd);
+
+        NodeSpec hostSpecInNodeRepo = nodeRepositoryApi.getNode("host123.domain.tld")
+                .orElseThrow(RuntimeException::new);
+
+        assertEquals(host.nodeFlavor, hostSpecInNodeRepo.nodeFlavor);
+        assertEquals(host.nodeType, hostSpecInNodeRepo.nodeType);
+
+        assertTrue(nodeRepositoryApi.getNode("host123-1.domain.tld").isPresent());
     }
 }

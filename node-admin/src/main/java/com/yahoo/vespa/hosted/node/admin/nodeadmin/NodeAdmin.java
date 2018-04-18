@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 
 import java.time.Duration;
 import java.util.List;

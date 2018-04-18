@@ -8,7 +8,7 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
@@ -42,7 +42,6 @@ public class StorageMaintainerTest {
             .environment("prod")
             .system("main")
             .pathResolver(new PathResolver())
-            .defaultFlavor("d-2-8-50")
             .cloud("mycloud")
             .build();
     private final DockerOperations docker = mock(DockerOperations.class);

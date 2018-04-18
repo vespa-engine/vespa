@@ -13,8 +13,9 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -89,7 +90,6 @@ public class NodeAgentImplTest {
             .parentHostHostname("parent.host.name.yahoo.com")
             .inetAddressResolver(new InetAddressResolver())
             .pathResolver(pathResolver)
-            .defaultFlavor("d-2-8-50")
             .cloud("mycloud")
             .build();
 
@@ -195,8 +195,7 @@ public class NodeAgentImplTest {
                 hostName, new NodeAttributes()
                         .withRestartGeneration(restartGeneration)
                         .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
+                        .withDockerImage(dockerImage));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -433,8 +432,7 @@ public class NodeAgentImplTest {
                 any(String.class), eq(new NodeAttributes()
                         .withRestartGeneration(wantedRestartGeneration.orElse(null))
                         .withRebootGeneration(0L)
-                        .withDockerImage(new DockerImage(""))
-                        .withVespaVersion("")));
+                        .withDockerImage(new DockerImage(""))));
     }
 
     @Test
@@ -709,8 +707,7 @@ public class NodeAgentImplTest {
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
                         .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
+                        .withDockerImage(dockerImage));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
