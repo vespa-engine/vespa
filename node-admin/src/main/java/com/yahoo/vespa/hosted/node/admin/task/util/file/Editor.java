@@ -103,7 +103,7 @@ public class Editor {
         }
 
         String diffDescription = diffTooLarge(diff) ? "" : ":\n" + diff.toString();
-        logConsumer.accept("Patching " + name + diffDescription);
+        logConsumer.accept("Patching file " + name + diffDescription);
         consumer.accept(newLines);
         return true;
     }
