@@ -107,11 +107,7 @@ public class Editor {
         consumer.accept(newLines);
         return true;
     }
-
-    /**
-     * Read the file which must be encoded in UTF-8, use the LineEditor to edit it,
-     * and any modifications were done write it back and return true.
-     */
+    
     public boolean converge(TaskContext context) {
         return this.edit(line -> context.recordSystemModification(logger, line));
     }
