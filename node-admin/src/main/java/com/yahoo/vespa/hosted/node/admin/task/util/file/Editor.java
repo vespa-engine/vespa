@@ -107,7 +107,7 @@ public class Editor {
         consumer.accept(newLines);
         return true;
     }
-    
+
     public boolean converge(TaskContext context) {
         return this.edit(line -> context.recordSystemModification(logger, line));
     }
