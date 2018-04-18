@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;

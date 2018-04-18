@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import org.junit.Assert;
