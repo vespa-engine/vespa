@@ -21,6 +21,13 @@ namespace attribute {
 class ISearchContext {
 public:
     using UP = std::unique_ptr<ISearchContext>;
+    using DocId = uint32_t;
+
+private:
+    virtual bool onCmp(DocId docId, int32_t &weight) const = 0;
+    virtual bool onCmp(DocId docId) const = 0;
+
+public:
     virtual ~ISearchContext() {}
 
     virtual unsigned int approximateHits() const = 0;
@@ -49,6 +56,9 @@ public:
     virtual Int64Range getAsIntegerTerm() const = 0;
     virtual const QueryTermBase &queryTerm() const = 0;
     virtual const vespalib::string &attributeName() const = 0;
+
+    bool cmp(DocId docId, int32_t &weight) const { return onCmp(docId, weight); }
+    bool cmp(DocId docId) const { return onCmp(docId); }
 
 };
 
