@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 
 import java.util.Objects;
 
@@ -41,8 +42,8 @@ public class ProviderUniqueId {
         this.clusterIndex = clusterIndex;
     }
 
-    public String asString() {
-        return String.format("%d.%s.%s.%s.%s.%s.%s", clusterIndex, clusterId, instance, application, tenant, region, environment);
+    public VespaUniqueInstanceId toVespaUniqueInstanceId() {
+        return new VespaUniqueInstanceId(clusterIndex, clusterId, instance, application, tenant, region, environment);
     }
 
     @Override

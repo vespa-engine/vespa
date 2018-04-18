@@ -135,7 +135,7 @@ public class InstanceValidatorTest {
                     new SignedIdentityDocument(encodedIdentityDocument,
                             Base64.getEncoder().encodeToString(sigGenerator.sign()),
                             0,
-                            identityDocument.providerUniqueId.asString(),
+                            identityDocument.providerUniqueId.toVespaUniqueInstanceId().asDottedString(),
                             "dnssuffix",
                             "service",
                             "localhost/zts",
