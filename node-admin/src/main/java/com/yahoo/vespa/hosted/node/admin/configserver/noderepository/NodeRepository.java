@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.Acl;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;

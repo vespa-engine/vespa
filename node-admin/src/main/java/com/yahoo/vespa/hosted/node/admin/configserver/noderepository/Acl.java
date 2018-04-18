@@ -1,17 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
+package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**

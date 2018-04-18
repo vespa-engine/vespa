@@ -5,7 +5,7 @@ import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.AddNode;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.Acl;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.ArrayList;
