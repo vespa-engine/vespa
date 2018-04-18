@@ -43,7 +43,7 @@ RPCTargetPool::flushTargets(bool force)
                 continue; // someone is using this
             }
             if (!force) {
-                if (--entry._lastUse + _expireMillis > currentTime) {
+                if (entry._lastUse + _expireMillis > currentTime) {
                     ++it;
                     continue; // not sufficiently idle
                 }

@@ -326,7 +326,6 @@ RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients
     double timeout = ctx._msg.getTimeRemainingNow() / 1000.0;
     for (uint32_t i = 0, len = ctx._recipients.size(); i < len; ++i) {
         RoutingNode *&recipient = ctx._recipients[i];
-        LOG_ASSERT(recipient != nullptr);
 
         RPCServiceAddress &address = static_cast<RPCServiceAddress&>(recipient->getServiceAddress());
         LOG_ASSERT(address.hasTarget());
@@ -348,8 +347,7 @@ RPCNetwork::send(RPCNetwork::SendContext &ctx)
             replyError(ctx, ErrorCode::INCOMPATIBLE_VERSION,
                        make_string("Can not send to version '%s' recipient.", ctx._version.toString().c_str()));
         } else if (timeRemaining == 0) {
-            replyError(ctx, ErrorCode::TIMEOUT,
-                       "Aborting transmission because zero time remains.");
+            replyError(ctx, ErrorCode::TIMEOUT, "Aborting transmission because zero time remains.");
         } else if (payload.size() == 0) {
             replyError(ctx, ErrorCode::ENCODE_ERROR,
                        make_string("Protocol '%s' failed to encode message.", ctx._msg.getProtocol().c_str()));
