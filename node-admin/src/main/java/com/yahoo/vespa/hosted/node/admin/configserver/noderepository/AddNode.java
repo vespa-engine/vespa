@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -46,26 +47,18 @@ public class AddNode {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         AddNode addNode = (AddNode) o;
-
-        if (!hostname.equals(addNode.hostname)) return false;
-        if (!parentHostname.equals(addNode.parentHostname)) return false;
-        if (!nodeFlavor.equals(addNode.nodeFlavor)) return false;
-        if (nodeType != addNode.nodeType) return false;
-        if (!ipAddresses.equals(addNode.ipAddresses)) return false;
-        return additionalIpAddresses.equals(addNode.additionalIpAddresses);
+        return Objects.equals(hostname, addNode.hostname) &&
+                Objects.equals(parentHostname, addNode.parentHostname) &&
+                Objects.equals(nodeFlavor, addNode.nodeFlavor) &&
+                nodeType == addNode.nodeType &&
+                Objects.equals(ipAddresses, addNode.ipAddresses) &&
+                Objects.equals(additionalIpAddresses, addNode.additionalIpAddresses);
     }
 
     @Override
     public int hashCode() {
-        int result = hostname.hashCode();
-        result = 31 * result + parentHostname.hashCode();
-        result = 31 * result + nodeFlavor.hashCode();
-        result = 31 * result + nodeType.hashCode();
-        result = 31 * result + ipAddresses.hashCode();
-        result = 31 * result + additionalIpAddresses.hashCode();
-        return result;
+        return Objects.hash(hostname, parentHostname, nodeFlavor, nodeType, ipAddresses, additionalIpAddresses);
     }
 
     @Override
