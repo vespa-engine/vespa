@@ -1,6 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.tls;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.openssl.PEMParser;
@@ -17,8 +21,10 @@ import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.List;
 
+import static com.yahoo.vespa.athenz.tls.Extension.SUBJECT_ALTERNATIVE_NAMES;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -59,8 +65,12 @@ public class X509CertificateUtils {
         }
     }
 
-    public static List<String> getCommonNames(X509Certificate certificate) {
+    public static List<String> getSubjectCommonNames(X509Certificate certificate) {
         return getCommonNames(certificate.getSubjectX500Principal());
+    }
+
+    public static List<String> getIssuerCommonNames(X509Certificate certificate) {
+        return getCommonNames(certificate.getIssuerX500Principal());
     }
 
     public static List<String> getCommonNames(X500Principal subject) {
@@ -74,5 +84,20 @@ public class X509CertificateUtils {
             throw new IllegalArgumentException("Invalid CN: " + e, e);
         }
 
+    }
+
+    public static List<SubjectAlternativeName> getSubjectAlternativeNames(X509Certificate certificate) {
+        try {
+            byte[] extensionValue = certificate.getExtensionValue(SUBJECT_ALTERNATIVE_NAMES.getOId());
+            if (extensionValue == null) return Collections.emptyList();
+            ASN1Encodable asn1Encodable = ASN1Primitive.fromByteArray(extensionValue);
+            if (asn1Encodable instanceof ASN1OctetString) {
+                asn1Encodable = ASN1Primitive.fromByteArray(((ASN1OctetString) asn1Encodable).getOctets());
+            }
+            GeneralNames names = GeneralNames.getInstance(asn1Encodable);
+            return SubjectAlternativeName.fromGeneralNames(names);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

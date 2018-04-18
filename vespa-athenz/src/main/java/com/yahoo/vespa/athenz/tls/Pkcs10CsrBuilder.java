@@ -20,6 +20,8 @@ import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
+
 /**
  * @author bjorncs
  */
@@ -27,7 +29,7 @@ public class Pkcs10CsrBuilder {
 
     private final X500Principal subject;
     private final KeyPair keyPair;
-    private final List<String> subjectAlternativeNames = new ArrayList<>();
+    private final List<SubjectAlternativeName> subjectAlternativeNames = new ArrayList<>();
     private final SignatureAlgorithm signatureAlgorithm;
     private BasicConstraintsExtension basicConstraintsExtension;
 
@@ -45,7 +47,12 @@ public class Pkcs10CsrBuilder {
         return new Pkcs10CsrBuilder(subject, keyPair, signatureAlgorithm);
     }
 
-    public Pkcs10CsrBuilder addSubjectAlternativeName(String san) {
+    public Pkcs10CsrBuilder addSubjectAlternativeName(String dns) {
+        this.subjectAlternativeNames.add(new SubjectAlternativeName(DNS_NAME, dns));
+        return this;
+    }
+
+    public Pkcs10CsrBuilder addSubjectAlternativeName(SubjectAlternativeName san) {
         this.subjectAlternativeNames.add(san);
         return this;
     }
@@ -69,7 +76,7 @@ public class Pkcs10CsrBuilder {
             if (!subjectAlternativeNames.isEmpty()) {
                 GeneralNames generalNames = new GeneralNames(
                         subjectAlternativeNames.stream()
-                                .map(san -> new GeneralName(GeneralName.dNSName, san))
+                                .map(SubjectAlternativeName::toGeneralName)
                                 .toArray(GeneralName[]::new));
                 extGen.addExtension(Extension.subjectAlternativeName, false, generalNames);
             }

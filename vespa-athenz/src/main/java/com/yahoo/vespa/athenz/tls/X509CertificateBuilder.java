@@ -27,6 +27,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
+
 /**
  * @author bjorncs
  */
@@ -37,7 +39,7 @@ public class X509CertificateBuilder {
     private final PrivateKey caPrivateKey;
     private final Instant notBefore;
     private final Instant notAfter;
-    private final List<String> subjectAlternativeNames = new ArrayList<>();
+    private final List<SubjectAlternativeName> subjectAlternativeNames = new ArrayList<>();
     private final X500Principal issuer;
     private final X500Principal subject;
     private final PublicKey certPublicKey;
@@ -102,7 +104,12 @@ public class X509CertificateBuilder {
                                           serialNumber);
     }
 
-    public X509CertificateBuilder addSubjectAlternativeName(String san) {
+    public X509CertificateBuilder addSubjectAlternativeName(String dnsName) {
+        this.subjectAlternativeNames.add(new SubjectAlternativeName(DNS_NAME, dnsName));
+        return this;
+    }
+
+    public X509CertificateBuilder addSubjectAlternativeName(SubjectAlternativeName san) {
         this.subjectAlternativeNames.add(san);
         return this;
     }
@@ -125,7 +132,7 @@ public class X509CertificateBuilder {
             if (!subjectAlternativeNames.isEmpty()) {
                 GeneralNames generalNames = new GeneralNames(
                         subjectAlternativeNames.stream()
-                                .map(san -> new GeneralName(GeneralName.dNSName, san))
+                                .map(SubjectAlternativeName::toGeneralName)
                                 .toArray(GeneralName[]::new));
                 jcaCertBuilder.addExtension(Extension.subjectAlternativeName, false, generalNames);
             }
