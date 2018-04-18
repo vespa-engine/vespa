@@ -10,12 +10,12 @@
 using search::datastore::EntryRef;
 using search::queryeval::EmptySearch;
 using search::queryeval::SearchIterator;
+using search::attribute::ISearchContext;
 using search::attribute::ReferenceAttribute;
 using search::AttributeVector;
 
 using ReverseMappingRefs = ReferenceAttribute::ReverseMappingRefs;
 using ReverseMapping = ReferenceAttribute::ReverseMapping;
-using SearchContext = AttributeVector::SearchContext;
 
 
 namespace search::attribute {
@@ -33,7 +33,7 @@ ImportedSearchContext::ImportedSearchContext(
                     std::unique_ptr<IDocumentMetaStoreContext::IReadGuard>()),
       _reference_attribute(*_imported_attribute.getReferenceAttribute()),
       _target_attribute(*_imported_attribute.getTargetAttribute()),
-      _target_search_context(_target_attribute.getSearch(std::move(term), params)),
+      _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
       _referencedLids(_reference_attribute.getReferencedLids()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
       _fetchPostingsDone(false)
@@ -97,7 +97,7 @@ struct TargetWeightedResult {
     {}
     static TargetWeightedResult
     getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
-              SearchContext &target_search_context, uint32_t committedDocIdLimit) __attribute__((noinline));
+              ISearchContext &target_search_context, uint32_t committedDocIdLimit) __attribute__((noinline));
 };
 
 class ReverseMappingBitVector
@@ -120,13 +120,13 @@ public:
 struct TargetResult {
     static void
     getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
-              SearchContext &target_search_context, uint32_t committedDocIdLimit,
+              ISearchContext &target_search_context, uint32_t committedDocIdLimit,
               PostingListMerger<int32_t> & merger) __attribute__((noinline));
 };
 
 TargetWeightedResult
 TargetWeightedResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
-                                SearchContext &target_search_context, uint32_t committedDocIdLimit)
+                                ISearchContext &target_search_context, uint32_t committedDocIdLimit)
 {
     TargetWeightedResult targetResult;
     fef::TermFieldMatchData matchData;
@@ -151,7 +151,7 @@ TargetWeightedResult::getResult(ReverseMappingRefs reverseMappingRefs, const Rev
 
 void
 TargetResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
-                        SearchContext &target_search_context, uint32_t committedDocIdLimit,
+                        ISearchContext &target_search_context, uint32_t committedDocIdLimit,
                         PostingListMerger<int32_t> & merger)
 {
     fef::TermFieldMatchData matchData;

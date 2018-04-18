@@ -545,20 +545,12 @@ public:
             return _attr.getName();
         }
 
-
-
-        bool cmp(DocId docId, int32_t &weight) const { return onCmp(docId, weight); }
-        bool cmp(DocId docId) const { return onCmp(docId); }
         const AttributeVector & attribute() const { return _attr; }
 
     protected:
         SearchContext(const AttributeVector &attr);
-    private:
-        virtual bool onCmp(DocId docId, int32_t &weight) const = 0;
-        virtual bool onCmp(DocId docId) const = 0;
-
         const AttributeVector & _attr;
-    protected:
+
         attribute::IPostingListSearchContext *_plsc;
 
         /**

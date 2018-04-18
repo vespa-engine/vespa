@@ -34,7 +34,7 @@ class ImportedSearchContext : public ISearchContext {
     IDocumentMetaStoreContext::IReadGuard::UP       _dmsReadGuard;
     const ReferenceAttribute&                       _reference_attribute;
     const AttributeVector&                          _target_attribute;
-    std::unique_ptr<AttributeVector::SearchContext> _target_search_context;
+    std::unique_ptr<ISearchContext>                 _target_search_context;
     ReferencedLids                                  _referencedLids;
     PostingListMerger<int32_t>                      _merger;
     bool                                            _fetchPostingsDone;
@@ -71,9 +71,12 @@ public:
         return _target_search_context->cmp(getReferencedLid(docId));
     }
 
+    bool onCmp(uint32_t docId, int32_t &weight) const override { return cmp(docId, weight); }
+    bool onCmp(uint32_t docId) const override { return cmp(docId); }
+
     const ReferenceAttribute& attribute() const noexcept { return _reference_attribute; }
 
-    const AttributeVector::SearchContext& target_search_context() const noexcept {
+    const ISearchContext &target_search_context() const noexcept {
         return *_target_search_context;
     }
 };
