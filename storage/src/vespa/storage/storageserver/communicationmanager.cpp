@@ -390,7 +390,7 @@ CommunicationManager::configureMessageBusLimits(const CommunicationManagerConfig
 void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig> config)
 {
     // Only allow dynamic (live) reconfiguration of message bus limits.
-    if (_mbus.get()) {
+    if (_mbus) {
         configureMessageBusLimits(*config);
         if (_mbus->getRPCNetwork().getPort() != config->mbusport) {
             auto m = make_string("mbus port changed from %d to %d. Will conduct a quick, but controlled restart.",
@@ -412,6 +412,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         LOG(debug, "setting up slobrok config from id: '%s", _configUri.getConfigId().c_str());
 
         params.setSlobrokConfig(_configUri);
+        params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
         if (config->mbusport != -1) {
@@ -438,7 +439,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
 
     _listener.reset(new FNetListener(*this, _configUri, config->rpcport));
 
-    if (_mbus.get()) {
+    if (_mbus) {
         mbus::DestinationSessionParams dstParams;
         dstParams.setName("default");
         dstParams.setBroadcastName(true);

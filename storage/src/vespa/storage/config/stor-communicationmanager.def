@@ -25,3 +25,6 @@ mbus.compress.level int default=3
 
 ## Compression type for packets.
 mbus.compress.type enum {NONE, LZ4, ZSTD} default=LZ4
+
+## TTL for rpc target cache
+mbus.rpctargetcache.ttl double default = 600
