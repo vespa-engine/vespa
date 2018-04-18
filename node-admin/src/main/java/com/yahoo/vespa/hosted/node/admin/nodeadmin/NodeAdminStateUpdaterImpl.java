@@ -6,7 +6,7 @@ import com.yahoo.concurrent.classlock.ClassLock;
 import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.concurrent.classlock.LockInterruptException;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.node.admin.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
