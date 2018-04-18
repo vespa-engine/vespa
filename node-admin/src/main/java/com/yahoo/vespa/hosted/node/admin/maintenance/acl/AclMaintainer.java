@@ -5,8 +5,8 @@ import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -51,21 +51,14 @@ public class AclMaintainer implements Runnable {
 
     private void applyRedirect(Container container, InetAddress address) {
         IPVersion ipVersion = IPVersion.get(address);
-
-        String redirectStatements = String.join("\n"
-                , "-P PREROUTING ACCEPT"
-                , "-P INPUT ACCEPT"
-                , "-P OUTPUT ACCEPT"
-                , "-P POSTROUTING ACCEPT"
-                , "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT");
-
-        IPTablesRestore.syncTableLogOnError(dockerOperations, container.name, ipVersion, "nat", redirectStatements);
+        String redirectRule = "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT";
+        IPTablesEditor.editLogOnError(dockerOperations, container.name, ipVersion, "nat", NatTableLineEditor.from(redirectRule));
     }
 
     private void apply(Container container, Acl acl) {
         // Apply acl to the filter table
-        IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", acl.toRules(IPVersion.IPv6));
-        IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", acl.toRules(IPVersion.IPv4));
+        IPTablesEditor.editFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", FilterTableLineEditor.from(acl, IPVersion.IPv6));
+        IPTablesEditor.editFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", FilterTableLineEditor.from(acl, IPVersion.IPv4));
 
         // Apply redirect to the nat table
         if (this.environment.getCloud().equals("AWS")) {
