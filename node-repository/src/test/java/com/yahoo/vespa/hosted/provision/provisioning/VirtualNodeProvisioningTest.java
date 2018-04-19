@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Before;
@@ -29,6 +30,8 @@ import static org.junit.Assert.assertNotNull;
  * @author hmusum
  * @author mpolden
  */
+// Note: Some of the tests here should be moved to DockerProvisioningTest if we stop using VMs and want
+// to remove these tests
 public class VirtualNodeProvisioningTest {
 
     private static final String flavor = "v-4-8-100";
@@ -74,6 +77,38 @@ public class VirtualNodeProvisioningTest {
         activate(containerHosts3);
         final List<Node> nodes3 = getNodes(applicationId);
         assertDistinctParentHosts(nodes3, ClusterSpec.Type.container, containerNodeCount);
+    }
+
+    @Test
+    public void allow_same_parent_host_for_nodes_in_a_cluster_in_cd_and_non_prod() {
+        final int containerNodeCount = 2;
+        final int contentNodeCount = 2;
+        final int groups = 1;
+
+        // Allowed to use same parent host for several nodes in same cluster in dev
+        {
+            tester = new ProvisioningTester(new Zone(Environment.dev, RegionName.from("us-east")));
+            tester.makeReadyVirtualNodes(4, "default", "parentHost1");
+
+            List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
+            List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
+            activate(containerHosts, contentHosts);
+
+            // downscaled to 1 node per cluster in dev, so 2 in total
+            assertEquals(2, getNodes(applicationId).size());
+        }
+
+        // Allowed to use same parent host for several nodes in same cluster in CD (even if prod env)
+        {
+            tester = new ProvisioningTester(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east")));
+            tester.makeReadyVirtualNodes(4, flavor, "parentHost1");
+
+            List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
+            List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
+            activate(containerHosts, contentHosts);
+
+            assertEquals(4, getNodes(applicationId).size());
+        }
     }
 
     @Test

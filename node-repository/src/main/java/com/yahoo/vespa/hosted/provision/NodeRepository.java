@@ -75,6 +75,7 @@ public class NodeRepository extends AbstractComponent {
     private final CuratorDatabaseClient db;
     private final Curator curator;
     private final Clock clock;
+    private final Zone zone;
     private final NodeFlavors flavors;
     private final NameResolver nameResolver;
     private final DockerImage dockerImage;
@@ -96,6 +97,7 @@ public class NodeRepository extends AbstractComponent {
                           DockerImage dockerImage, boolean useCuratorClientCache) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.curator = curator;
+        this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
@@ -660,6 +662,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the time keeper of this system */
     public Clock clock() { return clock; }
+
+    /** Returns the zone of this system */
+    public Zone zone() { return zone; }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application) { return db.lock(application); }
