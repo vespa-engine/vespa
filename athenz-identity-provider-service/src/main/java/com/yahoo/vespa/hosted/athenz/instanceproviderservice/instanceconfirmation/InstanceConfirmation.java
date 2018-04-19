@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 
 import java.io.IOException;
 import java.util.HashMap;

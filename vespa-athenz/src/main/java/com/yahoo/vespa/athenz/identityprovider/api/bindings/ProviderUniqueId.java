@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -44,6 +44,12 @@ public class ProviderUniqueId {
 
     public VespaUniqueInstanceId toVespaUniqueInstanceId() {
         return new VespaUniqueInstanceId(clusterIndex, clusterId, instance, application, tenant, region, environment);
+    }
+
+    public static ProviderUniqueId fromVespaUniqueInstanceId(VespaUniqueInstanceId instanceId) {
+        return new ProviderUniqueId(
+                instanceId.tenant(), instanceId.application(), instanceId.environment(), instanceId.region(),
+                instanceId.instance(), instanceId.clusterId(), instanceId.clusterIndex());
     }
 
     @Override

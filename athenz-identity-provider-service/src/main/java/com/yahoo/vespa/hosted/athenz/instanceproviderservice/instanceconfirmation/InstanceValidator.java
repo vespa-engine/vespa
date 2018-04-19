@@ -8,8 +8,8 @@ import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument.ProviderUniqueId;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.ProviderUniqueId;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;

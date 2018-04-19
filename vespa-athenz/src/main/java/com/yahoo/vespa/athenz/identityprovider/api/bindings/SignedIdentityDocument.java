@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -18,6 +19,8 @@ public class SignedIdentityDocument {
 
     public static final int DEFAULT_KEY_VERSION = 0;
     public static final int DEFAULT_DOCUMENT_VERSION = 1;
+
+    private static final ObjectMapper mapper = createObjectMapper();
 
     @JsonProperty("identity-document")public final String rawIdentityDocument;
     @JsonIgnore public final IdentityDocument identityDocument;
@@ -51,10 +54,16 @@ public class SignedIdentityDocument {
 
     private static IdentityDocument parseIdentityDocument(String rawIdentityDocument) {
         try {
-            return Utils.getMapper().readValue(Base64.getDecoder().decode(rawIdentityDocument), IdentityDocument.class);
+            return mapper.readValue(Base64.getDecoder().decode(rawIdentityDocument), IdentityDocument.class);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
     }
 
     @Override
