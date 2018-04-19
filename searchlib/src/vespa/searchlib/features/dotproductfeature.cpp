@@ -6,7 +6,7 @@
 #include "array_parser.hpp"
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <type_traits>
@@ -356,7 +356,7 @@ template class ArrayParam<double>;
 namespace {
 
 bool isImportedAttribute(const IAttributeVector& attribute) noexcept {
-    return dynamic_cast<const ImportedAttributeVector*>(&attribute) != nullptr;
+    return dynamic_cast<const ImportedAttributeVectorReadGuard*>(&attribute) != nullptr;
 }
 
 using dotproduct::ArrayParam;

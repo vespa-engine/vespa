@@ -29,7 +29,7 @@ public:
                                   std::shared_ptr<BitVectorSearchCache> search_cache);
     ~ImportedTensorAttributeVector();
 
-    virtual std::unique_ptr<attribute::ImportedAttributeVector> makeReadGuard(bool stableEnumGuard) const override;
+    virtual std::unique_ptr<attribute::IAttributeVector> makeReadGuard(bool stableEnumGuard) const override;
     virtual std::unique_ptr<Tensor> getTensor(uint32_t docId) const override;
     virtual std::unique_ptr<Tensor> getEmptyTensor() const override;
     virtual void getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;

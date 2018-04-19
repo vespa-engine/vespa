@@ -45,7 +45,7 @@ struct Fixture : ImportedAttributeFixture {
     }
 
     void assertSearch(const std::vector<uint32_t> &expDocIds, SearchIterator &iter) {
-        EXPECT_EQUAL(SimpleResult(expDocIds), SimpleResult().searchStrict(iter, imported_attr->getNumDocs()));
+        EXPECT_EQUAL(SimpleResult(expDocIds), SimpleResult().searchStrict(iter, get_imported_attr()->getNumDocs()));
     }
 };
 
@@ -376,7 +376,7 @@ makeSearchCacheEntry(const std::vector<uint32_t> docIds, uint32_t docIdLimit)
 TEST_F("Bit vector from search cache is used if found", SearchCacheFixture)
 {
     f.imported_attr->getSearchCache()->insert("5678",
-                                              makeSearchCacheEntry({2, 6}, f.imported_attr->getNumDocs()));
+                                              makeSearchCacheEntry({2, 6}, f.get_imported_attr()->getNumDocs()));
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(true);
     TermFieldMatchData match;
@@ -404,7 +404,7 @@ TEST_F("Entry is inserted into search cache if bit vector posting list is used",
 
     EXPECT_EQUAL(1u, f.imported_attr->getSearchCache()->size());
     auto cacheEntry = f.imported_attr->getSearchCache()->find("5678");
-    EXPECT_EQUAL(cacheEntry->docIdLimit, f.imported_attr->getNumDocs());
+    EXPECT_EQUAL(cacheEntry->docIdLimit, f.get_imported_attr()->getNumDocs());
     TEST_DO(assertBitVector({3, 5}, *cacheEntry->bitVector));
     EXPECT_EQUAL(1u, f.document_meta_store->get_read_guard_cnt);
 }

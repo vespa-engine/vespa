@@ -6,7 +6,7 @@
 
 #include <vespa/log/log.h>
 #include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/features/dotproductfeature.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -144,7 +144,7 @@ InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const Pa
 }
 
 bool isImportedAttribute(const IAttributeVector &attribute) noexcept {
-    return dynamic_cast<const ImportedAttributeVector*>(&attribute) != nullptr;
+    return dynamic_cast<const ImportedAttributeVectorReadGuard*>(&attribute) != nullptr;
 }
 
 template<typename A>

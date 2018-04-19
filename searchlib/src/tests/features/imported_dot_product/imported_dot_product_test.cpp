@@ -45,9 +45,10 @@ struct FixtureBase : ImportedAttributeFixture {
         if (pre_parsed) {
             feature.getQueryEnv().getObjectStore().add("dotProduct.vector.object", std::move(pre_parsed));
         }
-        feature.getIndexEnv().getAttributeMap().add(imported_attr);
+        std::shared_ptr<IAttributeVector> readable_imported_attr = imported_attr->makeReadGuard(false);
+        feature.getIndexEnv().getAttributeMap().add(readable_imported_attr);
         schema::CollectionType collection_type(
-                (imported_attr->getCollectionType() == attribute::CollectionType::ARRAY)
+                (readable_imported_attr->getCollectionType() == attribute::CollectionType::ARRAY)
                 ? schema::CollectionType::ARRAY : schema::CollectionType::WEIGHTEDSET);
         feature.getIndexEnv().getBuilder().addField(
                 FieldType::ATTRIBUTE, collection_type, imported_attr->getName());
@@ -108,7 +109,7 @@ struct ArrayFixture : FixtureBase {
         ParameterList params({Parameter(ParameterType::ATTRIBUTE, imported_attr->getName()),
                               Parameter(ParameterType::STRING, "fancyvector")});
 
-        feature.getIndexEnv().getAttributeMap().add(imported_attr);
+        feature.getIndexEnv().getAttributeMap().add(imported_attr->makeReadGuard(false));
         feature.getIndexEnv().getBuilder().addField(
                 FieldType::ATTRIBUTE, schema::CollectionType::ARRAY, imported_attr->getName());
 

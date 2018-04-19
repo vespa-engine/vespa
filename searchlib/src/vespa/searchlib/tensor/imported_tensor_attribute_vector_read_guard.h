@@ -5,6 +5,10 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 #include "i_tensor_attribute.h"
 
+namespace search::attribute {
+class ImportedAttributeVector;
+}
+
 namespace search::tensor {
 
 /**
@@ -20,11 +24,7 @@ class ImportedTensorAttributeVectorReadGuard : public attribute::ImportedAttribu
     using BitVectorSearchCache = attribute::BitVectorSearchCache;
     const ITensorAttribute &_target_tensor_attribute;
 public:
-    ImportedTensorAttributeVectorReadGuard(vespalib::stringref name,
-                                           std::shared_ptr<ReferenceAttribute> reference_attribute,
-                                           std::shared_ptr<AttributeVector> target_attribute,
-                                           std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
-                                           std::shared_ptr<BitVectorSearchCache> search_cache,
+    ImportedTensorAttributeVectorReadGuard(const attribute::ImportedAttributeVector &imported_attribute,
                                            bool stableEnumGuard);
     ~ImportedTensorAttributeVectorReadGuard();
 

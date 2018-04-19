@@ -9,19 +9,20 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/default_tensor.h>
 
+using search::attribute::IAttributeVector;
+using search::tensor::ITensorAttribute;
+using search::tensor::TensorAttribute;
 using vespalib::eval::ValueType;
+using vespalib::tensor::DenseTensorCells;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
-using vespalib::tensor::DenseTensorCells;
 using vespalib::tensor::TensorDimensions;
 using vespalib::tensor::TensorFactory;
-using search::tensor::TensorAttribute;
-using search::tensor::ITensorAttribute;
 
 namespace search {
 namespace attribute {
 
-
+// TODO: remove template argument (read guard is always used now)
 template <bool useReadGuard = false>
 struct FixtureBase : public ImportedAttributeFixture
 {
@@ -30,13 +31,6 @@ struct FixtureBase : public ImportedAttributeFixture
     {
     }
 
-    std::shared_ptr<ImportedAttributeVector> get_imported_attr() {
-        if (useReadGuard) {
-            return imported_attr->makeReadGuard(false);
-        } else {
-            return imported_attr;
-        }
-    }
 };
 
 using Fixture = FixtureBase<false>;
@@ -52,28 +46,29 @@ TEST_F("Accessors return expected attributes", Fixture) {
 TEST_F("getName() is equal to name given during construction", Fixture) {
     auto attr = f.create_attribute_vector_from_members("coolvector");
     EXPECT_EQUAL("coolvector", attr->getName());
+    EXPECT_EQUAL("coolvector", attr->makeReadGuard(false)->getName());
 }
 
 TEST_F("getNumDocs() returns number of documents in reference attribute vector", Fixture) {
     add_n_docs_with_undefined_values(*f.reference_attr, 42);
-    EXPECT_EQUAL(42u, f.imported_attr->getNumDocs());
+    EXPECT_EQUAL(42u, f.get_imported_attr()->getNumDocs());
 }
 
 TEST_F("hasEnum() is false for non-enum target attribute vector", Fixture) {
-    EXPECT_FALSE(f.imported_attr->hasEnum());
+    EXPECT_FALSE(f.get_imported_attr()->hasEnum());
 }
 
 TEST_F("Collection type is inherited from target attribute", Fixture) {
-    EXPECT_EQUAL(CollectionType::SINGLE, f.imported_attr->getCollectionType());
+    EXPECT_EQUAL(CollectionType::SINGLE, f.get_imported_attr()->getCollectionType());
     f.reset_with_new_target_attr(create_array_attribute<IntegerAttribute>(BasicType::INT32));
-    EXPECT_EQUAL(CollectionType::ARRAY, f.imported_attr->getCollectionType());
+    EXPECT_EQUAL(CollectionType::ARRAY, f.get_imported_attr()->getCollectionType());
 }
 
 TEST_F("getBasicType() returns target vector basic type", Fixture) {
     f.reset_with_new_target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT64));
-    EXPECT_EQUAL(BasicType::INT64, f.imported_attr->getBasicType());
+    EXPECT_EQUAL(BasicType::INT64, f.get_imported_attr()->getBasicType());
     f.reset_with_new_target_attr(create_single_attribute<FloatingPointAttribute>(BasicType::DOUBLE));
-    EXPECT_EQUAL(BasicType::DOUBLE, f.imported_attr->getBasicType());
+    EXPECT_EQUAL(BasicType::DOUBLE, f.get_imported_attr()->getBasicType());
 }
 
 TEST_F("makeReadGuard(false) acquires guards on both target and reference attributes", Fixture) {
@@ -171,16 +166,16 @@ TEST("getValueCount() is 0 for non-mapped single value attribute") {
 }
 
 TEST_F("getMaxValueCount() is 1 for single value attribute vectors", Fixture) {
-    EXPECT_EQUAL(1u, f.imported_attr->getMaxValueCount());
+    EXPECT_EQUAL(1u, f.get_imported_attr()->getMaxValueCount());
 }
 
 TEST_F("getFixedWidth() is inherited from target attribute vector", Fixture) {
     EXPECT_EQUAL(f.target_attr->getFixedWidth(),
-                 f.imported_attr->getFixedWidth());
+                 f.get_imported_attr()->getFixedWidth());
 }
 
 TEST_F("asDocumentWeightAttribute() returns nullptr", Fixture) {
-    EXPECT_TRUE(f.imported_attr->asDocumentWeightAttribute() == nullptr);
+    EXPECT_TRUE(f.get_imported_attr()->asDocumentWeightAttribute() == nullptr);
 }
 
 TEST_F("Multi-valued integer attribute values can be retrieved via reference", Fixture) {
@@ -230,8 +225,8 @@ TEST_F("Singled-valued floating point attribute values can be retrieved via refe
             {{DocId(2), dummy_gid(3), DocId(3), 10.5f},
              {DocId(4), dummy_gid(8), DocId(8), 3.14f}});
 
-    EXPECT_EQUAL(10.5f, f.imported_attr->getFloat(DocId(2)));
-    EXPECT_EQUAL(3.14f, f.imported_attr->getFloat(DocId(4)));
+    EXPECT_EQUAL(10.5f, f.get_imported_attr()->getFloat(DocId(2)));
+    EXPECT_EQUAL(3.14f, f.get_imported_attr()->getFloat(DocId(4)));
 }
 
 TEST_F("Multi-valued floating point attribute values can be retrieved via reference", Fixture) {
@@ -309,7 +304,7 @@ TEST_F("findEnum() returns target vector enum via reference", SingleStringAttrFi
     EnumHandle expected_handle{};
     ASSERT_TRUE(f.target_attr->findEnum("foo", expected_handle));
     EnumHandle actual_handle{};
-    ASSERT_TRUE(f.imported_attr->findEnum("foo", actual_handle));
+    ASSERT_TRUE(f.get_imported_attr()->findEnum("foo", actual_handle));
     EXPECT_EQUAL(expected_handle, actual_handle);
 }
 
@@ -328,17 +323,17 @@ TEST_F("Single-value getStringFromEnum() returns string enum is mapped to", Sing
 }
 
 TEST_F("hasEnum() is true for enum target attribute vector", SingleStringAttrFixture) {
-    EXPECT_TRUE(f.imported_attr->hasEnum());
+    EXPECT_TRUE(f.get_imported_attr()->hasEnum());
 }
 
 TEST_F("createSearchContext() returns an imported search context", SingleStringAttrFixture) {
-    auto ctx = f.imported_attr->createSearchContext(word_term("bar"), SearchContextParams());
+    auto ctx = f.get_imported_attr()->createSearchContext(word_term("bar"), SearchContextParams());
     ASSERT_TRUE(ctx.get() != nullptr);
     fef::TermFieldMatchData match;
     // Iterator specifics are tested in imported_search_context_test, so just make sure
     // we get the expected iterator functionality. In this case, a non-strict iterator.
     auto iter = ctx->createIterator(&match, false);
-    iter->initRange(1, f.imported_attr->getNumDocs());
+    iter->initRange(1, f.get_imported_attr()->getNumDocs());
     EXPECT_FALSE(iter->seek(DocId(1)));
     EXPECT_FALSE(iter->seek(DocId(2)));
     EXPECT_FALSE(iter->seek(DocId(3)));
@@ -386,11 +381,11 @@ TEST_F("Multi-value getStringFromEnum() returns string enum is mapped to", Multi
 }
 
 TEST_F("getValueCount() is equal to stored values for mapped multi value attribute", MultiStringAttrFixture) {
-    EXPECT_EQUAL(f.doc7_values.size(), f.imported_attr->getValueCount(DocId(4)));
+    EXPECT_EQUAL(f.doc7_values.size(), f.get_imported_attr()->getValueCount(DocId(4)));
 }
 
 TEST_F("getMaxValueCount() is greater than 1 for multi value attribute vectors", MultiStringAttrFixture) {
-    EXPECT_GREATER(f.imported_attr->getMaxValueCount(), 1u);
+    EXPECT_GREATER(f.get_imported_attr()->getMaxValueCount(), 1u);
 }
 
 struct WeightedMultiStringAttrFixture : Fixture {

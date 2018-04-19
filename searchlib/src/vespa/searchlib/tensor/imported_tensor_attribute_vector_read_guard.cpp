@@ -7,18 +7,11 @@ namespace search::tensor {
 
 using vespalib::tensor::Tensor;
 
-ImportedTensorAttributeVectorReadGuard::ImportedTensorAttributeVectorReadGuard(vespalib::stringref name,
-                                                                               std::shared_ptr<ReferenceAttribute> reference_attribute,
-                                                                               std::shared_ptr<AttributeVector> target_attribute,
-                                                                               std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
-                                                                               std::shared_ptr<BitVectorSearchCache> search_cache,
+ImportedTensorAttributeVectorReadGuard::ImportedTensorAttributeVectorReadGuard(const attribute::ImportedAttributeVector &imported_attribute,
                                                                                bool stableEnumGuard)
-    : ImportedAttributeVectorReadGuard(name, std::move(reference_attribute),
-                                       std::move(target_attribute),
-                                       std::move(document_meta_store),
-                                       std::move(search_cache),
+    : ImportedAttributeVectorReadGuard(imported_attribute,
                                        stableEnumGuard),
-      _target_tensor_attribute(dynamic_cast<const ITensorAttribute &>(*_target_attribute))
+      _target_tensor_attribute(dynamic_cast<const ITensorAttribute &>(*imported_attribute.getTargetAttribute()))
 {
 }
 

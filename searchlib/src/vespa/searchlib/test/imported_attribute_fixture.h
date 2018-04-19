@@ -149,6 +149,10 @@ struct ImportedAttributeFixture {
 
     virtual ~ImportedAttributeFixture();
 
+    std::unique_ptr<IAttributeVector> get_imported_attr() const {
+        return imported_attr->makeReadGuard(false);
+    }
+
     void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
         assert(from_lid < reference_attr->getNumDocs());
         mapper_factory->_map[via_gid] = to_lid;
@@ -285,7 +289,7 @@ void assert_multi_value_matches(const ImportedAttributeFixture &f,
                                 const std::vector<AttrValueType> &expected,
                                 PredicateType predicate) {
     AttributeContent<AttrValueType> content;
-    content.fill(*f.imported_attr, lid);
+    content.fill(*f.get_imported_attr(), lid);
     EXPECT_EQUAL(expected.size(), content.size());
     std::vector<AttrValueType> actual(content.begin(), content.end());
     EXPECT_TRUE(std::equal(expected.begin(), expected.end(),
