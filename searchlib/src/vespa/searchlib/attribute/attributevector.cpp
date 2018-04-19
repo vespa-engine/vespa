@@ -330,6 +330,22 @@ AttributeVector::getCollectionType() const {
 }
 
 bool
+AttributeVector::getIsFilter() const {
+    return _config.getIsFilter();
+}
+
+bool
+AttributeVector::getIsFastSearch() const {
+    return _config.fastSearch();
+}
+
+uint32_t
+AttributeVector::getCommittedDocIdLimitSlow() const
+{
+    return getCommittedDocIdLimit();
+}
+
+bool
 AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
 {
     return header.hasTag(dataTypeTag) &&

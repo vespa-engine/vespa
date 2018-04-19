@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_attribute_vector_read_guard.h"
+#include "imported_attribute_vector.h"
 #include "imported_search_context.h"
 #include "reference_attribute.h"
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
@@ -17,10 +18,9 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
       _imported_attribute(imported_attribute),
       _referencedLids(),
       _reference_attribute_guard(imported_attribute.getReferenceAttribute()),
-      _target_attribute_guard(stableEnumGuard ? std::shared_ptr<AttributeVector>() : imported_attribute.getTargetAttribute()),
-      _target_attribute_enum_guard(stableEnumGuard ? imported_attribute.getTargetAttribute(): std::shared_ptr<AttributeVector>()),
+      _target_attribute_guard(imported_attribute.getTargetAttribute()->makeReadGuard(stableEnumGuard)),
       _reference_attribute(*imported_attribute.getReferenceAttribute()),
-      _target_attribute(*imported_attribute.getTargetAttribute()),
+      _target_attribute(*_target_attribute_guard->attribute()),
       _mapper(_reference_attribute.getGidToLidMapperFactory()->getMapper())
 {
     _referencedLids = _reference_attribute.getReferencedLids();
@@ -107,7 +107,7 @@ const char * ImportedAttributeVectorReadGuard::getStringFromEnum(EnumHandle e) c
 
 std::unique_ptr<ISearchContext> ImportedAttributeVectorReadGuard::createSearchContext(std::unique_ptr<QueryTermSimple> term,
                                                                              const SearchContextParams &params) const {
-    return std::make_unique<ImportedSearchContext>(std::move(term), params, _imported_attribute);
+    return std::make_unique<ImportedSearchContext>(std::move(term), params, _imported_attribute, _target_attribute);
 }
 
 const IDocumentWeightAttribute *ImportedAttributeVectorReadGuard::asDocumentWeightAttribute() const {
@@ -132,6 +132,18 @@ CollectionType::Type ImportedAttributeVectorReadGuard::getCollectionType() const
 
 bool ImportedAttributeVectorReadGuard::hasEnum() const {
     return _target_attribute.hasEnum();
+}
+
+bool ImportedAttributeVectorReadGuard::getIsFilter() const {
+    return _target_attribute.getIsFilter();
+}
+
+bool ImportedAttributeVectorReadGuard::getIsFastSearch() const {
+    return _target_attribute.getIsFastSearch();
+}
+
+uint32_t ImportedAttributeVectorReadGuard::getCommittedDocIdLimitSlow() const {
+    return _reference_attribute.getCommittedDocIdLimit();
 }
 
 long ImportedAttributeVectorReadGuard::onSerializeForAscendingSort(DocId doc,

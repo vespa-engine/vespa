@@ -2,7 +2,8 @@
 
 #include "imported_attribute_vector_factory.h"
 #include "imported_attribute_vector.h"
-#include "attributevector.h"
+#include "attribute_read_guard.h"
+#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/tensor/imported_tensor_attribute_vector.h>
 
 namespace search::attribute {
@@ -11,9 +12,14 @@ using search::tensor::ImportedTensorAttributeVector;
 
 namespace {
 
-BasicType::Type getBasicType(const std::shared_ptr<AttributeVector> &attr)
+BasicType::Type getBasicType(const std::shared_ptr<attribute::ReadableAttributeVector> &attr)
 {
-    return attr ? attr->getBasicType() : BasicType::Type::NONE;
+    if (attr) {
+        auto readGuard = attr->makeReadGuard(false);
+        return readGuard->attribute()->getBasicType();
+    }else {
+        return BasicType::Type::NONE;
+    }
 }
 
 }
@@ -21,7 +27,7 @@ BasicType::Type getBasicType(const std::shared_ptr<AttributeVector> &attr)
 std::shared_ptr<ImportedAttributeVector>
 ImportedAttributeVectorFactory::create(vespalib::stringref name,
                                        std::shared_ptr<ReferenceAttribute> reference_attribute,
-                                       std::shared_ptr<AttributeVector> target_attribute,
+                                       std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
                                        std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                        bool use_search_cache)
 {
@@ -37,7 +43,7 @@ ImportedAttributeVectorFactory::create(vespalib::stringref name,
 std::shared_ptr<ImportedAttributeVector>
 ImportedAttributeVectorFactory::create(vespalib::stringref name,
                                        std::shared_ptr<ReferenceAttribute> reference_attribute,
-                                       std::shared_ptr<AttributeVector> target_attribute,
+                                       std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
                                        std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                        std::shared_ptr<BitVectorSearchCache> search_cache)
 {

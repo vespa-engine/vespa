@@ -24,7 +24,7 @@ ImportedTensorAttributeVectorReadGuard::ImportedTensorAttributeVectorReadGuard(c
                                                                                bool stableEnumGuard)
     : ImportedAttributeVectorReadGuard(imported_attribute,
                                        stableEnumGuard),
-      _target_tensor_attribute(getTensorAttribute(*imported_attribute.getTargetAttribute()))
+      _target_tensor_attribute(getTensorAttribute(_target_attribute))
 {
 }
 

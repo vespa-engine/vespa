@@ -20,7 +20,7 @@ struct Fixture : ImportedAttributeFixture {
     Fixture(bool useSearchCache = false) : ImportedAttributeFixture(useSearchCache) {}
 
     std::unique_ptr<ImportedSearchContext> create_context(std::unique_ptr<QueryTermSimple> term) {
-        return std::make_unique<ImportedSearchContext>(std::move(term), SearchContextParams(), *imported_attr);
+        return std::make_unique<ImportedSearchContext>(std::move(term), SearchContextParams(), *imported_attr, *target_attr);
     }
 
     std::unique_ptr<SearchIterator> create_iterator(

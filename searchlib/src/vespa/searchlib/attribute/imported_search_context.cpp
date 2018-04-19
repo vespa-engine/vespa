@@ -24,7 +24,8 @@ namespace search::attribute {
 ImportedSearchContext::ImportedSearchContext(
         std::unique_ptr<QueryTermSimple> term,
         const SearchContextParams& params,
-        const ImportedAttributeVector& imported_attribute)
+        const ImportedAttributeVector& imported_attribute,
+        const attribute::IAttributeVector &target_attribute)
     : _imported_attribute(imported_attribute),
       _queryTerm(term->getTerm()),
       _useSearchCache(_imported_attribute.getSearchCache().get() != nullptr),
@@ -33,7 +34,7 @@ ImportedSearchContext::ImportedSearchContext(
       _dmsReadGuard((_useSearchCache && !_searchCacheLookup) ? imported_attribute.getDocumentMetaStore()->getReadGuard() :
                     std::unique_ptr<IDocumentMetaStoreContext::IReadGuard>()),
       _reference_attribute(*_imported_attribute.getReferenceAttribute()),
-      _target_attribute(*_imported_attribute.getTargetAttribute()),
+      _target_attribute(target_attribute),
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
       _referencedLids(_reference_attribute.getReferencedLids()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
@@ -194,7 +195,7 @@ public:
 
 void ImportedSearchContext::makeMergedPostings(bool isFilter)
 {
-    uint32_t committedTargetDocIdLimit = _target_attribute.getCommittedDocIdLimit();
+    uint32_t committedTargetDocIdLimit = _target_attribute.getCommittedDocIdLimitSlow();
     std::atomic_thread_fence(std::memory_order_acquire);
     const auto &reverseMapping = _reference_attribute.getReverseMapping();
     if (isFilter) {
@@ -230,8 +231,8 @@ void ImportedSearchContext::fetchPostings(bool strict) {
     _fetchPostingsDone = true;
     if (!_searchCacheLookup) {
         _target_search_context->fetchPostings(strict);
-        if (strict || _target_attribute.getConfig().fastSearch()) {
-            makeMergedPostings(_target_attribute.getConfig().getIsFilter());
+        if (strict || _target_attribute.getIsFastSearch()) {
+            makeMergedPostings(_target_attribute.getIsFilter());
             considerAddSearchCacheEntry();
         }
     }

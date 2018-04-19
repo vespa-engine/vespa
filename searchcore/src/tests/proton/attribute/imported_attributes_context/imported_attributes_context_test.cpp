@@ -84,7 +84,10 @@ struct Fixture {
         return *this;
     }
     AttributeVector::SP getTargetAttribute(const vespalib::string &importedName) const {
-        return repo.get(importedName)->getTargetAttribute();
+        auto readable_target_attr = repo.get(importedName)->getTargetAttribute();
+        auto target_attr = std::dynamic_pointer_cast<AttributeVector>(readable_target_attr);
+        ASSERT_TRUE(target_attr);
+        return target_attr;
     }
     void clearContext() {
         ctx.reset();

@@ -431,6 +431,9 @@ public:
     // Implements IAttributeVector
     virtual BasicType::Type getBasicType() const override;
     virtual CollectionType::Type getCollectionType() const override;
+    virtual bool getIsFilter() const override;
+    virtual bool getIsFastSearch() const override;
+    virtual uint32_t getCommittedDocIdLimitSlow() const override;
 
     /**
      * Updates the base file name of this attribute vector and saves
