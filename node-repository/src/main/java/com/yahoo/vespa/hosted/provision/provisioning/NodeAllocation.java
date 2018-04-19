@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -95,7 +96,7 @@ class NodeAllocation {
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
                 // conditions on which we want to retire nodes that were allocated previously
-                if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) wantToRetireNode = true;
+                if ( violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
                 if ( ! hasCompatibleFlavor(offered)) wantToRetireNode = true;
                 if ( offered.flavor().isRetired()) wantToRetireNode = true;
                 if ( offered.status().wantToRetire()) wantToRetireNode = true;
@@ -107,7 +108,7 @@ class NodeAllocation {
                 }
             }
             else if ( ! saturated() && hasCompatibleFlavor(offered)) {
-                if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) {
+                if ( violatesParentHostPolicy(this.nodes, offered)) {
                     ++rejectedWithClashingParentHost;
                     continue;
                 }
@@ -133,6 +134,15 @@ class NodeAllocation {
         }
 
         return accepted;
+    }
+
+
+    private boolean violatesParentHostPolicy(Collection<PrioritizableNode> accepted, Node offered) {
+        return checkForClashingParentHost() && offeredNodeHasParentHostnameAlreadyAccepted(accepted, offered);
+    }
+
+    private boolean checkForClashingParentHost() {
+        return nodeRepository.zone().system() == SystemName.main && nodeRepository.zone().environment().isProduction();
     }
 
     private boolean offeredNodeHasParentHostnameAlreadyAccepted(Collection<PrioritizableNode> accepted, Node offered) {
