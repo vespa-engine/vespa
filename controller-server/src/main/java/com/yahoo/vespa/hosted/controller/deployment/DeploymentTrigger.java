@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
@@ -27,7 +28,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,6 +39,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -116,8 +120,7 @@ public class DeploymentTrigger {
      * Only one job is triggered each run for test jobs, since their environments have limited capacity.
      */
     public long triggerReadyJobs() {
-        return computeReadyJobs().stream()
-                                 .collect(partitioningBy(job -> job.jobType().isTest()))
+        return computeReadyJobs().collect(partitioningBy(job -> job.jobType().isTest()))
                                  .entrySet().stream()
                                  .flatMap(entry -> (entry.getKey()
                                          // True for capacity constrained zones -- sort by priority and make a task for each job type.
@@ -144,18 +147,19 @@ public class DeploymentTrigger {
      * the project id is removed from the application owning the job, to prevent further trigger attemps.
      */
     public boolean trigger(Job job) {
-        log.log(LogLevel.INFO, String.format("Attempting to trigger %s for %s, deploying %s: %s (platform: %s, application: %s)", job.jobType, job.id, job.change, job.reason, job.platformVersion, job.applicationVersion.id()));
+        log.log(LogLevel.INFO, String.format("Attempting to trigger %s, deploying %s: %s (platform: %s, application: %s)", job, job.change, job.reason, job.platformVersion, job.applicationVersion.id()));
 
         try {
             buildService.trigger(job);
-            applications().lockOrThrow(job.id, application -> applications().store(application.withJobTriggering(
-                    job.jobType, new JobStatus.JobRun(-1, job.platformVersion, job.applicationVersion, job.reason, clock.instant()))));
+            applications().lockOrThrow(job.applicationId(), application -> applications().store(application.withJobTriggering(
+                    job.jobType, new JobRun(-1, job.platformVersion, job.applicationVersion, job.reason, clock.instant()))));
             return true;
         }
         catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, String.format("Exception triggering %s for %s (%s): %s", job.jobType, job.id, job.projectId, e));
+            log.log(LogLevel.WARNING, "Exception triggering " + job + ": " + e);
             if (e instanceof NoSuchElementException || e instanceof IllegalArgumentException)
-                applications().lockOrThrow(job.id, application -> applications().store(application.withProjectId(OptionalLong.empty())));
+                applications().lockOrThrow(job.applicationId(), application ->
+                        applications().store(application.withProjectId(OptionalLong.empty())));
             return false;
         }
     }
@@ -189,16 +193,19 @@ public class DeploymentTrigger {
         });
     }
 
+    public Map<JobType, ? extends List<? extends BuildService.BuildJob>> jobsToRun() {
+        return computeReadyJobs().collect(groupingBy(Job::jobType));
+    }
+
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
-    public List<Job> computeReadyJobs() {
+    public Stream<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .notPullRequest()
                               .withProjectId()
                               .deploying()
                               .idList().stream()
                               .map(this::computeReadyJobs)
-                              .flatMap(List::stream)
-                .collect(Collectors.toList());
+                              .flatMap(List::stream);
     }
 
     /** Returns whether the given job is currently running; false if completed since last triggered, asking the build service othewise. */
@@ -209,6 +216,7 @@ public class DeploymentTrigger {
     }
 
     public Job forcedDeploymentJob(Application application, JobType jobType, String reason) {
+        // TODO jvenstad: Verification here!
         return deploymentJob(application, jobType, reason, clock.instant(), Collections.emptySet());
     }
 
@@ -342,7 +350,8 @@ public class DeploymentTrigger {
         return Optional.ofNullable(application.deployments().get(jobType.zone(controller.system()).get()));
     }
 
-    public static class Job extends BuildService.BuildJob {
+
+    private static class Job extends BuildService.BuildJob {
 
         private final JobType jobType;
         private final String reason;

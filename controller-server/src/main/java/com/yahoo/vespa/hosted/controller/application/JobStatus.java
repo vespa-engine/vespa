@@ -8,6 +8,8 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * The last known build status of a particular deployment job for a particular application.
  * This is immutable.
@@ -33,12 +35,12 @@ public class JobStatus {
     public JobStatus(DeploymentJobs.JobType type, Optional<DeploymentJobs.JobError> jobError,
                      Optional<JobRun> lastTriggered, Optional<JobRun> lastCompleted,
                      Optional<JobRun> firstFailing, Optional<JobRun> lastSuccess) {
-        Objects.requireNonNull(type, "jobType cannot be null");
-        Objects.requireNonNull(jobError, "jobError cannot be null");
-        Objects.requireNonNull(lastTriggered, "lastTriggered cannot be null");
-        Objects.requireNonNull(lastCompleted, "lastCompleted cannot be null");
-        Objects.requireNonNull(firstFailing, "firstFailing cannot be null");
-        Objects.requireNonNull(lastSuccess, "lastSuccess cannot be null");
+        requireNonNull(type, "jobType cannot be null");
+        requireNonNull(jobError, "jobError cannot be null");
+        requireNonNull(lastTriggered, "lastTriggered cannot be null");
+        requireNonNull(lastCompleted, "lastCompleted cannot be null");
+        requireNonNull(firstFailing, "firstFailing cannot be null");
+        requireNonNull(lastSuccess, "lastSuccess cannot be null");
 
         this.type = type;
         this.jobError = jobError;
@@ -160,16 +162,12 @@ public class JobStatus {
         private final String reason;
         private final Instant at;
 
-        public JobRun(long id, Version version, ApplicationVersion applicationVersion,String reason, Instant at) {
-            Objects.requireNonNull(version, "version cannot be null");
-            Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
-            Objects.requireNonNull(reason, "Reason cannot be null");
-            Objects.requireNonNull(at, "at cannot be null");
+        public JobRun(long id, Version version, ApplicationVersion applicationVersion, String reason, Instant at) {
             this.id = id;
-            this.version = version;
-            this.applicationVersion = applicationVersion;
-            this.reason = reason;
-            this.at = at;
+            this.version = requireNonNull(version);
+            this.applicationVersion = requireNonNull(applicationVersion);
+            this.reason = requireNonNull(reason);
+            this.at = requireNonNull(at);
         }
 
         /** Returns the id of this run of this job, or -1 if not known */

@@ -296,6 +296,7 @@ public class ApplicationController {
                         ? application.oldestDeployedApplication().orElse(triggered.get().applicationVersion())
                         : triggered.get().applicationVersion();
                 applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), applicationVersion.id()));
+                validateRun(application, zone, platformVersion, applicationVersion);
             }
 
             validate(applicationPackage.deploymentSpec());
@@ -314,12 +315,6 @@ public class ApplicationController {
                 application = deleteUnreferencedDeploymentJobs(application);
 
                 store(application); // store missing information even if we fail deployment below
-            }
-
-            // TODO jvenstad: Use code from DeploymentTrigger? Also, validate application version.
-            // Validate the change being deployed
-            if ( ! canDeployDirectly) {
-                validateChange(application, zone, platformVersion);
             }
 
             // Assign global rotation
@@ -602,26 +597,20 @@ public class ApplicationController {
                 .forEach(zone -> {
                     if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
                                                                        zone.region().orElse(null)))) {
-                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in " +
-                                                           "this system!");
+                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
                     }
                 });
     }
 
-    /** Verify that what we want to deploy is tested and that we aren't downgrading */
-    private void validateChange(Application application, ZoneId zone, Version version) {
-        if ( ! application.deploymentJobs().isDeployableTo(zone.environment(), application.change())) {
-            throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                               " as " + application.change() + " is not tested");
-        }
-        // TODO jvenstad: Rewrite to use decided versions. Simplifies the below.
-        Deployment existingDeployment = application.deployments().get(zone);
-        if (zone.environment().isProduction() && existingDeployment != null &&
-            existingDeployment.version().isAfter(version)) {
-            throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                               " as the requested version " + version + " is older than" +
-                                               " the current version " + existingDeployment.version());
-        }
+    /** Verify that we don't downgrade an existing production deployment. */
+    private void validateRun(Application application, ZoneId zone, Version platformVersion, ApplicationVersion applicationVersion) {
+        Deployment deployment = application.deployments().get(zone);
+        if (   zone.environment().isProduction() && deployment != null
+            && (   platformVersion.compareTo(deployment.version()) < 0
+                || applicationVersion.compareTo(deployment.applicationVersion()) < 0))
+            throw new IllegalArgumentException(String.format("Rejecting deployment of %s to %s, as the requested versions (platform: %s, application: %s)" +
+                                                             " are older than the currently deployed (platform: %s, application: %s).",
+                                                             application, zone, platformVersion, applicationVersion, deployment.version(), deployment.applicationVersion()));
     }
 
     public RotationRepository rotationRepository() {
