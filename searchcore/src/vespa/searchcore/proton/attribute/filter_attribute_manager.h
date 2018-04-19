@@ -35,8 +35,8 @@ public:
     virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
     virtual void getAttributeList(std::vector<search::AttributeGuard> &list) const override;
     virtual search::SerialNum getFlushedSerialNum(const vespalib::string &name) const override;
-    virtual search::AttributeGuard::UP getAttributeStableEnum(const vespalib::string &) const override;
     virtual search::attribute::IAttributeContext::UP createContext() const override;
+    virtual std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override;
 
     // Implements proton::IAttributeManager
     virtual IAttributeManager::SP create(const AttributeCollectionSpec &) const override;

@@ -339,7 +339,7 @@ struct MyAttributeManager : public proton::IAttributeManager
     virtual AttributeGuard::UP getAttribute(const string &) const override {
         abort();
     }
-    virtual AttributeGuard::UP getAttributeStableEnum(const string &) const override {
+    virtual std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool) const override {
         abort();
     }
     virtual void getAttributeList(std::vector<AttributeGuard> &) const override {

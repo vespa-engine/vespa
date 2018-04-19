@@ -2,6 +2,7 @@
 
 #include "attributecontext.h"
 #include "attributevector.h"
+#include "attribute_read_guard.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 using namespace search;
@@ -14,20 +15,19 @@ AttributeContext::getAttribute(AttributeMap & map, const string & name, bool sta
 {
     AttributeMap::const_iterator itr = map.find(name);
     if (itr != map.end()) {
-        return itr->second->get();
-    } else {
-        AttributeGuard::UP ret;
-        if (stableEnum) {
-            ret = _manager.getAttributeStableEnum(name);
+        if (itr->second) {
+            return itr->second->attribute();
         } else {
-            ret = _manager.getAttribute(name);
+            return nullptr;
         }
-        if (ret) {
-            const AttributeGuard & guard = *ret;
-            map[name] = std::move(ret);
-            return guard.get();
+    } else {
+        auto readGuard = _manager.getAttributeReadGuard(name, stableEnum);
+        const IAttributeVector *attribute = nullptr;
+        if (readGuard) {
+            attribute = readGuard->attribute();
         }
-        return nullptr;
+        map[name] = std::move(readGuard);
+        return attribute;
     }
 }
 

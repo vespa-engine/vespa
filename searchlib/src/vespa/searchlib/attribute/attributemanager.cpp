@@ -3,6 +3,7 @@
 #include "attributemanager.h"
 #include "attributecontext.h"
 #include "attributefactory.h"
+#include "attribute_read_guard.h"
 #include "attrvector.h"
 #include "attributefile.h"
 #include "interlock.h"
@@ -177,15 +178,15 @@ AttributeManager::getAttribute(const string & name) const
     return attrGuard;
 }
 
-AttributeGuard::UP
-AttributeManager::getAttributeStableEnum(const string & name) const
+std::unique_ptr<attribute::AttributeReadGuard>
+AttributeManager::getAttributeReadGuard(const string &name, bool stableEnumGuard) const
 {
-    AttributeGuard::UP attrGuard(new AttributeEnumGuard(VectorHolder()));
     const VectorHolder * vh = findAndLoadAttribute(name);
-    if ( vh != NULL ) {
-        attrGuard.reset(new AttributeEnumGuard(*vh));
+    if (vh != nullptr) {
+        return (*vh)->makeReadGuard(stableEnumGuard);
+    } else {
+        return std::unique_ptr<attribute::AttributeReadGuard>();
     }
-    return attrGuard;
 }
 
 bool

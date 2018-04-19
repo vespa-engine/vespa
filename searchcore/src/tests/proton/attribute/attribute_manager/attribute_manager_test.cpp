@@ -23,11 +23,11 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
@@ -268,9 +268,9 @@ TEST_F("require that attributes are added", Fixture)
     EXPECT_TRUE(f.addAttribute("a1").get() != NULL);
     EXPECT_TRUE(f.addAttribute("a2").get() != NULL);
     EXPECT_EQUAL("a1", (*f._m.getAttribute("a1"))->getName());
-    EXPECT_EQUAL("a1", (*f._m.getAttributeStableEnum("a1"))->getName());
+    EXPECT_EQUAL("a1", (*f._m.getAttributeReadGuard("a1", true))->getName());
     EXPECT_EQUAL("a2", (*f._m.getAttribute("a2"))->getName());
-    EXPECT_EQUAL("a2", (*f._m.getAttributeStableEnum("a2"))->getName());
+    EXPECT_EQUAL("a2", (*f._m.getAttributeReadGuard("a2", true))->getName());
     EXPECT_TRUE(!f._m.getAttribute("not")->valid());
 }
 
@@ -279,7 +279,7 @@ TEST_F("require that predicate attributes are added", Fixture)
     EXPECT_TRUE(f._m.addAttribute({"p1", AttributeUtils::getPredicateConfig()},
                                   createSerialNum).get() != NULL);
     EXPECT_EQUAL("p1", (*f._m.getAttribute("p1"))->getName());
-    EXPECT_EQUAL("p1", (*f._m.getAttributeStableEnum("p1"))->getName());
+    EXPECT_EQUAL("p1", (*f._m.getAttributeReadGuard("p1", true))->getName());
 }
 
 TEST_F("require that attributes are flushed and loaded", BaseFixture)

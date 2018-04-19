@@ -8,6 +8,8 @@
 
 namespace search {
 
+namespace attribute { class AttributeReadGuard; }
+
 /**
  * This is an interface used to access all registered attribute vectors.
  **/
@@ -28,12 +30,12 @@ public:
 
     /**
      * Returns a view of the attribute vector with the given name.
-     * Makes sure that the underlying enum values are stable during the use of this attribute vector.
      *
      * @param name name of the attribute vector.
-     * @return view of the attribute vector or empty view if the attribute vector does not exists.
+     * @param stableEnumGuard flag to block enumeration changes during use of the attribute vector via the view.
+     * @return view of the attribute vector if the attribute vector exists
      **/
-    virtual AttributeGuard::UP getAttributeStableEnum(const string & name) const = 0;
+    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const = 0;
 
     /**
      * Fill the given list with all attribute vectors registered in this manager.

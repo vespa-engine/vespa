@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 
 using search::AttributeGuard;
 using searchcorespi::IFlushTarget;
@@ -70,10 +71,6 @@ FilterAttributeManager::FilterAttributeManager(const AttributeSet &acceptedAttri
 
 FilterAttributeManager::~FilterAttributeManager() { }
 
-search::AttributeGuard::UP
-FilterAttributeManager::getAttributeStableEnum(const vespalib::string &) const {
-    throw vespalib::IllegalArgumentException("Not implemented");
-}
 search::attribute::IAttributeContext::UP
 FilterAttributeManager::createContext() const {
     throw vespalib::IllegalArgumentException("Not implemented");
@@ -131,6 +128,15 @@ FilterAttributeManager::getAttribute(const vespalib::string &name) const
         return _mgr->getAttribute(name);
     }
     return AttributeGuard::UP();
+}
+
+std::unique_ptr<search::attribute::AttributeReadGuard>
+FilterAttributeManager::getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const
+{
+    if (acceptAttribute(name)) {
+        return _mgr->getAttributeReadGuard(name, stableEnumGuard);
+    }
+    return std::unique_ptr<search::attribute::AttributeReadGuard>();
 }
 
 void

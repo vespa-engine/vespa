@@ -5,6 +5,7 @@
 #include <vespa/searchlib/attribute/attribute_weighted_set_blueprint.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -50,8 +51,13 @@ public:
         return AttributeGuard::UP(new AttributeGuard(lookup(name)));
     }
 
-    virtual AttributeGuard::UP getAttributeStableEnum(const vespalib::string &name) const override {
-        return AttributeGuard::UP(new AttributeEnumGuard(lookup(name)));
+    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override {
+        auto vector = lookup(name);
+        if (vector) {
+            return vector->makeReadGuard(stableEnumGuard);
+        } else {
+            return std::unique_ptr<attribute::AttributeReadGuard>();
+        }
     }
 
     virtual void getAttributeList(std::vector<AttributeGuard> &list) const override {
