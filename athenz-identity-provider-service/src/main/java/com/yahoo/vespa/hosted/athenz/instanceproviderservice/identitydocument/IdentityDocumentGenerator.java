@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
@@ -80,7 +81,7 @@ public class IdentityDocumentGenerator {
 
         return new IdentityDocument(
                 providerUniqueId,
-                "localhost", // TODO: Add configserver hostname
+                HostName.getLocalhost(),
                 node.hostname(),
                 Instant.now());
     }
