@@ -590,7 +590,7 @@ private:
     BaseName               _baseFileName;
     Config                 _config;
     std::shared_ptr<attribute::Interlock> _interlock;
-    std::shared_timed_mutex _enumLock;
+    mutable std::shared_timed_mutex _enumLock;
     GenerationHandler      _genHandler;
     GenerationHolder       _genHolder;
     Status                 _status;
@@ -624,6 +624,8 @@ private:
      * reader/writer guards.
      */
     std::shared_timed_mutex & getEnumLock() { return _enumLock; }
+
+    class ReadGuard;
 
     friend class ComponentGuard<AttributeVector>;
     friend class AttributeEnumGuard;
