@@ -113,6 +113,10 @@ const IDocumentWeightAttribute *ImportedAttributeVectorReadGuard::asDocumentWeig
     return nullptr;
 }
 
+const tensor::ITensorAttribute *ImportedAttributeVectorReadGuard::asTensorAttribute() const {
+    return nullptr;
+}
+
 BasicType::Type ImportedAttributeVectorReadGuard::getBasicType() const {
     return _target_attribute.getBasicType();
 }

@@ -12,6 +12,10 @@ namespace search {
 class IDocumentWeightAttribute;
 class QueryTermSimple;
 
+namespace tensor {
+class ITensorAttribute;
+}
+
 namespace attribute {
 
 class ISearchContext;
@@ -271,6 +275,13 @@ public:
      * @return document weight attribute or nullptr if not supported.
      */
     virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const = 0;
+
+    /**
+     * Type-safe down-cast to a tensor attribute.
+     *
+     * @return tensor attribute or nullptr if not supported.
+     */
+    virtual const tensor::ITensorAttribute *asTensorAttribute() const = 0;
 
     /**
      * Returns the basic type of this attribute vector.

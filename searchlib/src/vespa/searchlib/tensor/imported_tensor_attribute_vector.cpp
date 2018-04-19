@@ -16,8 +16,7 @@ ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref
     : ImportedAttributeVector(name, std::move(reference_attribute),
                               std::move(target_attribute),
                               std::move(document_meta_store),
-                              use_search_cache),
-      _target_tensor_attribute(dynamic_cast<const ITensorAttribute &>(*_target_attribute))
+                              use_search_cache)
 {
 }
 
@@ -29,8 +28,7 @@ ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref
     : ImportedAttributeVector(name, std::move(reference_attribute),
                               std::move(target_attribute),
                               std::move(document_meta_store),
-                              std::move(search_cache)),
-      _target_tensor_attribute(dynamic_cast<const ITensorAttribute &>(*_target_attribute))
+                              std::move(search_cache))
 {
 }
 

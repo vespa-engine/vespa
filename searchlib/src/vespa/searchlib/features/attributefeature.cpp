@@ -391,7 +391,7 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 " Returning empty tensor.", attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
-    const ITensorAttribute *tensorAttribute = dynamic_cast<const ITensorAttribute *>(attribute);
+    const ITensorAttribute *tensorAttribute = attribute->asTensorAttribute();
     if (tensorAttribute == nullptr) {
         LOG(warning, "The attribute vector '%s' could not be converted to a tensor attribute."
                 " Returning empty tensor.", attribute->getName().c_str());

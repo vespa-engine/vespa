@@ -11,12 +11,18 @@ ImportedTensorAttributeVectorReadGuard::ImportedTensorAttributeVectorReadGuard(c
                                                                                bool stableEnumGuard)
     : ImportedAttributeVectorReadGuard(imported_attribute,
                                        stableEnumGuard),
-      _target_tensor_attribute(dynamic_cast<const ITensorAttribute &>(*imported_attribute.getTargetAttribute()))
+      _target_tensor_attribute(*imported_attribute.getTargetAttribute()->asTensorAttribute())
 {
 }
 
 ImportedTensorAttributeVectorReadGuard::~ImportedTensorAttributeVectorReadGuard()
 {
+}
+
+const ITensorAttribute *
+ImportedTensorAttributeVectorReadGuard::asTensorAttribute() const
+{
+    return this;
 }
 
 std::unique_ptr<Tensor>

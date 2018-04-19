@@ -15,7 +15,7 @@ class ImportedTensorAttributeVector : public attribute::ImportedAttributeVector
 {
     using ReferenceAttribute = attribute::ReferenceAttribute;
     using BitVectorSearchCache = attribute::BitVectorSearchCache;
-    const ITensorAttribute &_target_tensor_attribute;
+
 public:
     ImportedTensorAttributeVector(vespalib::stringref name,
                                   std::shared_ptr<ReferenceAttribute> reference_attribute,

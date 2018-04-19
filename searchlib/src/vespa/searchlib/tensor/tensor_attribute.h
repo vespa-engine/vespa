@@ -35,6 +35,8 @@ public:
     TensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg,
                     TensorStore &tensorStore);
     virtual ~TensorAttribute();
+    virtual const ITensorAttribute *asTensorAttribute() const override;
+
     virtual uint32_t clearDoc(DocId docId) override;
     virtual void onCommit() override;
     virtual void onUpdateStat() override;
