@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
  */
 public class Reference extends TypeContext.Name {
 
-    private final String name;
     private final Arguments arguments;
 
     /**
@@ -33,12 +32,9 @@ public class Reference extends TypeContext.Name {
         super(name);
         Objects.requireNonNull(name, "name cannot be null");
         Objects.requireNonNull(arguments, "arguments cannot be null");
-        this.name = name;
         this.arguments = arguments;
         this.output = output;
     }
-
-    public String name() { return name; }
 
     public Arguments arguments() { return arguments; }
 
@@ -111,11 +107,11 @@ public class Reference extends TypeContext.Name {
     }
 
     public Reference withArguments(Arguments arguments) {
-        return new Reference(name, arguments, output);
+        return new Reference(name(), arguments, output);
     }
 
     public Reference withOutput(String output) {
-        return new Reference(name, arguments, output);
+        return new Reference(name(), arguments, output);
     }
 
     @Override
@@ -123,7 +119,7 @@ public class Reference extends TypeContext.Name {
         if (o == this) return true;
         if (!(o instanceof Reference)) return false;
         Reference other = (Reference) o;
-        if (!Objects.equals(other.name, this.name)) return false;
+        if (!Objects.equals(other.name(), this.name())) return false;
         if (!Objects.equals(other.arguments, this.arguments)) return false;
         if (!Objects.equals(other.output, this.output)) return false;
         return true;
@@ -131,7 +127,7 @@ public class Reference extends TypeContext.Name {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, arguments, output);
+        return Objects.hash(name(), arguments, output);
     }
 
     @Override
@@ -140,7 +136,7 @@ public class Reference extends TypeContext.Name {
     }
 
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        StringBuilder b = new StringBuilder(name);
+        StringBuilder b = new StringBuilder(name());
         if (arguments != null && arguments.expressions().size() > 0)
             b.append("(").append(arguments.expressions().stream()
                                                         .map(node -> node.toString(context, path, parent))
