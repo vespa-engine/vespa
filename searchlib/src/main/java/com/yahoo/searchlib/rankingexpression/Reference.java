@@ -44,9 +44,7 @@ public class Reference extends TypeContext.Name {
      * Creates a reference to a simple feature consisting of a name and a single argument
      */
     public static Reference simple(String name, String argumentValue) {
-        return new Reference(name,
-                             new Arguments(new ReferenceNode(argumentValue)),
-                             null);
+        return new Reference(name, new Arguments(new ReferenceNode(argumentValue)), null);
     }
 
     /**
@@ -137,7 +135,7 @@ public class Reference extends TypeContext.Name {
 
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
         StringBuilder b = new StringBuilder(name());
-        if (arguments != null && arguments.expressions().size() > 0)
+        if (arguments.expressions().size() > 0)
             b.append("(").append(arguments.expressions().stream()
                                                         .map(node -> node.toString(context, path, parent))
                                                         .collect(Collectors.joining(","))).append(")");
