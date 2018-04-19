@@ -8,7 +8,6 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
@@ -16,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
 import java.net.URI;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -34,6 +34,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     private final BiPredicate<Principal, URI> authorizer;
     private final BiConsumer<ErrorResponse, ResponseHandler> rejectAction;
+    private final HostAuthenticator hostAuthenticator;
 
     @Inject
     public AuthorizationFilter(Zone zone, NodeRepository nodeRepository, NodeRepositoryConfig nodeRepositoryConfig) {
@@ -45,44 +46,51 @@ public class AuthorizationFilter implements SecurityRequestFilter {
                                 Stream.of(HostName.getLocalhost()),
                                 Stream.of(nodeRepositoryConfig.hostnameWhitelist().split(","))
                         ).filter(hostname -> !hostname.isEmpty()).collect(Collectors.toSet())),
-                AuthorizationFilter::logAndReject
+                AuthorizationFilter::logAndReject,
+                new HostAuthenticator(zone, nodeRepository)
         );
     }
 
     AuthorizationFilter(BiPredicate<Principal, URI> authorizer,
-                        BiConsumer<ErrorResponse, ResponseHandler> rejectAction) {
+                        BiConsumer<ErrorResponse, ResponseHandler> rejectAction,
+                        HostAuthenticator hostAuthenticator) {
         this.authorizer = authorizer;
         this.rejectAction = rejectAction;
+        this.hostAuthenticator = hostAuthenticator;
     }
 
     @Override
     public void filter(DiscFilterRequest request, ResponseHandler handler) {
-        Optional<String> commonName = request.getClientCertificateChain().stream()
-                .findFirst()
-                .flatMap(AuthorizationFilter::commonName);
-        if (commonName.isPresent()) {
-            if (!authorizer.test(commonName::get, request.getUri())) {
-                rejectAction.accept(ErrorResponse.forbidden(
-                        String.format("%s %s denied for %s: Invalid credentials", request.getMethod(),
-                                      request.getUri().getPath(), request.getRemoteAddr())), handler
-                );
-            }
-        } else {
-            rejectAction.accept(ErrorResponse.unauthorized(
-                    String.format("%s %s denied for %s: Missing credentials", request.getMethod(),
-                                  request.getUri().getPath(), request.getRemoteAddr())), handler
-            );
+        validateAccess(request)
+                .ifPresent(errorResponse -> rejectAction.accept(errorResponse, handler));
+    }
+
+    private Optional<ErrorResponse> validateAccess(DiscFilterRequest request) {
+        try {
+            List<X509Certificate> clientCertificateChain = request.getClientCertificateChain();
+            if (clientCertificateChain.isEmpty())
+                return Optional.of(ErrorResponse.unauthorized(createErrorMessage(request, "Missing credentials")));
+            TlsPrincipal hostIdentity = hostAuthenticator.authenticate(clientCertificateChain);
+            if (!authorizer.test(hostIdentity, request.getUri()))
+                return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials")));
+            request.setUserPrincipal(hostIdentity);
+            return Optional.empty();
+        } catch (HostAuthenticator.AuthenticationException e) {
+            return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials: " + e.getMessage())));
         }
+    }
+
+    private static String createErrorMessage(DiscFilterRequest request, String message) {
+        return String.format("%s %s denied for %s: %s",
+                             request.getMethod(),
+                             request.getUri().getPath(),
+                             request.getRemoteAddr(),
+                             message);
     }
 
     private static void logAndReject(ErrorResponse response, ResponseHandler handler) {
         log.warning(response.message());
         FilterUtils.write(response, handler);
-    }
-
-    /** Read common name (CN) from certificate */
-    private static Optional<String> commonName(X509Certificate certificate) {
-        return X509CertificateUtils.getSubjectCommonNames(certificate).stream().findFirst();
     }
 
 }
