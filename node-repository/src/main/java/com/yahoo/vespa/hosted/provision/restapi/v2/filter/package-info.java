@@ -2,4 +2,7 @@
 /**
  * @author mpolden
  */
+@ExportPackage
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
+
+import com.yahoo.osgi.annotation.ExportPackage;
