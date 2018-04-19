@@ -57,7 +57,7 @@ public class IdentityDocumentGenerator {
                     encodedIdentityDocument,
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
-                    identityDocument.providerUniqueId.asString(),
+                    identityDocument.providerUniqueId.toVespaUniqueInstanceId().asDottedString(),
                     toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
                     zoneConfig.domain() + "." + zoneConfig.serviceName(),
                     zoneConfig.ztsUrl(),

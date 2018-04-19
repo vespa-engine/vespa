@@ -3,6 +3,6 @@
  * @author mortent
  */
 @ExportPackage
-package com.yahoo.vespa.athenz.identityprovider;
+package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.yahoo.osgi.annotation.ExportPackage;
