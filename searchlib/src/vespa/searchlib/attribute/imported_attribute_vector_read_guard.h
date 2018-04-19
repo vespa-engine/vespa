@@ -5,6 +5,7 @@
 #include "attribute_read_guard.h"
 #include "attributeguard.h"
 #include "imported_attribute_vector.h"
+#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 
 namespace search { class IGidToLidMapper; }

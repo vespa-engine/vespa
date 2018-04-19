@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_tensor_attribute_vector_read_guard.h"
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/eval/tensor/tensor.h>
 
 namespace search::tensor {

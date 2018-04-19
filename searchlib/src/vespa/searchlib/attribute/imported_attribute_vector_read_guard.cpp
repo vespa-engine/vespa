@@ -2,6 +2,7 @@
 
 #include "imported_attribute_vector_read_guard.h"
 #include "imported_search_context.h"
+#include "reference_attribute.h"
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/query/queryterm.h>

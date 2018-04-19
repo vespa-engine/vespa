@@ -3,6 +3,7 @@
 #include "bitvector_search_cache.h"
 #include "imported_search_context.h"
 #include "imported_attribute_vector.h"
+#include "reference_attribute.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include "attributeiterators.hpp"

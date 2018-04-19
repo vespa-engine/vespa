@@ -3,19 +3,19 @@
 #pragma once
 
 #include "readable_attribute_vector.h"
-#include "reference_attribute.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
 namespace search {
 
-class AttributeGuard;
+class AttributeVector;
 class AttributeEnumGuard;
 class IDocumentMetaStoreContext;
 
 namespace attribute {
 
 class BitVectorSearchCache;
+class ReferenceAttribute;
 
 /**
  * Attribute vector which does not store values of its own, but rather serves as a

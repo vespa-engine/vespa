@@ -2,6 +2,7 @@
 
 #include "imported_attribute_vector_factory.h"
 #include "imported_attribute_vector.h"
+#include "attributevector.h"
 #include <vespa/searchlib/tensor/imported_tensor_attribute_vector.h>
 
 namespace search::attribute {
