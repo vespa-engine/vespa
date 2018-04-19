@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/test/imported_attribute_fixture.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/eval/tensor/tensor_factory.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/searchlib/test/imported_attribute_fixture.h>
 
 using search::attribute::IAttributeVector;
 using search::tensor::ITensorAttribute;
@@ -19,22 +19,9 @@ using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
 using vespalib::tensor::TensorFactory;
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
-// TODO: remove template argument (read guard is always used now)
-template <bool useReadGuard = false>
-struct FixtureBase : public ImportedAttributeFixture
-{
-    FixtureBase()
-        : ImportedAttributeFixture()
-    {
-    }
-
-};
-
-using Fixture = FixtureBase<false>;
-using ReadGuardFixture = FixtureBase<true>;
+using Fixture = ImportedAttributeFixture;
 
 TEST_F("Accessors return expected attributes", Fixture) {
     EXPECT_EQUAL(f.imported_attr->getReferenceAttribute().get(),
@@ -117,11 +104,8 @@ TEST_F("makeReadGuard(true) acquires enum guard on target and regular guard on r
     EXPECT_FALSE(has_active_enum_guards(*f.target_attr));
 }
 
-template <typename Fixture>
-void
-checkSingleInt()
+TEST_F("Single-valued integer attribute values can be retrieved via reference", Fixture)
 {
-    Fixture f;
     reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
             f, BasicType::INT32,
             {{DocId(1), dummy_gid(3), DocId(3), 1234},
@@ -131,38 +115,17 @@ checkSingleInt()
     EXPECT_EQUAL(5678, f.get_imported_attr()->getInt(DocId(3)));
 }
 
-TEST("Single-valued integer attribute values can be retrieved via reference") {
-    TEST_DO(checkSingleInt<Fixture>());
-    TEST_DO(checkSingleInt<ReadGuardFixture>());
-}
-
-template <typename Fixture>
-void
-checkSingleMappedValueCount()
+TEST_F("getValueCount() is 1 for mapped single value attribute", Fixture)
 {
-    Fixture f;
     reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
             f, BasicType::INT32, {{DocId(1), dummy_gid(3), DocId(3), 1234}});
     EXPECT_EQUAL(1u, f.get_imported_attr()->getValueCount(DocId(1)));
 }
 
-TEST("getValueCount() is 1 for mapped single value attribute") {
-    TEST_DO(checkSingleMappedValueCount<Fixture>());
-    TEST_DO(checkSingleMappedValueCount<ReadGuardFixture>());
-}
-
-template <typename Fixture>
-void
-checkSingleNonMappedValueCount()
+TEST_F("getValueCount() is 0 for non-mapped single value attribute", Fixture)
 {
-    Fixture f;
     add_n_docs_with_undefined_values(*f.reference_attr, 3);
     EXPECT_EQUAL(0u, f.get_imported_attr()->getValueCount(DocId(2)));
-}
-
-TEST("getValueCount() is 0 for non-mapped single value attribute") {
-    TEST_DO(checkSingleNonMappedValueCount<Fixture>());
-    TEST_DO(checkSingleNonMappedValueCount<ReadGuardFixture>());
 }
 
 TEST_F("getMaxValueCount() is 1 for single value attribute vectors", Fixture) {
@@ -203,20 +166,12 @@ TEST_F("Weighted integer attribute values can be retrieved via reference", Fixtu
     assert_multi_value_matches<WeightedInt>(f, DocId(3), doc7_values);
 }
 
-template <class Fixture>
-void
-checkLidWithNotPresentGid()
+TEST_F("LID with not present GID reference mapping returns default value", Fixture)
 {
-    Fixture f;
     f.target_attr->addReservedDoc();
     add_n_docs_with_undefined_values(*f.reference_attr, 2);
     EXPECT_EQUAL(f.target_attr->getInt(DocId(0)), // Implicit default undefined value
                  f.get_imported_attr()->getInt(DocId(1)));
-}
-
-TEST("LID with not present GID reference mapping returns default value") {
-    TEST_DO(checkLidWithNotPresentGid<Fixture>());
-    TEST_DO(checkLidWithNotPresentGid<ReadGuardFixture>());
 }
 
 TEST_F("Singled-valued floating point attribute values can be retrieved via reference", Fixture) {
@@ -251,9 +206,8 @@ TEST_F("Weighted floating point attribute values can be retrieved via reference"
     assert_multi_value_matches<WeightedFloat>(f, DocId(3), doc7_values);
 }
 
-template <bool useReadGuard = false>
-struct SingleStringAttrFixtureBase : FixtureBase<useReadGuard> {
-    SingleStringAttrFixtureBase() : FixtureBase<useReadGuard>() {
+struct SingleStringAttrFixture : Fixture {
+    SingleStringAttrFixture() : Fixture() {
         setup();
     }
 
@@ -265,39 +219,19 @@ struct SingleStringAttrFixtureBase : FixtureBase<useReadGuard> {
     }
 };
 
-using SingleStringAttrFixture = SingleStringAttrFixtureBase<false>;
-using ReadGuardSingleStringAttrFixture = SingleStringAttrFixtureBase<true>;
-
-template <class Fixture>
-void
-checkSingleString()
+TEST_F("Single-valued string attribute values can be retrieved via reference", SingleStringAttrFixture)
 {
-    Fixture f;
     char buf[64];
     EXPECT_EQUAL(vespalib::string("foo"), f.get_imported_attr()->getString(DocId(2), buf, sizeof(buf)));
     EXPECT_EQUAL(vespalib::string("bar"), f.get_imported_attr()->getString(DocId(4), buf, sizeof(buf)));
 }
 
-
-TEST("Single-valued string attribute values can be retrieved via reference") {
-    TEST_DO(checkSingleString<SingleStringAttrFixture>());
-    TEST_DO(checkSingleString<ReadGuardSingleStringAttrFixture>());
-}
-
-template <class Fixture>
-void
-checkSingleStringEnum()
+TEST_F("getEnum() returns target vector enum via reference", SingleStringAttrFixture)
 {
-    Fixture f;
     EXPECT_EQUAL(f.target_attr->getEnum(DocId(3)),
                  f.get_imported_attr()->getEnum(DocId(2)));
     EXPECT_EQUAL(f.target_attr->getEnum(DocId(7)),
                  f.get_imported_attr()->getEnum(DocId(4)));
-}
-
-TEST("getEnum() returns target vector enum via reference") {
-    TEST_DO(checkSingleStringEnum<SingleStringAttrFixture>());
-    TEST_DO(checkSingleStringEnum<ReadGuardSingleStringAttrFixture>());
 }
 
 TEST_F("findEnum() returns target vector enum via reference", SingleStringAttrFixture) {
@@ -517,8 +451,6 @@ void check_onSerializeForAscendingSort_is_forwarded_with_remapped_lid() {
 TEST("onSerializeForAscendingSort() is forwarded with remapped LID to target vector") {
     TEST_DO(check_onSerializeForAscendingSort_is_forwarded_with_remapped_lid<
                     SerializeFixture<SingleStringAttrFixture>>());
-    TEST_DO(check_onSerializeForAscendingSort_is_forwarded_with_remapped_lid<
-                    SerializeFixture<ReadGuardSingleStringAttrFixture>>());
 }
 
 template <typename FixtureT>
@@ -539,18 +471,15 @@ void check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid() {
 TEST("onSerializeForDescendingSort() is forwarded with remapped LID to target vector") {
     TEST_DO(check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid<
                     SerializeFixture<SingleStringAttrFixture>>());
-    TEST_DO(check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid<
-                    SerializeFixture<ReadGuardSingleStringAttrFixture>>());
 }
 
-template <bool useReadGuard = false>
-struct TensorAttrFixtureBase : FixtureBase<useReadGuard> {
+struct TensorAttrFixture : Fixture {
     vespalib::tensor::DefaultTensor::builder builder;
     std::shared_ptr<Tensor> tensor1;
     std::shared_ptr<Tensor> tensor2;
 
-    TensorAttrFixtureBase(bool dense)
-        : FixtureBase<useReadGuard>(),
+    TensorAttrFixture(bool dense)
+        : Fixture(),
           builder(),
           tensor1(),
           tensor2()
@@ -602,10 +531,6 @@ struct TensorAttrFixtureBase : FixtureBase<useReadGuard> {
     }
 };
 
-using TensorAttrFixture = TensorAttrFixtureBase<false>;
-using ReadGuardTensorAttrFixture = TensorAttrFixtureBase<true>;
-
-
 
 TEST_F("Imported sparse tensor", TensorAttrFixture(false))
 {
@@ -617,17 +542,6 @@ TEST_F("Imported dense tensor", TensorAttrFixture(true))
     f.assertTensors();
 }
 
-TEST_F("Imported sparse tensor read guard", ReadGuardTensorAttrFixture(false))
-{
-    f.assertTensors();
 }
-
-TEST_F("Imported dense tensor read guard", ReadGuardTensorAttrFixture(true))
-{
-    f.assertTensors();
-}
-
-} // attribute
-} // search
 
 TEST_MAIN() { TEST_RUN_ALL(); }
