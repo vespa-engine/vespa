@@ -12,7 +12,8 @@ namespace attribute {
 ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
         const ImportedAttributeVector &imported_attribute,
         bool stableEnumGuard)
-    : _imported_attribute(imported_attribute),
+    : AttributeReadGuard(this),
+      _imported_attribute(imported_attribute),
       _referencedLids(),
       _reference_attribute_guard(imported_attribute.getReferenceAttribute()),
       _target_attribute_guard(stableEnumGuard ? std::shared_ptr<AttributeVector>() : imported_attribute.getTargetAttribute()),

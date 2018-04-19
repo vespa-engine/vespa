@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "readable_attribute_vector.h"
 #include "reference_attribute.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
@@ -26,7 +27,7 @@ class BitVectorSearchCache;
  * Any accessor on the imported attribute for a local LID yields the same result as
  * if the same accessor were invoked with the target LID on the target attribute vector.
  */
-class ImportedAttributeVector {
+class ImportedAttributeVector : public ReadableAttributeVector {
 public:
     using SP = std::shared_ptr<ImportedAttributeVector>;
     ImportedAttributeVector(vespalib::stringref name,
@@ -58,10 +59,7 @@ public:
         return _name;
     }
 
-    /*
-     * Create an imported attribute with a snapshot of lid to lid mapping.
-     */
-    virtual std::unique_ptr<IAttributeVector> makeReadGuard(bool stableEnumGuard) const;
+    virtual std::unique_ptr<AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
 
 protected:
     vespalib::string                           _name;

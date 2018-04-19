@@ -4,6 +4,7 @@
 
 #include "address_space_usage.h"
 #include "changevector.h"
+#include "readable_attribute_vector.h"
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
@@ -110,7 +111,8 @@ public:
 
 class AttributeVector : public vespalib::Identifiable,
                         public attribute::IAttributeVector,
-                        public common::ICompactableLidSpace
+                        public common::ICompactableLidSpace,
+                        public attribute::ReadableAttributeVector
 {
 protected:
     using Config = search::attribute::Config;
@@ -663,6 +665,8 @@ public:
     virtual void shrinkLidSpace() override;
     virtual void onShrinkLidSpace();
     virtual size_t getEstimatedShrinkLidSpaceGain() const override;
+
+    virtual std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
 
     void setInterlock(const std::shared_ptr<attribute::Interlock> &interlock);
 

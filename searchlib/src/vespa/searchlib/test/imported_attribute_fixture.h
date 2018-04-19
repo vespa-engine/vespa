@@ -5,6 +5,7 @@
 #include "mock_gid_to_lid_mapping.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/globalid.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/floatbase.h>
@@ -137,6 +138,13 @@ std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term) {
     return std::make_unique<QueryTermSimple>(term, QueryTerm::WORD);
 }
 
+struct ReadGuardWrapper {
+    std::unique_ptr<AttributeReadGuard> guard;
+    ReadGuardWrapper(std::unique_ptr<AttributeReadGuard> guard_) : guard(std::move(guard_)) {}
+    const IAttributeVector *operator->() const { return guard->operator->(); }
+    const IAttributeVector &operator*() const { return guard->operator*(); }
+};
+
 struct ImportedAttributeFixture {
     bool use_search_cache;
     std::shared_ptr<AttributeVector> target_attr;
@@ -149,8 +157,8 @@ struct ImportedAttributeFixture {
 
     virtual ~ImportedAttributeFixture();
 
-    std::unique_ptr<IAttributeVector> get_imported_attr() const {
-        return imported_attr->makeReadGuard(false);
+    ReadGuardWrapper get_imported_attr() const {
+        return ReadGuardWrapper(imported_attr->makeReadGuard(false));
     }
 
     void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
