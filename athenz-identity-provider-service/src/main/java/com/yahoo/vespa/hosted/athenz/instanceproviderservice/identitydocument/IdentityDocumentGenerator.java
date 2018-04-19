@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
 import java.net.InetAddress;
+import java.net.URI;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.time.Instant;
@@ -64,7 +65,7 @@ public class IdentityDocumentGenerator {
                     identityDocument.providerUniqueId.toVespaUniqueInstanceId().asDottedString(),
                     toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
                     zoneConfig.domain() + "." + zoneConfig.serviceName(),
-                    zoneConfig.ztsUrl(),
+                    URI.create(zoneConfig.ztsUrl()),
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);

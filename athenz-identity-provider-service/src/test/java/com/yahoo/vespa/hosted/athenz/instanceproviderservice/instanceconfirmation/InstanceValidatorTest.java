@@ -17,6 +17,7 @@ import com.yahoo.vespa.athenz.identityprovider.api.bindings.ProviderUniqueId;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 import org.junit.Test;
 
+import java.net.URI;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.time.Instant;
@@ -138,7 +139,7 @@ public class InstanceValidatorTest {
                             identityDocument.providerUniqueId.toVespaUniqueInstanceId().asDottedString(),
                             "dnssuffix",
                             "service",
-                            "localhost/zts",
+                            URI.create("http://localhost/zts"),
                             1));
         } catch (Exception e) {
             throw new RuntimeException(e);

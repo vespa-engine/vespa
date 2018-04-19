@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -29,7 +30,7 @@ public class SignedIdentityDocument {
     @JsonProperty("provider-unique-id") public final String providerUniqueId; // String representation
     @JsonProperty("dns-suffix") public final String dnsSuffix;
     @JsonProperty("provider-service") public final String providerService;
-    @JsonProperty("zts-endpoint") public final String ztsEndpoint;
+    @JsonProperty("zts-endpoint") public final URI ztsEndpoint;
     @JsonProperty("document-version") public final int documentVersion;
 
     @JsonCreator
@@ -39,7 +40,7 @@ public class SignedIdentityDocument {
                                   @JsonProperty("provider-unique-id") String providerUniqueId,
                                   @JsonProperty("dns-suffix") String dnsSuffix,
                                   @JsonProperty("provider-service") String providerService,
-                                  @JsonProperty("zts-endpoint") String ztsEndpoint,
+                                  @JsonProperty("zts-endpoint") URI ztsEndpoint,
                                   @JsonProperty("document-version") int documentVersion) {
         this.rawIdentityDocument = rawIdentityDocument;
         this.identityDocument = parseIdentityDocument(rawIdentityDocument);
