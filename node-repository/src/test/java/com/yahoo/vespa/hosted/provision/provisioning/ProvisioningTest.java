@@ -140,6 +140,31 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void nodeVersionIsReturnedIfSet() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.dev, RegionName.from("us-east")));
+
+        ApplicationId application1 = tester.makeApplicationId();
+
+        tester.makeReadyNodes(4, "default");
+
+        // deploy
+        SystemState state1 = prepare(application1, 1, 1, 1, 1, "default", tester);
+        tester.activate(application1, state1.allHosts);
+
+        HostSpec host1 = state1.container0.iterator().next();
+        assertFalse(host1.version().isPresent());
+        Node node1 = tester.nodeRepository().getNode(host1.hostname()).get();
+        tester.nodeRepository().write(node1.with(node1.status().withVespaVersion(Version.fromString("1.2.3"))));
+
+        // redeploy
+        SystemState state2 = prepare(application1, 1, 1, 1, 1, "default", tester);
+        tester.activate(application1, state2.allHosts);
+
+        host1 = state2.container0.iterator().next();
+        assertEquals(Version.fromString("1.2.3"), host1.version().get());
+    }
+
+    @Test
     public void application_deployment_variable_application_size() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 

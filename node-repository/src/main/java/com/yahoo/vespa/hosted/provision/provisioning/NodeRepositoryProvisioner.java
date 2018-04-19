@@ -123,7 +123,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
             log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             hosts.add(new HostSpec(node.hostname(),
                                    node.allocation().orElseThrow(IllegalStateException::new).membership(),
-                                   node.flavor()));
+                                   node.flavor(),
+                                   node.status().vespaVersion()));
         }
         return hosts;
     }

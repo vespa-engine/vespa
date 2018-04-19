@@ -4,14 +4,22 @@ package com.yahoo.vespa.config.server.deploy;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.provision.Host;
+import com.yahoo.config.model.provision.Hosts;
+import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Version;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
+import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,9 +62,47 @@ public class HostedDeployTest {
         modelFactories.add(DeployTester.createModelFactory(Version.fromString("6.1.0"), clock));
         modelFactories.add(DeployTester.createModelFactory(Version.fromString("6.2.0"), clock));
         modelFactories.add(DeployTester.createModelFactory(Version.fromString("7.0.0"), clock));
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", modelFactories, createConfigserverConfig());
+        DeployTester tester = new DeployTester("src/test/apps/hosted/", modelFactories, createConfigserverConfig(), clock, Zone.defaultZone());
         ApplicationId app = tester.deployApp("myApp", Instant.now());
         assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
+
+    }
+
+    /** Test that unused versions are skipped in dev */
+    @Test
+    public void testDeployMultipleVersionsInDev() {
+        List<Host> hosts = new ArrayList<>();
+        hosts.add(createHost("host1", "6.0.0"));
+        hosts.add(createHost("host2", "6.0.2"));
+        hosts.add(createHost("host3", "7.1.0"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
+        ManualClock clock = new ManualClock("2016-10-09T00:00:00");
+
+        CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"), clock);
+        CountingModelFactory factory610 = DeployTester.createModelFactory(Version.fromString("6.1.0"), clock);
+        CountingModelFactory factory620 = DeployTester.createModelFactory(Version.fromString("6.2.0"), clock);
+        CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"), clock);
+        CountingModelFactory factory710 = DeployTester.createModelFactory(Version.fromString("7.1.0"), clock);
+        CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"), clock);
+        List<ModelFactory> modelFactories = new ArrayList<>();
+        modelFactories.add(factory600);
+        modelFactories.add(factory610);
+        modelFactories.add(factory620);
+        modelFactories.add(factory700);
+        modelFactories.add(factory710);
+        modelFactories.add(factory720);
+
+        DeployTester tester = new DeployTester("src/test/apps/hosted/", modelFactories, createConfigserverConfig(),
+                                               clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
+        ApplicationId app = tester.deployApp("myApp", Instant.now());
+        assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
+
+        assertEquals(1, factory600.creationCount());
+        assertEquals(0, factory610.creationCount());
+        assertEquals(1, factory620.creationCount());
+        assertEquals(0, factory700.creationCount());
+        assertEquals(1, factory710.creationCount());
+        assertEquals("Newest is always included", 1, factory720.creationCount());
     }
 
     @Test
@@ -105,6 +151,10 @@ public class HostedDeployTest {
                                               .configDefinitionsDir(Files.createTempDir().getAbsolutePath())
                                               .hostedVespa(true)
                                               .multitenant(true));
+    }
+
+    private Host createHost(String hostname, String version) {
+        return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.of(com.yahoo.component.Version.fromString(version)));
     }
 
 }

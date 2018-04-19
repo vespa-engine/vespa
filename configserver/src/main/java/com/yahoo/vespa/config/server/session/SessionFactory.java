@@ -10,9 +10,9 @@ import java.io.File;
  * A session factory responsible for creating deploy sessions.
  *
  * @author lulf
- * @since 5.1
  */
 public interface SessionFactory {
+
     /**
      * Creates a new deployment session from an application package.
      *
@@ -34,4 +34,5 @@ public interface SessionFactory {
      * @return a new session
      */
     LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger, TimeoutBudget timeoutBudget);
+
 }

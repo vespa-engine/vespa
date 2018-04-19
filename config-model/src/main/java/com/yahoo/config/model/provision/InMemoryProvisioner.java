@@ -103,7 +103,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         List<Host> defaultHosts = freeNodes.get("default");
         if (defaultHosts.isEmpty()) throw new IllegalArgumentException("No more hosts of default flavor available");
         Host newHost = freeNodes.removeValue("default", 0);
-        HostSpec hostSpec = new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.empty());
+        HostSpec hostSpec = new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.empty(), newHost.version());
         legacyMapping.put(alias, hostSpec);
         return hostSpec;
     }
@@ -148,7 +148,11 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     private HostSpec retire(HostSpec host) {
-        return new HostSpec(host.hostname(), host.aliases(), host.membership().get().retire());
+        return new HostSpec(host.hostname(),
+                            host.aliases(),
+                            host.flavor(),
+                            Optional.of(host.membership().get().retire()),
+                            host.version());
     }
 
     private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, String flavor, int nodesInGroup, int startIndex) {
@@ -160,7 +164,7 @@ public class InMemoryProvisioner implements HostProvisioner {
             if (freeNodes.get(flavor).isEmpty()) throw new IllegalArgumentException("Insufficient capacity of flavor '" + flavor + "'");
             Host newHost = freeNodes.removeValue(flavor, 0);
             ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
-            allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.of(membership)));
+            allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.of(membership), newHost.version()));
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 

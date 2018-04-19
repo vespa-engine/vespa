@@ -34,7 +34,8 @@ public class ZKApplicationPackageTest extends TestWithCurator {
     private static final String TEST_FLAVOR_NAME = "test-flavor";
     private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
     private static final AllocatedHosts ALLOCATED_HOSTS = AllocatedHosts.withHosts(
-            Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty())));
+            Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty(),
+                                               Optional.of(com.yahoo.component.Version.fromString("6.0.1")))));
 
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
@@ -67,6 +68,7 @@ public class ZKApplicationPackageTest extends TestWithCurator {
         AllocatedHosts readInfo = zkApp.getAllocatedHosts().get();
         assertThat(Utf8.toString(readInfo.toJson()), is(Utf8.toString(ALLOCATED_HOSTS.toJson())));
         assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
+        assertEquals("6.0.1", readInfo.getHosts().iterator().next().version().get().toString());
         assertTrue(zkApp.getDeployment().isPresent());
         assertThat(DeploymentSpec.fromXml(zkApp.getDeployment().get()).globalServiceId().get(), is("mydisc"));
     }

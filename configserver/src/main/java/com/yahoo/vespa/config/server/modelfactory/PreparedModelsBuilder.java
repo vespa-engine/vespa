@@ -62,7 +62,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
                                  ModelContext.Properties properties) {
-        super(modelFactoryRegistry, properties.hostedVespa());
+        super(modelFactoryRegistry, properties.hostedVespa(), properties.zone());
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
 

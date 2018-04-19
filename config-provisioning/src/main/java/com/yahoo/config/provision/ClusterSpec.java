@@ -38,6 +38,7 @@ public final class ClusterSpec {
     /** Returns the cluster id */
     public Id id() { return id; }
 
+    /** Returns the version of Vespa that we want this cluster to run */
     public Version vespaVersion() { return vespaVersion; }
 
     /** Returns the group within the cluster this specifies, or empty to specify the whole cluster */

@@ -49,12 +49,12 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
     private final Curator curator;
-    private final Zone zone;
     private final DeployLogger logger;
 
     public ActivatedModelsBuilder(TenantName tenant, long appGeneration, SessionZooKeeperClient zkClient, GlobalComponentRegistry globalComponentRegistry) {
         super(globalComponentRegistry.getModelFactoryRegistry(), 
-              globalComponentRegistry.getHostProvisioner().isPresent());
+              globalComponentRegistry.getHostProvisioner().isPresent(),
+              globalComponentRegistry.getZone());
         this.tenant = tenant;
         this.appGeneration = appGeneration;
         this.zkClient = zkClient;
@@ -63,7 +63,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.configDefinitionRepo = globalComponentRegistry.getConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
         this.curator = globalComponentRegistry.getCurator();
-        this.zone = globalComponentRegistry.getZone();
         this.logger = new SilentDeployLogger();
     }
 
@@ -109,7 +108,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         return createModelContextProperties(
                 applicationId,
                 configserverConfig,
-                zone,
+                zone(),
                 new Rotations(curator, Tenants.getTenantPath(tenant)).readRotationsFromZooKeeper(applicationId));
     }
 

@@ -14,7 +14,6 @@ import java.util.List;
  * application if one exists.
  *
  * @author hmusum
- * @since 5.11
  */
 public class SingleNodeProvisioner implements HostProvisioner {
 

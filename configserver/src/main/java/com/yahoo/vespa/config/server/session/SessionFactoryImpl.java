@@ -33,8 +33,7 @@ import java.util.logging.Logger;
  * Serves as the factory of sessions. Takes care of copying files to the correct folder and initializing the
  * session state.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 

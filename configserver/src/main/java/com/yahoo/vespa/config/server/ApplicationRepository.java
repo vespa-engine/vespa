@@ -210,7 +210,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Deployment deployFromPreparedSession(LocalSession session, Tenant tenant, Duration timeout) {
-        return Deployment.prepared(session, this, hostProvisioner, tenant,timeout, clock);
+        return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock);
     }
 
     // ---------------- Application operations ----------------------------------------------------------------
