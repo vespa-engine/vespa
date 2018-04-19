@@ -123,8 +123,8 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
-        tester.buildService().removeJob(canary0.deploymentJobs().projectId().getAsLong(), stagingTest.jobName());
-        tester.buildService().removeJob(canary1.deploymentJobs().projectId().getAsLong(), systemTest.jobName());
+        tester.buildService().remove(ControllerTester.buildJob(canary0, stagingTest));
+        tester.buildService().remove(ControllerTester.buildJob(canary1, systemTest));
         tester.readyJobTrigger().maintain();
         tester.readyJobTrigger().maintain();
 

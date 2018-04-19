@@ -119,7 +119,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             Cursor jobArray = jobTypesObject.setArray(jobType.jobName());
             jobs.forEach(job -> {
                 Cursor buildJobObject = jobArray.addObject();
-                buildJobObject.setString("id", job.id().toString());
+                buildJobObject.setString("id", job.applicationId().toString());
                 buildJobObject.setLong("projectId", job.projectId());
                 buildJobObject.setString("reason", job.reason());
                 buildJobObject.setString("change", job.change().toString());

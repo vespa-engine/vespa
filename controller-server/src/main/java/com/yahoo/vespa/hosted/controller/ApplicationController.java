@@ -37,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -283,7 +284,7 @@ public class ApplicationController {
             } else {
                 JobType jobType = JobType.from(controller.system(), zone)
                                          .orElseThrow(() -> new IllegalArgumentException("No job found for zone " + zone));
-                Optional<JobStatus.JobRun> triggered = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
+                Optional<JobRun> triggered = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
                         .flatMap(JobStatus::lastTriggered);
                 // TODO jvenstad: Verify this response with a test, and see that it sorts itself when triggered.
                 if ( ! triggered.isPresent())

@@ -40,6 +40,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob.of;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -125,10 +127,10 @@ public class ContainerControllerTester {
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
 
         MockBuildService buildService = (MockBuildService) containerTester.container().components().getComponent(MockBuildService.class.getName());
-        if (report.jobType() != DeploymentJobs.JobType.component && ! buildService.removeJob(report.projectId(), report.jobType().jobName()))
+        if (report.jobType() != component && ! buildService.remove(report.buildJob()))
             throw new IllegalArgumentException(report.jobType() + " is not running for " + report.applicationId());
         assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService.jobs(),
-                    buildService.removeJob(report.projectId(), report.jobType().jobName()));
+                    buildService.remove(report.buildJob()));
         try {
             Thread.sleep(1);
         } catch (InterruptedException e) {

@@ -7,7 +7,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -324,7 +323,7 @@ public class DeploymentTriggerTest {
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
         tester.deploymentTrigger().triggerReadyJobs(); // Schedules the blocked production job(s)
-        assertEquals(singletonList(new BuildService.BuildJob(app.deploymentJobs().projectId().getAsLong(), "production-us-west-1")),
+        assertEquals(singletonList(ControllerTester.buildJob(app.deploymentJobs().projectId().getAsLong(), "production-us-west-1")),
                      tester.buildService().jobs());
     }
 

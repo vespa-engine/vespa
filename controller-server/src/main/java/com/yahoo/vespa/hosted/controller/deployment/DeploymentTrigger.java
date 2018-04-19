@@ -129,7 +129,7 @@ public class DeploymentTrigger {
                                                 .collect(groupingBy(Job::jobType))
                                          // False for production jobs -- keep step order and make a task for each application.
                                          : entry.getValue().stream()
-                                                .collect(groupingBy(Job::id)))
+                                                .collect(groupingBy(Job::applicationId)))
                                          .values().stream()
                                          .map(jobs -> (Supplier<Long>) jobs.stream()
                                                                            .filter(job -> canTrigger(job) && trigger(job))
@@ -147,7 +147,7 @@ public class DeploymentTrigger {
         log.log(LogLevel.INFO, String.format("Attempting to trigger %s for %s, deploying %s: %s (platform: %s, application: %s)", job.jobType, job.id, job.change, job.reason, job.platformVersion, job.applicationVersion.id()));
 
         try {
-            buildService.trigger(new BuildService.BuildJob(job.projectId, job.jobType.jobName()));
+            buildService.trigger(job);
             applications().lockOrThrow(job.id, application -> applications().store(application.withJobTriggering(
                     job.jobType, new JobStatus.JobRun(-1, job.platformVersion, job.applicationVersion, job.reason, clock.instant()))));
             return true;
@@ -205,7 +205,7 @@ public class DeploymentTrigger {
     public boolean isRunning(Application application, JobType jobType) {
         return    ! application.deploymentJobs().statusOf(jobType)
                                .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at()))).orElse(false)
-               &&   buildService.isRunning(new BuildService.BuildJob(application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
+               &&   buildService.isRunning(BuildService.BuildJob.of(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
     }
 
     public Job forcedDeploymentJob(Application application, JobType jobType, String reason) {
@@ -342,11 +342,9 @@ public class DeploymentTrigger {
         return Optional.ofNullable(application.deployments().get(jobType.zone(controller.system()).get()));
     }
 
-    public static class Job {
+    public static class Job extends BuildService.BuildJob {
 
-        private final ApplicationId id;
         private final JobType jobType;
-        private final long projectId;
         private final String reason;
         private final Instant availableSince;
         private final Collection<JobType> concurrentlyWith;
@@ -357,9 +355,8 @@ public class DeploymentTrigger {
         private final ApplicationVersion applicationVersion;
 
         private Job(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith, boolean isRetry, Change change, Version platformVersion, ApplicationVersion applicationVersion) {
-            this.id = application.id();
+            super(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName());
             this.jobType = jobType;
-            this.projectId = application.deploymentJobs().projectId().getAsLong();
             this.availableSince = availableSince;
             this.concurrentlyWith = concurrentlyWith;
             this.reason = reason;
@@ -370,9 +367,7 @@ public class DeploymentTrigger {
             this.applicationVersion = applicationVersion;
         }
 
-        public ApplicationId id() { return id; }
         public JobType jobType() { return jobType; }
-        public long projectId() { return projectId; }
         public String reason() { return reason; }
         public Instant availableSince() { return availableSince; }
         public boolean isRetry() { return isRetry; }

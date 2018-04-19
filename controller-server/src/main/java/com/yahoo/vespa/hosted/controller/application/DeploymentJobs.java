@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
@@ -262,6 +263,7 @@ public class DeploymentJobs {
         public boolean success() { return ! jobError.isPresent(); }
         public Optional<SourceRevision> sourceRevision() { return sourceRevision; }
         public Optional<JobError> jobError() { return jobError; }
+        public BuildService.BuildJob buildJob() { return BuildService.BuildJob.of(applicationId, projectId, jobType.jobName()); }
 
     }
 
