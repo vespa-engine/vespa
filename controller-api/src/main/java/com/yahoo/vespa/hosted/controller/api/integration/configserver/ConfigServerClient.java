@@ -34,8 +34,6 @@ public interface ConfigServerClient {
 
     PreparedApplication deploy(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
 
-    List<String> getNodeQueryHost(DeploymentId applicationInstance, String type) throws NoInstanceException;
-
     void restart(DeploymentId applicationInstance, Optional<Hostname> hostname) throws NoInstanceException;
 
     void deactivate(DeploymentId applicationInstance) throws NoInstanceException;

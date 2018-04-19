@@ -29,14 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * @author mortent
  */
 public class ConfigServerClientMock extends AbstractComponent implements ConfigServerClient {
 
-    private final Map<ApplicationId, String> applicationInstances = new HashMap<>();
     private final Map<ApplicationId, Boolean> applicationActivated = new HashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final Map<URI, Version> versions = new HashMap<>();
@@ -87,7 +85,6 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
             throw prepareException;
         }
         applicationActivated.put(deployment.applicationId(), false);
-        applicationInstances.put(deployment.applicationId(), UUID.randomUUID() + ":4080");
 
         return new PreparedApplication() {
             @Override
@@ -123,21 +120,12 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     }
 
     @Override
-    public List<String> getNodeQueryHost(DeploymentId deployment, String type) {
-        if (applicationInstances.containsKey(deployment.applicationId())) {
-            return Collections.singletonList(applicationInstances.get(deployment.applicationId()));
-        }
-        return Collections.emptyList();
-    }
-
-    @Override
     public void restart(DeploymentId deployment, Optional<Hostname> hostname) {
     }
 
     @Override
     public void deactivate(DeploymentId deployment) {
         applicationActivated.remove(deployment.applicationId());
-        applicationInstances.remove(deployment.applicationId());
     }
 
     @Override
