@@ -186,18 +186,16 @@ public class FileDownloaderTest {
     public void setFilesToDownload() throws IOException {
         Duration timeout = Duration.ofMillis(200);
         Duration sleepBetweenRetries = Duration.ofMillis(200);
-        File downloadDir = Files.createTempDirectory("filedistribution").toFile();
         MockConnection connectionPool = new MockConnection();
         connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
         FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, tempDir, timeout, sleepBetweenRetries);
         FileReference foo = new FileReference("foo");
-        FileReference bar = new FileReference("bar");
-        fileDownloader.download(new FileReferenceDownload(foo));
-        fileDownloader.download(new FileReferenceDownload(bar));
-
-        // Verify download status
-        assertDownloadStatus(fileDownloader, foo, 0.0);
-        assertDownloadStatus(fileDownloader, bar, 0.0);
+        // Should download since we do not have the file on disk
+        assertTrue(fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo)));
+        // Receive files to simulate download
+        receiveFile();
+        // Should not download, since file has already been downloaded
+        assertFalse(fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo)));
     }
 
     @Test

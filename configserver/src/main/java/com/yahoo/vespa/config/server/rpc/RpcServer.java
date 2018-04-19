@@ -537,7 +537,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
         Stream.of(fileReferenceStrings)
                 .map(FileReference::new)
-                .forEach(fileReference -> downloader.download(
+                .forEach(fileReference -> downloader.downloadIfNeeded(
                         new FileReferenceDownload(fileReference, false /* downloadFromOtherSourceIfNotFound */)));
         req.returnValues().add(new Int32Value(0));
     }
