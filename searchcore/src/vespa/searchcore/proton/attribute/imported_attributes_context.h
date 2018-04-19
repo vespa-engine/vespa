@@ -29,7 +29,7 @@ private:
     using IAttributeVector = search::attribute::IAttributeVector;
     using ImportedAttributeVector = search::attribute::ImportedAttributeVector;
 
-    using AttributeCache = std::unordered_map<vespalib::string, std::unique_ptr<ImportedAttributeVector>, vespalib::hash<vespalib::string>>;
+    using AttributeCache = std::unordered_map<vespalib::string, std::unique_ptr<IAttributeVector>, vespalib::hash<vespalib::string>>;
     using LockGuard = std::lock_guard<std::mutex>;
 
     const ImportedAttributesRepo &_repo;

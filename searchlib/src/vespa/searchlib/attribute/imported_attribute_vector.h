@@ -3,7 +3,6 @@
 #pragma once
 
 #include "reference_attribute.h"
-#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
@@ -27,7 +26,7 @@ class BitVectorSearchCache;
  * Any accessor on the imported attribute for a local LID yields the same result as
  * if the same accessor were invoked with the target LID on the target attribute vector.
  */
-class ImportedAttributeVector : public IAttributeVector {
+class ImportedAttributeVector {
 public:
     using SP = std::shared_ptr<ImportedAttributeVector>;
     ImportedAttributeVector(vespalib::stringref name,
@@ -40,34 +39,7 @@ public:
                             std::shared_ptr<AttributeVector> target_attribute,
                             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                             std::shared_ptr<BitVectorSearchCache> search_cache);
-    ~ImportedAttributeVector();
-
-    const vespalib::string & getName() const override;
-    uint32_t getNumDocs() const override;
-    uint32_t getValueCount(uint32_t doc) const override;
-    uint32_t getMaxValueCount() const override;
-    largeint_t getInt(DocId doc) const override;
-    double getFloat(DocId doc) const override;
-    const char * getString(DocId doc, char * buffer, size_t sz) const override;
-    EnumHandle getEnum(DocId doc) const override;
-    uint32_t get(DocId docId, largeint_t * buffer, uint32_t sz) const override;
-    uint32_t get(DocId docId, double * buffer, uint32_t sz) const override;
-    uint32_t get(DocId docId, const char ** buffer, uint32_t sz) const override;
-    uint32_t get(DocId docId, EnumHandle * buffer, uint32_t sz) const override;
-    uint32_t get(DocId docId, WeightedInt * buffer, uint32_t sz) const override;
-    uint32_t get(DocId docId, WeightedFloat * buffer, uint32_t sz) const override;
-    uint32_t get(DocId docId, WeightedString * buffer, uint32_t sz) const override;
-    uint32_t get(DocId docId, WeightedConstChar * buffer, uint32_t sz) const override;
-    uint32_t get(DocId docId, WeightedEnum * buffer, uint32_t sz) const override;
-    bool findEnum(const char * value, EnumHandle & e) const override;
-    const char * getStringFromEnum(EnumHandle e) const override;
-    std::unique_ptr<ISearchContext> createSearchContext(std::unique_ptr<QueryTermSimple> term,
-                                                        const SearchContextParams &params) const override;
-    const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
-    BasicType::Type getBasicType() const override;
-    size_t getFixedWidth() const override;
-    CollectionType::Type getCollectionType() const override;
-    bool hasEnum() const override;
+    virtual ~ImportedAttributeVector();
 
     const std::shared_ptr<ReferenceAttribute>& getReferenceAttribute() const noexcept {
         return _reference_attribute;
@@ -82,18 +54,16 @@ public:
         return _search_cache;
     }
     void clearSearchCache();
+    const vespalib::string &getName() const {
+        return _name;
+    }
 
     /*
      * Create an imported attribute with a snapshot of lid to lid mapping.
      */
-    virtual std::unique_ptr<ImportedAttributeVector> makeReadGuard(bool stableEnumGuard) const;
+    virtual std::unique_ptr<IAttributeVector> makeReadGuard(bool stableEnumGuard) const;
+
 protected:
-    long onSerializeForAscendingSort(DocId doc, void * serTo, long available,
-                                     const common::BlobConverter * bc) const override;
-    long onSerializeForDescendingSort(DocId doc, void * serTo, long available,
-                                      const common::BlobConverter * bc) const override;
-
-
     vespalib::string                           _name;
     std::shared_ptr<ReferenceAttribute>        _reference_attribute;
     std::shared_ptr<AttributeVector>           _target_attribute;
@@ -101,5 +71,5 @@ protected:
     std::shared_ptr<BitVectorSearchCache>      _search_cache;
 };
 
-} // attribute
-} // search
+}
+}
