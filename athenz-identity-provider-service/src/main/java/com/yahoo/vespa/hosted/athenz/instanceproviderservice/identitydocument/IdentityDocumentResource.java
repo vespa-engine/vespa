@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.google.inject.Inject;
@@ -11,6 +11,7 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -32,8 +33,14 @@ public class IdentityDocumentResource {
         this.identityDocumentGenerator = identityDocumentGenerator;
     }
 
+    /**
+     * @deprecated Use {@link #getNodeIdentityDocument(String, HttpServletRequest)}
+     *             and {@link #getTenantIdentityDocument(String, HttpServletRequest)} instead.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
+    // TODO Make this method private when the rest api is not longer in use
     public SignedIdentityDocument getIdentityDocument(@QueryParam("hostname") String hostname,
                                                       @Context HttpServletRequest request) {
         // TODO Use TLS client authentication instead of blindly trusting hostname
@@ -53,4 +60,22 @@ public class IdentityDocumentResource {
             throw new InternalServerErrorException(message, e);
         }
     }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/node/{host}")
+    public SignedIdentityDocument getNodeIdentityDocument(@PathParam("host") String host,
+                                                          @Context HttpServletRequest request) {
+        return getIdentityDocument(host, request);
+    }
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/tenant/{host}")
+    public SignedIdentityDocument getTenantIdentityDocument(@PathParam("host") String host,
+                                                            @Context HttpServletRequest request) {
+        return getIdentityDocument(host, request);
+    }
+
 }
