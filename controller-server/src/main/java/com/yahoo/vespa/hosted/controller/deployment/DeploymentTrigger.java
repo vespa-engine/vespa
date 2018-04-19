@@ -308,7 +308,7 @@ public class DeploymentTrigger {
     }
 
     private boolean canTrigger(Job job) {
-        Application application = applications().require(job.id);
+        Application application = applications().require(job.applicationId());
         // TODO jvenstad: Check versions, not change.
         if ( ! application.deploymentJobs().isDeployableTo(job.jobType.environment(), application.change()))
             return false;

@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob.of;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static org.junit.Assert.assertFalse;
 

@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.yahoo.config.provision.SystemName.main;
+import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsCentral1;
@@ -323,8 +324,7 @@ public class DeploymentTriggerTest {
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
         tester.deploymentTrigger().triggerReadyJobs(); // Schedules the blocked production job(s)
-        assertEquals(singletonList(ControllerTester.buildJob(app.deploymentJobs().projectId().getAsLong(), "production-us-west-1")),
-                     tester.buildService().jobs());
+        assertEquals(singletonList(buildJob(app, productionUsWest1)), tester.buildService().jobs());
     }
 
     @Test
