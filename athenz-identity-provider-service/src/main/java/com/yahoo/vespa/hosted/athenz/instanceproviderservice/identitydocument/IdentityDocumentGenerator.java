@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
@@ -80,7 +81,7 @@ public class IdentityDocumentGenerator {
 
         return new IdentityDocument(
                 providerUniqueId,
-                "localhost", // TODO: Add configserver hostname
+                HostName.getLocalhost(),
                 node.hostname(),
                 Instant.now());
     }
@@ -96,6 +97,7 @@ public class IdentityDocumentGenerator {
      *  If remote hostname is parent of requested hostname in node repo --> OK
      *  Otherwise NOT OK
      */
+    // TODO Move this check to AuthorizationFilter in node-repository
     boolean validateAccess(String hostname, String remoteAddr) {
         try {
             InetAddress addr = InetAddress.getByName(remoteAddr);
