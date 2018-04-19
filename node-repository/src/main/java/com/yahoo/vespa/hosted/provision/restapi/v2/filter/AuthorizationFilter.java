@@ -70,7 +70,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
             List<X509Certificate> clientCertificateChain = request.getClientCertificateChain();
             if (clientCertificateChain.isEmpty())
                 return Optional.of(ErrorResponse.unauthorized(createErrorMessage(request, "Missing credentials")));
-            TlsPrincipal hostIdentity = hostAuthenticator.authenticate(clientCertificateChain);
+            NodePrincipal hostIdentity = hostAuthenticator.authenticate(clientCertificateChain);
             if (!authorizer.test(hostIdentity, request.getUri()))
                 return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials")));
             request.setUserPrincipal(hostIdentity);

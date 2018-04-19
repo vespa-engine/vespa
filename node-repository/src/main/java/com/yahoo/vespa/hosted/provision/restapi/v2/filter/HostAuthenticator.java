@@ -33,7 +33,7 @@ class HostAuthenticator {
         this.nodeRepository = nodeRepository;
     }
 
-    TlsPrincipal authenticate(List<X509Certificate> certificateChain) throws AuthenticationException {
+    NodePrincipal authenticate(List<X509Certificate> certificateChain) throws AuthenticationException {
         X509Certificate clientCertificate = certificateChain.get(0);
         String subjectCommonName = X509CertificateUtils.getSubjectCommonNames(clientCertificate).stream()
                 .findFirst()
@@ -51,10 +51,10 @@ class HostAuthenticator {
                 default:
                     throw new AuthenticationException("Untrusted common name in subject: " + subjectCommonName);
             }
-            return new TlsPrincipal(hostname, certificateChain);
+            return new NodePrincipal(hostname, certificateChain);
         } else { // self-signed where common name is hostname
             // TODO Remove this branch once self-signed certificates are gone
-            return new TlsPrincipal(subjectCommonName, certificateChain);
+            return new NodePrincipal(subjectCommonName, certificateChain);
         }
     }
 

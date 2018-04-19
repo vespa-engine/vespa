@@ -55,7 +55,7 @@ public class HostAuthenticatorTest {
                         KEYPAIR, new X500Principal("CN=" + HOSTNAME), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
                 .build();
         HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
-        TlsPrincipal identity = authenticator.authenticate(singletonList(certificate));
+        NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
         assertEquals(HOSTNAME, identity.getName());
     }
 
@@ -72,7 +72,7 @@ public class HostAuthenticatorTest {
                 .addSubjectAlternativeName(OPENSTACK_ID + ".instanceid.athenz.provider-name.ostk.yahoo.cloud")
                 .build();
         HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
-        TlsPrincipal identity = authenticator.authenticate(singletonList(certificate));
+        NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
         assertEquals(HOSTNAME, identity.getName());
     }
 
@@ -96,7 +96,7 @@ public class HostAuthenticatorTest {
                 .addSubjectAlternativeName(vespaUniqueInstanceId.asDottedString() + ".instanceid.athenz.provider-name.vespa.yahoo.cloud")
                 .build();
         HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
-        TlsPrincipal identity = authenticator.authenticate(singletonList(certificate));
+        NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
         assertEquals(HOSTNAME, identity.getName());
     }
 

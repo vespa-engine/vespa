@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
-import com.yahoo.vespa.athenz.tls.SubjectAlternativeName;
-
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -10,11 +8,11 @@ import java.util.List;
 /**
  * @author bjorncs
  */
-public class TlsPrincipal implements Principal {
+public class NodePrincipal implements Principal {
     private final String hostIdentity;
     private final List<X509Certificate> clientCertificateChain;
 
-    public TlsPrincipal(String hostIdentity, List<X509Certificate> clientCertificateChain) {
+    public NodePrincipal(String hostIdentity, List<X509Certificate> clientCertificateChain) {
         this.hostIdentity = hostIdentity;
         this.clientCertificateChain = clientCertificateChain;
     }
