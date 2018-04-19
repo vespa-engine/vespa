@@ -106,7 +106,26 @@ public class FileDownloader {
         return Optional.empty();
     }
 
-    public synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
+    private boolean alreadyDownloaded(FileReference fileReference) {
+        try {
+            if (getFileFromFileSystem(fileReference, downloadDirectory).isPresent())
+                return true;
+        } catch (RuntimeException e) {
+            /* ignored */
+        }
+        return false;
+    }
+
+    public boolean downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
+        if (!alreadyDownloaded(fileReferenceDownload.fileReference())) {
+            download(fileReferenceDownload);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReferenceDownload));
         if (inProgress != null) {

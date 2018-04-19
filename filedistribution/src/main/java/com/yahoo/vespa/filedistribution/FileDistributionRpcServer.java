@@ -105,7 +105,7 @@ public class FileDistributionRpcServer {
     public final void setFileReferencesToDownload(Request req) {
         Arrays.stream(req.parameters().get(0).asStringArray())
                 .map(FileReference::new)
-                .forEach(fileReference -> downloader.download(new FileReferenceDownload(fileReference)));
+                .forEach(fileReference -> downloader.downloadIfNeeded(new FileReferenceDownload(fileReference)));
         req.returnValues().add(new Int32Value(0));
     }
 

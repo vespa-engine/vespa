@@ -3,6 +3,7 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
@@ -191,11 +192,16 @@ public class FileReceiver {
             log.log(LogLevel.DEBUG, () -> "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
-            // so it might be written already). Delete temp file in that case, to avoid filling the disk.
+            // so it might be written already). Delete temp file/dir in that case, to avoid filling the disk.
             log.log(LogLevel.DEBUG, () -> "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
             try {
-                Files.delete(tempFile.toPath());
-            } catch (IOException ioe) { /* ignore failure */}
+                if (tempFile.isDirectory())
+                    IOUtils.recursiveDeleteDir(tempFile);
+                else
+                    Files.delete(tempFile.toPath());
+            } catch (IOException ioe) {
+                log.log(LogLevel.WARNING, "Failed deleting file/dir " + tempFile);
+            }
         } catch (IOException e) {
             String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
             log.log(LogLevel.ERROR, message, e);
