@@ -2,6 +2,7 @@
 package com.yahoo.config.model.provision;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Flavor;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ public class Host {
     private final String hostname;
     private final ImmutableList<String> aliases;
     private final Optional<Flavor> flavor;
+    private final Optional<Version> version;
 
     public Host(String hostname) {
         this(hostname, ImmutableList.of(), Optional.empty());
@@ -28,9 +30,14 @@ public class Host {
     }
 
     public Host(String hostname, List<String> hostAliases, Optional<Flavor> flavor) {
+        this(hostname, hostAliases, flavor, Optional.empty());
+    }
+
+    public Host(String hostname, List<String> hostAliases, Optional<Flavor> flavor, Optional<Version> version) {
         this.hostname = hostname;
         this.aliases = ImmutableList.copyOf(hostAliases);
         this.flavor = flavor;
+        this.version = version;
     }
 
     public String hostname() { return hostname; }
@@ -39,6 +46,9 @@ public class Host {
     public List<String> aliases() { return aliases; }
 
     public Optional<Flavor> flavor() { return flavor; }
+
+    /** The current Vespa version running on this host, or empty if not known */
+    public Optional<Version> version() { return version; }
 
     @Override
     public String toString() {

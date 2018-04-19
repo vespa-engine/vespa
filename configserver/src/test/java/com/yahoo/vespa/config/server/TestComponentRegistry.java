@@ -30,8 +30,7 @@ import java.util.Optional;
 import static com.yahoo.vespa.config.server.SuperModelRequestHandlerTest.emptyNodeFlavors;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class TestComponentRegistry implements GlobalComponentRegistry {
 
@@ -50,6 +49,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final FileDistributionFactory fileDistributionFactory;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final Optional<Provisioner> hostProvisioner;
+    private final Zone zone;
     private final Clock clock;
 
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
@@ -65,6 +65,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   ConfigDefinitionRepo defRepo,
                                   ReloadListener reloadListener,
                                   TenantListener tenantListener,
+                                  Zone zone,
                                   Clock clock) {
         this.curator = curator;
         this.configCurator = configCurator;
@@ -81,6 +82,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.hostProvisioner = hostProvisioner;
         this.sessionPreparer = sessionPreparer;
+        this.zone = zone;
         this.clock = clock;
     }
 
@@ -101,6 +103,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         private Optional<Provisioner> hostProvisioner = Optional.empty();
+        private Zone zone = Zone.defaultZone();
         private Clock clock = Clock.systemUTC();
 
         public Builder configServerConfig(ConfigserverConfig configserverConfig) {
@@ -138,6 +141,11 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             return this;
         }
 
+        public Builder zone(Zone zone) {
+            this.zone = zone;
+            return this;
+        }
+
         public Builder clock(Clock clock) {
             this.clock = clock;
             return this;
@@ -154,7 +162,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
-                                                                  new Zone(configserverConfig, emptyNodeFlavors()));
+                                                                  zone);
             return new TestComponentRegistry(curator, configCurator.orElse(ConfigCurator.create(curator)),
                                              metrics, modelFactoryRegistry,
                                              permApp,
@@ -163,7 +171,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                              new ConfigServerDB(configserverConfig),
                                              hostRegistries, configserverConfig, sessionPreparer,
                                              hostProvisioner, defRepo, reloadListener,
-                                             tenantListener, clock);
+                                             tenantListener, zone, clock);
         }
     }
 
@@ -193,19 +201,17 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public HostRegistries getHostRegistries() { return hostRegistries;}
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
-
     @Override
     public Optional<Provisioner> getHostProvisioner() {
         return hostProvisioner;
     }
-
     @Override
     public Zone getZone() {
-        return Zone.defaultZone();
+        return zone;
     }
+    @Override
+    public Clock getClock() { return clock;}
 
     public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
 
-    @Override
-    public Clock getClock() { return clock;}
 }

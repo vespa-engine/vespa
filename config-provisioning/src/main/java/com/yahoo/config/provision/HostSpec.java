@@ -27,12 +27,19 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<Flavor> flavor;
 
+    private final Optional<com.yahoo.component.Version> version;
+
     public HostSpec(String hostname, Optional<ClusterMembership> membership) {
         this(hostname, new ArrayList<>(), Optional.empty(), membership);
     }
 
+    // TODO: Remove after May 2018
     public HostSpec(String hostname, ClusterMembership membership, Flavor flavor) {
         this(hostname, new ArrayList<>(), Optional.of(flavor), Optional.of(membership));
+    }
+
+    public HostSpec(String hostname, ClusterMembership membership, Flavor flavor, Optional<com.yahoo.component.Version> version) {
+        this(hostname, new ArrayList<>(), Optional.of(flavor), Optional.of(membership), version);
     }
 
     public HostSpec(String hostname, List<String> aliases) {
@@ -44,11 +51,18 @@ public class HostSpec implements Comparable<HostSpec> {
     }
 
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor, Optional<ClusterMembership> membership) {
+        this(hostname, aliases, flavor, membership, Optional.empty());
+    }
+
+    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
+                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
+        Objects.requireNonNull(version, "Version cannot be null but can be empty");
         this.hostname = hostname;
         this.aliases = ImmutableList.copyOf(aliases);
         this.flavor = flavor;
         this.membership = membership;
+        this.version = version;
     }
 
     /** Returns the name identifying this host */
@@ -58,6 +72,9 @@ public class HostSpec implements Comparable<HostSpec> {
     public List<String> aliases() { return aliases; }
 
     public Optional<Flavor> flavor() { return flavor; }
+
+    /** Returns the current version of Vespa running on this node, or empty if not known */
+    public Optional<com.yahoo.component.Version> version() { return version; }
 
     /** Returns the membership of this host, or an empty value if not present */
     public Optional<ClusterMembership> membership() { return membership; }

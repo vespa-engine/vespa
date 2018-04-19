@@ -210,6 +210,7 @@ public class SessionZooKeeperClient {
 
     /**
      * Create necessary paths atomically for a new session.
+     *
      * @param createTime Time of session creation.
      * @param timeUnit Time unit of createTime.
      */

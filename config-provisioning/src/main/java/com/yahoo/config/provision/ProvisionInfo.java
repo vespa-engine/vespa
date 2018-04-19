@@ -39,7 +39,7 @@ public class ProvisionInfo extends AllocatedHosts {
         array.traverse(new ArrayTraverser() {
             @Override
             public void entry(int i, Inspector inspector) {
-                hosts.add(hostsFromSlime(inspector.field(hostSpecKey), nodeFlavors));
+                hosts.add(hostFromSlime(inspector.field(hostSpecKey), nodeFlavors));
             }
         });
         return new ProvisionInfo(hosts);

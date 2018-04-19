@@ -25,6 +25,7 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -91,9 +92,18 @@ public class DeployTester {
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
+        this(appPath, modelFactories, configserverConfig, clock, Zone.defaultZone());
+    }
+
+    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone) {
+        this(appPath, modelFactories, configserverConfig, clock, Zone.defaultZone(), createProvisioner());
+    }
+
+    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone, HostProvisioner provisioner) {
         this.clock = clock;
         TestComponentRegistry componentRegistry = createComponentRegistry(new MockCurator(), Metrics.createTestMetrics(),
-                                                                          modelFactories, configserverConfig, clock);
+                                                                          modelFactories, configserverConfig, clock, zone,
+                                                                          provisioner);
         try {
             this.testApp = new File(appPath);
             this.tenants = new Tenants(componentRegistry, Collections.emptySet());
@@ -102,7 +112,7 @@ public class DeployTester {
         catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        applicationRepository = new ApplicationRepository(tenants, createHostProvisioner(), clock);
+        applicationRepository = new ApplicationRepository(tenants, new ProvisionerAdapter(provisioner), clock);
     }
 
     public Tenant tenant() {
@@ -110,13 +120,13 @@ public class DeployTester {
     }
     
     /** Create a model factory for the version of this source*/
-    public static ModelFactory createModelFactory(Clock clock) { 
-        return new VespaModelFactory(new NullConfigModelRegistry(), clock);
+    public static CountingModelFactory createModelFactory(Clock clock) {
+        return new CountingModelFactory(clock);
     }
 
     /** Create a model factory for a particular version */
-    public static ModelFactory createModelFactory(Version version, Clock clock) { 
-        return new VespaModelFactory(version, new NullConfigModelRegistry(), clock); 
+    public static CountingModelFactory createModelFactory(Version version, Clock clock) {
+        return new CountingModelFactory(version, clock);
     }
 
     /** Create a model factory which always fails validation */
@@ -168,24 +178,26 @@ public class DeployTester {
         return applicationRepository;
     }
 
-    private Provisioner createHostProvisioner() {
-        return new ProvisionerAdapter(new InMemoryProvisioner(true, "host0", "host1", "host2", "host3", "host4", "host5"));
+    private static HostProvisioner createProvisioner() {
+        return new InMemoryProvisioner(true, "host0", "host1", "host2", "host3", "host4", "host5");
     }
 
     private TestComponentRegistry createComponentRegistry(Curator curator, Metrics metrics,
                                                           List<ModelFactory> modelFactories,
                                                           ConfigserverConfig configserverConfig,
-                                                          Clock clock) {
+                                                          Clock clock,
+                                                          Zone zone,
+                                                          HostProvisioner provisioner) {
         TestComponentRegistry.Builder builder = new TestComponentRegistry.Builder();
 
-        if (configserverConfig.hostedVespa()) {
-            builder.provisioner(createHostProvisioner());
-        }
+        if (configserverConfig.hostedVespa())
+            builder.provisioner(new ProvisionerAdapter(provisioner));
 
         builder.configServerConfig(configserverConfig)
                .curator(curator)
                .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                .metrics(metrics)
+               .zone(zone)
                .clock(clock);
         return builder.build();
     }
@@ -248,6 +260,42 @@ public class DeployTester {
             if ( ! ignoreValidationErrors)
                 throw new IllegalArgumentException("Validation fails");
             return new ModelCreateResult(createModel(modelContext), Collections.emptyList());
+        }
+
+    }
+
+    /** A wrapper of the regular model factory which counts the number of models it has created */
+    public static class CountingModelFactory implements ModelFactory {
+
+        private final VespaModelFactory wrapped;
+        private int creationCount;
+
+        public CountingModelFactory(Clock clock) {
+            this.wrapped = new VespaModelFactory(new NullConfigModelRegistry(), clock);
+        }
+
+        public CountingModelFactory(Version version, Clock clock) {
+            this.wrapped = new VespaModelFactory(version, new NullConfigModelRegistry(), clock);
+        }
+
+        /** Returns the number of models created successfully by this instance */
+        public int creationCount() { return creationCount; }
+
+        @Override
+        public Version getVersion() { return wrapped.getVersion(); }
+
+        @Override
+        public Model createModel(ModelContext modelContext) {
+            Model model = wrapped.createModel(modelContext);
+            creationCount++;
+            return model;
+        }
+
+        @Override
+        public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
+            ModelCreateResult result = wrapped.createAndValidateModel(modelContext, ignoreValidationErrors);
+            creationCount++;
+            return result;
         }
 
     }

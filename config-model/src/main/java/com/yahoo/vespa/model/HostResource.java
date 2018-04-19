@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
@@ -44,13 +45,21 @@ public class HostResource implements Comparable<HostResource> {
     // Empty for self-hosted Vespa.
     private Optional<Flavor> flavor = Optional.empty();
 
+    /** The current Vespa version running on this node, or empty if not known */
+    private final Optional<Version> version;
+
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
      *
      * @param host {@link com.yahoo.vespa.model.Host} object to bind to.
      */
     public HostResource(Host host) {
+        this(host, Optional.empty());
+    }
+
+    public HostResource(Host host, Optional<Version> version) {
         this.host = host;
+        this.version = version;
     }
 
     /**
@@ -58,6 +67,9 @@ public class HostResource implements Comparable<HostResource> {
      * @return the {@link com.yahoo.vespa.model.Host} if bound, null if not.
      */
     public Host getHost() { return host; }
+
+    /** Returns the current Vespa version running on this node, or null if not known */
+    public Optional<Version> version() { return version; }
 
     /**
      * Returns the baseport of the first available port range of length numPorts,

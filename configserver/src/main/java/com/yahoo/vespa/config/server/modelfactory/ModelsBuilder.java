@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.Rotation;
@@ -49,10 +50,16 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     /** True if we are running in hosted mode */
     private final boolean hosted;
 
-    protected ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry, boolean hosted) {
+    private final Zone zone;
+
+    protected ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry, boolean hosted, Zone zone) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.hosted = hosted;
+        this.zone = zone;
     }
+
+    /** Returns the zone this is running in */
+    protected Zone zone() { return zone; }
 
     /**
      * Builds all applicable model versions
@@ -137,6 +144,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         List<MODELRESULT> allApplicationVersions = new ArrayList<>();
         allApplicationVersions.add(latestModelVersion);
 
+        if (zone().environment() == Environment.dev)
+            versions = keepThoseUsedOn(allocatedHosts.get(), versions);
+
         // TODO: We use the allocated hosts from the newest version when building older model versions.
         // This is correct except for the case where an old model specifies a cluster which the new version
         // does not. In that case we really want to extend the set of allocated hosts to include those of that
@@ -168,6 +178,17 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         List<Version> versionList = new ArrayList<>(versionSet);
         Collections.sort(versionList);
         return versionList.get(versionList.size() - 1);
+    }
+
+    /** Returns the subset of the given versions which are in use on these hosts */
+    private Set<Version> keepThoseUsedOn(AllocatedHosts hosts, Set<Version> versions) {
+        return versions.stream().filter(version -> mayBeUsedOn(hosts, version)).collect(Collectors.toSet());
+    }
+
+    private boolean mayBeUsedOn(AllocatedHosts hosts, Version version) {
+        com.yahoo.component.Version v = new com.yahoo.component.Version(version.toString());
+        return hosts.getHosts().stream()
+                               .anyMatch(host -> ! host.version().isPresent() || host.version().get().equals(v));
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,

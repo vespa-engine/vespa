@@ -29,7 +29,12 @@ public class AllocatedHosts {
     private static final String hostSpecHostName = "hostName";
     private static final String hostSpecMembership = "membership";
     private static final String hostSpecFlavor = "flavor";
+
+    /** Wanted version */
     private static final String hostSpecVespaVersion = "vespaVersion";
+
+    /** Current version */
+    private static final String hostSpecCurrentVespaVersion = "currentVespaVersion";
 
     private final ImmutableSet<HostSpec> hosts;
 
@@ -49,12 +54,12 @@ public class AllocatedHosts {
 
     private void toSlime(HostSpec host, Cursor cursor) {
         cursor.setString(hostSpecHostName, host.hostname());
-        if (host.membership().isPresent()) {
-            cursor.setString(hostSpecMembership, host.membership().get().stringValue());
-            cursor.setString(hostSpecVespaVersion, host.membership().get().cluster().vespaVersion().toString());
-        }
-        if (host.flavor().isPresent())
-            cursor.setString(hostSpecFlavor, host.flavor().get().name());
+        host.membership().ifPresent(membership -> {
+            cursor.setString(hostSpecMembership, membership.stringValue());
+            cursor.setString(hostSpecVespaVersion, membership.cluster().vespaVersion().toString());
+        });
+        host.flavor().ifPresent(flavor -> cursor.setString(hostSpecFlavor, flavor.name()));
+        host.version().ifPresent(version -> cursor.setString(hostSpecCurrentVespaVersion, version.toString()));
     }
 
     /** Returns the hosts of this allocation */
@@ -66,19 +71,21 @@ public class AllocatedHosts {
         array.traverse(new ArrayTraverser() {
             @Override
             public void entry(int i, Inspector inspector) {
-                hosts.add(hostsFromSlime(inspector.field(hostSpecKey), nodeFlavors));
+                hosts.add(hostFromSlime(inspector.field(hostSpecKey), nodeFlavors));
             }
         });
         return new AllocatedHosts(hosts);
     }
 
-    static HostSpec hostsFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
+    static HostSpec hostFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
         Optional<ClusterMembership> membership =
                 object.field(hostSpecMembership).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty();
         Optional<Flavor> flavor =
                 object.field(hostSpecFlavor).valid() ? flavorFromSlime(object, nodeFlavors) : Optional.empty();
+        Optional<com.yahoo.component.Version> version =
+                optionalString(object.field(hostSpecCurrentVespaVersion)).map(com.yahoo.component.Version::new);
 
-        return new HostSpec(object.field(hostSpecHostName).asString(),Collections.emptyList(), flavor, membership);
+        return new HostSpec(object.field(hostSpecHostName).asString(), Collections.emptyList(), flavor, membership, version);
     }
 
     private static ClusterMembership membershipFromSlime(Inspector object) {
@@ -89,6 +96,11 @@ public class AllocatedHosts {
     private static Optional<Flavor> flavorFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
         return nodeFlavors.map(flavorMapper ->  flavorMapper.getFlavor(object.field(hostSpecFlavor).asString()))
                 .orElse(Optional.empty());
+    }
+
+    private static Optional<String> optionalString(Inspector inspector) {
+        if ( ! inspector.valid()) return Optional.empty();
+        return Optional.of(inspector.asString());
     }
 
     public byte[] toJson() throws IOException {
