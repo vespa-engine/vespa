@@ -10,6 +10,7 @@
 namespace search {
 class AttributeGuard;
 namespace attribute {
+class AttributeReadGuard;
 class IAttributeVector;
 class ImportedAttributeVector;
 }}
@@ -26,10 +27,11 @@ class ImportedAttributesRepo;
 class ImportedAttributesContext : public search::attribute::IAttributeContext {
 private:
     using AttributeGuard = search::AttributeGuard;
+    using AttributeReadGuard = search::attribute::AttributeReadGuard;
     using IAttributeVector = search::attribute::IAttributeVector;
     using ImportedAttributeVector = search::attribute::ImportedAttributeVector;
 
-    using AttributeCache = std::unordered_map<vespalib::string, std::unique_ptr<IAttributeVector>, vespalib::hash<vespalib::string>>;
+    using AttributeCache = std::unordered_map<vespalib::string, std::unique_ptr<AttributeReadGuard>, vespalib::hash<vespalib::string>>;
     using LockGuard = std::lock_guard<std::mutex>;
 
     const ImportedAttributesRepo &_repo;

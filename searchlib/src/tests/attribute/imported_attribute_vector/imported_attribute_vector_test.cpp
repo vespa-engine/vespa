@@ -33,7 +33,7 @@ TEST_F("Accessors return expected attributes", Fixture) {
 TEST_F("getName() is equal to name given during construction", Fixture) {
     auto attr = f.create_attribute_vector_from_members("coolvector");
     EXPECT_EQUAL("coolvector", attr->getName());
-    EXPECT_EQUAL("coolvector", attr->makeReadGuard(false)->getName());
+    EXPECT_EQUAL("coolvector", attr->makeReadGuard(false)->attribute()->getName());
 }
 
 TEST_F("getNumDocs() returns number of documents in reference attribute vector", Fixture) {

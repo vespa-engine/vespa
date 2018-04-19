@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "imported_attribute_vector.h"
+#include "attribute_read_guard.h"
 #include "attributeguard.h"
+#include "imported_attribute_vector.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
 
 namespace search { class IGidToLidMapper; }
@@ -18,7 +19,8 @@ class BitVectorSearchCache;
  * Extra information for direct lid to referenced lid mapping with
  * boundary check is setup during construction.
  */
-class ImportedAttributeVectorReadGuard : public IAttributeVector
+class ImportedAttributeVectorReadGuard : public IAttributeVector,
+                                         public AttributeReadGuard
 {
 private:
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;

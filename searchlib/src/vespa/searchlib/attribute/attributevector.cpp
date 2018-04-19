@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attribute_read_guard.h"
 #include "attributefilesavetarget.h"
 #include "attributeiterators.hpp"
 #include "attributesaver.h"
@@ -882,6 +883,14 @@ AttributeVector::getEstimatedShrinkLidSpaceGain() const
         }
     }
     return canFree;
+}
+
+std::unique_ptr<attribute::AttributeReadGuard>
+AttributeVector::makeReadGuard(bool stableEnumGuard) const
+{
+    (void) stableEnumGuard;
+    // TODO: implement
+    return std::unique_ptr<attribute::AttributeReadGuard>();
 }
 
 MemoryUsage

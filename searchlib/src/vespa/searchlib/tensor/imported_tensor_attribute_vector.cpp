@@ -38,7 +38,7 @@ ImportedTensorAttributeVector::~ImportedTensorAttributeVector()
 {
 }
 
-std::unique_ptr<attribute::IAttributeVector>
+std::unique_ptr<attribute::AttributeReadGuard>
 ImportedTensorAttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
     return std::make_unique<ImportedTensorAttributeVectorReadGuard>(*this, stableEnumGuard);

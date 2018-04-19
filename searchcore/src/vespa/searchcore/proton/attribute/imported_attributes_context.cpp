@@ -2,6 +2,7 @@
 
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -20,12 +21,12 @@ ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name,
 {
     auto itr = attributes.find(name);
     if (itr != attributes.end()) {
-        return itr->second.get();
+        return itr->second->attribute();
     }
     ImportedAttributeVector::SP result = _repo.get(name);
     if (result.get() != nullptr) {
         auto insRes = attributes.emplace(name, result->makeReadGuard(stableEnumGuard));
-        return insRes.first->second.get();
+        return insRes.first->second->attribute();
     } else {
         return nullptr;
     }

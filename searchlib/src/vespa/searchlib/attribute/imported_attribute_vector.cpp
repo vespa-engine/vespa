@@ -38,7 +38,7 @@ ImportedAttributeVector::ImportedAttributeVector(vespalib::stringref name,
 ImportedAttributeVector::~ImportedAttributeVector() {
 }
 
-std::unique_ptr<IAttributeVector>
+std::unique_ptr<AttributeReadGuard>
 ImportedAttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
     return std::make_unique<ImportedAttributeVectorReadGuard>(*this, stableEnumGuard);

@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/features/dotproductfeature.h>
 #include <vespa/searchlib/test/imported_attribute_fixture.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
@@ -45,10 +46,11 @@ struct FixtureBase : ImportedAttributeFixture {
         if (pre_parsed) {
             feature.getQueryEnv().getObjectStore().add("dotProduct.vector.object", std::move(pre_parsed));
         }
-        std::shared_ptr<IAttributeVector> readable_imported_attr = imported_attr->makeReadGuard(false);
-        feature.getIndexEnv().getAttributeMap().add(readable_imported_attr);
+        auto readGuard = imported_attr->makeReadGuard(false);
+        const IAttributeVector *attr = readGuard->attribute();
+        feature.getIndexEnv().getAttributeMap().add(std::move(readGuard));
         schema::CollectionType collection_type(
-                (readable_imported_attr->getCollectionType() == attribute::CollectionType::ARRAY)
+                (attr->getCollectionType() == attribute::CollectionType::ARRAY)
                 ? schema::CollectionType::ARRAY : schema::CollectionType::WEIGHTEDSET);
         feature.getIndexEnv().getBuilder().addField(
                 FieldType::ATTRIBUTE, collection_type, imported_attr->getName());

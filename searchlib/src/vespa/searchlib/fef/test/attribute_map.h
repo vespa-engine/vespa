@@ -2,14 +2,13 @@
 
 #include "mock_attribute_context.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <memory>
 #include <map>
 
 #pragma once
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 /**
  * Simple mapping from attribute name to IAttributeVector which can be used for tests
@@ -21,6 +20,7 @@ namespace test {
  */
 class AttributeMap {
     std::map<vespalib::string, std::shared_ptr<attribute::IAttributeVector>> _attributes;
+    std::map<vespalib::string, std::unique_ptr<attribute::AttributeReadGuard>> _guards;
 public:
     using IAttributeVector = attribute::IAttributeVector;
 
@@ -28,14 +28,28 @@ public:
         _attributes.emplace(attr->getName(), std::move(attr));
     }
 
+    void add(std::unique_ptr<attribute::AttributeReadGuard> guard) {
+        _guards.emplace(guard->attribute()->getName(), std::move(guard));
+    }
+
     const IAttributeVector * getAttribute(const vespalib::string & name) const {
-        auto iter = _attributes.find(name);
-        return (iter != _attributes.end() ? iter->second.get() : nullptr);
+        auto attrItr = _attributes.find(name);
+        if (attrItr != _attributes.end()) {
+            return attrItr->second.get();
+        }
+        auto guardItr = _guards.find(name);
+        if (guardItr != _guards.end()) {
+            return guardItr->second->attribute();
+        }
+        return nullptr;
     }
 
     void getAttributeList(std::vector<const IAttributeVector *> & list) const {
         for (const auto& attr : _attributes) {
             list.emplace_back(attr.second.get());
+        }
+        for (const auto &guard : _guards) {
+            list.emplace_back(guard.second->attribute());
         }
     }
 
@@ -44,6 +58,4 @@ public:
     }
 };
 
-} // test
-} // fef
-} // search
+}
