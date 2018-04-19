@@ -67,12 +67,15 @@ public final class IfNode extends CompositeNode {
     public Double getTrueProbability() { return trueProbability; }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return "if (" +
-               condition.toString(context, path, this) + ", " +
-               trueExpression.toString(context, path, this) + ", " +
-               falseExpression.toString(context, path, this) +
-                (trueProbability != null ? ", " + trueProbability : "") + ")";
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        string.append("if (");
+        condition.toString(string, context, path, this).append(", ");
+        trueExpression.toString(string, context, path, this).append(", ");
+        falseExpression.toString(string, context, path, this);
+        if (trueProbability != null) {
+            string.append(", ").append(trueProbability);
+        }
+        return string.append(')');
     }
 
     @Override

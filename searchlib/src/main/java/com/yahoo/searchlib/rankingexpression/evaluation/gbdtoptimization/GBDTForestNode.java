@@ -42,8 +42,8 @@ public class GBDTForestNode extends ExpressionNode {
     }
 
     /** Returns (optimized sum of condition trees) */
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return "(optimized sum of condition trees of size " + (values.length*8) + " bytes)";
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        return string.append("(optimized sum of condition trees of size ").append(values.length*8).append(" bytes)");
     }
 
 }

@@ -54,17 +54,15 @@ public final class FunctionNode extends CompositeNode {
     }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        StringBuilder b=new StringBuilder(function.toString());
-        b.append("(");
+    public StringBuilder toString(StringBuilder b, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        b.append(function.toString()).append("(");
         for (int i = 0; i < this.arguments.expressions().size(); ++i) {
-            b.append(this.arguments.expressions().get(i).toString(context, path, this));
+            this.arguments.expressions().get(i).toString(b, context, path, this);
             if (i < this.arguments.expressions().size() - 1) {
                 b.append(",");
             }
         }
-        b.append(")");
-        return b.toString();
+        return b.append(")");
     }
 
     @Override

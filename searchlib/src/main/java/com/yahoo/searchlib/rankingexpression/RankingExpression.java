@@ -246,7 +246,7 @@ public class RankingExpression implements Serializable {
     public Map<String, String> getRankProperties(List<ExpressionFunction> macros) {
         Deque<String> path = new LinkedList<>();
         SerializationContext context = new SerializationContext(macros);
-        String serializedRoot = root.toString(context, path, null);
+        String serializedRoot = root.toString(new StringBuilder(), context, path, null).toString();
         Map<String, String> serializedExpressions = context.serializedFunctions();
         serializedExpressions.put(propertyName(name), serializedRoot);
         return serializedExpressions;

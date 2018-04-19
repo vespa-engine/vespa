@@ -98,7 +98,7 @@ public final class GBDTNode extends ExpressionNode {
 
     /** Returns "(optimized condition tree)" */
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return "(optimized condition tree)";
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        return string.append("(optimized condition tree)");
     }
 }

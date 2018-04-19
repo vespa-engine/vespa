@@ -130,18 +130,26 @@ public class Reference extends TypeContext.Name {
 
     @Override
     public String toString() {
-        return toString(new SerializationContext(), null, null);
+        return toString(new StringBuilder(), new SerializationContext(), null, null).toString();
     }
 
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        StringBuilder b = new StringBuilder(name());
-        if (arguments.expressions().size() > 0)
-            b.append("(").append(arguments.expressions().stream()
-                                                        .map(node -> node.toString(context, path, parent))
-                                                        .collect(Collectors.joining(","))).append(")");
+    public StringBuilder toString(StringBuilder b, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        b.append(name());
+        if (arguments.expressions().size() > 0) {
+            b.append("(");
+            for (int i = 0; i < arguments.expressions().size(); i++) {
+                ExpressionNode e = arguments.expressions().get(i);
+                e.toString(b, context, path, parent);
+                if (i+1 < arguments.expressions().size()) {
+                    b.append(',');
+                }
+
+            }
+            b.append(")");
+        }
         if (output != null)
             b.append(".").append(output);
-        return b.toString();
+        return b;
     }
 
 }

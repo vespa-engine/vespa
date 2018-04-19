@@ -34,8 +34,9 @@ public class NotNode extends BooleanNode {
     }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return "!" + value.toString(context, path, parent);
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        string.append("!");
+        return value.toString(string, context, path, parent);
     }
 
     @Override

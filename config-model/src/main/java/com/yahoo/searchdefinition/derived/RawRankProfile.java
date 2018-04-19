@@ -145,9 +145,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         /**
          * The rank type definitions used to derive settings for the native rank features
          */
-        private NativeRankTypeDefinitionSet nativeRankTypeDefinitions = new NativeRankTypeDefinitionSet("default");
+        private final NativeRankTypeDefinitionSet nativeRankTypeDefinitions = new NativeRankTypeDefinitionSet("default");
 
-        private RankProfile rankProfile;
+        private final Map<String, String> attributeTypes;
+        private final Map<String, String> queryFeatureTypes;
 
         private Set<String> filterFields = new java.util.LinkedHashSet<>();
 
@@ -155,11 +156,13 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
          * Creates a raw rank profile from the given rank profile
          */
         public Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, AttributeFields attributeFields) {
-            this.rankProfile = rankProfile.compile(queryProfiles);
-            deriveRankingFeatures(this.rankProfile);
-            deriveRankTypeSetting(this.rankProfile, attributeFields);
-            deriveFilterFields(this.rankProfile);
-            deriveWeightProperties(this.rankProfile);
+            RankProfile compiled = rankProfile.compile(queryProfiles);
+            attributeTypes = compiled.getAttributeTypes();
+            queryFeatureTypes = compiled.getQueryFeatureTypes();
+            deriveRankingFeatures(compiled);
+            deriveRankTypeSetting(compiled, attributeFields);
+            deriveFilterFields(compiled);
+            deriveWeightProperties(compiled);
         }
 
         private void deriveFilterFields(RankProfile rp) {
@@ -209,7 +212,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private Map<String, String> deriveMacroProperties(Map<String, ExpressionFunction> eMacros) {
             SerializationContext context = new SerializationContext(eMacros);
             for (Map.Entry<String, ExpressionFunction> e : eMacros.entrySet()) {
-                String script = e.getValue().getBody().getRoot().toString(context, null, null);
+                String script = e.getValue().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
                 context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), script);
             }
             return context.serializedFunctions();
@@ -223,7 +226,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 // Is the feature a macro?
                 if (context.getFunction(referenceNode.getName()) != null) {
                     context.addFunctionSerialization(RankingExpression.propertyName(referenceNode.getName()),
-                                                     referenceNode.toString(context, null, null));
+                                                     referenceNode.toString(new StringBuilder(), context, null, null).toString());
                     ReferenceNode newReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")", referenceNode.getArguments().expressions(), referenceNode.getOutput());
                     macroSummaryFeatures.put(referenceNode.getName(), newReferenceNode);
                     i.remove(); // Will add the expanded one in next block
@@ -363,7 +366,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.put("vespa.matchphase.degradation.maxfiltercoverage", matchPhaseSettings.getMaxFilterCoverage() + "");
                 properties.put("vespa.matchphase.degradation.samplepercentage", matchPhaseSettings.getEvaluationPoint() + "");
                 properties.put("vespa.matchphase.degradation.postfiltermultiplier", matchPhaseSettings.getPrePostFilterTippingPoint() + "");
-                RankProfile.DiversitySettings diversitySettings = rankProfile.getMatchPhaseSettings().getDiversity();
+                RankProfile.DiversitySettings diversitySettings = matchPhaseSettings.getDiversity();
                 if (diversitySettings != null) {
                     properties.put("vespa.matchphase.diversity.attribute", diversitySettings.getAttribute());
                     properties.put("vespa.matchphase.diversity.mingroups", String.valueOf(diversitySettings.getMinGroups()));
@@ -388,10 +391,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 String fieldName = (String) filterFieldsIterator.next();
                 properties.put("vespa.isfilterfield." + fieldName + ".part42", String.valueOf(true));
             }
-            for (Map.Entry<String, String> attributeType : rankProfile.getAttributeTypes().entrySet()) {
+            for (Map.Entry<String, String> attributeType : attributeTypes.entrySet()) {
                 properties.put("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue());
             }
-            for (Map.Entry<String, String> queryFeatureType : rankProfile.getQueryFeatureTypes().entrySet()) {
+            for (Map.Entry<String, String> queryFeatureType : queryFeatureTypes.entrySet()) {
                 properties.put("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue());
             }
             if (properties.size() >= 1000000) throw new RuntimeException("Too many rank properties");

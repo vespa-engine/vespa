@@ -47,17 +47,17 @@ public class SetMembershipNode extends BooleanNode {
     }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        StringBuilder b = new StringBuilder(testValue.toString(context, path, this));
-        b.append(" in [");
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        testValue.toString(string, context, path, this);
+        string.append(" in [");
         for (int i = 0, len = setValues.size(); i < len; ++i) {
-            b.append(setValues.get(i).toString(context, path, this));
+            setValues.get(i).toString(string, context, path, this);
             if (i < len - 1) {
-                b.append(", ");
+                string.append(", ");
             }
         }
-        b.append("]");
-        return b.toString();
+        string.append("]");
+        return string;
     }
 
     @Override

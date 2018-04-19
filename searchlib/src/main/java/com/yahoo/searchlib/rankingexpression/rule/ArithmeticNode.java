@@ -41,26 +41,23 @@ public final class ArithmeticNode extends CompositeNode {
     public List<ExpressionNode> children() { return children; }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        StringBuilder string = new StringBuilder();
-
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
         boolean nonDefaultPrecedence = nonDefaultPrecedence(parent);
         if (nonDefaultPrecedence)
             string.append("(");
 
         Iterator<ExpressionNode> child = children.iterator();
-        string.append(child.next().toString(context, path, this)).append(" ");
+        child.next().toString(string, context, path, this).append(" ");
         for (Iterator<ArithmeticOperator> op = operators.iterator(); op.hasNext() && child.hasNext();) {
             string.append(op.next().toString()).append(" ");
-            string.append(child.next().toString(context, path, this));
+            child.next().toString(string, context, path, this);
             if (op.hasNext())
                 string.append(" ");
         }
         if (nonDefaultPrecedence)
             string.append(")");
-        string.append(" ");
 
-        return string.toString().trim();
+        return string;
     }
 
     /**

@@ -30,7 +30,7 @@ public abstract class ExpressionNode implements Serializable {
 
     @Override
     public final String toString() {
-        return toString(new SerializationContext(), null, null);
+        return toString(new StringBuilder(), new SerializationContext(), null, null).toString();
     }
 
     /**
@@ -41,7 +41,7 @@ public abstract class ExpressionNode implements Serializable {
      * @param parent the parent node of this, or null if it a root
      * @return the main script, referring to script instances.
      */
-    public abstract String toString(SerializationContext context, Deque<String> path, CompositeNode parent);
+    public abstract StringBuilder toString(StringBuilder builder, SerializationContext context, Deque<String> path, CompositeNode parent);
 
     /**
      * Returns the type this will return if evaluated with the given context.
