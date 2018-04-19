@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
@@ -52,13 +53,18 @@ public class VersionStatus {
     public VersionStatus(List<VespaVersion> versions) {
         this.versions = ImmutableList.copyOf(versions);
     }
+
+    /** Returns the current version of controllers in this system */
+    public Optional<VespaVersion> controllerVersion() {
+        return versions().stream().filter(VespaVersion::isControllerVersion).findFirst();
+    }
     
     /** 
      * Returns the current Vespa version of the system controlled by this, 
      * or empty if we have not currently determined what the system version is in this status.
      */
     public Optional<VespaVersion> systemVersion() {
-        return versions().stream().filter(VespaVersion::isCurrentSystemVersion).findAny();
+        return versions().stream().filter(VespaVersion::isSystemVersion).findFirst();
     }
 
     /** 
@@ -79,16 +85,15 @@ public class VersionStatus {
 
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
-        return compute(controller, Vtag.currentVersion);
-    }
-
-    /** Compute version status using the given current version. This is useful for testing. */
-    public static VersionStatus compute(Controller controller, Version currentVersion) {
-        ListMap<Version, String> configServerVersions = findConfigServerVersions(controller);
+        ListMap<Version, HostName> configServerVersions = findConfigServerVersions(controller);
+        ListMap<Version, HostName> controllerVersions = findControllerVersions(controller);
 
         Set<Version> infrastructureVersions = new HashSet<>();
-        infrastructureVersions.add(currentVersion);
+        infrastructureVersions.addAll(controllerVersions.keySet());
         infrastructureVersions.addAll(configServerVersions.keySet());
+
+        // The controller version is the lowest controller version of all controllers
+        Version controllerVersion = controllerVersions.keySet().stream().sorted().findFirst().get();
 
         // The system version is the oldest infrastructure version
         Version systemVersion = infrastructureVersions.stream().sorted().findFirst().get();
@@ -102,6 +107,7 @@ public class VersionStatus {
 
             try {
                 VespaVersion vespaVersion = createVersion(statistics,
+                                                          statistics.version().equals(controllerVersion),
                                                           statistics.version().equals(systemVersion),
                                                           configServerVersions.getList(statistics.version()),
                                                           controller);
@@ -116,7 +122,7 @@ public class VersionStatus {
         return new VersionStatus(versions);
     }
 
-    private static ListMap<Version, String> findConfigServerVersions(Controller controller) {
+    private static ListMap<Version, HostName> findConfigServerVersions(Controller controller) {
         List<URI> configServers = controller.zoneRegistry().zones()
                 .controllerManaged()
                 // TODO jvenstad: Remove this when AWS is automatically upgraded.
@@ -125,9 +131,22 @@ public class VersionStatus {
                 .flatMap(zoneId -> controller.zoneRegistry().getConfigServerUris(zoneId).stream())
                 .collect(Collectors.toList());
 
-        ListMap<Version, String> versions = new ListMap<>();
+        ListMap<Version, HostName> versions = new ListMap<>();
         for (URI configServer : configServers)
-            versions.put(controller.applications().configServer().version(configServer), configServer.getHost());
+            versions.put(controller.applications().configServer().version(configServer),
+                         HostName.from(configServer.getHost()));
+        return versions;
+    }
+
+    private static ListMap<Version, HostName> findControllerVersions(Controller controller) {
+        ListMap<Version, HostName> versions = new ListMap<>();
+        if (controller.curator().cluster().isEmpty()) { // Use vtag if we do not have cluster
+            versions.put(Vtag.currentVersion, controller.hostname());
+        } else {
+            for (HostName hostname : controller.curator().cluster()) {
+                versions.put(controller.curator().readControllerVersion(hostname), hostname);
+            }
+        }
         return versions;
     }
 
@@ -176,15 +195,16 @@ public class VersionStatus {
     }
     
     private static VespaVersion createVersion(DeploymentStatistics statistics,
+                                              boolean isControllerVersion,
                                               boolean isSystemVersion, 
-                                              Collection<String> configServerHostnames,
+                                              Collection<HostName> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
         Instant committedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime());
         VespaVersion.Confidence confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
         // Compute confidence if there's no override
         if (confidence == null) {
-            if (isSystemVersion) { // Always compute confidence for system version
+            if (isSystemVersion || isControllerVersion) { // Always compute confidence for system and controller
                 confidence = VespaVersion.confidenceFrom(statistics, controller);
             } else { // Keep existing confidence for non-system versions if already computed
                 confidence = confidenceFor(statistics.version(), controller)
@@ -193,6 +213,7 @@ public class VersionStatus {
         }
         return new VespaVersion(statistics,
                                 gitSha.sha, committedAt,
+                                isControllerVersion,
                                 isSystemVersion,
                                 configServerHostnames,
                                 confidence

@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -32,7 +33,8 @@ public class VersionStatusSerializer {
     // VespaVersion fields
     private static final String releaseCommitField = "releaseCommit";
     private static final String committedAtField = "releasedAt";
-    private static final String isCurrentSystemVersionField = "isCurrentSystemVersion";
+    private static final String isControllerVersionField = "isCurrentControllerVersion";
+    private static final String isSystemVersionField = "isCurrentSystemVersion";
     private static final String deploymentStatisticsField = "deploymentStatistics";
     private static final String confidenceField = "confidence";
     private static final String configServersField = "configServerHostnames";
@@ -62,14 +64,15 @@ public class VersionStatusSerializer {
     private void vespaVersionToSlime(VespaVersion version, Cursor object) {
         object.setString(releaseCommitField, version.releaseCommit());
         object.setLong(committedAtField, version.committedAt().toEpochMilli());
-        object.setBool(isCurrentSystemVersionField, version.isCurrentSystemVersion());
+        object.setBool(isControllerVersionField, version.isControllerVersion());
+        object.setBool(isSystemVersionField, version.isSystemVersion());
         deploymentStatisticsToSlime(version.statistics(), object.setObject(deploymentStatisticsField));
         object.setString(confidenceField, version.confidence().name());
         configServersToSlime(version.configServerHostnames(), object.setArray(configServersField));
     }
 
-    private void configServersToSlime(Set<String> configServerHostnames, Cursor array) {
-        configServerHostnames.forEach(array::addString);
+    private void configServersToSlime(Set<HostName> configServerHostnames, Cursor array) {
+        configServerHostnames.stream().map(HostName::value).forEach(array::addString);
     }
 
     private void deploymentStatisticsToSlime(DeploymentStatistics statistics, Cursor object) {
@@ -93,15 +96,16 @@ public class VersionStatusSerializer {
         return new VespaVersion(deploymentStatisticsFromSlime(object.field(deploymentStatisticsField)),
                                 object.field(releaseCommitField).asString(),
                                 Instant.ofEpochMilli(object.field(committedAtField).asLong()),
-                                object.field(isCurrentSystemVersionField).asBool(),
+                                object.field(isControllerVersionField).asBool(),
+                                object.field(isSystemVersionField).asBool(),
                                 configServersFromSlime(object.field(configServersField)),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
     }
 
-    private Set<String> configServersFromSlime(Inspector array) {
-        Set<String> configServerHostnames = new LinkedHashSet<>();
-        array.traverse((ArrayTraverser) (i, entry) -> configServerHostnames.add(entry.asString()));
+    private Set<HostName> configServersFromSlime(Inspector array) {
+        Set<HostName> configServerHostnames = new LinkedHashSet<>();
+        array.traverse((ArrayTraverser) (i, entry) -> configServerHostnames.add(HostName.from(entry.asString())));
         return Collections.unmodifiableSet(configServerHostnames);
     }
 

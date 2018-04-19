@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -87,6 +87,12 @@ public final class ControllerTester {
         this(new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), rotationsConfig, new MemoryNameService(),
              new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
+    }
+
+    public ControllerTester(MockCuratorDb curatorDb) {
+        this(new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
+             new ZoneRegistryMock(), new GitHubMock(), curatorDb, defaultRotationsConfig(),
+             new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
     private ControllerTester(AthenzDbMock athenzDb, ManualClock clock,
@@ -270,7 +276,8 @@ public final class ControllerTester {
                                                clock,
                                                new AthenzClientFactoryMock(athensDb),
                                                artifactRepository,
-                                               buildService);
+                                               buildService,
+                                               () -> "test-controller");
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;
     }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -17,7 +17,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class VersionStatusUpdaterTest {
 
-    /** Test that this job updates the status. Test of the content of the update is in VersionStatusTest */
+    /** Test that this job updates the status. Test of the content of the update is in
+     * {@link com.yahoo.vespa.hosted.controller.versions.VersionStatusTest} */
     @Test
     public void testVersionUpdating() {
         ControllerTester tester = new ControllerTester();

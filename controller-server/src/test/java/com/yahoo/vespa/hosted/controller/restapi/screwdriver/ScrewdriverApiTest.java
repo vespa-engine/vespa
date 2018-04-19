@@ -1,9 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.screwdriver;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -11,7 +10,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
@@ -37,7 +35,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
     @Test
     public void testTriggerJobForApplication() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        tester.containerTester().updateSystemVersion();
+        tester.containerTester().updateVersionStatus();
 
         Application app = tester.createApplication();
         tester.controller().applications().lockOrThrow(app.id(), application ->

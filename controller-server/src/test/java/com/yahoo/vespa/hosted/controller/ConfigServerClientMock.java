@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -183,8 +183,8 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     }
     
     @Override
-    public Version version(URI configServerURI) {
-        return versions.getOrDefault(configServerURI, defaultVersion);
+    public Version version(URI configServerUri) {
+        return versions.getOrDefault(configServerUri, defaultVersion);
     }
 
     @Override

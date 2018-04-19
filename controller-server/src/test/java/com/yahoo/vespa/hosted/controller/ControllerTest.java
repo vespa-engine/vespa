@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
@@ -75,12 +75,6 @@ public class ControllerTest {
     private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .environment(Environment.prod)
             .region("corp-us-east-1")
-            .build();
-
-    private static final ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
-            .environment(Environment.prod)
-            .region("corp-us-east-1")
-            .region("us-west-1")
             .build();
 
     @Test
@@ -296,15 +290,18 @@ public class ControllerTest {
                                                               "commit1",
                                                               Instant.now(),
                                                               true,
+                                                              true,
                                                               Collections.emptyList(),
                                                               VespaVersion.Confidence.low
         );
         List<VespaVersion> versions = new ArrayList<>(controller.versionStatus().versions());
         for (int i = 0; i < versions.size(); i++) {
             VespaVersion c = versions.get(i);
-            if (c.isCurrentSystemVersion())
+            if (c.isSystemVersion())
                 versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.committedAt(),
-                                                 false, c.configServerHostnames(),
+                                                 false,
+                                                 false,
+                                                 c.configServerHostnames(),
                                                  c.confidence()));
         }
         versions.add(newSystemVespaVersion);

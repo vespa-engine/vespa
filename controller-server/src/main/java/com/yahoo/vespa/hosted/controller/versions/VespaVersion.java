@@ -1,9 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 
@@ -25,18 +25,21 @@ public class VespaVersion implements Comparable<VespaVersion> {
     
     private final String releaseCommit;
     private final Instant committedAt;
-    private final boolean isCurrentSystemVersion;
+    private final boolean isControllerVersion;
+    private final boolean isSystemVersion;
     private final DeploymentStatistics statistics;
-    private final ImmutableSet<String> configServerHostnames;
+    private final ImmutableSet<HostName> configServerHostnames;
     private final Confidence confidence;
 
     public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant committedAt,
-                        boolean isCurrentSystemVersion, Collection<String> configServerHostnames,
+                        boolean isControllerVersion, boolean isSystemVersion,
+                        Collection<HostName> configServerHostnames,
                         Confidence confidence) {
         this.statistics = statistics;
         this.releaseCommit = releaseCommit;
         this.committedAt = committedAt;
-        this.isCurrentSystemVersion = isCurrentSystemVersion;
+        this.isControllerVersion = isControllerVersion;
+        this.isSystemVersion = isSystemVersion;
         this.configServerHostnames = ImmutableSet.copyOf(configServerHostnames);
         this.confidence = confidence;
     }
@@ -83,22 +86,25 @@ public class VespaVersion implements Comparable<VespaVersion> {
     /** Statistics about deployment of this version */
     public DeploymentStatistics statistics() { return statistics; }
 
-    /** Returns whether this is the version currently running on this controller */
-    public boolean isSelfVersion() { return versionNumber().equals(Vtag.currentVersion); }
+    /** Returns whether this is the current version of controllers in this system (the lowest version across all
+     * controllers) */
+    public boolean isControllerVersion() {
+        return isControllerVersion;
+    }
 
     /**
      * Returns whether this is the current version of the infrastructure of the system
-     * (i.e the lowest version across this controller and all config servers in all zones).
-     * A goal of the controller is to eventually (limited by safety and upgrade capacity) drive 
+     * (i.e the lowest version across all controllers and all config servers in all zones).
+     * A goal of the controllers is to eventually (limited by safety and upgrade capacity) drive
      * all applications to this version.
      * 
      * Note that the self version may be higher than the current system version if
-     * all config servers are not yet upgraded to the version of this controller.
+     * all config servers are not yet upgraded to the version of the controllers.
      */
-    public boolean isCurrentSystemVersion() { return isCurrentSystemVersion; }
+    public boolean isSystemVersion() { return isSystemVersion; }
 
     /** Returns the host names of the config servers (across all zones) which are currently of this version */
-    public Set<String> configServerHostnames() { return configServerHostnames; }
+    public Set<HostName> configServerHostnames() { return configServerHostnames; }
     
     /** Returns the confidence we have in this versions suitability for production */
     public Confidence confidence() { return confidence; }

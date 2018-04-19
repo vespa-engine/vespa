@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi;
 
 import com.yahoo.application.container.JDisc;
@@ -10,6 +10,7 @@ import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
+import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.ComparisonFailure;
@@ -43,12 +44,18 @@ public class ContainerTester {
         return (Controller) container.components().getComponent(Controller.class.getName());
     }
 
-    public void updateSystemVersion() {
+    public ConfigServerClientMock configServer() {
+        return (ConfigServerClientMock) container.components().getComponent(ConfigServerClientMock.class.getName());
+    }
+
+    public void updateVersionStatus() {
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
-    public void updateSystemVersion(Version version) {
-        controller().updateVersionStatus(VersionStatus.compute(controller(), version));
+    public void updateVersionStatus(Version version) {
+        controller().curator().writeControllerVersion(controller().hostname(), version);
+        configServer().setDefaultVersion(version);
+        controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
     public void assertResponse(Supplier<Request> request, File responseFile) throws IOException {

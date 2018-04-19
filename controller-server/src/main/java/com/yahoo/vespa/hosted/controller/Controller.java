@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -40,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
@@ -57,6 +59,7 @@ public class Controller extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(Controller.class.getName());
 
+    private final Supplier<String> hostnameSupplier;
     private final CuratorDb curator;
     private final ApplicationController applicationController;
     private final TenantController tenantController;
@@ -88,7 +91,8 @@ public class Controller extends AbstractComponent {
         this(curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServer, nodeRepository, metricsService, nameService, routingGenerator, chef,
-             Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService);
+             Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService,
+             com.yahoo.net.HostName::getLocalhost);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
@@ -98,8 +102,9 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
-                      BuildService buildService) {
+                      BuildService buildService, Supplier<String> hostnameSupplier) {
 
+        this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.gitHub = Objects.requireNonNull(gitHub, "GitHub cannot be null");
         this.entityService = Objects.requireNonNull(entityService, "EntityService cannot be null");;
@@ -122,6 +127,9 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
         tenantController = new TenantController(this, curator, athenzClientFactory);
+
+        // Record the version of this controller
+        curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);
     }
     
     /** Returns the instance controlling tenants */
@@ -202,6 +210,11 @@ public class Controller extends AbstractComponent {
         return versionStatus().systemVersion()
                 .map(VespaVersion::versionNumber)
                 .orElse(Vtag.currentVersion);
+    }
+
+    /** Returns the hostname of this controller */
+    public HostName hostname() {
+        return HostName.from(hostnameSupplier.get());
     }
 
     public MetricsService metricsService() {
