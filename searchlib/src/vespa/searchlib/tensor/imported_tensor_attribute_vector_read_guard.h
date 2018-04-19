@@ -28,10 +28,12 @@ public:
                                            bool stableEnumGuard);
     ~ImportedTensorAttributeVectorReadGuard();
 
+    const ITensorAttribute *asTensorAttribute() const override;
+
     virtual std::unique_ptr<Tensor> getTensor(uint32_t docId) const override;
     virtual std::unique_ptr<Tensor> getEmptyTensor() const override;
     virtual void getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
     virtual vespalib::eval::ValueType getTensorType() const override;
 };
 
-}  // namespace search::tensor
+}

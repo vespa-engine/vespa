@@ -136,9 +136,9 @@ SingleAttrDFW::insertField(uint32_t docid,
         BasicType::Type t = v.getBasicType();
         switch (t) {
         case BasicType::TENSOR: {
-            const tensor::ITensorAttribute &tv =
-                dynamic_cast<const tensor::ITensorAttribute &>(v);
-            const auto tensor = tv.getTensor(docid);
+            const tensor::ITensorAttribute *tv = v.asTensorAttribute();
+            assert(tv != nullptr);
+            const auto tensor = tv->getTensor(docid);
             if (tensor) {
                 vespalib::nbostream str;
                 vespalib::tensor::TypedBinaryFormat::serialize(str, *tensor);

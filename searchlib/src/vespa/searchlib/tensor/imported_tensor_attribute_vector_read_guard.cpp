@@ -7,16 +7,34 @@ namespace search::tensor {
 
 using vespalib::tensor::Tensor;
 
+namespace {
+
+const ITensorAttribute &
+getTensorAttribute(const search::attribute::IAttributeVector &attr)
+{
+    const ITensorAttribute *result = attr.asTensorAttribute();
+    assert(result != nullptr);
+    return *result;
+}
+
+}
+
 ImportedTensorAttributeVectorReadGuard::ImportedTensorAttributeVectorReadGuard(const attribute::ImportedAttributeVector &imported_attribute,
                                                                                bool stableEnumGuard)
     : ImportedAttributeVectorReadGuard(imported_attribute,
                                        stableEnumGuard),
-      _target_tensor_attribute(dynamic_cast<const ITensorAttribute &>(*imported_attribute.getTargetAttribute()))
+      _target_tensor_attribute(getTensorAttribute(*imported_attribute.getTargetAttribute()))
 {
 }
 
 ImportedTensorAttributeVectorReadGuard::~ImportedTensorAttributeVectorReadGuard()
 {
+}
+
+const ITensorAttribute *
+ImportedTensorAttributeVectorReadGuard::asTensorAttribute() const
+{
+    return this;
 }
 
 std::unique_ptr<Tensor>

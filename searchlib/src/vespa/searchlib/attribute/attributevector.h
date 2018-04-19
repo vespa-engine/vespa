@@ -514,6 +514,8 @@ public:
     // type-safe down-cast to attribute supporting direct document weight iterators
     const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
 
+    const tensor::ITensorAttribute *asTensorAttribute() const override;
+
     /**
        - Search for equality
        - Range search

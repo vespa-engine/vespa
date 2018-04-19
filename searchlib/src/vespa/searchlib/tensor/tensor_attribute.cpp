@@ -60,7 +60,11 @@ TensorAttribute::~TensorAttribute()
 {
 }
 
-
+const ITensorAttribute *
+TensorAttribute::asTensorAttribute() const
+{
+    return this;
+}
 
 uint32_t
 TensorAttribute::clearDoc(DocId docId)

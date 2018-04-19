@@ -65,6 +65,7 @@ public:
     virtual std::unique_ptr<ISearchContext> createSearchContext(std::unique_ptr<QueryTermSimple> term,
                                                                 const SearchContextParams &params) const override;
     virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
+    virtual const tensor::ITensorAttribute *asTensorAttribute() const override;
     virtual BasicType::Type getBasicType() const override;
     virtual size_t getFixedWidth() const override;
     virtual CollectionType::Type getCollectionType() const override;

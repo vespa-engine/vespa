@@ -16,8 +16,7 @@ ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref
     : ImportedAttributeVector(name, std::move(reference_attribute),
                               std::move(target_attribute),
                               std::move(document_meta_store),
-                              use_search_cache),
-      _target_tensor_attribute(dynamic_cast<const ITensorAttribute &>(*_target_attribute))
+                              use_search_cache)
 {
 }
 
@@ -29,8 +28,7 @@ ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref
     : ImportedAttributeVector(name, std::move(reference_attribute),
                               std::move(target_attribute),
                               std::move(document_meta_store),
-                              std::move(search_cache)),
-      _target_tensor_attribute(dynamic_cast<const ITensorAttribute &>(*_target_attribute))
+                              std::move(search_cache))
 {
 }
 
@@ -42,30 +40,6 @@ std::unique_ptr<attribute::AttributeReadGuard>
 ImportedTensorAttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
     return std::make_unique<ImportedTensorAttributeVectorReadGuard>(*this, stableEnumGuard);
-}
-
-std::unique_ptr<Tensor>
-ImportedTensorAttributeVector::getTensor(uint32_t docId) const
-{
-    return _target_tensor_attribute.getTensor(_reference_attribute->getReferencedLid(docId));
-}
-
-std::unique_ptr<Tensor>
-ImportedTensorAttributeVector::getEmptyTensor() const
-{
-    return _target_tensor_attribute.getEmptyTensor();
-}
-
-void
-ImportedTensorAttributeVector::getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const
-{
-    _target_tensor_attribute.getTensor(_reference_attribute->getReferencedLid(docId), tensor);
-}
-
-vespalib::eval::ValueType
-ImportedTensorAttributeVector::getTensorType() const
-{
-    return _target_tensor_attribute.getTensorType();
 }
 
 }

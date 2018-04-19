@@ -141,6 +141,10 @@ TEST_F("asDocumentWeightAttribute() returns nullptr", Fixture) {
     EXPECT_TRUE(f.get_imported_attr()->asDocumentWeightAttribute() == nullptr);
 }
 
+TEST_F("asTensorAttribute() returns nullptr", Fixture) {
+    EXPECT_TRUE(f.get_imported_attr()->asTensorAttribute() == nullptr);
+}
+
 TEST_F("Multi-valued integer attribute values can be retrieved via reference", Fixture) {
     const std::vector<int64_t> doc3_values({1234});
     const std::vector<int64_t> doc7_values({5678, 9876, 555, 777});
@@ -510,8 +514,9 @@ struct TensorAttrFixture : Fixture {
     }
     Tensor::UP getTensor(DocId docId) {
         auto imp_attr = this->get_imported_attr();
-        const ITensorAttribute & tensorAttr = dynamic_cast<const ITensorAttribute &>(*imp_attr);
-        return tensorAttr.getTensor(docId);
+        const ITensorAttribute *tensorAttr = imp_attr->asTensorAttribute();
+        ASSERT_TRUE(tensorAttr != nullptr);
+        return tensorAttr->getTensor(docId);
     }
     void assertNoTensor(DocId docId) {
         auto tensor = getTensor(docId);
