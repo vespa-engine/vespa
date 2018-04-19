@@ -3,15 +3,15 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include "i_tensor_attribute.h"
 
 namespace search::tensor {
+
+class ITensorAttribute;
 
 /**
  * Attribute vector for imported tensor attributes.
  */
-class ImportedTensorAttributeVector : public attribute::ImportedAttributeVector,
-                                      public ITensorAttribute
+class ImportedTensorAttributeVector : public attribute::ImportedAttributeVector
 {
     using ReferenceAttribute = attribute::ReferenceAttribute;
     using BitVectorSearchCache = attribute::BitVectorSearchCache;
@@ -30,10 +30,6 @@ public:
     ~ImportedTensorAttributeVector();
 
     virtual std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
-    virtual std::unique_ptr<Tensor> getTensor(uint32_t docId) const override;
-    virtual std::unique_ptr<Tensor> getEmptyTensor() const override;
-    virtual void getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
-    virtual vespalib::eval::ValueType getTensorType() const override;
 };
 
-}  // namespace search::tensor
+}

@@ -44,28 +44,4 @@ ImportedTensorAttributeVector::makeReadGuard(bool stableEnumGuard) const
     return std::make_unique<ImportedTensorAttributeVectorReadGuard>(*this, stableEnumGuard);
 }
 
-std::unique_ptr<Tensor>
-ImportedTensorAttributeVector::getTensor(uint32_t docId) const
-{
-    return _target_tensor_attribute.getTensor(_reference_attribute->getReferencedLid(docId));
-}
-
-std::unique_ptr<Tensor>
-ImportedTensorAttributeVector::getEmptyTensor() const
-{
-    return _target_tensor_attribute.getEmptyTensor();
-}
-
-void
-ImportedTensorAttributeVector::getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const
-{
-    _target_tensor_attribute.getTensor(_reference_attribute->getReferencedLid(docId), tensor);
-}
-
-vespalib::eval::ValueType
-ImportedTensorAttributeVector::getTensorType() const
-{
-    return _target_tensor_attribute.getTensorType();
-}
-
 }
