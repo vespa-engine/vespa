@@ -62,7 +62,7 @@ class HostAuthenticator {
         String issuerCommonName = X509CertificateUtils.getIssuerCommonNames(certificate).stream()
                 .findFirst()
                 .orElseThrow(() -> new AuthenticationException("Certificate issuer common name is missing!"));
-        return issuerCommonName.equals("Yahoo Athenz CA");
+        return issuerCommonName.equals("Yahoo Athenz CA") || issuerCommonName.equals("Athenz AWS CA");
     }
 
     private String getHostFromCalypsoCertificate(List<SubjectAlternativeName> sans) {
