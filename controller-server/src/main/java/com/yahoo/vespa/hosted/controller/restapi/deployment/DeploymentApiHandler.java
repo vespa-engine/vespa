@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -85,13 +86,13 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             versionObject.setString("confidence", version.confidence().name());
             versionObject.setString("commit", version.releaseCommit());
             versionObject.setLong("date", version.committedAt().toEpochMilli());
-            versionObject.setBool("controllerVersion", version.isSelfVersion());
-            versionObject.setBool("systemVersion", version.isCurrentSystemVersion());
+            versionObject.setBool("controllerVersion", version.isControllerVersion());
+            versionObject.setBool("systemVersion", version.isSystemVersion());
 
             Cursor configServerArray = versionObject.setArray("configServers");
-            for (String configServerHostnames : version.configServerHostnames()) {
+            for (HostName hostname : version.configServerHostnames()) {
                 Cursor configServerObject = configServerArray.addObject();
-                configServerObject.setString("hostname", configServerHostnames);
+                configServerObject.setString("hostname", hostname.value());
             }
 
             Cursor failingArray = versionObject.setArray("failingApplications");

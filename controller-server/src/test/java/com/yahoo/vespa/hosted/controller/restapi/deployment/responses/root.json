@@ -1,7 +1,7 @@
 {
   "versions":[
     {
-      "version": "(ignore)",
+      "version": "5",
       "confidence": "high",
       "commit": "(ignore)",
       "date": 0,
@@ -23,7 +23,7 @@
       "deployingApplications": [ ]
     },
     {
-      "version":"(ignore)",
+      "version":"5.1",
       "confidence":"normal",
       "commit":"(ignore)",
       "date":0,

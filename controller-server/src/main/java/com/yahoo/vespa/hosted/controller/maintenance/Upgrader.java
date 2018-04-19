@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -72,6 +72,8 @@ public class Upgrader extends Maintainer {
 
     private Optional<Version> newestVersionWithConfidence(Confidence confidence) {
         return reversed(controller().versionStatus().versions()).stream()
+                                                                // Ensure we never pick a version newer than the system
+                                                                .filter(v -> !v.versionNumber().isAfter(controller().systemVersion()))
                                                                 .filter(v -> v.confidence().equalOrHigherThan(confidence))
                                                                 .findFirst()
                                                                 .map(VespaVersion::versionNumber);

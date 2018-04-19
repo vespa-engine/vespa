@@ -1,9 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -50,9 +53,11 @@ public class CuratorDb {
     private static final Path lockRoot = root.append("locks");
     private static final Path tenantRoot = root.append("tenants");
     private static final Path applicationRoot = root.append("applications");
+    private static final Path controllerRoot = root.append("controllers");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
+    private final VersionSerializer versionSerializer = new VersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
@@ -68,6 +73,15 @@ public class CuratorDb {
     @Inject
     public CuratorDb(Curator curator) {
         this.curator = curator;
+    }
+
+    /** Returns all hosts configured to be part of this ZooKeeper cluster */
+    public List<HostName> cluster() {
+        return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
+                     .filter(hostAndPort -> !hostAndPort.isEmpty())
+                     .map(hostAndPort -> hostAndPort.split(":")[0])
+                     .map(HostName::from)
+                     .collect(Collectors.toList());
     }
 
     // -------------- Locks ---------------------------------------------------
@@ -178,6 +192,16 @@ public class CuratorDb {
     public Map<Version, VespaVersion.Confidence> readConfidenceOverrides() {
         return readSlime(confidenceOverridesPath()).map(confidenceOverrideSerializer::fromSlime)
                                                    .orElseGet(Collections::emptyMap);
+    }
+
+    public void writeControllerVersion(HostName hostname, Version version) {
+        curator.set(controllerPath(hostname.value()), asJson(versionSerializer.toSlime(version)));
+    }
+
+    public Version readControllerVersion(HostName hostname) {
+        return readSlime(controllerPath(hostname.value()))
+                .map(versionSerializer::fromSlime)
+                .orElse(Vtag.currentVersion);
     }
 
     // -------------- Tenant --------------------------------------------------
@@ -351,6 +375,10 @@ public class CuratorDb {
 
     private static Path applicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
+    }
+
+    private static Path controllerPath(String hostname) {
+        return controllerRoot.append(hostname);
     }
 
 }

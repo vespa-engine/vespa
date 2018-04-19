@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -12,13 +13,14 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import org.junit.Test;
 
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.Duration;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
@@ -43,7 +45,7 @@ public class VersionStatusTest {
     }
 
     @Test
-    public void testSystemVersionIsControllerVersionIfConfigserversAreNewer() {
+    public void testSystemVersionIsControllerVersionIfConfigServersAreNewer() {
         ControllerTester tester = new ControllerTester();
         Version largerThanCurrent = new Version(Vtag.currentVersion.getMajor() + 1);
         tester.configServer().setDefaultVersion(largerThanCurrent);
@@ -52,12 +54,36 @@ public class VersionStatusTest {
     }
 
     @Test
-    public void testSystemVersionIsVersionOfOldestConfigServer() throws URISyntaxException {
+    public void testSystemVersionIsVersionOfOldestConfigServer() {
         ControllerTester tester = new ControllerTester();
         Version oldest = new Version(5);
-        tester.configServer().versions().put(new URI("https://cfg.prod.corp-us-east-1.test:4443"), oldest);
+        tester.configServer().versions().put(URI.create("https://cfg.prod.corp-us-east-1.test:4443"), oldest);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(oldest, versionStatus.systemVersion().get().versionNumber());
+    }
+
+    @Test
+    public void testControllerVersionIsVersionOfOldestController() {
+        HostName controller1 = HostName.from("controller-1");
+        HostName controller2 = HostName.from("controller-2");
+        HostName controller3 = HostName.from("controller-3");
+        MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
+                                                   .map(hostName -> hostName.value() + ":2222")
+                                                   .collect(Collectors.joining(",")));
+        ControllerTester tester = new ControllerTester(db);
+
+        db.writeControllerVersion(controller1, Version.fromString("6.2"));
+        db.writeControllerVersion(controller2, Version.fromString("6.1"));
+        db.writeControllerVersion(controller3, Version.fromString("6.2"));
+
+        VersionStatus versionStatus = VersionStatus.compute(tester.controller());
+        assertEquals("Controller version is oldest version", Version.fromString("6.1"),
+                     versionStatus.controllerVersion().get().versionNumber());
+
+        // Last controller upgrades
+        db.writeControllerVersion(controller2, Version.fromString("6.2"));
+        versionStatus = VersionStatus.compute(tester.controller());
+        assertEquals(Version.fromString("6.2"), versionStatus.controllerVersion().get().versionNumber());
     }
 
     @Test

@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -22,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -41,7 +43,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
     public void testDeploymentApi() throws IOException {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
         Version version = Version.fromString("5.0");
-        tester.containerTester().updateSystemVersion(version);
+        tester.containerTester().updateVersionStatus(version);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("corp-us-east-1")
@@ -64,7 +66,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         // New version released
         version = Version.fromString("5.1");
-        tester.containerTester().updateSystemVersion(version);
+        tester.containerTester().updateVersionStatus(version);
 
         // Applications upgrade, 1/2 succeed
         tester.upgrader().maintain();
@@ -82,11 +84,14 @@ public class DeploymentApiTest extends ControllerContainerTest {
         List<VespaVersion> censored = new ArrayList<>();
         for (VespaVersion version : versionStatus.versions()) {
             if ( ! version.configServerHostnames().isEmpty())
-                version = new VespaVersion(version.statistics(), 
-                                           version.releaseCommit(), 
+                version = new VespaVersion(version.statistics(),
+                                           version.releaseCommit(),
                                            version.committedAt(),
-                                           version.isCurrentSystemVersion(), 
-                                           ImmutableSet.of("config1.test", "config2.test"),
+                                           version.isControllerVersion(),
+                                           version.isSystemVersion(),
+                                           ImmutableSet.of("config1.test", "config2.test").stream()
+                                                       .map(HostName::from)
+                                                       .collect(Collectors.toSet()),
                                            VespaVersion.confidenceFrom(version.statistics(), controller)
                 );
             censored.add(version);

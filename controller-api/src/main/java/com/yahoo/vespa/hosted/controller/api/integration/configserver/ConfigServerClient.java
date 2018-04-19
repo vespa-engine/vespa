@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,7 +47,7 @@ public interface ConfigServerClient {
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
     
     /** Returns the version this particular config server is running */
-    Version version(URI configserverUri);
+    Version version(URI configServerUri);
 
     /**
      * Set new status on en endpoint in one zone.

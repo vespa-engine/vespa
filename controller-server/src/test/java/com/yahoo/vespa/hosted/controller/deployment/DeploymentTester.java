@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
@@ -90,12 +90,13 @@ public class DeploymentTester {
     }
 
     public void updateVersionStatus() {
-        controller().updateVersionStatus(VersionStatus.compute(controller(), tester.controller().systemVersion()));
+        updateVersionStatus(tester.controller().systemVersion());
     }
 
-    public void updateVersionStatus(Version currentVersion) {
-        configServer().setDefaultVersion(currentVersion);
-        controller().updateVersionStatus(VersionStatus.compute(controller(), currentVersion));
+    public void updateVersionStatus(Version newVersion) {
+        controller().curator().writeControllerVersion(controller().hostname(), newVersion);
+        configServer().setDefaultVersion(newVersion);
+        controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
     public void upgradeSystem(Version version) {
