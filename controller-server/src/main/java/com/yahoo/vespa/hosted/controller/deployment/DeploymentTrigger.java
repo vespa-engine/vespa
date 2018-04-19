@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -41,6 +40,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.groupingBy;
@@ -102,7 +104,7 @@ public class DeploymentTrigger {
             application = application.withJobCompletion(report, applicationVersion, clock.instant(), controller);
             application = application.withProjectId(OptionalLong.of(report.projectId()));
 
-            if (report.jobType() == JobType.component && report.success()) {
+            if (report.jobType() == component && report.success()) {
                 if (acceptNewApplicationVersion(application))
                     // Note that in case of an ongoing upgrade this may result in both the upgrade and application
                     // change being deployed together
@@ -193,7 +195,7 @@ public class DeploymentTrigger {
         });
     }
 
-    public Map<JobType, ? extends List<? extends BuildService.BuildJob>> jobsToRun() {
+    public Map<JobType, ? extends List<? extends BuildJob>> jobsToRun() {
         return computeReadyJobs().collect(groupingBy(Job::jobType));
     }
 
@@ -212,12 +214,15 @@ public class DeploymentTrigger {
     public boolean isRunning(Application application, JobType jobType) {
         return    ! application.deploymentJobs().statusOf(jobType)
                                .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at()))).orElse(false)
-               &&   buildService.isRunning(BuildService.BuildJob.of(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
+               &&   buildService.isRunning(BuildJob.of(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
     }
 
-    public Job forcedDeploymentJob(Application application, JobType jobType, String reason) {
-        // TODO jvenstad: Verification here!
-        return deploymentJob(application, jobType, reason, clock.instant(), Collections.emptySet());
+    public void forceTrigger(ApplicationId applicationId, JobType jobType) {
+        Application application = applications().require(applicationId);
+        if (jobType == component)
+            buildService.trigger(BuildJob.of(applicationId, application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
+        else
+            trigger(deploymentJob(application, jobType, ">:o:< Triggered by force! (-o-) |-o-| (=oo=) ", clock.instant(), Collections.emptySet()));
     }
 
     private Job deploymentJob(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
@@ -226,23 +231,21 @@ public class DeploymentTrigger {
         if (isRetry) reason += "; retrying on out of capacity";
 
         Change change = application.change();
-        // For both versions, use the newer of the change's and the currently deployed versions, or a fallback if none of these exist.
-        Version platform = jobType == JobType.component
-                ? Version.emptyVersion
-                : deploymentFor(application, jobType).map(Deployment::version)
-                                                     .filter(version -> ! change.upgrades(version))
-                                                     .orElse(change.platform()
-                                                                   .orElse(application.oldestDeployedPlatform()
-                                                                                      .orElse(controller.systemVersion())));
-        ApplicationVersion applicationVersion = jobType == JobType.component
-                ? ApplicationVersion.unknown
-                : deploymentFor(application, jobType).map(Deployment::applicationVersion)
-                                                     .filter(version -> ! change.upgrades(version))
-                                                     .orElse(change.application()
-                                                                   .orElseGet(() -> application.oldestDeployedApplication()
-                                                                                               .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version to use for " + jobType))));
+        Optional<Deployment> deployment = deploymentFor(application, jobType);
+
+        Version platform = max(deployment.map(Deployment::version), change.platform())
+                .orElse(application.oldestDeployedPlatform()
+                                   .orElse(controller.systemVersion()));
+
+        ApplicationVersion applicationVersion = max(deployment.map(Deployment::applicationVersion), change.application())
+                .orElse(application.oldestDeployedApplication()
+                                   .orElse(application.deploymentJobs().jobStatus().get(component).lastSuccess().get().applicationVersion()));
 
         return new Job(application, jobType, reason, availableSince, concurrentlyWith, isRetry, change, platform, applicationVersion);
+    }
+
+    private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {
+        return ! o1.isPresent() ? o2 : ! o2.isPresent() ? o1 : o1.get().compareTo(o2.get()) >= 0 ? o1 : o2;
     }
 
     /**
@@ -351,7 +354,7 @@ public class DeploymentTrigger {
     }
 
 
-    private static class Job extends BuildService.BuildJob {
+    private static class Job extends BuildJob {
 
         private final JobType jobType;
         private final String reason;
@@ -376,16 +379,13 @@ public class DeploymentTrigger {
             this.applicationVersion = applicationVersion;
         }
 
-        public JobType jobType() { return jobType; }
-        public String reason() { return reason; }
-        public Instant availableSince() { return availableSince; }
-        public boolean isRetry() { return isRetry; }
-        public boolean applicationUpgrade() { return isApplicationUpgrade; }
-        public Change change() { return change; }
-        public Version platform() { return platformVersion; }
-        public ApplicationVersion application() { return applicationVersion; }
+        JobType jobType() { return jobType; }
+        Instant availableSince() { return availableSince; }
+        boolean isRetry() { return isRetry; }
+        boolean applicationUpgrade() { return isApplicationUpgrade; }
 
     }
+
 
 }
 
