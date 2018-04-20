@@ -19,42 +19,42 @@ import java.security.cert.X509Certificate;
 /**
  * @author bjorncs
  */
-public class AthenzSslContextBuilder {
+public class SslContextBuilder {
 
     private KeyStoreSupplier trustStoreSupplier;
     private KeyStoreSupplier keyStoreSupplier;
     private char[] keyStorePassword;
 
-    public AthenzSslContextBuilder() {}
+    public SslContextBuilder() {}
 
-    public AthenzSslContextBuilder withTrustStore(File file, KeyStoreType trustStoreType) {
+    public SslContextBuilder withTrustStore(File file, KeyStoreType trustStoreType) {
         this.trustStoreSupplier = () -> KeyStoreBuilder.withType(trustStoreType).fromFile(file).build();
         return this;
     }
 
-    public AthenzSslContextBuilder withTrustStore(KeyStore trustStore) {
+    public SslContextBuilder withTrustStore(KeyStore trustStore) {
         this.trustStoreSupplier = () -> trustStore;
         return this;
     }
 
-    public AthenzSslContextBuilder withIdentityCertificate(AthenzIdentityCertificate certificate) {
+    public SslContextBuilder withIdentityCertificate(AthenzIdentityCertificate certificate) {
         return withKeyStore(certificate.getPrivateKey(), certificate.getCertificate());
     }
 
-    public AthenzSslContextBuilder withKeyStore(PrivateKey privateKey, X509Certificate certificate) {
+    public SslContextBuilder withKeyStore(PrivateKey privateKey, X509Certificate certificate) {
         char[] pwd = new char[0];
-        this.keyStoreSupplier = () -> KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("athenz", privateKey, certificate).build();
+        this.keyStoreSupplier = () -> KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificate).build();
         this.keyStorePassword = pwd;
         return this;
     }
 
-    public AthenzSslContextBuilder withKeyStore(KeyStore keyStore, char[] password) {
+    public SslContextBuilder withKeyStore(KeyStore keyStore, char[] password) {
         this.keyStoreSupplier = () -> keyStore;
         this.keyStorePassword = password;
         return this;
     }
 
-    public AthenzSslContextBuilder withKeyStore(File file, char[] password, KeyStoreType keyStoreType) {
+    public SslContextBuilder withKeyStore(File file, char[] password, KeyStoreType keyStoreType) {
         this.keyStoreSupplier = () -> KeyStoreBuilder.withType(keyStoreType).fromFile(file, password).build();
         this.keyStorePassword = password;
         return this;

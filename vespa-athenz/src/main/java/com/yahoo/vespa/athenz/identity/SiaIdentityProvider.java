@@ -6,7 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
+import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
@@ -84,7 +84,7 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
             X509Certificate certificate = X509CertificateUtils.fromPem(certPem);
             String keyPem = new String(Files.readAllBytes(privateKeyFile.toPath()));
             PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(keyPem);
-            return new AthenzSslContextBuilder()
+            return new SslContextBuilder()
                     .withTrustStore(trustStoreFile, KeyStoreType.JKS)
                     .withIdentityCertificate(new AthenzIdentityCertificate(certificate, privateKey))
                     .build();
