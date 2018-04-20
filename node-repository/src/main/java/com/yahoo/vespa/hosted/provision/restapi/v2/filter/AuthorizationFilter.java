@@ -27,6 +27,7 @@ import java.util.stream.Stream;
  * Authorization filter for all paths in config server.
  *
  * @author mpolden
+ * @author bjorncs
  */
 public class AuthorizationFilter implements SecurityRequestFilter {
 

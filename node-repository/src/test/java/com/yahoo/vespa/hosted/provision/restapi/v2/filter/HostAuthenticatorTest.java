@@ -34,6 +34,8 @@ import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -56,7 +58,9 @@ public class HostAuthenticatorTest {
                 .build();
         HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
         NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
-        assertEquals(HOSTNAME, identity.getName());
+        assertTrue(identity.getHostname().isPresent());
+        assertEquals(HOSTNAME, identity.getHostname().get());
+        assertEquals(HOSTNAME, identity.getHostIdentityName());
     }
 
     @Test
@@ -64,8 +68,9 @@ public class HostAuthenticatorTest {
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         nodeRepositoryDummy.addNode(OPENSTACK_ID, HOSTNAME, INSTANCE_ID, NodeType.host);
         nodeRepositoryDummy.setNodeState(HOSTNAME, Node.State.active);
+        String identityName = "vespa.vespa.tenant-host";
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=vespa.vespa.tenant-host"), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + identityName), KEYPAIR, SHA256_WITH_RSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
                 .fromCsr(csr, ATHENZ_CA_DUMMY.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
@@ -73,7 +78,9 @@ public class HostAuthenticatorTest {
                 .build();
         HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
         NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
-        assertEquals(HOSTNAME, identity.getName());
+        assertTrue(identity.getHostname().isPresent());
+        assertEquals(HOSTNAME, identity.getHostname().get());
+        assertEquals(identityName, identity.getHostIdentityName());
     }
 
     @Test
@@ -87,8 +94,9 @@ public class HostAuthenticatorTest {
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         Node node = createNode(clusterId, clusterIndex, tenant, application);
         nodeRepositoryDummy.nodeRepository().addDockerNodes(singletonList(node));
+        String identityName = "vespa.vespa.tenant";
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=vespa.vespa.tenant"), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + identityName), KEYPAIR, SHA256_WITH_RSA)
                 .build();
         VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(clusterIndex, clusterId, INSTANCE_ID, application, tenant, region, environment);
         X509Certificate certificate = X509CertificateBuilder
@@ -97,7 +105,25 @@ public class HostAuthenticatorTest {
                 .build();
         HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
         NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
-        assertEquals(HOSTNAME, identity.getName());
+        assertTrue(identity.getHostname().isPresent());
+        assertEquals(HOSTNAME, identity.getHostname().get());
+        assertEquals(identityName, identity.getHostIdentityName());
+    }
+
+    @Test
+    public void accepts_controller_certificate() {
+        NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
+        String identityName = "vespa.vespa.hosting";
+        Pkcs10Csr csr = Pkcs10CsrBuilder
+                .fromKeypair(new X500Principal("CN=" + identityName), KEYPAIR, SHA256_WITH_RSA)
+                .build();
+        X509Certificate certificate = X509CertificateBuilder
+                .fromCsr(csr, ATHENZ_CA_DUMMY.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .build();
+        HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
+        assertFalse(identity.getHostname().isPresent());
+        assertEquals(identityName, identity.getHostIdentityName());
     }
 
     private static Node createNode(String clusterId, int clusterIndex, String tenant, String application) {

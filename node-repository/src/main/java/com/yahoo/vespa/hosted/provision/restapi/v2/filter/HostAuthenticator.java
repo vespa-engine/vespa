@@ -39,22 +39,18 @@ class HostAuthenticator {
                 .findFirst()
                 .orElseThrow(() -> new AuthenticationException("Certificate subject common name is missing!"));
         if (isAthenzIssued(clientCertificate)) {
-            String hostname;
             List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(clientCertificate);
             switch (subjectCommonName) {
                 case TENANT_DOCKER_HOST_IDENTITY:
-                    hostname = getHostFromCalypsoCertificate(sans);
-                    break;
+                    return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoCertificate(sans), certificateChain);
                 case TENANT_DOCKER_CONTAINER_IDENTITY:
-                    hostname = getHostFromVespaCertificate(sans);
-                    break;
+                    return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromVespaCertificate(sans), certificateChain);
                 default:
-                    throw new AuthenticationException("Untrusted common name in subject: " + subjectCommonName);
+                    return NodePrincipal.withAthenzIdentity(subjectCommonName, certificateChain);
             }
-            return new NodePrincipal(hostname, certificateChain);
         } else { // self-signed where common name is hostname
             // TODO Remove this branch once self-signed certificates are gone
-            return new NodePrincipal(subjectCommonName, certificateChain);
+            return NodePrincipal.withLegacyIdentity(subjectCommonName, certificateChain);
         }
     }
 
