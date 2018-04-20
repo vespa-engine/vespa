@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.zone;
 
 import com.yahoo.config.provision.Environment;
@@ -28,7 +28,7 @@ public interface ZoneRegistry {
     /** Returns the default region for the given environment, if one is configured */
     Optional<RegionName> getDefaultRegion(Environment environment);
 
-    /** Returns a list with all known config servers in the given zone, with a secure connection URL */
+    /** Returns the API endpoints of all known config servers in the given zone */
     List<URI> getConfigServerUris(ZoneId zoneId);
 
     /** Returns the URI for the config server VIP in the given zone, or Optional.empty() if no VIP exists */
@@ -48,5 +48,8 @@ public interface ZoneRegistry {
 
     /** Return the configserver's Athenz service identity */
     AthenzService getConfigServerAthenzService(ZoneId zoneId);
+
+    /** Returns the upgrade policy to use for zones in this registry */
+    UpgradePolicy upgradePolicy();
 
 }

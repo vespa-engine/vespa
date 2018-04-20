@@ -43,11 +43,14 @@ public interface ConfigServer {
     JsonNode waitForConfigConverge(DeploymentId applicationInstance, long timeoutInSeconds);
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
-    
+
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
-    
-    /** Returns the version this particular config server is running */
-    Version version(URI configServerUri);
+
+    /** Returns the version of this config server */
+    ConfigServerVersion version(URI configServerUri);
+
+    /** Upgrade config server at URI to the given version */
+    void upgrade(URI configServerUri, Version version);
 
     /**
      * Set new status on en endpoint in one zone.

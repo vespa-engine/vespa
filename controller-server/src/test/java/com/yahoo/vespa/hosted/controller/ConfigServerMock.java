@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -38,6 +39,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<ApplicationId, Boolean> applicationActivated = new HashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final Map<URI, Version> versions = new HashMap<>();
+    private final Map<URI, Version> wantedVersions = new HashMap<>();
 
     private Version defaultVersion = new Version(6, 1, 0);
     private Version lastPrepareVersion = null;
@@ -64,6 +66,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
      */
     public Map<URI, Version> versions() {
         return versions;
+    }
+
+    @Override
+    public void upgrade(URI configServerUri, Version version) {
+        wantedVersions.put(configServerUri, version);
     }
 
     /** Set the default config server version */
@@ -171,8 +178,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
     
     @Override
-    public Version version(URI configServerUri) {
-        return versions.getOrDefault(configServerUri, defaultVersion);
+    public ConfigServerVersion version(URI configServerUri) {
+        return new ConfigServerVersion(versions.getOrDefault(configServerUri, defaultVersion),
+                                       wantedVersions.getOrDefault(configServerUri, defaultVersion));
     }
 
     @Override
