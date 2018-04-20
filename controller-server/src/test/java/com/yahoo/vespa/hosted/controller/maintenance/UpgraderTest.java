@@ -504,6 +504,9 @@ public class UpgraderTest {
         tester.readyJobTrigger().maintain();
         tester.readyJobTrigger().maintain();
         tester.readyJobTrigger().maintain();
+        tester.readyJobTrigger().maintain();
+        tester.readyJobTrigger().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Canaries upgrade and raise confidence of V2
         tester.completeUpgrade(canary0, v2, "canary");

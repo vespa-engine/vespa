@@ -186,8 +186,31 @@ public class JobStatus {
         public Instant at() { return at; }
 
         @Override
-        public String toString() { return "job run " + id + " of version " + version + " "
-                                          + applicationVersion + " at " + at; }
+        public String toString() {
+            return "job run " + id + " of version " + version + " " + applicationVersion + " at " + at;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof JobRun)) return false;
+
+            JobRun run = (JobRun) o;
+
+            if (id != run.id) return false;
+            if (!version.equals(run.version)) return false;
+            if (!applicationVersion.equals(run.applicationVersion)) return false;
+            return at.equals(run.at);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (id ^ (id >>> 32));
+            result = 31 * result + version.hashCode();
+            result = 31 * result + applicationVersion.hashCode();
+            result = 31 * result + at.hashCode();
+            return result;
+        }
 
     }
 
