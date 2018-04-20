@@ -621,16 +621,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.compendium</artifactId>
-                <version>4.3.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.core</artifactId>
-                <version>4.3.0</version>
-            </dependency>
-            <dependency>
                 <groupId>org.scala-lang.modules</groupId>
                 <artifactId>scala-parser-combinators_${scala.major-version}</artifactId>
                 <version>1.0.1</version>

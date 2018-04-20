@@ -61,11 +61,6 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-    	<groupId>org.osgi</groupId>
-    	<artifactId>org.osgi.core</artifactId>
-    	<scope>test</scope>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
