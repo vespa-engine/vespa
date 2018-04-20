@@ -3,6 +3,7 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;

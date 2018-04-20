@@ -4,6 +4,9 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.ProviderUniqueId;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
@@ -12,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
 import java.net.InetAddress;
+import java.net.URI;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.time.Instant;
@@ -61,7 +65,7 @@ public class IdentityDocumentGenerator {
                     identityDocument.providerUniqueId.toVespaUniqueInstanceId().asDottedString(),
                     toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
                     zoneConfig.domain() + "." + zoneConfig.serviceName(),
-                    zoneConfig.ztsUrl(),
+                    URI.create(zoneConfig.ztsUrl()),
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);

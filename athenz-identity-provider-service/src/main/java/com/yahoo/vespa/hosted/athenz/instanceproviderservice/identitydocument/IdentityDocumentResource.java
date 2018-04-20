@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentApi;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 import com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodePrincipal;
 
 import javax.servlet.http.HttpServletRequest;
@@ -12,7 +14,6 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -25,27 +26,29 @@ import java.util.logging.Logger;
  * @author bjorncs
  */
 @Path("/identity-document")
-public class IdentityDocumentResource {
+public class IdentityDocumentResource implements IdentityDocumentApi {
 
     private static final Logger log = Logger.getLogger(IdentityDocumentResource.class.getName());
 
     private final IdentityDocumentGenerator identityDocumentGenerator;
+    private final HttpServletRequest request;
 
     @Inject
-    public IdentityDocumentResource(@Component IdentityDocumentGenerator identityDocumentGenerator) {
+    public IdentityDocumentResource(@Component IdentityDocumentGenerator identityDocumentGenerator,
+                                    @Context HttpServletRequest request) {
         this.identityDocumentGenerator = identityDocumentGenerator;
+        this.request = request;
     }
 
     /**
-     * @deprecated Use {@link #getNodeIdentityDocument(String, HttpServletRequest)}
-     *             and {@link #getTenantIdentityDocument(String, HttpServletRequest)} instead.
+     * @deprecated Use {@link #getNodeIdentityDocument(String)} and {@link #getTenantIdentityDocument(String)} instead.
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Deprecated
+    @Override
     // TODO Make this method private when the rest api is not longer in use
-    public SignedIdentityDocument getIdentityDocument(@QueryParam("hostname") String hostname,
-                                                      @Context HttpServletRequest request) {
+    public SignedIdentityDocument getIdentityDocument(@QueryParam("hostname") String hostname) {
         if (hostname == null) {
             throw new BadRequestException("The 'hostname' query parameter is missing");
         }
@@ -74,18 +77,17 @@ public class IdentityDocumentResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/node/{host}")
-    public SignedIdentityDocument getNodeIdentityDocument(@PathParam("host") String host,
-                                                          @Context HttpServletRequest request) {
-        return getIdentityDocument(host, request);
+    @Override
+    public SignedIdentityDocument getNodeIdentityDocument(@PathParam("host") String host) {
+        return getIdentityDocument(host);
     }
-
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/tenant/{host}")
-    public SignedIdentityDocument getTenantIdentityDocument(@PathParam("host") String host,
-                                                            @Context HttpServletRequest request) {
-        return getIdentityDocument(host, request);
+    @Override
+    public SignedIdentityDocument getTenantIdentityDocument(@PathParam("host") String host) {
+        return getIdentityDocument(host);
     }
 
 }
