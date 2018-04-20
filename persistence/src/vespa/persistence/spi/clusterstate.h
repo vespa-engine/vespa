@@ -3,14 +3,13 @@
 
 #include "bucket.h"
 
-namespace storage {
 
-namespace lib {
+namespace storage::lib {
     class ClusterState;
     class Distribution;
 }
 
-namespace spi {
+namespace storage::spi {
 
 /**
  * Used to determine the state of the current node and its buckets.
@@ -77,6 +76,3 @@ private:
 };
 
 }
-
-}
-

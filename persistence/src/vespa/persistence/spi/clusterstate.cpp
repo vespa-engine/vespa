@@ -40,7 +40,7 @@ ClusterState::ClusterState(const ClusterState& other) {
     deserialize(o);
 }
 
-ClusterState::~ClusterState() { }
+ClusterState::~ClusterState() = default;
 
 ClusterState& ClusterState::operator=(const ClusterState& other) {
     ClusterState copy(other);
@@ -51,8 +51,8 @@ ClusterState& ClusterState::operator=(const ClusterState& other) {
 }
 
 bool ClusterState::shouldBeReady(const Bucket& b) const {
-    assert(_distribution.get());
-    assert(_state.get());
+    assert(_distribution);
+    assert(_state);
 
     if (_distribution->getReadyCopies() >= _distribution->getRedundancy()) {
         return true; // all copies should be ready
@@ -69,11 +69,11 @@ bool ClusterState::shouldBeReady(const Bucket& b) const {
 }
 
 bool ClusterState::clusterUp() const {
-    return _state.get() && _state->getClusterState() == lib::State::UP;
+    return _state && _state->getClusterState() == lib::State::UP;
 }
 
 bool ClusterState::nodeHasStateOneOf(const char* states) const {
-    return _state.get() &&
+    return _state &&
            _state->getNodeState(lib::Node(lib::NodeType::STORAGE, _nodeIndex)).
                    getState().oneOf(states);
 }
@@ -91,8 +91,8 @@ bool ClusterState::nodeRetired() const {
 }
 
 void ClusterState::serialize(vespalib::nbostream& o) const {
-    assert(_distribution.get());
-    assert(_state.get());
+    assert(_distribution);
+    assert(_state);
     vespalib::asciistream tmp;
     _state->serialize(tmp, false);
     o << tmp.str() << _nodeIndex;

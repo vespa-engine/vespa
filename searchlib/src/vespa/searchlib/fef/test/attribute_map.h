@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mock_attribute_context.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
@@ -23,6 +23,7 @@ class AttributeMap {
     std::map<vespalib::string, std::unique_ptr<attribute::AttributeReadGuard>> _guards;
 public:
     using IAttributeVector = attribute::IAttributeVector;
+    ~AttributeMap();
 
     void add(std::shared_ptr<attribute::IAttributeVector> attr) {
         _attributes.emplace(attr->getName(), std::move(attr));
