@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
@@ -67,12 +68,25 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                                                                                                 Optional.of(new SourceRevision("repo", "branch", "commit")),
                                                                                                 Optional.empty()));
 
-        // Triggers specific job when given -- fails here because the job has never run before, and so application version can't be resolved.
+        // Triggers specific job when given -- triggers the prerequisites here, since they are not yet fulfilled.
+        assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
+                                   app.id().tenant().value() + "/application/" + app.id().application().value(),
+                                   "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
+                       200, "{\"message\":\"Triggered system-test for tenant1.application1\"}");
+
+        tester.controller().applications().deploymentTrigger().notifyOfCompletion(new JobReport(app.id(),
+                                                                                                DeploymentJobs.JobType.systemTest,
+                                                                                                1,
+                                                                                                42,
+                                                                                                Optional.empty(),
+                                                                                                Optional.empty()));
+
+        // Triggers specific job when given, and when it is verified.
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
                                    "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
                        200, "{\"message\":\"Triggered staging-test for tenant1.application1\"}");
-        // TODO jvenstad: This should trigger system-test instead, unless they are allowed to run in parallel.
+
     }
 
 }

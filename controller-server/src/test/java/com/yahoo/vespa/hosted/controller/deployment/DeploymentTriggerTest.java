@@ -120,7 +120,6 @@ public class DeploymentTriggerTest {
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .delay(Duration.ofSeconds(30))
                 .region("us-west-1")
                 .delay(Duration.ofMinutes(2))
                 .delay(Duration.ofMinutes(2)) // Multiple delays are summed up
@@ -133,14 +132,8 @@ public class DeploymentTriggerTest {
 
         // Test jobs pass
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
-        tester.clock().advance(Duration.ofSeconds(1)); // Make staging test sort as the last successful job
         tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
-        assertTrue("No more jobs triggered at this time", mockBuildService.jobs().isEmpty());
-
-        // 30 seconds pass, us-west-1 is triggered
-        tester.clock().advance(Duration.ofSeconds(30));
         tester.deploymentTrigger().triggerReadyJobs();
-
         assertEquals(1, mockBuildService.jobs().size());
         tester.assertRunning(application.id(), productionUsWest1);
 
@@ -383,11 +376,15 @@ public class DeploymentTriggerTest {
         tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
         tester.deployAndNotify(application, empty(), true, systemTest);
         tester.deployAndNotify(application, empty(), true, stagingTest);
-        tester.deployAndNotify(application, empty(), true, productionUsCentral1);
+        tester.deployAndNotify(application, empty(), false, productionUsCentral1);
 
         // The last job has a different target, and the tests need to run again.
+        // These may now start, since the first job has been triggered once, and thus is verified already.
         tester.deployAndNotify(application, empty(), true, systemTest);
         tester.deployAndNotify(application, empty(), true, stagingTest);
+
+        // Finally, the two production jobs complete, in order.
+        tester.deployAndNotify(application, empty(), true, productionUsCentral1);
         tester.deployAndNotify(application, empty(), true, productionEuWest1);
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
     }

@@ -57,6 +57,7 @@ import static java.util.Optional.empty;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -226,17 +227,21 @@ public class DeploymentTrigger {
                &&   buildService.isRunning(BuildJob.of(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
     }
 
-    public void forceTrigger(ApplicationId applicationId, JobType jobType) {
+    public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType) {
         Application application = applications().require(applicationId);
         if (jobType == component) {
             buildService.trigger(BuildJob.of(applicationId, application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
-            return;
+            return singletonList(component);
         }
         State target = targetFor(application, application.change(), jobType);
-        if (isVerified(application, target, jobType))
-            trigger(deploymentJob(application, target, application.change(), jobType, ">:o:< Triggered by force! (-o-) |-o-| (=oo=) ", clock.instant(), Collections.emptySet()));
-        else
-            ; // TODO jvenstad: Test it!
+        String reason = ">:o:< Triggered by force! (-o-) |-o-| (=oo=)";
+        if (isVerified(application, target, jobType)) {
+            trigger(deploymentJob(application, target, application.change(), jobType, reason, clock.instant(), Collections.emptySet()));
+            return singletonList(jobType);
+        }
+        List<Job> testJobs = testJobsFor(application, target, reason, clock.instant());
+        testJobs.forEach(this::trigger);
+        return testJobs.stream().map(Job::jobType).collect(toList());
     }
 
     private Job deploymentJob(Application application, State target, Change change, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
@@ -267,26 +272,38 @@ public class DeploymentTrigger {
      * Finds the next step to trigger for the given application, if any, and returns these as a list.
      */
     private List<Job> computeReadyJobs(ApplicationId id) {
+        /*
+            find testJobs
+            find productionSteps
+
+            completedAt = EPOCH
+
+
+
+
+
+
+
+
+
+
+         */
+
+
+
+
+
         List<Job> jobs = new ArrayList<>();
         applications().get(id).ifPresent(application -> {
             List<Step> steps = application.deploymentSpec().steps().isEmpty()
                     ? singletonList(new DeploymentSpec.DeclaredZone(test))
                     : application.deploymentSpec().steps();
-            List<Step> productionSteps = new ArrayList<>(steps);
-            productionSteps.removeIf(step -> ! step.deploysTo(prod) && ! step.zones().isEmpty());
-            List<Step> testSteps = new ArrayList<>(steps);
-            testSteps.removeAll(productionSteps);
+            List<Step> productionSteps = steps.stream().filter(step -> step.deploysTo(prod) || step.zones().isEmpty()).collect(toList());
 
-            boolean complete = ! productionSteps.isEmpty();
-            Optional<Instant> completedAt = application.deploymentJobs().statusOf(stagingTest).flatMap(JobStatus::lastSuccess).map(JobRun::at);
+            Optional<Instant> completedAt = Optional.of(Instant.EPOCH); // Delays before first production job are ignored.
             String reason = "New change available";
-            State testTarget = null;
-            Instant testAvailableSince = null;
-            JobType testFor = null;
+            List<Job> testJobs = null;
 
-            // Loop through all production steps and find
-            //   a) any incomplete and ready production jobs which are already verified, and / or
-            //   b) any tests which are required to verify the first incomplete production job
             for (Step step : productionSteps) {
                 Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
                 Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(application.change(), application, job)));
@@ -297,16 +314,9 @@ public class DeploymentTrigger {
                             if (completedAt.isPresent())
                                 jobs.add(deploymentJob(application, target, application.change(), job, reason, completedAt.get(), stepJobs));
                         }
-                        else if (testTarget == null) {
-                            testTarget = target;
-                            testAvailableSince = completedAt.orElse(clock.instant());
-                            testFor = job;
-                        }
+                        else if (testJobs == null)
+                            testJobs = testJobsFor(application, target, "Testing deployment for " + job.jobName(), completedAt.orElse(clock.instant()));
                     }
-
-                    complete = false;
-                    completedAt = empty();
-                    break;
                 }
                 else { // All jobs are complete -- find the time of completion of this step.
                     if (stepJobs.isEmpty()) { // No jobs means this is delay step.
@@ -321,26 +331,31 @@ public class DeploymentTrigger {
                 }
             }
 
-            if (productionSteps.isEmpty()) {
-                testTarget = targetFor(application, application.change(), systemTest);
-                testFor = systemTest;
-                testAvailableSince = clock.instant();
-            }
-            if (testTarget != null)
-                for (Step step : testSteps) {
-                    for (JobType jobType : step.zones().stream().map(order::toJob).collect(Collectors.toList())) {
-                        Optional<JobRun> completion = successOn(application, jobType, testTarget.targetPlatform, testTarget.targetApplication);
-                        if (completion.isPresent())
-                            testAvailableSince = completion.get().at();
-                        else if (isVerified(application, testTarget, jobType))
-                            jobs.add(deploymentJob(application, testTarget, application.change(), jobType, "Testing deployment for " + testFor.jobName(), testAvailableSince, emptySet()));
-                    }
-                }
+            if (testJobs == null)
+                testJobs = testJobsFor(application, targetFor(application, application.change(), systemTest), "Testing last changes outside prod", clock.instant());
+            jobs.addAll(testJobs);
 
             // TODO jvenstad: Replace with completion of individual parts of Change.
-            if (complete)
+            if (steps.stream().flatMap(step -> step.zones().stream()).map(order::toJob)
+                     .allMatch(job -> completedAt(application.change(), application, job).isPresent()))
                 applications().lockIfPresent(id, lockedApplication -> applications().store(lockedApplication.withChange(Change.empty())));
         });
+        return jobs;
+    }
+
+    private List<Job> testJobsFor(Application application, State target, String reason, Instant availableSince) {
+        List<Step> steps = application.deploymentSpec().steps();
+        if (steps.isEmpty()) steps = singletonList(new DeploymentSpec.DeclaredZone(test));
+        List<Job> jobs = new ArrayList<>();
+        for (Step step : steps.stream().filter(step -> step.deploysTo(test) || step.deploysTo(staging)).collect(toList())) {
+            for (JobType jobType : step.zones().stream().map(order::toJob).collect(toList())) {
+                Optional<JobRun> completion = successOn(application, jobType, target.targetPlatform, target.targetApplication);
+                if (completion.isPresent())
+                    availableSince = completion.get().at();
+                else if (isVerified(application, target, jobType))
+                    jobs.add(deploymentJob(application, target, application.change(), jobType, reason, availableSince, emptySet()));
+            }
+        }
         return jobs;
     }
 
@@ -403,7 +418,7 @@ public class DeploymentTrigger {
         return application.deploymentJobs().jobStatus().keySet().parallelStream()
                           .filter(job -> job.isProduction())
                           .filter(job -> isRunning(application, job))
-                          .collect(Collectors.toList());
+                          .collect(toList());
     }
 
     private ApplicationController applications() {

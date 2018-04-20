@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.screwdriver;
 
+import com.google.common.base.Joiner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -28,6 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 
 /**
  * This API lists deployment jobs that are queued for execution on Screwdriver.
@@ -88,11 +90,13 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                                   .map(JobType::fromJobName)
                                   .orElse(JobType.component);
 
-        controller.applications().deploymentTrigger().forceTrigger(ApplicationId.from(tenantName, applicationName, "default"), jobType);
+        String triggered = controller.applications().deploymentTrigger()
+                                     .forceTrigger(ApplicationId.from(tenantName, applicationName, "default"), jobType)
+                                     .stream().map(JobType::jobName).collect(joining(", "));
 
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
-        cursor.setString("message", "Triggered " + jobType.jobName() + " for " + tenantName + "." + applicationName);
+        cursor.setString("message", "Triggered " + triggered + " for " + tenantName + "." + applicationName);
         return new SlimeJsonResponse(slime);
     }
 
