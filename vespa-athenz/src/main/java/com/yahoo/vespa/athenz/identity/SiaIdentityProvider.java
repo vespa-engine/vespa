@@ -6,19 +6,12 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -49,7 +42,11 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
              getPrivateKeyFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
              getCertificateFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
              new File(config.trustStorePath()),
-             new ScheduledThreadPoolExecutor(1));
+             new ScheduledThreadPoolExecutor(1, runnable -> {
+                 Thread thread = new Thread(runnable);
+                 thread.setName("sia-identity-provider-sslcontext-updater");
+                 return thread;
+             }));
     }
 
     public SiaIdentityProvider(AthenzService service,
