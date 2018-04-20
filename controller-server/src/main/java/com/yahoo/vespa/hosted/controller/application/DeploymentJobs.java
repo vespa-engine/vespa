@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -98,20 +99,6 @@ public class DeploymentJobs {
         return ! JobList.from(status.values()).failing().isEmpty();
     }
 
-    /** Returns whether change can be deployed to the given environment */
-    public boolean isDeployableTo(Environment environment, Change change) {
-        // TODO jvenstad: Rewrite to verify versions when deployment is already decided.
-        if (environment == null || ! change.isPresent()) {
-            return true;
-        }
-        if (environment == Environment.staging) {
-            return successAt(change, JobType.systemTest).isPresent();
-        } else if (environment == Environment.prod) {
-            return successAt(change, JobType.stagingTest).isPresent();
-        }
-        return true; // other environments do not have any preconditions
-    }
-
     /** Returns the JobStatus of the given JobType, or empty. */
     public Optional<JobStatus> statusOf(JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType));
@@ -125,14 +112,6 @@ public class DeploymentJobs {
     public OptionalLong projectId() { return projectId; }
 
     public Optional<IssueId> issueId() { return issueId; }
-
-    /** Returns the time of success for the given change for the given job type, or empty if unsuccessful. */
-    public Optional<Instant> successAt(Change change, JobType jobType) {
-        return statusOf(jobType)
-                .flatMap(JobStatus::lastSuccess)
-                .filter(status -> status.lastCompletedWas(change))
-                .map(JobStatus.JobRun::at);
-    }
 
     private static OptionalLong requireId(OptionalLong id, String message) {
         Objects.requireNonNull(id, message);

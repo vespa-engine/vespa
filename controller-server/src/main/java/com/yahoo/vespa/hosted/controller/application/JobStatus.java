@@ -185,29 +185,6 @@ public class JobStatus {
         /** Returns the time if this triggering or completion */
         public Instant at() { return at; }
 
-        /** Returns whether the job last completed for the given change */
-        public boolean lastCompletedWas(Change change) {
-            if (change.platform().isPresent() && ! change.platform().get().equals(version())) return false;
-            if (change.application().isPresent() && ! change.application().get().equals(applicationVersion)) return false;
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(version, applicationVersion, at);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if ( ! (o instanceof JobRun)) return false;
-            JobRun jobRun = (JobRun) o;
-            return id == jobRun.id &&
-                   Objects.equals(version, jobRun.version) &&
-                   Objects.equals(applicationVersion, jobRun.applicationVersion) &&
-                   Objects.equals(at, jobRun.at);
-        }
-
         @Override
         public String toString() { return "job run " + id + " of version " + version + " "
                                           + applicationVersion + " at " + at; }

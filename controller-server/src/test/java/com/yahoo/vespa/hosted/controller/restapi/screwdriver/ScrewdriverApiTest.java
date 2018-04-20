@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.controller.restapi.screwdriver;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
+import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -57,12 +60,19 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
                                    new byte[0], Request.Method.POST),
                        200, "{\"message\":\"Triggered component for tenant1.application1\"}");
+        tester.controller().applications().deploymentTrigger().notifyOfCompletion(new JobReport(app.id(),
+                                                                                                DeploymentJobs.JobType.component,
+                                                                                                1,
+                                                                                                42,
+                                                                                                Optional.of(new SourceRevision("repo", "branch", "commit")),
+                                                                                                Optional.empty()));
 
         // Triggers specific job when given -- fails here because the job has never run before, and so application version can't be resolved.
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
                                    "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot determine application version to use for stagingTest\"}");
+                       200, "{\"message\":\"Triggered staging-test for tenant1.application1\"}");
+        // TODO jvenstad: This should trigger system-test instead, unless they are allowed to run in parallel.
     }
 
 }

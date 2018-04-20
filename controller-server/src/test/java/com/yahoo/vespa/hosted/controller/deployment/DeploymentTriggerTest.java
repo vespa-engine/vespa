@@ -379,6 +379,7 @@ public class DeploymentTriggerTest {
         Version version1 = new Version("6.2");
         tester.upgradeSystem(version1);
         tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        // TODO jvenstad: Fails here now, because job isn't triggered any more, as deploy target is not verified.
         tester.completeUpgrade(application, version1, applicationPackage);
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
     }
@@ -426,6 +427,7 @@ public class DeploymentTriggerTest {
 
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
         assertEquals((Long) 42L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+        // TODO jvenstad: Fails here now, because job isn't triggered any more, as deploy target is not verified.
         assertNotEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
@@ -434,7 +436,7 @@ public class DeploymentTriggerTest {
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
         assertEquals((Long) 43L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
 
-        // Change is again strictly dominated, and us-central-1 should be skipped, even though it is still a failure.
+        // Change is again strictly dominated, and us-central-1 is skipped, even though it is still failing.
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         tester.deployAndNotify(application, applicationPackage, true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
@@ -471,6 +473,7 @@ public class DeploymentTriggerTest {
         assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main).get()).version());
 
         // New application version should run system and staging tests first against 6.2, then against 6.1.
+        // TODO jvenstad: Make triggering happen at 6.2 here, since that is the first production job. Currently it tests 6.1.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
         tester.deployAndNotify(application, Optional.empty(), true, systemTest);
