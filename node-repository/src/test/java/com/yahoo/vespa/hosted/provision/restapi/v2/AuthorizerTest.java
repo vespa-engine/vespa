@@ -7,6 +7,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodePrincipal;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import org.junit.Before;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -64,92 +66,108 @@ public class AuthorizerTest {
 
     @Test
     public void root_authorization() {
-        assertFalse(authorized("", ""));
-        assertFalse(authorized("", "/"));
-        assertFalse(authorized("node1", ""));
-        assertFalse(authorized("node1", "/"));
+        assertFalse(authorizedTenantNode("", ""));
+        assertFalse(authorizedTenantNode("", "/"));
+        assertFalse(authorizedTenantNode("node1", ""));
+        assertFalse(authorizedTenantNode("node1", "/"));
     }
 
     @Test
     public void nodes_authorization() {
         // Node can only access its own resources
-        assertFalse(authorized("node1", "/nodes/v2/node"));
-        assertFalse(authorized("node1", "/nodes/v2/node/"));
-        assertFalse(authorized("node1", "/nodes/v2/node/node2"));
-        assertFalse(authorized("node1", "/nodes/v2/state/dirty/"));
-        assertFalse(authorized("node1", "/nodes/v2/state/dirty/node2"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/node"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/node/"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/node/node2"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/state/dirty/"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/state/dirty/node2"));
         // Path traversal fails gracefully
-        assertFalse(authorized("node1", "/nodes/v2/node/."));
-        assertFalse(authorized("node1", "/nodes/v2/node/.."));
-        assertFalse(authorized("node1", "/nodes/v2/acl/node2"));
-        assertFalse(authorized("node1", "/nodes/v2/node/?parentHost=node2"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/node/."));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/node/.."));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/acl/node2"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/node/?parentHost=node2"));
         // Node resource always takes precedence over filter
-        assertFalse(authorized("node1", "/nodes/v2/acl/node2?hostname=node1"));
-        assertFalse(authorized("node1", "/nodes/v2/command/reboot/"));
-        assertFalse(authorized("node1", "/nodes/v2/command/reboot/?hostname="));
-        assertFalse(authorized("node1", "/nodes/v2/command/reboot/?hostname=node2"));
-        assertTrue(authorized("node1", "/nodes/v2/node/node1"));
-        assertTrue(authorized("node1", "/nodes/v2/state/dirty/node1"));
-        assertTrue(authorized("node1", "/nodes/v2/acl/node1"));
-        assertTrue(authorized("node1", "/nodes/v2/command/reboot?hostname=node1"));
-        assertTrue(authorized("node1", "/nodes/v2/node/?parentHost=node1"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/acl/node2?hostname=node1"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/command/reboot/"));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/command/reboot/?hostname="));
+        assertFalse(authorizedTenantNode("node1", "/nodes/v2/command/reboot/?hostname=node2"));
+        assertTrue(authorizedTenantNode("node1", "/nodes/v2/node/node1"));
+        assertTrue(authorizedTenantNode("node1", "/nodes/v2/state/dirty/node1"));
+        assertTrue(authorizedTenantNode("node1", "/nodes/v2/acl/node1"));
+        assertTrue(authorizedTenantNode("node1", "/nodes/v2/command/reboot?hostname=node1"));
+        assertTrue(authorizedTenantNode("node1", "/nodes/v2/node/?parentHost=node1"));
 
         // Host node can access itself and its children
-        assertFalse(authorized("host1", "/nodes/v2/node/child2-1"));
-        assertFalse(authorized("host1", "/nodes/v2/command/reboot?hostname=child2-1"));
-        assertTrue(authorized("host1", "/nodes/v2/node/host1"));
-        assertTrue(authorized("host1", "/nodes/v2/node/child1-1"));
-        assertTrue(authorized("host1", "/nodes/v2/command/reboot?hostname=child1-1"));
+        assertFalse(authorizedTenantHostNode("host1", "/nodes/v2/node/child2-1"));
+        assertFalse(authorizedTenantHostNode("host1", "/nodes/v2/command/reboot?hostname=child2-1"));
+        assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/node/host1"));
+        assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/node/child1-1"));
+        assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/command/reboot?hostname=child1-1"));
 
         // Trusted services can access everything in their own system
-        assertFalse(authorized("vespa.vespa.cd.hosting", "/")); // Wrong system
-        assertTrue(new Authorizer(SystemName.cd, nodeRepository, Collections.emptySet()).test(() -> "vespa.vespa.cd.hosting", uri("/")));
-        assertTrue(authorized("vespa.vespa.hosting", "/"));
-        assertTrue(authorized("vespa.vespa.hosting", "/nodes/v2/node/"));
-        assertTrue(authorized("vespa.vespa.hosting", "/nodes/v2/node/node1"));
+        assertFalse(authorizedController("vespa.vespa.cd.hosting", "/")); // Wrong system
+        assertTrue(new Authorizer(SystemName.cd, nodeRepository, Collections.emptySet()).test(NodePrincipal.withAthenzIdentity("vespa.vespa.cd.hosting", emptyList()), uri("/")));
+        assertTrue(authorizedController("vespa.vespa.hosting", "/"));
+        assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/"));
+        assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/node1"));
     }
 
     @Test
     public void orchestrator_authorization() {
         // Node can only access its own resources
-        assertFalse(authorized("node1", "/orchestrator/v1/hosts"));
-        assertFalse(authorized("node1", "/orchestrator/v1/hosts/"));
-        assertFalse(authorized("node1", "/orchestrator/v1/hosts/node2"));
-        assertFalse(authorized("node1", "/orchestrator/v1/hosts/node2/suspended"));
+        assertFalse(authorizedTenantNode("node1", "/orchestrator/v1/hosts"));
+        assertFalse(authorizedTenantNode("node1", "/orchestrator/v1/hosts/"));
+        assertFalse(authorizedTenantNode("node1", "/orchestrator/v1/hosts/node2"));
+        assertFalse(authorizedTenantNode("node1", "/orchestrator/v1/hosts/node2/suspended"));
 
         // Node can suspend itself
-        assertTrue(authorized("node1", "/orchestrator/v1/hosts/node1"));
-        assertTrue(authorized("node1", "/orchestrator/v1/hosts/node1/suspended"));
+        assertTrue(authorizedTenantNode("node1", "/orchestrator/v1/hosts/node1"));
+        assertTrue(authorizedTenantNode("node1", "/orchestrator/v1/hosts/node1/suspended"));
 
         // Host node can suspend itself and its children
-        assertFalse(authorized("host1", "/orchestrator/v1/hosts/child2-1/suspended"));
-        assertFalse(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child2-1"));
+        assertFalse(authorizedTenantHostNode("host1", "/orchestrator/v1/hosts/child2-1/suspended"));
+        assertFalse(authorizedTenantHostNode("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child2-1"));
         // All given hostnames must be children
-        assertFalse(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1&hostname=child2-1"));
-        assertTrue(authorized("host1", "/orchestrator/v1/hosts/host1/suspended"));
-        assertTrue(authorized("host1", "/orchestrator/v1/hosts/child1-1/suspended"));
-        assertTrue(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1"));
+        assertFalse(authorizedTenantHostNode("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1&hostname=child2-1"));
+        assertTrue(authorizedTenantHostNode("host1", "/orchestrator/v1/hosts/host1/suspended"));
+        assertTrue(authorizedTenantHostNode("host1", "/orchestrator/v1/hosts/child1-1/suspended"));
+        assertTrue(authorizedTenantHostNode("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1"));
         // Multiple children
-        assertTrue(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1&hostname=child1-2"));
+        assertTrue(authorizedTenantHostNode("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1&hostname=child1-2"));
     }
 
     @Test
     public void routing_authorization() {
         // Node of proxy or proxyhost type can access routing resource
-        assertFalse(authorized("node1", "/routing/v1/status"));
-        assertTrue(authorized("proxy1", "/routing/v1/status"));
-        assertTrue(authorized("proxy1-host", "/routing/v1/status"));
+        assertFalse(authorizedTenantNode("node1", "/routing/v1/status"));
+        assertTrue(authorizedTenantNode("proxy1", "/routing/v1/status"));
+        assertTrue(authorizedTenantNode("proxy1-host", "/routing/v1/status"));
     }
 
     @Test
     public void host_authorization() {
-        assertTrue(authorized("cfg1", "/"));
-        assertTrue(authorized("cfg1", "/application/v2"));
-        assertTrue(authorized("cfghost1", "/application/v2"));
+        assertTrue(authorizedLegacyNode("cfg1", "/"));
+        assertTrue(authorizedLegacyNode("cfg1", "/application/v2"));
+        assertTrue(authorizedLegacyNode("cfghost1", "/application/v2"));
     }
 
-    private boolean authorized(String principal, String path) {
-        return authorizer.test(() -> principal, uri(path));
+    private boolean authorizedTenantNode(String hostname, String path) {
+        return authorized(NodePrincipal.withAthenzIdentity("vespa.vespa.tenant", hostname, emptyList()), path);
+    }
+
+    private boolean authorizedTenantHostNode(String hostname, String path) {
+        return authorized(NodePrincipal.withAthenzIdentity("vespa.vespa.tenant-host", hostname, emptyList()), path);
+    }
+
+    private boolean authorizedLegacyNode(String hostname, String path) {
+        return authorized(NodePrincipal.withLegacyIdentity(hostname, emptyList()), path);
+    }
+
+    private boolean authorizedController(String controllerIdentity, String path) {
+        return authorized(NodePrincipal.withAthenzIdentity(controllerIdentity, emptyList()), path);
+    }
+
+    private boolean authorized(NodePrincipal principal, String path) {
+        return authorizer.test(principal, uri(path));
     }
 
     private static URI uri(String path) {
