@@ -366,12 +366,18 @@ public:
      */
     virtual bool getIsFastSearch() const = 0;
 
-    /*
+    /**
      * Returns the committed docid limit for the attribute.
      *
      * @return committed docid limit for the attribute.
      */
     virtual uint32_t getCommittedDocIdLimitSlow() const = 0;
+
+    /*
+     * Returns whether the current attribute vector is an imported attribute
+     * vector.
+     */
+    virtual bool isImported() const = 0;
 
     /**
      * Will serialize the values for the documentid in ascending order. The serialized form can be used by memcmp and

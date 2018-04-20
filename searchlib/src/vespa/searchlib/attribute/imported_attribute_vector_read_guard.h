@@ -76,6 +76,7 @@ public:
     virtual bool getIsFilter() const override;
     virtual bool getIsFastSearch() const override;
     virtual uint32_t getCommittedDocIdLimitSlow() const override;
+    virtual bool isImported() const override;
 
 protected:
     virtual long onSerializeForAscendingSort(DocId doc, void * serTo, long available,

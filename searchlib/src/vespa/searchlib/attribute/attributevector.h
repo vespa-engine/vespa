@@ -434,6 +434,7 @@ public:
     virtual bool getIsFilter() const override;
     virtual bool getIsFastSearch() const override;
     virtual uint32_t getCommittedDocIdLimitSlow() const override;
+    virtual bool isImported() const override;
 
     /**
      * Updates the base file name of this attribute vector and saves

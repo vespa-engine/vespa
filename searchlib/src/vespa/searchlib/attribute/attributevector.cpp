@@ -346,6 +346,12 @@ AttributeVector::getCommittedDocIdLimitSlow() const
 }
 
 bool
+AttributeVector::isImported() const
+{
+    return false;
+}
+
+bool
 AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
 {
     return header.hasTag(dataTypeTag) &&

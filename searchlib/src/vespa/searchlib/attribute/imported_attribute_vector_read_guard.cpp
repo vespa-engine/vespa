@@ -146,6 +146,11 @@ uint32_t ImportedAttributeVectorReadGuard::getCommittedDocIdLimitSlow() const {
     return _reference_attribute.getCommittedDocIdLimit();
 }
 
+bool ImportedAttributeVectorReadGuard::isImported() const
+{
+    return true;
+}
+
 long ImportedAttributeVectorReadGuard::onSerializeForAscendingSort(DocId doc,
                                                                    void *serTo,
                                                                    long available,
