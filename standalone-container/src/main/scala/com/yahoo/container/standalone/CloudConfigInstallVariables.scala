@@ -39,7 +39,7 @@ class CloudConfigInstallVariables extends CloudConfigOptions {
   override val loadBalancerAddress = optionalInstallVar[java.lang.String]("load_balancer_address")
 
   private def getConfigservers = {
-    val newVar = installVar("VESPA_CONFIGSERVERS", "services") withDefault Array[ConfigServer]()
+    val newVar = envVar("VESPA_CONFIGSERVERS") withDefault Array[ConfigServer]()
     val oldVar = installVar("addr_configserver", "services") withDefault Array[ConfigServer]()
     if (newVar.nonEmpty) newVar else oldVar
   }
@@ -55,6 +55,16 @@ object CloudConfigInstallVariables {
   }
 
   private def installVar(setting:String, installPkg: String = "cloudconfig_server") = new InstallVariable(installPkg, setting)
+
+  private class EnvVariable(name: String) {
+    val value = Environment.env(name)
+
+    def withDefault[T](defaultValue: T)(implicit c: Converter[T]) : T = {
+      value map { implicitly[Converter[T]].convert } getOrElse defaultValue
+    }
+  }
+
+  private def envVar(name:String) = new EnvVariable(name)
 
   private def optionalInstallVar[T](setting:String, installPkg: String = "cloudconfig_server")(implicit c: Converter[T]): Optional[T] = {
     Environment.optionalInstallVariable(installPkg + "." + setting) map ( c.convert )
