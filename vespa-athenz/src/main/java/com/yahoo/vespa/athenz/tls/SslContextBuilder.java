@@ -36,10 +36,6 @@ public class SslContextBuilder {
         return this;
     }
 
-    public SslContextBuilder withIdentityCertificate(AthenzIdentityCertificate certificate) {
-        return withKeyStore(certificate.getPrivateKey(), certificate.getCertificate());
-    }
-
     public SslContextBuilder withKeyStore(PrivateKey privateKey, X509Certificate certificate) {
         char[] pwd = new char[0];
         this.keyStoreSupplier = () -> KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificate).build();

@@ -97,9 +97,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     @Override
     public SSLContext getIdentitySslContext() {
         return new SslContextBuilder()
-                .withIdentityCertificate(new AthenzIdentityCertificate(
-                        credentials.getCertificate(),
-                        credentials.getKeyPair().getPrivate()))
+                .withKeyStore(credentials.getKeyPair().getPrivate(), credentials.getCertificate())
                 .withTrustStore(new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks")), JKS)
                 .build();
     }
