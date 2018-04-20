@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.AbstractComponent;
@@ -36,6 +36,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
     private final DnsMaintainer dnsMaintainer;
+    private final SystemUpgrader systemUpgrader;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
@@ -56,6 +57,7 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(10), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
+        systemUpgrader = new SystemUpgrader(controller, maintenanceInterval, jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -77,6 +79,7 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentMetricsMaintainer.deconstruct();
         applicationOwnershipConfirmer.deconstruct();
         dnsMaintainer.deconstruct();
+        systemUpgrader.maintain();
     }
 
 }

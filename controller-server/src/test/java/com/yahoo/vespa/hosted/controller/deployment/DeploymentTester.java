@@ -9,7 +9,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
-import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
+import com.yahoo.vespa.hosted.controller.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
+import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
@@ -46,6 +47,7 @@ public class DeploymentTester {
 
     private final ControllerTester tester;
     private final Upgrader upgrader;
+    private final SystemUpgrader systemUpgrader;
     private final ReadyJobsTrigger readyJobTrigger;
 
     public DeploymentTester() {
@@ -57,8 +59,13 @@ public class DeploymentTester {
         tester.curator().writeUpgradesPerMinute(100);
         this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, new JobControl(tester.curator()),
                                      tester.curator());
+        this.systemUpgrader = new SystemUpgrader(tester.controller(), maintenanceInterval, new JobControl(tester.curator()));
         this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval,
                                                     new JobControl(tester.curator()));
+    }
+
+    public SystemUpgrader systemUpgrader() {
+        return systemUpgrader;
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -77,7 +84,7 @@ public class DeploymentTester {
 
     public ControllerTester controllerTester() { return tester; }
 
-    public ConfigServerClientMock configServer() { return tester.configServer(); }
+    public ConfigServerMock configServer() { return tester.configServer(); }
 
     public ArtifactRepositoryMock artifactRepository() { return tester.artifactRepository(); }
 
@@ -94,8 +101,13 @@ public class DeploymentTester {
     }
 
     public void updateVersionStatus(Version newVersion) {
-        controller().curator().writeControllerVersion(controller().hostname(), newVersion);
+        upgradeController(newVersion);
         configServer().setDefaultVersion(newVersion);
+        controller().updateVersionStatus(VersionStatus.compute(controller()));
+    }
+
+    public void upgradeController(Version newVersion) {
+        controller().curator().writeControllerVersion(controller().hostname(), newVersion);
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 

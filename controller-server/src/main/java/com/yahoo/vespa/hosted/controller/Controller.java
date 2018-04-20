@@ -16,7 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
@@ -68,7 +68,7 @@ public class Controller extends AbstractComponent {
     private final EntityService entityService;
     private final GlobalRoutingService globalRoutingService;
     private final ZoneRegistry zoneRegistry;
-    private final ConfigServerClient configServer;
+    private final ConfigServer configServer;
     private final NodeRepositoryClientInterface nodeRepository;
     private final MetricsService metricsService;
     private final Chef chef;
@@ -84,7 +84,7 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, ConfigServerClient configServer, NodeRepositoryClientInterface nodeRepository,
+                      ZoneRegistry zoneRegistry, ConfigServer configServer, NodeRepositoryClientInterface nodeRepository,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
                       ArtifactRepository artifactRepository, BuildService buildService) {
@@ -98,7 +98,7 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, ConfigServerClient configServer, NodeRepositoryClientInterface nodeRepository,
+                      ZoneRegistry zoneRegistry, ConfigServer configServer, NodeRepositoryClientInterface nodeRepository,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
@@ -111,7 +111,7 @@ public class Controller extends AbstractComponent {
         this.organization = Objects.requireNonNull(organization, "Organization cannot be null");
         this.globalRoutingService = Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");;
-        this.configServer = Objects.requireNonNull(configServer, "ConfigServerClient cannot be null");;
+        this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");;
         this.nodeRepository = Objects.requireNonNull(nodeRepository, "NodeRepositoryClientInterface cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
@@ -176,10 +176,6 @@ public class Controller extends AbstractComponent {
                                                   serviceName, restPath);
     }
 
-    public GitHub gitHub() {
-        return gitHub;
-    }
-
     /** Replace the current version status by a new one */
     public void updateVersionStatus(VersionStatus newStatus) {
         VersionStatus currentStatus = versionStatus();
@@ -217,8 +213,16 @@ public class Controller extends AbstractComponent {
         return HostName.from(hostnameSupplier.get());
     }
 
+    public GitHub gitHub() {
+        return gitHub;
+    }
+
     public MetricsService metricsService() {
         return metricsService;
+    }
+
+    public ConfigServer configServer() {
+        return configServer;
     }
 
     public SystemName system() {

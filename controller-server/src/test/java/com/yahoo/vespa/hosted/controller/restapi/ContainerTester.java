@@ -10,7 +10,7 @@ import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
-import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
+import com.yahoo.vespa.hosted.controller.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.ComparisonFailure;
@@ -44,8 +44,8 @@ public class ContainerTester {
         return (Controller) container.components().getComponent(Controller.class.getName());
     }
 
-    public ConfigServerClientMock configServer() {
-        return (ConfigServerClientMock) container.components().getComponent(ConfigServerClientMock.class.getName());
+    public ConfigServerMock configServer() {
+        return (ConfigServerMock) container.components().getComponent(ConfigServerMock.class.getName());
     }
 
     public void updateVersionStatus() {

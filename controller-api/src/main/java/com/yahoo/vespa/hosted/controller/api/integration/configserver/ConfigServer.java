@@ -17,9 +17,11 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
+ * The API controllers use when communicating with config servers.
+ *
  * @author Oyvind Grønnesby
  */
-public interface ConfigServerClient {
+public interface ConfigServer {
 
     interface PreparedApplication {
         void activate();
@@ -34,8 +36,6 @@ public interface ConfigServerClient {
 
     PreparedApplication deploy(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
 
-    List<String> getNodeQueryHost(DeploymentId applicationInstance, String type) throws NoInstanceException;
-
     void restart(DeploymentId applicationInstance, Optional<Hostname> hostname) throws NoInstanceException;
 
     void deactivate(DeploymentId applicationInstance) throws NoInstanceException;
@@ -43,11 +43,14 @@ public interface ConfigServerClient {
     JsonNode waitForConfigConverge(DeploymentId applicationInstance, long timeoutInSeconds);
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
-    
+
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
-    
-    /** Returns the version this particular config server is running */
-    Version version(URI configServerUri);
+
+    /** Returns the version of this config server */
+    ConfigServerVersion version(URI configServerUri);
+
+    /** Upgrade config server at URI to the given version */
+    void upgrade(URI configServerUri, Version version);
 
     /**
      * Set new status on en endpoint in one zone.

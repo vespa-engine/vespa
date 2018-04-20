@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -137,7 +137,7 @@ public class FailureRedeployerTest {
     @Test
     public void ignoresPullRequestInstances() throws Exception {
         DeploymentTester tester = new DeploymentTester();
-        tester.controllerTester().zoneRegistry().setSystem(SystemName.cd);
+        tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.42.1");

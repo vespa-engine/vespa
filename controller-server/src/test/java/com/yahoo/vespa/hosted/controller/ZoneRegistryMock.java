@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.inject.Inject;
@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -32,6 +33,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
     private List<ZoneId> zones = new ArrayList<>();
     private SystemName system = SystemName.main;
+    private UpgradePolicy upgradePolicy = null;
 
     @Inject
     public ZoneRegistryMock() {
@@ -61,8 +63,13 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return setZones(Arrays.asList(zone));
     }
 
-    public ZoneRegistryMock setSystem(SystemName system) {
+    public ZoneRegistryMock setSystemName(SystemName system) {
         this.system = system;
+        return this;
+    }
+
+    public ZoneRegistryMock setUpgradePolicy(UpgradePolicy upgradePolicy) {
+        this.upgradePolicy = upgradePolicy;
         return this;
     }
 
@@ -78,6 +85,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     public AthenzService getConfigServerAthenzService(ZoneId zone) {
         return new AthenzService("vespadomain", "provider-" + zone.environment().value() + "-" + zone.region().value());
+    }
+
+    @Override
+    public UpgradePolicy upgradePolicy() {
+        return upgradePolicy;
     }
 
     @Override

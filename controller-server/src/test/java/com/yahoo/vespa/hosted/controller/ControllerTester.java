@@ -59,7 +59,7 @@ public final class ControllerTester {
 
     private final AthenzDbMock athenzDb;
     private final ManualClock clock;
-    private final ConfigServerClientMock configServer;
+    private final ConfigServerMock configServer;
     private final ZoneRegistryMock zoneRegistry;
     private final GitHubMock gitHub;
     private final CuratorDb curator;
@@ -72,31 +72,31 @@ public final class ControllerTester {
     private Controller controller;
 
     public ControllerTester() {
-        this(new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
+        this(new AthenzDbMock(), new ManualClock(), new ConfigServerMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
              new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
     public ControllerTester(ManualClock clock) {
-        this(new AthenzDbMock(), clock, new ConfigServerClientMock(),
+        this(new AthenzDbMock(), clock, new ConfigServerMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
              new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
     public ControllerTester(RotationsConfig rotationsConfig) {
-        this(new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
+        this(new AthenzDbMock(), new ManualClock(), new ConfigServerMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), rotationsConfig, new MemoryNameService(),
              new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
     public ControllerTester(MockCuratorDb curatorDb) {
-        this(new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
+        this(new AthenzDbMock(), new ManualClock(), new ConfigServerMock(),
              new ZoneRegistryMock(), new GitHubMock(), curatorDb, defaultRotationsConfig(),
              new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
     private ControllerTester(AthenzDbMock athenzDb, ManualClock clock,
-                             ConfigServerClientMock configServer, ZoneRegistryMock zoneRegistry,
+                             ConfigServerMock configServer, ZoneRegistryMock zoneRegistry,
                              GitHubMock gitHub, CuratorDb curator, RotationsConfig rotationsConfig,
                              MemoryNameService nameService, ArtifactRepositoryMock artifactRepository,
                              EntityService entityService, MockBuildService buildService) {
@@ -134,7 +134,7 @@ public final class ControllerTester {
 
     public ZoneRegistryMock zoneRegistry() { return zoneRegistry; }
 
-    public ConfigServerClientMock configServer() { return configServer; }
+    public ConfigServerMock configServer() { return configServer; }
 
     public GitHubMock gitHub() { return gitHub; }
 
@@ -255,19 +255,19 @@ public final class ControllerTester {
     }
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
-                                               ConfigServerClientMock configServerClientMock, ManualClock clock,
-                                               GitHubMock gitHubClientMock, ZoneRegistryMock zoneRegistryMock,
+                                               ConfigServerMock configServer, ManualClock clock,
+                                               GitHubMock gitHub, ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb, MemoryNameService nameService,
                                                ArtifactRepository artifactRepository, EntityService entityService,
                                                BuildService buildService) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
-                                               gitHubClientMock,
+                                               gitHub,
                                                entityService,
                                                new MockOrganization(clock),
                                                new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
-                                               configServerClientMock,
+                                               configServer,
                                                new NodeRepositoryClientMock(),
                                                new MockMetricsService(),
                                                nameService,

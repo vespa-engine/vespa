@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi;
 
 import com.yahoo.application.Networking;
@@ -69,7 +69,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerClientMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.NodeRepositoryClientMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.ZoneRegistryMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +

@@ -561,7 +561,7 @@ public class ControllerTest {
     @Test
     public void testCleanupOfStaleDeploymentData() throws IOException {
         DeploymentTester tester = new DeploymentTester();
-        tester.controllerTester().zoneRegistry().setSystem(SystemName.cd);
+        tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
         tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "cd-us-central-1"));
 
         Supplier<Map<JobType, JobStatus>> statuses = () ->
@@ -769,7 +769,7 @@ public class ControllerTest {
     @Test
     public void testDeployWithoutProjectId() {
         DeploymentTester tester = new DeploymentTester();
-        tester.controllerTester().zoneRegistry().setSystem(SystemName.cd);
+        tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
         tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "cd-us-central-1"));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableList;
@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.curator.Lock;
@@ -21,7 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
@@ -88,7 +87,7 @@ public class ApplicationController {
     private final RotationRepository rotationRepository;
     private final AthenzClientFactory zmsClientFactory;
     private final NameService nameService;
-    private final ConfigServerClient configServer;
+    private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
     private final Clock clock;
 
@@ -96,7 +95,7 @@ public class ApplicationController {
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
-                          NameService nameService, ConfigServerClient configServer,
+                          NameService nameService, ConfigServer configServer,
                           ArtifactRepository artifactRepository,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
@@ -336,7 +335,7 @@ public class ApplicationController {
             options = withVersion(platformVersion, options);
 
             DeploymentId deploymentId = new DeploymentId(applicationId, zone);
-            ConfigServerClient.PreparedApplication preparedApplication =
+            ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
             // TODO: Set new deployment after convergence, rather than after deployment call, succeeds.
             application = application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant());
@@ -584,7 +583,7 @@ public class ApplicationController {
                                   id.instance().value());
     }
 
-    public ConfigServerClient configServer() { return configServer; }
+    public ConfigServer configServer() { return configServer; }
 
     /**
      * Returns a lock which provides exclusive rights to changing this application.

@@ -13,7 +13,8 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -29,17 +30,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * @author mortent
  */
-public class ConfigServerClientMock extends AbstractComponent implements ConfigServerClient {
+public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
-    private final Map<ApplicationId, String> applicationInstances = new HashMap<>();
     private final Map<ApplicationId, Boolean> applicationActivated = new HashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final Map<URI, Version> versions = new HashMap<>();
+    private final Map<URI, Version> wantedVersions = new HashMap<>();
 
     private Version defaultVersion = new Version(6, 1, 0);
     private Version lastPrepareVersion = null;
@@ -68,6 +68,11 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
         return versions;
     }
 
+    @Override
+    public void upgrade(URI configServerUri, Version version) {
+        wantedVersions.put(configServerUri, version);
+    }
+
     /** Set the default config server version */
     public void setDefaultVersion(Version version) {
         this.defaultVersion = version;
@@ -87,7 +92,6 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
             throw prepareException;
         }
         applicationActivated.put(deployment.applicationId(), false);
-        applicationInstances.put(deployment.applicationId(), UUID.randomUUID() + ":4080");
 
         return new PreparedApplication() {
             @Override
@@ -123,21 +127,12 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     }
 
     @Override
-    public List<String> getNodeQueryHost(DeploymentId deployment, String type) {
-        if (applicationInstances.containsKey(deployment.applicationId())) {
-            return Collections.singletonList(applicationInstances.get(deployment.applicationId()));
-        }
-        return Collections.emptyList();
-    }
-
-    @Override
     public void restart(DeploymentId deployment, Optional<Hostname> hostname) {
     }
 
     @Override
     public void deactivate(DeploymentId deployment) {
         applicationActivated.remove(deployment.applicationId());
-        applicationInstances.remove(deployment.applicationId());
     }
 
     @Override
@@ -183,8 +178,9 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     }
     
     @Override
-    public Version version(URI configServerUri) {
-        return versions.getOrDefault(configServerUri, defaultVersion);
+    public ConfigServerVersion version(URI configServerUri) {
+        return new ConfigServerVersion(versions.getOrDefault(configServerUri, defaultVersion),
+                                       wantedVersions.getOrDefault(configServerUri, defaultVersion));
     }
 
     @Override
