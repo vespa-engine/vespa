@@ -10,6 +10,6 @@ public class ConfigServerHostApplication extends HostedVespaApplication {
 
     private ConfigServerHostApplication() {
         super("configserver-host", NodeType.confighost,
-                ClusterSpec.Type.container, ClusterSpec.Id.from("configserver-host"), ClusterSpec.Group.from(1));
+                ClusterSpec.Type.container, ClusterSpec.Id.from("configserver-host"));
     }
 }

@@ -9,7 +9,6 @@ public class ProxyHostApplication extends HostedVespaApplication {
     public static final ProxyHostApplication PROXY_HOST_APPLICATION = new ProxyHostApplication();
 
     private ProxyHostApplication() {
-        super("proxy-host", NodeType.proxyhost,
-                ClusterSpec.Type.container, ClusterSpec.Id.from("proxy-host"), ClusterSpec.Group.from(1));
+        super("proxy-host", NodeType.proxyhost, ClusterSpec.Type.container, ClusterSpec.Id.from("proxy-host"));
     }
 }

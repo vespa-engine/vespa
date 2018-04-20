@@ -9,7 +9,6 @@ public class TenantHostApplication extends HostedVespaApplication {
     public static final TenantHostApplication TENANT_HOST_APPLICATION = new TenantHostApplication();
 
     private TenantHostApplication() {
-        super("tenant-host", NodeType.host,
-                ClusterSpec.Type.container, ClusterSpec.Id.from("tenant-host"), ClusterSpec.Group.from(1));
+        super("tenant-host", NodeType.host, ClusterSpec.Type.container, ClusterSpec.Id.from("tenant-host"));
     }
 }

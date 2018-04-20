@@ -22,8 +22,9 @@ public abstract class HostedVespaApplication {
     private final ClusterSpec.Group clusterGroup;
 
     protected HostedVespaApplication(String applicationName, NodeType nodeType,
-                                     ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, ClusterSpec.Group clusterGroup) {
-        this(createHostedVespaApplicationId(applicationName), Capacity.fromRequiredNodeType(nodeType), clusterType, clusterId, clusterGroup);
+                                     ClusterSpec.Type clusterType, ClusterSpec.Id clusterId) {
+        this(createHostedVespaApplicationId(applicationName), Capacity.fromRequiredNodeType(nodeType),
+                clusterType, clusterId, ClusterSpec.Group.from(0));
     }
 
     protected HostedVespaApplication(ApplicationId applicationId, Capacity capacity,

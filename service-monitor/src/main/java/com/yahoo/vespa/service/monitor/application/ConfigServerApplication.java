@@ -34,7 +34,7 @@ public class ConfigServerApplication extends HostedVespaApplication {
 
     private ConfigServerApplication() {
         super("zone-config-servers", NodeType.config,
-                ClusterSpec.Type.admin, ClusterSpec.Id.from("zone-config-servers"), ClusterSpec.Group.from(1));
+                ClusterSpec.Type.admin, ClusterSpec.Id.from("zone-config-servers"));
     }
 
     public ApplicationInstance toApplicationInstance(List<String> hostnames) {
