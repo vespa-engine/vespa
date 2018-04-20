@@ -1,20 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations;
 
-import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.DimensionRenamer;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.OrderedTensorType;
-import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
-import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.functions.Generate;
-import com.yahoo.tensor.functions.ScalarFunctions;
 import com.yahoo.tensor.functions.TensorFunction;
 import org.tensorflow.framework.NodeDef;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
