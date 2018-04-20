@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,6 +16,8 @@ import com.yahoo.log.LogLevel;
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @author  bratseth
  */
+// TODO: Remove packet cache as it timed out a long time ago.
+// 1 - It does not work with grouping, 2 the packet protocol is eroding away.
 public class PacketCache extends LinkedHashMap<CacheKey, PacketWrapper> {
 
     private static final long serialVersionUID = -7403077211906108356L;
