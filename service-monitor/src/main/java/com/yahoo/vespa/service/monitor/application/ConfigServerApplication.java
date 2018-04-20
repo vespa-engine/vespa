@@ -25,10 +25,10 @@ import java.util.stream.Stream;
 public class ConfigServerApplication extends HostedVespaApplication {
 
     public static final ConfigServerApplication CONFIG_SERVER_APPLICATION = new ConfigServerApplication();
-    public static final TenantId TENANT_ID = new TenantId(CONFIG_SERVER_APPLICATION.applicationId.tenant().value());
+    public static final TenantId TENANT_ID = new TenantId(CONFIG_SERVER_APPLICATION.getApplicationId().tenant().value());
     public static final ApplicationInstanceId APPLICATION_INSTANCE_ID =
-            new ApplicationInstanceId(CONFIG_SERVER_APPLICATION.applicationId.application().value());
-    public static final ClusterId CLUSTER_ID = new ClusterId(CONFIG_SERVER_APPLICATION.clusterId.value());
+            new ApplicationInstanceId(CONFIG_SERVER_APPLICATION.getApplicationId().application().value());
+    public static final ClusterId CLUSTER_ID = new ClusterId(CONFIG_SERVER_APPLICATION.getClusterId().value());
     public static final ServiceType SERVICE_TYPE = new ServiceType("configserver");
     public static final String CONFIG_ID_PREFIX = "configid.";
 

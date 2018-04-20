@@ -15,11 +15,11 @@ public abstract class HostedVespaApplication {
 
     public static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
 
-    protected final ApplicationId applicationId;
-    protected final Capacity capacity;
-    protected final ClusterSpec.Type clusterType;
-    protected final ClusterSpec.Id clusterId;
-    protected final ClusterSpec.Group clusterGroup;
+    private final ApplicationId applicationId;
+    private final Capacity capacity;
+    private final ClusterSpec.Type clusterType;
+    private final ClusterSpec.Id clusterId;
+    private final ClusterSpec.Group clusterGroup;
 
     protected HostedVespaApplication(String applicationName, NodeType nodeType,
                                      ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, ClusterSpec.Group clusterGroup) {
@@ -47,6 +47,17 @@ public abstract class HostedVespaApplication {
         return ClusterSpec.from(clusterType, clusterId, clusterGroup, version, true);
     }
 
+    public ClusterSpec.Type getClusterType() {
+        return clusterType;
+    }
+
+    public ClusterSpec.Id getClusterId() {
+        return clusterId;
+    }
+
+    public ClusterSpec.Group getClusterGroup() {
+        return clusterGroup;
+    }
 
     public static ApplicationId createHostedVespaApplicationId(String applicationName) {
         return new ApplicationId.Builder()
