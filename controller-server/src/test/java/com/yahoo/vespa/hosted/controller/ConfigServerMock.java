@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -33,7 +33,7 @@ import java.util.Set;
 /**
  * @author mortent
  */
-public class ConfigServerClientMock extends AbstractComponent implements ConfigServerClient {
+public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
     private final Map<ApplicationId, Boolean> applicationActivated = new HashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();

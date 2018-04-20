@@ -9,7 +9,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
-import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
+import com.yahoo.vespa.hosted.controller.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
@@ -77,7 +77,7 @@ public class DeploymentTester {
 
     public ControllerTester controllerTester() { return tester; }
 
-    public ConfigServerClientMock configServer() { return tester.configServer(); }
+    public ConfigServerMock configServer() { return tester.configServer(); }
 
     public ArtifactRepositoryMock artifactRepository() { return tester.artifactRepository(); }
 

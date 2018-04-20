@@ -17,9 +17,11 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
+ * The API controllers use when communicating with config servers.
+ *
  * @author Oyvind Grønnesby
  */
-public interface ConfigServerClient {
+public interface ConfigServer {
 
     interface PreparedApplication {
         void activate();
