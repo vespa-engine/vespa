@@ -505,12 +505,12 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /*
-     * This method is used by the REST API to handle readying nodes for new allocations. For docker containers this will
-     * remove the node from node repository, otherwise the node will be moved to state ready.
+     * This method is used by the REST API to handle readying nodes for new allocations. For tenant docker
+     * containers this will remove the node from node repository, otherwise the node will be moved to state ready.
      */
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
-        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
+        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
             if (node.state() != Node.State.dirty) {
                 throw new IllegalArgumentException(
                         "Cannot make " + hostname + " available for new allocation, must be in state dirty, but was in " + node.state());
