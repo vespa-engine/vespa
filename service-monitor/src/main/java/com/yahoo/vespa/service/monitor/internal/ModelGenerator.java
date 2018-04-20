@@ -21,6 +21,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
+import com.yahoo.vespa.service.monitor.internal.application.ConfigServerApplication;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,7 +59,7 @@ public class ModelGenerator {
 
         // The config server is part of the service model (but not super model)
         if (!configServerHosts.isEmpty()) {
-            ConfigServerApplication configServerApplication = new ConfigServerApplication();
+            ConfigServerApplication configServerApplication = ConfigServerApplication.CONFIG_SERVER_APPLICATION;
             ApplicationInstance configServerApplicationInstance =
                     configServerApplication.toApplicationInstance(configServerHosts);
             applicationInstances.put(configServerApplicationInstance.reference(), configServerApplicationInstance);

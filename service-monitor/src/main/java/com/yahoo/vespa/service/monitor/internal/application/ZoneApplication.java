@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.service.monitor.internal;
+package com.yahoo.vespa.service.monitor.internal.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -9,14 +9,18 @@ import java.util.Objects;
 
 /**
  * @author hakon
+ *
+ * TODO: This does not extend HostedVespaApplication because
+ * 1) It is not deployed same as the other HostedVespaApplications
+ * 2) ZoneApplication has multiple clusters
  */
 public class ZoneApplication {
     private ZoneApplication() {}
 
-    static final ApplicationId ZONE_APPLICATION_ID =
-            ApplicationId.from("hosted-vespa", "routing", "default");
+    public static final ApplicationId ZONE_APPLICATION_ID = HostedVespaApplication
+            .createHostedVespaApplicationId("routing");
 
-    static boolean isNodeAdminService(ApplicationId applicationId,
+    public static boolean isNodeAdminService(ApplicationId applicationId,
                                       ClusterId clusterId,
                                       ServiceType serviceType) {
         return Objects.equals(applicationId, ZONE_APPLICATION_ID) &&
