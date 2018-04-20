@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.identity;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
@@ -23,12 +24,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 /**
  * @author mortent
  * @author bjorncs
  */
 public class SiaIdentityProvider extends AbstractComponent implements AthenzIdentityProvider {
+
+    private static final Logger log = Logger.getLogger(SiaIdentityProvider.class.getName());
 
     private static final Duration REFRESH_INTERVAL = Duration.ofHours(1);
 
@@ -85,7 +89,12 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
     }
 
     private void reloadSslContext() {
-        this.sslContext.set(createIdentitySslContext());
+        log.log(LogLevel.DEBUG, "Updating SSLContext for identity " + service.getFullName());
+        try {
+            this.sslContext.set(createIdentitySslContext());
+        } catch (Exception e) {
+            log.log(LogLevel.SEVERE, "Failed to update SSLContext: " + e.getMessage(), e);
+        }
     }
 
     private static File getCertificateFile(String rootPath, String domain, String service) {
