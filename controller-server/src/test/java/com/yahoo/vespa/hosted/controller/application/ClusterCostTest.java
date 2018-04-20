@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ClusterSpec;
@@ -14,7 +14,7 @@ import java.util.List;
 public class ClusterCostTest {
 
     @Test
-    public void clusterCost() throws Exception {
+    public void clusterCost() {
         List<String> hostnames = new ArrayList<>();
         hostnames.add("host1");
         hostnames.add("host2");
