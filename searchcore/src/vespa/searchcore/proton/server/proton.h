@@ -12,7 +12,6 @@
 #include "proton_config_fetcher.h"
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
-#include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
@@ -42,6 +41,7 @@ class PrepareRestartHandler;
 class SummaryEngine;
 class DocsumBySlime;
 class FlushEngine;
+class MatchEngine;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -91,13 +91,13 @@ private:
     const config::ConfigUri         _configUri;
     mutable std::shared_timed_mutex _mutex;
     MetricsUpdateHook               _metricsHook;
-    MetricsEngine::UP               _metricsEngine;
+    std::unique_ptr<MetricsEngine>  _metricsEngine;
     ProtonFileHeaderContext         _fileHeaderContext;
     TLS::UP                         _tls;
     std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
     PersistenceEngine::UP           _persistenceEngine;
     DocumentDBMap                   _documentDBMap;
-    MatchEngine::UP                 _matchEngine;
+    std::unique_ptr<MatchEngine>   _matchEngine;
     std::unique_ptr<SummaryEngine>  _summaryEngine;
     std::unique_ptr<DocsumBySlime>  _docsumBySlime;
     MemoryFlushConfigUpdater::UP    _memoryFlushConfigUpdater;

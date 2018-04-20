@@ -21,6 +21,7 @@
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
+#include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/document/base/exceptions.h>
@@ -246,9 +247,9 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
     _metricsEngine->addMetricsHook(_metricsHook);
     _fileHeaderContext.setClusterName(protonConfig.clustername, protonConfig.basedir);
-    _matchEngine.reset(new MatchEngine(protonConfig.numsearcherthreads,
-                                       protonConfig.numthreadspersearch,
-                                       protonConfig.distributionkey));
+    _matchEngine = std::make_unique<MatchEngine>(protonConfig.numsearcherthreads,
+                                                 protonConfig.numthreadspersearch,
+                                                 protonConfig.distributionkey);
     _distributionKey = protonConfig.distributionkey;
     _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads);
     _docsumBySlime = std::make_unique<DocsumBySlime>(*_summaryEngine);
@@ -276,6 +277,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _fs4Server = std::make_unique<TransportServer>(*_matchEngine, *_summaryEngine, *this, protonConfig.ptport, TransportServer::DEBUG_ALL);
     _fs4Server->setTCPNoDelay(true);
     _metricsEngine->addExternalMetrics(_fs4Server->getMetrics());
+    _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
 
     char tmp[1024];
     LOG(debug, "Start proton server with root at %s and cwd at %s",
@@ -308,7 +310,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     waitForInitDone();
 
     _metricsEngine->start(_configUri);
-    _stateServer.reset(new vespalib::StateServer(protonConfig.httpport, _healthAdapter, _metricsEngine->metrics_producer(), *this));
+    _stateServer = std::make_unique<vespalib::StateServer>(protonConfig.httpport, _healthAdapter,
+                                                           _metricsEngine->metrics_producer(), *this);
     _customComponentBindToken = _stateServer->repo().bind(CUSTOM_COMPONENT_API_PATH, _genericStateHandler);
     _customComponentRootToken = _stateServer->repo().add_root_resource(CUSTOM_COMPONENT_API_PATH);
 
@@ -401,6 +404,9 @@ Proton::~Proton()
     }
     if (_matchEngine) {
         _matchEngine->close();
+    }
+    if (_metricsEngine && _summaryEngine) {
+        _metricsEngine->removeExternalMetrics(_summaryEngine->getMetrics());
     }
     if (_summaryEngine) {
         _summaryEngine->close();
