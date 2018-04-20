@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer;
 
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations.ConcatV2;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations.Const;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations.ExpandDims;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations.Identity;
@@ -35,6 +36,7 @@ public class OperationMapper {
     public static TensorFlowOperation get(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
         switch (node.getOp().toLowerCase()) {
             // array ops
+            case "concatv2":    return new ConcatV2(modelName, node, inputs, port);
             case "const":       return new Const(modelName, node, inputs, port);
             case "expanddims":  return new ExpandDims(modelName, node, inputs, port);
             case "identity":    return new Identity(modelName, node, inputs, port);
