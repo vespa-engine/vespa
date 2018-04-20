@@ -27,12 +27,13 @@ import java.util.stream.Stream;
  * Authorization filter for all paths in config server.
  *
  * @author mpolden
+ * @author bjorncs
  */
 public class AuthorizationFilter implements SecurityRequestFilter {
 
     private static final Logger log = Logger.getLogger(AuthorizationFilter.class.getName());
 
-    private final BiPredicate<Principal, URI> authorizer;
+    private final BiPredicate<NodePrincipal, URI> authorizer;
     private final BiConsumer<ErrorResponse, ResponseHandler> rejectAction;
     private final HostAuthenticator hostAuthenticator;
 
@@ -51,7 +52,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
         );
     }
 
-    AuthorizationFilter(BiPredicate<Principal, URI> authorizer,
+    AuthorizationFilter(BiPredicate<NodePrincipal, URI> authorizer,
                         BiConsumer<ErrorResponse, ResponseHandler> rejectAction,
                         HostAuthenticator hostAuthenticator) {
         this.authorizer = authorizer;

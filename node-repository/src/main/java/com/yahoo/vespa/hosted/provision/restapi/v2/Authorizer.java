@@ -5,12 +5,12 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodePrincipal;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  *
  * @author mpolden
  */
-public class Authorizer implements BiPredicate<Principal, URI> {
+public class Authorizer implements BiPredicate<NodePrincipal, URI> {
 
     private final SystemName system;
     private final NodeRepository nodeRepository;
@@ -40,56 +40,56 @@ public class Authorizer implements BiPredicate<Principal, URI> {
 
     /** Returns whether principal is authorized to access given URI */
     @Override
-    public boolean test(Principal principal, URI uri) {
+    public boolean test(NodePrincipal principal, URI uri) {
         // Trusted services can access everything
-        if (principal.getName().equals(trustedService())) {
+        if (principal.getHostIdentityName().equals(trustedService())) {
             return true;
         }
+        if (principal.getHostname().isPresent()) {
+            // Individual nodes can only access their own resources
+            if (canAccessAll(hostnamesFrom(uri), principal, this::isSelfOrParent)) {
+                return true;
+            }
 
-        // Individual nodes can only access their own resources
-        if (canAccessAll(hostnamesFrom(uri), principal, this::isSelfOrParent)) {
-            return true;
+            // Nodes can access this resource if its type matches any of the valid node types
+            if (canAccessAny(nodeTypesFor(uri), principal, this::isNodeType)) {
+                return true;
+            }
+
+            // The host itself can access all resources
+            if (whitelistedHostnames.contains(principal.getHostname().get())) {
+                return true;
+            }
         }
-
-        // Nodes can access this resource if its type matches any of the valid node types
-        if (canAccessAny(nodeTypesFor(uri), principal, this::isNodeType)) {
-            return true;
-        }
-
-        // The host itself can access all resources
-        if (whitelistedHostnames.contains(principal.getName())) {
-            return true;
-        }
-
         return false;
     }
 
     /** Returns whether principal is the node itself or the parent of the node */
-    private boolean isSelfOrParent(String hostname, Principal principal) {
+    private boolean isSelfOrParent(String hostname, NodePrincipal principal) {
         // Node can always access itself
-        if (principal.getName().equals(hostname)) {
+        if (principal.getHostname().get().equals(hostname)) {
             return true;
         }
 
         // Parent node can access its children
         return getNode(hostname).flatMap(Node::parentHostname)
-                                .map(parentHostname -> principal.getName().equals(parentHostname))
+                                .map(parentHostname -> principal.getHostname().get().equals(parentHostname))
                                 .orElse(false);
     }
 
     /** Returns whether principal is a node of the given node type */
-    private boolean isNodeType(NodeType type, Principal principal) {
-        return getNode(principal.getName()).map(node -> node.type() == type)
+    private boolean isNodeType(NodeType type, NodePrincipal principal) {
+        return getNode(principal.getHostname().get()).map(node -> node.type() == type)
                                            .orElse(false);
     }
 
     /** Returns whether principal can access all given resources */
-    private <T> boolean canAccessAll(List<T> resources, Principal principal, BiPredicate<T, Principal> predicate) {
+    private <T> boolean canAccessAll(List<T> resources, NodePrincipal principal, BiPredicate<T, NodePrincipal> predicate) {
         return !resources.isEmpty() && resources.stream().allMatch(resource -> predicate.test(resource, principal));
     }
 
     /** Returns whether principal can access any of the given resources */
-    private <T> boolean canAccessAny(List<T> resources, Principal principal, BiPredicate<T, Principal> predicate) {
+    private <T> boolean canAccessAny(List<T> resources, NodePrincipal principal, BiPredicate<T, NodePrincipal> predicate) {
         return !resources.isEmpty() && resources.stream().anyMatch(resource -> predicate.test(resource, principal));
     }
 
