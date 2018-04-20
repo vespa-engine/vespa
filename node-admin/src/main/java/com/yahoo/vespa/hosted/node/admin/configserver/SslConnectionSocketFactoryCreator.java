@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
+import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -26,7 +26,7 @@ class SslConnectionSocketFactoryCreator {
     private static SSLContext makeSslContext(
             ConfigServerInfo configServerInfo,
             Optional<KeyStoreOptions> keyStoreOptions) {
-        AthenzSslContextBuilder sslContextBuilder = new AthenzSslContextBuilder();
+        SslContextBuilder sslContextBuilder = new SslContextBuilder();
         configServerInfo.getTrustStoreOptions()
                 .map(KeyStoreOptions::loadKeyStore)
                 .ifPresent(sslContextBuilder::withTrustStore);

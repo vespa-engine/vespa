@@ -4,32 +4,28 @@ package com.yahoo.vespa.athenz.identity;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
-import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 /**
  * @author mortent
  * @author bjorncs
  */
 public class SiaIdentityProvider extends AbstractComponent implements AthenzIdentityProvider {
+
+    private static final Logger log = Logger.getLogger(SiaIdentityProvider.class.getName());
 
     private static final Duration REFRESH_INTERVAL = Duration.ofHours(1);
 
@@ -46,14 +42,18 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
              getPrivateKeyFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
              getCertificateFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
              new File(config.trustStorePath()),
-             new ScheduledThreadPoolExecutor(1));
+             new ScheduledThreadPoolExecutor(1, runnable -> {
+                 Thread thread = new Thread(runnable);
+                 thread.setName("sia-identity-provider-sslcontext-updater");
+                 return thread;
+             }));
     }
 
-    SiaIdentityProvider(AthenzService service,
-                        File privateKeyFile,
-                        File certificateFile,
-                        File trustStoreFile,
-                        ScheduledExecutorService scheduler) {
+    public SiaIdentityProvider(AthenzService service,
+                               File privateKeyFile,
+                               File certificateFile,
+                               File trustStoreFile,
+                               ScheduledExecutorService scheduler) {
         this.service = service;
         this.privateKeyFile = privateKeyFile;
         this.certificateFile = certificateFile;
@@ -79,22 +79,19 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
     }
 
     private SSLContext createIdentitySslContext() {
-        try {
-            String certPem = new String(Files.readAllBytes(certificateFile.toPath()));
-            X509Certificate certificate = X509CertificateUtils.fromPem(certPem);
-            String keyPem = new String(Files.readAllBytes(privateKeyFile.toPath()));
-            PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(keyPem);
-            return new AthenzSslContextBuilder()
-                    .withTrustStore(trustStoreFile, KeyStoreType.JKS)
-                    .withIdentityCertificate(new AthenzIdentityCertificate(certificate, privateKey))
-                    .build();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return new SslContextBuilder()
+                .withTrustStore(trustStoreFile, KeyStoreType.JKS)
+                .withKeyStore(privateKeyFile, certificateFile)
+                .build();
     }
 
     private void reloadSslContext() {
-        this.sslContext.set(createIdentitySslContext());
+        log.log(LogLevel.DEBUG, "Updating SSLContext for identity " + service.getFullName());
+        try {
+            this.sslContext.set(createIdentitySslContext());
+        } catch (Exception e) {
+            log.log(LogLevel.SEVERE, "Failed to update SSLContext: " + e.getMessage(), e);
+        }
     }
 
     private static File getCertificateFile(String rootPath, String domain, String service) {

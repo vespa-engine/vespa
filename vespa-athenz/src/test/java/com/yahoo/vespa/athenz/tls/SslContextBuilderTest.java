@@ -16,7 +16,7 @@ import static com.yahoo.vespa.athenz.tls.TestUtils.createKeystoreFile;
 /**
  * @author bjorncs
  */
-public class AthenzSslContextBuilderTest {
+public class SslContextBuilderTest {
 
     private static final char[] PASSWORD = new char[0];
 
@@ -25,21 +25,21 @@ public class AthenzSslContextBuilderTest {
 
     @Test
     public void can_build_sslcontext_with_truststore_only() throws Exception {
-        new AthenzSslContextBuilder()
+        new SslContextBuilder()
                 .withTrustStore(createKeystore(KeyStoreType.JKS, PASSWORD))
                 .build();
     }
 
     @Test
     public void can_build_sslcontext_with_keystore_only() throws Exception {
-        new AthenzSslContextBuilder()
+        new SslContextBuilder()
                 .withKeyStore(createKeystore(KeyStoreType.JKS, PASSWORD), PASSWORD)
                 .build();
     }
 
     @Test
     public void can_build_sslcontext_with_truststore_and_keystore() throws Exception {
-        new AthenzSslContextBuilder()
+        new SslContextBuilder()
                 .withKeyStore(createKeystore(KeyStoreType.JKS, PASSWORD), PASSWORD)
                 .withTrustStore(createKeystore(KeyStoreType.JKS, PASSWORD))
                 .build();
@@ -49,7 +49,7 @@ public class AthenzSslContextBuilderTest {
     public void can_build_sslcontext_with_keystore_from_private_key_and_certificate() throws Exception {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
         X509Certificate certificate = createCertificate(keyPair);
-        new AthenzSslContextBuilder()
+        new SslContextBuilder()
                 .withKeyStore(keyPair.getPrivate(), certificate)
                 .build();
     }
@@ -59,7 +59,7 @@ public class AthenzSslContextBuilderTest {
         File keystoreFile = tempDirectory.newFile();
         createKeystoreFile(keystoreFile, KeyStoreType.JKS, PASSWORD);
 
-        new AthenzSslContextBuilder()
+        new SslContextBuilder()
                 .withKeyStore(keystoreFile, PASSWORD, KeyStoreType.JKS)
                 .build();
     }
@@ -69,7 +69,7 @@ public class AthenzSslContextBuilderTest {
         File keystoreFile = tempDirectory.newFile();
         createKeystoreFile(keystoreFile, KeyStoreType.PKCS12, PASSWORD);
 
-        new AthenzSslContextBuilder()
+        new SslContextBuilder()
                 .withKeyStore(keystoreFile, PASSWORD, KeyStoreType.PKCS12)
                 .build();
     }

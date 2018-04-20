@@ -9,7 +9,7 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
-import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
+import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
@@ -96,10 +96,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override
     public SSLContext getIdentitySslContext() {
-        return new AthenzSslContextBuilder()
-                .withIdentityCertificate(new AthenzIdentityCertificate(
-                        credentials.getCertificate(),
-                        credentials.getKeyPair().getPrivate()))
+        return new SslContextBuilder()
+                .withKeyStore(credentials.getKeyPair().getPrivate(), credentials.getCertificate())
                 .withTrustStore(new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks")), JKS)
                 .build();
     }
