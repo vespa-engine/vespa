@@ -51,7 +51,6 @@ vespa_define_module(
     src/tests/memory
     src/tests/net/async_resolver
     src/tests/net/selector
-    src/tests/net/send_fd
     src/tests/net/socket
     src/tests/net/socket_spec
     src/tests/objects/nbostream
