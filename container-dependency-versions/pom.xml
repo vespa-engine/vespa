@@ -440,7 +440,7 @@
         <guava.version>18.0</guava.version>
         <guice.version>3.0</guice.version>
         <jetty.version>9.4.9.v20180320</jetty.version>
-        <scala.version>2.11.4</scala.version>  <!-- When updating this, the scala.major-version in parent must also be updated! -->
+        <scala.version>2.11.12</scala.version>  <!-- When updating this, the scala.major-version in parent must also be updated! -->
         <slf4j.version>1.7.5</slf4j.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->
