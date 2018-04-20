@@ -13,20 +13,25 @@
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
 
-#include <vespa/document/base/exceptions.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
+#include <vespa/searchcore/proton/summaryengine/summaryengine.h>
+#include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/searchlib/engine/transportserver.h>
+#include <vespa/vespalib/net/state_server.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -130,10 +135,8 @@ Proton::ProtonFileHeaderContext::addTags(vespalib::GenericHeader &header,
 
 
 void
-Proton::ProtonFileHeaderContext::setClusterName(const vespalib::string &
-                                                clusterName,
-                                                const vespalib::string &
-                                                baseDir)
+Proton::ProtonFileHeaderContext::setClusterName(const vespalib::string & clusterName,
+                                                const vespalib::string & baseDir)
 {
     if (!clusterName.empty()) {
         _cluster = clusterName;
@@ -247,8 +250,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                        protonConfig.numthreadspersearch,
                                        protonConfig.distributionkey));
     _distributionKey = protonConfig.distributionkey;
-    _summaryEngine.reset(new SummaryEngine(protonConfig.numsummarythreads));
-    _docsumBySlime.reset(new DocsumBySlime(*_summaryEngine));
+    _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads);
+    _docsumBySlime = std::make_unique<DocsumBySlime>(*_summaryEngine);
     IFlushStrategy::SP strategy;
     const ProtonConfig::Flush & flush(protonConfig.flush);
     switch (flush.strategy) {
@@ -262,15 +265,15 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     }
     case ProtonConfig::Flush::SIMPLE:
     default:
-        strategy.reset(new SimpleFlush());
+        strategy = std::make_shared<SimpleFlush>();
         break;
     }
     vespalib::mkdir(protonConfig.basedir + "/documents", true);
     vespalib::chdir(protonConfig.basedir);
     _tls->start();
-    _flushEngine.reset(new FlushEngine(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
-                                       strategy, flush.maxconcurrent, flush.idleinterval*1000));
-    _fs4Server.reset(new TransportServer(*_matchEngine, *_summaryEngine, *this, protonConfig.ptport, TransportServer::DEBUG_ALL));
+    _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
+                                                 strategy, flush.maxconcurrent, flush.idleinterval*1000);
+    _fs4Server = std::make_unique<TransportServer>(*_matchEngine, *_summaryEngine, *this, protonConfig.ptport, TransportServer::DEBUG_ALL);
     _fs4Server->setTCPNoDelay(true);
     _metricsEngine->addExternalMetrics(_fs4Server->getMetrics());
 

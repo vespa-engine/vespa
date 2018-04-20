@@ -32,7 +32,7 @@ void
 TransportServer::SearchHandler::start()
 {
     SearchReply::UP reply = parent._searchServer.search(std::move(request), *this);
-    if (reply.get() != 0) {
+    if (reply) {
         searchDone(std::move(reply));
     }
 }
@@ -40,7 +40,7 @@ TransportServer::SearchHandler::start()
 void
 TransportServer::SearchHandler::searchDone(SearchReply::UP reply)
 {
-    if (reply.get() != 0) {
+    if (reply) {
         const SearchReply &r = *reply;
         if (r.valid) {
             if (r.errorCode == 0) {
@@ -86,7 +86,7 @@ void
 TransportServer::DocsumHandler::start()
 {
     DocsumReply::UP reply = parent._docsumServer.getDocsums(std::move(request), *this);
-    if (reply.get() != 0) {
+    if (reply) {
         getDocsumsDone(std::move(reply));
     }
 }
@@ -94,7 +94,7 @@ TransportServer::DocsumHandler::start()
 void
 TransportServer::DocsumHandler::getDocsumsDone(DocsumReply::UP reply)
 {
-    if (reply.get() != 0) {
+    if (reply) {
         const DocsumReply &r = *reply;
         for (uint32_t i = 0; i < r.docsums.size(); ++i) {
             PacketConverter::DOCSUM *p = new PacketConverter::DOCSUM();
@@ -109,9 +109,8 @@ TransportServer::DocsumHandler::getDocsumsDone(DocsumReply::UP reply)
             logPacket("outgoing packet", p, channel, 0);
         }
         channel->Send(p);
-        if (r.request.get() != NULL) {
-            parent.updateDocsumMetrics(r.request->getTimeUsed().sec(),
-                                       r.docsums.size()); // possible thread issue
+        if (r.request) {
+            parent.updateDocsumMetrics(r.request->getTimeUsed().sec(), r.docsums.size());
         }
     } else {
         LOG(warning, "got <null> docsum reply from back-end");
@@ -130,7 +129,7 @@ void
 TransportServer::MonitorHandler::start()
 {
     MonitorReply::UP reply = parent._monitorServer.ping(std::move(request), *this);
-    if (reply.get() != 0) {
+    if (reply) {
         pingDone(std::move(reply));
     }
 }
@@ -138,7 +137,7 @@ TransportServer::MonitorHandler::start()
 void
 TransportServer::MonitorHandler::pingDone(MonitorReply::UP reply)
 {
-    if (reply.get() != 0) {
+    if (reply) {
         const MonitorReply &r = *reply;
         PacketConverter::MONITORRESULTX *p = new PacketConverter::MONITORRESULTX();
         PacketConverter::fromMonitorReply(r, *p);

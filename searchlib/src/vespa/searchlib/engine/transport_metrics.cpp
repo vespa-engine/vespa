@@ -24,7 +24,7 @@ TransportMetrics::DocsumMetrics::DocsumMetrics(metrics::MetricSet *parent)
 TransportMetrics::DocsumMetrics::~DocsumMetrics() = default;
 
 TransportMetrics::TransportMetrics()
-    : metrics::MetricSet("transport", "", "Transport server metrics", 0),
+    : metrics::MetricSet("transport", "", "Transport server metrics", nullptr),
       updateLock(),
       query(this),
       docsum(this)

@@ -8,9 +8,12 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/searchlib/common/transport.h>
+#include <vespa/metrics/metricset.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
+#include <vespa/metrics/metrics.h>
+
 LOG_SETUP("summaryengine_test");
 
 using namespace search::engine;
@@ -204,6 +207,9 @@ TEST("requireThatCorrectHandlerIsUsed") {
     EXPECT_TRUE(assertDocsumReply(engine, "bar", "bar reply"));
     EXPECT_TRUE(assertDocsumReply(engine, "baz", "baz reply"));
     EXPECT_TRUE(assertDocsumReply(engine, "not", "bar reply")); // uses the first (sorted on name)
+    EXPECT_EQUAL(4ul, static_cast<metrics::LongCountMetric *>(engine.getMetrics().getMetric("count"))->getValue());
+    EXPECT_EQUAL(4ul, static_cast<metrics::LongCountMetric *>(engine.getMetrics().getMetric("docs"))->getValue());
+    EXPECT_LESS(0.0, static_cast<metrics::DoubleAverageMetric *>(engine.getMetrics().getMetric("latency"))->getAverage());
 }
 
 using vespalib::Slime;

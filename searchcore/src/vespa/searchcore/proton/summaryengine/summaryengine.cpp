@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "summaryengine.h"
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.summaryengine.summaryengine");
@@ -28,6 +31,25 @@ public:
     }
 };
 
+struct DocsumMetrics : metrics::MetricSet {
+    metrics::LongCountMetric     count;
+    metrics::LongCountMetric     docs;
+    metrics::DoubleAverageMetric latency;
+
+    DocsumMetrics();
+    ~DocsumMetrics();
+};
+
+DocsumMetrics::DocsumMetrics()
+        : metrics::MetricSet("docsum", "", "Docsum metrics", nullptr),
+          count("count", "logdefault", "Docsum requests handled", this),
+          docs("docs", "logdefault", "Total docsums returned", this),
+          latency("latency", "logdefault", "Docsum request latency", this)
+{
+}
+
+DocsumMetrics::~DocsumMetrics() = default;
+
 } // namespace anonymous
 
 namespace proton {
@@ -36,10 +58,9 @@ SummaryEngine::SummaryEngine(size_t numThreads)
     : _lock(),
       _closed(false),
       _handlers(),
-      _executor(numThreads, 128 * 1024)
-{
-    // empty
-}
+      _executor(numThreads, 128 * 1024),
+      _metrics(std::make_unique<DocsumMetrics>())
+{ }
 
 SummaryEngine::~SummaryEngine()
 {
@@ -114,10 +135,21 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
                 reply = snapshot->get()->getDocsums(*req); // use the first handler
             }
         }
+        updateDocsumMetrics(req->getTimeUsed().sec(), reply->docsums.size());
     }
     reply->request = std::move(req);
+
     return reply;
 }
 
+void
+SummaryEngine::updateDocsumMetrics(double latency_s, uint32_t numDocs)
+{
+    std::lock_guard guard(_lock);
+    DocsumMetrics & m = static_cast<DocsumMetrics &>(*_metrics);
+    m.count.inc();
+    m.docs.inc(numDocs);
+    m.latency.set(latency_s);
+}
 
 } // namespace proton

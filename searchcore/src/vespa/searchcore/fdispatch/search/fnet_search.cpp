@@ -886,7 +886,7 @@ FastS_FNET_Search::CheckCoverage()
             cntNone++;
         }
     }
-    if ((cntNone > 0) && (cntNone != _nodes.size())) {
+    if ((cntNone > 0) && (cntNone != _nodes.size()) && (soonActiveDocs > activeDocs)) {
         activeDocs += cntNone * activeDocs/(_nodes.size() - cntNone);
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);

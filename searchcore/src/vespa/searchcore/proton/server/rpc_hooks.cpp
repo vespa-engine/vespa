@@ -2,6 +2,7 @@
 
 #include "rpc_hooks.h"
 #include "proton.h"
+#include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/fnet/frt/supervisor.h>
 
@@ -24,7 +25,7 @@ struct Pair {
     ~Pair();
 };
 
-Pair::~Pair() {}
+Pair::~Pair() = default;
 
 }
 
