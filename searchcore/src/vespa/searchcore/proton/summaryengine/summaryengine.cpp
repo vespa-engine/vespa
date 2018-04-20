@@ -31,6 +31,10 @@ public:
     }
 };
 
+} // namespace anonymous
+
+namespace proton::internal {
+
 struct DocsumMetrics : metrics::MetricSet {
     metrics::LongCountMetric     count;
     metrics::LongCountMetric     docs;
@@ -50,7 +54,7 @@ DocsumMetrics::DocsumMetrics()
 
 DocsumMetrics::~DocsumMetrics() = default;
 
-} // namespace anonymous
+}
 
 namespace proton {
 
@@ -59,7 +63,7 @@ SummaryEngine::SummaryEngine(size_t numThreads)
       _closed(false),
       _handlers(),
       _executor(numThreads, 128 * 1024),
-      _metrics(std::make_unique<DocsumMetrics>())
+      _metrics(std::make_unique<internal::DocsumMetrics>())
 { }
 
 SummaryEngine::~SummaryEngine()
@@ -146,10 +150,14 @@ void
 SummaryEngine::updateDocsumMetrics(double latency_s, uint32_t numDocs)
 {
     std::lock_guard guard(_lock);
-    DocsumMetrics & m = static_cast<DocsumMetrics &>(*_metrics);
-    m.count.inc();
-    m.docs.inc(numDocs);
-    m.latency.set(latency_s);
+    _metrics->count.inc();
+    _metrics->docs.inc(numDocs);
+    _metrics->latency.set(latency_s);
+}
+
+metrics::MetricSet &
+SummaryEngine::getMetrics() {
+    return *_metrics;
 }
 
 } // namespace proton

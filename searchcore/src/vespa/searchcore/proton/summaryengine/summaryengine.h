@@ -9,6 +9,7 @@
 #include <mutex>
 
 namespace metrics { class MetricSet; }
+namespace proton::internal { class DocsumMetrics; }
 
 namespace proton {
 
@@ -24,7 +25,7 @@ private:
     bool                          _closed;
     HandlerMap<ISearchHandler>    _handlers;
     vespalib::ThreadStackExecutor _executor;
-    std::unique_ptr<metrics::MetricSet> _metrics;
+    std::unique_ptr<internal::DocsumMetrics> _metrics;
 
 public:
     SummaryEngine(const SummaryEngine &) = delete;
@@ -105,7 +106,7 @@ public:
      */
     DocsumReply::UP getDocsums(DocsumRequest::UP req) override;
 
-    metrics::MetricSet & getMetrics() { return *_metrics; }
+    metrics::MetricSet & getMetrics();
 };
 
 } // namespace proton
