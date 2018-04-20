@@ -5,6 +5,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.Timer;
@@ -39,12 +41,14 @@ public class DatabaseHandler {
         Integer lastSystemStateVersion;
         Map<Node, NodeState> wantedStates;
         Map<Node, Long> startTimestamps;
+        ClusterStateBundle clusterStateBundle;
 
         void clear() {
             masterVote = null;
             lastSystemStateVersion = null;
             wantedStates = null;
             startTimestamps = null;
+            clusterStateBundle = null;
         }
     }
     private class DatabaseListener implements Database.DatabaseListener {
@@ -68,15 +72,13 @@ public class DatabaseHandler {
         }
     }
 
+    private final DatabaseFactory databaseFactory;
     private final Timer timer;
     private final int nodeIndex;
     private final Object monitor;
     private String zooKeeperAddress;
     private int zooKeeperSessionTimeout = 5000;
     private final Object databaseMonitor = new Object();
-
-    /** This is always ZooKeeperDatabase */
-    // TODO: Get rid of the interface as it is both unnecessary and gives a false impression of independence
     private Database database;
 
     private DatabaseListener dbListener = new DatabaseListener();
@@ -87,8 +89,9 @@ public class DatabaseHandler {
     private boolean lostZooKeeperConnectionEvent = false;
     private Map<Integer, Integer> masterDataEvent = null;
 
-    public DatabaseHandler(Timer timer, String zooKeeperAddress, int ourIndex, Object monitor) throws InterruptedException
+    public DatabaseHandler(DatabaseFactory databaseFactory, Timer timer, String zooKeeperAddress, int ourIndex, Object monitor) throws InterruptedException
     {
+        this.databaseFactory = databaseFactory;
         this.timer = timer;
         this.nodeIndex = ourIndex;
         pendingStore.masterVote = ourIndex; // To begin with we'll vote for ourselves.
@@ -166,8 +169,13 @@ public class DatabaseHandler {
                 clearSessionMetaData();
                 log.log(LogLevel.INFO,
                         "Fleetcontroller " + nodeIndex + ": Setting up new ZooKeeper session at " + zooKeeperAddress);
-                database = new ZooKeeperDatabase(cluster,
-                        nodeIndex, zooKeeperAddress, zooKeeperSessionTimeout, dbListener);
+                DatabaseFactory.Params params = new DatabaseFactory.Params()
+                        .cluster(cluster)
+                        .nodeIndex(nodeIndex)
+                        .databaseAddress(zooKeeperAddress)
+                        .databaseSessionTimeout(zooKeeperSessionTimeout)
+                        .databaseListener(dbListener);
+                database = databaseFactory.create(params);
             }
         } catch (KeeperException.NodeExistsException e) {
             log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Cannot create ephemeral fleetcontroller node. ZooKeeper server "
@@ -279,6 +287,15 @@ public class DatabaseHandler {
                     return didWork;
                 }
             }
+            if (pendingStore.clusterStateBundle != null) {
+                didWork = true;
+                if (database.storeLastPublishedStateBundle(pendingStore.clusterStateBundle)) {
+                    currentlyStored.clusterStateBundle = pendingStore.clusterStateBundle;
+                    pendingStore.clusterStateBundle = null;
+                } else {
+                    return true;
+                }
+            }
         }
         return didWork;
     }
@@ -325,9 +342,26 @@ public class DatabaseHandler {
             if (usingZooKeeper()) {
                 log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve latest system state version from ZooKeeper. Returning version 0.");
             }
-            return 0;
+            return 0; // FIXME "fail-oblivious" is not a good error handling mode for such a critical component!
         }
         return version;
+    }
+
+    public void saveLatestClusterStateBundle(Context context, ClusterStateBundle clusterStateBundle) throws InterruptedException {
+        log.log(LogLevel.DEBUG, () -> String.format("Fleetcontroller %d: Scheduling bundle %s to be saved to ZooKeeper", nodeIndex, clusterStateBundle));
+        pendingStore.clusterStateBundle = clusterStateBundle;
+        doNextZooKeeperTask(context);
+    }
+
+    public ClusterStateBundle getLatestClusterStateBundle() throws InterruptedException {
+        log.log(LogLevel.DEBUG, () -> String.format("Fleetcontroller %d: Retrieving latest cluster state bundle from ZooKeeper", nodeIndex));
+        synchronized (databaseMonitor) {
+            if (database != null && !database.isClosed()) {
+                return database.retrieveLastPublishedStateBundle();
+            } else {
+                return ClusterStateBundle.empty();
+            }
+        }
     }
 
     public void saveWantedStates(Context context) throws InterruptedException {
@@ -399,7 +433,9 @@ public class DatabaseHandler {
     public boolean loadStartTimestamps(ContentCluster cluster) throws InterruptedException {
         log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Retrieving start timestamps");
         synchronized (databaseMonitor) {
-            if (database == null || database.isClosed()) return false;
+            if (database == null || database.isClosed()) {
+                return false;
+            }
             currentlyStored.startTimestamps = database.retrieveStartTimestamps();
         }
         Map<Node, Long> startTimestamps = currentlyStored.startTimestamps;

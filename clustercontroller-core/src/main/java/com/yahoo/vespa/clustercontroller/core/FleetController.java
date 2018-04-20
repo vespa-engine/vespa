@@ -10,6 +10,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
+import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.*;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
@@ -25,7 +26,18 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 
 import java.io.FileNotFoundException;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -54,7 +66,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private AtomicBoolean running = new AtomicBoolean(true);
     private FleetControllerOptions options;
     private FleetControllerOptions nextOptions;
-    private final List<SystemStateListener> systemStateListeners = new LinkedList<>();
+    private final List<SystemStateListener> systemStateListeners = new CopyOnWriteArrayList<>();
     private boolean processingCycle = false;
     private boolean wantedStateChanged = false;
     private long cycleCount = 0;
@@ -185,7 +197,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 options.nodeStateRequestTimeoutEarliestPercentage,
                 options.nodeStateRequestTimeoutLatestPercentage,
                 options.nodeStateRequestRoundTripTimeMaxSeconds);
-        DatabaseHandler database = new DatabaseHandler(timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
+        DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
         NodeLookup lookUp = new SlobrokClient(timer);
         StateChangeHandler stateGenerator = new StateChangeHandler(timer, log, metricUpdater);
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
@@ -219,6 +231,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
     }
 
+    public ClusterStateBundle getClusterStateBundle() {
+        synchronized (monitor) {
+            return systemStateBroadcaster.getClusterStateBundle();
+        }
+    }
+
     public void schedule(RemoteClusterControllerTask task) {
         synchronized (monitor) {
             log.fine("Scheduled remote task " + task.getClass().getName() + " for execution");
@@ -228,13 +246,13 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     /** Used for unit testing. */
     public void addSystemStateListener(SystemStateListener listener) {
-        synchronized (systemStateListeners) {
-            systemStateListeners.add(listener);
-            // Always give cluster state listeners the current state, in case acceptable state has come before listener is registered.
-            com.yahoo.vdslib.state.ClusterState state = getSystemState();
-            if (state == null) throw new NullPointerException("Cluster state should never be null at this point");
-            listener.handleNewSystemState(ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.withoutAnnotations(state)));
+        systemStateListeners.add(listener);
+        // Always give cluster state listeners the current state, in case acceptable state has come before listener is registered.
+        com.yahoo.vdslib.state.ClusterState state = getSystemState();
+        if (state == null) {
+            throw new NullPointerException("Cluster state should never be null at this point");
         }
+        listener.handleNewPublishedState(ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.withoutAnnotations(state)));
     }
 
     public FleetControllerOptions getOptions() {
@@ -351,7 +369,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     @Override
-    public void handleNewSystemState(ClusterStateBundle stateBundle) {
+    public void handleNewPublishedState(ClusterStateBundle stateBundle) {
         verifyInControllerThread();
         ClusterState baselineState = stateBundle.getBaselineClusterState();
         newStates.add(stateBundle);
@@ -361,13 +379,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // nodes so that a cluster controller crash after publishing but before a successful
         // ZK store will not risk reusing the same version number.
         if (masterElectionHandler.isMaster()) {
-            storeClusterStateVersionToZooKeeper(baselineState);
+            storeClusterStateMetaDataToZooKeeper(stateBundle);
         }
     }
 
-    private void storeClusterStateVersionToZooKeeper(ClusterState state) {
+    private void storeClusterStateMetaDataToZooKeeper(ClusterStateBundle stateBundle) {
         try {
-            database.saveLatestSystemStateVersion(databaseContext, state.getVersion());
+            database.saveLatestSystemStateVersion(databaseContext, stateBundle.getVersion());
+            database.saveLatestClusterStateBundle(databaseContext, stateBundle);
         } catch (InterruptedException e) {
             // Rethrow as RuntimeException to propagate exception up to main thread method.
             // Don't want to hide failures to write cluster state version.
@@ -654,6 +673,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             }
             sentAny = systemStateBroadcaster.broadcastNewState(databaseContext, communicator);
             if (sentAny) {
+                // FIXME won't this inhibit resending to unresponsive nodes?
                 nextStateSendTime = currentTime + options.minTimeBetweenNewSystemStates;
             }
         }
@@ -665,7 +685,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             synchronized (systemStateListeners) {
                 for (ClusterStateBundle stateBundle : newStates) {
                     for(SystemStateListener listener : systemStateListeners) {
-                        listener.handleNewSystemState(stateBundle);
+                        listener.handleNewPublishedState(stateBundle);
                     }
                 }
                 newStates.clear();
@@ -782,10 +802,19 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became node state gatherer as we are fleetcontroller master candidate.", timer.getCurrentTimeInMillis()));
                 // Update versions to use so what is shown is closer to what is reality on the master
                 stateVersionTracker.setVersionRetrievedFromZooKeeper(database.getLatestSystemStateVersion());
+                stateChangeHandler.setStateChangedFlag();
             }
         }
         isStateGatherer = true;
         return didWork;
+    }
+
+    private void invokeCandidateStateListeners(ClusterStateBundle candidateBundle) {
+        systemStateListeners.forEach(listener -> listener.handleNewCandidateState(candidateBundle));
+    }
+
+    private boolean hasPassedFirstStateBroadcastTimePoint(long timeNowMs) {
+        return timeNowMs >= firstAllowedStateBroadcast || cluster.allStatesReported();
     }
 
     private boolean recomputeClusterStateIfRequired() {
@@ -800,16 +829,18 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                     .stateDeriver(createBucketSpaceStateDeriver())
                     .deriveAndBuild();
             stateVersionTracker.updateLatestCandidateStateBundle(candidateBundle);
+            invokeCandidateStateListeners(candidateBundle);
 
-            if (stateVersionTracker.candidateChangedEnoughFromCurrentToWarrantPublish()
-                    || stateVersionTracker.hasReceivedNewVersionFromZooKeeper())
+            final long timeNowMs = timer.getCurrentTimeInMillis();
+            if (hasPassedFirstStateBroadcastTimePoint(timeNowMs)
+                && (stateVersionTracker.candidateChangedEnoughFromCurrentToWarrantPublish()
+                    || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()))
             {
-                final long timeNowMs = timer.getCurrentTimeInMillis();
                 final ClusterStateBundle before = stateVersionTracker.getVersionedClusterStateBundle();
 
                 stateVersionTracker.promoteCandidateToVersionedState(timeNowMs);
                 emitEventsForAlteredStateEdges(before, stateVersionTracker.getVersionedClusterStateBundle(), timeNowMs);
-                handleNewSystemState(stateVersionTracker.getVersionedClusterStateBundle());
+                handleNewPublishedState(stateVersionTracker.getVersionedClusterStateBundle());
                 stateWasChanged = true;
             }
         }
@@ -893,10 +924,19 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
     }
 
+    private boolean atFirstClusterStateSendTimeEdge() {
+        // We only care about triggering a state recomputation for the master, which is the only
+        // one allowed to actually broadcast any states.
+        if (!isMaster || systemStateBroadcaster.hasBroadcastedClusterStateBundle()) {
+            return false;
+        }
+        return hasPassedFirstStateBroadcastTimePoint(timer.getCurrentTimeInMillis());
+    }
+
     private boolean mustRecomputeCandidateClusterState() {
         return stateChangeHandler.stateMayHaveChanged()
-                || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()
-                || stateVersionTracker.bucketSpaceMergeCompletionStateHasChanged();
+                || stateVersionTracker.bucketSpaceMergeCompletionStateHasChanged()
+                || atFirstClusterStateSendTimeEdge();
     }
 
     private boolean handleLeadershipEdgeTransitions() throws InterruptedException {
@@ -904,16 +944,25 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if (masterElectionHandler.isMaster()) {
             if ( ! isMaster) {
                 metricUpdater.becameMaster();
-                // If we just became master, restore wanted states from database
+                // If we just became master, restore state from ZooKeeper
+                stateChangeHandler.setStateChangedFlag();
+                systemStateBroadcaster.resetBroadcastedClusterStateBundle();
+
                 stateVersionTracker.setVersionRetrievedFromZooKeeper(database.getLatestSystemStateVersion());
-                didWork = database.loadStartTimestamps(cluster);
-                didWork |= database.loadWantedStates(databaseContext);
+                ClusterStateBundle previousBundle = database.getLatestClusterStateBundle();
+                database.loadStartTimestamps(cluster);
+                database.loadWantedStates(databaseContext);
+
+                log.info(() -> String.format("Loaded previous cluster state bundle from ZooKeeper: %s", previousBundle));
+                stateVersionTracker.setClusterStateBundleRetrievedFromZooKeeper(previousBundle);
+
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became fleetcontroller master. Bumped version to "
                         + stateVersionTracker.getCurrentVersion() + " to be in line.", timer.getCurrentTimeInMillis()));
                 long currentTime = timer.getCurrentTimeInMillis();
                 firstAllowedStateBroadcast = currentTime + options.minTimeBeforeFirstSystemStateBroadcast;
                 log.log(LogLevel.DEBUG, "At time " + currentTime + " we set first system state broadcast time to be "
                         + options.minTimeBeforeFirstSystemStateBroadcast + " ms after at time " + firstAllowedStateBroadcast + ".");
+                didWork = true;
             }
             isMaster = true;
             if (wantedStateChanged) {

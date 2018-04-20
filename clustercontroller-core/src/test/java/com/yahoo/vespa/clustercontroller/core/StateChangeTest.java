@@ -5,6 +5,7 @@ import com.yahoo.jrt.*;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.*;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
+import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.testutils.StateWaiter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.Before;
@@ -46,7 +47,7 @@ public class StateChangeTest extends FleetControllerTest {
         ContentCluster cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution,
                                                     options.minStorageNodesUp, options.minRatioOfStorageNodesUp);
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
-        DatabaseHandler database = new DatabaseHandler(timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
+        DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
         StateChangeHandler stateGenerator = new StateChangeHandler(timer, eventLog, metricUpdater);
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
         MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
@@ -955,8 +956,9 @@ public class StateChangeTest extends FleetControllerTest {
         StateWaiter waiter = new StateWaiter(timer);
         fleetController.addSystemStateListener(waiter);
 
-            // Ensure all nodes have been seen by fleetcontroller and that it has had enough time to possibly have sent a cluster state
-        waiter.waitForState("version:\\d+ distributor:10 (\\.\\d+\\.t:\\d+ )*storage:10 (\\.\\d+\\.t:\\d+ )*.1.s:d( \\.\\d+\\.t:\\d+)*", timeoutMS);
+        // Ensure all nodes have been seen by fleetcontroller and that it has had enough time to possibly have sent a cluster state
+        // Note: this is a candidate state and therefore NOT versioned yet
+        waiter.waitForState("^distributor:10 (\\.\\d+\\.t:\\d+ )*storage:10 (\\.\\d+\\.t:\\d+ )*.1.s:d( \\.\\d+\\.t:\\d+)*", timeoutMS);
         waitForCompleteCycle();
         new StateMessageChecker(nodes) {
             @Override int expectedMessageCount(final DummyVdsNode node) { return 0; }

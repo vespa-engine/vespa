@@ -18,8 +18,11 @@ import java.util.Map;
  *
  * LZ4 compression is transparently applied during encoding and decompression is
  * subsequently applied during decoding.
+ *
+ * Implements optional Slime-based enveloping for *WithEnvelope methods, which removes
+ * need to explicitly track compression metadata by the caller.
  */
-public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec {
+public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, EnvelopedClusterStateBundleCodec {
 
     private static final Compressor compressor = new Compressor(CompressionType.LZ4, 3, 0.90, 1024);
 
@@ -54,5 +57,31 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec {
         }));
 
         return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(baseline), derivedStates);
+    }
+
+    // Technically the Slime enveloping could be its own class that is bundle codec independent, but
+    // realistically there won't be any other implementations. Can be trivially factored out if required.
+    @Override
+    public byte[] encodeWithEnvelope(ClusterStateBundle stateBundle) {
+        EncodedClusterStateBundle toEnvelope = encode(stateBundle);
+
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setLong("compression-type", toEnvelope.getCompression().type().getCode());
+        root.setLong("uncompressed-size", toEnvelope.getCompression().uncompressedSize());
+        root.setData("data", toEnvelope.getCompression().data());
+        return BinaryFormat.encode(slime);
+    }
+
+    @Override
+    public ClusterStateBundle decodeWithEnvelope(byte[] encodedClusterStateBundle) {
+        // We expect ZK writes to be atomic, letting us not worry about partially written or corrupted blobs.
+        Slime slime = BinaryFormat.decode(encodedClusterStateBundle);
+        Inspector root = slime.get();
+        CompressionType compressionType = CompressionType.valueOf((byte)root.field("compression-type").asLong());
+        int uncompressedSize = (int)root.field("uncompressed-size").asLong();
+        byte[] data = root.field("data").asData();
+        return decode(EncodedClusterStateBundle.fromCompressionBuffer(
+                new Compressor.Compression(compressionType, uncompressedSize, data)));
     }
 }

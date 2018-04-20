@@ -9,6 +9,8 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -483,7 +485,7 @@ public class MasterElectionTest extends FleetControllerTest {
         // no guarantees that it has been published to any nodes yet.
         final long preElectionVersionNumber = fleetControllers.get(0).getSystemState().getVersion();
 
-        // Nuke controller 1, leaving controller 1 in charge.
+        // Nuke controller 0, leaving controller 1 in charge.
         // It should have observed the most recently written version number and increase this
         // number before publishing its own new state.
         fleetControllers.get(0).shutdown();
@@ -493,6 +495,49 @@ public class MasterElectionTest extends FleetControllerTest {
         final long postElectionVersionNumber = fleetControllers.get(1).getSystemState().getVersion();
 
         assertThat(postElectionVersionNumber, greaterThan(preElectionVersionNumber));
+    }
+
+    @Test
+    public void previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps() throws Exception {
+        startingTest("MasterElectionTest::previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps");
+        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        options.enableMultipleBucketSpaces = true;
+        options.masterZooKeeperCooldownPeriod = 1;
+        options.minTimeBeforeFirstSystemStateBroadcast = 10000;
+        setUpFleetController(3, true, options);
+        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
+        waitForMaster(0);
+        waitForStableSystem();
+        log.info("Waiting for full maintenance mode in default space");
+        waitForStateInSpace("default", "version:\\d+ distributor:10 storage:10 .0.s:m .1.s:m .2.s:m .3.s:m .4.s:m .5.s:m .6.s:m .7.s:m .8.s:m .9.s:m");
+
+        log.info("Responding with zero global merges pending from all distributors");
+        final int ackVersion = fleetControllers.get(0).getClusterStateBundle().getVersion();
+        // ACKing with no merge state in host info (implied: no pending merges) should not cause
+        // a new state to be published before the last node has ACKed. Consequently there should
+        // not be any race potential where a new version is published concurrently with our attempts
+        // at ACKing a previous one.
+        this.nodes.stream().filter(DummyVdsNode::isDistributor).forEach(node -> {
+            node.setNodeState(new NodeState(NodeType.DISTRIBUTOR, State.UP),
+                    String.format("{\"cluster-state-version\":%d}", ackVersion));
+        });
+        waitForStateInAllSpaces("version:\\d+ distributor:10 storage:10");
+
+        log.info("Bundle before restart cycle: " + fleetControllers.get(0).getClusterStateBundle());
+        log.info("Doing restart cycle of controller 0");
+        fleetControllers.get(0).shutdown();
+        waitForMaster(1);
+        waitForCompleteCycle(1);
+
+        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, null));
+        waitForMaster(0);
+        waitForCompleteCycle(0);
+
+        // We should NOT publish a state where all storage nodes are in Maintenance, since they were
+        // marked as Up in the last published cluster state.
+        log.info("Bundle after restart cycle: " + fleetControllers.get(0).getClusterStateBundle());
+        waitForStateInAllSpaces("version:\\d+ distributor:10 storage:10");
     }
 
 }

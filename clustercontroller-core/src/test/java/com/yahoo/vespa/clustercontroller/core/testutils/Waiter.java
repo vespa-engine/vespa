@@ -7,28 +7,32 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.DummyVdsNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public interface Waiter {
 
-    public interface DataRetriever {
-        public Object getMonitor();
-        public FleetController getFleetController();
-        public List<DummyVdsNode> getDummyNodes();
-        public int getTimeoutMS();
+    interface DataRetriever {
+        Object getMonitor();
+        FleetController getFleetController();
+        List<DummyVdsNode> getDummyNodes();
+        int getTimeoutMS();
     }
 
-    public ClusterState waitForState(String state) throws Exception;
-    public ClusterState waitForState(String state, int timeoutMS) throws Exception;
-    public ClusterState waitForStableSystem() throws Exception;
-    public ClusterState waitForStableSystem(int nodeCount) throws Exception;
-    public ClusterState waitForInitProgressPassed(Node n, double progress);
-    public ClusterState waitForClusterStateIncludingNodesWithMinUsedBits(int bitcount, int nodecount);
-    public void wait(WaitCondition c, WaitTask wt, int timeoutMS);
+    ClusterState waitForState(String state) throws Exception;
+    ClusterState waitForStateInSpace(String space, String state) throws Exception;
+    ClusterState waitForStateInAllSpaces(String state) throws Exception;
+    ClusterState waitForState(String state, int timeoutMS) throws Exception;
+    ClusterState waitForStableSystem() throws Exception;
+    ClusterState waitForStableSystem(int nodeCount) throws Exception;
+    ClusterState waitForInitProgressPassed(Node n, double progress);
+    ClusterState waitForClusterStateIncludingNodesWithMinUsedBits(int bitcount, int nodecount);
+    void wait(WaitCondition c, WaitTask wt, int timeoutMS);
 
-    public static class Impl implements Waiter {
+    class Impl implements Waiter {
 
         private static final Logger log = Logger.getLogger(Impl.class.getName());
         private final DataRetriever data;
@@ -37,15 +41,32 @@ public interface Waiter {
             this.data = data;
         }
 
-        public ClusterState waitForState(String state) throws Exception { return waitForState(state, data.getTimeoutMS()); }
-        public ClusterState waitForState(String state, int timeoutMS) throws Exception {
+        // TODO refactor
+        private ClusterState waitForState(String state, int timeoutMS, boolean checkAllSpaces, Set<String> checkSpaces) {
             LinkedList<DummyVdsNode> nodesToCheck = new LinkedList<>();
             for(DummyVdsNode node : data.getDummyNodes()) {
                 if (node.isConnected()) nodesToCheck.add(node);
             }
-            WaitCondition.StateWait swc = new WaitCondition.RegexStateMatcher(state, data.getFleetController(), data.getMonitor()).includeNotifyingNodes(nodesToCheck);
+            WaitCondition.StateWait swc = new WaitCondition.RegexStateMatcher(
+                    state, data.getFleetController(), data.getMonitor())
+                    .includeNotifyingNodes(nodesToCheck)
+                    .checkAllSpaces(checkAllSpaces)
+                    .checkSpaceSubset(checkSpaces);
             wait(swc, new WaitTask.StateResender(data.getFleetController()), timeoutMS);
             return swc.getCurrentState();
+        }
+
+        public ClusterState waitForState(String state) throws Exception {
+            return waitForState(state, data.getTimeoutMS());
+        }
+        public ClusterState waitForStateInAllSpaces(String state) {
+            return waitForState(state, data.getTimeoutMS(), true, Collections.emptySet());
+        }
+        public ClusterState waitForStateInSpace(String space, String state) {
+            return waitForState(state, data.getTimeoutMS(), false, Collections.singleton(space));
+        }
+        public ClusterState waitForState(String state, int timeoutMS) {
+            return waitForState(state, timeoutMS, false, Collections.emptySet());
         }
         public ClusterState waitForStableSystem() throws Exception {
             return waitForStableSystem(data.getDummyNodes().size() / 2);

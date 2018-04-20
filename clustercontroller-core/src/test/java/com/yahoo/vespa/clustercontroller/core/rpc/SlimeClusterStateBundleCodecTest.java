@@ -18,6 +18,12 @@ public class SlimeClusterStateBundleCodecTest {
         return codec.decode(encoded);
     }
 
+    private static ClusterStateBundle roundtripEncodeWithEnvelope(ClusterStateBundle stateBundle) {
+        SlimeClusterStateBundleCodec codec = new SlimeClusterStateBundleCodec();
+        byte[] encoded = codec.encodeWithEnvelope(stateBundle);
+        return codec.decodeWithEnvelope(encoded);
+    }
+
     @Test
     public void baseline_only_bundle_can_be_round_trip_encoded() {
         ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2");
@@ -51,6 +57,19 @@ public class SlimeClusterStateBundleCodecTest {
         assertThat(encoded.getCompression().data().length, lessThan(stateBundle.getBaselineClusterState().toString().length()));
         ClusterStateBundle decodedBundle = codec.decode(encoded);
         assertThat(decodedBundle, equalTo(stateBundle));
+    }
+
+    @Test
+    public void uncompressed_enveloped_bundle_can_be_roundtrip_encoded() {
+        // Insufficient length and too much entropy to be compressed
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:3");
+        assertThat(roundtripEncodeWithEnvelope(stateBundle), equalTo(stateBundle));
+    }
+
+    @Test
+    public void compressable_enveloped_bundle_can_be_roundtrip_encoded() {
+        ClusterStateBundle stateBundle = makeCompressableBundle();
+        assertThat(roundtripEncodeWithEnvelope(stateBundle), equalTo(stateBundle));
     }
 
 }

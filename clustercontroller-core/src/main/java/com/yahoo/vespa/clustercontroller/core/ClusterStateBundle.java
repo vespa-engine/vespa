@@ -78,6 +78,10 @@ public class ClusterStateBundle {
         return new ClusterStateBundle(baselineState, Collections.emptyMap());
     }
 
+    public static ClusterStateBundle empty() {
+        return ofBaselineOnly(AnnotatedClusterState.emptyState());
+    }
+
     public AnnotatedClusterState getBaselineAnnotatedState() {
         return baselineState;
     }
