@@ -1,8 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import com.yahoo.fs4.BasicPacket;
@@ -21,6 +25,8 @@ import com.yahoo.document.DocumentId;
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @author  <a href="mailto:mathiasm@yahoo-inc.com">Mathias Lidal</a>
  */
+// TODO: Remove packet cache as it timed out a long time ago.
+// 1 - It does not work with grouping, 2 the packet protocol is eroding away.
 public class PacketWrapper implements Cloneable {
     private static Logger log = Logger.getLogger(PacketWrapper.class.getName());
 
@@ -131,9 +137,7 @@ public class PacketWrapper implements Cloneable {
             return; // do not add a packet which does not contain new info
         }
 
-        insertionPoint = Collections.binarySearch(resultPackets,
-                                                      resultPacket,
-                                                      resultPacketComparator);
+        insertionPoint = Collections.binarySearch(resultPackets, resultPacket, resultPacketComparator);
         if (insertionPoint < 0) {
             // new offset
             insertionPoint = ~insertionPoint; // (insertionPoint + 1) * -1;
