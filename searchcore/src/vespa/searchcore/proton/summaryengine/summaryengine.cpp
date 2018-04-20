@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "summaryengine.h"
-#include <vespa/metrics/valuemetric.h>
-#include <vespa/metrics/countmetric.h>
-#include <vespa/metrics/metricset.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.summaryengine.summaryengine");
@@ -33,37 +30,24 @@ public:
 
 } // namespace anonymous
 
-namespace proton::internal {
+namespace proton {
 
-struct DocsumMetrics : metrics::MetricSet {
-    metrics::LongCountMetric     count;
-    metrics::LongCountMetric     docs;
-    metrics::DoubleAverageMetric latency;
-
-    DocsumMetrics();
-    ~DocsumMetrics();
-};
-
-DocsumMetrics::DocsumMetrics()
-        : metrics::MetricSet("docsum", "", "Docsum metrics", nullptr),
-          count("count", "logdefault", "Docsum requests handled", this),
-          docs("docs", "logdefault", "Total docsums returned", this),
-          latency("latency", "logdefault", "Docsum request latency", this)
+SummaryEngine::DocsumMetrics::DocsumMetrics()
+    : metrics::MetricSet("docsum", "", "Docsum metrics", nullptr),
+      count("count", "logdefault", "Docsum requests handled", this),
+      docs("docs", "logdefault", "Total docsums returned", this),
+      latency("latency", "logdefault", "Docsum request latency", this)
 {
 }
 
-DocsumMetrics::~DocsumMetrics() = default;
-
-}
-
-namespace proton {
+SummaryEngine::DocsumMetrics::~DocsumMetrics() = default;
 
 SummaryEngine::SummaryEngine(size_t numThreads)
     : _lock(),
       _closed(false),
       _handlers(),
       _executor(numThreads, 128 * 1024),
-      _metrics(std::make_unique<internal::DocsumMetrics>())
+      _metrics(std::make_unique<DocsumMetrics>())
 { }
 
 SummaryEngine::~SummaryEngine()
@@ -150,14 +134,10 @@ void
 SummaryEngine::updateDocsumMetrics(double latency_s, uint32_t numDocs)
 {
     std::lock_guard guard(_lock);
-    _metrics->count.inc();
-    _metrics->docs.inc(numDocs);
-    _metrics->latency.set(latency_s);
-}
-
-metrics::MetricSet &
-SummaryEngine::getMetrics() {
-    return *_metrics;
+    DocsumMetrics & m = static_cast<DocsumMetrics &>(*_metrics);
+    m.count.inc();
+    m.docs.inc(numDocs);
+    m.latency.set(latency_s);
 }
 
 } // namespace proton
