@@ -631,7 +631,6 @@ private:
     class ReadGuard;
 
     friend class ComponentGuard<AttributeVector>;
-    friend class AttributeEnumGuard;
     friend class AttributeValueGuard;
     friend class AttributeTest;
     friend class AttributeManagerTest;
