@@ -48,11 +48,11 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
              new ScheduledThreadPoolExecutor(1));
     }
 
-    SiaIdentityProvider(AthenzService service,
-                        File privateKeyFile,
-                        File certificateFile,
-                        File trustStoreFile,
-                        ScheduledExecutorService scheduler) {
+    public SiaIdentityProvider(AthenzService service,
+                               File privateKeyFile,
+                               File certificateFile,
+                               File trustStoreFile,
+                               ScheduledExecutorService scheduler) {
         this.service = service;
         this.privateKeyFile = privateKeyFile;
         this.certificateFile = certificateFile;
