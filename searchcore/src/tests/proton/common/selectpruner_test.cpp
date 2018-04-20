@@ -78,7 +78,8 @@ makeDocTypeRepo()
                      addField("aa", DataType::T_INT).
                      addField("aaa", Array(DataType::T_INT)).
                      addField("aaw", Wset(DataType::T_INT)).
-                     addField("ab", DataType::T_INT));
+                     addField("ab", DataType::T_INT).
+                     addField("ae", DataType::T_INT));
     builder.document(doc_type_id + 1, type_name_2,
                      Struct(header_name_2), Struct(body_name_2).
                      addField("ic", DataType::T_STRING).
@@ -131,6 +132,7 @@ public:
     MockAttributeManager _amgr;
     std::unique_ptr<const DocumentTypeRepo> _repoUP;
     bool _hasFields;
+    bool _hasDocuments;
 
     TestFixture();
 
@@ -156,11 +158,13 @@ public:
 TestFixture::TestFixture()
     : _amgr(),
       _repoUP(),
-      _hasFields(true)
+      _hasFields(true),
+      _hasDocuments(true)
 {
     _amgr.addAttribute("aa", AttributeFactory::createAttribute("aa", { BasicType::INT32 }));
     _amgr.addAttribute("aaa", AttributeFactory::createAttribute("aaa", { BasicType::INT32 , CollectionType::ARRAY}));
     _amgr.addAttribute("aaw", AttributeFactory::createAttribute("aaw", { BasicType::INT32 , CollectionType::WSET}));
+    _amgr.addAttribute("ae", AttributeFactory::createAttribute("ae", { BasicType::INT32 }));
     _repoUP = makeDocTypeRepo();
 }
 
@@ -247,7 +251,7 @@ TestFixture::testPrune(const string &selection,
     ASSERT_TRUE(docType != NULL);
     Document::UP emptyDoc(new Document(*docType, docId));
     emptyDoc->setRepo(repo);
-    SelectPruner pruner(docTypeName, &_amgr, *emptyDoc, repo, _hasFields);
+    SelectPruner pruner(docTypeName, &_amgr, *emptyDoc, repo, _hasFields, _hasDocuments);
     pruner.process(*select);
     std::ostringstream pos;
     pruner.getNode()->print(pos, true, "");
@@ -295,7 +299,7 @@ TEST_F("Test that test setup is OK", TestFixture)
     const DocumentTypeRepo &repo = *f._repoUP;
     const DocumentType *docType = repo.getDocumentType("test");
     ASSERT_TRUE(docType);
-    EXPECT_EQUAL(10u, docType->getFieldCount());
+    EXPECT_EQUAL(11u, docType->getFieldCount());
     EXPECT_EQUAL("String", docType->getField("ia").getDataType().getName());
     EXPECT_EQUAL("String", docType->getField("ib").getDataType().getName());
     EXPECT_EQUAL("Int", docType->getField("aa").getDataType().getName());
@@ -732,6 +736,8 @@ TEST_F("Test that complex field refs are handled", TestFixture)
 {
     f.testPrune("test.ia",
                 "test.ia != null");
+    f.testPrune("test.ia != null",
+                "test.ia != null");
     f.testPrune("test.ia == \"hello\"",
                 "test.ia == \"hello\"");
     f.testPrune("test.ia.foo == \"hello\"",
@@ -762,6 +768,57 @@ TEST_F("Test that complex field refs are handled", TestFixture)
                 "invalid");
     f.testPrune("test.aaw{4} == 4",
                 "test.aaw{4} == 4");
+    f.testPrune("id.namespace == \"hello\"",
+                "id.namespace == \"hello\"");
+    f.testPrune("test.aa == 4 and id.namespace == \"hello\"",
+                "test.aa == 4 and id.namespace == \"hello\"");
+    f.testPrune("test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"",
+                "test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"");
+}
+
+TEST_F("Test that field values are invalid when disabling document access", TestFixture)
+{
+    f._hasDocuments = false;
+    f.testPrune("test.ia",
+                "invalid");
+    f.testPrune("test.ia != null",
+                "invalid");
+    f.testPrune("test.ia == \"hello\"",
+                "invalid");
+    f.testPrune("test.ia.foo == \"hello\"",
+                "invalid");
+    f.testPrune("test.ibs.foo == \"hello\"",
+                "invalid");
+    f.testPrune("test.ibs.x == \"hello\"",
+                "invalid");
+    f.testPrune("test.ia[2] == \"hello\"",
+                "invalid");
+    f.testPrune("test.iba[2] == \"hello\"",
+                "invalid");
+    f.testPrune("test.ia{foo} == \"hello\"",
+                "invalid");
+    f.testPrune("test.ibw{foo} == 4",
+                "invalid");
+    f.testPrune("test.ibw{foo} == \"hello\"",
+                "invalid");
+    f.testPrune("test.ibm{foo} == \"hello\"",
+                "invalid");
+    f.testPrune("test.aa == 4",
+                "test.aa == 4");
+    f.testPrune("test.aa[4] == 4",
+                "invalid");
+    f.testPrune("test.aaa[4] == 4",
+                "invalid");
+    f.testPrune("test.aa{4} == 4",
+                "invalid");
+    f.testPrune("test.aaw{4} == 4",
+                "invalid");
+    f.testPrune("id.namespace == \"hello\"",
+                "invalid");
+    f.testPrune("test.aa == 4 and id.namespace == \"hello\"",
+                "test.aa == 4 and invalid");
+    f.testPrune("test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"",
+                "test.aa == 4 and test.ae == 5 and invalid");
 }
 
 

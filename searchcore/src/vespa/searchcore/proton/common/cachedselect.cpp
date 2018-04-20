@@ -161,7 +161,8 @@ CachedSelect::set(const vespalib::string &selection,
                         amgr,
                         emptyDoc,
                         repo,
-                        hasFields);
+                        hasFields,
+                        true);
     pruner.process(*parsed);
     _resultSet = pruner.getResultSet();
     _allFalse = pruner.isFalse();
