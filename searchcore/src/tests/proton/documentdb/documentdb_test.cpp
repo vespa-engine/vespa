@@ -21,6 +21,7 @@
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -240,7 +241,8 @@ TEST_F("require that document db registers reference", Fixture)
     EXPECT_TRUE(reference);
     auto attr = reference->getAttribute("attr1");
     EXPECT_TRUE(attr);
-    EXPECT_EQUAL(search::attribute::BasicType::INT32, attr->getBasicType());
+    auto attrReadGuard = attr->makeReadGuard(false);
+    EXPECT_EQUAL(search::attribute::BasicType::INT32, attrReadGuard->attribute()->getBasicType());
 }
 
 }  // namespace

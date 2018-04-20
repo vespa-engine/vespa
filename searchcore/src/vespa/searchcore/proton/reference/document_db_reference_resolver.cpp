@@ -143,7 +143,7 @@ DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManage
     if (_useReferences) {
         for (const auto &attr : _importedFieldsCfg.attribute) {
             ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
-            AttributeVector::SP targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
+            auto targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
             auto importedAttr = ImportedAttributeVectorFactory::create(attr.name, refAttr, targetAttr, documentMetaStore, useSearchCache);
             result->add(importedAttr->getName(), importedAttr);
         }

@@ -4,10 +4,8 @@
 #include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_registrator.h>
 
-namespace search {
-class AttributeVector;
-class IGidToLidMapperFactory;
-}
+namespace search::attribute { class ReadableAttributeVector; }
+namespace search { class IGidToLidMapperFactory; }
 
 namespace proton {
 namespace test {
@@ -17,8 +15,8 @@ namespace test {
  */
 struct MockDocumentDBReference : public IDocumentDBReference {
     using SP = std::shared_ptr<MockDocumentDBReference>;
-    virtual std::shared_ptr<search::AttributeVector> getAttribute(vespalib::stringref) override {
-        return std::shared_ptr<search::AttributeVector>();
+    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref) override {
+        return std::shared_ptr<search::attribute::ReadableAttributeVector>();
     }
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override {
         return std::shared_ptr<search::IGidToLidMapperFactory>();
