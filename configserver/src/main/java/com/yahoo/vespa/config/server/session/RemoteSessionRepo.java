@@ -68,8 +68,8 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.reloadHandler = reloadHandler;
         this.metrics = metricUpdater;
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, executorService);
-        this.directoryCache.start();
         this.directoryCache.addListener(this);
+        this.directoryCache.start();
         sessionsChanged();
     }
 
