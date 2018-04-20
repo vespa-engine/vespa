@@ -4,7 +4,6 @@ package com.yahoo.vespa.athenz.identity;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
-import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
@@ -79,18 +78,10 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
     }
 
     private SSLContext createIdentitySslContext() {
-        try {
-            String certPem = new String(Files.readAllBytes(certificateFile.toPath()));
-            X509Certificate certificate = X509CertificateUtils.fromPem(certPem);
-            String keyPem = new String(Files.readAllBytes(privateKeyFile.toPath()));
-            PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(keyPem);
-            return new SslContextBuilder()
-                    .withTrustStore(trustStoreFile, KeyStoreType.JKS)
-                    .withIdentityCertificate(new AthenzIdentityCertificate(certificate, privateKey))
-                    .build();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return new SslContextBuilder()
+                .withTrustStore(trustStoreFile, KeyStoreType.JKS)
+                .withKeyStore(privateKeyFile, certificateFile)
+                .build();
     }
 
     private void reloadSslContext() {

@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.tls;
 
-import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
-
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -11,6 +9,7 @@ import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -57,6 +56,19 @@ public class SslContextBuilder {
     public SslContextBuilder withKeyStore(File file, char[] password, KeyStoreType keyStoreType) {
         this.keyStoreSupplier = () -> KeyStoreBuilder.withType(keyStoreType).fromFile(file, password).build();
         this.keyStorePassword = password;
+        return this;
+    }
+
+    public SslContextBuilder withKeyStore(File privateKeyPemFile, File certificatePemFile) {
+        this.keyStoreSupplier =
+                () ->  {
+                    PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyPemFile.toPath())));
+                    X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificatePemFile.toPath())));
+                    return KeyStoreBuilder.withType(KeyStoreType.JKS)
+                            .withKeyEntry("default", privateKey, certificate)
+                            .build();
+                };
+        this.keyStorePassword = new char[0];
         return this;
     }
 
