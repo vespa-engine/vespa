@@ -63,17 +63,16 @@ public class FileDownloader {
     private Future<Optional<File>> getFutureFile(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Objects.requireNonNull(fileReference, "file reference cannot be null");
-        File directory = new File(downloadDirectory, fileReference.value());
-        log.log(LogLevel.DEBUG, () -> "Checking if there is a file in '" + directory.getAbsolutePath() + "' ");
-
-        Optional<File> file = getFileFromFileSystem(fileReference, directory);
+        log.log(LogLevel.DEBUG, () -> "Checking if file reference '" + fileReference.value() + "' exists in '" +
+                downloadDirectory.getAbsolutePath() + "' ");
+        Optional<File> file = getFileFromFileSystem(fileReference, downloadDirectory);
         if (file.isPresent()) {
             SettableFuture<Optional<File>> future = SettableFuture.create();
             future.set(file);
             return future;
         } else {
             log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' not found in " +
-                    directory.getAbsolutePath() + ", starting download");
+                    downloadDirectory.getAbsolutePath() + ", starting download");
             return download(fileReferenceDownload);
         }
     }
@@ -91,14 +90,15 @@ public class FileDownloader {
     }
 
     private Optional<File> getFileFromFileSystem(FileReference fileReference, File directory) {
-        File[] files = directory.listFiles();
+        File[] files = new File(directory, fileReference.value()).listFiles();
         if (directory.exists() && directory.isDirectory() && files != null && files.length > 0) {
             File file = files[0];
             if (!file.exists()) {
-                throw new RuntimeException("File with reference '" + fileReference.value() + "' does not exist");
+                throw new RuntimeException("File reference '" + fileReference.value() + "' does not exist");
             } else if (!file.canRead()) {
-                throw new RuntimeException("File with reference '" + fileReference.value() + "'exists, but unable to read it");
+                throw new RuntimeException("File reference '" + fileReference.value() + "'exists, but unable to read it");
             } else {
+                log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
                 fileReferenceDownloader.setDownloadStatus(fileReference, 1.0);
                 return Optional.of(file);
             }
@@ -108,12 +108,10 @@ public class FileDownloader {
 
     private boolean alreadyDownloaded(FileReference fileReference) {
         try {
-            if (getFileFromFileSystem(fileReference, downloadDirectory).isPresent())
-                return true;
+            return (getFileFromFileSystem(fileReference, downloadDirectory).isPresent());
         } catch (RuntimeException e) {
-            /* ignored */
+            return false;
         }
-        return false;
     }
 
     public boolean downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
@@ -121,11 +119,12 @@ public class FileDownloader {
             download(fileReferenceDownload);
             return true;
         } else {
+            log.log(LogLevel.DEBUG, () -> "Download not needed, " + fileReferenceDownload.fileReference() + " already downloaded" );
             return false;
         }
     }
 
-    synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
+    private synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReferenceDownload));
         if (inProgress != null) {

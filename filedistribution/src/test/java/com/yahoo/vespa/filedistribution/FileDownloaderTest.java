@@ -208,7 +208,9 @@ public class FileDownloaderTest {
     }
 
     private void writeFileReference(File dir, String fileReferenceString, String fileName) throws IOException {
-        File file = new File(new File(dir, fileReferenceString), fileName);
+        File fileReferenceDir = new File(dir, fileReferenceString);
+        fileReferenceDir.mkdir();
+        File file = new File(fileReferenceDir, fileName);
         IOUtils.writeFile(file, "content", false);
     }
 
