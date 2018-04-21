@@ -203,8 +203,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("proton.diskusage.last", "diskusage"));
         metrics.add(new Metric("proton.memoryusage.max", "content.proton.memoryusage.max"));
         metrics.add(new Metric("proton.transport.query.count.rate", "query_requests"));
-        metrics.add(new Metric("proton.transport.docsum.docs.rate", "document_requests"));
-        metrics.add(new Metric("proton.transport.docsum.latency.average", "content.proton.transport.docsum.latency.average"));
+        metrics.add(new Metric("proton.docsum.docs.rate", "document_requests"));
+        metrics.add(new Metric("proton.docsum.latency.average", "content.proton.transport.docsum.latency.average"));
         metrics.add(new Metric("proton.transport.query.latency.average", "query_latency"));
 
         // jobs
