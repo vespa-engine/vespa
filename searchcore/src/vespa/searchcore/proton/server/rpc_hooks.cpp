@@ -2,6 +2,8 @@
 
 #include "rpc_hooks.h"
 #include "proton.h"
+#include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
+#include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/fnet/frt/supervisor.h>
 
@@ -24,7 +26,7 @@ struct Pair {
     ~Pair();
 };
 
-Pair::~Pair() {}
+Pair::~Pair() = default;
 
 }
 
@@ -46,7 +48,7 @@ RPCHooksBase::checkState(StateArg::UP arg)
             Session & session = *arg->_session;
             Executor::Task::UP failedTask = _executor.execute(makeTask(
                     makeClosure(this, &RPCHooksBase::checkState, std::move(arg))));
-            if (failedTask.get() != NULL) {
+            if (failedTask) {
                 reportState(session, req);
                 req->Return();
             }
@@ -273,7 +275,7 @@ RPCHooksBase::rpc_GetState(FRT_RPCRequest *req)
     } else {
         fastos::TimeStamp dueTime(fastos::ClockSystem::now() + timeoutMS * fastos::TimeStamp::MS);
         StateArg::UP stateArg(new StateArg(sharedSession, req, dueTime));
-        if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg)))).get() != NULL) {
+        if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg))))) {
             reportState(*sharedSession, req);
             req->Return();
         } else {
@@ -342,7 +344,7 @@ RPCHooksBase::rpc_getIncrementalState(FRT_RPCRequest *req)
     } else {
         fastos::TimeStamp dueTime(fastos::ClockSystem::now() + timeoutMS * fastos::TimeStamp::MS);
         StateArg::UP stateArg(new StateArg(sharedSession, req, dueTime));
-        if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg)))).get() != NULL) {
+        if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg))))) {
             reportState(*sharedSession, req);
             req->Return();
         } else {

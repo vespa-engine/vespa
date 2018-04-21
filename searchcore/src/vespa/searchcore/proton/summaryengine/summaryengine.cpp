@@ -32,14 +32,23 @@ public:
 
 namespace proton {
 
+SummaryEngine::DocsumMetrics::DocsumMetrics()
+    : metrics::MetricSet("docsum", "", "Docsum metrics", nullptr),
+      count("count", "logdefault", "Docsum requests handled", this),
+      docs("docs", "logdefault", "Total docsums returned", this),
+      latency("latency", "logdefault", "Docsum request latency", this)
+{
+}
+
+SummaryEngine::DocsumMetrics::~DocsumMetrics() = default;
+
 SummaryEngine::SummaryEngine(size_t numThreads)
     : _lock(),
       _closed(false),
       _handlers(),
-      _executor(numThreads, 128 * 1024)
-{
-    // empty
-}
+      _executor(numThreads, 128 * 1024),
+      _metrics(std::make_unique<DocsumMetrics>())
+{ }
 
 SummaryEngine::~SummaryEngine()
 {
@@ -114,10 +123,21 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
                 reply = snapshot->get()->getDocsums(*req); // use the first handler
             }
         }
+        updateDocsumMetrics(req->getTimeUsed().sec(), reply->docsums.size());
     }
     reply->request = std::move(req);
+
     return reply;
 }
 
+void
+SummaryEngine::updateDocsumMetrics(double latency_s, uint32_t numDocs)
+{
+    std::lock_guard guard(_lock);
+    DocsumMetrics & m = static_cast<DocsumMetrics &>(*_metrics);
+    m.count.inc();
+    m.docs.inc(numDocs);
+    m.latency.set(latency_s);
+}
 
 } // namespace proton

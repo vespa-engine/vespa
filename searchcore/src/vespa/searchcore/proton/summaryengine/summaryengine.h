@@ -1,33 +1,43 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "isearchhandler.h"
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
-#include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
 #include <mutex>
+
 
 namespace proton {
 
 class SummaryEngine : public search::engine::DocsumServer
 {
 private:
+    void updateDocsumMetrics(double latency_s, uint32_t numDocs);
     using DocsumReply = search::engine::DocsumReply;
     using DocsumRequest = search::engine::DocsumRequest;
     using DocsumClient = search::engine::DocsumClient;
+
+    struct DocsumMetrics : metrics::MetricSet {
+        metrics::LongCountMetric     count;
+        metrics::LongCountMetric     docs;
+        metrics::DoubleAverageMetric latency;
+
+        DocsumMetrics();
+        ~DocsumMetrics();
+    };
 
     std::mutex                    _lock;
     bool                          _closed;
     HandlerMap<ISearchHandler>    _handlers;
     vespalib::ThreadStackExecutor _executor;
+    std::unique_ptr<metrics::MetricSet> _metrics;
 
 public:
-    /**
-     * Convenience typedefs.
-     */
-    typedef std::unique_ptr<SummaryEngine> UP;
-    typedef std::shared_ptr<SummaryEngine> SP;
     SummaryEngine(const SummaryEngine &) = delete;
     SummaryEngine & operator = (const SummaryEngine &) = delete;
 
@@ -105,6 +115,8 @@ public:
      * @param req    The docsum request to perform.
      */
     DocsumReply::UP getDocsums(DocsumRequest::UP req) override;
+
+    metrics::MetricSet & getMetrics() { return *_metrics; }
 };
 
 } // namespace proton

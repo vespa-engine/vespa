@@ -12,33 +12,36 @@
 #include "proton_config_fetcher.h"
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
-#include <vespa/searchcore/proton/flushengine/flushengine.h>
-#include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
-#include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
-#include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
-#include <vespa/searchlib/engine/transportserver.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/vespalib/net/component_config_producer.h>
 #include <vespa/vespalib/net/generic_state_handler.h>
 #include <vespa/vespalib/net/json_get_handler.h>
+#include <vespa/vespalib/net/json_handler_repo.h>
 #include <vespa/vespalib/net/state_explorer.h>
-#include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>
 #include <shared_mutex>
+
+namespace search::engine { class TransportServer; }
+
+namespace vespalib { class StateServer; }
 
 namespace proton {
 
 class DiskMemUsageSampler;
 class IDocumentDBReferenceRegistry;
 class PrepareRestartHandler;
+class SummaryEngine;
+class DocsumBySlime;
+class FlushEngine;
+class MatchEngine;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -50,7 +53,7 @@ class Proton : public IProtonConfigurerOwner,
 {
 private:
     typedef search::transactionlog::TransLogServerApp     TLS;
-    typedef search::engine::TransportServer               TransportServer;
+    using TransportServer = search::engine::TransportServer;
     typedef search::engine::MonitorRequest                MonitorRequest;
     typedef search::engine::MonitorReply                  MonitorReply;
     typedef search::engine::MonitorClient                 MonitorClient;
@@ -88,25 +91,25 @@ private:
     const config::ConfigUri         _configUri;
     mutable std::shared_timed_mutex _mutex;
     MetricsUpdateHook               _metricsHook;
-    MetricsEngine::UP               _metricsEngine;
+    std::unique_ptr<MetricsEngine>  _metricsEngine;
     ProtonFileHeaderContext         _fileHeaderContext;
     TLS::UP                         _tls;
     std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
     PersistenceEngine::UP           _persistenceEngine;
     DocumentDBMap                   _documentDBMap;
-    MatchEngine::UP                 _matchEngine;
-    SummaryEngine::UP               _summaryEngine;
-    DocsumBySlime::UP               _docsumBySlime;
+    std::unique_ptr<MatchEngine>   _matchEngine;
+    std::unique_ptr<SummaryEngine>  _summaryEngine;
+    std::unique_ptr<DocsumBySlime>  _docsumBySlime;
     MemoryFlushConfigUpdater::UP    _memoryFlushConfigUpdater;
-    FlushEngine::UP                 _flushEngine;
+    std::unique_ptr<FlushEngine>    _flushEngine;
     std::unique_ptr<PrepareRestartHandler> _prepareRestartHandler;
     RPCHooks::UP                    _rpcHooks;
     HealthAdapter                   _healthAdapter;
     vespalib::GenericStateHandler   _genericStateHandler;
     vespalib::JsonHandlerRepo::Token::UP _customComponentBindToken;
     vespalib::JsonHandlerRepo::Token::UP _customComponentRootToken;
-    vespalib::StateServer::UP       _stateServer;
-    TransportServer::UP             _fs4Server;
+    std::unique_ptr<vespalib::StateServer>  _stateServer;
+    std::unique_ptr<TransportServer>        _fs4Server;
     vespalib::ThreadStackExecutor   _executor;
     ProtonConfigurer                _protonConfigurer;
     ProtonConfigFetcher             _protonConfigFetcher;
