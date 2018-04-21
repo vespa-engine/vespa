@@ -10,7 +10,6 @@ public class DefaultContainerEnvironmentResolver implements ContainerEnvironment
 
     public String createSettings(Environment environment, NodeSpec node) {
         return new ContainerEnvironmentSettings()
-                .set("configServerAddresses", environment.getConfigServerHostNames())
                 .set("nodeType", node.nodeType)
                 .set("cloud", environment.getCloud())
                 .build();
