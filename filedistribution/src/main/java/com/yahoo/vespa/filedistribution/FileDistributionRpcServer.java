@@ -103,6 +103,7 @@ public class FileDistributionRpcServer {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void setFileReferencesToDownload(Request req) {
+        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         Arrays.stream(req.parameters().get(0).asStringArray())
                 .map(FileReference::new)
                 .forEach(fileReference -> downloader.downloadIfNeeded(new FileReferenceDownload(fileReference)));
