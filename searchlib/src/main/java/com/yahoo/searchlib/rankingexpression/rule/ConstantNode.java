@@ -39,8 +39,8 @@ public final class ConstantNode extends ExpressionNode {
     public Value getValue() { return value; }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return sourceString();
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        return string.append(sourceString());
     }
 
     /** Returns the string which created this, or the value.toString() if not known */

@@ -55,10 +55,10 @@ public class ExpressionFunction {
      */
     public Instance expand(SerializationContext context, List<ExpressionNode> argumentValues, Deque<String> path) {
         Map<String, String> argumentBindings = new HashMap<>();
-        for (int i = 0; i < arguments.size() && i < arguments.size(); ++i) {
-            argumentBindings.put(arguments.get(i), argumentValues.get(i).toString(context, path, null));
+        for (int i = 0; i < arguments.size() && i < argumentValues.size(); ++i) {
+            argumentBindings.put(arguments.get(i), argumentValues.get(i).toString(new StringBuilder(), context, path, null).toString());
         }
-        return new Instance(toSymbol(argumentBindings), body.getRoot().toString(context.withBindings(argumentBindings), path, null));
+        return new Instance(toSymbol(argumentBindings), body.getRoot().toString(new StringBuilder(), context.withBindings(argumentBindings), path, null).toString());
     }
 
     /**

@@ -39,10 +39,10 @@ public final class EmbracedNode extends CompositeNode {
     }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        String expression = value.toString(context, path, this);
-        if (value instanceof ReferenceNode)  return expression;
-        return  "(" + expression + ")";
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        if (value instanceof ReferenceNode)
+            return value.toString(string, context, path, this);
+        return value.toString(string.append('('), context, path, this).append(')');
     }
 
     @Override

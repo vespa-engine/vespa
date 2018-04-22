@@ -34,8 +34,8 @@ public class NegativeNode extends CompositeNode {
     }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return "-" + value.toString(context, path, parent);
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        return value.toString(string.append('-'), context, path, parent);
     }
 
     @Override

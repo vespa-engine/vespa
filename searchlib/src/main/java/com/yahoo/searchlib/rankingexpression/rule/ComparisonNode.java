@@ -44,9 +44,9 @@ public class ComparisonNode extends BooleanNode {
     public ExpressionNode getRightCondition() { return rightCondition; }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return leftCondition.toString(context, path, this) + " " + operator + " " +
-               rightCondition.toString(context, path, this);
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        leftCondition.toString(string, context, path, this).append(' ').append(operator).append(' ');
+        return rightCondition.toString(string, context, path, this);
     }
 
     @Override

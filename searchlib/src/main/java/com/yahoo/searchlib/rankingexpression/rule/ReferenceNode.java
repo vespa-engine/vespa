@@ -63,11 +63,11 @@ public final class ReferenceNode extends CompositeNode {
     public List<ExpressionNode> children() { return reference.arguments().expressions(); }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
         // A reference to a macro argument?
         if (reference.isIdentifier() && context.getBinding(getName()) != null) {
             // a bound identifier: replace by the value it is bound to
-            return context.getBinding(getName());
+            return string.append(context.getBinding(getName()));
         }
 
         // A reference to a function?
@@ -83,11 +83,11 @@ public final class ReferenceNode extends CompositeNode {
             ExpressionFunction.Instance instance = function.expand(context, getArguments().expressions(), path);
             path.removeLast();
             context.addFunctionSerialization(RankingExpression.propertyName(instance.getName()), instance.getExpressionString());
-            return "rankingExpression(" + instance.getName() + ")";
+            return string.append("rankingExpression(").append(instance.getName()).append(')');
         }
 
         // Not resolved in this context: output as-is
-        return reference.toString(context, path, parent);
+        return reference.toString(string, context, path, parent);
     }
 
     /** Returns the reference of this node */

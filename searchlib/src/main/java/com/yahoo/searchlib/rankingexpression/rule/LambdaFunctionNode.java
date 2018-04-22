@@ -44,8 +44,9 @@ public class LambdaFunctionNode extends CompositeNode {
     }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return ("f(" + commaSeparated(arguments) + ")(" + functionExpression.toString(context, path, this)) + ")";
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        string.append("f(").append(commaSeparated(arguments)).append(")(");
+        return functionExpression.toString(string, context, path, this).append(")");
     }
 
     private String commaSeparated(List<String> list) {

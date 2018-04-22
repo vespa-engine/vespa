@@ -29,8 +29,8 @@ public final class NameNode extends ExpressionNode {
     }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return name;
+    public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
+        return string.append(name);
     }
 
     @Override

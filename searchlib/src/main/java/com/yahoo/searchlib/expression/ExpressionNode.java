@@ -13,7 +13,7 @@ import java.io.Serializable;
  * happens in the C++ backend. This class hierarchy is for <b>building</b> the expression tree to pass to the backend.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class ExpressionNode extends Identifiable implements Serializable {
 
