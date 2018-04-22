@@ -133,23 +133,38 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @param deployState the global deploy state to use for this model.
      */
     public VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState) throws IOException, SAXException {
+        this(configModelRegistry, deployState, true, null);
+    }
+
+    private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete, FileDistributor fileDistributor) throws IOException, SAXException {
         super("vespamodel");
         this.deployState = deployState;
         this.validationOverrides = deployState.validationOverrides();
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
-        configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
-        addServiceClusters(deployState.getApplicationPackage(), builder);
-        this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
-        setupRouting();
-        this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
-        getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState);
-        freezeModelTopology();
-        root.prepare(configModelRepo);
-        configModelRepo.prepareConfigModels();
-        validateWrapExceptions();
-        this.deployState = null;
+        if (complete) { // create a a completed, frozen model
+            configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
+            addServiceClusters(deployState.getApplicationPackage(), builder);
+            this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
+            setupRouting();
+            this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
+            getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState);
+            freezeModelTopology();
+            root.prepare(configModelRepo);
+            configModelRepo.prepareConfigModels();
+            validateWrapExceptions();
+            this.deployState = null;
+        }
+        else { // create a model with no services instantiated and the given file distributor
+            this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs());
+            this.fileDistributor = fileDistributor;
+        }
+    }
+
+    /** Creates a mutable model with no services instantiated */
+    public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
+        return new VespaModel(new NullConfigModelRegistry(), deployState, false, new FileDistributor(deployState.getFileRegistry(), null));
     }
 
     private void validateWrapExceptions() {
