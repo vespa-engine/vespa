@@ -86,5 +86,4 @@ public class LongdataField extends DocsumField implements VariableLengthField {
     public Object convert(Inspector value) {
         return convert(value.asData(Value.empty().asData()));
     }
-
 }

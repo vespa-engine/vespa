@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
+@Beta
 public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
