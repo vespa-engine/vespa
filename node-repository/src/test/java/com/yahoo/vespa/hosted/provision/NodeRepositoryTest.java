@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * tests basic operation of the node repository
@@ -80,6 +79,27 @@ public class NodeRepositoryTest {
         tester.nodeRepository().dirtyRecursively("host1", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().setReady("host1", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().removeRecursively("host1");
+    }
+
+    @Test
+    public void only_remove_tenant_docker_containers_for_new_allocations() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        tester.addNode("host1", "host1", "default", NodeType.tenant);
+        tester.addNode("host2", "host2", "docker", NodeType.tenant);
+        tester.addNode("cfg1", "cfg1", "docker", NodeType.config);
+
+        tester.setNodeState("host1", Node.State.dirty);
+        tester.setNodeState("host2", Node.State.dirty);
+        tester.setNodeState("cfg1", Node.State.dirty);
+
+        tester.nodeRepository().markNodeAvailableForNewAllocation("host1", Agent.system, getClass().getSimpleName());
+        assertEquals(Node.State.ready, tester.nodeRepository().getNode("host1").get().state());
+
+        tester.nodeRepository().markNodeAvailableForNewAllocation("host2", Agent.system, getClass().getSimpleName());
+        assertFalse(tester.nodeRepository().getNode("host2").isPresent());
+
+        tester.nodeRepository().markNodeAvailableForNewAllocation("cfg1", Agent.system, getClass().getSimpleName());
+        assertEquals(Node.State.ready, tester.nodeRepository().getNode("cfg1").get().state());
     }
 
     @Test
