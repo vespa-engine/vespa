@@ -55,6 +55,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     private static final CompoundName grouping=new CompoundName("grouping");
     private static final CompoundName combinerows=new CompoundName("combinerows");
+    /** If this is turned on this will fill summaries by dispatching directly to search nodes over RPC */
+    private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 
     protected static final CompoundName PACKET_COMPRESSION_LIMIT = new CompoundName("packetcompressionlimit");
     protected static final CompoundName PACKET_COMPRESSION_TYPE = new CompoundName("packetcompressiontype");
@@ -108,6 +110,10 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     protected abstract void doPartialFill(Result result, String summaryClass);
 
+    protected static boolean wantsRPCSummaryFill(Query query) {
+        return query.properties().getBoolean(dispatchSummaries);
+    }
+
     /**
      * Returns whether we need to send the query when fetching summaries.
      * This is necessary if the query requests summary features or dynamic snippeting
@@ -118,7 +124,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         DocumentDatabase documentDb = getDocumentDatabase(query);
 
         // Needed to generate a dynamic summary?
-        DocsumDefinition docsumDefinition = documentDb.getDocsumDefinitionSet().getDocsum(query.getPresentation().getSummary());
+        DocsumDefinition docsumDefinition = documentDb.getDocsumDefinitionSet().getDocsumDefinition(query.getPresentation().getSummary());
+        if (docsumDefinition == null) return true; // stay safe
         if (docsumDefinition.isDynamic()) return true;
 
         // Needed to generate ranking features?
@@ -207,6 +214,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         Item root = query.getModel().getQueryTree().getRoot();
         if (root == null || root instanceof NullItem) {
             return new Result(query, ErrorMessage.createNullQuery(query.getHttpRequest().getUri().toString()));
+        }
+
+        if (wantsRPCSummaryFill(query) && summaryNeedsQuery(query)) {
+            return new Result(query, ErrorMessage.createInvalidQueryParameter(
+                    "When using dispatch.summaries and your summary/rankprofile require the query, " +
+                    " you need to enable ranking.queryCache."));
         }
 
         QueryRewrite.optimizeByRestrict(query);
