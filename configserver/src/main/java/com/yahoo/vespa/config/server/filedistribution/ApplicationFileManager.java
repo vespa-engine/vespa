@@ -10,24 +10,22 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 
+/**
+ * @author baldersheim
+ */
 public class ApplicationFileManager implements AddFileInterface {
 
     private final File applicationDir;
-    private final FileDirectory master;
+    private final FileDirectory fileDirectory;
 
-    ApplicationFileManager(File applicationDir, FileDirectory master) {
+    ApplicationFileManager(File applicationDir, FileDirectory fileDirectory) {
         this.applicationDir = applicationDir;
-        this.master = master;
-    }
-
-    @Override
-    public FileReference addFile(String relativePath, FileReference reference) {
-        return master.addFile(new File(applicationDir, relativePath), reference);
+        this.fileDirectory = fileDirectory;
     }
 
     @Override
     public FileReference addFile(String relativePath) {
-        return master.addFile(new File(applicationDir, relativePath));
+        return fileDirectory.addFile(new File(applicationDir, relativePath));
     }
 
     @Override
@@ -36,13 +34,7 @@ public class ApplicationFileManager implements AddFileInterface {
         return addFile(relativePath);
     }
 
-    @Override
-    public FileReference addUri(String uri, String relativePath, FileReference reference) {
-        download(uri, relativePath);
-        return addFile(relativePath, reference);
-    }
-
-    void download(String uri, String relativePath) {
+    private void download(String uri, String relativePath) {
         File file = new File(applicationDir, relativePath);
         FileOutputStream fos = null;
         ReadableByteChannel rbc = null;
