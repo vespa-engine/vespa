@@ -46,7 +46,7 @@ public abstract class ExpressionNode implements Serializable {
 
     /**
      * Returns a script instance of this based on the supplied script functions.
-     * @Deprecated, use the faster one that takes and returns a StringBuilder instead.
+     * @deprecated use the faster one that takes and returns a StringBuilder instead.
      *
      * @param context the serialization context
      * @param path the call path to this, used for cycle detection, or null if this is a root
