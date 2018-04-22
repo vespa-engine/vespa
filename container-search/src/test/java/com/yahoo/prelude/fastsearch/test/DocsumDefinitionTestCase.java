@@ -47,7 +47,7 @@ public class DocsumDefinitionTestCase {
         }
         assertEquals(7, set.size());
 
-        DocsumDefinition docsum0 = set.getDocsumDefinition("default");
+        DocsumDefinition docsum0 = set.getDocsum("default");
 
         assertNotNull(docsum0);
         assertEquals("default", docsum0.getName());

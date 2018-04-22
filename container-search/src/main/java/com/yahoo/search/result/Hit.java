@@ -89,10 +89,10 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * Set to true for hits which does not contain content,
      * but which contains meta information about the query or result
      */
-    private boolean meta=false;
+    private boolean meta = false;
 
     /** If this is true, then this hit will not be counted as a concrete hit */
-    private boolean auxiliary=false;
+    private boolean auxiliary = false;
 
     /**
      * The hit field used to store rank features. TODO: Remove on Vespa 7
@@ -403,16 +403,13 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     //TODO Should it be deprecated ?
     public final Map<String,Object> fields() { return getUnmodifiableFieldMap(); }
 
-    /**
-     * Will preallocate in order to avoid resizing.
-     * @param minSize The minimum size to reserve
-     */
+    /** Aallocate room for the given number of fields to avoid resizing. */
     public void reserve(int minSize) {
         getFieldMap(minSize);
     }
 
     /**
-     * Fields
+     * Returns an iterator over the fields of this
      * 
      * @return an iterator for traversing the fields of this hit
      */
@@ -663,9 +660,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         if (p == null) {
             return null;
         } else if (p instanceof HitField) {
-            HitField hf = (HitField) p;
-
-            return hf.quotedContent(false);
+            return ((HitField)p).quotedContent(false);
         } else if (p instanceof StructuredData) {
             return p.toString();
         } else if (p instanceof XMLString || p instanceof JSONString) {
@@ -743,9 +738,10 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /**
-     * For vespa internal use only.
+     * For internal use only.
      * Gives access to the modifiable backing set of filled summaries.
      * This set might be unmodifiable if the size is less than or equal to 1
+     *
      * @return the set of filled summaries.
      */
     protected final Set<String> getFilledInternal() {
@@ -755,6 +751,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private Map<String,Object> getFieldMap() {
         return getFieldMap(16);
     }
+
     private Map<String,Object> getFieldMap(int minSize) {
         if (fields == null) {
             // Compensate for loadfactor and then some, rounded up....
