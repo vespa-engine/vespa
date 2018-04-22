@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
@@ -67,10 +68,10 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.remoteSessionFactory = remoteSessionFactory;
         this.reloadHandler = reloadHandler;
         this.metrics = metricUpdater;
+        initializeSessions();
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, executorService);
-        this.directoryCache.addListener(this);
         this.directoryCache.start();
-        sessionsChanged();
+        this.directoryCache.addListener(this);
     }
 
     // For testing only
@@ -132,16 +133,23 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         }
     }
 
-    private List<Long> getSessionList(List<ChildData> children) {
-        List<Long> sessions = new ArrayList<>();
-        for (ChildData data : children) {
-            sessions.add(Long.parseLong(Path.fromString(data.getPath()).getName()));
-        }
-        return sessions;
+    private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
+        return getSessionList(children.stream()
+                                      .map(child -> Path.fromString(child.getPath()).getName())
+                                      .collect(Collectors.toList()));
+    }
+
+    private List<Long> getSessionList(List<String> children) {
+        return children.stream().map(Long::parseLong).collect(Collectors.toList());
+    }
+
+    // TODO: Add sessions in parallel
+    private void initializeSessions() throws NumberFormatException {
+        getSessionList(curator.getChildren(sessionsPath)).forEach(this::sessionAdded);
     }
 
     private synchronized void sessionsChanged() throws NumberFormatException {
-        List<Long> sessions = getSessionList(directoryCache.getCurrentData());
+        List<Long> sessions = getSessionListFromDirectoryCache(directoryCache.getCurrentData());
         checkForRemovedSessions(sessions);
         checkForAddedSessions(sessions);
     }
@@ -213,7 +221,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     }
 
     @Override
-    public void nodeChanged() throws Exception {
+    public void nodeChanged() {
         Multiset<Session.Status> sessionMetrics = HashMultiset.create();
         for (RemoteSession session : listSessions()) {
             sessionMetrics.add(session.getStatus());
@@ -225,14 +233,14 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     }
 
     @Override
-    public void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) throws Exception {
+    public void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Got child event: " + event);
         }
         switch (event.getType()) {
             case CHILD_ADDED:
                 sessionsChanged();
-                synchronizeOnNew(getSessionList(Collections.singletonList(event.getData())));
+                synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
                 break;
             case CHILD_REMOVED:
                 sessionsChanged();
