@@ -259,7 +259,7 @@ public class Dispatcher extends AbstractComponent {
 
             Inspector summaries = new SlimeAdapter(root.field("docsums"));
             if ( ! summaries.valid())
-                return 0; // Requested a non-existing summary class: Nothing to fill
+                return 0; // No summaries; Perhaps we requested a non-existing summary class
             int skippedHits = 0;
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
