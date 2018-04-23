@@ -11,6 +11,7 @@ import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,11 +43,17 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
              getPrivateKeyFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
              getCertificateFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
              new File(config.trustStorePath()),
-             new ScheduledThreadPoolExecutor(1, runnable -> {
-                 Thread thread = new Thread(runnable);
-                 thread.setName("sia-identity-provider-sslcontext-updater");
-                 return thread;
-             }));
+             createScheduler());
+    }
+
+    public SiaIdentityProvider(AthenzService service,
+                               Path siaPath,
+                               File trustStoreFile) {
+        this(service,
+             getPrivateKeyFile(siaPath.toString(), service.getDomain().getName(), service.getName()),
+             getCertificateFile(siaPath.toString(), service.getDomain().getName(), service.getName()),
+             trustStoreFile,
+             createScheduler());
     }
 
     public SiaIdentityProvider(AthenzService service,
@@ -61,6 +68,14 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
         this.scheduler = scheduler;
         this.sslContext.set(createIdentitySslContext());
         scheduler.scheduleAtFixedRate(this::reloadSslContext, REFRESH_INTERVAL.toMinutes(), REFRESH_INTERVAL.toMinutes(), TimeUnit.MINUTES);
+    }
+
+    private static ScheduledThreadPoolExecutor createScheduler() {
+        return new ScheduledThreadPoolExecutor(1, runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setName("sia-identity-provider-sslcontext-updater");
+            return thread;
+        });
     }
 
     @Override
