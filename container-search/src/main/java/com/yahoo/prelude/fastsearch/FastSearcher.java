@@ -4,6 +4,7 @@ package com.yahoo.prelude.fastsearch;
 import java.util.Optional;
 
 import com.yahoo.compress.CompressionType;
+import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
 import com.yahoo.fs4.GetDocSumsPacket;
@@ -15,7 +16,6 @@ import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
-import com.yahoo.net.HostName;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.querytransform.QueryRewrite;
@@ -55,6 +55,9 @@ public class FastSearcher extends VespaBackEndSearcher {
 
     /** If this is turned on this will make search queries directly to the local search node when possible */
     private final static CompoundName dispatchDirect = new CompoundName("dispatch.direct");
+
+    /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
+    private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     private final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
@@ -231,6 +234,7 @@ public class FastSearcher extends VespaBackEndSearcher {
 
     /**
      * Only used to fill the sddocname field when using direct dispatching as that is normally done in VespaBackEndSearcher.decodeSummary
+     *
      * @param result The result
      */
     private void fillSDDocName(Result result) {
@@ -255,11 +259,16 @@ public class FastSearcher extends VespaBackEndSearcher {
         Query query = result.getQuery();
         traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 2, quotedSummaryClass(summaryClass));
 
-        if (wantsRPCSummaryFill(query)) {
+        if (query.properties().getBoolean(dispatchSummaries, true)
+            && ! summaryNeedsQuery(query)
+            && query.getRanking().getLocation() == null
+            && ! cacheControl.useCache(query)
+            && ! legacyEmulationConfigIsSet(getDocumentDatabase(query))) {
+
             CompressionType compression =
                 CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
             fillSDDocName(result);
-            dispatcher.fill(result, summaryClass, compression);
+            dispatcher.fill(result, summaryClass, getDocumentDatabase(query), compression);
             return;
         }
 
@@ -271,7 +280,7 @@ public class FastSearcher extends VespaBackEndSearcher {
                 QueryPacket queryPacket = QueryPacket.create(query);
                 cacheKey = new CacheKey(queryPacket);
             }
-            packetWrapper = cacheLookupTwoPhase(cacheKey, result,summaryClass);
+            packetWrapper = cacheLookupTwoPhase(cacheKey, result, summaryClass);
         }
 
         FS4Channel channel = chooseBackend(query).openChannel();
@@ -347,6 +356,14 @@ public class FastSearcher extends VespaBackEndSearcher {
         } finally {
             channel.close();
         }
+    }
+
+    private boolean legacyEmulationConfigIsSet(DocumentDatabase db) {
+        LegacyEmulationConfig config = db.getDocsumDefinitionSet().legacyEmulationConfig();
+        if (config.forceFillEmptyFields()) return true;
+        if (config.stringBackedFeatureData()) return true;
+        if (config.stringBackedStructuredData()) return true;
+        return false;
     }
 
     private static @NonNull Optional<String> quotedSummaryClass(String summaryClass) {
@@ -465,13 +482,8 @@ public class FastSearcher extends VespaBackEndSearcher {
         }
 
         boolean couldSend = channel.sendPacket(docsumsPacket);
-        if (isLoggingFine())
-            getLogger().finest("Sent " + docsumsPacket + " on " + channel);
         if ( ! couldSend) throw new IOException("Could not successfully send GetDocSumsPacket.");
         receivedPackets = channel.receivePackets(result.getQuery().getTimeLeft(), docsumsPacket.getNumDocsums() + 1);
-
-        if (isLoggingFine())
-            getLogger().finest("got " + receivedPackets.length + "docsumPackets");
 
         return convertBasicPackets(receivedPackets);
     }

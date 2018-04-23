@@ -12,9 +12,10 @@ import com.yahoo.search.searchchain.Execution;
  * a search chain to ensure full results are present at an earlier
  * time than they would normally be.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">havardpe</a>
- **/
+ * @author havardpe
+ */
 public class FillSearcher extends Searcher {
+
     private final Searcher next;
 
     public FillSearcher() {
@@ -49,4 +50,5 @@ public class FillSearcher extends Searcher {
             e.fill(result, summaryClass);
         }
     }
+
 }
