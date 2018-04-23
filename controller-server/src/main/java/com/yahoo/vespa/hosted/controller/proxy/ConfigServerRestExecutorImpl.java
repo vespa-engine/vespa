@@ -65,7 +65,8 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private final AthenzSslContextProvider sslContextProvider;
 
     @Inject
-    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, AthenzSslContextProvider sslContextProvider) {
+    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry,
+                                        AthenzSslContextProvider sslContextProvider) {
         this.zoneRegistry = zoneRegistry;
         this.sslContextProvider = sslContextProvider;
     }
@@ -77,38 +78,27 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         }
 
         ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
+
+        // Make a local copy of the list as we want to manipulate it in case of ping problems.
+        List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
+
         StringBuilder errorBuilder = new StringBuilder();
-        // TODO: Use config server VIP for all zones that have one
-        if (zoneId.region().value().startsWith("aws-")
-                || zoneId.region().value().startsWith("cd-aws-")
-                || zoneId.region().value().equals("cd-us-east-1a")) {
-            URI uri = zoneRegistry.getConfigServerVipUri(zoneId)
-                    .orElseThrow(() -> new RuntimeException("Could not find a config server VIP for " + zoneId));
+        if (queueFirstServerIfDown(allServers, proxyRequest)) {
+            errorBuilder.append("Change ordering due to failed ping.");
+        }
+        for (URI uri : allServers) {
             Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
             if (proxyResponse.isPresent()) {
                 return proxyResponse.get();
             }
-        } else {
-            // Make a local copy of the list as we want to manipulate it in case of ping problems.
-            List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
-
-            if (queueFirstServerIfDown(allServers, proxyRequest)) {
-                errorBuilder.append("Change ordering due to failed ping.");
-            }
-            for (URI uri : allServers) {
-                Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
-                if (proxyResponse.isPresent()) {
-                    return proxyResponse.get();
-                }
-            }
         }
         // TODO Add logging, for now, experimental and we want to not add more noise.
         throw new ProxyException(ErrorResponse.internalServerError("Failed talking to config servers: "
-                                                                           + errorBuilder.toString()));
+                + errorBuilder.toString()));
     }
 
     private static class DiscoveryResponseStructure {
-        List<String> uris = new ArrayList<>();
+        public List<String> uris = new ArrayList<>();
     }
 
     private ProxyResponse createDiscoveryResponse(ProxyRequest proxyRequest) {
@@ -138,7 +128,8 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private Optional<ProxyResponse> proxyCall(URI uri, ProxyRequest proxyRequest, StringBuilder errorBuilder)
             throws ProxyException {
         String fullUri = uri.toString() + removeFirstSlashIfAny(proxyRequest.getConfigServerRequest());
-        final HttpRequestBase requestBase = createHttpBaseRequest(proxyRequest.getMethod(), fullUri, proxyRequest.getData());
+        final HttpRequestBase requestBase = createHttpBaseRequest(
+                proxyRequest.getMethod(), fullUri, proxyRequest.getData());
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
         copyHeaders(proxyRequest.getHeaders(), requestBase);
 
@@ -146,13 +137,16 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
                 .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
                 .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
-        try (CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
-             CloseableHttpResponse response = client.execute(requestBase)) {
+        try (
+                CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
+                CloseableHttpResponse response = client.execute(requestBase);
+        ) {
             String content = getContent(response);
             int status = response.getStatusLine().getStatusCode();
             if (status / 100 == 5) {
-                errorBuilder.append("Talking to server ").append(uri.getHost())
-                        .append(", got ").append(status).append(" ").append(content).append("\n");
+                errorBuilder.append("Talking to server ").append(uri.getHost());
+                errorBuilder.append(", got ").append(status).append(" ")
+                        .append(content).append("\n");
                 log.log(LogLevel.DEBUG, () -> String.format("Got response from %s with status code %d and content:\n %s",
                                                             uri.getHost(), status, content));
                 return Optional.empty();
@@ -167,7 +161,8 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             // Send response back
             return Optional.of(new ProxyResponse(proxyRequest, content, status, Optional.of(uri), contentType));
         } catch (Exception e) {
-            errorBuilder.append("Talking to server ").append(uri.getHost()).append(" got exception ").append(e.getMessage());
+            errorBuilder.append("Talking to server ").append(uri.getHost());
+            errorBuilder.append(" got exception ").append(e.getMessage());
             log.log(LogLevel.DEBUG, e, () -> "Got exception while sending request to " + uri.getHost());
             return Optional.empty();
         }
@@ -232,8 +227,9 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
      * but will increase latency to some extent.
      */
     private boolean queueFirstServerIfDown(List<URI> allServers, ProxyRequest proxyRequest) {
-        if (allServers.size() < 2) { return false; }
-
+        if (allServers.size() < 2) {
+            return false;
+        }
         URI uri = allServers.get(0);
         HttpGet httpget = new HttpGet(uri);
 
@@ -242,11 +238,15 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectTimeout(timeout)
                 .setConnectionRequestTimeout(timeout)
                 .setSocketTimeout(timeout).build();
-        try (CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
-             CloseableHttpResponse response = client.execute(httpget)) {
+        try (
+                CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
+                CloseableHttpResponse response = client.execute(httpget);
+
+        ) {
             if (response.getStatusLine().getStatusCode() == 200) {
                 return false;
             }
+
         } catch (IOException e) {
             // We ignore this, if server is restarting this might happen.
         }
