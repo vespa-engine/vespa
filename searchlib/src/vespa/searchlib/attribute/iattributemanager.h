@@ -29,11 +29,11 @@ public:
     virtual AttributeGuard::UP getAttribute(const string & name) const = 0;
 
     /**
-     * Returns a view of the attribute vector with the given name.
+     * Returns a read view of the attribute vector with the given name.
      *
      * @param name name of the attribute vector.
      * @param stableEnumGuard flag to block enumeration changes during use of the attribute vector via the view.
-     * @return view of the attribute vector if the attribute vector exists
+     * @return read view of the attribute vector if the attribute vector exists
      **/
     virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const = 0;
 
