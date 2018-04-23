@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -57,50 +58,30 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public JobStatus withTriggering(Version platform, ApplicationVersion application, String reason, Instant triggeredAt) {
-        return withTriggering(new JobRun(-1, platform, application, reason, triggeredAt));
+    public JobStatus withTriggering(Version platform, ApplicationVersion application, Optional<Deployment> deployment, String reason, Instant triggeredAt) {
+        return withTriggering(JobRun.triggering(platform, application, deployment.map(Deployment::version), deployment.map(Deployment::applicationVersion), reason, triggeredAt));
     }
 
     public JobStatus withTriggering(JobRun jobRun) {
         return new JobStatus(type, jobError, Optional.of(jobRun), lastCompleted, firstFailing, lastSuccess);
     }
 
-    public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completionTime,
-                                    Controller controller) {
-        return withCompletion(runId, ApplicationVersion.unknown, jobError, completionTime, controller);
+    public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completion) {
+        return withCompletion(lastTriggered.get().completion(runId, completion), jobError);
     }
 
-    public JobStatus withCompletion(long runId, ApplicationVersion applicationVersion,
-                                    Optional<DeploymentJobs.JobError> jobError, Instant completionTime,
-                                    Controller controller) {
-        Version version;
-        String reason;
-        if (type == DeploymentJobs.JobType.component) { // not triggered by us
-            version = controller.systemVersion();
-            reason = "Application commit";
-        } else if ( ! lastTriggered.isPresent()) {
-            throw new IllegalStateException("Got notified about completion of " + this +
-                                            ", but that has neither been triggered nor deployed");
-
-        } else {
-            version = lastTriggered.get().version();
-            applicationVersion = lastTriggered.get().applicationVersion();
-            reason = lastTriggered.get().reason();
-        }
-
-        JobRun thisCompletion = new JobRun(runId, version, applicationVersion, reason, completionTime);
-
+    public JobStatus withCompletion(JobRun completion, Optional<DeploymentJobs.JobError> jobError) {
         Optional<JobRun> firstFailing = this.firstFailing;
-        if (jobError.isPresent() &&  ! this.firstFailing.isPresent())
-            firstFailing = Optional.of(thisCompletion);
+        if (jobError.isPresent() && ! this.firstFailing.isPresent())
+            firstFailing = Optional.of(completion);
 
         Optional<JobRun> lastSuccess = this.lastSuccess;
         if ( ! jobError.isPresent()) {
-            lastSuccess = Optional.of(thisCompletion);
+            lastSuccess = Optional.of(completion);
             firstFailing = Optional.empty();
         }
 
-        return new JobStatus(type, jobError, lastTriggered, Optional.of(thisCompletion), firstFailing, lastSuccess);
+        return new JobStatus(type, jobError, lastTriggered, Optional.of(completion), firstFailing, lastSuccess);
     }
 
     public DeploymentJobs.JobType type() { return type; }
@@ -157,27 +138,45 @@ public class JobStatus {
     public static class JobRun {
 
         private final long id;
-        private final Version version;
-        private final ApplicationVersion applicationVersion;
+        private final Version platform;
+        private final ApplicationVersion application;
+        private final Optional<Version> sourcePlatform;
+        private final Optional<ApplicationVersion> sourceApplication;
         private final String reason;
         private final Instant at;
 
-        public JobRun(long id, Version version, ApplicationVersion applicationVersion, String reason, Instant at) {
+        public JobRun(long id, Version platform, ApplicationVersion applicationVersion, Optional<Version> sourcePlatform, Optional<ApplicationVersion> application, String reason, Instant at) {
             this.id = id;
-            this.version = requireNonNull(version);
-            this.applicationVersion = requireNonNull(applicationVersion);
+            this.platform = requireNonNull(platform);
+            this.application = requireNonNull(applicationVersion);
+            this.sourcePlatform = sourcePlatform;
+            this.sourceApplication = application;
             this.reason = requireNonNull(reason);
             this.at = requireNonNull(at);
+        }
+
+        public static JobRun triggering(Version platform, ApplicationVersion application, Optional<Version> sourcePlatform, Optional<ApplicationVersion> sourceApplication, String reason, Instant at) {
+            return new JobRun(-1, platform, application, sourcePlatform, sourceApplication, reason, at);
+        }
+
+        public JobRun completion(long id, Instant at) {
+            return new JobRun(id, platform, application, sourcePlatform, sourceApplication, reason, at);
         }
 
         /** Returns the id of this run of this job, or -1 if not known */
         public long id() { return id; }
 
         /** Returns the Vespa version used on this run */
-        public Version version() { return version; }
+        public Version platform() { return platform; }
+
+        /** Returns the Vespa version this run upgraded from, if already deployed */
+        public Optional<Version> sourcePlatform() { return sourcePlatform; }
 
         /** Returns the application version used in this run */
-        public ApplicationVersion applicationVersion() { return applicationVersion; }
+        public ApplicationVersion application() { return application; }
+
+        /** Returns the application version this run upgraded from, if already deployed */
+        public Optional<ApplicationVersion> sourceApplication() { return sourceApplication; }
 
         /** Returns a human-readable reason for this particular job run */
         public String reason() { return reason; }
@@ -187,7 +186,7 @@ public class JobStatus {
 
         @Override
         public String toString() {
-            return "job run " + id + " of version " + version + " " + applicationVersion + " at " + at;
+            return "job run " + id + " of version " + platform + " " + application + " at " + at;
         }
 
         @Override
@@ -198,16 +197,16 @@ public class JobStatus {
             JobRun run = (JobRun) o;
 
             if (id != run.id) return false;
-            if (!version.equals(run.version)) return false;
-            if (!applicationVersion.equals(run.applicationVersion)) return false;
+            if (!platform.equals(run.platform)) return false;
+            if (!application.equals(run.application)) return false;
             return at.equals(run.at);
         }
 
         @Override
         public int hashCode() {
             int result = (int) (id ^ (id >>> 32));
-            result = 31 * result + version.hashCode();
-            result = 31 * result + applicationVersion.hashCode();
+            result = 31 * result + platform.hashCode();
+            result = 31 * result + application.hashCode();
             result = 31 * result + at.hashCode();
             return result;
         }

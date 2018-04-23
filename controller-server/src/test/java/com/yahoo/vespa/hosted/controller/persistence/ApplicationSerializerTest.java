@@ -38,7 +38,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
+import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -74,13 +76,16 @@ public class ApplicationSerializerTest {
         List<JobStatus> statusList = new ArrayList<>();
 
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.systemTest)
-                                .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, "Test", Instant.ofEpochMilli(7))
-                                .withCompletion(30, Optional.empty(), Instant.ofEpochMilli(8), tester.controller()));
+                                .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, empty(), "Test", Instant.ofEpochMilli(7))
+                                .withCompletion(30, empty(), Instant.ofEpochMilli(8)));
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.stagingTest)
-                                .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, "Test 2", Instant.ofEpochMilli(5))
-                                .withCompletion(11, Optional.of(JobError.unknown), Instant.ofEpochMilli(6), tester.controller()));
+                                .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, empty(), "Test 2", Instant.ofEpochMilli(5))
+                                .withCompletion(11, Optional.of(JobError.unknown), Instant.ofEpochMilli(6)));
+        statusList.add(JobStatus.initial(DeploymentJobs.JobType.from(main, zone1).get())
+                                .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, deployments.stream().findFirst(), "Test 3", Instant.ofEpochMilli(6))
+                                .withCompletion(11, empty(), Instant.ofEpochMilli(7)));
 
-        DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, Optional.empty());
+        DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, empty());
 
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
                                                deploymentSpec,

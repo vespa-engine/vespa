@@ -874,7 +874,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         assertNotNull("Status was recorded", recordedStatus);
         assertTrue(recordedStatus.isSuccess());
-        assertEquals(vespaVersion, recordedStatus.lastCompleted().get().version());
+        assertEquals(vespaVersion, recordedStatus.lastCompleted().get().platform());
 
         recordedStatus =
                 tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(DeploymentJobs.JobType.productionApNortheast2);

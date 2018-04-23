@@ -1,4 +1,4 @@
 {
   "error-code": "BAD_REQUEST",
-  "message": "Got notified about completion of job status of productionUsEast3[ last triggered: (never), last completed: (never), first failing: (not failing), lastSuccess: (never)], but that has neither been triggered nor deployed"
+  "message": "Got notified about completion of production-us-east-3 for tenant1.application1, but that has neither been triggered nor deployed"
 }

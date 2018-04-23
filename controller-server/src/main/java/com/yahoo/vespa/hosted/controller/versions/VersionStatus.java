@@ -175,20 +175,20 @@ public class VersionStatus {
                     .failing()
                     .not().failingApplicationChange()
                     .not().failingBecause(outOfCapacity)
-                    .mapToList(job -> job.lastCompleted().get().version())
+                    .mapToList(job -> job.lastCompleted().get().platform())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withFailing(application.id())));
 
             // Succeeding versions
             JobList.from(application)
                     .lastSuccess().present()
                     .production()
-                    .mapToList(job -> job.lastSuccess().get().version())
+                    .mapToList(job -> job.lastSuccess().get().platform())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withProduction(application.id())));
 
             // Deploying versions
             JobList.from(application)
                     .upgrading()
-                    .mapToList(job -> job.lastTriggered().get().version())
+                    .mapToList(job -> job.lastTriggered().get().platform())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withDeploying(application.id())));
         }
         return versionMap.values();

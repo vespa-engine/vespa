@@ -70,7 +70,7 @@ public class JobList {
         return filter(job ->      job.lastSuccess().isPresent()
                              &&   job.lastTriggered().isPresent()
                              && ! job.lastTriggered().get().at().isBefore(job.lastCompleted().get().at())
-                             &&   job.lastSuccess().get().version().isBefore(job.lastTriggered().get().version()));
+                             &&   job.lastSuccess().get().platform().isBefore(job.lastTriggered().get().platform()));
     }
 
     /** Returns the subset of jobs which are currently failing */
@@ -147,12 +147,12 @@ public class JobList {
 
         /** Returns the subset of jobs where the run of the given type was on the given version */
         public JobList on(ApplicationVersion version) {
-            return filter(run -> run.applicationVersion().equals(version));
+            return filter(run -> run.application().equals(version));
         }
 
         /** Returns the subset of jobs where the run of the given type was on the given version */
         public JobList on(Version version) {
-            return filter(run -> run.version().equals(version));
+            return filter(run -> run.platform().equals(version));
         }
 
         /** Transforms the JobRun condition to a JobStatus condition, by considering only the JobRun mapped by which, and executes */
@@ -167,8 +167,8 @@ public class JobList {
     private static boolean failingApplicationChange(JobStatus job) {
         if (   job.isSuccess()) return false;
         if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
-        if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
-        return ! job.firstFailing().get().applicationVersion().equals(job.lastSuccess().get().applicationVersion()); // Return whether there is an application change.
+        if ( ! job.firstFailing().get().platform().equals(job.lastSuccess().get().platform())) return false; // Version change may be to blame.
+        return ! job.firstFailing().get().application().equals(job.lastSuccess().get().application()); // Return whether there is an application change.
     }
 
     /** Returns a new JobList which is the result of filtering with the -- possibly negated -- condition */

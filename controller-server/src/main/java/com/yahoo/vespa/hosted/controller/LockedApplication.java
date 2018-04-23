@@ -62,10 +62,8 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(deploymentJobs().with(issueId)));
     }
 
-    public LockedApplication withJobCompletion(DeploymentJobs.JobReport report, ApplicationVersion applicationVersion,
-                                               Instant notificationTime, Controller controller) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(
-                report, applicationVersion, notificationTime, controller))
+    public LockedApplication withJobCompletion(long projectId, JobType jobType, JobStatus.JobRun completion, Optional<DeploymentJobs.JobError> jobError) {
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(projectId, jobType, completion, jobError))
         );
     }
 

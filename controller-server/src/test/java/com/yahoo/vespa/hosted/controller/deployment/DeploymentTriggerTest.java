@@ -21,7 +21,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.yahoo.config.provision.SystemName.main;
@@ -491,14 +490,14 @@ public class DeploymentTriggerTest {
 
         // New application version should run system and staging tests first against 6.2, then against 6.1.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
+        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, systemTest);
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().version());
+        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, stagingTest);
         tester.deployAndNotify(application, empty(), true, productionUsCentral1);
-        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, systemTest);
-        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().version());
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, stagingTest);
 
         // The production job on version 6.2 fails and must retry -- this is OK, even though staging now has a different version.
@@ -506,9 +505,9 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, empty(), true, productionUsEast3);
         tester.deployAndNotify(application, empty(), true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastSuccess().get().application().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().get().longValue());
     }
 
 }

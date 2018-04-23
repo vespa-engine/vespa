@@ -57,15 +57,13 @@ public class DeploymentJobs {
     }
 
     /** Return a new instance with the given completion */
-    public DeploymentJobs withCompletion(JobReport report, ApplicationVersion applicationVersion,
-                                         Instant notificationTime, Controller controller) {
+    public DeploymentJobs withCompletion(long projectId, JobType jobType, JobStatus.JobRun completion, Optional<JobError> jobError) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
-        status.compute(report.jobType(), (type, job) -> {
-            if (job == null) job = JobStatus.initial(report.jobType());
-            return job.withCompletion(report.buildNumber(), applicationVersion, report.jobError(), notificationTime,
-                                      controller);
+        status.compute(jobType, (type, job) -> {
+            if (job == null) job = JobStatus.initial(jobType);
+            return job.withCompletion(completion, jobError);
         });
-        return new DeploymentJobs(OptionalLong.of(report.projectId()), status, issueId);
+        return new DeploymentJobs(OptionalLong.of(projectId), status, issueId);
     }
 
     public DeploymentJobs withTriggering(JobType jobType, JobStatus.JobRun jobRun) {

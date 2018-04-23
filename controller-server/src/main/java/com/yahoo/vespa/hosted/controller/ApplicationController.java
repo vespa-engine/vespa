@@ -291,10 +291,10 @@ public class ApplicationController {
                     return unexpectedDeployment(applicationId, zone);
                 platformVersion = preferOldestVersion
                         ? application.oldestDeployedPlatform().orElse(controller.systemVersion())
-                        : triggered.get().version();
+                        : triggered.get().platform();
                 applicationVersion = preferOldestVersion
-                        ? application.oldestDeployedApplication().orElse(triggered.get().applicationVersion())
-                        : triggered.get().applicationVersion();
+                        ? application.oldestDeployedApplication().orElse(triggered.get().application())
+                        : triggered.get().application();
                 applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), applicationVersion.id()));
                 validateRun(application, zone, platformVersion, applicationVersion);
             }
