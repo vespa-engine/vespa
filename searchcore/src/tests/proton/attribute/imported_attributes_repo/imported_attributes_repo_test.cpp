@@ -23,8 +23,9 @@ createAttr(const vespalib::string &name)
 {
     return ImportedAttributeVectorFactory::create(name,
                                                   ReferenceAttribute::SP(),
-                                                  AttributeVector::SP(),
                                                   std::shared_ptr<search::IDocumentMetaStoreContext>(),
+                                                  AttributeVector::SP(),
+                                                  std::shared_ptr<const search::IDocumentMetaStoreContext>(),
                                                   false);
 }
 

@@ -748,8 +748,9 @@ createImportedAttribute(const vespalib::string &name)
 {
     auto result = ImportedAttributeVectorFactory::create(name,
                                                          std::shared_ptr<ReferenceAttribute>(),
-                                                         AttributeVector::SP(),
                                                          std::shared_ptr<search::IDocumentMetaStoreContext>(),
+                                                         AttributeVector::SP(),
+                                                         std::shared_ptr<const search::IDocumentMetaStoreContext>(),
                                                          true);
     result->getSearchCache()->insert("foo", BitVectorSearchCache::Entry::SP());
     return result;

@@ -64,6 +64,10 @@ std::shared_ptr<ReferenceAttribute> create_reference_attribute(vespalib::stringr
     return std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
 }
 
+MockDocumentMetaStoreContext::SP create_target_document_meta_store() {
+    return std::make_shared<MockDocumentMetaStoreContext>();
+}
+
 MockDocumentMetaStoreContext::SP create_document_meta_store() {
     return std::make_shared<MockDocumentMetaStoreContext>();
 }
@@ -149,6 +153,7 @@ struct ReadGuardWrapper {
 struct ImportedAttributeFixture {
     bool use_search_cache;
     std::shared_ptr<AttributeVector> target_attr;
+    MockDocumentMetaStoreContext::SP target_document_meta_store;
     std::shared_ptr<ReferenceAttribute> reference_attr;
     MockDocumentMetaStoreContext::SP document_meta_store;
     std::shared_ptr<ImportedAttributeVector> imported_attr;
@@ -180,7 +185,7 @@ struct ImportedAttributeFixture {
 
     std::shared_ptr<ImportedAttributeVector>
     create_attribute_vector_from_members(vespalib::stringref name = default_imported_attr_name()) {
-        return ImportedAttributeVectorFactory::create(name, reference_attr, target_attr, document_meta_store, use_search_cache);
+        return ImportedAttributeVectorFactory::create(name, reference_attr, document_meta_store, target_attr, target_document_meta_store, use_search_cache);
     }
 
     template<typename AttrVecType>
@@ -283,6 +288,7 @@ struct ImportedAttributeFixture {
 ImportedAttributeFixture::ImportedAttributeFixture(bool use_search_cache_)
         : use_search_cache(use_search_cache_),
           target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
+          target_document_meta_store(create_target_document_meta_store()),
           reference_attr(create_reference_attribute()),
           document_meta_store(create_document_meta_store()),
           imported_attr(create_attribute_vector_from_members()),

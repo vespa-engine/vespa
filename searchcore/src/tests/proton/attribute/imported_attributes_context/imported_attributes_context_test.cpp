@@ -77,8 +77,9 @@ struct Fixture {
     Fixture &addAttribute(const vespalib::string &name) {
         auto attr = ImportedAttributeVectorFactory::create(name,
                                                            createReferenceAttribute(name + "_ref"),
-                                                           createTargetAttribute(name + "_target"),
                                                            std::shared_ptr<search::IDocumentMetaStoreContext>(),
+                                                           createTargetAttribute(name + "_target"),
+                                                           std::shared_ptr<const search::IDocumentMetaStoreContext>(),
                                                            false);
         repo.add(name, attr);
         return *this;

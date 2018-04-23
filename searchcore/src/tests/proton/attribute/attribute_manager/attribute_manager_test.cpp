@@ -139,7 +139,8 @@ struct ImportedAttributesRepoBuilder {
         refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
         auto documentMetaStore = std::shared_ptr<search::IDocumentMetaStoreContext>();
-        auto importedAttr = ImportedAttributeVectorFactory::create(name, refAttr, targetAttr, documentMetaStore, false);
+        auto targetDocumentMetaStore = std::shared_ptr<const search::IDocumentMetaStoreContext>();
+        auto importedAttr = ImportedAttributeVectorFactory::create(name, refAttr, documentMetaStore, targetAttr, targetDocumentMetaStore, false);
         _repo->add(name, importedAttr);
     }
     ImportedAttributesRepo::UP build() {

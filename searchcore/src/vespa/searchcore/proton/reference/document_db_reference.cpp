@@ -39,6 +39,12 @@ DocumentDBReference::getAttribute(vespalib::stringref name)
     }
 }
 
+std::shared_ptr<const search::IDocumentMetaStoreContext>
+DocumentDBReference::getDocumentMetaStoreContext() const
+{
+    return _dmsContext;
+}
+
 std::shared_ptr<search::IGidToLidMapperFactory>
 DocumentDBReference::getGidToLidMapperFactory()
 {

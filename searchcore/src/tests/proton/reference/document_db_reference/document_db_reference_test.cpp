@@ -26,8 +26,9 @@ makeImportedAttributesRepo()
     ImportedAttributesRepo::UP result = std::make_unique<ImportedAttributesRepo>();
     ImportedAttributeVector::SP attr = std::make_shared<ImportedAttributeVector>("imported",
                                                                                  std::shared_ptr<ReferenceAttribute>(),
+                                                                                 std::shared_ptr<IDocumentMetaStoreContext>(),
                                                                                  std::shared_ptr<ReadableAttributeVector>(),
-                                                                                 std::shared_ptr<IDocumentMetaStoreContext>(), false);
+                                                                                 std::shared_ptr<const IDocumentMetaStoreContext>(), false);
     result->add("imported", std::move(attr));
     return result;
 }
