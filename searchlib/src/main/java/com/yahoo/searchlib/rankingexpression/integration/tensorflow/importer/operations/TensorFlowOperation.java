@@ -132,6 +132,9 @@ public abstract class TensorFlowOperation {
     /** Retrieve the list of warnings produced during its lifetime */
     public List<String> warnings() { return Collections.unmodifiableList(importWarnings); }
 
+    /** Set an input warning */
+    public void warning(String warning) { importWarnings.add(warning); }
+
     boolean verifyInputs(int expected, Function<TensorFlowOperation, Optional<?>> func) {
         if (!controlInputs.stream().map(func).allMatch(Optional::isPresent)) {
             return false;

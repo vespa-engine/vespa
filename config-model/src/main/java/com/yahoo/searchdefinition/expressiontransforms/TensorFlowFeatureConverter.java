@@ -110,6 +110,17 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         // Find the specified expression
         Signature signature = chooseSignature(model, store.arguments().signature());
         String output = chooseOutput(signature, store.arguments().output());
+        if (signature.skippedOutputs().containsKey(output)) {
+            String message = "Could not import TensorFlow model output '" + output + "'";
+            if (!signature.skippedOutputs().get(output).isEmpty()) {
+                message += ": " + signature.skippedOutputs().get(output);
+            }
+            if (!signature.importWarnings().isEmpty()) {
+                message += ": "  + String.join(", ", signature.importWarnings());
+            }
+            throw new IllegalArgumentException(message);
+        }
+
         RankingExpression expression = model.expressions().get(output);
         expression = replaceConstantsByMacros(expression, constantsReplacedByMacros);
         verifyRequiredMacros(expression, model, profile, queryProfiles);

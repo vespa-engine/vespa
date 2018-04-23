@@ -366,6 +366,9 @@ public class TensorFlowImporter {
         for (String warning : operation.warnings()) {
             signature.importWarning(warning);
         }
+        for (TensorFlowOperation input : operation.inputs()) {
+            reportWarnings(input, signature);
+        }
     }
 
     private static NodeDef getTensorFlowNodeFromGraph(String name, GraphDef graph) {

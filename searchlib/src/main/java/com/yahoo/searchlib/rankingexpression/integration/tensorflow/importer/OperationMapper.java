@@ -85,7 +85,10 @@ public class OperationMapper {
             case "stopgradient":return new Identity(modelName, node, inputs, port);
             case "noop":        return new NoOp(modelName, node, inputs, port);
         }
-        return new NoOp(modelName, node, inputs, port);
+
+        TensorFlowOperation op = new NoOp(modelName, node, inputs, port);
+        op.warning("Operation '" + node.getOp() + "' is currently not implemented");
+        return op;
     }
 
 }
