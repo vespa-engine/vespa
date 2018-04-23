@@ -28,17 +28,18 @@ import org.xml.sax.SAXParseException;
  * @author Steinar Knutsen
  */
 public class XML {
+
     /**
      * The point of this weird class and the jumble of abstract methods is
      * linking the scan for characters that must be quoted into the quoting
      * table, and making it actual work to make them go out of sync again.
      */
     private static abstract class LegalCharacters {
+
         // To quote http://www.w3.org/TR/REC-xml/ :
         // Char ::= #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] |
         // [#x10000-#x10FFFF]
-        final boolean isLegal(final int codepoint, final boolean escapeLow,
-                final int stripCodePoint, final boolean isAttribute) {
+        final boolean isLegal(int codepoint, boolean escapeLow, int stripCodePoint, boolean isAttribute) {
             if (codepoint == stripCodePoint) {
                 return removeCodePoint();
             } else if (codepoint < ' ') {
@@ -75,7 +76,7 @@ public class XML {
             }
         }
 
-        private boolean quotCodePoint(final boolean isAttribute) {
+        private boolean quotCodePoint(boolean isAttribute) {
             if (isAttribute) {
                 quoteQuot();
                 return false;
@@ -84,7 +85,7 @@ public class XML {
             }
         }
 
-        private boolean filterCodePoint(final int codepoint) {
+        private boolean filterCodePoint(int codepoint) {
             replace(codepoint);
             return false;
         }
@@ -104,7 +105,7 @@ public class XML {
             return false;
         }
 
-        private boolean ctrlEscapeCodePoint(final int codepoint) {
+        private boolean ctrlEscapeCodePoint(int codepoint) {
             ctrlEscape(codepoint);
             return false;
         }
@@ -349,8 +350,7 @@ public class XML {
      * </ul>
      * with character entities.
      *
-     * @param stripCodePoint
-     *            any occurrence of this character is removed from the string
+     * @param stripCodePoint any occurrence of this character is removed from the string
      */
     public static String xmlEscape(String string, boolean isAttribute, boolean escapeLowAscii,
                                    StringBuilder buffer, int stripCodePoint) {
@@ -399,8 +399,7 @@ public class XML {
     /**
      * Returns the Document of an XML file reader
      *
-     * @throws RuntimeException
-     *             if the root Document cannot be returned
+     * @throws RuntimeException if the root Document cannot be returned
      */
     public static Document getDocument(Reader reader) {
         try {

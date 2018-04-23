@@ -73,8 +73,8 @@ public abstract class DocsumField {
         this.name = name;
     }
 
-    /* for unit test only */
-    static DocsumField create(String name, String typename) {
+    /* For unit test only */
+    public static DocsumField create(String name, String typename) {
         return create(name, typename, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
     }
 
@@ -114,7 +114,7 @@ public abstract class DocsumField {
     /**
      * Convert a generic value into an object of the appropriate type
      * for this field.
-     **/
+     */
     public abstract Object convert(Inspector value);
 
 }
