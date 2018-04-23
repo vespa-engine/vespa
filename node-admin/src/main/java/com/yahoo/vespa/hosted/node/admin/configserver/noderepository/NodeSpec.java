@@ -490,22 +490,6 @@ public class NodeSpec {
             return this;
         }
 
-        @Deprecated
-        public Builder nodeState(Node.State nodeState) {
-            this.state = nodeState;
-            return this;
-        }
-        @Deprecated
-        public Builder nodeFlavor(String nodeFlavor) {
-            this.flavor = nodeFlavor;
-            return this;
-        }
-        @Deprecated
-        public Builder nodeCanonicalFlavor(String nodeCanonicalFlavor) {
-            this.canonicalFlavor = nodeCanonicalFlavor;
-            return this;
-        }
-
         public Builder wantedVespaVersion(String wantedVespaVersion) {
             this.wantedVespaVersion = Optional.of(wantedVespaVersion);
             return this;
