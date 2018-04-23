@@ -79,7 +79,9 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
         StringBuilder errorBuilder = new StringBuilder();
         // TODO: Use config server VIP for all zones that have one
-        if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().startsWith("cd-aws-")) {
+        if (zoneId.region().value().startsWith("aws-")
+                || zoneId.region().value().startsWith("cd-aws-")
+                || zoneId.region().value().equals("cd-us-east-1a")) {
             URI uri = zoneRegistry.getConfigServerVipUri(zoneId)
                     .orElseThrow(() -> new RuntimeException("Could not find a config server VIP for " + zoneId));
             Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
