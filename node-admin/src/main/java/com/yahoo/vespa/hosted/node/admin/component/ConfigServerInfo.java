@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +29,7 @@ public class ConfigServerInfo {
     private final Optional<KeyStoreOptions> keyStoreOptions;
     private final Optional<KeyStoreOptions> trustStoreOptions;
     private final Optional<AthenzIdentity> athenzIdentity;
+    private final ConfigServerConfig.Sia siaConfig;
 
     public ConfigServerInfo(ConfigServerConfig config) {
         this.configServerHostNames = config.hosts();
@@ -46,6 +48,7 @@ public class ConfigServerInfo {
         this.athenzIdentity = createAthenzIdentity(
                 config.athenzDomain(),
                 config.serviceName());
+        this.siaConfig = verifySiaConfig(config.sia());
     }
 
     public List<String> getConfigServerHostNames() {
@@ -77,6 +80,10 @@ public class ConfigServerInfo {
         return athenzIdentity;
     }
 
+    public Optional<ConfigServerConfig.Sia> getSiaConfig() {
+        return Optional.ofNullable(siaConfig);
+    }
+
     private static Map<String, URI> createConfigServerUris(
             String scheme,
             List<String> configServerHosts,
@@ -84,6 +91,18 @@ public class ConfigServerInfo {
         return configServerHosts.stream().collect(toMap(
                 Function.identity(),
                 hostname -> URI.create(scheme + "://" + hostname + ":" + port)));
+    }
+
+    private static ConfigServerConfig.Sia verifySiaConfig(ConfigServerConfig.Sia sia) {
+        List<String> configParams = Arrays.asList(
+                sia.credentialsPath(), sia.configserverIdentityName(), sia.hostIdentityName(), sia.trustStoreFile());
+        if (configParams.stream().allMatch(String::isEmpty)) {
+            return null;
+        } else if (configParams.stream().noneMatch(String::isEmpty)) {
+            return sia;
+        } else {
+            throw new IllegalArgumentException("Inconsistent sia config: " + sia);
+        }
     }
 
     private static Optional<KeyStoreOptions> createKeyStoreOptions(String pathToKeyStore, char[] password, String type) {
