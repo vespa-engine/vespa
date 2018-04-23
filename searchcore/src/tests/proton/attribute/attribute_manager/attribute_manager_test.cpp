@@ -16,6 +16,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
@@ -139,7 +140,7 @@ struct ImportedAttributesRepoBuilder {
         refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
         auto documentMetaStore = std::shared_ptr<search::IDocumentMetaStoreContext>();
-        auto targetDocumentMetaStore = std::shared_ptr<const search::IDocumentMetaStoreContext>();
+        auto targetDocumentMetaStore = std::make_shared<const DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
         auto importedAttr = ImportedAttributeVectorFactory::create(name, refAttr, documentMetaStore, targetAttr, targetDocumentMetaStore, false);
         _repo->add(name, importedAttr);
     }

@@ -15,6 +15,7 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
         const ImportedAttributeVector &imported_attribute,
         bool stableEnumGuard)
     : AttributeReadGuard(this),
+      _target_document_meta_store_read_guard(imported_attribute.getTargetDocumentMetaStore()->getReadGuard()),
       _imported_attribute(imported_attribute),
       _referencedLids(),
       _reference_attribute_guard(imported_attribute.getReferenceAttribute()),

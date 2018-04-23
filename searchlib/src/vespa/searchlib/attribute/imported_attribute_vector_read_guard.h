@@ -6,6 +6,7 @@
 #include "attributeguard.h"
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchlib/common/i_document_meta_store_context.h>
 
 namespace search { class IGidToLidMapper; }
 
@@ -26,6 +27,7 @@ class ImportedAttributeVectorReadGuard : public IAttributeVector,
 {
 private:
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
+    IDocumentMetaStoreContext::IReadGuard::UP _target_document_meta_store_read_guard;
     const ImportedAttributeVector   &_imported_attribute;
     ReferencedLids                   _referencedLids;
     AttributeGuard                   _reference_attribute_guard;
