@@ -281,7 +281,7 @@ public class TensorFlowImporter {
             operation.setConstantValue(new TensorValue(tensor));
         }
 
-        if (tensor.type().rank() == 0 || tensor.size() <= 1) {
+        if (tensor.type().rank() == 0) {
             model.smallConstant(name, tensor);
         } else {
             model.largeConstant(name, tensor);
