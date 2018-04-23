@@ -14,37 +14,37 @@ import java.util.Set;
  * @author stiankri
  */
 public class NodeSpec {
-    public final String hostname;
-    public final Node.State nodeState;
-    public final NodeType nodeType;
-    public final String nodeFlavor;
-    public final String nodeCanonicalFlavor;
+    private final String hostname;
+    private final Node.State state;
+    private final NodeType nodeType;
+    private final String flavor;
+    private final String canonicalFlavor;
 
-    public final Optional<DockerImage> wantedDockerImage;
-    public final Optional<DockerImage> currentDockerImage;
+    private final Optional<DockerImage> wantedDockerImage;
+    private final Optional<DockerImage> currentDockerImage;
 
-    public final Optional<String> wantedVespaVersion;
-    public final Optional<String> vespaVersion;
+    private final Optional<String> wantedVespaVersion;
+    private final Optional<String> vespaVersion;
 
-    public final Optional<Long> wantedRestartGeneration;
-    public final Optional<Long> currentRestartGeneration;
+    private final Optional<Long> wantedRestartGeneration;
+    private final Optional<Long> currentRestartGeneration;
 
-    public final long wantedRebootGeneration;
-    public final long currentRebootGeneration;
+    private final long wantedRebootGeneration;
+    private final long currentRebootGeneration;
 
-    public final Optional<Boolean> allowedToBeDown;
-    public final Optional<Owner> owner;
-    public final Optional<Membership> membership;
+    private final Optional<Boolean> allowedToBeDown;
+    private final Optional<Owner> owner;
+    private final Optional<Membership> membership;
 
-    public final double minCpuCores;
-    public final double minMainMemoryAvailableGb;
-    public final double minDiskAvailableGb;
+    private final double minCpuCores;
+    private final double minMainMemoryAvailableGb;
+    private final double minDiskAvailableGb;
 
-    public final boolean fastDisk;
-    public final Set<String> ipAddresses;
+    private final boolean fastDisk;
+    private final Set<String> ipAddresses;
 
-    public final Optional<String> hardwareDivergence;
-    public final Optional<String> parentHostname;
+    private final Optional<String> hardwareDivergence;
+    private final Optional<String> parentHostname;
 
     public NodeSpec(
             final String hostname,
@@ -73,10 +73,10 @@ public class NodeSpec {
         this.hostname = Objects.requireNonNull(hostname);
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage);
         this.currentDockerImage = Objects.requireNonNull(currentDockerImage);
-        this.nodeState = Objects.requireNonNull(state);
+        this.state = Objects.requireNonNull(state);
         this.nodeType = Objects.requireNonNull(nodeType);
-        this.nodeFlavor = Objects.requireNonNull(flavor);
-        this.nodeCanonicalFlavor = canonicalFlavor;
+        this.flavor = Objects.requireNonNull(flavor);
+        this.canonicalFlavor = canonicalFlavor;
         this.wantedVespaVersion = Objects.requireNonNull(wantedVespaVersion);
         this.vespaVersion = Objects.requireNonNull(vespaVersion);
         this.allowedToBeDown = Objects.requireNonNull(allowedToBeDown);
@@ -100,7 +100,7 @@ public class NodeSpec {
     }
 
     public Node.State getState() {
-        return nodeState;
+        return state;
     }
 
     public NodeType getNodeType() {
@@ -108,11 +108,11 @@ public class NodeSpec {
     }
 
     public String getFlavor() {
-        return nodeFlavor;
+        return flavor;
     }
 
     public String getCanonicalFlavor() {
-        return nodeCanonicalFlavor;
+        return canonicalFlavor;
     }
 
     public Optional<DockerImage> getWantedDockerImage() {
@@ -197,10 +197,10 @@ public class NodeSpec {
         return Objects.equals(hostname, that.hostname) &&
                 Objects.equals(wantedDockerImage, that.wantedDockerImage) &&
                 Objects.equals(currentDockerImage, that.currentDockerImage) &&
-                Objects.equals(nodeState, that.nodeState) &&
+                Objects.equals(state, that.state) &&
                 Objects.equals(nodeType, that.nodeType) &&
-                Objects.equals(nodeFlavor, that.nodeFlavor) &&
-                Objects.equals(nodeCanonicalFlavor, that.nodeCanonicalFlavor) &&
+                Objects.equals(flavor, that.flavor) &&
+                Objects.equals(canonicalFlavor, that.canonicalFlavor) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(vespaVersion, that.vespaVersion) &&
                 Objects.equals(allowedToBeDown, that.allowedToBeDown) &&
@@ -225,10 +225,10 @@ public class NodeSpec {
                 hostname,
                 wantedDockerImage,
                 currentDockerImage,
-                nodeState,
+                state,
                 nodeType,
-                nodeFlavor,
-                nodeCanonicalFlavor,
+                flavor,
+                canonicalFlavor,
                 wantedVespaVersion,
                 vespaVersion,
                 allowedToBeDown,
@@ -253,10 +253,10 @@ public class NodeSpec {
                 + " hostname=" + hostname
                 + " wantedDockerImage=" + wantedDockerImage
                 + " currentDockerImage=" + currentDockerImage
-                + " state=" + nodeState
+                + " state=" + state
                 + " nodeType=" + nodeType
-                + " flavor=" + nodeFlavor
-                + " canonicalFlavor=" + nodeCanonicalFlavor
+                + " flavor=" + flavor
+                + " canonicalFlavor=" + canonicalFlavor
                 + " wantedVespaVersion=" + wantedVespaVersion
                 + " vespaVersion=" + vespaVersion
                 + " allowedToBeDown=" + allowedToBeDown
@@ -277,9 +277,9 @@ public class NodeSpec {
     }
 
     public static class Owner {
-        public final String tenant;
-        public final String application;
-        public final String instance;
+        private final String tenant;
+        private final String application;
+        private final String instance;
 
         public Owner(String tenant, String application, String instance) {
             this.tenant = tenant;
@@ -330,11 +330,11 @@ public class NodeSpec {
     }
 
     public static class Membership {
-        public final String clusterType;
-        public final String clusterId;
-        public final String group;
-        public final int index;
-        public final boolean retired;
+        private final String clusterType;
+        private final String clusterId;
+        private final String group;
+        private final int index;
+        private final boolean retired;
 
         public Membership(String clusterType, String clusterId, String group, int index, boolean retired) {
             this.clusterType = clusterType;
@@ -430,10 +430,10 @@ public class NodeSpec {
 
         public Builder(NodeSpec node) {
             hostname(node.hostname);
-            state(node.nodeState);
+            state(node.state);
             nodeType(node.nodeType);
-            flavor(node.nodeFlavor);
-            canonicalFlavor(node.nodeCanonicalFlavor);
+            flavor(node.flavor);
+            canonicalFlavor(node.canonicalFlavor);
             minCpuCores(node.minCpuCores);
             minMainMemoryAvailableGb(node.minMainMemoryAvailableGb);
             minDiskAvailableGb(node.minDiskAvailableGb);
