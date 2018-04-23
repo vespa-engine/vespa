@@ -104,6 +104,98 @@ public class NodeSpec {
         this.parentHostname = parentHostname;
     }
 
+    public String getHostname() {
+        return hostname;
+    }
+
+    public Node.State getNodeState() {
+        return nodeState;
+    }
+
+    public NodeType getNodeType() {
+        return nodeType;
+    }
+
+    public String getNodeFlavor() {
+        return nodeFlavor;
+    }
+
+    public String getNodeCanonicalFlavor() {
+        return nodeCanonicalFlavor;
+    }
+
+    public Optional<DockerImage> getWantedDockerImage() {
+        return wantedDockerImage;
+    }
+
+    public Optional<DockerImage> getCurrentDockerImage() {
+        return currentDockerImage;
+    }
+
+    public Optional<String> getWantedVespaVersion() {
+        return wantedVespaVersion;
+    }
+
+    public Optional<String> getVespaVersion() {
+        return vespaVersion;
+    }
+
+    public Optional<Long> getWantedRestartGeneration() {
+        return wantedRestartGeneration;
+    }
+
+    public Optional<Long> getCurrentRestartGeneration() {
+        return currentRestartGeneration;
+    }
+
+    public long getWantedRebootGeneration() {
+        return wantedRebootGeneration;
+    }
+
+    public long getCurrentRebootGeneration() {
+        return currentRebootGeneration;
+    }
+
+    public Optional<Boolean> getAllowedToBeDown() {
+        return allowedToBeDown;
+    }
+
+    public Optional<Owner> getOwner() {
+        return owner;
+    }
+
+    public Optional<Membership> getMembership() {
+        return membership;
+    }
+
+    public double getMinCpuCores() {
+        return minCpuCores;
+    }
+
+    public double getMinMainMemoryAvailableGb() {
+        return minMainMemoryAvailableGb;
+    }
+
+    public double getMinDiskAvailableGb() {
+        return minDiskAvailableGb;
+    }
+
+    public boolean isFastDisk() {
+        return fastDisk;
+    }
+
+    public Set<String> getIpAddresses() {
+        return ipAddresses;
+    }
+
+    public Optional<String> getHardwareDivergence() {
+        return hardwareDivergence;
+    }
+
+    public Optional<String> getParentHostname() {
+        return parentHostname;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -204,6 +296,18 @@ public class NodeSpec {
             this.instance = instance;
         }
 
+        public String getTenant() {
+            return tenant;
+        }
+
+        public String getApplication() {
+            return application;
+        }
+
+        public String getInstance() {
+            return instance;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -249,6 +353,26 @@ public class NodeSpec {
             this.retired = retired;
         }
 
+        public String getClusterType() {
+            return clusterType;
+        }
+
+        public String getClusterId() {
+            return clusterId;
+        }
+
+        public String getGroup() {
+            return group;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public boolean isRetired() {
+            return retired;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -286,7 +410,6 @@ public class NodeSpec {
         }
     }
 
-    // For testing only
     public static class Builder {
         private String hostname;
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
@@ -332,6 +455,7 @@ public class NodeSpec {
             node.currentDockerImage.ifPresent(this::currentDockerImage);
             node.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
             node.vespaVersion.ifPresent(this::vespaVersion);
+            node.allowedToBeDown.ifPresent(this::allowedToBeDown);
             node.owner.ifPresent(this::owner);
             node.membership.ifPresent(this::membership);
             node.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
@@ -452,6 +576,118 @@ public class NodeSpec {
         public Builder parentHostname(String parentHostname) {
             this.parentHostname = Optional.of(parentHostname);
             return this;
+        }
+
+        public Builder updateFromNodeAttributes(NodeAttributes attributes) {
+            if (attributes.getDockerImage() != null) {
+                currentDockerImage = Optional.of(attributes.getDockerImage());
+            }
+
+            if (attributes.getHardwareDivergence() != null) {
+                hardwareDivergence = Optional.of(attributes.getHardwareDivergence());
+            }
+
+            if (attributes.getRebootGeneration() != null) {
+                currentRebootGeneration = attributes.getRebootGeneration();
+            }
+
+            if (attributes.getRestartGeneration() != null) {
+                currentRestartGeneration = Optional.of(attributes.getRestartGeneration());
+            }
+
+            return this;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public Optional<DockerImage> getWantedDockerImage() {
+            return wantedDockerImage;
+        }
+
+        public Optional<DockerImage> getCurrentDockerImage() {
+            return currentDockerImage;
+        }
+
+        public Node.State getNodeState() {
+            return nodeState;
+        }
+
+        public NodeType getNodeType() {
+            return nodeType;
+        }
+
+        public String getNodeFlavor() {
+            return nodeFlavor;
+        }
+
+        public String getNodeCanonicalFlavor() {
+            return nodeCanonicalFlavor;
+        }
+
+        public Optional<String> getWantedVespaVersion() {
+            return wantedVespaVersion;
+        }
+
+        public Optional<String> getVespaVersion() {
+            return vespaVersion;
+        }
+
+        public Optional<Boolean> getAllowedToBeDown() {
+            return allowedToBeDown;
+        }
+
+        public Optional<Owner> getOwner() {
+            return owner;
+        }
+
+        public Optional<Membership> getMembership() {
+            return membership;
+        }
+
+        public Optional<Long> getWantedRestartGeneration() {
+            return wantedRestartGeneration;
+        }
+
+        public Optional<Long> getCurrentRestartGeneration() {
+            return currentRestartGeneration;
+        }
+
+        public long getWantedRebootGeneration() {
+            return wantedRebootGeneration;
+        }
+
+        public long getCurrentRebootGeneration() {
+            return currentRebootGeneration;
+        }
+
+        public double getMinCpuCores() {
+            return minCpuCores;
+        }
+
+        public double getMinMainMemoryAvailableGb() {
+            return minMainMemoryAvailableGb;
+        }
+
+        public double getMinDiskAvailableGb() {
+            return minDiskAvailableGb;
+        }
+
+        public boolean isFastDisk() {
+            return fastDisk;
+        }
+
+        public Set<String> getIpAddresses() {
+            return ipAddresses;
+        }
+
+        public Optional<String> getHardwareDivergence() {
+            return hardwareDivergence;
+        }
+
+        public Optional<String> getParentHostname() {
+            return parentHostname;
         }
 
         public NodeSpec build() {
