@@ -17,7 +17,7 @@ BasicType::Type getBasicType(const std::shared_ptr<attribute::ReadableAttributeV
     if (attr) {
         auto readGuard = attr->makeReadGuard(false);
         return readGuard->attribute()->getBasicType();
-    }else {
+    } else {
         return BasicType::Type::NONE;
     }
 }
