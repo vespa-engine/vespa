@@ -5,7 +5,7 @@ package com.yahoo.container.jdisc;
 /**
  * @author mortent
  */
-public interface Ckms {
+public interface SecretStore {
     /** Returns the secret for this key */
     String getSecret(String key);
 

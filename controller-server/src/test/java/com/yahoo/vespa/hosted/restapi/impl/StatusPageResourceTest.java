@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.restapi.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.container.jdisc.Ckms;
+import com.yahoo.container.jdisc.SecretStore;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -30,15 +30,15 @@ public class StatusPageResourceTest {
         Client mockClient = Mockito.mock(Client.class);
         WebTarget mockTarget = Mockito.mock(WebTarget.class);
         Invocation.Builder mockRequest = Mockito.mock(Invocation.Builder.class);
-        Ckms ckms = Mockito.mock(Ckms.class);
+        SecretStore secretStore = Mockito.mock(SecretStore.class);
 
         Mockito.when(mockClient.target(Mockito.any(UriBuilder.class))).thenReturn(mockTarget);
         Mockito.when(mockTarget.request()).thenReturn(mockRequest);
         Mockito.when(mockRequest.get(JsonNode.class)).thenReturn(
             new ObjectMapper().readTree("{\"page\":{\"name\":\"Vespa\"}}"));
-        Mockito.when(ckms.getSecret(Mockito.any(String.class))).thenReturn("testpage:testkey");
+        Mockito.when(secretStore.getSecret(Mockito.any(String.class))).thenReturn("testpage:testkey");
 
-        statusPage = new StatusPageResource(ckms, mockClient);
+        statusPage = new StatusPageResource(secretStore, mockClient);
     }
 
 
