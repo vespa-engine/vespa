@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.documentmodel.DocumentTypeRepo;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.UserConfigBuilder;
@@ -40,14 +39,12 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private final Set<NewDocumentType> globallyDistributedDocuments;
 
     /** The search nodes of this if it does not have an indexed cluster */
-    List<SearchNode> nonIndexed = new ArrayList<>();
+    private List<SearchNode> nonIndexed = new ArrayList<>();
 
-    Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
-    private DocumentTypeRepo repo = null;
+    private Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
 
     public void prepare() {
-        repo = getRoot().getDeployState().getDocumentModel().getDocumentManager();
         List<SearchNode> allBackends = getSearchNodes();
         for (AbstractSearchCluster cluster : clusters.values()) {
             cluster.prepareToDistributeFiles(allBackends);
@@ -195,7 +192,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
     }
 
-    public ContentSearchCluster addCluster(AbstractSearchCluster sc) {
+    private void addCluster(AbstractSearchCluster sc) {
         if (clusters.containsKey(sc.getClusterName())) {
             throw new IllegalArgumentException("I already have registered cluster '" + sc.getClusterName() + "'");
         }
@@ -206,7 +203,6 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             indexedCluster = (IndexedSearchCluster)sc;
         }
         clusters.put(sc.getClusterName(), sc);
-        return this;
     }
 
     public List<SearchNode> getSearchNodes() {

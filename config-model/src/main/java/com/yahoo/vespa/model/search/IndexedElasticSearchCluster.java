@@ -13,11 +13,6 @@ public class IndexedElasticSearchCluster extends IndexedSearchCluster {
     }
 
     @Override
-    public boolean getAllowFeedingWhenNodesDown() {
-        return true;
-    }
-
-    @Override
     public int getMinNodesPerColumn() { return 0; }
 
     @Override
@@ -35,8 +30,5 @@ public class IndexedElasticSearchCluster extends IndexedSearchCluster {
         }
         return false;
     }
-
-    @Override
-    public boolean isElastic() { return true; }
 
 }

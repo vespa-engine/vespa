@@ -10,6 +10,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
  */
+// TODO: Public methods only used in tests. What is this class for?
 public class DocumentSelectionConverter {
 
     private final DocumentSelector selector;

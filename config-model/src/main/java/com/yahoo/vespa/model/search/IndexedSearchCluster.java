@@ -335,15 +335,11 @@ public abstract class IndexedSearchCluster extends SearchCluster
     @Override
     protected void exportSdFiles(File toDir) throws IOException { }
 
-    public abstract boolean getAllowFeedingWhenNodesDown();
-
     public abstract int getMinNodesPerColumn();
 
     boolean useFixedRowInDispatch() {
         return false;
     }
-
-    public abstract boolean isElastic();
 
     int getMaxNodesDownPerFixedRow() {
         return maxNodesDownPerFixedRow;
