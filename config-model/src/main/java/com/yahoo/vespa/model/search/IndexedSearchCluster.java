@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 /**
  * @author baldersheim
  */
-public abstract class IndexedSearchCluster extends SearchCluster
+public class IndexedSearchCluster extends SearchCluster
     implements
         DocumentdbInfoConfig.Producer,
         // TODO consider removing, these only produced by UnionConfiguration and DocumentDatabase?
@@ -335,9 +335,14 @@ public abstract class IndexedSearchCluster extends SearchCluster
     @Override
     protected void exportSdFiles(File toDir) throws IOException { }
 
-    public abstract int getMinNodesPerColumn();
+    public int getMinNodesPerColumn() { return 0; }
 
     boolean useFixedRowInDispatch() {
+        for (SearchNode node : getSearchNodes()) {
+            if (node.getNodeSpec().groupIndex() > 0) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -389,5 +394,11 @@ public abstract class IndexedSearchCluster extends SearchCluster
             builder.node(nodeBuilder);
         }
     }
+
+    @Override
+    protected void assureSdConsistent() { }
+
+    @Override
+    public int getRowBits() { return 8; }
 
 }
