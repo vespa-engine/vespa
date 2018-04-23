@@ -908,19 +908,25 @@ AttributeVector::getEstimatedShrinkLidSpaceGain() const
     return canFree;
 }
 
-class AttributeVector::ReadGuard : public attribute::AttributeReadGuard
+
+namespace {
+
+class ReadGuard : public attribute::AttributeReadGuard
 {
+    using GenerationHandler = vespalib::GenerationHandler;
     GenerationHandler::Guard _generationGuard;
     using EnumGuard = std::shared_lock<std::shared_timed_mutex>;
     EnumGuard _enumGuard;
 public:
-    ReadGuard(const IAttributeVector *attr, GenerationHandler::Guard &&generationGuard, std::shared_timed_mutex *enumLock)
+    ReadGuard(const attribute::IAttributeVector *attr, GenerationHandler::Guard &&generationGuard, std::shared_timed_mutex *enumLock)
         : attribute::AttributeReadGuard(attr),
           _generationGuard(std::move(generationGuard)),
           _enumGuard(enumLock != nullptr ? EnumGuard(*enumLock) : EnumGuard())
     {
     }
 };
+
+}
 
 std::unique_ptr<attribute::AttributeReadGuard>
 AttributeVector::makeReadGuard(bool stableEnumGuard) const

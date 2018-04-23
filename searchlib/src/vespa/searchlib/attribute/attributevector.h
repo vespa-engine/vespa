@@ -629,8 +629,6 @@ private:
      */
     std::shared_timed_mutex & getEnumLock() { return _enumLock; }
 
-    class ReadGuard;
-
     friend class ComponentGuard<AttributeVector>;
     friend class AttributeValueGuard;
     friend class AttributeTest;
