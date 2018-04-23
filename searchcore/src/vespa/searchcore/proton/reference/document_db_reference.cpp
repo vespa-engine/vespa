@@ -6,12 +6,12 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 
 namespace proton {
 
-DocumentDBReference::DocumentDBReference(std::shared_ptr<AttributeManager> attrMgr,
+DocumentDBReference::DocumentDBReference(std::shared_ptr<IAttributeManager> attrMgr,
                                          std::shared_ptr<DocumentMetaStore> dms,
                                          std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler)
     : _attrMgr(std::move(attrMgr)),

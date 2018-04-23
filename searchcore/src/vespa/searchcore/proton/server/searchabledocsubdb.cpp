@@ -364,9 +364,7 @@ SearchableDocSubDB::close()
 std::shared_ptr<IDocumentDBReference>
 SearchableDocSubDB::getDocumentDBReference()
 {
-    auto attrMgr = std::dynamic_pointer_cast<AttributeManager>(getAttributeManager());
-    assert(attrMgr);
-    return std::make_shared<DocumentDBReference>(attrMgr, _dms, _gidToLidChangeHandler);
+    return std::make_shared<DocumentDBReference>(getAttributeManager(), _dms, _gidToLidChangeHandler);
 }
 
 void

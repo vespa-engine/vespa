@@ -5,7 +5,7 @@
 
 namespace proton {
 
-class AttributeManager;
+class IAttributeManager;
 class DocumentMetaStore;
 class IGidToLidChangeHandler;
 
@@ -16,11 +16,11 @@ class IGidToLidChangeHandler;
  */
 class DocumentDBReference : public IDocumentDBReference
 {
-    std::shared_ptr<AttributeManager> _attrMgr;
+    std::shared_ptr<IAttributeManager> _attrMgr;
     std::shared_ptr<DocumentMetaStore> _dms;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 public:
-    DocumentDBReference(std::shared_ptr<AttributeManager> attrMgr,
+    DocumentDBReference(std::shared_ptr<IAttributeManager> attrMgr,
                         std::shared_ptr<DocumentMetaStore> dms,
                         std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler);
     virtual ~DocumentDBReference();
