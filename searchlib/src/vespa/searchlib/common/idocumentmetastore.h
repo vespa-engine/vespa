@@ -64,6 +64,8 @@ class Blueprint;
 
 }
 
+class IGidToLidMapperVisitor;
+
 
 /**
  * Read interface for a document meta store that provides mapping between
@@ -152,6 +154,8 @@ struct IDocumentMetaStore {
      * Give read access to the current generation of the metastore.
      **/
     virtual uint64_t getCurrentGeneration() const = 0;
+
+    virtual void foreach(const IGidToLidMapperVisitor &visitor) const = 0;
 };
 
 

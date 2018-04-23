@@ -37,7 +37,7 @@ struct Fixture {
     DocumentDBReference ref;
     Fixture()
         : attrMgr(std::make_shared<test::MockAttributeManager>()),
-          ref(attrMgr, std::shared_ptr<DocumentMetaStore>(), std::shared_ptr<IGidToLidChangeHandler>())
+          ref(attrMgr, std::shared_ptr<const IDocumentMetaStoreContext>(), std::shared_ptr<IGidToLidChangeHandler>())
     {
         attrMgr->addAttribute("regular", AttributeFactory::createAttribute("regular", {BasicType::INT32}));
         attrMgr->setImportedAttributes(makeImportedAttributesRepo());

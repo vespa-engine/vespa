@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/document/base/documentid.h>
@@ -76,12 +77,14 @@ struct Fixture
 
     BucketDBOwner::SP _bucketDB;
     std::shared_ptr<DocumentMetaStore> _dms;
+    std::shared_ptr<const DocumentMetaStoreContext> _dmsContext;
     Timestamp _timestamp;
     using generation_t = GenerationHandler::generation_t;
 
     Fixture()
         : _bucketDB(std::make_shared<BucketDBOwner>()),
-          _dms(std::make_shared<DocumentMetaStore>(_bucketDB))
+          _dms(std::make_shared<DocumentMetaStore>(_bucketDB)),
+          _dmsContext(std::make_shared<const DocumentMetaStoreContext>(_dms))
     {
         populate();
     }
@@ -120,7 +123,7 @@ struct Fixture
     }
 
     std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() {
-        return std::make_shared<GidToLidMapperFactory>(_dms);
+        return std::make_shared<GidToLidMapperFactory>(_dmsContext);
     }
 
     void assertGenerations(generation_t currentGeneration, generation_t firstUsedGeneration)

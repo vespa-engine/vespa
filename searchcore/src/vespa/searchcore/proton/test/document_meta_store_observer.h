@@ -182,6 +182,9 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     virtual search::SerialNum getLastSerialNum() const override {
         return _store.getLastSerialNum();
     }
+    virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override {
+        _store.foreach(visitor);
+    }
 };
 
 }

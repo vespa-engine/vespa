@@ -10,6 +10,7 @@
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreebuilder.hpp>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
@@ -1068,6 +1069,13 @@ uint32_t
 DocumentMetaStore::getVersion() const
 {
     return _trackDocumentSizes ? documentmetastore::DOCUMENT_SIZE_TRACKING_VERSION : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
+}
+
+void
+DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor &visitor) const
+{
+    beginFrozen().foreach_key([this,&visitor](uint32_t lid)
+                              { visitor.visit(getRawMetaData(lid).getGid(), lid); });
 }
 
 }  // namespace proton

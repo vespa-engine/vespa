@@ -6,8 +6,8 @@
 
 namespace proton {
 
-GidToLidMapperFactory::GidToLidMapperFactory(std::shared_ptr<DocumentMetaStore> dms)
-    : _dms(std::move(dms))
+GidToLidMapperFactory::GidToLidMapperFactory(std::shared_ptr<const search::IDocumentMetaStoreContext> dmsContext)
+    : _dmsContext(std::move(dmsContext))
 {
 }
 
@@ -18,7 +18,7 @@ GidToLidMapperFactory::~GidToLidMapperFactory()
 std::unique_ptr<search::IGidToLidMapper>
 GidToLidMapperFactory::getMapper() const
 {
-    return std::make_unique<GidToLidMapper>(_dms->getGenerationHandler().takeGuard(), *_dms);
+    return std::make_unique<GidToLidMapper>(*_dmsContext);
 }
 
 } // namespace proton
