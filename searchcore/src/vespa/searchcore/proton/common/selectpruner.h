@@ -21,13 +21,15 @@ protected:
     const document::Document &_emptyDoc;
     const document::DocumentTypeRepo &_repo;
     bool _hasFields;
+    bool _hasDocuments;
 
 public:
     SelectPrunerBase(const vespalib::string &docType,
                      const search::IAttributeManager *amgr,
                      const document::Document &emptyDoc,
                      const document::DocumentTypeRepo &repo,
-                     bool hasFields);
+                     bool hasFields,
+                     bool hasDocuments);
 
     SelectPrunerBase(const SelectPrunerBase &rhs);
 };
@@ -48,7 +50,8 @@ public:
                  const search::IAttributeManager *amgr,
                  const document::Document &emptyDoc,
                  const document::DocumentTypeRepo &repo,
-                 bool hasFields);
+                 bool hasFields,
+                 bool hasDocuments);
 
     SelectPruner(const SelectPruner *rhs);
     virtual ~SelectPruner();
@@ -70,6 +73,7 @@ private:
     void visitOrBranch(const document::select::Or &expr) override;
     void visitArithmeticValueNode(const document::select::ArithmeticValueNode &expr) override;
     void visitFunctionValueNode(const document::select::FunctionValueNode &expr) override;
+    void visitIdValueNode(const document::select::IdValueNode &expr) override;
     void visitFieldValueNode(const document::select::FieldValueNode &expr) override;
     void invertNode();
     const document::select::Operator &getOperator(const document::select::Operator &op);

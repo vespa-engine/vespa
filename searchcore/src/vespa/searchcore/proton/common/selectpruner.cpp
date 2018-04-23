@@ -10,6 +10,7 @@
 #include <vespa/document/select/doctype.h>
 #include <vespa/document/select/invalidconstant.h>
 #include <vespa/document/select/valuenodes.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
 using document::select::And;
@@ -42,6 +43,7 @@ using document::FieldPath;
 using document::Field;
 using document::FieldNotFoundException;
 using search::AttributeGuard;
+using search::attribute::CollectionType;
 
 namespace proton {
 
@@ -49,12 +51,14 @@ SelectPrunerBase::SelectPrunerBase(const vespalib::string &docType,
                                    const search::IAttributeManager *amgr,
                                    const document::Document &emptyDoc,
                                    const document::DocumentTypeRepo &repo,
-                                   bool hasFields)
+                                   bool hasFields,
+                                   bool hasDocuments)
     : _docType(docType),
       _amgr(amgr),
       _emptyDoc(emptyDoc),
       _repo(repo),
-      _hasFields(hasFields)
+      _hasFields(hasFields),
+      _hasDocuments(hasDocuments)
 {
 }
 
@@ -63,7 +67,8 @@ SelectPrunerBase::SelectPrunerBase(const SelectPrunerBase &rhs)
       _amgr(rhs._amgr),
       _emptyDoc(rhs._emptyDoc),
       _repo(rhs._repo),
-      _hasFields(rhs._hasFields)
+      _hasFields(rhs._hasFields),
+      _hasDocuments(rhs._hasDocuments)
 {
 }
 
@@ -71,9 +76,10 @@ SelectPruner::SelectPruner(const vespalib::string &docType,
                            const search::IAttributeManager *amgr,
                            const document::Document &emptyDoc,
                            const document::DocumentTypeRepo &repo,
-                           bool hasFields)
+                           bool hasFields,
+                           bool hasDocuments)
     : CloningVisitor(),
-      SelectPrunerBase(docType, amgr, emptyDoc, repo, hasFields),
+      SelectPrunerBase(docType, amgr, emptyDoc, repo, hasFields, hasDocuments),
       _inverted(false),
       _wantInverted(false),
       _attrFieldNodes(0u)
@@ -371,6 +377,17 @@ SelectPruner::visitFunctionValueNode(const FunctionValueNode &expr)
 
 
 void
+SelectPruner::visitIdValueNode(const IdValueNode &expr)
+{
+    if (!_hasDocuments) {
+        setInvalidVal();
+        return;
+    }
+    CloningVisitor::visitIdValueNode(expr);
+}
+
+
+void
 SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
 {
     if (_docType != expr.getDocType()) {
@@ -378,11 +395,13 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
         return;
     }
     const document::DocumentType *docType = _repo.getDocumentType(_docType);
+    bool complex = false; // Cannot handle attribute if complex expression
     vespalib::string name(expr.getFieldName());
     for (uint32_t i = 0; i < name.size(); ++i) {
         if (name[i] == '.' || name[i] == '{' || name[i] == '[') {
             // TODO: Check for struct, array, map or weigthed set
             name = expr.getFieldName().substr(0, i);
+            complex = true;
             break;
         }
     }
@@ -417,12 +436,25 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     
     _valueNode = expr.clone(); // Replace with different node type for attrs ?
     _valueNode->clearParentheses();
-    ++_fieldNodes;
+    bool svAttr = false;
+    bool attrField = false;
     if (_amgr != nullptr) {
         AttributeGuard::UP ag(_amgr->getAttribute(name));
         if (ag->valid()) {
-            ++_attrFieldNodes;
+            attrField = true;
+            auto av(ag->getSP());
+            if (av->getCollectionType() == CollectionType::SINGLE && !complex) {
+                svAttr = true;
+            }
         }
+    }
+    if (!_hasDocuments && !svAttr) {
+        setInvalidVal();
+        return;
+    }
+    ++_fieldNodes;
+    if (attrField) {
+        ++_attrFieldNodes;
     }
     _priority = FieldValuePriority;
 }
