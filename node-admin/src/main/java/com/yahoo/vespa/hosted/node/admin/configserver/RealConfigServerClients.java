@@ -29,7 +29,7 @@ public class RealConfigServerClients implements ConfigServerClients {
     private final ConfigServerInfo configServerInfo;
 
     public RealConfigServerClients(Environment environment) {
-        this(environment.getConfigServerInfo(), environment.getParentHostHostname());
+        this(environment.getConfigServerInfo());
     }
 
     /**
@@ -39,9 +39,9 @@ public class RealConfigServerClients implements ConfigServerClients {
      * and kept up to date. On failure, this constructor will throw an exception and
      * the caller may retry later.
      */
-    public RealConfigServerClients(ConfigServerInfo info, String hostname) {
+    public RealConfigServerClients(ConfigServerInfo info) {
         this.configServerInfo = info;
-        updater = SslConnectionSocketFactoryUpdater.createAndRefreshKeyStoreIfNeeded(info, hostname);
+        updater = SslConnectionSocketFactoryUpdater.createAndRefreshKeyStoreIfNeeded(info);
 
         configServerApi = ConfigServerApiImpl.create(info, updater);
 
