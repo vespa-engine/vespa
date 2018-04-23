@@ -4,9 +4,9 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
@@ -24,6 +24,7 @@
 #include <vespa/searchcore/proton/test/buckethandler.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -333,67 +334,7 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
     }
 };
 
-
-struct MyAttributeManager : public proton::IAttributeManager
-{
-    virtual AttributeGuard::UP getAttribute(const string &) const override {
-        abort();
-    }
-    virtual std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool) const override {
-        abort();
-    }
-    virtual void getAttributeList(std::vector<AttributeGuard> &) const override {
-        abort();
-    }
-    virtual search::attribute::IAttributeContext::UP createContext() const override {
-        abort();
-    }
-    virtual IAttributeManager::SP create(const AttributeCollectionSpec &) const override {
-        abort();
-    }
-    virtual std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override {
-        abort();
-    }
-    virtual search::SerialNum getFlushedSerialNum(const vespalib::string &) const override {
-        abort();
-    }
-    virtual search::SerialNum getOldestFlushedSerialNumber() const override {
-        abort();
-    }
-    virtual search::SerialNum getNewestFlushedSerialNumber() const override {
-        abort();
-    }
-    virtual void getAttributeListAll(std::vector<search::AttributeGuard> &) const override {
-        abort();
-    }
-    virtual void pruneRemovedFields(search::SerialNum) override {
-        abort();
-    }
-    virtual const IAttributeFactory::SP &getFactory() const override {
-        abort();
-    }
-    virtual search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
-        abort();
-    }
-    virtual search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
-        abort();
-    }
-    virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
-        abort();
-    }
-    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>)
-        const override {
-    }
-    virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &) const override {
-        abort();
-    }
-    virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo>) override {
-        abort();
-    }
-    virtual const ImportedAttributesRepo *getImportedAttributes() const override {
-        abort();
-    }
-};
+using MyAttributeManager = test::MockAttributeManager;
 
 struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 {
