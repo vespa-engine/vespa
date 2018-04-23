@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 
 import java.util.ArrayList;
@@ -36,8 +37,8 @@ public class MockBuildService extends AbstractComponent implements BuildService 
     }
 
     /** Removes the given job for the given project and returns whether it was found. */
-    public boolean removeJob(long projectId, String jobType) {
-        return jobs.remove(new BuildJob(projectId, jobType));
+    public boolean remove(BuildJob buildJob) {
+        return jobs.remove(buildJob);
     }
 
 }

@@ -7,7 +7,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -85,7 +85,7 @@ public class FailureRedeployerTest {
         // Production job fails again, and is retried
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
         tester.readyJobTrigger().maintain();
-        assertEquals("Job is retried", Collections.singletonList(new BuildService.BuildJob(app.deploymentJobs().projectId().getAsLong(), productionUsEast3.jobName())), tester.buildService().jobs());
+        assertEquals("Job is retried", Collections.singletonList(ControllerTester.buildJob(app, productionUsEast3)), tester.buildService().jobs());
 
         // Production job finally succeeds
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
@@ -125,7 +125,7 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
-        tester.buildService().removeJob((long) 1, systemTest.jobName());
+        tester.buildService().remove(ControllerTester.buildJob(app, systemTest));
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());

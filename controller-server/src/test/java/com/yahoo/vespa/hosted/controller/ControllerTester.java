@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrgani
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
@@ -120,6 +121,10 @@ public final class ControllerTester {
                     record.setMillis(clock.millis());
                     return true;
                 });
+    }
+
+    public static BuildService.BuildJob buildJob(Application application, DeploymentJobs.JobType jobType) {
+        return BuildService.BuildJob.of(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName());
     }
 
     public Controller controller() { return controller; }

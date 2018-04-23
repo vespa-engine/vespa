@@ -146,6 +146,11 @@ public class JobList {
         }
 
         /** Returns the subset of jobs where the run of the given type was on the given version */
+        public JobList on(ApplicationVersion version) {
+            return filter(run -> run.applicationVersion().equals(version));
+        }
+
+        /** Returns the subset of jobs where the run of the given type was on the given version */
         public JobList on(Version version) {
             return filter(run -> run.version().equals(version));
         }

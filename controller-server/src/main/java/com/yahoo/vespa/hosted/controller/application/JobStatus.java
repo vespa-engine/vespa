@@ -8,6 +8,8 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * The last known build status of a particular deployment job for a particular application.
  * This is immutable.
@@ -33,12 +35,12 @@ public class JobStatus {
     public JobStatus(DeploymentJobs.JobType type, Optional<DeploymentJobs.JobError> jobError,
                      Optional<JobRun> lastTriggered, Optional<JobRun> lastCompleted,
                      Optional<JobRun> firstFailing, Optional<JobRun> lastSuccess) {
-        Objects.requireNonNull(type, "jobType cannot be null");
-        Objects.requireNonNull(jobError, "jobError cannot be null");
-        Objects.requireNonNull(lastTriggered, "lastTriggered cannot be null");
-        Objects.requireNonNull(lastCompleted, "lastCompleted cannot be null");
-        Objects.requireNonNull(firstFailing, "firstFailing cannot be null");
-        Objects.requireNonNull(lastSuccess, "lastSuccess cannot be null");
+        requireNonNull(type, "jobType cannot be null");
+        requireNonNull(jobError, "jobError cannot be null");
+        requireNonNull(lastTriggered, "lastTriggered cannot be null");
+        requireNonNull(lastCompleted, "lastCompleted cannot be null");
+        requireNonNull(firstFailing, "firstFailing cannot be null");
+        requireNonNull(lastSuccess, "lastSuccess cannot be null");
 
         this.type = type;
         this.jobError = jobError;
@@ -74,7 +76,7 @@ public class JobStatus {
         Version version;
         String reason;
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
-            version = controller.systemVersion(); // TODO jvenstad: Get rid of this, and perhaps all of component info?
+            version = controller.systemVersion();
             reason = "Application commit";
         } else if ( ! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +
@@ -160,16 +162,12 @@ public class JobStatus {
         private final String reason;
         private final Instant at;
 
-        public JobRun(long id, Version version, ApplicationVersion applicationVersion,String reason, Instant at) {
-            Objects.requireNonNull(version, "version cannot be null");
-            Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
-            Objects.requireNonNull(reason, "Reason cannot be null");
-            Objects.requireNonNull(at, "at cannot be null");
+        public JobRun(long id, Version version, ApplicationVersion applicationVersion, String reason, Instant at) {
             this.id = id;
-            this.version = version;
-            this.applicationVersion = applicationVersion;
-            this.reason = reason;
-            this.at = at;
+            this.version = requireNonNull(version);
+            this.applicationVersion = requireNonNull(applicationVersion);
+            this.reason = requireNonNull(reason);
+            this.at = requireNonNull(at);
         }
 
         /** Returns the id of this run of this job, or -1 if not known */
@@ -187,32 +185,32 @@ public class JobStatus {
         /** Returns the time if this triggering or completion */
         public Instant at() { return at; }
 
-        /** Returns whether the job last completed for the given change */
-        public boolean lastCompletedWas(Change change) {
-            if (change.platform().isPresent() && ! change.platform().get().equals(version())) return false;
-            if (change.application().isPresent() && ! change.application().get().equals(applicationVersion)) return false;
-            return true;
-        }
-
         @Override
-        public int hashCode() {
-            return Objects.hash(version, applicationVersion, at);
+        public String toString() {
+            return "job run " + id + " of version " + version + " " + applicationVersion + " at " + at;
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if ( ! (o instanceof JobRun)) return false;
-            JobRun jobRun = (JobRun) o;
-            return id == jobRun.id &&
-                   Objects.equals(version, jobRun.version) &&
-                   Objects.equals(applicationVersion, jobRun.applicationVersion) &&
-                   Objects.equals(at, jobRun.at);
+            if (!(o instanceof JobRun)) return false;
+
+            JobRun run = (JobRun) o;
+
+            if (id != run.id) return false;
+            if (!version.equals(run.version)) return false;
+            if (!applicationVersion.equals(run.applicationVersion)) return false;
+            return at.equals(run.at);
         }
 
         @Override
-        public String toString() { return "job run " + id + " of version " + version + " "
-                                          + applicationVersion + " at " + at; }
+        public int hashCode() {
+            int result = (int) (id ^ (id >>> 32));
+            result = 31 * result + version.hashCode();
+            result = 31 * result + applicationVersion.hashCode();
+            result = 31 * result + at.hashCode();
+            return result;
+        }
 
     }
 

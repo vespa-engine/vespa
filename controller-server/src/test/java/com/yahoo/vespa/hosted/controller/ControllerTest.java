@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionCorpUsEast1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
@@ -179,7 +180,7 @@ public class ControllerTest {
         JobStatus jobStatus = applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1);
         assertNotNull("Deployment job was not removed", jobStatus);
         assertEquals(42, jobStatus.lastCompleted().get().id());
-        assertEquals("Available change in staging-test", jobStatus.lastCompleted().get().reason());
+        assertEquals("New change available", jobStatus.lastCompleted().get().reason());
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()
@@ -440,33 +441,33 @@ public class ControllerTest {
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
+        jobs.add(buildJob(app2, stagingTest));
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
+        jobs.add(buildJob(app1, stagingTest));
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app3.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
+        jobs.add(buildJob(app3, stagingTest));
         assertEquals(jobs, tester.buildService().jobs());
 
         // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
         // All three jobs are now eligible, but the one for app3 should trigger first as an outOfCapacity-retry.
-        tester.buildService().removeJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName());
-        tester.buildService().removeJob(app2.deploymentJobs().projectId().getAsLong(), stagingTest.jobName());
+        tester.buildService().remove(buildJob(app1, stagingTest));
+        tester.buildService().remove(buildJob(app2, stagingTest));
         tester.clock().advance(Duration.ofHours(13));
-        jobs.remove(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
-        jobs.remove(new BuildService.BuildJob(app2.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
+        jobs.remove(buildJob(app1, stagingTest));
+        jobs.remove(buildJob(app2, stagingTest));
         tester.jobCompletion(stagingTest).application(app3).error(JobError.outOfCapacity).submit();
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
+        jobs.add(buildJob(app2, stagingTest));
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
+        jobs.add(buildJob(app1, stagingTest));
         assertEquals(jobs, tester.buildService().jobs());
 
         // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
@@ -486,21 +487,21 @@ public class ControllerTest {
 
         // Let the last system test job start, then remove the ones for apps 1 and 2, and let app3 fail with outOfCapacity again.
         tester.readyJobTrigger().maintain();
-        tester.buildService().removeJob(app1.deploymentJobs().projectId().getAsLong(), systemTest.jobName());
-        tester.buildService().removeJob(app2.deploymentJobs().projectId().getAsLong(), systemTest.jobName());
+        tester.buildService().remove(buildJob(app1, systemTest));
+        tester.buildService().remove(buildJob(app2, systemTest));
         tester.clock().advance(Duration.ofHours(13));
         jobs.clear();
-        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
-        jobs.add(new BuildService.BuildJob(app3.deploymentJobs().projectId().getAsLong(), systemTest.jobName()));
+        jobs.add(buildJob(app1, stagingTest));
+        jobs.add(buildJob(app3, systemTest));
         tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), systemTest.jobName()));
+        jobs.add(buildJob(app1, systemTest));
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().getAsLong(), systemTest.jobName()));
+        jobs.add(buildJob(app2, systemTest));
         assertEquals(jobs, tester.buildService().jobs());
 
     }
@@ -536,26 +537,6 @@ public class ControllerTest {
         assertEquals(1, rotationStatus.size());
         assertTrue(rotationStatus.get("qrs-endpoint").getStatus().equals(EndpointStatus.Status.out));
         assertTrue(rotationStatus.get("qrs-endpoint").getReason().equals("Testing I said"));
-    }
-
-    @Test
-    public void testDeployUntestedChangeFails() {
-        DeploymentTester tester = new DeploymentTester();
-        ApplicationController applications = tester.controller().applications();
-        TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 11L);
-        Application app = tester.controllerTester().createApplication(tenant, "app1", "default", 1);
-        tester.deployCompletely(app, applicationPackage);
-
-        tester.controller().applications().lockOrThrow(app.id(), application -> {
-            application = application.withChange(Change.of(Version.fromString("6.3")));
-            applications.store(application);
-            try {
-                tester.controllerTester().deploy(app, ZoneId.from("prod", "corp-us-east-1"), applicationPackage);
-                fail("Expected exception");
-            } catch (IllegalArgumentException e) {
-                assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.corp-us-east-1 as upgrade to 6.3 is not tested", e.getMessage());
-            }
-        });
     }
 
     @Test

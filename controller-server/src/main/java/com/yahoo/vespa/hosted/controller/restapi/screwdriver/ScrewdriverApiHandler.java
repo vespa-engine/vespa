@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.screwdriver;
 
+import com.google.common.base.Joiner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -10,6 +11,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
@@ -19,7 +21,6 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 
 /**
  * This API lists deployment jobs that are queued for execution on Screwdriver.
@@ -70,7 +72,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             return vespaVersion();
         }
         if (path.matches("/screwdriver/v1/jobsToRun"))
-            return buildJobs(controller.applications().deploymentTrigger().computeReadyJobs().stream().collect(groupingBy(job -> job.jobType())));
+            return buildJobs(controller.applications().deploymentTrigger().jobsToRun());
         return notFound(request);
     }
 
@@ -88,14 +90,13 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                                   .map(JobType::fromJobName)
                                   .orElse(JobType.component);
 
-        Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, "default"));
-        controller.applications().deploymentTrigger().trigger(controller.applications().deploymentTrigger().forcedDeploymentJob(application,
-                                                                                                                                jobType,
-                                                                                                                                "Triggered from screwdriver/v1"));
+        String triggered = controller.applications().deploymentTrigger()
+                                     .forceTrigger(ApplicationId.from(tenantName, applicationName, "default"), jobType)
+                                     .stream().map(JobType::jobName).collect(joining(", "));
 
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
-        cursor.setString("message", "Triggered " + jobType.jobName() + " for " + application.id());
+        cursor.setString("message", "Triggered " + triggered + " for " + tenantName + "." + applicationName);
         return new SlimeJsonResponse(slime);
     }
 
@@ -112,20 +113,15 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse buildJobs(Map<JobType, List<DeploymentTrigger.Job>> jobLists) {
+    private HttpResponse buildJobs(Map<JobType, ? extends List<? extends BuildService.BuildJob>> jobLists) {
         Slime slime = new Slime();
         Cursor jobTypesObject = slime.setObject();
         jobLists.forEach((jobType, jobs) -> {
             Cursor jobArray = jobTypesObject.setArray(jobType.jobName());
             jobs.forEach(job -> {
                 Cursor buildJobObject = jobArray.addObject();
-                buildJobObject.setString("id", job.id().toString());
+                buildJobObject.setString("applicationId", job.applicationId().toString());
                 buildJobObject.setLong("projectId", job.projectId());
-                buildJobObject.setString("reason", job.reason());
-                buildJobObject.setString("change", job.change().toString());
-                buildJobObject.setLong("availableSince", job.availableSince().toEpochMilli());
-                buildJobObject.setString("platform", job.platform().toString());
-                buildJobObject.setString("application", job.application().toString());
             });
         });
         return new SlimeJsonResponse(slime);
