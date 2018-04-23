@@ -73,7 +73,6 @@ public abstract class Searcher extends Processor {
 
     // Note to developers: If you think you should add something here you are probably wrong
     //                     Create a subclass containing the new method instead.
-
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     public Searcher() {}
@@ -131,7 +130,7 @@ public abstract class Searcher extends Processor {
     /** Use the search method in Searcher processors. This forwards to it. */
     @Override
     public final Response process(com.yahoo.processing.Request request, com.yahoo.processing.execution.Execution execution) {
-        return search((Query)request,(Execution)execution);
+        return search((Query)request, (Execution)execution);
     }
 
     /**
@@ -147,7 +146,7 @@ public abstract class Searcher extends Processor {
      * @param summaryClass the name of the collection of fields to fetch the values of, or null to use the default
      */
     public void fill(Result result, String summaryClass, Execution execution) {
-        execution.fill(result,summaryClass);
+        execution.fill(result, summaryClass);
     }
 
     /**

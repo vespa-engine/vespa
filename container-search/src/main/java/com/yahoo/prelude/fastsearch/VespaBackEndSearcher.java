@@ -479,13 +479,13 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      *         when things are working normally we return 0.
      */
     protected FillHitsResult fillHits(Result result, Packet[] packets, String summaryClass) throws IOException {
-        int skippedHits=0;
+        int skippedHits = 0;
         String lastError = null;
         int packetIndex = 0;
         for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
             Hit hit = i.next();
 
-            if (hit instanceof FastHit && !hit.isFilled(summaryClass)) {
+            if (hit instanceof FastHit && ! hit.isFilled(summaryClass)) {
                 FastHit fastHit = (FastHit) hit;
 
                 ensureInstanceOf(DocsumPacket.class, packets[packetIndex], getName());

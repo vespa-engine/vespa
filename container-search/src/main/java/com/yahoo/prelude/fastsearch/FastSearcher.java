@@ -280,7 +280,7 @@ public class FastSearcher extends VespaBackEndSearcher {
                 QueryPacket queryPacket = QueryPacket.create(query);
                 cacheKey = new CacheKey(queryPacket);
             }
-            packetWrapper = cacheLookupTwoPhase(cacheKey, result,summaryClass);
+            packetWrapper = cacheLookupTwoPhase(cacheKey, result, summaryClass);
         }
 
         FS4Channel channel = chooseBackend(query).openChannel();

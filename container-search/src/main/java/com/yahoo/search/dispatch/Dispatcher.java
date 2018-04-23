@@ -94,7 +94,6 @@ public class Dispatcher extends AbstractComponent {
                 sendGetDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), summaryClass, compression, result, responseReceiver);
             }
             responseReceiver.processResponses(result.getQuery(), summaryClass, documentDb);
-            result.hits().setFilled(summaryClass);
             result.hits().setSorted(false);
             result.analyzeHits();
         }
@@ -266,6 +265,7 @@ public class Dispatcher extends AbstractComponent {
                 Inspector summary = summaries.entry(i).field("docsum");
                 if (summary.fieldCount() != 0) {
                     hits.get(i).addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
+                    hits.get(i).setFilled(summaryClass);
                 } else {
                     skippedHits++;
                 }
