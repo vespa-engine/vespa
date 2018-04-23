@@ -33,7 +33,7 @@ class ImportedSearchContext : public ISearchContext {
     BitVectorSearchCache::Entry::SP                 _searchCacheLookup;
     IDocumentMetaStoreContext::IReadGuard::UP       _dmsReadGuard;
     const ReferenceAttribute&                       _reference_attribute;
-    const attribute::IAttributeVector              &_target_attribute;
+    const IAttributeVector                         &_target_attribute;
     std::unique_ptr<ISearchContext>                 _target_search_context;
     ReferencedLids                                  _referencedLids;
     PostingListMerger<int32_t>                      _merger;

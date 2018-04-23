@@ -25,7 +25,7 @@ ImportedSearchContext::ImportedSearchContext(
         std::unique_ptr<QueryTermSimple> term,
         const SearchContextParams& params,
         const ImportedAttributeVector& imported_attribute,
-        const attribute::IAttributeVector &target_attribute)
+        const IAttributeVector &target_attribute)
     : _imported_attribute(imported_attribute),
       _queryTerm(term->getTerm()),
       _useSearchCache(_imported_attribute.getSearchCache().get() != nullptr),

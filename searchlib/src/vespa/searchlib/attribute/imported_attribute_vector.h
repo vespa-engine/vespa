@@ -26,17 +26,17 @@ class ReferenceAttribute;
  * Any accessor on the imported attribute for a local LID yields the same result as
  * if the same accessor were invoked with the target LID on the target attribute vector.
  */
-class ImportedAttributeVector : public attribute::ReadableAttributeVector {
+class ImportedAttributeVector : public ReadableAttributeVector {
 public:
     using SP = std::shared_ptr<ImportedAttributeVector>;
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
-                            std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
+                            std::shared_ptr<ReadableAttributeVector> target_attribute,
                             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                             bool use_search_cache);
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
-                            std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
+                            std::shared_ptr<ReadableAttributeVector> target_attribute,
                             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                             std::shared_ptr<BitVectorSearchCache> search_cache);
     virtual ~ImportedAttributeVector();
@@ -44,7 +44,7 @@ public:
     const std::shared_ptr<ReferenceAttribute>& getReferenceAttribute() const noexcept {
         return _reference_attribute;
     }
-    const std::shared_ptr<attribute::ReadableAttributeVector>& getTargetAttribute() const noexcept {
+    const std::shared_ptr<ReadableAttributeVector>& getTargetAttribute() const noexcept {
         return _target_attribute;
     }
     const std::shared_ptr<IDocumentMetaStoreContext> &getDocumentMetaStore() const {
@@ -63,7 +63,7 @@ public:
 protected:
     vespalib::string                           _name;
     std::shared_ptr<ReferenceAttribute>        _reference_attribute;
-    std::shared_ptr<attribute::ReadableAttributeVector>  _target_attribute;
+    std::shared_ptr<ReadableAttributeVector>   _target_attribute;
     std::shared_ptr<IDocumentMetaStoreContext> _document_meta_store;
     std::shared_ptr<BitVectorSearchCache>      _search_cache;
 };
