@@ -145,6 +145,10 @@ TEST_F("asTensorAttribute() returns nullptr", Fixture) {
     EXPECT_TRUE(f.get_imported_attr()->asTensorAttribute() == nullptr);
 }
 
+TEST_F("isImported() returns true", Fixture) {
+    EXPECT_TRUE(f.get_imported_attr()->isImported());
+}
+
 TEST_F("Multi-valued integer attribute values can be retrieved via reference", Fixture) {
     const std::vector<int64_t> doc3_values({1234});
     const std::vector<int64_t> doc7_values({5678, 9876, 555, 777});
