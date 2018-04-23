@@ -68,14 +68,14 @@ public class NodeRepoMock implements NodeRepository {
 
         synchronized (monitor) {
             node.ifPresent(nrn -> updateNodeRepositoryNode(new NodeSpec.Builder(nrn)
-                    .nodeState(nodeState)
+                    .state(nodeState)
                     .build()));
             callOrderVerifier.add("setNodeState " + hostName + " to " + nodeState);
         }
     }
 
     public void updateNodeRepositoryNode(NodeSpec nodeSpec) {
-        nodeRepositoryNodesByHostname.put(nodeSpec.hostname, nodeSpec);
+        nodeRepositoryNodesByHostname.put(nodeSpec.getHostname(), nodeSpec);
     }
 
     public int getNumberOfContainerSpecs() {

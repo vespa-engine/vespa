@@ -74,9 +74,9 @@ public class StorageMaintainerTest {
         ContainerName containerName = ContainerName.fromHostname(hostname);
         NodeSpec node = new NodeSpec.Builder()
                 .hostname(hostname)
-                .nodeState(Node.State.ready)
+                .state(Node.State.ready)
                 .nodeType(NodeType.tenant)
-                .nodeFlavor("docker")
+                .flavor("docker")
                 .minCpuCores(1)
                 .minMainMemoryAvailableGb(1)
                 .minDiskAvailableGb(1)

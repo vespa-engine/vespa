@@ -134,7 +134,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             String hardwareDivergence = maintainer.getHardwareDivergence(node);
 
             // Only update hardware divergence if there is a change.
-            if (!node.hardwareDivergence.orElse("null").equals(hardwareDivergence)) {
+            if (!node.getHardwareDivergence().orElse("null").equals(hardwareDivergence)) {
                 NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
                 nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
             }
@@ -281,8 +281,8 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     private List<String> getNodesInActiveState() {
         return nodeRepository.getNodes(dockerHostHostName)
                              .stream()
-                             .filter(node -> node.nodeState == Node.State.active)
-                             .map(node -> node.hostname)
+                             .filter(node -> node.getState() == Node.State.active)
+                             .map(NodeSpec::getHostname)
                              .collect(Collectors.toList());
     }
 

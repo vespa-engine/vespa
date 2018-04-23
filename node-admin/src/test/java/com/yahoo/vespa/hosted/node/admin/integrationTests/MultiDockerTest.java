@@ -22,15 +22,15 @@ public class MultiDockerTest {
 
             dockerTester.addNodeRepositoryNode(
                     new NodeSpec.Builder(nodeSpec2)
-                            .nodeState(Node.State.dirty)
+                            .state(Node.State.dirty)
                             .minCpuCores(1)
                             .minMainMemoryAvailableGb(1)
                             .minDiskAvailableGb(1)
                             .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getNode(nodeSpec2.hostname)
-                    .filter(node -> node.nodeState != Node.State.ready).isPresent()) {
+            while (dockerTester.nodeRepositoryMock.getNode(nodeSpec2.getHostname())
+                    .filter(node -> node.getState() != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
 
@@ -67,9 +67,9 @@ public class MultiDockerTest {
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
                 .wantedVespaVersion("1.2.3")
-                .nodeState(Node.State.active)
+                .state(Node.State.active)
                 .nodeType(NodeType.tenant)
-                .nodeFlavor("docker")
+                .flavor("docker")
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
                 .minCpuCores(1)

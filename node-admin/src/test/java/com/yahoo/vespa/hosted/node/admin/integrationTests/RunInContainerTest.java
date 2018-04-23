@@ -173,9 +173,9 @@ public class RunInContainerTest {
                 Collections.singletonList(new NodeSpec.Builder()
                         .hostname("host1.test.yahoo.com")
                         .wantedDockerImage(new DockerImage("dockerImage"))
-                        .nodeState(Node.State.active)
+                        .state(Node.State.active)
                         .nodeType(NodeType.tenant)
-                        .nodeFlavor("docker")
+                        .flavor("docker")
                         .build()));
         doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestratorMock)
                 .suspend("localhost.test.yahoo.com", Arrays.asList("host1.test.yahoo.com", parentHostname));

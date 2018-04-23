@@ -18,9 +18,9 @@ public class NodeStateTest {
     private final NodeSpec initialNodeSpec = new NodeSpec.Builder()
             .hostname("host1.test.yahoo.com")
             .wantedDockerImage(new DockerImage("dockerImage"))
-            .nodeState(Node.State.active)
+            .state(Node.State.active)
             .nodeType(NodeType.tenant)
-            .nodeFlavor("docker")
+            .flavor("docker")
             .wantedRestartGeneration(1L)
             .currentRestartGeneration(1L)
             .minCpuCores(1)
@@ -48,15 +48,15 @@ public class NodeStateTest {
             setup(dockerTester);
             // Change node state to dirty
             dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
-                    .nodeState(Node.State.dirty)
+                    .state(Node.State.dirty)
                     .minCpuCores(1)
                     .minMainMemoryAvailableGb(1)
                     .minDiskAvailableGb(1)
                     .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getNode(initialNodeSpec.hostname)
-                    .filter(node -> node.nodeState != Node.State.ready).isPresent()) {
+            while (dockerTester.nodeRepositoryMock.getNode(initialNodeSpec.getHostname())
+                    .filter(node -> node.getState() != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
 
@@ -78,7 +78,7 @@ public class NodeStateTest {
             // Change node state to inactive and change the wanted docker image
             dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
                     .wantedDockerImage(newDockerImage)
-                    .nodeState(Node.State.inactive)
+                    .state(Node.State.inactive)
                     .minCpuCores(1)
                     .minMainMemoryAvailableGb(1)
                     .minDiskAvailableGb(1)
@@ -93,7 +93,7 @@ public class NodeStateTest {
             // Change node state to active
             dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
                     .wantedDockerImage(newDockerImage)
-                    .nodeState(Node.State.active)
+                    .state(Node.State.active)
                     .minCpuCores(1)
                     .minMainMemoryAvailableGb(1)
                     .minDiskAvailableGb(1)
