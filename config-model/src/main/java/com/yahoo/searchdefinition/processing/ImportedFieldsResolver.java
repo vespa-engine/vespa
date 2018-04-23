@@ -6,6 +6,7 @@ import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.SDField;
@@ -39,7 +40,7 @@ public class ImportedFieldsResolver extends Processor {
 
     private void resolveImportedField(TemporaryImportedField importedField, boolean validate) {
         DocumentReference reference = validateDocumentReference(importedField);
-        SDField targetField = validateTargetField(importedField, reference, validate);
+        ImmutableSDField targetField = validateTargetField(importedField, reference, validate);
         importedFields.put(importedField.fieldName(), new ImportedField(importedField.fieldName(), reference, targetField));
     }
 
@@ -52,16 +53,12 @@ public class ImportedFieldsResolver extends Processor {
         return reference;
     }
 
-    private SDField validateTargetField(TemporaryImportedField importedField,
-                                        DocumentReference reference,
-                                        boolean validate) {
+    private ImmutableSDField validateTargetField(TemporaryImportedField importedField,
+                                                 DocumentReference reference,
+                                                 boolean validate) {
         String targetFieldName = importedField.targetFieldName();
         Search targetSearch = reference.targetSearch();
-        if (validate && isImportedField(targetSearch, targetFieldName)) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) +
-                                ": Is an imported field. Not supported");
-        }
-        SDField targetField = targetSearch.getConcreteField(targetFieldName);
+        ImmutableSDField targetField = targetSearch.getField(targetFieldName);
         if (targetField == null) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) +
                                 ": Not found");
@@ -75,10 +72,6 @@ public class ImportedFieldsResolver extends Processor {
                                     ": Is an index field. Not supported");
         }
         return targetField;
-    }
-
-    private static boolean isImportedField(Search targetSearch, String targetFieldName) {
-        return targetSearch.importedFields().isPresent() && targetSearch.importedFields().get().fields().containsKey(targetFieldName);
     }
 
     private static String targetFieldAsString(String targetFieldName, DocumentReference reference) {

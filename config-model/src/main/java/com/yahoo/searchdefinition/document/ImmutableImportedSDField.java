@@ -27,6 +27,10 @@ public class ImmutableImportedSDField implements ImmutableSDField {
         this.importedField = importedField;
     }
 
+    public ImportedField getImportedField() {
+        return importedField;
+    }
+
     @Override
     public <T extends Expression> boolean containsExpression(Class<T> searchFor) {
         throw createUnsupportedException(searchFor.getSimpleName());

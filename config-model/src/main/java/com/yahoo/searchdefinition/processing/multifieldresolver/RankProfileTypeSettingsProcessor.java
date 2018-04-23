@@ -11,6 +11,7 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.SDField;
@@ -57,7 +58,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processImportedField(ImportedField field) {
-        SDField targetField = field.targetField();
+        ImmutableSDField targetField = field.targetField();
         Attribute attribute = targetField.getAttributes().get(targetField.getName());
         if (attribute != null && attribute.tensorType().isPresent()) {
             addAttributeTypeToRankProfiles(field.fieldName(), attribute.tensorType().get().toString());

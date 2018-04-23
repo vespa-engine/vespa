@@ -11,6 +11,8 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -48,13 +50,23 @@ public class ImportedFieldsResolverTestCase {
         assertEquals(fieldName, myField.fieldName());
         assertSame(model.childSearch.getConcreteField("ref"), myField.reference().referenceField());
         assertSame(model.parentSearch, myField.reference().targetSearch());
-        assertSame(model.parentSearch.getConcreteField(targetFieldName), myField.targetField());
+        ImmutableSDField targetField = model.parentSearch.getField(targetFieldName);
+        if (targetField instanceof SDField) {
+            assertSame(targetField, myField.targetField());
+        } else {
+            assertSame(getImportedField(targetField), getImportedField(myField.targetField()));
+        }
+    }
+
+    private static ImportedField getImportedField(ImmutableSDField field) {
+        return ((ImmutableImportedSDField) field).getImportedField();
     }
 
     @Test
     public void valid_imported_fields_are_resolved() {
-	resolve_imported_field("my_attribute_field", "attribute_field");
-	resolve_imported_field("my_tensor_field", "tensor_field");
+        resolve_imported_field("my_attribute_field", "attribute_field");
+        resolve_imported_field("my_tensor_field", "tensor_field");
+        resolve_imported_field("my_ancient_field", "ancient_field");
     }
 
     @Test
@@ -89,17 +101,6 @@ public class ImportedFieldsResolverTestCase {
                         "Field 'attribute_and_index' via reference field 'ref': Is an index field. Not supported");
         new SearchModel()
                 .addImportedField("my_attribute_and_index", "ref", "attribute_and_index")
-                .resolve();
-    }
-
-    @Test
-    public void resolver_fails_if_imported_field_is_also_an_imported_field() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For search 'child', import field 'my_ancient_field': " +
-                        "Field 'ancient_field' via reference field 'ref': Is an imported field. Not supported");
-        new SearchModel()
-                .addImportedField("my_ancient_field", "ref", "ancient_field")
                 .resolve();
     }
 
