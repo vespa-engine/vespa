@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.collections.ArraySet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
@@ -39,7 +38,6 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.Environment.prod;
@@ -159,12 +157,12 @@ public class DeploymentTrigger {
      * the project id is removed from the application owning the job, to prevent further trigger attemps.
      */
     public boolean trigger(Job job) {
-        log.log(LogLevel.INFO, String.format("Attempting to trigger %s: %s (platform: %s, application: %s)", job, job.reason, job.platformVersion, job.applicationVersion.id()));
+        log.log(LogLevel.INFO, String.format("Attempting to trigger %s: %s (%s)", job, job.reason, job.target));
 
         try {
             buildService.trigger(job);
             applications().lockOrThrow(job.applicationId(), application -> applications().store(application.withJobTriggering(
-                    job.jobType, new JobRun(-1, job.platformVersion, job.applicationVersion, job.reason, clock.instant()))));
+                    job.jobType, new JobRun(-1, job.target.targetPlatform, job.target.targetApplication, job.reason, clock.instant()))));
             return true;
         }
         catch (RuntimeException e) {
@@ -233,7 +231,7 @@ public class DeploymentTrigger {
             buildService.trigger(BuildJob.of(applicationId, application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
             return singletonList(component);
         }
-        State target = targetFor(application, application.change(), jobType);
+        State target = targetFor(application, application.change(), deploymentFor(application, jobType));
         String reason = ">:o:< Triggered by force! (-o-) |-o-| (=oo=)";
         if (isVerified(application, target, jobType)) {
             trigger(deploymentJob(application, target, application.change(), jobType, reason, clock.instant(), Collections.emptySet()));
@@ -252,14 +250,14 @@ public class DeploymentTrigger {
         return new Job(application, target, jobType, reason, availableSince, concurrentlyWith, isRetry, change.application().isPresent());
     }
 
-    private Version targetPlatform(Application application, Change change, JobType jobType) {
-        return max(deploymentFor(application, jobType).map(Deployment::version), change.platform())
+    private Version targetPlatform(Application application, Change change, Optional<Deployment> deployment) {
+        return max(deployment.map(Deployment::version), change.platform())
                 .orElse(application.oldestDeployedPlatform()
                                    .orElse(controller.systemVersion()));
     }
 
-    private ApplicationVersion targetApplication(Application application, Change change, JobType jobType) {
-        return max(deploymentFor(application, jobType).map(Deployment::applicationVersion), change.application())
+    private ApplicationVersion targetApplication(Application application, Change change, Optional<Deployment> deployment) {
+        return max(deployment.map(Deployment::applicationVersion), change.application())
                 .orElse(application.oldestDeployedApplication()
                                    .orElse(application.deploymentJobs().jobStatus().get(component).lastSuccess().get().applicationVersion()));
     }
@@ -288,7 +286,7 @@ public class DeploymentTrigger {
                 Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(application.change(), application, job)));
                 if (jobsByCompletion.containsKey(empty())) { // Step not complete, because some jobs remain -- trigger these if the previous step was done.
                     for (JobType job : jobsByCompletion.get(empty())) {
-                        State target = targetFor(application, application.change(), job);
+                        State target = targetFor(application, application.change(), deploymentFor(application, job));
                         if (isVerified(application, target, job)) {
                             if (completedAt.isPresent())
                                 jobs.add(deploymentJob(application, target, application.change(), job, reason, completedAt.get(), stepJobs));
@@ -311,7 +309,7 @@ public class DeploymentTrigger {
             }
 
             if (testJobs == null)
-                testJobs = testJobsFor(application, targetFor(application, application.change(), systemTest), "Testing last changes outside prod", clock.instant());
+                testJobs = testJobsFor(application, targetFor(application, application.change(), empty()), "Testing last changes outside prod", clock.instant());
             jobs.addAll(testJobs);
 
             // TODO jvenstad: Replace with completion of individual parts of Change.
@@ -328,7 +326,7 @@ public class DeploymentTrigger {
         List<Job> jobs = new ArrayList<>();
         for (Step step : steps.stream().filter(step -> step.deploysTo(test) || step.deploysTo(staging)).collect(toList())) {
             for (JobType jobType : step.zones().stream().map(order::toJob).collect(toList())) {
-                Optional<JobRun> completion = successOn(application, jobType, target.targetPlatform, target.targetApplication);
+                Optional<JobRun> completion = successOn(application, jobType, target);
                 if (completion.isPresent())
                     availableSince = completion.get().at();
                 else if (isVerified(application, target, jobType))
@@ -340,9 +338,9 @@ public class DeploymentTrigger {
 
     private boolean isVerified(Application application, State state, JobType jobType) {
         if (jobType.environment() == staging)
-            return successOn(application, systemTest, state.targetPlatform, state.targetApplication).isPresent();
+            return successOn(application, systemTest, state).isPresent();
         if (jobType.environment() == prod)
-            return      successOn(application, stagingTest, state.targetPlatform, state.targetApplication).isPresent()
+            return      successOn(application, stagingTest, state).isPresent()
                    || ! JobList.from(application).production()
                                .lastTriggered().on(state.targetPlatform)
                                .lastTriggered().on(state.targetApplication)
@@ -359,7 +357,8 @@ public class DeploymentTrigger {
      * part is a downgrade, regardless of the status of the job.
      */
     private Optional<Instant> completedAt(Change change, Application application, JobType jobType) {
-        Optional<JobRun> lastSuccess = successOn(application, jobType, targetPlatform(application, change, jobType), targetApplication(application, change, jobType));
+        State target = targetFor(application, change, deploymentFor(application, jobType));
+        Optional<JobRun> lastSuccess = successOn(application, jobType, target);
         if (lastSuccess.isPresent() || ! jobType.isProduction())
             return lastSuccess.map(JobRun::at);
 
@@ -371,9 +370,10 @@ public class DeploymentTrigger {
                 .map(Deployment::at);
     }
 
-    private Optional<JobRun> successOn(Application application, JobType jobType, Version targetPlatform, ApplicationVersion targetApplication) {
+    private Optional<JobRun> successOn(Application application, JobType jobType, State target) {
         return application.deploymentJobs().statusOf(jobType).flatMap(JobStatus::lastSuccess)
-                          .filter(last -> targetPlatform.equals(last.version()) && targetApplication.equals(last.applicationVersion()));
+                          .filter(last ->    target.targetPlatform.equals(last.version())
+                                          && target.targetApplication.equals(last.applicationVersion()));
     }
 
     private boolean canTrigger(Job job) {
@@ -415,12 +415,13 @@ public class DeploymentTrigger {
         return Optional.ofNullable(application.deployments().get(jobType.zone(controller.system()).get()));
     }
 
-    private State targetFor(Application application, Change change, JobType jobType) {
-        return new State(targetPlatform(application, change, jobType),
-                         targetApplication(application, change, jobType),
-                         deploymentFor(application, jobType).map(Deployment::version),
-                         deploymentFor(application, jobType).map(Deployment::applicationVersion));
+    private State targetFor(Application application, Change change, Optional<Deployment> deployment) {
+        return new State(targetPlatform(application, change, deployment),
+                         targetApplication(application, change, deployment),
+                         deployment.map(Deployment::version),
+                         deployment.map(Deployment::applicationVersion));
     }
+
 
     private static class Job extends BuildJob {
 
@@ -430,8 +431,7 @@ public class DeploymentTrigger {
         private final Collection<JobType> concurrentlyWith;
         private final boolean isRetry;
         private final boolean isApplicationUpgrade;
-        private final Version platformVersion;
-        private final ApplicationVersion applicationVersion;
+        private final State target;
 
         private Job(Application application, State target, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith, boolean isRetry, boolean isApplicationUpgrade) {
             super(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName());
@@ -441,8 +441,7 @@ public class DeploymentTrigger {
             this.reason = reason;
             this.isRetry = isRetry;
             this.isApplicationUpgrade = isApplicationUpgrade;
-            this.platformVersion = target.targetPlatform;
-            this.applicationVersion = target.targetApplication;
+            this.target = target;
         }
 
         JobType jobType() { return jobType; }
@@ -465,6 +464,15 @@ public class DeploymentTrigger {
             this.targetApplication = targetApplication;
             this.sourcePlatform = sourcePlatform;
             this.sourceApplication = sourceApplication;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("platform %s %s, application %s %s",
+                                 targetPlatform,
+                                 sourcePlatform.map(v -> "(from " + v + ")").orElse(""),
+                                 targetApplication.id(),
+                                 sourceApplication.map(v -> "(from " + v.id() + ")").orElse(""));
         }
 
     }
