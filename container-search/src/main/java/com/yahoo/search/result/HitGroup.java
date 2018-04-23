@@ -583,8 +583,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             Collections.sort(hits);
             hitsSorted = true;
         } else {
-            // This may or may not lead to a sorted result set, but
-            // it's a best effort
+            // This may or may not lead to a sorted result set, but it's a best effort
             hitOrderer.order(hits);
             if (likelyHitsHaveCorrectValueForSortFields()) {
                 hitsSorted = true;
