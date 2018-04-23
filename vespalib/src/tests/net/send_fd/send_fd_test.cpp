@@ -65,6 +65,7 @@ void send_fd(SocketHandle &socket, SocketHandle fd) {
     data.iov_base = &tag;
     data.iov_len = 1;
     char buf[CMSG_SPACE(sizeof(int))];
+    memset(buf, 0, sizeof(buf));
     msg.msg_iov = &data;
     msg.msg_iovlen = 1;
     msg.msg_control = buf;
