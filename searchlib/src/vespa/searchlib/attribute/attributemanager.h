@@ -37,7 +37,7 @@ public:
     const VectorHolder * getAttributeRef(const string & name) const;
 
     AttributeGuard::UP getAttribute(const string & name) const override;
-    AttributeGuard::UP getAttributeStableEnum(const string & name) const override;
+    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override;
     /**
      * This will load attributes in the most memory economical way by loading largest first.
      */

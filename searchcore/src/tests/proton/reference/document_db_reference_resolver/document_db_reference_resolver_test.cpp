@@ -67,7 +67,7 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
     virtual IGidToLidMapperFactory::SP getGidToLidMapperFactory() override {
         return factory;
     }
-    virtual AttributeVector::SP getAttribute(vespalib::stringref name) override {
+    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref name) override {
         auto itr = attributes.find(name);
         ASSERT_TRUE(itr != attributes.end());
         return itr->second;

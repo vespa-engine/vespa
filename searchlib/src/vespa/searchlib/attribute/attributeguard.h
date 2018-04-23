@@ -23,21 +23,5 @@ public:
     AttributeGuard(const AttributeVectorSP & attribute);
 };
 
-/**
- * This class makes sure that the attribute vector is not updated with enum changes while the guard is held.
- **/
-class AttributeEnumGuard : public AttributeGuard
-{
-public:
-    AttributeEnumGuard(const AttributeEnumGuard &) = delete;
-    AttributeEnumGuard & operator = (const AttributeEnumGuard &) = delete;
-    explicit AttributeEnumGuard(const AttributeVectorSP & attribute);
-    explicit AttributeEnumGuard(const AttributeGuard & attribute);
-    ~AttributeEnumGuard();
-private:
-    mutable std::shared_lock<std::shared_timed_mutex> _lock;
-    void takeLock();
-};
-
 }
 

@@ -11,6 +11,7 @@
 #include "flushableattribute.h"
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/threaded_compactable_lid_space.h>
@@ -23,7 +24,6 @@
 LOG_SETUP(".proton.attribute.attributemanager");
 
 using search::AttributeContext;
-using search::AttributeEnumGuard;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::common::ThreadedCompactableLidSpace;
@@ -402,10 +402,15 @@ AttributeManager::getAttribute(const vespalib::string &name) const
     return AttributeGuard::UP(new AttributeGuard(findAttribute(name)));
 }
 
-AttributeGuard::UP
-AttributeManager::getAttributeStableEnum(const vespalib::string &name) const
+std::unique_ptr<search::attribute::AttributeReadGuard>
+AttributeManager::getAttributeReadGuard(const string &name, bool stableEnumGuard) const
 {
-    return AttributeGuard::UP(new AttributeEnumGuard(findAttribute(name)));
+    auto attribute = findAttribute(name);
+    if (attribute) {
+        return attribute->makeReadGuard(stableEnumGuard);
+    } else {
+        return std::unique_ptr<search::attribute::AttributeReadGuard>();
+    }
 }
 
 void

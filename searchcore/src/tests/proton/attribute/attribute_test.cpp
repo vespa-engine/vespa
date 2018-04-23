@@ -747,7 +747,7 @@ ImportedAttributeVector::SP
 createImportedAttribute(const vespalib::string &name)
 {
     auto result = ImportedAttributeVectorFactory::create(name,
-                                                         ReferenceAttribute::SP(),
+                                                         std::shared_ptr<ReferenceAttribute>(),
                                                          AttributeVector::SP(),
                                                          std::shared_ptr<search::IDocumentMetaStoreContext>(),
                                                          true);

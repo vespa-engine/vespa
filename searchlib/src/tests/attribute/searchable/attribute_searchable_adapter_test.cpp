@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
@@ -27,7 +28,6 @@
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <memory>
 
-using search::AttributeEnumGuard;
 using search::AttributeFactory;
 using search::AttributeGuard;
 using search::AttributeVector;
@@ -100,13 +100,13 @@ public:
         }
     }
 
-    AttributeGuard::UP getAttributeStableEnum(const string &name) const override {
-        if (name == field) {
-            return AttributeGuard::UP(new AttributeEnumGuard(_attribute_vector));
-        } else if (name == other) {
-            return AttributeGuard::UP(new AttributeEnumGuard(_other));
+    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override {
+        if (name == field && _attribute_vector) {
+            return _attribute_vector->makeReadGuard(stableEnumGuard);
+        } else if (name == other && _other) {
+            return _other->makeReadGuard(stableEnumGuard);
         } else {
-            return AttributeGuard::UP(nullptr);
+            return std::unique_ptr<attribute::AttributeReadGuard>();
         }
     }
 

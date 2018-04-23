@@ -143,10 +143,6 @@ InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const Pa
     return true;
 }
 
-bool isImportedAttribute(const IAttributeVector &attribute) noexcept {
-    return dynamic_cast<const ImportedAttributeVectorReadGuard*>(&attribute) != nullptr;
-}
-
 template<typename A>
 bool supportsGetRawValues(const A &attr) noexcept {
     try {
@@ -163,7 +159,7 @@ template <typename BaseType>
 FeatureExecutor &
 selectTypedExecutor(const IAttributeVector *attribute, const IntegerVector &vector, vespalib::Stash &stash)
 {
-    if (!isImportedAttribute(*attribute)) {
+    if (!attribute->isImported()) {
         using A = IntegerAttributeTemplate<BaseType>;
         using VT = multivalue::Value<BaseType>;
         using ExactA = MultiValueNumericAttribute<A, VT>;

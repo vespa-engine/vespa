@@ -355,10 +355,6 @@ template class ArrayParam<double>;
 
 namespace {
 
-bool isImportedAttribute(const IAttributeVector& attribute) noexcept {
-    return dynamic_cast<const ImportedAttributeVectorReadGuard*>(&attribute) != nullptr;
-}
-
 using dotproduct::ArrayParam;
 
 template <typename A>
@@ -373,7 +369,7 @@ bool supportsGetRawValues(const A & attr) noexcept {
     }
 }
 
-// Precondition: isImportedAttribute(*attribute) == false
+// Precondition: attribute->isImported() == false
 template <typename A>
 FeatureExecutor &
 createForDirectArrayImpl(const IAttributeVector * attribute,
@@ -471,7 +467,7 @@ FeatureExecutor &
 createFromObject(const IAttributeVector * attribute, const fef::Anything & object, vespalib::Stash &stash)
 {
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
-        if (!isImportedAttribute(*attribute)) {
+        if (!attribute->isImported()) {
             switch (attribute->getBasicType()) {
                 case BasicType::INT32:
                     return createForDirectArray<IntegerAttributeTemplate<int32_t>>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
@@ -507,7 +503,7 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
 FeatureExecutor * createTypedArrayExecutor(const IAttributeVector * attribute,
                                            const Property & prop,
                                            vespalib::Stash & stash) {
-    if (!isImportedAttribute(*attribute)) {
+    if (!attribute->isImported()) {
         switch (attribute->getBasicType()) {
             case BasicType::INT32:
                 return &createForDirectArray<IntegerAttributeTemplate<int32_t>>(attribute, prop, stash);
@@ -586,7 +582,7 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
 }
 
 fef::Anything::UP attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property & prop) {
-    if (!isImportedAttribute(attribute)) {
+    if (!attribute.isImported()) {
         switch (attribute.getBasicType()) {
             case BasicType::INT32:
                 return std::make_unique<ArrayParam<int32_t>>(prop);

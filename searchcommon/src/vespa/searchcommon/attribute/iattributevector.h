@@ -353,6 +353,33 @@ public:
     virtual bool hasEnum() const = 0;
 
     /**
+     * Returns whether the attribute vector is a filter attribute.
+     *
+     * @return true if attribute vector is a filter attribute.
+     */
+    virtual bool getIsFilter() const = 0;
+
+    /**
+     * Returns whether the attribute vector is marked as fast search.
+     *
+     * @return true if attribute vector is marked as fast search.
+     */
+    virtual bool getIsFastSearch() const = 0;
+
+    /**
+     * Returns the committed docid limit for the attribute.
+     *
+     * @return committed docid limit for the attribute.
+     */
+    virtual uint32_t getCommittedDocIdLimitSlow() const = 0;
+
+    /*
+     * Returns whether the current attribute vector is an imported attribute
+     * vector.
+     */
+    virtual bool isImported() const = 0;
+
+    /**
      * Will serialize the values for the documentid in ascending order. The serialized form can be used by memcmp and
      * sortorder will be preserved.
      * @param doc The document id to serialize for.

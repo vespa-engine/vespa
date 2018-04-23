@@ -16,31 +16,6 @@ AttributeGuard::AttributeGuard(const AttributeVector::SP & attr) :
 {
 }
 
-AttributeEnumGuard::AttributeEnumGuard(const AttributeVector::SP & attr) :
-    AttributeGuard(attr),
-    _lock()
-{
-    takeLock();
-}
-
-AttributeEnumGuard::AttributeEnumGuard(const AttributeGuard & attr) :
-    AttributeGuard(attr),
-    _lock()
-{
-    takeLock();
-}
-
-AttributeEnumGuard::~AttributeEnumGuard() { }
-
-void AttributeEnumGuard::takeLock() {
-    if (valid()) {
-        std::shared_lock<std::shared_timed_mutex> take(get()->getEnumLock(),
-                                                       std::defer_lock);
-        _lock = std::move(take);
-        _lock.lock();
-    }
-}
-
 template class ComponentGuard<AttributeVector>;
 
 }

@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
@@ -17,7 +18,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attributeblueprint_test");
 
-using search::AttributeEnumGuard;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::IAttributeManager;
@@ -64,10 +64,13 @@ public:
         return AttributeGuard::UP(new AttributeGuard(_attribute_vector));
     }
 
-    AttributeGuard::UP getAttributeStableEnum(const string &) const override {
-        return AttributeGuard::UP(new AttributeEnumGuard(_attribute_vector));
+    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool stableEnumGuard) const override {
+        if (_attribute_vector) {
+            return _attribute_vector->makeReadGuard(stableEnumGuard);
+        } else {
+            return std::unique_ptr<attribute::AttributeReadGuard>();
+        }
     }
-
     void getAttributeList(vector<AttributeGuard> &) const override {
         assert(!"Not implemented");
     }

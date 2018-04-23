@@ -20,7 +20,7 @@ AttributeGuardTest::Main()
 
 
     AttributeVector::SP ssattr(new SingleStringExtAttribute("ss1"));
-    AttributeEnumGuard guard(ssattr);
+    AttributeGuard guard(ssattr);
     EXPECT_TRUE(guard.valid());
 
     TEST_DONE();

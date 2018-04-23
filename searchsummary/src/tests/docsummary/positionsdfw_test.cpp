@@ -76,7 +76,7 @@ public:
     virtual AttributeGuard::UP getAttribute(const string &) const override {
         abort();
     }
-    virtual AttributeGuard::UP getAttributeStableEnum(const string &) const override {
+    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool) const override {
         abort();
     }
     virtual void getAttributeList(vector<AttributeGuard> &) const override {

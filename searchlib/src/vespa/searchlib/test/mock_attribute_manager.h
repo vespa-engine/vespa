@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
 namespace search {
@@ -33,9 +34,13 @@ public:
         return AttributeGuard::UP(new AttributeGuard(attr));
     }
 
-    virtual AttributeGuard::UP getAttributeStableEnum(const vespalib::string &name) const override {
+    virtual std::unique_ptr<AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override {
         AttributeVector::SP attr = findAttribute(name);
-        return AttributeGuard::UP(new AttributeEnumGuard(attr));
+        if (attr) {
+            return attr->makeReadGuard(stableEnumGuard);
+        } else {
+            return std::unique_ptr<AttributeReadGuard>();
+        }
     }
 
     virtual void getAttributeList(std::vector<AttributeGuard> &list) const override {

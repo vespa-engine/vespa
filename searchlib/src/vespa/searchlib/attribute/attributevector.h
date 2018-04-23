@@ -431,6 +431,10 @@ public:
     // Implements IAttributeVector
     virtual BasicType::Type getBasicType() const override;
     virtual CollectionType::Type getCollectionType() const override;
+    virtual bool getIsFilter() const override;
+    virtual bool getIsFastSearch() const override;
+    virtual uint32_t getCommittedDocIdLimitSlow() const override;
+    virtual bool isImported() const override;
 
     /**
      * Updates the base file name of this attribute vector and saves
@@ -590,7 +594,7 @@ private:
     BaseName               _baseFileName;
     Config                 _config;
     std::shared_ptr<attribute::Interlock> _interlock;
-    std::shared_timed_mutex _enumLock;
+    mutable std::shared_timed_mutex _enumLock;
     GenerationHandler      _genHandler;
     GenerationHolder       _genHolder;
     Status                 _status;
@@ -626,7 +630,6 @@ private:
     std::shared_timed_mutex & getEnumLock() { return _enumLock; }
 
     friend class ComponentGuard<AttributeVector>;
-    friend class AttributeEnumGuard;
     friend class AttributeValueGuard;
     friend class AttributeTest;
     friend class AttributeManagerTest;

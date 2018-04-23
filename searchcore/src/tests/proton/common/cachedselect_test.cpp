@@ -48,7 +48,6 @@ using document::select::ResultSet;
 using proton::CachedSelect;
 using proton::SelectContext;
 using search::AttributeContext;
-using search::AttributeEnumGuard;
 using search::AttributeFactory;
 using search::AttributeGuard;
 using search::AttributePosting;

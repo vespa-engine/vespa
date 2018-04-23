@@ -9,6 +9,7 @@ LOG_SETUP("imported_attributes_context_test");
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <future>
 
@@ -23,7 +24,7 @@ using search::attribute::ReferenceAttribute;
 using search::attribute::test::MockGidToLidMapperFactory;
 using generation_t = AttributeVector::generation_t;
 
-ReferenceAttribute::SP
+std::shared_ptr<ReferenceAttribute>
 createReferenceAttribute(const vespalib::string &name)
 {
     auto refAttr = std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
@@ -83,7 +84,10 @@ struct Fixture {
         return *this;
     }
     AttributeVector::SP getTargetAttribute(const vespalib::string &importedName) const {
-        return repo.get(importedName)->getTargetAttribute();
+        auto readable_target_attr = repo.get(importedName)->getTargetAttribute();
+        auto target_attr = std::dynamic_pointer_cast<AttributeVector>(readable_target_attr);
+        ASSERT_TRUE(target_attr);
+        return target_attr;
     }
     void clearContext() {
         ctx.reset();

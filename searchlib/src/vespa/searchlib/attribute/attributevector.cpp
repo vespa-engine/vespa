@@ -330,6 +330,28 @@ AttributeVector::getCollectionType() const {
 }
 
 bool
+AttributeVector::getIsFilter() const {
+    return _config.getIsFilter();
+}
+
+bool
+AttributeVector::getIsFastSearch() const {
+    return _config.fastSearch();
+}
+
+uint32_t
+AttributeVector::getCommittedDocIdLimitSlow() const
+{
+    return getCommittedDocIdLimit();
+}
+
+bool
+AttributeVector::isImported() const
+{
+    return false;
+}
+
+bool
 AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
 {
     return header.hasTag(dataTypeTag) &&
@@ -886,12 +908,30 @@ AttributeVector::getEstimatedShrinkLidSpaceGain() const
     return canFree;
 }
 
+
+namespace {
+
+class ReadGuard : public attribute::AttributeReadGuard
+{
+    using GenerationHandler = vespalib::GenerationHandler;
+    GenerationHandler::Guard _generationGuard;
+    using EnumGuard = std::shared_lock<std::shared_timed_mutex>;
+    EnumGuard _enumGuard;
+public:
+    ReadGuard(const attribute::IAttributeVector *attr, GenerationHandler::Guard &&generationGuard, std::shared_timed_mutex *enumLock)
+        : attribute::AttributeReadGuard(attr),
+          _generationGuard(std::move(generationGuard)),
+          _enumGuard(enumLock != nullptr ? EnumGuard(*enumLock) : EnumGuard())
+    {
+    }
+};
+
+}
+
 std::unique_ptr<attribute::AttributeReadGuard>
 AttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
-    (void) stableEnumGuard;
-    // TODO: implement
-    return std::unique_ptr<attribute::AttributeReadGuard>();
+    return std::make_unique<ReadGuard>(this, _genHandler.takeGuard(), stableEnumGuard ? &_enumLock : nullptr);
 }
 
 MemoryUsage

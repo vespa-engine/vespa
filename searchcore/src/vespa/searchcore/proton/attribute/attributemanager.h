@@ -158,8 +158,7 @@ public:
 
     // Implements search::IAttributeManager
     virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
-
-    virtual search::AttributeGuard::UP getAttributeStableEnum(const vespalib::string &name) const override;
+    virtual std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override;
 
     /**
      * Fills all regular registered attributes (not extra attributes)

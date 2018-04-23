@@ -5,11 +5,13 @@
 #include "gid_to_lid_change_registrator.h"
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 
 namespace proton {
 
-DocumentDBReference::DocumentDBReference(std::shared_ptr<search::IAttributeManager> attrMgr,
+DocumentDBReference::DocumentDBReference(std::shared_ptr<IAttributeManager> attrMgr,
                                          std::shared_ptr<DocumentMetaStore> dms,
                                          std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler)
     : _attrMgr(std::move(attrMgr)),
@@ -22,14 +24,18 @@ DocumentDBReference::~DocumentDBReference()
 {
 }
 
-std::shared_ptr<search::AttributeVector>
+std::shared_ptr<search::attribute::ReadableAttributeVector>
 DocumentDBReference::getAttribute(vespalib::stringref name)
 {
     search::AttributeGuard::UP guard = _attrMgr->getAttribute(name);
-    if (guard) {
+    if (guard && guard->valid()) {
         return guard->getSP();
     } else {
-        return std::shared_ptr<search::AttributeVector>();
+        auto importedAttributesRepo = _attrMgr->getImportedAttributes();
+        if (importedAttributesRepo != nullptr) {
+            return importedAttributesRepo->get(name);
+        }
+        return std::shared_ptr<search::attribute::ReadableAttributeVector>();
     }
 }
 

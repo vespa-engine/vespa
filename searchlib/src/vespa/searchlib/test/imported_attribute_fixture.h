@@ -13,6 +13,7 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/searchlib/query/queryterm.h>

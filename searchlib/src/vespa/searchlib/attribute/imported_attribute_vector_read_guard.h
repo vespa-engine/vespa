@@ -4,7 +4,7 @@
 
 #include "attribute_read_guard.h"
 #include "attributeguard.h"
-#include "imported_attribute_vector.h"
+#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 
 namespace search { class IGidToLidMapper; }
@@ -12,6 +12,8 @@ namespace search { class IGidToLidMapper; }
 namespace search::attribute {
 
 class BitVectorSearchCache;
+class ImportedAttributeVector;
+class ReferenceAttribute;
 
 /*
  * Short lived attribute vector that does not store values on its own.
@@ -27,10 +29,11 @@ private:
     const ImportedAttributeVector   &_imported_attribute;
     ReferencedLids                   _referencedLids;
     AttributeGuard                   _reference_attribute_guard;
-    AttributeGuard                   _target_attribute_guard;
-    AttributeEnumGuard               _target_attribute_enum_guard;
+    std::unique_ptr<attribute::AttributeReadGuard> _target_attribute_guard;
     const ReferenceAttribute        &_reference_attribute;
-    const AttributeVector           &_target_attribute;
+protected:
+    const IAttributeVector          &_target_attribute;
+private:
     std::unique_ptr<IGidToLidMapper> _mapper;
 
 protected:
@@ -70,6 +73,10 @@ public:
     virtual size_t getFixedWidth() const override;
     virtual CollectionType::Type getCollectionType() const override;
     virtual bool hasEnum() const override;
+    virtual bool getIsFilter() const override;
+    virtual bool getIsFastSearch() const override;
+    virtual uint32_t getCommittedDocIdLimitSlow() const override;
+    virtual bool isImported() const override;
 
 protected:
     virtual long onSerializeForAscendingSort(DocId doc, void * serTo, long available,

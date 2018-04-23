@@ -16,7 +16,7 @@ namespace search {
 class AttributeContext : public attribute::IAttributeContext
 {
 private:
-    typedef vespalib::hash_map<string, AttributeGuard::UP> AttributeMap;
+    typedef vespalib::hash_map<string, std::unique_ptr<attribute::AttributeReadGuard>> AttributeMap;
 
     const search::IAttributeManager & _manager;
     mutable AttributeMap              _attributes;

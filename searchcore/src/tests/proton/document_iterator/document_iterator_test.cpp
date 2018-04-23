@@ -27,7 +27,6 @@ using document::Field;
 using document::IntFieldValue;
 using document::StringFieldValue;
 using search::AttributeContext;
-using search::AttributeEnumGuard;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::DocumentIdT;
