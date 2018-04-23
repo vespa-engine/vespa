@@ -210,7 +210,7 @@ public class DeploymentTrigger {
     }
 
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
-    public Stream<Job> computeReadyJobs() {
+    private Stream<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .notPullRequest()
                               .withProjectId()
@@ -272,27 +272,6 @@ public class DeploymentTrigger {
      * Finds the next step to trigger for the given application, if any, and returns these as a list.
      */
     private List<Job> computeReadyJobs(ApplicationId id) {
-        /*
-            find testJobs
-            find productionSteps
-
-            completedAt = EPOCH
-
-
-
-
-
-
-
-
-
-
-         */
-
-
-
-
-
         List<Job> jobs = new ArrayList<>();
         applications().get(id).ifPresent(application -> {
             List<Step> steps = application.deploymentSpec().steps().isEmpty()
