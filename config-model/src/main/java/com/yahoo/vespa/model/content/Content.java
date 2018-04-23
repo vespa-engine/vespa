@@ -311,11 +311,10 @@ public class Content extends ConfigModel {
             List<Container> nodes = new ArrayList<>();
             int index = 0;
             Set<HostResource> processedHosts = new LinkedHashSet<>();
-            boolean isElastic = cluster.isElastic();
             for (SearchNode searchNode : cluster.getSearchNodes()) {
                 HostResource host = searchNode.getHostResource();
                 if (!processedHosts.contains(host)) {
-                    String containerName = String.valueOf(isElastic ? searchNode.getDistributionKey() : index);
+                    String containerName = String.valueOf(searchNode.getDistributionKey());
                     Container docprocService = new Container(indexingCluster, containerName, index);
                     index++;
                     docprocService.setBasePort(host.nextAvailableBaseport(docprocService.getPortCount()));
