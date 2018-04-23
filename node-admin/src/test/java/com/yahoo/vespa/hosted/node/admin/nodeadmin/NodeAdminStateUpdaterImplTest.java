@@ -56,7 +56,7 @@ public class NodeAdminStateUpdaterImplTest {
     public void testStateConvergence() {
         mockNodeRepo(4);
         List<String> activeHostnames = nodeRepository.getNodes(parentHostname).stream()
-                .map(node -> node.hostname)
+                .map(NodeSpec::getHostname)
                 .collect(Collectors.toList());
         List<String> suspendHostnames = new ArrayList<>(activeHostnames);
         suspendHostnames.add(parentHostname);
@@ -186,9 +186,9 @@ public class NodeAdminStateUpdaterImplTest {
         List<NodeSpec> containersToRun = IntStream.range(0, numberOfNodes)
                 .mapToObj(i -> new NodeSpec.Builder()
                         .hostname("host" + i + ".test.yahoo.com")
-                        .nodeState(Node.State.active)
+                        .state(Node.State.active)
                         .nodeType(NodeType.tenant)
-                        .nodeFlavor("docker")
+                        .flavor("docker")
                         .minCpuCores(1)
                         .minMainMemoryAvailableGb(1)
                         .minDiskAvailableGb(1)

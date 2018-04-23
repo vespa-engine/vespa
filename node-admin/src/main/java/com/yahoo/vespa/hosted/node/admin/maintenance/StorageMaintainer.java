@@ -77,21 +77,21 @@ public class StorageMaintainer {
         SecretAgentScheduleMaker hostLifeSchedule = new SecretAgentScheduleMaker("host-life", 60, hostLifeCheckPath)
                 .withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
-                .withTag("flavor", node.nodeFlavor)
-                .withTag("canonicalFlavor", node.nodeCanonicalFlavor)
-                .withTag("state", node.nodeState.toString())
+                .withTag("flavor", node.getFlavor())
+                .withTag("canonicalFlavor", node.getCanonicalFlavor())
+                .withTag("state", node.getState().toString())
                 .withTag("zone", environment.getZone())
                 .withTag("parentHostname", environment.getParentHostHostname());
-        node.owner.ifPresent(owner -> hostLifeSchedule
-                .withTag("tenantName", owner.tenant)
-                .withTag("app", owner.application + "." + owner.instance)
-                .withTag("applicationName", owner.application)
-                .withTag("instanceName", owner.instance)
-                .withTag("applicationId", owner.tenant + "." + owner.application + "." + owner.instance));
-        node.membership.ifPresent(membership -> hostLifeSchedule
-                .withTag("clustertype", membership.clusterType)
-                .withTag("clusterid", membership.clusterId));
-        node.vespaVersion.ifPresent(version -> hostLifeSchedule.withTag("vespaVersion", version));
+        node.getOwner().ifPresent(owner -> hostLifeSchedule
+                .withTag("tenantName", owner.getTenant())
+                .withTag("app", owner.getApplication() + "." + owner.getInstance())
+                .withTag("applicationName", owner.getApplication())
+                .withTag("instanceName", owner.getInstance())
+                .withTag("applicationId", owner.getTenant() + "." + owner.getApplication() + "." + owner.getInstance()));
+        node.getMembership().ifPresent(membership -> hostLifeSchedule
+                .withTag("clustertype", membership.getClusterType())
+                .withTag("clusterid", membership.getClusterId()));
+        node.getVespaVersion().ifPresent(version -> hostLifeSchedule.withTag("vespaVersion", version));
 
         try {
             vespaSchedule.writeTo(yamasAgentFolder);
@@ -234,19 +234,19 @@ public class StorageMaintainer {
         }
 
         Map<String, Object> attributes = new HashMap<>();
-        attributes.put("hostname", node.hostname);
+        attributes.put("hostname", node.getHostname());
         attributes.put("parent_hostname", environment.getParentHostHostname());
         attributes.put("region", environment.getRegion());
         attributes.put("environment", environment.getEnvironment());
-        attributes.put("flavor", node.nodeFlavor);
+        attributes.put("flavor", node.getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
 
-        node.currentDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
-        node.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
-        node.owner.ifPresent(owner -> {
-            attributes.put("tenant", owner.tenant);
-            attributes.put("application", owner.application);
-            attributes.put("instance", owner.instance);
+        node.getCurrentDockerImage().ifPresent(image -> attributes.put("docker_image", image.asString()));
+        node.getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version));
+        node.getOwner().ifPresent(owner -> {
+            attributes.put("tenant", owner.getTenant());
+            attributes.put("application", owner.getApplication());
+            attributes.put("instance", owner.getInstance());
         });
 
         maintainerExecutor.addJob("handle-core-dumps")
@@ -322,16 +322,16 @@ public class StorageMaintainer {
      */
     public String getHardwareDivergence(NodeSpec node) {
         List<String> arguments = new ArrayList<>(Arrays.asList("specification",
-                "--disk", Double.toString(node.minDiskAvailableGb),
-                "--memory", Double.toString(node.minMainMemoryAvailableGb),
-                "--cpu_cores", Double.toString(node.minCpuCores),
-                "--is_ssd", Boolean.toString(node.fastDisk),
-                "--ips", String.join(",", node.ipAddresses)));
+                "--disk", Double.toString(node.getMinDiskAvailableGb()),
+                "--memory", Double.toString(node.getMinMainMemoryAvailableGb()),
+                "--cpu_cores", Double.toString(node.getMinCpuCores()),
+                "--is_ssd", Boolean.toString(node.isFastDisk()),
+                "--ips", String.join(",", node.getIpAddresses())));
 
-        if (node.hardwareDivergence.isPresent()) {
+        node.getHardwareDivergence().ifPresent(hardwareDivergence -> {
             arguments.add("--divergence");
-            arguments.add(node.hardwareDivergence.get());
-        }
+            arguments.add(hardwareDivergence);
+        });
 
         return executeMaintainer("com.yahoo.vespa.hosted.node.verification.Main", arguments.toArray(new String[0]));
     }

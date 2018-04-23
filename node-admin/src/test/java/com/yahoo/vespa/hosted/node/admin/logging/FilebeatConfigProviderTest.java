@@ -54,8 +54,8 @@ public class FilebeatConfigProviderTest {
     public void it_does_not_generate_config_for_nodes_wihout_owner() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
         NodeSpec node = new NodeSpec.Builder()
-                .nodeFlavor("flavor")
-                .nodeState(Node.State.active)
+                .flavor("flavor")
+                .state(Node.State.active)
                 .nodeType(NodeType.tenant)
                 .hostname("hostname")
                 .minCpuCores(1)
@@ -111,8 +111,8 @@ public class FilebeatConfigProviderTest {
         NodeSpec.Owner owner = new NodeSpec.Owner(tenant, application, instance);
         return new NodeSpec.Builder()
                 .owner(owner)
-                .nodeFlavor("flavor")
-                .nodeState(Node.State.active)
+                .flavor("flavor")
+                .state(Node.State.active)
                 .nodeType(NodeType.tenant)
                 .hostname("hostname")
                 .minCpuCores(1)

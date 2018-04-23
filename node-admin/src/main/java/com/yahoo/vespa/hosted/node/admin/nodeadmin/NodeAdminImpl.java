@@ -83,7 +83,7 @@ public class NodeAdminImpl implements NodeAdmin {
     public void refreshContainersToRun(final List<NodeSpec> containersToRun) {
         final List<ContainerName> existingContainerNames = dockerOperations.listAllManagedContainers();
         final List<String> containersToRunHostnames = containersToRun.stream()
-                .map(container -> container.hostname)
+                .map(NodeSpec::getHostname)
                 .collect(Collectors.toList());
 
         storageMaintainer.cleanNodeAdmin();

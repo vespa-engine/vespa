@@ -47,11 +47,11 @@ public class RestartTest {
     private NodeSpec createNodeRepositoryNode(long wantedRestartGeneration, long currentRestartGeneration) {
         return new NodeSpec.Builder()
                 .hostname("host1.test.yahoo.com")
-                .nodeState(Node.State.active)
+                .state(Node.State.active)
                 .wantedDockerImage(new DockerImage("image:1.2.3"))
                 .wantedVespaVersion("1.2.3")
                 .nodeType(NodeType.tenant)
-                .nodeFlavor("docker")
+                .flavor("docker")
                 .wantedRestartGeneration(wantedRestartGeneration)
                 .currentRestartGeneration(currentRestartGeneration)
                 .minCpuCores(1)

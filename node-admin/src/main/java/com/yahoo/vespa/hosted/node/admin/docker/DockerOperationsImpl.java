@@ -66,15 +66,15 @@ public class DockerOperationsImpl implements DockerOperations {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Creating container " + containerName);
         try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.hostname);
+            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.getHostname());
 
             String configServers = String.join(",", environment.getConfigServerHostNames());
 
             Docker.CreateContainerCommand command = docker.createContainerCommand(
-                    node.wantedDockerImage.get(),
-                    ContainerResources.from(node.minCpuCores, node.minMainMemoryAvailableGb),
+                    node.getWantedDockerImage().get(),
+                    ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
                     containerName,
-                    node.hostname)
+                    node.getHostname())
                     .withManagedBy(MANAGER_NAME)
                     .withEnvironment("VESPA_CONFIGSERVERS", configServers)
                     .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
@@ -100,14 +100,14 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not necessary - review later
             } else {
                 // IPv6 - Assume always valid
-                Inet6Address ipV6Address = this.retriever.getIPv6Address(node.hostname).orElseThrow(
+                Inet6Address ipV6Address = this.retriever.getIPv6Address(node.getHostname()).orElseThrow(
                         () -> new RuntimeException("Unable to find a valid IPv6 address. Missing an AAAA DNS entry?"));
                 InetAddress ipV6Prefix = InetAddress.getByName(IPV6_NPT_PREFIX);
                 InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
                 command.withIpAddress(ipV6Local);
 
                 // IPv4 - Only present for some containers
-                Optional<Inet4Address> ipV4Address = this.retriever.getIPv4Address(node.hostname);
+                Optional<Inet4Address> ipV4Address = this.retriever.getIPv4Address(node.getHostname());
                 if (ipV4Address.isPresent()) {
                     InetAddress ipV4Prefix = InetAddress.getByName(IPV4_NPT_PREFIX);
                     InetAddress ipV4Local = IPAddresses.prefixTranslate(ipV4Address.get(), ipV4Prefix, 2);
@@ -123,7 +123,7 @@ public class DockerOperationsImpl implements DockerOperations {
             }
 
             // TODO: Enforce disk constraints
-            long minMainMemoryAvailableMb = (long) (node.minMainMemoryAvailableGb * 1024);
+            long minMainMemoryAvailableMb = (long) (node.getMinMainMemoryAvailableGb() * 1024);
             if (minMainMemoryAvailableMb > 0) {
                 // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
                 // only has this much physical memory (overrides total memory reported by `free -m`).
@@ -144,7 +144,7 @@ public class DockerOperationsImpl implements DockerOperations {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Starting container " + containerName);
         try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.hostname);
+            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.getHostname());
             boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
             if (isIPv6) {

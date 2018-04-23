@@ -12,8 +12,6 @@ import java.util.stream.Collectors;
  */
 public class FilebeatConfigProvider {
 
-    private static final String TEMPLATE = "filebeat.yml.template";
-
     private static final String TENANT_FIELD = "%%TENANT%%";
     private static final String APPLICATION_FIELD = "%%APPLICATION%%";
     private static final String INSTANCE_FIELD = "%%INSTANCE%%";
@@ -34,10 +32,10 @@ public class FilebeatConfigProvider {
 
     public Optional<String> getConfig(NodeSpec node) {
 
-        if (environment.getLogstashNodes().size() == 0 || !node.owner.isPresent()) {
+        if (environment.getLogstashNodes().size() == 0 || !node.getOwner().isPresent()) {
             return Optional.empty();
         }
-        NodeSpec.Owner owner = node.owner.get();
+        NodeSpec.Owner owner = node.getOwner().get();
         int spoolSize = environment.getLogstashNodes().size() * logstashWorkers * logstashBulkMaxSize;
         String logstashNodeString = environment.getLogstashNodes().stream()
                 .map(this::addQuotes)
@@ -49,9 +47,9 @@ public class FilebeatConfigProvider {
                 .replaceAll(LOGSTASH_HOSTS_FIELD, logstashNodeString)
                 .replaceAll(LOGSTASH_WORKERS_FIELD, Integer.toString(logstashWorkers))
                 .replaceAll(LOGSTASH_BULK_MAX_SIZE_FIELD, Integer.toString(logstashBulkMaxSize))
-                .replaceAll(TENANT_FIELD, owner.tenant)
-                .replaceAll(APPLICATION_FIELD, owner.application)
-                .replaceAll(INSTANCE_FIELD, owner.instance));
+                .replaceAll(TENANT_FIELD, owner.getTenant())
+                .replaceAll(APPLICATION_FIELD, owner.getApplication())
+                .replaceAll(INSTANCE_FIELD, owner.getInstance()));
     }
 
     private String addQuotes(String logstashNode) {

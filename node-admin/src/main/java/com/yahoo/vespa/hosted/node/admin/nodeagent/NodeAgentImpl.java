@@ -181,7 +181,7 @@ public class NodeAgentImpl implements NodeAgent {
         synchronized (debugMessages) {
             debug.put("history", new LinkedList<>(debugMessages));
         }
-        debug.put("nodeRepoState", lastNode.nodeState.name());
+        debug.put("nodeRepoState", lastNode.getState().name());
         return debug;
     }
 
@@ -245,16 +245,16 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void updateNodeRepoWithCurrentAttributes(final NodeSpec node) {
         final NodeAttributes currentNodeAttributes = new NodeAttributes()
-                .withRestartGeneration(node.currentRestartGeneration.orElse(null))
-                .withRebootGeneration(node.currentRebootGeneration)
-                .withDockerImage(node.currentDockerImage.orElse(new DockerImage("")));
+                .withRestartGeneration(node.getCurrentRestartGeneration().orElse(null))
+                .withRebootGeneration(node.getCurrentRebootGeneration())
+                .withDockerImage(node.getCurrentDockerImage().orElse(new DockerImage("")));
 
         final NodeAttributes wantedNodeAttributes = new NodeAttributes()
-                .withRestartGeneration(node.wantedRestartGeneration.orElse(null))
+                .withRestartGeneration(node.getWantedRestartGeneration().orElse(null))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
-                .withRebootGeneration(node.wantedRebootGeneration)
-                .withDockerImage(node.wantedDockerImage.filter(n -> containerState == UNKNOWN).orElse(new DockerImage("")));
+                .withRebootGeneration(node.getWantedRebootGeneration())
+                .withDockerImage(node.getWantedDockerImage().filter(n -> containerState == UNKNOWN).orElse(new DockerImage("")));
 
         publishStateToNodeRepoIfChanged(currentNodeAttributes, wantedNodeAttributes);
     }
@@ -292,18 +292,18 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private Optional<String> shouldRestartServices(NodeSpec node) {
-        if (!node.wantedRestartGeneration.isPresent()) return Optional.empty();
+        if (!node.getWantedRestartGeneration().isPresent()) return Optional.empty();
 
-        if (!node.currentRestartGeneration.isPresent() ||
-                node.currentRestartGeneration.get() < node.wantedRestartGeneration.get()) {
+        if (!node.getCurrentRestartGeneration().isPresent() ||
+                node.getCurrentRestartGeneration().get() < node.getWantedRestartGeneration().get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
-                    + node.currentRestartGeneration.get() + " -> " + node.wantedRestartGeneration.get());
+                    + node.getCurrentRestartGeneration().get() + " -> " + node.getWantedRestartGeneration().get());
         }
         return Optional.empty();
     }
 
     private void restartServices(NodeSpec node, Container existingContainer) {
-        if (existingContainer.state.isRunning() && node.nodeState == Node.State.active) {
+        if (existingContainer.state.isRunning() && node.getState() == Node.State.active) {
             ContainerName containerName = existingContainer.name;
             logger.info("Restarting services for " + containerName);
             // Since we are restarting the services we need to suspend the node.
@@ -320,20 +320,20 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private Optional<String> shouldRemoveContainer(NodeSpec node, Container existingContainer) {
-        final Node.State nodeState = node.nodeState;
+        final Node.State nodeState = node.getState();
         if (nodeState == Node.State.dirty || nodeState == Node.State.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
-        if (node.wantedDockerImage.isPresent() && !node.wantedDockerImage.get().equals(existingContainer.image)) {
+        if (node.getWantedDockerImage().isPresent() && !node.getWantedDockerImage().get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                    + existingContainer + " -> " + node.wantedDockerImage.get());
+                    + existingContainer + " -> " + node.getWantedDockerImage().get());
         }
         if (!existingContainer.state.isRunning()) {
             return Optional.of("Container no longer running");
         }
 
         ContainerResources wantedContainerResources = ContainerResources.from(
-                node.minCpuCores, node.minMainMemoryAvailableGb);
+                node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
         if (!wantedContainerResources.equals(existingContainer.resources)) {
             return Optional.of("Container should be running with different resource allocation, wanted: " +
                     wantedContainerResources + ", actual: " + existingContainer.resources);
@@ -349,7 +349,7 @@ public class NodeAgentImpl implements NodeAgent {
             logger.info("Will remove container " + existingContainer + ": " + removeReason.get());
 
             if (existingContainer.state.isRunning()) {
-                if (node.nodeState == Node.State.active) {
+                if (node.getState() == Node.State.active) {
                     orchestratorSuspendNode();
                 }
 
@@ -370,10 +370,10 @@ public class NodeAgentImpl implements NodeAgent {
 
 
     private void scheduleDownLoadIfNeeded(NodeSpec node) {
-        if (node.currentDockerImage.equals(node.wantedDockerImage)) return;
+        if (node.getCurrentDockerImage().equals(node.getWantedDockerImage())) return;
 
-        if (dockerOperations.pullImageAsyncIfNeeded(node.wantedDockerImage.get())) {
-            imageBeingDownloaded = node.wantedDockerImage.get();
+        if (dockerOperations.pullImageAsyncIfNeeded(node.getWantedDockerImage().get())) {
+            imageBeingDownloaded = node.getWantedDockerImage().get();
         } else if (imageBeingDownloaded != null) { // Image was downloading, but now it's ready
             imageBeingDownloaded = null;
         }
@@ -463,7 +463,7 @@ public class NodeAgentImpl implements NodeAgent {
             lastNode = node;
         }
 
-        switch (node.nodeState) {
+        switch (node.getState()) {
             case ready:
             case reserved:
             case parked:
@@ -475,7 +475,7 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
 
                 storageMaintainer.getDiskUsageFor(containerName)
-                        .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.minDiskAvailableGb)
+                        .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.getMinDiskAvailableGb())
                         .filter(diskUtil -> diskUtil >= 0.8)
                         .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(containerName));
 
@@ -519,14 +519,14 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             case dirty:
                 removeContainerIfNeededUpdateContainerState(node, container);
-                logger.info("State is " + node.nodeState + ", will delete application storage and mark node as ready");
+                logger.info("State is " + node.getState() + ", will delete application storage and mark node as ready");
                 storageMaintainer.cleanupNodeStorage(containerName, node);
                 updateNodeRepoWithCurrentAttributes(node);
                 nodeRepository.setNodeState(hostname, Node.State.ready);
                 expectNodeNotInNodeRepo = true;
                 break;
             default:
-                throw new RuntimeException("UNKNOWN STATE " + node.nodeState.name());
+                throw new RuntimeException("UNKNOWN STATE " + node.getState().name());
         }
     }
 
@@ -581,9 +581,9 @@ public class NodeAgentImpl implements NodeAgent {
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
                 .add("role", "tenants")
-                .add("state", node.nodeState.toString())
+                .add("state", node.getState().toString())
                 .add("parentHostname", environment.getParentHostHostname());
-        node.allowedToBeDown.ifPresent(allowed ->
+        node.getAllowedToBeDown().ifPresent(allowed ->
                 dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
         Dimensions dimensions = dimensionsBuilder.build();
 
@@ -596,13 +596,13 @@ public class NodeAgentImpl implements NodeAgent {
         final long memoryTotalBytes = ((Number) stats.getMemoryStats().get("limit")).longValue();
         final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
         final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
-        final long diskTotalBytes = (long) (node.minDiskAvailableGb * BYTES_IN_GB);
+        final long diskTotalBytes = (long) (node.getMinDiskAvailableGb() * BYTES_IN_GB);
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(containerName);
 
         lastCpuMetric.updateCpuDeltas(cpuSystemTotalTime, cpuContainerTotalTime, cpuContainerKernelTime);
 
         // Ratio of CPU cores allocated to this container to total number of CPU cores on this host
-        final double allocatedCpuRatio = node.minCpuCores / totalNumCpuCores;
+        final double allocatedCpuRatio = node.getMinCpuCores() / totalNumCpuCores;
         double cpuUsageRatioOfAllocated = lastCpuMetric.getCpuUsageRatio() / allocatedCpuRatio;
         double cpuKernelUsageRatioOfAllocated = lastCpuMetric.getCpuKernelUsageRatio() / allocatedCpuRatio;
 
