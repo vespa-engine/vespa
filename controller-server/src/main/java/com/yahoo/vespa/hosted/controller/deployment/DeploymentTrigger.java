@@ -47,6 +47,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.Bui
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
@@ -295,6 +296,8 @@ public class DeploymentTrigger {
                         else if (testJobs == null) {
                             if ( ! alreadyTriggered(application, target))
                                 testJobs = testJobsFor(application, target, "Testing deployment for " + job.jobName(), completedAt.orElse(clock.instant()));
+                            else
+                                testJobs = emptyList();
                         }
                     }
                 }
@@ -349,6 +352,18 @@ public class DeploymentTrigger {
                                .lastTriggered().on(state.targetApplication)
                                .isEmpty();
         return true;
+    }
+
+    private Optional<Instant> testedAt(Application application, State target) {
+        return max(successOn(application, systemTest, target).map(JobRun::at),
+                   successOn(application, stagingTest, target).map(JobRun::at));
+    }
+
+    private boolean alreadyTriggered(Application application, State target) {
+        return ! JobList.from(application).production()
+                        .lastTriggered().on(target.targetPlatform)
+                        .lastTriggered().on(target.targetApplication)
+                        .isEmpty();
     }
 
     /**
