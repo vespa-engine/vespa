@@ -292,8 +292,10 @@ public class DeploymentTrigger {
                             if (completedAt.isPresent())
                                 jobs.add(deploymentJob(application, target, application.change(), job, reason, completedAt.get(), stepJobs));
                         }
-                        else if (testJobs == null)
-                            testJobs = testJobsFor(application, target, "Testing deployment for " + job.jobName(), completedAt.orElse(clock.instant()));
+                        else if (testJobs == null) {
+                            if ( ! alreadyTriggered(application, target))
+                                testJobs = testJobsFor(application, target, "Testing deployment for " + job.jobName(), completedAt.orElse(clock.instant()));
+                        }
                     }
                 }
                 else { // All jobs are complete -- find the time of completion of this step.
