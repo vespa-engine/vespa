@@ -125,7 +125,7 @@ public class NodePatcher {
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
             case HARDWARE_FAILURE_DESCRIPTION:
-                return node.with(node.status().withHardwareFailureDescription(asOptionalString(value)));
+                return node.with(node.status().withHardwareFailureDescription(removeQuotedNulls(asOptionalString(value))));
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
@@ -182,7 +182,7 @@ public class NodePatcher {
         return field.type().equals(Type.NIX) ? Optional.empty() : Optional.of(asString(field));
     }
 
-    // Remove when we no longer have "null" strings for this field in the node repo
+    // Allows us to clear optional flags by passing "null" as slime does not have an empty (but present) representation
     private Optional<String> removeQuotedNulls(Optional<String> value) {
         return value.filter(v -> !v.equals("null"));
     }
