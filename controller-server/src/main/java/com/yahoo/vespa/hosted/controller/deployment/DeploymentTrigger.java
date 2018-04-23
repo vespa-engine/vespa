@@ -95,7 +95,7 @@ public class DeploymentTrigger {
      * Called each time a job completes (successfully or not) to record information used when deciding what to trigger.
      */
     public void notifyOfCompletion(JobReport report) {
-        log.log(LogLevel.INFO, String.format("Got notified of %s for %s of %s (%d).",
+        log.log(LogLevel.DEBUG, String.format("Got notified of %s for %s of %s (%d).",
                                              report.jobError().map(JobError::toString).orElse("success"),
                                              report.jobType(),
                                              report.applicationId(),
@@ -277,7 +277,8 @@ public class DeploymentTrigger {
                     : application.deploymentSpec().steps();
             List<Step> productionSteps = steps.stream().filter(step -> step.deploysTo(prod) || step.zones().isEmpty()).collect(toList());
 
-            Optional<Instant> completedAt = Optional.of(Instant.EPOCH); // Delays before first production job are ignored.
+            Optional<Instant> completedAt = application.deploymentJobs().statusOf(stagingTest)
+                                                       .flatMap(JobStatus::lastSuccess).map(JobRun::at);
             String reason = "New change available";
             List<Job> testJobs = null;
 

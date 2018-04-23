@@ -120,6 +120,7 @@ public class DeploymentTriggerTest {
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
+                .delay(Duration.ofSeconds(30))
                 .region("us-west-1")
                 .delay(Duration.ofMinutes(2))
                 .delay(Duration.ofMinutes(2)) // Multiple delays are summed up
@@ -134,6 +135,13 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
         tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
         tester.deploymentTrigger().triggerReadyJobs();
+
+        // No jobs have started yet, as 30 seconds have not yet passed.
+        assertEquals(0, mockBuildService.jobs().size());
+        tester.clock().advance(Duration.ofSeconds(30));
+        tester.deploymentTrigger().triggerReadyJobs();
+
+        // 30 seconds later, the first jobs may trigger.
         assertEquals(1, mockBuildService.jobs().size());
         tester.assertRunning(application.id(), productionUsWest1);
 
