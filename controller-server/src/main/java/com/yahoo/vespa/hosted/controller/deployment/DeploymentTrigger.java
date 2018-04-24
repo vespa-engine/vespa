@@ -251,7 +251,7 @@ public class DeploymentTrigger {
                                      .filter(JobError.outOfCapacity::equals).isPresent();
         if (isRetry) reason += "; retrying on out of capacity";
 
-        return new Job(application, target, jobType, reason, availableSince, concurrentlyWith, isRetry, change.application().isPresent());
+        return new Job(application, target, change, jobType, reason, availableSince, concurrentlyWith, isRetry);
     }
 
     private Version targetPlatform(Application application, Change change, Optional<Deployment> deployment) {
@@ -411,13 +411,16 @@ public class DeploymentTrigger {
         if (isRunning(application, job.jobType))
             return false;
 
+        if (completedAt(job.change, application, job.jobType).isPresent())
+            return false; // Job may have completed since it was computed.
+
         if ( ! job.jobType.isProduction())
             return true;
 
         if ( ! job.concurrentlyWith.containsAll(runningProductionJobsFor(application)))
             return false;
 
-        if ( ! application.changeAt(clock.instant()).isPresent())
+        if ( ! job.change.effectiveAt(application.deploymentSpec(), clock.instant()).isPresent())
             return false;
 
         return true;
@@ -455,6 +458,7 @@ public class DeploymentTrigger {
 
     private static class Job extends BuildJob {
 
+        private final Change change;
         private final JobType jobType;
         private final String reason;
         private final Instant availableSince;
@@ -463,14 +467,15 @@ public class DeploymentTrigger {
         private final boolean isApplicationUpgrade;
         private final State target;
 
-        private Job(Application application, State target, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith, boolean isRetry, boolean isApplicationUpgrade) {
+        private Job(Application application, State target, Change change, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith, boolean isRetry) {
             super(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName());
+            this.change = change;
             this.jobType = jobType;
             this.availableSince = availableSince;
             this.concurrentlyWith = concurrentlyWith;
             this.reason = reason;
             this.isRetry = isRetry;
-            this.isApplicationUpgrade = isApplicationUpgrade;
+            this.isApplicationUpgrade = change.application().isPresent();
             this.target = target;
         }
 
