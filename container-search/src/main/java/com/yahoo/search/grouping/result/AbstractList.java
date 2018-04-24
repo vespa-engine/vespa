@@ -45,4 +45,10 @@ public abstract class AbstractList extends HitGroup {
         return continuations;
     }
 
+    @Override
+    public void close() {
+        super.close();
+        continuations.clear();
+    }
+
 }

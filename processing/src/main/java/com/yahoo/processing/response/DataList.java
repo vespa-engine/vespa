@@ -28,9 +28,9 @@ public interface DataList<DATATYPE extends Data> extends Data {
      * @param data the data to add to this
      * @return the input data instance, for chaining
      */
-    public DATATYPE add(DATATYPE data);
+    DATATYPE add(DATATYPE data);
 
-    public DATATYPE get(int index);
+    DATATYPE get(int index);
 
     /**
      * Returns the content of this as a List.
@@ -38,7 +38,7 @@ public interface DataList<DATATYPE extends Data> extends Data {
      * If the returned list is editable and this is frozen, the only allowed operation is to add new items
      * to the end of the list.
      */
-    public List<DATATYPE> asList();
+    List<DATATYPE> asList();
 
     /**
      * Returns the buffer of incoming/future data to this list.
@@ -49,7 +49,7 @@ public interface DataList<DATATYPE extends Data> extends Data {
      * such lists responds to <i>read</i> calls to IncomingData as expected and without
      * incurring any synchronization, and throws an exception on <i>write</i> calls.
      */
-    public IncomingData<DATATYPE> incoming();
+    IncomingData<DATATYPE> incoming();
 
     /**
      * Returns a future in which all incoming data in this has become available.
@@ -73,13 +73,22 @@ public interface DataList<DATATYPE extends Data> extends Data {
      * Making this call on a list which does not support future data always returns immediately and
      * causes no memory synchronization cost.
      */
-    public ListenableFuture<DataList<DATATYPE>> complete();
+    ListenableFuture<DataList<DATATYPE>> complete();
 
     /**
      * Adds a listener which is invoked every time data is added to this list.
      * The listener is always invoked on the same thread which is adding the data,
      * and hence it can modify this list freely without synchronization.
      */
-    public void addDataListener(Runnable runnable);
+    void addDataListener(Runnable runnable);
+
+    /**
+     * Notify this list that is will never be accessed again, neither for read nor write.
+     * Implementations can override this as an optimization to release any data held in the list
+     * for garbage collection.
+     *
+     * This default implementation does nothing.
+     */
+    default void close() {};
 
 }

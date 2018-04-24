@@ -365,13 +365,14 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
             dataListListenerStack.removeFirst();
             if (parent != null)
                 parent.childCompleted();
+            list.close();
         }
 
         /** Called each time a direct child of this completed. */
         private void childCompleted() {
             uncompletedChildren--;
 
-            if (uncompletedChildren>0) return;
+            if (uncompletedChildren > 0) return;
             if (list.incoming().isComplete()) // i) if the parent had completed earlier, render it now, see ii)
                 run();
         }
@@ -506,7 +507,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
             this.dataListListener = dataListListener;
         }
 
-        protected void render() throws IOException, InterruptedException, ExecutionException {
+        protected void render() throws IOException {
             dataListListener.renderData();
             flushIfLikelyToSuspend(dataListListener.list);
         }

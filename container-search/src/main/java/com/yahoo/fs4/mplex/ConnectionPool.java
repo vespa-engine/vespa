@@ -13,10 +13,11 @@ import com.yahoo.log.LogLevel;
 /**
  * Pool of FS4 connections.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ConnectionPool {
-    final static int CLEANINGPERIOD = 1000; // Execute every second
+
+    private final static int CLEANINGPERIOD = 1000; // Execute every second
     private final Queue<FS4Connection> connections = new ConcurrentLinkedQueue<>();
     private final AtomicInteger activeConnections = new AtomicInteger(0);
     private final AtomicInteger passiveConnections = new AtomicInteger(0);

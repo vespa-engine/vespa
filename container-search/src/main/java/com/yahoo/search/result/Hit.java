@@ -797,4 +797,10 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
+    protected void close() {
+        query = null;
+        fields = null;
+        unmodifiableFieldMap = null;
+    }
+
 }

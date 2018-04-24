@@ -10,7 +10,7 @@ import com.yahoo.search.result.Relevance;
  * as fields, use {@link #getField(String)} to access), {@link GroupList} and {@link HitList}. Use the {@link
  * com.yahoo.search.grouping.GroupingRequest#getResultGroup(com.yahoo.search.Result)} to retrieve an instance of this.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class Group extends HitGroup {
 
