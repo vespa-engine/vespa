@@ -233,20 +233,6 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     /**
-     * Only used to fill the sddocname field when using direct dispatching as that is normally done in VespaBackEndSearcher.decodeSummary
-     *
-     * @param result The result
-     */
-    private void fillSDDocName(Result result) {
-        DocumentDatabase db = getDocumentDatabase(result.getQuery());
-        for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
-            Hit hit = i.next();
-            if (hit instanceof FastHit) {
-                hit.setField(Hit.SDDOCNAME_FIELD, db.getName());
-            }
-        }
-    }
-    /**
      * Perform a partial docsum fill for a temporary result
      * representing a partition of the complete fill request.
      *
@@ -267,7 +253,6 @@ public class FastSearcher extends VespaBackEndSearcher {
 
             CompressionType compression =
                 CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
-            fillSDDocName(result);
             dispatcher.fill(result, summaryClass, getDocumentDatabase(query), compression);
             return;
         }

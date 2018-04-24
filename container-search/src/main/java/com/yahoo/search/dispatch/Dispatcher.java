@@ -264,6 +264,7 @@ public class Dispatcher extends AbstractComponent {
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
                 if (summary.fieldCount() != 0) {
+                    hits.get(i).setField(Hit.SDDOCNAME_FIELD, documentDb.getName());
                     hits.get(i).addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
                     hits.get(i).setFilled(summaryClass);
                 } else {
