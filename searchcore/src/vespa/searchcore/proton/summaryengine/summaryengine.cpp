@@ -3,11 +3,16 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.summaryengine.summaryengine");
+#include <vespa/vespalib/data/slime/slime.h>
 
 using namespace search::engine;
 using namespace proton;
+using vespalib::Memory;
+using vespalib::slime::Inspector;
 
 namespace {
+
+Memory DOCSUMS("docsums");
 
 class DocsumTask : public vespalib::Executor::Task {
 private:
@@ -27,6 +32,15 @@ public:
         _client.getDocsumsDone(_engine.getDocsums(_request.release()));
     }
 };
+
+uint32_t getNumDocs(const DocsumReply &reply) {
+    if (reply._root) {
+        const Inspector &root = reply._root->get();
+        return root[DOCSUMS].entries();
+    } else {
+        return reply.docsums.size();
+    }
+}
 
 } // namespace anonymous
 
@@ -123,7 +137,7 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
                 reply = snapshot->get()->getDocsums(*req); // use the first handler
             }
         }
-        updateDocsumMetrics(req->getTimeUsed().sec(), reply->docsums.size());
+        updateDocsumMetrics(req->getTimeUsed().sec(), getNumDocs(*reply));
     }
     reply->request = std::move(req);
 
