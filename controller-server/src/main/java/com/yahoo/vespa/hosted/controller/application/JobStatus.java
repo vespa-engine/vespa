@@ -186,7 +186,11 @@ public class JobStatus {
 
         @Override
         public String toString() {
-            return "job run " + id + " of version " + platform + " " + application + " at " + at;
+            return "job run " + id + " of version " + platform +
+                   (sourcePlatform.map(version -> " (" + version + ")").orElse("")) +
+                   " " + application.id() +
+                   (sourceApplication.map(version -> " (" + version.id() + ")").orElse("")) +
+                   " at " + at;
         }
 
         @Override
@@ -199,6 +203,8 @@ public class JobStatus {
             if (id != run.id) return false;
             if (!platform.equals(run.platform)) return false;
             if (!application.equals(run.application)) return false;
+            if (!sourcePlatform.equals(run.sourcePlatform)) return false;
+            if (!sourceApplication.equals(run.sourceApplication)) return false;
             return at.equals(run.at);
         }
 
@@ -207,10 +213,11 @@ public class JobStatus {
             int result = (int) (id ^ (id >>> 32));
             result = 31 * result + platform.hashCode();
             result = 31 * result + application.hashCode();
+            result = 31 * result + sourcePlatform.hashCode();
+            result = 31 * result + sourceApplication.hashCode();
             result = 31 * result + at.hashCode();
             return result;
         }
-
     }
 
 }
