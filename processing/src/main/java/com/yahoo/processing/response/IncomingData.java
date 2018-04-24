@@ -22,7 +22,7 @@ public interface IncomingData<DATATYPE extends Data> {
      * Note that accessing the owner from the thread producing incoming data
      * is generally *not* thread safe.
      */
-    public DataList<DATATYPE> getOwner();
+    DataList<DATATYPE> getOwner();
 
     /**
      * Returns a future in which all the incoming data that will be produced in this is available.
@@ -35,57 +35,57 @@ public interface IncomingData<DATATYPE extends Data> {
      * <p>
      * This return the list owning this for convenience.
      */
-    public abstract ListenableFuture<DataList<DATATYPE>> completed();
+    ListenableFuture<DataList<DATATYPE>> completed();
 
     /**
      * Returns whether this is complete
      */
-    public boolean isComplete();
+    boolean isComplete();
 
     /**
      * Add new data and mark this as completed
      *
      * @throws IllegalStateException if this is already complete or does not allow writes
      */
-    public void addLast(DATATYPE data);
+    void addLast(DATATYPE data);
 
     /**
      * Add new data without completing this
      *
      * @throws IllegalStateException if this is already complete or does not allow writes
      */
-    public void add(DATATYPE data);
+    void add(DATATYPE data);
 
     /**
      * Add new data and mark this as completed
      *
      * @throws IllegalStateException if this is already complete or does not allow writes
      */
-    public void addLast(List<DATATYPE> data);
+    void addLast(List<DATATYPE> data);
 
     /**
      * Add new data without completing this.
      *
      * @throws IllegalStateException if this is already complete or does not allow writes
      */
-    public void add(List<DATATYPE> data);
+    void add(List<DATATYPE> data);
 
     /**
      * Mark this as completed and notify any listeners. If this is already complete this method does nothing.
      */
-    public void markComplete();
+    void markComplete();
 
     /**
      * Get and remove all the data currently available in this
      */
-    public List<DATATYPE> drain();
+    List<DATATYPE> drain();
 
     /**
      * Add a listener which will be invoked every time new data is added to this.
      * This listener may be invoked at any time in any thread, any thread synchronization is left
      * to the listener itself
      */
-    public void addNewDataListener(Runnable listener, Executor executor);
+    void addNewDataListener(Runnable listener, Executor executor);
 
     /**
      * Creates a null implementation of this which is empty and complete at creation:
@@ -98,7 +98,7 @@ public interface IncomingData<DATATYPE extends Data> {
      * This allows consumers to check for completion the same way whether or not the data list in question
      * supports asynchronous addition of data, and without incurring unnecessary costs.
      */
-    public static final class NullIncomingData<DATATYPE extends Data> implements IncomingData<DATATYPE> {
+    final class NullIncomingData<DATATYPE extends Data> implements IncomingData<DATATYPE> {
 
         private DataList<DATATYPE> owner;
         private final ImmediateFuture<DATATYPE> completionFuture;

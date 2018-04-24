@@ -17,8 +17,8 @@ import java.util.List;
 public class SectionHitGroup extends HitGroup {
 
     private static final long serialVersionUID = -9048845836777953538L;
-    private List<Source> sources=new ArrayList<>(0);
-    private List<Renderer> renderers=new ArrayList<>(0);
+    private List<Source> sources = new ArrayList<>(0);
+    private List<Renderer> renderers = new ArrayList<>(0);
     private final String displayId;
 
     private boolean leaf=false;
@@ -48,5 +48,11 @@ public class SectionHitGroup extends HitGroup {
     public boolean isLeaf() { return leaf; }
 
     public void setLeaf(boolean leaf) { this.leaf=leaf; }
+
+    @Override
+    public void close() {
+        sources = null;
+        renderers = null;
+    }
 
 }

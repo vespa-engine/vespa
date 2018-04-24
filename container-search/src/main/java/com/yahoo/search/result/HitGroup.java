@@ -68,13 +68,13 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     transient private HitOrderer hitOrderer = null;
 
     /** Accounting the number of subgroups to allow some early returns when the number is 0 */
-    private int subgroupCount=0;
+    private int subgroupCount = 0;
 
     /**
      * The number of hits not cached at this level, not counting hits in subgroups or
      * any nested hitgroups themselves
      */
-    private int notCachedCount=0;
+    private int notCachedCount = 0;
 
     /**
      * A direct reference to the errors of this result, or null if there are no errors.
@@ -919,6 +919,15 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     @Override
     public void addDataListener(Runnable runnable) {
         hits.addListener(runnable);
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        hits = null;
+        unmodifiableHits = null;
+        hitOrderer = null;
+        incomingHits.drain(); // Just to gc as much as possible
     }
 
 }

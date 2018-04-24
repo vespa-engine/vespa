@@ -363,6 +363,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
             endRenderLevel(list);
             stream.flush();
             dataListListenerStack.removeFirst();
+            list.close();
             if (parent != null)
                 parent.childCompleted();
         }
