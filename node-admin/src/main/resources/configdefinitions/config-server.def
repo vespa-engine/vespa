@@ -5,15 +5,24 @@ hosts[]                      string
 port                         int                         default=8080 range=[1,65535]
 scheme                       string                      default="http"
 
+# TODO Remove once self-signed certs are gone
 # Optional options used to authenticate config server
 athenzDomain                 string                      default=""
 serviceName                  string                      default=""
 
+# Configuration of Athenz SIA (Service Identity Agent)
+sia.hostIdentityName         string                      default=""
+sia.configserverIdentityName string                      default=""
+sia.credentialsPath          string                      default=""
+sia.trustStoreFile           string                      default=""
+
+# TODO Remove once self-signed certs are gone
 # Optional options about key store to use when communicating with config server
 keyStoreConfig.path          string                      default=""      # Path to keystore
 keyStoreConfig.type          enum { JKS, PEM, PKCS12 }   default=JKS
 keyStoreConfig.password      string                      default=""
 
+# TODO Remove once self-signed certs are gone
 # Optional options about trust store to use to authenticate config server
 trustStoreConfig.path        string                      default=""
 trustStoreConfig.type        enum { JKS, PEM, PKCS12 }   default=JKS
