@@ -24,7 +24,7 @@ public class Editor {
     private static final Logger logger = Logger.getLogger(Editor.class.getName());
     private static final Charset ENCODING = StandardCharsets.UTF_8;
 
-    private static final int MAX_LENGTH = 300;
+    private static final int MAX_LENGTH = 500;
 
     private final Supplier<List<String>> supplier;
     private final Consumer<List<String>> consumer;
