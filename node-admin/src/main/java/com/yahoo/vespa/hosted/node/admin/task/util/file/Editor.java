@@ -7,7 +7,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -24,7 +24,7 @@ public class Editor {
     private static final Logger logger = Logger.getLogger(Editor.class.getName());
     private static final Charset ENCODING = StandardCharsets.UTF_8;
 
-    private static int maxLength = 300;
+    private static final int MAX_LENGTH = 300;
 
     private final Supplier<List<String>> supplier;
     private final Consumer<List<String>> consumer;
@@ -60,7 +60,7 @@ public class Editor {
 
     public boolean edit(Consumer<String> logConsumer) {
         List<String> lines = supplier.get();
-        List<String> newLines = new ArrayList<>();
+        List<String> newLines = new LinkedList<>();
         StringBuilder diff = new StringBuilder();
         boolean modified = false;
 
@@ -102,7 +102,7 @@ public class Editor {
             return false;
         }
 
-        String diffDescription = diffTooLarge(diff) ? "" : ":\n" + diff.toString();
+        String diffDescription = diffTooLarge(diff) ? ": Diff too large" : ":\n" + diff.toString();
         logConsumer.accept("Patching file " + name + diffDescription);
         consumer.accept(newLines);
         return true;
@@ -127,6 +127,6 @@ public class Editor {
     }
 
     private static boolean diffTooLarge(StringBuilder diff) {
-        return diff.length() > maxLength;
+        return diff.length() > MAX_LENGTH;
     }
 }
