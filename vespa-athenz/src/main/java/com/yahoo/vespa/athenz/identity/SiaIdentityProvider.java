@@ -11,12 +11,16 @@ import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
@@ -29,12 +33,13 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
 
     private static final Duration REFRESH_INTERVAL = Duration.ofHours(1);
 
-    private final AtomicReference<SSLContext> sslContext = new AtomicReference<SSLContext>();
+    private final AtomicReference<SSLContext> sslContext = new AtomicReference<>();
     private final AthenzService service;
     private final File privateKeyFile;
     private final File certificateFile;
     private final File trustStoreFile;
     private final ScheduledExecutorService scheduler;
+    private final Set<Consumer<SSLContext>> listeners = new ConcurrentSkipListSet<>();
 
     @Inject
     public SiaIdentityProvider(SiaProviderConfig config) {
@@ -42,11 +47,17 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
              getPrivateKeyFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
              getCertificateFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
              new File(config.trustStorePath()),
-             new ScheduledThreadPoolExecutor(1, runnable -> {
-                 Thread thread = new Thread(runnable);
-                 thread.setName("sia-identity-provider-sslcontext-updater");
-                 return thread;
-             }));
+             createScheduler());
+    }
+
+    public SiaIdentityProvider(AthenzService service,
+                               Path siaPath,
+                               File trustStoreFile) {
+        this(service,
+             getPrivateKeyFile(siaPath.toString(), service.getDomain().getName(), service.getName()),
+             getCertificateFile(siaPath.toString(), service.getDomain().getName(), service.getName()),
+             trustStoreFile,
+             createScheduler());
     }
 
     public SiaIdentityProvider(AthenzService service,
@@ -61,6 +72,14 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
         this.scheduler = scheduler;
         this.sslContext.set(createIdentitySslContext());
         scheduler.scheduleAtFixedRate(this::reloadSslContext, REFRESH_INTERVAL.toMinutes(), REFRESH_INTERVAL.toMinutes(), TimeUnit.MINUTES);
+    }
+
+    private static ScheduledThreadPoolExecutor createScheduler() {
+        return new ScheduledThreadPoolExecutor(1, runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setName("sia-identity-provider-sslcontext-updater");
+            return thread;
+        });
     }
 
     @Override
@@ -78,6 +97,14 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
         return sslContext.get();
     }
 
+    public void addReloadListener(Consumer<SSLContext> listener) {
+        listeners.add(listener);
+    }
+
+    public void removeReloadListener(Consumer<SSLContext> listener) {
+        listeners.remove(listener);
+    }
+
     private SSLContext createIdentitySslContext() {
         return new SslContextBuilder()
                 .withTrustStore(trustStoreFile, KeyStoreType.JKS)
@@ -88,7 +115,9 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
     private void reloadSslContext() {
         log.log(LogLevel.DEBUG, "Updating SSLContext for identity " + service.getFullName());
         try {
-            this.sslContext.set(createIdentitySslContext());
+            SSLContext sslContext = createIdentitySslContext();
+            this.sslContext.set(sslContext);
+            listeners.forEach(listener -> listener.accept(sslContext));
         } catch (Exception e) {
             log.log(LogLevel.SEVERE, "Failed to update SSLContext: " + e.getMessage(), e);
         }
@@ -107,6 +136,7 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
         try {
             scheduler.shutdownNow();
             scheduler.awaitTermination(90, TimeUnit.SECONDS);
+            listeners.clear();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

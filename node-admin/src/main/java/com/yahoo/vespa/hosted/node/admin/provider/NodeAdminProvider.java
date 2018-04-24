@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.provider;
 import com.google.inject.Inject;
 import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
@@ -22,8 +21,7 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
                              MetricReceiverWrapper metricReceiver,
                              ClassLocking classLocking) {
         ConfigServerClients clients = new RealConfigServerClients(
-                new ConfigServerInfo(configServerConfig),
-                Defaults.getDefaults().vespaHostname());
+                new ConfigServerInfo(configServerConfig));
 
         dockerAdmin = new DockerAdminComponent(configServerConfig,
                 docker,
