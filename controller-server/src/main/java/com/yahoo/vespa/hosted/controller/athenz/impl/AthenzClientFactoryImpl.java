@@ -9,7 +9,7 @@ import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zms.ZMSClient;
 import com.yahoo.athenz.zts.ZTSClient;
-import com.yahoo.container.jdisc.SecretStore;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;

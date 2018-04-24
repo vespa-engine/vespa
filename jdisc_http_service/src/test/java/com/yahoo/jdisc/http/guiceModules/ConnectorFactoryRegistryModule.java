@@ -8,7 +8,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Builder;
-import com.yahoo.jdisc.http.SecretStore;
+
 import com.yahoo.jdisc.http.server.jetty.ConnectorFactory;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers;
 import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
@@ -55,7 +55,8 @@ public class ConnectorFactoryRegistryModule implements Module {
 
     }
 
-    private static final class MockSecretStore implements SecretStore {
+    @SuppressWarnings("deprecation")
+    private static final class MockSecretStore implements com.yahoo.jdisc.http.SecretStore {
 
         @Override
         public String getSecret(String key) {

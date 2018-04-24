@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.restapi.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.container.jdisc.SecretStore;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;

@@ -3,18 +3,19 @@ package com.yahoo.jdisc.http.ssl;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.SecretStore;
 
 /**
  * @author bjorncs
  */
 public class DefaultSslTrustStoreConfigurator implements SslTrustStoreConfigurator {
 
-    private final SecretStore secretStore;
+    @SuppressWarnings("deprecation")
+    private final com.yahoo.jdisc.http.SecretStore secretStore;
     private final ConnectorConfig.Ssl config;
 
     @Inject
-    public DefaultSslTrustStoreConfigurator(ConnectorConfig config, SecretStore secretStore) {
+    @SuppressWarnings("deprecation")
+    public DefaultSslTrustStoreConfigurator(ConnectorConfig config, com.yahoo.jdisc.http.SecretStore secretStore) {
         validateConfig(config.ssl());
         this.secretStore = secretStore;
         this.config = config.ssl();

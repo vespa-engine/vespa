@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http.ssl;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.pem.PemSslKeyStore;
 
 import java.io.IOException;
@@ -20,11 +19,13 @@ public class DefaultSslKeyStoreConfigurator implements SslKeyStoreConfigurator {
 
     private static final Logger log = Logger.getLogger(DefaultSslKeyStoreConfigurator.class.getName());
 
-    private final SecretStore secretStore;
+    @SuppressWarnings("deprecation")
+    private final com.yahoo.jdisc.http.SecretStore secretStore;
     private final ConnectorConfig.Ssl config;
 
     @Inject
-    public DefaultSslKeyStoreConfigurator(ConnectorConfig config, SecretStore secretStore) {
+    @SuppressWarnings("deprecation")
+    public DefaultSslKeyStoreConfigurator(ConnectorConfig config, com.yahoo.jdisc.http.SecretStore secretStore) {
         validateConfig(config.ssl());
         this.secretStore = secretStore;
         this.config = config.ssl();

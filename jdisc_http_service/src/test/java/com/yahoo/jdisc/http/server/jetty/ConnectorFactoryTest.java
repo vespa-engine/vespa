@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreConfigurator;
 import org.eclipse.jetty.server.Request;
@@ -139,7 +138,8 @@ public class ConnectorFactoryTest {
     private static class DummyContext implements Metric.Context {
     }
 
-    private static final class ThrowingSecretStore implements SecretStore {
+    @SuppressWarnings("deprecation")
+    private static final class ThrowingSecretStore implements com.yahoo.jdisc.http.SecretStore {
 
         @Override
         public String getSecret(String key) {

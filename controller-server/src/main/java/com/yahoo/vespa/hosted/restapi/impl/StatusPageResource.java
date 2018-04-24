@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.restapi.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.container.jdisc.SecretStore;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
