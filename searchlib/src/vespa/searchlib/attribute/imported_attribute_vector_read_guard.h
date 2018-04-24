@@ -8,8 +8,6 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
 
-namespace search { class IGidToLidMapper; }
-
 namespace search::attribute {
 
 class BitVectorSearchCache;
@@ -40,8 +38,6 @@ private:
     const ReferenceAttribute        &_reference_attribute;
 protected:
     const IAttributeVector          &_target_attribute;
-private:
-    std::unique_ptr<IGidToLidMapper> _mapper;
 
 protected:
     uint32_t getReferencedLid(uint32_t lid) const {

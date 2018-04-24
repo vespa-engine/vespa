@@ -4,8 +4,6 @@
 #include "imported_attribute_vector.h"
 #include "imported_search_context.h"
 #include "reference_attribute.h"
-#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
-#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/query/queryterm.h>
 
 namespace search {
@@ -21,8 +19,7 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
       _reference_attribute_guard(imported_attribute.getReferenceAttribute()),
       _target_attribute_guard(imported_attribute.getTargetAttribute()->makeReadGuard(stableEnumGuard)),
       _reference_attribute(*imported_attribute.getReferenceAttribute()),
-      _target_attribute(*_target_attribute_guard->attribute()),
-      _mapper(_reference_attribute.getGidToLidMapperFactory()->getMapper())
+      _target_attribute(*_target_attribute_guard->attribute())
 {
     _referencedLids = _reference_attribute.getReferencedLids();
 }
