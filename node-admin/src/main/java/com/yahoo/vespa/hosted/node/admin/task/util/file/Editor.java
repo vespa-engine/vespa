@@ -30,6 +30,7 @@ public class Editor {
     private final Consumer<List<String>> consumer;
     private final String name;
     private final LineEditor editor;
+    private int diffSize = 0;
 
     /**
      * Read the file which must be encoded in UTF-8, use the LineEditor to edit it,
@@ -102,7 +103,7 @@ public class Editor {
             return false;
         }
 
-        String diffDescription = diffTooLarge(diff) ? ": Diff too large" : ":\n" + diff.toString();
+        String diffDescription = diffTooLarge() ? ": Diff too large (" + diffSize + ")" : ":\n" + diff.toString();
         logConsumer.accept("Patching file " + name + diffDescription);
         consumer.accept(newLines);
         return true;
@@ -112,21 +113,25 @@ public class Editor {
         return this.edit(line -> context.recordSystemModification(logger, line));
     }
 
-    private static void maybeAdd(StringBuilder diff, List<String> lines) {
+    private void maybeAdd(StringBuilder diff, List<String> lines) {
         for (String line : lines) {
-            if (!diffTooLarge(diff)) {
+            // 2 for '+' and '\n'
+            diffSize += 2 + line.length();
+            if (!diffTooLarge()) {
                 diff.append('+').append(line).append('\n');
             }
         }
     }
 
-    private static void maybeRemove(StringBuilder diff, String line) {
-        if (!diffTooLarge(diff)) {
+    private void maybeRemove(StringBuilder diff, String line) {
+        // 2 for '-' and '\n'
+        diffSize += 2 + line.length();
+        if (!diffTooLarge()) {
             diff.append('-').append(line).append('\n');
         }
     }
 
-    private static boolean diffTooLarge(StringBuilder diff) {
-        return diff.length() > MAX_LENGTH;
+    private boolean diffTooLarge() {
+        return diffSize > MAX_LENGTH;
     }
 }
