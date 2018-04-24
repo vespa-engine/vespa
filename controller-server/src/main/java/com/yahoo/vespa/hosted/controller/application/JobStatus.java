@@ -145,12 +145,12 @@ public class JobStatus {
         private final String reason;
         private final Instant at;
 
-        public JobRun(long id, Version platform, ApplicationVersion applicationVersion, Optional<Version> sourcePlatform, Optional<ApplicationVersion> application, String reason, Instant at) {
+        public JobRun(long id, Version platform, ApplicationVersion application, Optional<Version> sourcePlatform, Optional<ApplicationVersion> sourceApplication, String reason, Instant at) {
             this.id = id;
             this.platform = requireNonNull(platform);
-            this.application = requireNonNull(applicationVersion);
+            this.application = requireNonNull(application);
             this.sourcePlatform = sourcePlatform;
-            this.sourceApplication = application;
+            this.sourceApplication = sourceApplication;
             this.reason = requireNonNull(reason);
             this.at = requireNonNull(at);
         }
