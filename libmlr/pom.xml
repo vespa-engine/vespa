@@ -29,10 +29,10 @@
             <arg>-Werror</arg>
           </compilerArgs>
           <showWarnings>true</showWarnings>
-          <source>1.8</source>
-          <target>1.8</target>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
+          <source>1.9</source>
+          <target>1.9</target>
           <optimize>true</optimize>
         </configuration>
       </plugin>
