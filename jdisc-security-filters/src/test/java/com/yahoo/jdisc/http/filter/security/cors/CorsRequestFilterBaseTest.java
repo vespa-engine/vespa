@@ -52,7 +52,7 @@ public class CorsRequestFilterBaseTest {
         }
 
         @Override
-        protected Optional<ErrorResponse> filter(DiscFilterRequest request) {
+        protected Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
             return Optional.ofNullable(this.errorResponse);
         }
     }

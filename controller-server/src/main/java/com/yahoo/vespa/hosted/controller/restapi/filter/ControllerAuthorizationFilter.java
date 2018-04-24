@@ -78,7 +78,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     // NOTE: Be aware of the ordering of the path pattern matching. Semantics may change if the patterns are evaluated
     //       in different order.
     @Override
-    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
+    public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         Method method = getMethod(request);
         if (isWhiteListedMethod(method)) return Optional.empty();
 

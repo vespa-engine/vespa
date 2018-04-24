@@ -58,7 +58,7 @@ public class AthenzPrincipalFilter extends CorsRequestFilterBase {
     }
 
     @Override
-    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
+    public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
             Optional<AthenzPrincipal> certificatePrincipal = getClientCertificate(request)
                     .map(AthenzIdentities::from)
