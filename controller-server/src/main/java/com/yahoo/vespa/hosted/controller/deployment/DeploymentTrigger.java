@@ -95,7 +95,7 @@ public class DeploymentTrigger {
      * Called each time a job completes (successfully or not) to record information used when deciding what to trigger.
      */
     public void notifyOfCompletion(JobReport report) {
-        log.log(LogLevel.DEBUG, String.format("Got notified of %s for %s of %s (%d).",
+        log.log(LogLevel.INFO, String.format("Got notified of %s for %s of %s (%d).",
                                              report.jobError().map(JobError::toString).orElse("success"),
                                              report.jobType(),
                                              report.applicationId(),
@@ -335,7 +335,8 @@ public class DeploymentTrigger {
         List<Job> jobs = new ArrayList<>();
         for (Step step : steps.stream().filter(step -> step.deploysTo(test) || step.deploysTo(staging)).collect(toList())) {
             for (JobType jobType : step.zones().stream().map(order::toJob).collect(toList())) {
-                Optional<JobRun> completion = successOn(application, jobType, target);
+                Optional<JobRun> completion = successOn(application, jobType, target)
+                        .filter(run -> jobType != stagingTest || sourcesMatchIfPresent(target, run));
                 if (completion.isPresent())
                     availableSince = completion.get().at();
                 else if (isTested(application, target, jobType))
@@ -355,10 +356,12 @@ public class DeploymentTrigger {
         return true;
     }
 
+    /** If the given state's sources are present and differ from its targets, returns whether they are equal to those of the given job run. */
     private static boolean sourcesMatchIfPresent(State target, JobRun jobRun) {
-        return true;
-        //return (   (target.sourcePlatform.equals(jobRun.sourcePlatform()) || ! target.sourcePlatform.isPresent())
-                //&& (target.sourceApplication.equals(jobRun.sourceApplication()) || ! target.sourceApplication.isPresent()));
+        return   (   ! target.sourcePlatform.filter(version -> ! version.equals(target.targetPlatform)).isPresent()
+                  ||   target.sourcePlatform.equals(jobRun.sourcePlatform()))
+              && (   ! target.sourceApplication.filter(version -> ! version.equals(target.targetApplication)).isPresent()
+                  ||   target.sourceApplication.equals(jobRun.sourceApplication()));
     }
 
     private static boolean targetsMatch(State target, JobRun jobRun) {
@@ -411,7 +414,7 @@ public class DeploymentTrigger {
         if (isRunning(application, job.jobType))
             return false;
 
-        if (completedAt(job.change, application, job.jobType).isPresent())
+        if (successOn(application, job.jobType, job.target).filter(run -> sourcesMatchIfPresent(job.target, run)).isPresent())
             return false; // Job may have completed since it was computed.
 
         if ( ! job.jobType.isProduction())
@@ -508,11 +511,13 @@ public class DeploymentTrigger {
 
         @Override
         public String toString() {
-            return String.format("platform %s %s, application %s %s",
+            return String.format("platform %s%s, application %s%s",
                                  targetPlatform,
-                                 sourcePlatform.map(v -> "(from " + v + ")").orElse(""),
+                                 sourcePlatform.filter(version -> ! version.equals(targetPlatform))
+                                               .map(v -> " (from " + v + ")").orElse(""),
                                  targetApplication.id(),
-                                 sourceApplication.map(v -> "(from " + v.id() + ")").orElse(""));
+                                 sourceApplication.filter(version -> ! version.equals(targetApplication))
+                                                  .map(v -> " (from " + v.id() + ")").orElse(""));
         }
 
     }

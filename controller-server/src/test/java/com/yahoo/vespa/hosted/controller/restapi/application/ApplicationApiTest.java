@@ -515,9 +515,25 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .projectId(projectId)
                         .submit();
 
+        // staging-test again for us-east-3
+        String stagingPath = String.format("/application/v4/tenant/%s/application/%s/environment/staging/region/us-east-3/instance/default",
+                                           id.tenant().value(), id.application().value());
+        tester.assertResponse(request(stagingPath, POST)
+                                      .data(deployData)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              new File("deploy-result.json"));
+        tester.assertResponse(request(stagingPath, DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
+        controllerTester.jobCompletion(DeploymentJobs.JobType.stagingTest)
+                        .application(id)
+                        .projectId(projectId)
+                        .submit();
+
         // us-east-3
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/deploy", POST)
-                                      .data(deployData).screwdriverIdentity(SCREWDRIVER_ID),
+                                      .data(deployData)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         controllerTester.jobCompletion(DeploymentJobs.JobType.productionUsEast3)
                         .application(id)

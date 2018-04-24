@@ -94,7 +94,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1",
+        "reason": "Testing deployment for production-us-east-3",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -108,7 +108,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1",
+        "reason": "Testing deployment for production-us-east-3",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -122,7 +122,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1",
+        "reason": "Testing deployment for production-us-east-3",
         "at": "(ignore)"
       }
     },
