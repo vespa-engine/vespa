@@ -371,7 +371,7 @@ public:
      *
      * @return committed docid limit for the attribute.
      */
-    virtual uint32_t getCommittedDocIdLimitSlow() const = 0;
+    virtual uint32_t getCommittedDocIdLimit() const = 0;
 
     /*
      * Returns whether the current attribute vector is an imported attribute

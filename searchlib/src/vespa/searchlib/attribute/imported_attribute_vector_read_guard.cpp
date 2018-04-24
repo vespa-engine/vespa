@@ -142,7 +142,7 @@ bool ImportedAttributeVectorReadGuard::getIsFastSearch() const {
     return _target_attribute.getIsFastSearch();
 }
 
-uint32_t ImportedAttributeVectorReadGuard::getCommittedDocIdLimitSlow() const {
+uint32_t ImportedAttributeVectorReadGuard::getCommittedDocIdLimit() const {
     return _reference_attribute.getCommittedDocIdLimit();
 }
 
