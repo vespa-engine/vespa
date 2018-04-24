@@ -5,8 +5,8 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -14,10 +14,11 @@ import java.util.List;
  */
 class FilterTableLineEditor implements LineEditor {
 
-    private final LinkedList<String> wantedRules;
+    private final List<String> wantedRules;
+    private boolean removeRemaining = false;
 
     FilterTableLineEditor(List<String> wantedRules) {
-        this.wantedRules = new LinkedList<>(wantedRules);
+        this.wantedRules = new ArrayList<>(wantedRules);
     }
 
     static FilterTableLineEditor from(Acl acl, IPVersion ipVersion) {
@@ -27,8 +28,16 @@ class FilterTableLineEditor implements LineEditor {
 
     @Override
     public LineEdit edit(String line) {
-        String wantedRule = wantedRules.pop();
-        return wantedRule.equals(line) ? LineEdit.none() : LineEdit.replaceWith(wantedRule);
+        if (removeRemaining) {
+            return LineEdit.remove();
+        }
+        if (wantedRules.indexOf(line) == 0) {
+            wantedRules.remove(line);
+            return LineEdit.none();
+        } else {
+            removeRemaining = true;
+            return LineEdit.remove();
+        }
     }
 
     @Override
