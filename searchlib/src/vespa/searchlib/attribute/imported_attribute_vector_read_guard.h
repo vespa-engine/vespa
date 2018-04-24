@@ -19,6 +19,11 @@ class ReferenceAttribute;
 /*
  * Short lived attribute vector that does not store values on its own.
  *
+ * Read guards are held on
+ * - target attribute, to ensure that reads are safe.
+ * - target document meta store, to avoid referenced lids being reused.
+ * - reference attribute, to ensure that access to lid mapping is safe.
+ *
  * Extra information for direct lid to referenced lid mapping with
  * boundary check is setup during construction.
  */
