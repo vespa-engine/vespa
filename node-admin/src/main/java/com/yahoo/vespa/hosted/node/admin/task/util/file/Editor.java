@@ -7,7 +7,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -24,13 +24,12 @@ public class Editor {
     private static final Logger logger = Logger.getLogger(Editor.class.getName());
     private static final Charset ENCODING = StandardCharsets.UTF_8;
 
-    private static final int MAX_LENGTH = 500;
+    private static int maxLength = 300;
 
     private final Supplier<List<String>> supplier;
     private final Consumer<List<String>> consumer;
     private final String name;
     private final LineEditor editor;
-    private int diffSize = 0;
 
     /**
      * Read the file which must be encoded in UTF-8, use the LineEditor to edit it,
@@ -61,7 +60,7 @@ public class Editor {
 
     public boolean edit(Consumer<String> logConsumer) {
         List<String> lines = supplier.get();
-        List<String> newLines = new LinkedList<>();
+        List<String> newLines = new ArrayList<>();
         StringBuilder diff = new StringBuilder();
         boolean modified = false;
 
@@ -103,7 +102,7 @@ public class Editor {
             return false;
         }
 
-        String diffDescription = diffTooLarge() ? ": Diff too large (" + diffSize + ")" : ":\n" + diff.toString();
+        String diffDescription = diffTooLarge(diff) ? "" : ":\n" + diff.toString();
         logConsumer.accept("Patching file " + name + diffDescription);
         consumer.accept(newLines);
         return true;
@@ -113,25 +112,21 @@ public class Editor {
         return this.edit(line -> context.recordSystemModification(logger, line));
     }
 
-    private void maybeAdd(StringBuilder diff, List<String> lines) {
+    private static void maybeAdd(StringBuilder diff, List<String> lines) {
         for (String line : lines) {
-            // 2 for '+' and '\n'
-            diffSize += 2 + line.length();
-            if (!diffTooLarge()) {
+            if (!diffTooLarge(diff)) {
                 diff.append('+').append(line).append('\n');
             }
         }
     }
 
-    private void maybeRemove(StringBuilder diff, String line) {
-        // 2 for '-' and '\n'
-        diffSize += 2 + line.length();
-        if (!diffTooLarge()) {
+    private static void maybeRemove(StringBuilder diff, String line) {
+        if (!diffTooLarge(diff)) {
             diff.append('-').append(line).append('\n');
         }
     }
 
-    private boolean diffTooLarge() {
-        return diffSize > MAX_LENGTH;
+    private static boolean diffTooLarge(StringBuilder diff) {
+        return diff.length() > maxLength;
     }
 }

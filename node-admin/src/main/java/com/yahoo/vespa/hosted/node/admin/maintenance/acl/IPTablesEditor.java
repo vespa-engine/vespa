@@ -22,9 +22,10 @@ import java.util.stream.Collectors;
 /**
  * Edit the iptables for docker containers.
  */
-class IPTablesEditor {
+public class IPTablesEditor {
 
-    private final PrefixLogger log;
+    private static final PrefixLogger log = PrefixLogger.getNodeAdminLogger(AclMaintainer.class);
+
     private final DockerOperations dockerOperations;
     private final ContainerName containerName;
     private final Consumer<String> testInterceptor;
@@ -37,7 +38,6 @@ class IPTablesEditor {
         this.dockerOperations = dockerOperations;
         this.containerName = containerName;
         this.testInterceptor = testInterceptor;
-        this.log = PrefixLogger.getNodeAgentLogger(AclMaintainer.class, containerName);
     }
 
     public static boolean editFlushOnError(DockerOperations dockerOperations, ContainerName containerName, IPVersion ipVersion, String table, LineEditor lineEditor) {
