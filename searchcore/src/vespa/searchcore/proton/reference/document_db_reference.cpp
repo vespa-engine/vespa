@@ -40,7 +40,7 @@ DocumentDBReference::getAttribute(vespalib::stringref name)
 }
 
 std::shared_ptr<const search::IDocumentMetaStoreContext>
-DocumentDBReference::getDocumentMetaStoreContext() const
+DocumentDBReference::getDocumentMetaStore() const
 {
     return _dmsContext;
 }

@@ -27,7 +27,7 @@ public:
     using SP = std::shared_ptr<IDocumentDBReference>;
     virtual ~IDocumentDBReference() { }
     virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref name) = 0;
-    virtual std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStoreContext() const = 0;
+    virtual std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const = 0;
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() = 0;
     virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) = 0;
 };
