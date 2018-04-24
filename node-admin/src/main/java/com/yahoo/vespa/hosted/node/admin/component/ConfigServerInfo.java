@@ -29,7 +29,7 @@ public class ConfigServerInfo {
     private final Optional<KeyStoreOptions> keyStoreOptions;
     private final Optional<KeyStoreOptions> trustStoreOptions;
     private final Optional<AthenzIdentity> athenzIdentity;
-    private final ConfigServerConfig.Sia siaConfig;
+    private final Optional<ConfigServerConfig.Sia> siaConfig;
 
     public ConfigServerInfo(ConfigServerConfig config) {
         this.configServerHostNames = config.hosts();
@@ -81,7 +81,7 @@ public class ConfigServerInfo {
     }
 
     public Optional<ConfigServerConfig.Sia> getSiaConfig() {
-        return Optional.ofNullable(siaConfig);
+        return siaConfig;
     }
 
     private static Map<String, URI> createConfigServerUris(
@@ -93,13 +93,13 @@ public class ConfigServerInfo {
                 hostname -> URI.create(scheme + "://" + hostname + ":" + port)));
     }
 
-    private static ConfigServerConfig.Sia verifySiaConfig(ConfigServerConfig.Sia sia) {
+    private static Optional<ConfigServerConfig.Sia> verifySiaConfig(ConfigServerConfig.Sia sia) {
         List<String> configParams = Arrays.asList(
                 sia.credentialsPath(), sia.configserverIdentityName(), sia.hostIdentityName(), sia.trustStoreFile());
         if (configParams.stream().allMatch(String::isEmpty)) {
-            return null;
+            return Optional.empty();
         } else if (configParams.stream().noneMatch(String::isEmpty)) {
-            return sia;
+            return Optional.of(sia);
         } else {
             throw new IllegalArgumentException("Inconsistent sia config: " + sia);
         }
