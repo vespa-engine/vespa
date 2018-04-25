@@ -155,35 +155,36 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     /** The first upgrade job to fail on this version, for this application */
     private Optional<JobStatus> firstFailingOn(Version version, Application application) {
         return JobList.from(application)
-                .failing()
-                .not().failingApplicationChange()
-                .not().failingBecause(outOfCapacity)
-                .lastCompleted().on(version)
-                .asList().stream()
-                .min(comparing(job -> job.lastCompleted().get().at()));
+                      .failing()
+                      .not().failingApplicationChange()
+                      .not().failingBecause(outOfCapacity)
+                      .lastCompleted().on(version)
+                      .asList().stream()
+                      .min(comparing(job -> job.lastCompleted().get().at()));
     }
 
     /** The number of production jobs for this application */
     private int productionJobsFor(Application application) {
         return JobList.from(application)
-                .production()
-                .size();
+                      .production()
+                      .size();
     }
 
     /** The number of production jobs with last success on the given version, for this application */
     private int productionSuccessesFor(Version version, Application application) {
         return JobList.from(application)
-                .production()
-                .lastSuccess().on(version)
-                .size();
+                      .production()
+                      .lastSuccess().on(version)
+                      .size();
     }
 
     /** The last triggered upgrade to this version, for this application */
     private Optional<JobStatus> lastDeployingTo(Version version, Application application) {
         return JobList.from(application)
-                .upgrading()
-                .asList().stream()
-                .max(comparing(job -> job.lastTriggered().get().at()));
+                      .upgrading()
+                      .lastTriggered().on(version)
+                      .asList().stream()
+                      .max(comparing(job -> job.lastTriggered().get().at()));
     }
 
 }
