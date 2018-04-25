@@ -75,7 +75,6 @@ public class DatabaseHandlerTest {
         DatabaseHandler handler = f.createHandler();
         handler.doNextZooKeeperTask(f.createMockContext()); // Database setup step
         handler.saveLatestClusterStateBundle(f.createMockContext(), f.dummyBundle);
-        handler.doNextZooKeeperTask(f.createMockContext()); // Bundle store step
 
         verify(f.mockDatabase).storeLastPublishedStateBundle(eq(f.dummyBundle));
     }
