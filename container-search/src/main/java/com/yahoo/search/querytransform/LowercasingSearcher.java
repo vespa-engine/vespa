@@ -20,8 +20,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 /**
  * Traverse a query tree and lowercase terms based on decision made in subclasses.
  *
- * @since 5.1.3
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public abstract class LowercasingSearcher extends Searcher {
 
