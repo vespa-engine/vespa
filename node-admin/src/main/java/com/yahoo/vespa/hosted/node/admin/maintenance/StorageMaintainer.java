@@ -16,7 +16,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
+import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -70,11 +70,11 @@ public class StorageMaintainer {
                 containerName, Paths.get("/etc/yamas-agent/"));
 
         Path vespaCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
-        SecretAgentScheduleMaker vespaSchedule = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+        SecretAgentCheckConfig vespaSchedule = new SecretAgentCheckConfig("vespa", 60, vespaCheckPath, "all")
                 .withTag("parentHostname", environment.getParentHostHostname());
 
         Path hostLifeCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
-        SecretAgentScheduleMaker hostLifeSchedule = new SecretAgentScheduleMaker("host-life", 60, hostLifeCheckPath)
+        SecretAgentCheckConfig hostLifeSchedule = new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath)
                 .withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
                 .withTag("flavor", node.getFlavor())

@@ -10,11 +10,11 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author valerijf
  */
-public class SecretAgentScheduleMakerTest {
+public class SecretAgentCheckConfigTest {
 
     @Test
     public void generateFullSecretAgentScheduleTest() {
-        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("system-checks", 60,
+        SecretAgentCheckConfig scheduleMaker = new SecretAgentCheckConfig("system-checks", 60,
                 Paths.get("/some/test"), "arg1", "arg2 with space")
                 .withTag("tenantName", "vespa")
                 .withTag("applicationName", "canary-docker")
@@ -49,30 +49,30 @@ public class SecretAgentScheduleMakerTest {
                 "    role: tenants\n" +
                 "    flavor: docker\n" +
                 "    state: active\n" +
-                "    zone: test.us-west-5\n", scheduleMaker.toString());
+                "    zone: test.us-west-5\n", scheduleMaker.render());
     }
 
     @Test
     public void generateMinimalSecretAgentScheduleTest() {
-        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("system-checks", 60,
+        SecretAgentCheckConfig scheduleMaker = new SecretAgentCheckConfig("system-checks", 60,
                 Paths.get("/some/test"));
 
         assertEquals(
                 "- id: system-checks\n" +
                 "  interval: 60\n" +
                 "  user: nobody\n" +
-                "  check: /some/test\n", scheduleMaker.toString());
+                "  check: /some/test\n", scheduleMaker.render());
     }
 
     @Test
     public void generateSecretAgentScheduleWithDifferentUserTest() {
-        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("system-checks", 60,
+        SecretAgentCheckConfig scheduleMaker = new SecretAgentCheckConfig("system-checks", 60,
                 Paths.get("/some/test")).withRunAsUser("barfoo");
 
         assertEquals(
                 "- id: system-checks\n" +
                 "  interval: 60\n" +
                 "  user: barfoo\n" +
-                "  check: /some/test\n", scheduleMaker.toString());
+                "  check: /some/test\n", scheduleMaker.render());
     }
 }
