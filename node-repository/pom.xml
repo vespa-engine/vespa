@@ -83,6 +83,12 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>jdisc-security-filters</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- compile -->
         <dependency>
