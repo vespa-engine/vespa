@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
@@ -443,13 +444,13 @@ public class ControllerTest {
         tester.buildService().clear();
 
         List<BuildService.BuildJob> jobs = new ArrayList<>();
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         tester.triggerUntilQuiescence();
         jobs.add(buildJob(app2, stagingTest));
         jobs.add(buildJob(app1, stagingTest));
         jobs.add(buildJob(app3, stagingTest));
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
         // All three jobs are now eligible, but the one for app3 should trigger first as an outOfCapacity-retry.
@@ -458,12 +459,12 @@ public class ControllerTest {
         jobs.remove(buildJob(app1, stagingTest));
         jobs.remove(buildJob(app2, stagingTest));
         tester.jobCompletion(stagingTest).application(app3).error(JobError.outOfCapacity).submit();
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         tester.triggerUntilQuiescence();
         jobs.add(buildJob(app2, stagingTest));
         jobs.add(buildJob(app1, stagingTest));
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
         tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
@@ -480,7 +481,7 @@ public class ControllerTest {
         jobs.add(buildJob(app1, stagingTest));
         jobs.add(buildJob(app1, systemTest));
         // Tests for app1 trigger before the others since it carries an application upgrade.
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         // Let the test jobs start, remove everything expect system test for app3, which fails with outOfCapacity again.
         tester.triggerUntilQuiescence();
@@ -493,15 +494,25 @@ public class ControllerTest {
         jobs.clear();
         jobs.add(buildJob(app1, stagingTest));
         jobs.add(buildJob(app3, systemTest));
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         tester.triggerUntilQuiescence();
         jobs.add(buildJob(app2, stagingTest));
         jobs.add(buildJob(app1, systemTest));
         jobs.add(buildJob(app3, stagingTest));
         jobs.add(buildJob(app2, systemTest));
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
+    }
+
+    /** Verifies that the given job lists have the same jobs, ignoring order of jobs that may have been triggered concurrently. */
+    private static void assertJobsInOrder(List<BuildService.BuildJob> expected, List<BuildService.BuildJob> actual) {
+        assertEquals(expected.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()),
+                     actual.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()));
+        assertEquals(expected.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()),
+                     actual.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()));
+        assertTrue(expected.containsAll(actual));
+        assertTrue(actual.containsAll(expected));
     }
 
     private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
