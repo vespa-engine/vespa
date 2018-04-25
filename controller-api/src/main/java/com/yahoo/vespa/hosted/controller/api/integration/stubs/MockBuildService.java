@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.idle;
+import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.running;
+
 /**
  * @author jvenstad
  */
@@ -22,8 +25,8 @@ public class MockBuildService extends AbstractComponent implements BuildService 
     }
 
     @Override
-    public boolean isRunning(BuildJob buildJob) {
-        return jobs.contains(buildJob);
+    public JobState stateOf(BuildJob buildJob) {
+        return jobs.contains(buildJob) ? running : idle;
     }
 
     /** List all running jobs. */
