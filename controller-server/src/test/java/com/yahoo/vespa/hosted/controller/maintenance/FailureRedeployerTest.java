@@ -70,7 +70,6 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
         tester.jobCompletion(DeploymentJobs.JobType.productionUsEast3).application(app).unsuccessful().submit();
-        tester.readyJobTrigger().maintain();
         assertEquals("Application starts upgrading to new version", 1, tester.buildService().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
@@ -84,7 +83,6 @@ public class FailureRedeployerTest {
 
         // Production job fails again, and is retried
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
-        tester.readyJobTrigger().maintain();
         assertEquals("Job is retried", Collections.singletonList(ControllerTester.buildJob(app, productionUsEast3)), tester.buildService().jobs());
 
         // Production job finally succeeds
@@ -148,7 +146,7 @@ public class FailureRedeployerTest {
         // Load test data data
         byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/pr-instance-with-dead-locked-job.json"));
         Slime slime = SlimeUtils.jsonToSlime(json);
-        Application application = tester.controllerTester().createApplication(slime);
+        tester.controllerTester().createApplication(slime);
 
         // Failure redeployer does not restart deployment
         tester.readyJobTrigger().maintain();

@@ -59,7 +59,6 @@ public class DeploymentTriggerTest {
         Version version = new Version(5, 1);
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
-        tester.readyJobTrigger().maintain();
 
         // Deploy completely once
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
@@ -80,7 +79,6 @@ public class DeploymentTriggerTest {
 
         // staging-test times out and is retried
         tester.buildService().clear();
-        tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.readyJobTrigger().maintain();
         assertEquals("Retried dead job", 1, tester.buildService().jobs().size());
         assertEquals(JobType.stagingTest.jobName(), tester.buildService().jobs().get(0).jobName());

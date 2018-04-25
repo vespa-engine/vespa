@@ -117,6 +117,10 @@ public class DeploymentTester {
         readyJobTrigger().maintain();
     }
 
+    public void triggerUntilQuiescence() {
+        while (deploymentTrigger().triggerReadyJobs() > 0);
+    }
+
     public Version defaultVespaVersion() {
         return configServer().getDefaultVersion();
     }

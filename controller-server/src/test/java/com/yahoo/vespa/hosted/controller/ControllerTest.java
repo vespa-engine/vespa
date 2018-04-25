@@ -446,15 +446,9 @@ public class ControllerTest {
         List<BuildService.BuildJob> jobs = new ArrayList<>();
         assertEquals(jobs, tester.buildService().jobs());
 
-        tester.readyJobTrigger().maintain();
+        tester.triggerUntilQuiescence();
         jobs.add(buildJob(app2, stagingTest));
-        assertEquals(jobs, tester.buildService().jobs());
-
-        tester.readyJobTrigger().maintain();
         jobs.add(buildJob(app1, stagingTest));
-        assertEquals(jobs, tester.buildService().jobs());
-
-        tester.readyJobTrigger().maintain();
         jobs.add(buildJob(app3, stagingTest));
         assertEquals(jobs, tester.buildService().jobs());
 
@@ -468,11 +462,8 @@ public class ControllerTest {
         tester.jobCompletion(stagingTest).application(app3).error(JobError.outOfCapacity).submit();
         assertEquals(jobs, tester.buildService().jobs());
 
-        tester.readyJobTrigger().maintain();
+        tester.triggerUntilQuiescence();
         jobs.add(buildJob(app2, stagingTest));
-        assertEquals(jobs, tester.buildService().jobs());
-
-        tester.readyJobTrigger().maintain();
         jobs.add(buildJob(app1, stagingTest));
         assertEquals(jobs, tester.buildService().jobs());
 
@@ -492,7 +483,7 @@ public class ControllerTest {
         tester.assertRunning(app1.id(), systemTest); // app1 triggers before the other of the two apps, which are only upgrading platform.
 
         // Let the last system test job start, then remove the ones for apps 1 and 2, and let app3 fail with outOfCapacity again.
-        tester.readyJobTrigger().maintain();
+        tester.triggerUntilQuiescence();
         tester.buildService().remove(buildJob(app1, systemTest));
         tester.buildService().remove(buildJob(app2, systemTest));
         tester.clock().advance(Duration.ofHours(13));
@@ -502,11 +493,8 @@ public class ControllerTest {
         tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
         assertEquals(jobs, tester.buildService().jobs());
 
-        tester.readyJobTrigger().maintain();
+        tester.triggerUntilQuiescence();
         jobs.add(buildJob(app1, systemTest));
-        assertEquals(jobs, tester.buildService().jobs());
-
-        tester.readyJobTrigger().maintain();
         jobs.add(buildJob(app2, systemTest));
         assertEquals(jobs, tester.buildService().jobs());
 

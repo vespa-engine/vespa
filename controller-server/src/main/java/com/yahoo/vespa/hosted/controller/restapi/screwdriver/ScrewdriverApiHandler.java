@@ -90,13 +90,14 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                                   .map(JobType::fromJobName)
                                   .orElse(JobType.component);
 
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         String triggered = controller.applications().deploymentTrigger()
-                                     .forceTrigger(ApplicationId.from(tenantName, applicationName, "default"), jobType)
-                                     .stream().map(JobType::jobName).collect(joining(", "));
+                                     .forceTrigger(id, jobType).stream()
+                                     .map(JobType::jobName).collect(joining(", "));
 
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
-        cursor.setString("message", "Triggered " + triggered + " for " + tenantName + "." + applicationName);
+        cursor.setString("message", "Triggered " + triggered + " for " + id);
         return new SlimeJsonResponse(slime);
     }
 

@@ -38,17 +38,13 @@ public class DeploymentExpirer extends Maintainer {
                 if (deployment.zone().environment().equals(Environment.prod)) continue;
 
                 if (hasExpired(controller().zoneRegistry(), deployment, clock.instant()))
-                    deactivate(application, deployment);
+                    try {
+                        controller().applications().deactivate(application, deployment.zone());
+                    }
+                    catch (Exception e) {
+                        log.log(Level.WARNING, "Could not expire " + deployment + " of " + application, e);
+                    }
             }
-        }
-    }
-
-    private void deactivate(Application application, Deployment deployment) {
-        try {
-            controller().applications().deactivate(application, deployment, true);
-        }
-        catch (Exception e) {
-            log.log(Level.WARNING, "Could not expire " + deployment + " of " + application, e);
         }
     }
 
