@@ -42,7 +42,7 @@ class HostAuthenticator {
             List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(clientCertificate);
             switch (subjectCommonName) {
                 case TENANT_DOCKER_HOST_IDENTITY:
-                    return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoCertificate(sans), certificateChain);
+                    return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoOrAwsCertificate(sans), certificateChain);
                 case TENANT_DOCKER_CONTAINER_IDENTITY:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromVespaCertificate(sans), certificateChain);
                 default:
@@ -59,6 +59,11 @@ class HostAuthenticator {
                 .findFirst()
                 .orElseThrow(() -> new AuthenticationException("Certificate issuer common name is missing!"));
         return issuerCommonName.equals("Yahoo Athenz CA") || issuerCommonName.equals("Athenz AWS CA");
+    }
+
+    // NOTE: AWS instance id is currently stored as the attribute 'openstack-id' in node repository.
+    private String getHostFromCalypsoOrAwsCertificate(List<SubjectAlternativeName> sans) {
+        return getHostFromCalypsoCertificate(sans);
     }
 
     private String getHostFromCalypsoCertificate(List<SubjectAlternativeName> sans) {
