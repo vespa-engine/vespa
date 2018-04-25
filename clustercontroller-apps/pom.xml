@@ -69,16 +69,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <compilerArgs>
-                        <arg>-Xlint:rawtypes</arg>
-                        <arg>-Xlint:unchecked</arg>
-                        <arg>-Xlint:deprecation</arg>
-                        <arg>-Werror</arg>
-                    </compilerArgs>
-                </configuration>
             </plugin>
         </plugins>
     </build>
