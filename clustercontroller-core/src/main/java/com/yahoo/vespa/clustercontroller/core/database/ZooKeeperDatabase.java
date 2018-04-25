@@ -343,7 +343,7 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            maybeLogExceptionWarning(e, "Failed to store start timestamps in ZooKeeper");
+            maybeLogExceptionWarning(e, "Failed to store last published cluster state bundle in ZooKeeper");
             return false;
         }
         return true;
