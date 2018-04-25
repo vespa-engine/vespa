@@ -16,10 +16,25 @@ public interface BuildService {
     void trigger(BuildJob buildJob);
 
     /**
-     * Returns whether the given job is currently running.
+     * Returns the state of the given job in the build service.
      */
-    // TODO jvenstad: Change to enum State { idle, running, queued, disabled }
-    boolean isRunning(BuildJob buildJob);
+    JobState stateOf(BuildJob buildJob);
+
+    enum JobState {
+
+        /** Job is not running, and may be triggered. */
+        idle,
+
+        /** Job is already running, and will be queued if triggered now. */
+        running,
+
+        /** Job is running and queued and will automatically be started again after it finishes its current run. */
+        queued,
+
+        /** Job is disabled, i.e., it can not be triggered. */
+        disabled
+
+    }
 
 
     class BuildJob {

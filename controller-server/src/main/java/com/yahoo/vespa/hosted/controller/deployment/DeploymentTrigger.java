@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -28,6 +29,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -43,6 +45,9 @@ import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
+import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.disabled;
+import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.queued;
+import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.running;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
@@ -222,11 +227,18 @@ public class DeploymentTrigger {
                               .flatMap(List::stream);
     }
 
-    /** Returns whether the given job is currently running; false if completed since last triggered, asking the build service othewise. */
+    /** Returns whether the given job is currently running; false if completed since last triggered, asking the build service otherwise. */
     public boolean isRunning(Application application, JobType jobType) {
         return    ! application.deploymentJobs().statusOf(jobType)
-                               .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at()))).orElse(false)
-               &&   buildService.isRunning(BuildJob.of(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
+                               .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at())))
+                               .orElse(false)
+               &&   jobStateIsAmong(application, jobType, running, queued);
+    }
+
+    private boolean jobStateIsAmong(Application application, JobType jobType, JobState state, JobState... states) {
+        return EnumSet.of(state, states).contains(buildService.stateOf(BuildJob.of(application.id(),
+                                                                                   application.deploymentJobs().projectId().getAsLong(),
+                                                                                   jobType.jobName())));
     }
 
     public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType) {
@@ -411,7 +423,7 @@ public class DeploymentTrigger {
 
     private boolean canTrigger(Job job) {
         Application application = applications().require(job.applicationId());
-        if (isRunning(application, job.jobType))
+        if (isRunning(application, job.jobType) || jobStateIsAmong(application, job.jobType, disabled))
             return false;
 
         if (successOn(application, job.jobType, job.target).filter(run -> sourcesMatchIfPresent(job.target, run)).isPresent())
