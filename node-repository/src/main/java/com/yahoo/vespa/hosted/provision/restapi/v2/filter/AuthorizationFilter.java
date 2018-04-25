@@ -35,7 +35,6 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     private final BiPredicate<NodePrincipal, URI> authorizer;
     private final BiConsumer<ErrorResponse, ResponseHandler> rejectAction;
-    private final HostAuthenticator hostAuthenticator;
 
     @Inject
     public AuthorizationFilter(Zone zone, NodeRepository nodeRepository, NodeRepositoryConfig nodeRepositoryConfig) {
@@ -47,17 +46,14 @@ public class AuthorizationFilter implements SecurityRequestFilter {
                                 Stream.of(HostName.getLocalhost()),
                                 Stream.of(nodeRepositoryConfig.hostnameWhitelist().split(","))
                         ).filter(hostname -> !hostname.isEmpty()).collect(Collectors.toSet())),
-                AuthorizationFilter::logAndReject,
-                new HostAuthenticator(zone, nodeRepository)
+                AuthorizationFilter::logAndReject
         );
     }
 
     AuthorizationFilter(BiPredicate<NodePrincipal, URI> authorizer,
-                        BiConsumer<ErrorResponse, ResponseHandler> rejectAction,
-                        HostAuthenticator hostAuthenticator) {
+                        BiConsumer<ErrorResponse, ResponseHandler> rejectAction) {
         this.authorizer = authorizer;
         this.rejectAction = rejectAction;
-        this.hostAuthenticator = hostAuthenticator;
     }
 
     @Override
@@ -68,10 +64,9 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     private Optional<ErrorResponse> validateAccess(DiscFilterRequest request) {
         try {
-            List<X509Certificate> clientCertificateChain = request.getClientCertificateChain();
-            if (clientCertificateChain.isEmpty())
-                return Optional.of(ErrorResponse.unauthorized(createErrorMessage(request, "Missing credentials")));
-            NodePrincipal hostIdentity = hostAuthenticator.authenticate(clientCertificateChain);
+            NodePrincipal hostIdentity = (NodePrincipal) request.getUserPrincipal();
+            if (hostIdentity == null)
+                return Optional.of(ErrorResponse.internalServerError(createErrorMessage(request, "Principal is missing. AuthenticationFilter has not been applied.")));
             if (!authorizer.test(hostIdentity, request.getUri()))
                 return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials")));
             request.setUserPrincipal(hostIdentity);
