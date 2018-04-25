@@ -82,6 +82,15 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         // Make a local copy of the list as we want to manipulate it in case of ping problems.
         List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
 
+        // TODO: Use config server VIP for all zones that have one
+
+        // For now, just add config server VIP as first element in list of servers if it exists
+        if (zoneId.region().value().startsWith("aws-")
+                || zoneId.region().value().startsWith("cd-aws-")
+                || zoneId.region().value().equals("cd-us-east-1a")) {
+            zoneRegistry.getConfigServerVipUri(zoneId).ifPresent(uri -> allServers.add(0, uri));
+        }
+
         StringBuilder errorBuilder = new StringBuilder();
         if (queueFirstServerIfDown(allServers, proxyRequest)) {
             errorBuilder.append("Change ordering due to failed ping.");
