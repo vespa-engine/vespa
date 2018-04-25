@@ -78,6 +78,8 @@ public class CallOrderVerifier {
             for (String functionCall : functionCalls) {
                 int temp = indexOf(callOrder.listIterator(pos), functionCall);
                 if (temp == -1) {
+                    System.out.println("Function call '" + functionCall +
+                            "' never made at position " + pos);
                     return false;
                 }
                 pos += temp;

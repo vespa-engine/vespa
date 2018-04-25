@@ -205,10 +205,10 @@ public class RealNodeRepository implements NodeRepository {
 
     private static NodeRepositoryNode nodeRepositoryNodeFromNodeAttributes(NodeAttributes nodeAttributes) {
         NodeRepositoryNode node = new NodeRepositoryNode();
-        node.currentDockerImage = Optional.ofNullable(nodeAttributes.getDockerImage()).map(DockerImage::asString).orElse(null);
-        node.currentRestartGeneration = nodeAttributes.getRestartGeneration();
-        node.currentRebootGeneration = nodeAttributes.getRebootGeneration();
-        node.hardwareDivergence = nodeAttributes.getHardwareDivergence();
+        node.currentDockerImage = nodeAttributes.getDockerImage().map(DockerImage::asString).orElse(null);
+        node.currentRestartGeneration = nodeAttributes.getRestartGeneration().orElse(null);
+        node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
+        node.hardwareDivergence = nodeAttributes.getHardwareDivergence().orElse(null);
         return node;
     }
 }

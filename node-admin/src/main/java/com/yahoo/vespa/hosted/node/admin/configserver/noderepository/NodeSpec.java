@@ -571,22 +571,10 @@ public class NodeSpec {
         }
 
         public Builder updateFromNodeAttributes(NodeAttributes attributes) {
-            if (attributes.getDockerImage() != null) {
-                currentDockerImage = Optional.of(attributes.getDockerImage());
-            }
-
-            if (attributes.getHardwareDivergence() != null) {
-                hardwareDivergence = Optional.of(attributes.getHardwareDivergence());
-            }
-
-            if (attributes.getRebootGeneration() != null) {
-                currentRebootGeneration = attributes.getRebootGeneration();
-            }
-
-            if (attributes.getRestartGeneration() != null) {
-                currentRestartGeneration = Optional.of(attributes.getRestartGeneration());
-            }
-
+            attributes.getDockerImage().ifPresent(this::currentDockerImage);
+            attributes.getHardwareDivergence().ifPresent(this::hardwareDivergence);
+            attributes.getRebootGeneration().ifPresent(this::currentRebootGeneration);
+            attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
             return this;
         }
 

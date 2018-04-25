@@ -245,12 +245,12 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void updateNodeRepoWithCurrentAttributes(final NodeSpec node) {
         final NodeAttributes currentNodeAttributes = new NodeAttributes()
-                .withRestartGeneration(node.getCurrentRestartGeneration().orElse(null))
+                .withRestartGeneration(node.getCurrentRestartGeneration())
                 .withRebootGeneration(node.getCurrentRebootGeneration())
                 .withDockerImage(node.getCurrentDockerImage().orElse(new DockerImage("")));
 
         final NodeAttributes wantedNodeAttributes = new NodeAttributes()
-                .withRestartGeneration(node.getWantedRestartGeneration().orElse(null))
+                .withRestartGeneration(node.getWantedRestartGeneration())
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
                 .withRebootGeneration(node.getWantedRebootGeneration())
