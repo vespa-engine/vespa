@@ -143,8 +143,10 @@ DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManage
     if (_useReferences) {
         for (const auto &attr : _importedFieldsCfg.attribute) {
             ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
-            auto targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
-            auto importedAttr = ImportedAttributeVectorFactory::create(attr.name, refAttr, targetAttr, documentMetaStore, useSearchCache);
+            auto targetDocumentDB = getTargetDocumentDB(refAttr->getName());
+            auto targetAttr = targetDocumentDB->getAttribute(attr.targetfield);
+            auto targetDocumentMetaStore = targetDocumentDB->getDocumentMetaStore();
+            auto importedAttr = ImportedAttributeVectorFactory::create(attr.name, refAttr, documentMetaStore, targetAttr, targetDocumentMetaStore, useSearchCache);
             result->add(importedAttr->getName(), importedAttr);
         }
     }

@@ -49,6 +49,7 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     uint64_t getCurrentGeneration() const override { return 0; }
     LidUsageStats getLidUsageStats() const override { return LidUsageStats(); }
     Blueprint::UP createWhiteListBlueprint() const override { return Blueprint::UP(); }
+    void foreach(const search::IGidToLidMapperVisitor &) const override { }
 };
 
 FeatureSet::SP findFeatureSet(const DocsumRequest &req,

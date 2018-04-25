@@ -6,8 +6,7 @@
 #include "attributeguard.h"
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-
-namespace search { class IGidToLidMapper; }
+#include <vespa/searchlib/common/i_document_meta_store_context.h>
 
 namespace search::attribute {
 
@@ -18,6 +17,11 @@ class ReferenceAttribute;
 /*
  * Short lived attribute vector that does not store values on its own.
  *
+ * Read guards are held on
+ * - target attribute, to ensure that reads are safe.
+ * - target document meta store, to avoid referenced lids being reused.
+ * - reference attribute, to ensure that access to lid mapping is safe.
+ *
  * Extra information for direct lid to referenced lid mapping with
  * boundary check is setup during construction.
  */
@@ -26,6 +30,7 @@ class ImportedAttributeVectorReadGuard : public IAttributeVector,
 {
 private:
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
+    IDocumentMetaStoreContext::IReadGuard::UP _target_document_meta_store_read_guard;
     const ImportedAttributeVector   &_imported_attribute;
     ReferencedLids                   _referencedLids;
     AttributeGuard                   _reference_attribute_guard;
@@ -33,8 +38,6 @@ private:
     const ReferenceAttribute        &_reference_attribute;
 protected:
     const IAttributeVector          &_target_attribute;
-private:
-    std::unique_ptr<IGidToLidMapper> _mapper;
 
 protected:
     uint32_t getReferencedLid(uint32_t lid) const {

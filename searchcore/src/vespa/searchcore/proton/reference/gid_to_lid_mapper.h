@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
-#include <vespa/vespalib/util/generationhandler.h>
 
 namespace proton {
 
@@ -15,11 +15,9 @@ class DocumentMetaStore;
  */
 class GidToLidMapper : public search::IGidToLidMapper
 {
-    vespalib::GenerationHandler::Guard _guard;
-    const DocumentMetaStore &_dms;
+    search::IDocumentMetaStoreContext::IReadGuard::UP _guard;
 public:
-    GidToLidMapper(vespalib::GenerationHandler::Guard &&guard,
-                   const DocumentMetaStore &dms);
+    GidToLidMapper(const search::IDocumentMetaStoreContext &dmsContext);
     virtual ~GidToLidMapper();
     virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
 };

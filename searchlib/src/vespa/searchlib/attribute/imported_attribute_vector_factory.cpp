@@ -27,15 +27,16 @@ BasicType::Type getBasicType(const std::shared_ptr<attribute::ReadableAttributeV
 std::shared_ptr<ImportedAttributeVector>
 ImportedAttributeVectorFactory::create(vespalib::stringref name,
                                        std::shared_ptr<ReferenceAttribute> reference_attribute,
-                                       std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
                                        std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+                                       std::shared_ptr<ReadableAttributeVector> target_attribute,
+                                       std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
                                        bool use_search_cache)
 {
     switch (getBasicType(target_attribute)) {
     case BasicType::Type::TENSOR:
-        return std::make_shared<ImportedTensorAttributeVector>(name, std::move(reference_attribute), std::move(target_attribute), std::move(document_meta_store), use_search_cache);
+        return std::make_shared<ImportedTensorAttributeVector>(name, std::move(reference_attribute), std::move(document_meta_store), std::move(target_attribute), std::move(target_document_meta_store), use_search_cache);
     default:
-        return std::make_shared<ImportedAttributeVector>(name, std::move(reference_attribute), std::move(target_attribute), std::move(document_meta_store), use_search_cache);
+        return std::make_shared<ImportedAttributeVector>(name, std::move(reference_attribute), std::move(document_meta_store), std::move(target_attribute), std::move(target_document_meta_store), use_search_cache);
     }
 }
 
@@ -43,15 +44,16 @@ ImportedAttributeVectorFactory::create(vespalib::stringref name,
 std::shared_ptr<ImportedAttributeVector>
 ImportedAttributeVectorFactory::create(vespalib::stringref name,
                                        std::shared_ptr<ReferenceAttribute> reference_attribute,
-                                       std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
                                        std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+                                       std::shared_ptr<ReadableAttributeVector> target_attribute,
+                                       std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
                                        std::shared_ptr<BitVectorSearchCache> search_cache)
 {
     switch (getBasicType(target_attribute)) {
     case BasicType::Type::TENSOR:
-        return std::make_shared<ImportedTensorAttributeVector>(name, std::move(reference_attribute), std::move(target_attribute), std::move(document_meta_store), std::move(search_cache));
+        return std::make_shared<ImportedTensorAttributeVector>(name, std::move(reference_attribute), std::move(document_meta_store), std::move(target_attribute), std::move(target_document_meta_store), std::move(search_cache));
     default:
-        return std::make_shared<ImportedAttributeVector>(name, std::move(reference_attribute), std::move(target_attribute), std::move(document_meta_store), std::move(search_cache));
+        return std::make_shared<ImportedAttributeVector>(name, std::move(reference_attribute), std::move(document_meta_store), std::move(target_attribute), std::move(target_document_meta_store), std::move(search_cache));
     }
 }
 

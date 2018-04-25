@@ -18,6 +18,9 @@ struct MockDocumentDBReference : public IDocumentDBReference {
     virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref) override {
         return std::shared_ptr<search::attribute::ReadableAttributeVector>();
     }
+    virtual std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const override {
+        return std::shared_ptr<const search::IDocumentMetaStoreContext>();
+    }
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override {
         return std::shared_ptr<search::IGidToLidMapperFactory>();
     }

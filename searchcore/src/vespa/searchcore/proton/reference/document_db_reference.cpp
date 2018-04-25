@@ -12,10 +12,10 @@
 namespace proton {
 
 DocumentDBReference::DocumentDBReference(std::shared_ptr<IAttributeManager> attrMgr,
-                                         std::shared_ptr<DocumentMetaStore> dms,
+                                         std::shared_ptr<const search::IDocumentMetaStoreContext> dmsContext,
                                          std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler)
     : _attrMgr(std::move(attrMgr)),
-      _dms(std::move(dms)),
+      _dmsContext(std::move(dmsContext)),
       _gidToLidChangeHandler(std::move(gidToLidChangeHandler))
 {
 }
@@ -39,10 +39,16 @@ DocumentDBReference::getAttribute(vespalib::stringref name)
     }
 }
 
+std::shared_ptr<const search::IDocumentMetaStoreContext>
+DocumentDBReference::getDocumentMetaStore() const
+{
+    return _dmsContext;
+}
+
 std::shared_ptr<search::IGidToLidMapperFactory>
 DocumentDBReference::getGidToLidMapperFactory()
 {
-    return std::make_shared<GidToLidMapperFactory>(_dms);
+    return std::make_shared<GidToLidMapperFactory>(_dmsContext);
 }
 
 std::unique_ptr<GidToLidChangeRegistrator>

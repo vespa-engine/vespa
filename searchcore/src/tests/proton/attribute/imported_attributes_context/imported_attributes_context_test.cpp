@@ -5,6 +5,7 @@ LOG_SETUP("imported_attributes_context_test");
 
 #include <vespa/searchcore/proton/attribute/imported_attributes_context.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
@@ -77,8 +78,9 @@ struct Fixture {
     Fixture &addAttribute(const vespalib::string &name) {
         auto attr = ImportedAttributeVectorFactory::create(name,
                                                            createReferenceAttribute(name + "_ref"),
-                                                           createTargetAttribute(name + "_target"),
                                                            std::shared_ptr<search::IDocumentMetaStoreContext>(),
+                                                           createTargetAttribute(name + "_target"),
+                                                           std::make_shared<const DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>()),
                                                            false);
         repo.add(name, attr);
         return *this;

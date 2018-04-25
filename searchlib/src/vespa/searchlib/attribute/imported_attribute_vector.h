@@ -31,24 +31,29 @@ public:
     using SP = std::shared_ptr<ImportedAttributeVector>;
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
-                            std::shared_ptr<ReadableAttributeVector> target_attribute,
                             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+                            std::shared_ptr<ReadableAttributeVector> target_attribute,
+                            std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
                             bool use_search_cache);
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
-                            std::shared_ptr<ReadableAttributeVector> target_attribute,
                             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+                            std::shared_ptr<ReadableAttributeVector> target_attribute,
+                            std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
                             std::shared_ptr<BitVectorSearchCache> search_cache);
     virtual ~ImportedAttributeVector();
 
     const std::shared_ptr<ReferenceAttribute>& getReferenceAttribute() const noexcept {
         return _reference_attribute;
     }
+    const std::shared_ptr<IDocumentMetaStoreContext> &getDocumentMetaStore() const {
+        return _document_meta_store;
+    }
     const std::shared_ptr<ReadableAttributeVector>& getTargetAttribute() const noexcept {
         return _target_attribute;
     }
-    const std::shared_ptr<IDocumentMetaStoreContext> &getDocumentMetaStore() const {
-        return _document_meta_store;
+    const std::shared_ptr<const IDocumentMetaStoreContext> &getTargetDocumentMetaStore() const {
+        return _target_document_meta_store;
     }
     const std::shared_ptr<BitVectorSearchCache> &getSearchCache() const {
         return _search_cache;
@@ -63,8 +68,9 @@ public:
 protected:
     vespalib::string                           _name;
     std::shared_ptr<ReferenceAttribute>        _reference_attribute;
-    std::shared_ptr<ReadableAttributeVector>   _target_attribute;
     std::shared_ptr<IDocumentMetaStoreContext> _document_meta_store;
+    std::shared_ptr<ReadableAttributeVector>   _target_attribute;
+    std::shared_ptr<const IDocumentMetaStoreContext> _target_document_meta_store;
     std::shared_ptr<BitVectorSearchCache>      _search_cache;
 };
 

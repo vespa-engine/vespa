@@ -274,6 +274,7 @@ public:
     uint64_t getEstimatedSaveByteSize() const override;
     virtual uint32_t getVersion() const override;
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
+    virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
 };
 
 }
