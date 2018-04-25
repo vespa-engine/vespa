@@ -19,25 +19,25 @@ import java.util.Set;
  * @author baldersheim
  */
 public class ValidateMatchPhaseSearcher extends Searcher {
+
     private Set<String> validMatchPhaseAttributes = new HashSet<>();
     private Set<String> validDiversityAttributes = new HashSet<>();
+
     public ValidateMatchPhaseSearcher(AttributesConfig attributesConfig) {
         for (AttributesConfig.Attribute a : attributesConfig.attribute()) {
             if (a.fastsearch() &&
-                (a.collectiontype() == AttributesConfig.Attribute.Collectiontype.SINGLE) &&
-                isNumeric(a.datatype()))
-            {
+                (a.collectiontype() == AttributesConfig.Attribute.Collectiontype.SINGLE) && isNumeric(a.datatype())) {
                 validMatchPhaseAttributes.add(a.name());
             }
         }
         for (AttributesConfig.Attribute a : attributesConfig.attribute()) {
             if ((a.collectiontype() == AttributesConfig.Attribute.Collectiontype.SINGLE) &&
-                ((a.datatype() == AttributesConfig.Attribute.Datatype.STRING) || isNumeric(a.datatype())))
-            {
+                ((a.datatype() == AttributesConfig.Attribute.Datatype.STRING) || isNumeric(a.datatype()))) {
                 validDiversityAttributes.add(a.name());
             }
         }
     }
+
     private boolean isNumeric(AttributesConfig.Attribute.Datatype.Enum dt) {
         return  dt == AttributesConfig.Attribute.Datatype.DOUBLE ||
                 dt == AttributesConfig.Attribute.Datatype.FLOAT ||
@@ -46,6 +46,7 @@ public class ValidateMatchPhaseSearcher extends Searcher {
                 dt == AttributesConfig.Attribute.Datatype.INT32 ||
                 dt == AttributesConfig.Attribute.Datatype.INT64;
     }
+
     @Override
     public Result search(Query query, Execution execution) {
         ErrorMessage e = validate(query);
@@ -67,4 +68,5 @@ public class ValidateMatchPhaseSearcher extends Searcher {
         }
         return null;
     }
+
 }

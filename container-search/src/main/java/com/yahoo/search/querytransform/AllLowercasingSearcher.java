@@ -18,8 +18,7 @@ import com.yahoo.prelude.query.WordItem;
  * chains and search chain ordering.
  * </p>
  *
- * @since 5.1.3.
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class AllLowercasingSearcher extends LowercasingSearcher {
 

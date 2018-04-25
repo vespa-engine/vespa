@@ -60,7 +60,7 @@ import com.yahoo.search.searchchain.Execution;
  * InvalidQueryParameter error will be added, and the query will be passed
  * through untransformed.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @Before({"transformedQuery", "com.yahoo.prelude.querytransform.StemmingSearcher"})
 public class LegacyCombinator extends Searcher {
