@@ -8,6 +8,7 @@ import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.yolean.chain.Provides;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
+@Provides("AuthenticationFilter")
 public class AuthenticationFilter extends JsonSecurityRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(AuthenticationFilter.class.getName());

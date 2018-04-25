@@ -11,6 +11,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
+import com.yahoo.yolean.chain.After;
 
 import java.net.URI;
 import java.security.Principal;
@@ -24,11 +25,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Authorization filter for all paths in config server.
+ * Authorization filter for all paths in config server. It assumes that {@link AuthenticationFilter} is part of filter chain.
  *
  * @author mpolden
  * @author bjorncs
  */
+@After("AuthenticationFilter")
 public class AuthorizationFilter implements SecurityRequestFilter {
 
     private static final Logger log = Logger.getLogger(AuthorizationFilter.class.getName());
