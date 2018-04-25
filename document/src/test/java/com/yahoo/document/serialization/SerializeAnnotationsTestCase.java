@@ -13,6 +13,8 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.io.GrowableByteBuffer;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,6 +24,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests that serialization of annotations from Java generates the
@@ -33,17 +37,19 @@ import java.util.ArrayList;
  * AnnotationDeserialization component to handle the format changes.
  */
 @SuppressWarnings("deprecation")
-public class SerializeAnnotationsTestCase extends junit.framework.TestCase {
+public class SerializeAnnotationsTestCase {
+
     private static final String PATH = "src/tests/serialization/";
     DocumentTypeManager docMan = new DocumentTypeManager();
 
-    @Override
+    @Before
     public void setUp() {
         DocumentTypeManagerConfigurer.configure(docMan,
                                                 "file:src/tests/serialization/" +
                                                 "annotation.serialize.test.cfg");
     }
 
+    @Test
     public void testSerializeSimpleTree() throws IOException {
         SpanList root = new SpanList();
         root.add(new Span(0, 19))
@@ -78,6 +84,7 @@ public class SerializeAnnotationsTestCase extends junit.framework.TestCase {
         assertEquals(value, valueFromFile);
     }
 
+    @Test
     public void testSerializeAdvancedTree() throws IOException {
         SpanList root = new SpanList();
         SpanTree tree = new SpanTree("html", root);
@@ -211,4 +218,5 @@ public class SerializeAnnotationsTestCase extends junit.framework.TestCase {
 
         return readBuf;
     }
+
 }

@@ -6,19 +6,27 @@ import com.yahoo.document.datatypes.*;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 
-/**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- */
-public class FieldUpdateTestCase extends junit.framework.TestCase {
-    Field strfoo;
-    Field strarray;
-    Field strws;
-    Field strws2;
-    DocumentTypeManager docman = new DocumentTypeManager();
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
+/**
+ * @author Einar M R Rosenvinge
+ */
+public class FieldUpdateTestCase {
+
+    private Field strfoo;
+    private Field strarray;
+    private Field strws;
+    private Field strws2;
+    private DocumentTypeManager docman = new DocumentTypeManager();
+
+    @Before
     public void setUp() {
         docman = new DocumentTypeManager();
 
@@ -36,6 +44,7 @@ public class FieldUpdateTestCase extends junit.framework.TestCase {
         strws2 = docman.getDocumentType("foobar").getField("strws2");
     }
 
+    @Test
     public void testInstantiationExceptions() {
         //add(field, value)
         try {
@@ -185,6 +194,7 @@ public class FieldUpdateTestCase extends junit.framework.TestCase {
         return copy;
     }
 
+    @Test
     public void testApplyToSingleValue() {
         Document testDoc = new Document(docman.getDocumentType("foobar"), new DocumentId("doc:test:ballooo"));
         FieldUpdate alter = FieldUpdate.create(strfoo);
@@ -201,6 +211,7 @@ public class FieldUpdateTestCase extends junit.framework.TestCase {
         assertNull(testDoc.getFieldValue("strfoo"));
     }
 
+    @Test
     public void testApplyToArray() {
         Array<StringFieldValue> fruitList = new Array<>(DataType.getArray(DataType.STRING));
         fruitList.add(new StringFieldValue("kiwi"));
@@ -245,6 +256,7 @@ public class FieldUpdateTestCase extends junit.framework.TestCase {
         assertNull(testDoc.getFieldValue("strarray"));
     }
 
+    @Test
     public void testApplyToWs() {
         WeightedSet fruitWs = new WeightedSet(DataType.getWeightedSet(DataType.STRING));
         fruitWs.put(new StringFieldValue("pineapple"), 50);
@@ -351,6 +363,7 @@ public class FieldUpdateTestCase extends junit.framework.TestCase {
         assertNull(testDoc.getFieldValue("strws"));
     }
 
+    @Test
     public void testArithmeticUpdatesOnAutoCreatedWSetItemsAreZeroBased() {
         Document testDoc = new Document(
                 docman.getDocumentType("foobar"),

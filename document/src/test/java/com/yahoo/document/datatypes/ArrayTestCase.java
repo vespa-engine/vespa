@@ -3,13 +3,24 @@ package com.yahoo.document.datatypes;
 
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
+import org.junit.Test;
 
 import java.util.*;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class ArrayTestCase extends junit.framework.TestCase {
+public class ArrayTestCase {
+
+    @Test
     public void testToArray() {
         ArrayDataType dt = new ArrayDataType(DataType.STRING);
         Array<StringFieldValue> arr = new Array<>(dt);
@@ -30,6 +41,7 @@ public class ArrayTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("c"), b[2]);
     }
 
+    @Test
     public void testCreateIllegalArray() {
         ArrayList<FieldValue> arrayList = new ArrayList<>();
         arrayList.add(new StringFieldValue("foo"));
@@ -58,6 +70,7 @@ public class ArrayTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testWrappedList() {
         Array<StringFieldValue> array = new Array<StringFieldValue>(DataType.getArray(DataType.STRING));
         List<String> list = new ArrayList<>();
@@ -243,6 +256,7 @@ public class ArrayTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testListWrapperToArray() {
         Array<StringFieldValue> array = new Array<>(new ArrayDataType(DataType.STRING));
         List<StringFieldValue> assignFrom = new ArrayList<>(3);

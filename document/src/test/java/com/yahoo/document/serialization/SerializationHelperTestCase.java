@@ -6,20 +6,22 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.objects.BufferSerializer;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 @SuppressWarnings("deprecation")
-public class SerializationHelperTestCase extends junit.framework.TestCase {
-    public SerializationHelperTestCase(String name) {
-        super(name);
-    }
+public class SerializationHelperTestCase {
 
-    public void testGetNullTerminatedString() throws Exception {
+    @Test
+    public void testGetNullTerminatedString() {
         //This is a test.0ab
         byte[] test = {0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x74, 0x65, 0x73, 0x74, 0x2e, 0x0,
                 0x61, 0x62};
@@ -45,7 +47,8 @@ public class SerializationHelperTestCase extends junit.framework.TestCase {
         assertTrue(test[16] == 0x61); //a
     }
 
-    public void testSerializeRawField() throws UnsupportedEncodingException {
+    @Test
+    public void testSerializeRawField() {
         GrowableByteBuffer gbuf = new GrowableByteBuffer();
         ByteBuffer rawValue = ByteBuffer.wrap(Utf8.toBytes("0123456789"));
         rawValue.position(7);
@@ -61,4 +64,5 @@ public class SerializationHelperTestCase extends junit.framework.TestCase {
         assertEquals(14, gbuf.position());
         assertEquals(7, rawValue.position());
     }
+
 }

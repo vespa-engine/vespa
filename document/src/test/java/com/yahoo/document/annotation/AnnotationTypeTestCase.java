@@ -2,11 +2,17 @@
 package com.yahoo.document.annotation;
 
 import com.yahoo.document.DataType;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class AnnotationTypeTestCase extends junit.framework.TestCase {
+public class AnnotationTypeTestCase {
+
+    @Test
     public void testBasic() {
         AnnotationType a = new AnnotationType("foo");
         AnnotationType b = new AnnotationType("foo");
@@ -30,6 +36,7 @@ public class AnnotationTypeTestCase extends junit.framework.TestCase {
         assertFalse(c.hashCode() == b.hashCode());
     }
 
+    @Test
     public void testBasic2() {
         AnnotationType a = new AnnotationType("foo", DataType.INT);
         AnnotationType b = new AnnotationType("foo", DataType.INT);
@@ -48,6 +55,7 @@ public class AnnotationTypeTestCase extends junit.framework.TestCase {
         assertEquals(c.hashCode(), c.getId());
     }
 
+    @Test
     public void testPolymorphy() {
         AnnotationType suuper = new AnnotationType("super");
         AnnotationType sub = new AnnotationType("sub");
@@ -63,4 +71,5 @@ public class AnnotationTypeTestCase extends junit.framework.TestCase {
         //this would fail without polymorphy support:
         AnnotationReference ref2 = new AnnotationReference(refType, subAnnotation);
     }
+
 }

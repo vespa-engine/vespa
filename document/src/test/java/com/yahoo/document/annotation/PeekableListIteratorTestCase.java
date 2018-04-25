@@ -1,22 +1,32 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.annotation;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * Tests that PeekableListIterator behaves as expected.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class PeekableListIteratorTestCase extends junit.framework.TestCase {
+public class PeekableListIteratorTestCase {
+
     private List<String> strings;
 
-    @Override
+    @Before
     public void setUp() {
-        strings = new ArrayList<String>();
+        strings = new ArrayList<>();
         strings.add("0");
         strings.add("1");
         strings.add("2");
@@ -25,6 +35,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         strings.add("5");
     }
 
+    @Test
     public void testSimpleListIterator() {
         ListIterator<String> it = strings.listIterator();
         assertEquals("0", it.next());
@@ -39,6 +50,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("1", it.next());
     }
 
+    @Test
     public void testVarious() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -95,6 +107,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testRemoveFirst() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
         try {
@@ -111,6 +124,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("1", strings.get(0));
     }
 
+    @Test
     public void testPeekThenRemove() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -132,6 +146,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(4));
     }
 
+    @Test
     public void testPeekNextRemove() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -146,6 +161,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(4));
     }
 
+    @Test
     public void testPeekNextPeekRemove() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -161,6 +177,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(4));
     }
 
+    @Test
     public void testPeekNextNextRemove() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -176,6 +193,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(4));
     }
 
+    @Test
     public void testNextPeekRemove() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -190,6 +208,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(4));
     }
 
+    @Test
     public void testAddSimple() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -210,6 +229,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(8));
     }
 
+    @Test
     public void testPeekAdd() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -231,7 +251,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(8));
     }
 
-
+    @Test
     public void testSetFirst() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
         try {
@@ -248,6 +268,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("elvis", strings.get(0));
     }
 
+    @Test
     public void testPeekThenSet() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -270,6 +291,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(5));
     }
 
+    @Test
     public void testPeekNextSet() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -285,6 +307,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(5));
     }
 
+    @Test
     public void testPeekNextPeekSet() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -301,6 +324,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(5));
     }
 
+    @Test
     public void testPeekNextNextSet() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 
@@ -317,6 +341,7 @@ public class PeekableListIteratorTestCase extends junit.framework.TestCase {
         assertEquals("5", strings.get(5));
     }
 
+    @Test
     public void testNextPeekSet() {
         PeekableListIterator<String> it = new PeekableListIterator<String>(strings.listIterator());
 

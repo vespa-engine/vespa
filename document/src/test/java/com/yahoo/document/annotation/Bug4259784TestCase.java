@@ -18,7 +18,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Bug4259784TestCase extends junit.framework.TestCase {
+public class Bug4259784TestCase {
 
     @Test
     public void testSerialize() {

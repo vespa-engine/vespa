@@ -4,30 +4,32 @@ package com.yahoo.document.update;
 import com.yahoo.document.*;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.serialization.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.FileOutputStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class SerializationTestCase extends junit.framework.TestCase {
+public class SerializationTestCase {
 
     private DocumentType documentType;
 
     private Field field;
 
-    public SerializationTestCase(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() {
-        documentType=new DocumentType("document1");
-        field=new Field("field1", DataType.getArray(DataType.STRING));
+        documentType = new DocumentType("document1");
+        field = new Field("field1", DataType.getArray(DataType.STRING));
         documentType.addField(field);
     }
 
+    @Test
     public void testAddSerialization() {
-        FieldUpdate update=FieldUpdate.createAdd(field, new StringFieldValue("value1"));
+        FieldUpdate update = FieldUpdate.createAdd(field, new StringFieldValue("value1"));
         DocumentSerializer buffer = DocumentSerializerFactory.create42();
         update.serialize(buffer);
 
@@ -43,8 +45,9 @@ public class SerializationTestCase extends junit.framework.TestCase {
         assertEquals("'field1' [add value1 1]", deserializedUpdate.toString());
     }
 
+    @Test
     public void testClearSerialization() {
-        FieldUpdate update=FieldUpdate.createClear(field);
+        FieldUpdate update = FieldUpdate.createClear(field);
         DocumentSerializer buffer = DocumentSerializerFactory.create42();
         update.serialize(buffer);
 

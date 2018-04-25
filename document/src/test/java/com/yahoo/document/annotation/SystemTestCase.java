@@ -9,13 +9,16 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.serialization.*;
 import com.yahoo.io.GrowableByteBuffer;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Iterator;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class SystemTestCase extends junit.framework.TestCase {
+public class SystemTestCase {
+
     DocumentTypeManager manager;
 
     private void annotate(Document document) {
@@ -108,11 +111,13 @@ public class SystemTestCase extends junit.framework.TestCase {
         System.err.println("Event is " + eventValue.getFieldValue("description") + " with " + eventValue.getFieldValue("person") + " and " + eventValue.getFieldValue("date") + " and " + eventValue.getFieldValue("place"));
     }
 
+    @Before
     public void setUp() {
         manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.systemtest.cfg");
     }
 
+    @Test
     public void testSystemTest() {
         DocumentType type = manager.getDocumentType("article");
         Document inDocument = new Document(type, "doc:article:boringarticle:longarticle");
@@ -127,4 +132,5 @@ public class SystemTestCase extends junit.framework.TestCase {
         Document outDocument = new Document(deserializer);
         consume(outDocument);
     }
+
 }

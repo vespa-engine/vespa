@@ -1,13 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import org.junit.Test;
+
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.10
+ * @author Einar M R Rosenvinge
  */
-public class GlobalIdTestCase extends junit.framework.TestCase {
+public class GlobalIdTestCase {
+
     private final byte[] raw0 = new byte[0];
     private final byte[] raw1_0 = new byte[]{(byte) 0};
     private final byte[] raw2_11 = new byte[]{(byte) 1, (byte) 1};
@@ -19,6 +25,7 @@ public class GlobalIdTestCase extends junit.framework.TestCase {
 
     private final BucketIdFactory bucketIdFactory = new BucketIdFactory();
 
+    @Test
     public void testRaw0() {
         GlobalId gid = new GlobalId(raw0);
         assertEquals(12, gid.getRawId().length);
@@ -39,6 +46,7 @@ public class GlobalIdTestCase extends junit.framework.TestCase {
         assertEquals(gid.hashCode(), gid2.hashCode());
     }
 
+    @Test
     public void testLonger() {
         GlobalId gid1 = new GlobalId(raw2_11);
         GlobalId gid2 = new GlobalId(raw2_minus1_1);
@@ -52,6 +60,7 @@ public class GlobalIdTestCase extends junit.framework.TestCase {
         assertEquals(gid3.hashCode(), gid4.hashCode());
     }
 
+    @Test
     public void testCompareTo() {
         GlobalId gid0 = new GlobalId(raw1_0);
         GlobalId gid11 = new GlobalId(raw2_11);
@@ -75,6 +84,7 @@ public class GlobalIdTestCase extends junit.framework.TestCase {
         assertEquals(bucketIdThroughFactory, bucketIdThroughGlobalId);
     }
 
+    @Test
     public void testToBucketId() {
         verifyGidToBucketIdMapping("userdoc:ns:1:abc");
         verifyGidToBucketIdMapping("userdoc:ns:1000:abc");
@@ -84,4 +94,5 @@ public class GlobalIdTestCase extends junit.framework.TestCase {
         verifyGidToBucketIdMapping("doc:myns:http://foo.bar");
         verifyGidToBucketIdMapping("doc:jsrthsdf:a234aleingzldkifvasdfgadf");
     }
+
 }

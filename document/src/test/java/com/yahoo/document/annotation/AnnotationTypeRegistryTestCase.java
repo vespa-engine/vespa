@@ -2,11 +2,16 @@
 package com.yahoo.document.annotation;
 
 import com.yahoo.document.DataType;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class AnnotationTypeRegistryTestCase extends junit.framework.TestCase {
+public class AnnotationTypeRegistryTestCase {
+
+    @Test
     public void testRegisterUnregister() {
         AnnotationTypeRegistry reg = new AnnotationTypeRegistry();
         assertEquals(0, reg.getTypes().size());
@@ -47,4 +52,5 @@ public class AnnotationTypeRegistryTestCase extends junit.framework.TestCase {
         reg.unregister(three);
         assertEquals(0, reg.getTypes().size());
     }
+
 }

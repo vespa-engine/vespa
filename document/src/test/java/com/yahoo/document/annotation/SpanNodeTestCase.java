@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.annotation;
 
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -9,11 +11,18 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-/**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- */
-public class SpanNodeTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+/**
+ * @author Einar M R Rosenvinge
+ */
+public class SpanNodeTestCase {
+
+    @Test
     public void testOverlaps() {
         //qwertyuiopasdfghjklzxcvbnm
         //012345678901234567890123456789
@@ -102,6 +111,7 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
         assertTrue(a.overlaps(a));
     }
 
+    @Test
     public void testContains() {
         //qwertyuiopasdfghjklzxcvbnm
         //012345678901234567890123456789
@@ -123,7 +133,7 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
         assertTrue(c.contains(a));
     }
 
-
+    @Test
     public void testSpanTree() {
         final String text = "Hallo er et ord fra Norge";
         SpanList sentence = new SpanList();
@@ -223,6 +233,7 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
         //coming up: assert that children(Annotation) works...
     }
 
+    @Test
     public void testOrder() {
         {
             String text = "08/20/1999";
@@ -262,6 +273,7 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testNonRecursiveAnnotationIterator() {
         AnnotationType nounType = new AnnotationType("noun");
         AnnotationType detType = new AnnotationType("determiner");
@@ -359,6 +371,7 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testRecursion() {
         AnnotationType noun = new AnnotationType("noun");
         AnnotationType verb = new AnnotationType("verb");
@@ -564,7 +577,7 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
     }
 
     private static List<Annotation> annotations(SpanTree tree, SpanNode node) {
-        List<Annotation> list = new ArrayList<Annotation>();
+        List<Annotation> list = new ArrayList<>();
         Iterator<Annotation> it = tree.iterator(node);
         while (it.hasNext()) {
             list.add(it.next());
@@ -572,6 +585,7 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
         return list;
     }
 
+    @Test
 	public void testMultilevelRecursion() {
 		//			   01234567890123
 		String text = "Hello!Goodbye!";
@@ -604,6 +618,7 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
 		assertTrue(root.getText(text).toString().equals(text));
 	}
 
+    @Test
     public void testRecursiveIteratorDeterministicBehavior() {
         SpanList root = new SpanList();
         SpanTree tree = new SpanTree("tree", root);
@@ -643,4 +658,5 @@ public class SpanNodeTestCase extends junit.framework.TestCase {
         assertSame(newC, a.children().get(1));
         assertEquals(2, a.children().size());
     }
+
 }

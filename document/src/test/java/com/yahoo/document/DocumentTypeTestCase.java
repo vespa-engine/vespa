@@ -1,19 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import org.junit.Test;
+
 import java.util.Iterator;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Thomas Gundersen
  * @author bratseth
  */
-public class DocumentTypeTestCase extends junit.framework.TestCase {
-
-    public DocumentTypeTestCase(String name) {
-        super(name);
-    }
+public class DocumentTypeTestCase {
 
     // Verify that we can register and retrieve fields.
+    @Test
     public void testSetGet() {
         DocumentType docType = new DocumentType("testdoc");
         docType.addField("Bongle", DataType.STRING);
@@ -24,6 +28,7 @@ public class DocumentTypeTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testInheritance() {
         DocumentTypeManager typeManager = new DocumentTypeManager();
 
