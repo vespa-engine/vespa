@@ -171,7 +171,9 @@ public class DeploymentTrigger {
         try {
             buildService.trigger(job);
             applications().lockOrThrow(job.applicationId(), application -> applications().store(application.withJobTriggering(
-                    job.jobType, JobRun.triggering(job.target.targetPlatform, job.target.targetApplication, job.target.sourcePlatform, job.target.sourceApplication, job.reason, clock.instant()))));
+                    job.jobType, JobRun.triggering(job.target.targetPlatform, job.target.targetApplication,
+                                                   job.target.sourcePlatform, job.target.sourceApplication,
+                                                   job.reason, clock.instant()))));
             return true;
         }
         catch (RuntimeException e) {
@@ -249,7 +251,7 @@ public class DeploymentTrigger {
         }
         State target = targetFor(application, application.change(), deploymentFor(application, jobType));
         String reason = ">:o:< Triggered by force! (-o-) |-o-| (=oo=)";
-        if (isTested(application, target, jobType)) {
+        if ( ! jobType.isProduction() || isTested(application, target)) {
             trigger(deploymentJob(application, target, application.change(), jobType, reason, clock.instant(), Collections.emptySet()));
             return singletonList(jobType);
         }
@@ -293,20 +295,24 @@ public class DeploymentTrigger {
                     : application.deploymentSpec().steps();
             List<Step> productionSteps = steps.stream().filter(step -> step.deploysTo(prod) || step.zones().isEmpty()).collect(toList());
 
-            Optional<Instant> completedAt = application.deploymentJobs().statusOf(stagingTest)
-                                                       .flatMap(JobStatus::lastSuccess).map(JobRun::at);
+            Change change = application.change();
+            @SuppressWarnings("cast") // Bad compiler!
+            Optional<Instant> completedAt = max((Optional<Instant>) application.deploymentJobs().statusOf(systemTest)
+                                                                               .flatMap(job -> job.lastSuccess().map(JobRun::at)),
+                                                (Optional<Instant>) application.deploymentJobs().statusOf(stagingTest)
+                                                                               .flatMap(job -> job.lastSuccess().map(JobRun::at)));
             String reason = "New change available";
             List<Job> testJobs = null;
 
             for (Step step : productionSteps) {
                 Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(application.change(), application, job)));
+                Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job)));
                 if (jobsByCompletion.containsKey(empty())) { // Step not complete, because some jobs remain -- trigger these if the previous step was done.
                     for (JobType job : jobsByCompletion.get(empty())) {
-                        State target = targetFor(application, application.change(), deploymentFor(application, job));
-                        if (isTested(application, target, job)) {
+                        State target = targetFor(application, change, deploymentFor(application, job));
+                        if (isTested(application, target)) {
                             if (completedAt.isPresent())
-                                jobs.add(deploymentJob(application, target, application.change(), job, reason, completedAt.get(), stepJobs));
+                                jobs.add(deploymentJob(application, target, change, job, reason, completedAt.get(), stepJobs));
                         }
                         else if (testJobs == null) {
                             if ( ! alreadyTriggered(application, target))
@@ -341,6 +347,9 @@ public class DeploymentTrigger {
         return jobs;
     }
 
+    /**
+     * Returns the list of test jobs that should run now, and that need to succeed on the given target for it to be considered tested.
+     */
     private List<Job> testJobsFor(Application application, State target, String reason, Instant availableSince) {
         List<Step> steps = application.deploymentSpec().steps();
         if (steps.isEmpty()) steps = singletonList(new DeploymentSpec.DeclaredZone(test));
@@ -349,23 +358,16 @@ public class DeploymentTrigger {
             for (JobType jobType : step.zones().stream().map(order::toJob).collect(toList())) {
                 Optional<JobRun> completion = successOn(application, jobType, target)
                         .filter(run -> jobType != stagingTest || sourcesMatchIfPresent(target, run));
-                if (completion.isPresent())
-                    availableSince = completion.get().at();
-                else if (isTested(application, target, jobType))
+                if ( ! completion.isPresent())
                     jobs.add(deploymentJob(application, target, application.change(), jobType, reason, availableSince, emptySet()));
             }
         }
         return jobs;
     }
 
-    // TODO jvenstad: Replace this when tests run in parallel.
-    private boolean isTested(Application application, State target, JobType jobType) {
-        if (jobType.environment() == staging)
-            return successOn(application, systemTest, target).isPresent();
-        if (jobType.environment() == prod)
-            return    successOn(application, stagingTest, target).filter(run -> sourcesMatchIfPresent(target, run)).isPresent()
-                   || alreadyTriggered(application, target);
-        return true;
+    private boolean isTested(Application application, State target) {
+        return    testedAt(application, target).isPresent()
+               || alreadyTriggered(application, target);
     }
 
     /** If the given state's sources are present and differ from its targets, returns whether they are equal to those of the given job run. */
@@ -381,8 +383,11 @@ public class DeploymentTrigger {
     }
 
     private Optional<Instant> testedAt(Application application, State target) {
-        return max(successOn(application, systemTest, target).map(JobRun::at),
-                   successOn(application, stagingTest, target).filter(run -> sourcesMatchIfPresent(target, run)).map(JobRun::at));
+        Optional<JobRun> testRun = successOn(application, systemTest, target);
+        Optional<JobRun> stagingRun = successOn(application, stagingTest, target)
+                .filter(run -> sourcesMatchIfPresent(target, run));
+        return max(testRun.map(JobRun::at), stagingRun.map(JobRun::at))
+                .filter(__ -> testRun.isPresent() && stagingRun.isPresent());
     }
 
     private boolean alreadyTriggered(Application application, State target) {

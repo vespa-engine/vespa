@@ -441,7 +441,6 @@ public class ControllerTest {
 
         // Abort all running jobs, so we have three candidate jobs, of which only one should be triggered at a time.
         tester.buildService().clear();
-        tester.clock().advance(Duration.ofHours(13));
 
         List<BuildService.BuildJob> jobs = new ArrayList<>();
         assertEquals(jobs, tester.buildService().jobs());
@@ -456,7 +455,6 @@ public class ControllerTest {
         // All three jobs are now eligible, but the one for app3 should trigger first as an outOfCapacity-retry.
         tester.buildService().remove(buildJob(app1, stagingTest));
         tester.buildService().remove(buildJob(app2, stagingTest));
-        tester.clock().advance(Duration.ofHours(13));
         jobs.remove(buildJob(app1, stagingTest));
         jobs.remove(buildJob(app2, stagingTest));
         tester.jobCompletion(stagingTest).application(app3).error(JobError.outOfCapacity).submit();
@@ -474,27 +472,33 @@ public class ControllerTest {
         tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
 
         tester.upgradeSystem(new Version("6.2"));
-        assertEquals(2, tester.buildService().jobs().size());
-
-        // app1 also gets a new application change, so its time fo availability is after the version upgrade.
+        // app1 also gets a new application change, so its time of availability is after the version upgrade.
         tester.clock().advance(Duration.ofMinutes(1));
+        tester.buildService().clear();
         tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        assertEquals(3, tester.buildService().jobs().size());
-        tester.assertRunning(app1.id(), systemTest); // app1 triggers before the other of the two apps, which are only upgrading platform.
+        jobs.clear();
+        jobs.add(buildJob(app1, stagingTest));
+        jobs.add(buildJob(app1, systemTest));
+        // Tests for app1 trigger before the others since it carries an application upgrade.
+        assertEquals(jobs, tester.buildService().jobs());
 
-        // Let the last system test job start, then remove the ones for apps 1 and 2, and let app3 fail with outOfCapacity again.
+        // Let the test jobs start, remove everything expect system test for app3, which fails with outOfCapacity again.
         tester.triggerUntilQuiescence();
         tester.buildService().remove(buildJob(app1, systemTest));
         tester.buildService().remove(buildJob(app2, systemTest));
-        tester.clock().advance(Duration.ofHours(13));
+        tester.buildService().remove(buildJob(app1, stagingTest));
+        tester.buildService().remove(buildJob(app2, stagingTest));
+        tester.buildService().remove(buildJob(app3, stagingTest));
+        tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
         jobs.clear();
         jobs.add(buildJob(app1, stagingTest));
         jobs.add(buildJob(app3, systemTest));
-        tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.triggerUntilQuiescence();
+        jobs.add(buildJob(app2, stagingTest));
         jobs.add(buildJob(app1, systemTest));
+        jobs.add(buildJob(app3, stagingTest));
         jobs.add(buildJob(app2, systemTest));
         assertEquals(jobs, tester.buildService().jobs());
 
@@ -683,7 +687,7 @@ public class ControllerTest {
 
         // Application 2 is deployed and assigned same rotation as application 1 had before deletion
         {
-            Application app2 = tester.createApplication("app2", "tenant2", 1, 1L);
+            Application app2 = tester.createApplication("app2", "tenant2", 2, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
                     .globalServiceId("foo")
@@ -711,6 +715,7 @@ public class ControllerTest {
 
         // Application 1 is recreated, deployed and assigned a new rotation
         {
+            tester.buildService().clear();
             Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)

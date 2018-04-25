@@ -142,7 +142,7 @@ public class MetricsReporterTest {
         reporter.maintain();
 
         // Average time is 1 hour
-        assertEquals(Duration.ofHours(1), getAverageDeploymentDuration(app));
+        assertEquals(Duration.ofMinutes(80), getAverageDeploymentDuration(app));
 
         // Another deployment starts and stalls for 12 hours
         tester.jobCompletion(component).application(app).nextBuildNumber(2).uploadArtifact(applicationPackage).submit();
@@ -150,7 +150,7 @@ public class MetricsReporterTest {
         reporter.maintain();
 
         assertEquals(Duration.ofHours(12) // hanging system-test
-                             .plus(Duration.ofMinutes(30)) // previous staging-test
+                             .plus(Duration.ofHours(12)) // hanging staging-test
                              .plus(Duration.ofMinutes(90)) // previous production job
                              .dividedBy(3), // Total number of orchestrated jobs
                      getAverageDeploymentDuration(app));

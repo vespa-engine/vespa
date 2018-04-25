@@ -57,11 +57,11 @@ public class OutstandingChangeDeployerTest {
         Application app = tester.application("app1");
         assertTrue(app.outstandingChange().isPresent());
         assertEquals("1.0.43-cafed00d", app.outstandingChange().application().get().id());
-        assertEquals(1, tester.buildService().jobs().size());
+        assertEquals(2, tester.buildService().jobs().size());
 
         deployer.maintain();
         tester.deploymentTrigger().triggerReadyJobs();
-        assertEquals("No effect as job is in progress", 1, tester.buildService().jobs().size());
+        assertEquals("No effect as job is in progress", 2, tester.buildService().jobs().size());
         assertEquals("1.0.43-cafed00d", app.outstandingChange().application().get().id());
 
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
@@ -74,9 +74,10 @@ public class OutstandingChangeDeployerTest {
         app = tester.application("app1");
         assertEquals("1.0.43-cafed00d", app.change().application().get().id());
         List<BuildService.BuildJob> jobs = tester.buildService().jobs();
-        assertEquals(1, jobs.size());
+        assertEquals(2, jobs.size());
         assertEquals(11, jobs.get(0).projectId());
-        assertEquals(DeploymentJobs.JobType.systemTest.jobName(), jobs.get(0).jobName());
+        tester.assertRunning(app.id(), DeploymentJobs.JobType.systemTest);
+        tester.assertRunning(app.id(), DeploymentJobs.JobType.stagingTest);
         assertFalse(tester.application("app1").outstandingChange().isPresent());
     }
 

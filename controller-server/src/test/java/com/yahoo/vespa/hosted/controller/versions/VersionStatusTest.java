@@ -201,6 +201,7 @@ public class VersionStatusTest {
 
         // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade
         tester.jobCompletion(systemTest).application(canary2).unsuccessful().submit();
+        tester.jobCompletion(stagingTest).application(canary2).submit();
         tester.completeUpgrade(canary2, version2, "canary");
         tester.updateVersionStatus();
         tester.upgrader().maintain();

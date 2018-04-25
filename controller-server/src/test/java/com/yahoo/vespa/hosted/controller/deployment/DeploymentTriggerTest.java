@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static com.yahoo.config.provision.SystemName.main;
@@ -74,7 +75,7 @@ public class DeploymentTriggerTest {
 
         // system-test fails and is retried
         tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
-        assertEquals("Job is retried on failure", 1, tester.buildService().jobs().size());
+        assertEquals("Job is retried on failure", 2, tester.buildService().jobs().size());
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
 
         // staging-test times out and is retried
@@ -340,8 +341,8 @@ public class DeploymentTriggerTest {
         });
         assertEquals(0, tester.buildService().jobs().size());
         readyJobsTrigger.run();
-        assertEquals(1, tester.buildService().jobs().size());
-        assertEquals("system-test", tester.buildService().jobs().get(0).jobName());
+        tester.assertRunning(app.id(), systemTest);
+        tester.assertRunning(app.id(), stagingTest);
     }
 
     @Test

@@ -70,7 +70,7 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
         tester.jobCompletion(DeploymentJobs.JobType.productionUsEast3).application(app).unsuccessful().submit();
-        assertEquals("Application starts upgrading to new version", 1, tester.buildService().jobs().size());
+        assertEquals("Application starts upgrading to new version", 2, tester.buildService().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // Failure re-deployer did not retry failing job for prod.us-east-3, since it no longer had an available change
