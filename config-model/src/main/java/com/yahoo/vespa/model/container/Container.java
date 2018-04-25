@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -39,8 +38,8 @@ import static com.yahoo.container.QrConfig.Rpc;
 
 /**
  * @author gjoranv
- * @author einarmr
- * @author tonytv
+ * @author Einar M R Rosenvinge
+ * @author Tony Vaagenes
  */
 //qr is restart because it is handled by ConfiguredApplication.start
 @RestartConfigs({QrStartConfig.class, QrConfig.class})
@@ -59,14 +58,8 @@ public class Container extends AbstractService implements
     private final boolean isHostedVespa;
 
     private String clusterName = null;
-    private boolean rpcServerEnabled = true;
-    
     private Optional<String> hostResponseHeaderKey = Optional.empty();
 
-    // TODO: move these up to cluster
-    private boolean httpServerEnabled = true;
-    private boolean messageBusEnabled = true;
-    
     /** Whether this node has been marked as retired (e.g, will be removed) */
     private final boolean retired;
     /** The unique index of this node */
@@ -84,10 +77,10 @@ public class Container extends AbstractService implements
     private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
 
     public Container(AbstractConfigProducer parent, String name, int index) {
-        this(parent, name, Collections.<PortOverride>emptyList(), index);
+        this(parent, name, Collections.emptyList(), index);
     }
     public Container(AbstractConfigProducer parent, String name, boolean retired, int index) {
-        this(parent, name, retired, Collections.<PortOverride>emptyList(), index);
+        this(parent, name, retired, Collections.emptyList(), index);
     }
     public Container(AbstractConfigProducer parent, String name, List<PortOverride> portOverrides, int index) {
         this(parent, name, false, portOverrides, index);
@@ -159,6 +152,8 @@ public class Container extends AbstractService implements
 
     @Override
     public void initService() {
+        if (isInitialized()) return;
+
         // XXX: Must be called first, to set the baseport
         super.initService();
 
@@ -179,7 +174,7 @@ public class Container extends AbstractService implements
         for (int i = 1; i < numHttpServerPorts; i++)
             portsMeta.on(i).tag("http").tag("external");
 
-        if (rpcServerEnabled) {
+        if (rpcServerEnabled()) {
             portsMeta.on(numHttpServerPorts + 0).tag("rpc").tag("messaging");
             portsMeta.on(numHttpServerPorts + 1).tag("rpc").tag("admin");
         }
@@ -286,7 +281,7 @@ public class Container extends AbstractService implements
                 return getRelativePort(0);
             }
         } else {
-            return httpServerEnabled ? getSearchPort() : -1;
+            return httpServerEnabled() ? getSearchPort() : -1;
         }
     }
 
@@ -294,8 +289,8 @@ public class Container extends AbstractService implements
         return "PRELOAD=" + getPreLoad() + " exec vespa-start-container-daemon " + getJvmArgs() + " ";
     }
 
-    public boolean isRpcServerEnabled() {
-        return rpcServerEnabled;
+    private boolean isRpcServerEnabled() {
+        return ((ContainerCluster) parent).rpcServerEnabled();
     }
 
     @Override
@@ -352,7 +347,7 @@ public class Container extends AbstractService implements
 
     private void addAllEnabledComponents(Collection<Component<?, ?>> allComponents, AbstractConfigProducer<?> current) {
         for (AbstractConfigProducer<?> child: current.getChildren().values()) {
-            if ( ! httpServerEnabled && isHttpServer(child)) continue;
+            if ( ! httpServerEnabled() && isHttpServer(child)) continue;
 
             if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
@@ -378,7 +373,7 @@ public class Container extends AbstractService implements
 
     @Override
     public void getConfig(ContainerMbusConfig.Builder builder) {
-        builder.enabled(messageBusEnabled).port(getMessagingPort());
+        builder.enabled(messageBusEnabled()).port(getMessagingPort());
     }
 
     @Override
@@ -389,14 +384,17 @@ public class Container extends AbstractService implements
         return dimensions;
     }
 
-    public void setRpcServerEnabled(boolean rpcServerEnabled) {
-        this.rpcServerEnabled = rpcServerEnabled;
+    private boolean messageBusEnabled() {
+        return containerCluster().isPresent() && containerCluster().get().messageBusEnabled();
     }
 
-    public void setHttpServerEnabled(boolean httpServerEnabled) {
-        this.httpServerEnabled = httpServerEnabled;
+    private boolean httpServerEnabled() {
+        return containerCluster().isPresent() && containerCluster().get().httpServerEnabled();
     }
 
+    private boolean rpcServerEnabled() {
+        return containerCluster().isPresent() && containerCluster().get().rpcServerEnabled();
+    }
 
     public static final class PortOverride {
         public final ComponentSpecification serverId;
@@ -406,6 +404,10 @@ public class Container extends AbstractService implements
             this.serverId = serverId;
             this.port = port;
         }
+    }
+
+    private Optional<ContainerCluster> containerCluster() {
+        return (parent instanceof ContainerCluster) ? Optional.of((ContainerCluster) parent) : Optional.empty();
     }
 
 }
