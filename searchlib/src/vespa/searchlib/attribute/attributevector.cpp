@@ -340,9 +340,9 @@ AttributeVector::getIsFastSearch() const {
 }
 
 uint32_t
-AttributeVector::getCommittedDocIdLimitSlow() const
+AttributeVector::getCommittedDocIdLimit() const
 {
-    return getCommittedDocIdLimit();
+    return _committedDocIdLimit;
 }
 
 bool

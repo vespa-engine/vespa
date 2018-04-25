@@ -78,7 +78,7 @@ public:
     virtual bool hasEnum() const override;
     virtual bool getIsFilter() const override;
     virtual bool getIsFastSearch() const override;
-    virtual uint32_t getCommittedDocIdLimitSlow() const override;
+    virtual uint32_t getCommittedDocIdLimit() const override;
     virtual bool isImported() const override;
 
 protected:

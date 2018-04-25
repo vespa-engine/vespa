@@ -417,7 +417,6 @@ public:
 
     // Implements IAttributeVector
     uint32_t getNumDocs() const override;
-    uint32_t getCommittedDocIdLimit() const { return _committedDocIdLimit; }
     uint32_t & getCommittedDocIdLimitRef() { return _committedDocIdLimit; }
     void setCommittedDocIdLimit(uint32_t committedDocIdLimit) {
         _committedDocIdLimit = committedDocIdLimit;
@@ -433,7 +432,7 @@ public:
     virtual CollectionType::Type getCollectionType() const override;
     virtual bool getIsFilter() const override;
     virtual bool getIsFastSearch() const override;
-    virtual uint32_t getCommittedDocIdLimitSlow() const override;
+    virtual uint32_t getCommittedDocIdLimit() const override;
     virtual bool isImported() const override;
 
     /**

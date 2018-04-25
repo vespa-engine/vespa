@@ -195,7 +195,7 @@ public:
 
 void ImportedSearchContext::makeMergedPostings(bool isFilter)
 {
-    uint32_t committedTargetDocIdLimit = _target_attribute.getCommittedDocIdLimitSlow();
+    uint32_t committedTargetDocIdLimit = _target_attribute.getCommittedDocIdLimit();
     std::atomic_thread_fence(std::memory_order_acquire);
     const auto &reverseMapping = _reference_attribute.getReverseMapping();
     if (isFilter) {
