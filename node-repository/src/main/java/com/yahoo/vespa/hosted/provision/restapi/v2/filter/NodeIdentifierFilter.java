@@ -16,21 +16,21 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * A filter that authenticates the remote host based on the subject and subject alternative names in client certificate.
- * A {@link NodePrincipal} object is assigned to user principal field if authentication is successful.
+ * A filter that identifies the remote node based on the subject and subject alternative names in client certificate.
+ * A {@link NodePrincipal} object is assigned to user principal field if identification is successful.
  *
  * @author bjorncs
  */
-@Provides("AuthenticationFilter")
-public class AuthenticationFilter extends JsonSecurityRequestFilterBase {
+@Provides("NodeIdentifierFilter")
+public class NodeIdentifierFilter extends JsonSecurityRequestFilterBase {
 
-    private static final Logger log = Logger.getLogger(AuthenticationFilter.class.getName());
+    private static final Logger log = Logger.getLogger(NodeIdentifierFilter.class.getName());
 
-    private final HostAuthenticator authenticator;
+    private final NodeIdentifier nodeIdentifier;
 
     @Inject
-    public AuthenticationFilter(Zone zone, NodeRepository nodeRepository) {
-        this.authenticator = new HostAuthenticator(zone, nodeRepository);
+    public NodeIdentifierFilter(Zone zone, NodeRepository nodeRepository) {
+        this.nodeIdentifier = new NodeIdentifier(zone, nodeRepository);
     }
 
     @Override
@@ -39,11 +39,11 @@ public class AuthenticationFilter extends JsonSecurityRequestFilterBase {
         if (clientCertificateChain.isEmpty())
             return Optional.of(new ErrorResponse(Response.Status.UNAUTHORIZED, 0, "Missing client certificate"));
         try {
-            NodePrincipal identity = authenticator.authenticate(clientCertificateChain);
+            NodePrincipal identity = nodeIdentifier.resolveNode(clientCertificateChain);
             request.setUserPrincipal(identity);
             return Optional.empty();
-        } catch (HostAuthenticator.AuthenticationException e) {
-            log.log(LogLevel.WARNING, "Authentication failed: " + e.getMessage(), e);
+        } catch (NodeIdentifier.NodeIdentifierException e) {
+            log.log(LogLevel.WARNING, "Node identification failed: " + e.getMessage(), e);
             return Optional.of(new ErrorResponse(Response.Status.UNAUTHORIZED, 1, e.getMessage()));
         }
     }

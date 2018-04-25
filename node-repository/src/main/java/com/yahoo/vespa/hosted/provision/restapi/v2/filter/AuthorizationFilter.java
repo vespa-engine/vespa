@@ -14,9 +14,6 @@ import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
 import com.yahoo.yolean.chain.After;
 
 import java.net.URI;
-import java.security.Principal;
-import java.security.cert.X509Certificate;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -25,12 +22,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Authorization filter for all paths in config server. It assumes that {@link AuthenticationFilter} is part of filter chain.
+ * Authorization filter for all paths in config server. It assumes that {@link NodeIdentifierFilter} is part of filter chain.
  *
  * @author mpolden
  * @author bjorncs
  */
-@After("AuthenticationFilter")
+@After("NodeIdentifierFilter")
 public class AuthorizationFilter implements SecurityRequestFilter {
 
     private static final Logger log = Logger.getLogger(AuthorizationFilter.class.getName());
@@ -68,12 +65,12 @@ public class AuthorizationFilter implements SecurityRequestFilter {
         try {
             NodePrincipal hostIdentity = (NodePrincipal) request.getUserPrincipal();
             if (hostIdentity == null)
-                return Optional.of(ErrorResponse.internalServerError(createErrorMessage(request, "Principal is missing. AuthenticationFilter has not been applied.")));
+                return Optional.of(ErrorResponse.internalServerError(createErrorMessage(request, "Principal is missing. NodeIdentifierFilter has not been applied.")));
             if (!authorizer.test(hostIdentity, request.getUri()))
                 return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials")));
             request.setUserPrincipal(hostIdentity);
             return Optional.empty();
-        } catch (HostAuthenticator.AuthenticationException e) {
+        } catch (NodeIdentifier.NodeIdentifierException e) {
             return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials: " + e.getMessage())));
         }
     }
