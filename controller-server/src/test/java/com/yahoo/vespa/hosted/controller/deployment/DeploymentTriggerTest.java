@@ -21,7 +21,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.yahoo.config.provision.SystemName.main;
@@ -440,7 +439,6 @@ public class DeploymentTriggerTest {
 
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
         assertEquals((Long) 42L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
-        // TODO jvenstad: Fails here now, because job isn't triggered any more, as deploy target is not verified.
         assertNotEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
@@ -491,14 +489,14 @@ public class DeploymentTriggerTest {
 
         // New application version should run system and staging tests first against 6.2, then against 6.1.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
+        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, systemTest);
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().version());
+        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, stagingTest);
         tester.deployAndNotify(application, empty(), true, productionUsCentral1);
-        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, systemTest);
-        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().version());
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, stagingTest);
 
         // The production job on version 6.2 fails and must retry -- this is OK, even though staging now has a different version.
@@ -506,9 +504,50 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, empty(), true, productionUsEast3);
         tester.deployAndNotify(application, empty(), true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastSuccess().get().application().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().get().longValue());
+    }
+
+    @Test
+    public void eachDifferentUpgradeCombinationIsTested() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Application> app = () -> tester.application(application.id());
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-central-1")
+                .parallel("eu-west-1", "us-east-3")
+                .build();
+        // Application version 42 and platform version 6.1.
+        tester.deployCompletely(application, applicationPackage);
+
+        // Application partially upgrades, then a new version is released.
+        Version v1 = new Version("6.1");
+        Version v2 = new Version("6.2");
+        tester.upgradeSystem(v2);
+        tester.deployAndNotify(application, empty(), true, systemTest);
+        tester.deployAndNotify(application, empty(), true, stagingTest);
+        tester.deployAndNotify(application, empty(), true, productionUsCentral1);
+        tester.deployAndNotify(application, empty(), true, productionEuWest1);
+        tester.deployAndNotify(application, empty(), false, productionUsEast3);
+        assertEquals(v2, app.get().deployments().get(ZoneId.from("prod", "us-central-1")).version());
+        assertEquals(v2, app.get().deployments().get(ZoneId.from("prod", "eu-west-1")).version());
+        assertEquals(v1, app.get().deployments().get(ZoneId.from("prod", "us-east-3")).version());
+
+        Version v3 = new Version("6.3");
+        tester.upgradeSystem(v3);
+        tester.deployAndNotify(application, empty(), false, productionUsEast3);
+
+        // See that sources for staging are: first v2, then v1.
+        tester.deployAndNotify(application, empty(), true, systemTest);
+        tester.deployAndNotify(application, empty(), true, stagingTest);
+        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastSuccess().get().sourcePlatform().get());
+        tester.deployAndNotify(application, empty(), true, productionUsCentral1);
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().sourcePlatform().get());
+        tester.deployAndNotify(application, empty(), true, stagingTest);
+        tester.deployAndNotify(application, empty(), true, productionEuWest1);
+        tester.deployAndNotify(application, empty(), true, productionUsEast3);
     }
 
 }

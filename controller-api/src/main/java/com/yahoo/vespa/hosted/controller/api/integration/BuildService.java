@@ -18,6 +18,7 @@ public interface BuildService {
     /**
      * Returns whether the given job is currently running.
      */
+    // TODO jvenstad: Change to enum State { idle, running, queued, disabled }
     boolean isRunning(BuildJob buildJob);
 
 

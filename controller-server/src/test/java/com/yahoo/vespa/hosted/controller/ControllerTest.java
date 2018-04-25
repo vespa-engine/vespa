@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionCorpUsEast1;
@@ -103,22 +104,27 @@ public class ControllerTest {
         ApplicationVersion applicationVersion = tester.controller().applications().require(app1.id()).change().application().get();
         assertTrue("Application version has been set during deployment", applicationVersion != ApplicationVersion.unknown);
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
-                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
+                              .withTriggering(version1, applicationVersion, Optional.empty(),"", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withCompletion(42, Optional.empty(), tester.clock().instant()), app1.id(), tester.controller());
 
         // Causes first deployment job to be triggered
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                              .withTriggering(version1, applicationVersion, "", tester.clock().instant()), app1.id(), tester.controller());
+                              .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant()), app1.id(), tester.controller());
         tester.clock().advance(Duration.ofSeconds(1));
 
-        // production job (failing)
+        // production job (failing) after deployment
+        tester.deploy(productionCorpUsEast1, app1, applicationPackage);
         tester.deployAndNotify(app1, applicationPackage, false, productionCorpUsEast1);
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         JobStatus expectedJobStatus = JobStatus.initial(productionCorpUsEast1)
-                                               .withTriggering(version1, applicationVersion, "", tester.clock().instant()) // Triggered first without application version info
-                                               .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant(), tester.controller())
-                                               .withTriggering(version1, applicationVersion, "", tester.clock().instant()); // Re-triggering (due to failure) has application version info
+                                               .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant()) // Triggered first without application version info
+                                               .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant())
+                                               .withTriggering(version1,
+                                                               applicationVersion,
+                                                               Optional.of(tester.application(app1.id()).deployments().get(productionCorpUsEast1.zone(main).get())),
+                                                               "",
+                                                               tester.clock().instant()); // Re-triggering (due to failure) has application version info
 
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
@@ -141,22 +147,22 @@ public class ControllerTest {
         applicationVersion = tester.application("app1").change().application().get();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
-                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()),
+                              .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withCompletion(42, Optional.empty(), tester.clock().instant()),
                      app1.id(), tester.controller());
         tester.jobCompletion(productionCorpUsEast1).application(app1).unsuccessful().submit();
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
-        tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         expectedJobStatus = expectedJobStatus
-                .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
-                .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller());
+                .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant())
+                .withCompletion(42, Optional.empty(), tester.clock().instant().plus(Duration.ofMillis(1)));
+        tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
         // causes triggering of next production job
         assertStatus(JobStatus.initial(productionUsEast3)
-                              .withTriggering(version1, applicationVersion, "", tester.clock().instant()),
+                              .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant()),
                      app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
@@ -176,7 +182,7 @@ public class ControllerTest {
             assertEquals("deployment-removal: application 'tenant1.app1' is deployed in corp-us-east-1, but does not include this zone in deployment.xml", e.getMessage());
         }
         assertNotNull("Zone was not removed",
-                      applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
+                      applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(main).get()));
         JobStatus jobStatus = applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1);
         assertNotNull("Deployment job was not removed", jobStatus);
         assertEquals(42, jobStatus.lastCompleted().get().id());
@@ -192,7 +198,7 @@ public class ControllerTest {
         tester.jobCompletion(component).application(app1).nextBuildNumber(2).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertNull("Zone was removed",
-                   applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
+                   applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(main).get()));
         assertNull("Deployment job was removed", applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1));
     }
 
@@ -570,7 +576,7 @@ public class ControllerTest {
                         .count();
 
         long mainJobsCount = statuses.get().keySet().stream()
-                .filter(type -> type.zone(SystemName.main).isPresent() && ! type.zone(SystemName.cd).isPresent())
+                .filter(type -> type.zone(main).isPresent() && ! type.zone(SystemName.cd).isPresent())
                 .count();
 
         assertEquals("Irrelevant (main) data is present.", 8, mainJobsCount);
@@ -591,7 +597,7 @@ public class ControllerTest {
                 .count();
 
         long newMainJobsCount = statuses.get().keySet().stream()
-                .filter(type -> type.zone(SystemName.main).isPresent() && ! type.zone(SystemName.cd).isPresent())
+                .filter(type -> type.zone(main).isPresent() && ! type.zone(SystemName.cd).isPresent())
                 .count();
 
         assertEquals("Irrelevant (main) job data is removed.", 0, newMainJobsCount);
@@ -805,25 +811,26 @@ public class ControllerTest {
         // Deploy in test
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        assertStatus(JobStatus.initial(stagingTest)
-                             .withTriggering(vespaVersion, version, "",
+        JobStatus expected = JobStatus.initial(stagingTest)
+                             .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
                                              tester.clock().instant().minus(Duration.ofMillis(1)))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), app.id(), tester.controller());
+                             .withCompletion(42, Optional.empty(), tester.clock().instant());
+        assertStatus(expected, app.id(), tester.controller());
 
         // Deploy in production
+        expected = JobStatus.initial(productionCorpUsEast1)
+                             .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                             tester.clock().instant())
+                             .withCompletion(42, Optional.empty(), tester.clock().instant().plus(Duration.ofMillis(1)));
         tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
-        assertStatus(JobStatus.initial(productionCorpUsEast1)
-                             .withTriggering(vespaVersion, version, "",
-                                             tester.clock().instant().minus(Duration.ofMillis(1)))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), app.id(), tester.controller());
+        assertStatus(expected, app.id(), tester.controller());
+
+        expected = JobStatus.initial(productionUsEast3)
+                             .withTriggering(vespaVersion, version, productionUsEast3.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                             tester.clock().instant())
+                             .withCompletion(42, Optional.empty(), tester.clock().instant().plus(Duration.ofMillis(1)));
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
-        assertStatus(JobStatus.initial(productionUsEast3)
-                             .withTriggering(vespaVersion, version, "",
-                                             tester.clock().instant().minus(Duration.ofMillis(1)))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), app.id(), tester.controller());
+        assertStatus(expected, app.id(), tester.controller());
 
         // Verify deployed version
         app = tester.controller().applications().require(app.id());

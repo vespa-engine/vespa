@@ -86,6 +86,8 @@ public class ApplicationSerializer {
     private final String jobRunIdField = "id";
     private final String versionField = "version";
     private final String revisionField = "revision";
+    private final String sourceVersionField = "sourceVersion";
+    private final String sourceApplicationField = "sourceRevision";
     private final String reasonField = "reason";
     private final String atField = "at";
 
@@ -226,20 +228,21 @@ public class ApplicationSerializer {
         if (jobStatus.jobError().isPresent())
             object.setString(errorField, jobStatus.jobError().get().name());
 
-        jobRunToSlime(jobStatus.lastTriggered(), object, lastTriggeredField);
-        jobRunToSlime(jobStatus.lastCompleted(), object, lastCompletedField);
-        jobRunToSlime(jobStatus.firstFailing(), object, firstFailingField);
-        jobRunToSlime(jobStatus.lastSuccess(), object, lastSuccessField);
+        jobStatus.lastTriggered().ifPresent(run -> jobRunToSlime(run, object, lastTriggeredField));
+        jobStatus.lastCompleted().ifPresent(run -> jobRunToSlime(run, object, lastCompletedField));
+        jobStatus.lastSuccess().ifPresent(run -> jobRunToSlime(run, object, lastSuccessField));
+        jobStatus.firstFailing().ifPresent(run -> jobRunToSlime(run, object, firstFailingField));
     }
 
-    private void jobRunToSlime(Optional<JobStatus.JobRun> jobRun, Cursor parent, String jobRunObjectName) {
-        if ( ! jobRun.isPresent()) return;
+    private void jobRunToSlime(JobStatus.JobRun jobRun, Cursor parent, String jobRunObjectName) {
         Cursor object = parent.setObject(jobRunObjectName);
-        object.setLong(jobRunIdField, jobRun.get().id());
-        object.setString(versionField, jobRun.get().version().toString());
-        toSlime(jobRun.get().applicationVersion(), object.setObject(revisionField));
-        object.setString(reasonField, jobRun.get().reason());
-        object.setLong(atField, jobRun.get().at().toEpochMilli());
+        object.setLong(jobRunIdField, jobRun.id());
+        object.setString(versionField, jobRun.platform().toString());
+        toSlime(jobRun.application(), object.setObject(revisionField));
+        jobRun.sourcePlatform().ifPresent(version -> object.setString(sourceVersionField, version.toString()));
+        jobRun.sourceApplication().ifPresent(version -> toSlime(version, object.setObject(sourceApplicationField)));
+        object.setString(reasonField, jobRun.reason());
+        object.setLong(atField, jobRun.at().toEpochMilli());
     }
 
     private void toSlime(Change deploying, Cursor parentObject, String fieldName) {
@@ -399,10 +402,12 @@ public class ApplicationSerializer {
 
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        return Optional.of(new JobStatus.JobRun(optionalLong(object.field(jobRunIdField)).orElse(-1L), // TODO: Make non-optional after November 2017 -- what about lastTriggered?
+        return Optional.of(new JobStatus.JobRun(object.field(jobRunIdField).asLong(),
                                                 new Version(object.field(versionField).asString()),
                                                 applicationVersionFromSlime(object.field(revisionField)),
-                                                optionalString(object.field(reasonField)).orElse(""), // TODO: Make non-optional after November 2017
+                                                optionalString(object.field(sourceVersionField)).map(Version::fromString),
+                                                Optional.of(object.field(sourceApplicationField)).filter(Inspector::valid).map(this::applicationVersionFromSlime),
+                                                object.field(reasonField).asString(),
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
     }
 

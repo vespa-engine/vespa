@@ -131,7 +131,7 @@ public class FailureRedeployerTest {
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // Cancellation of outdated version and triggering on a new version is done by the upgrader.
-        assertEquals(version, tester.application(app.id()).deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
+        assertEquals(version, tester.application(app.id()).deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
     }
 
     @Test

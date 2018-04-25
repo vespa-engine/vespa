@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
@@ -717,7 +718,7 @@ public class UpgraderTest {
         // Another hour pass, time is 20:00 and application upgrades
         tester.clock().advance(Duration.ofHours(1));
         readyJobsTrigger.maintain();
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
     }
@@ -760,7 +761,7 @@ public class UpgraderTest {
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
         assertTrue(tester.buildService().jobs().isEmpty()); // Next job not triggered due to being in the block window
 
         // A day passes and we get a new version
@@ -776,12 +777,12 @@ public class UpgraderTest {
         tester.clock().advance(Duration.ofHours(17)); // Monday, 10:00
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
-        // We proceed with the new version in the expected order, not starting with the previously blocked version:
-        // Test jobs are run with the new version, but not production as we are in the block window
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
+        // us-east-3 has an older version than the other zones, and needs a new staging test run.
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
         
