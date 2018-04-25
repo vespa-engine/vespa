@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
+import org.jetbrains.annotations.TestOnly;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -145,7 +146,8 @@ public class JobStatus {
         private final String reason;
         private final Instant at;
 
-        public JobRun(long id, Version platform, ApplicationVersion application, Optional<Version> sourcePlatform, Optional<ApplicationVersion> sourceApplication, String reason, Instant at) {
+        public JobRun(long id, Version platform, ApplicationVersion application, Optional<Version> sourcePlatform,
+                      Optional<ApplicationVersion> sourceApplication, String reason, Instant at) {
             this.id = id;
             this.platform = requireNonNull(platform);
             this.application = requireNonNull(application);
@@ -155,7 +157,8 @@ public class JobStatus {
             this.at = requireNonNull(at);
         }
 
-        public static JobRun triggering(Version platform, ApplicationVersion application, Optional<Version> sourcePlatform, Optional<ApplicationVersion> sourceApplication, String reason, Instant at) {
+        public static JobRun triggering(Version platform, ApplicationVersion application, Optional<Version> sourcePlatform,
+                                        Optional<ApplicationVersion> sourceApplication, String reason, Instant at) {
             return new JobRun(-1, platform, application, sourcePlatform, sourceApplication, reason, at);
         }
 

@@ -539,20 +539,6 @@ public class ApplicationController {
 
     /** Deactivate application in the given zone */
     public void deactivate(Application application, ZoneId zone) {
-        deactivate(application, zone, Optional.empty(), false);
-    }
-
-    /** Deactivate a known deployment of the given application */
-    public void deactivate(Application application, Deployment deployment, boolean requireThatDeploymentHasExpired) {
-        deactivate(application, deployment.zone(), Optional.of(deployment), requireThatDeploymentHasExpired);
-    }
-
-    private void deactivate(Application application, ZoneId zone, Optional<Deployment> deployment,
-                            boolean requireThatDeploymentHasExpired) {
-        if (requireThatDeploymentHasExpired && deployment.isPresent()
-            && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant()))
-            return;
-
         lockOrThrow(application.id(), lockedApplication -> store(deactivate(lockedApplication, zone)));
     }
 
@@ -596,7 +582,7 @@ public class ApplicationController {
                 .filter(zone -> zone.environment() == Environment.prod)
                 .forEach(zone -> {
                     if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
-                                                                       zone.region().orElse(null)))) {
+                                                                         zone.region().orElse(null)))) {
                         throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
                     }
                 });
