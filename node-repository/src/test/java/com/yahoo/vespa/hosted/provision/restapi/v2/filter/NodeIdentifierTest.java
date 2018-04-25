@@ -41,13 +41,15 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bjorncs
  */
-public class HostAuthenticatorTest {
+public class NodeIdentifierTest {
     private static final String HOSTNAME = "myhostname";
     private static final String OPENSTACK_ID = "OPENSTACK-ID";
+    private static final String AWS_INSTANCE_ID = "i-abcdef123456";
     private static final String INSTANCE_ID = "default";
     private static final Zone ZONE = new Zone(SystemName.main, Environment.prod, RegionName.defaultName());
     private static final KeyPair KEYPAIR = KeyUtils.generateKeypair(RSA);
-    private static final X509Certificate ATHENZ_CA_DUMMY = createAthenzCaDummyCertificate();
+    private static final X509Certificate ATHENZ_YAHOO_CA_CERT = createDummyCaCertificate("Yahoo Athenz CA");
+    private static final X509Certificate ATHENZ_AWS_CA_CERT = createDummyCaCertificate("Athenz AWS CA");
 
     @Test
     public void accepts_configserver_selfsigned_cert() {
@@ -56,8 +58,8 @@ public class HostAuthenticatorTest {
                 .fromKeypair(
                         KEYPAIR, new X500Principal("CN=" + HOSTNAME), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
                 .build();
-        HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
-        NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(HOSTNAME, identity.getHostname().get());
         assertEquals(HOSTNAME, identity.getHostIdentityName());
@@ -73,11 +75,31 @@ public class HostAuthenticatorTest {
                 .fromKeypair(new X500Principal("CN=" + identityName), KEYPAIR, SHA256_WITH_RSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_CA_DUMMY.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
                 .addSubjectAlternativeName(OPENSTACK_ID + ".instanceid.athenz.provider-name.ostk.yahoo.cloud")
                 .build();
-        HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
-        NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
+        assertTrue(identity.getHostname().isPresent());
+        assertEquals(HOSTNAME, identity.getHostname().get());
+        assertEquals(identityName, identity.getHostIdentityName());
+    }
+
+    @Test
+    public void accepts_aws_host_certificate() {
+        NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
+        nodeRepositoryDummy.addNode(AWS_INSTANCE_ID, HOSTNAME, INSTANCE_ID, NodeType.host);
+        nodeRepositoryDummy.setNodeState(HOSTNAME, Node.State.active);
+        String identityName = "vespa.vespa.tenant-host";
+        Pkcs10Csr csr = Pkcs10CsrBuilder
+                .fromKeypair(new X500Principal("CN=" + identityName), KEYPAIR, SHA256_WITH_RSA)
+                .build();
+        X509Certificate certificate = X509CertificateBuilder
+                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
+                .build();
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(HOSTNAME, identity.getHostname().get());
         assertEquals(identityName, identity.getHostIdentityName());
@@ -100,11 +122,11 @@ public class HostAuthenticatorTest {
                 .build();
         VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(clusterIndex, clusterId, INSTANCE_ID, application, tenant, region, environment);
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_CA_DUMMY.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
                 .addSubjectAlternativeName(vespaUniqueInstanceId.asDottedString() + ".instanceid.athenz.provider-name.vespa.yahoo.cloud")
                 .build();
-        HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
-        NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(HOSTNAME, identity.getHostname().get());
         assertEquals(identityName, identity.getHostIdentityName());
@@ -118,10 +140,10 @@ public class HostAuthenticatorTest {
                 .fromKeypair(new X500Principal("CN=" + identityName), KEYPAIR, SHA256_WITH_RSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_CA_DUMMY.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
                 .build();
-        HostAuthenticator authenticator = new HostAuthenticator(ZONE, nodeRepositoryDummy.nodeRepository());
-        NodePrincipal identity = authenticator.authenticate(singletonList(certificate));
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertFalse(identity.getHostname().isPresent());
         assertEquals(identityName, identity.getHostIdentityName());
     }
@@ -151,11 +173,11 @@ public class HostAuthenticatorTest {
 
     }
 
-    private static X509Certificate createAthenzCaDummyCertificate() {
+    private static X509Certificate createDummyCaCertificate(String caCommonName) {
         KeyPair keyPair = KeyUtils.generateKeypair(RSA);
         return X509CertificateBuilder
                 .fromKeypair(
-                        keyPair, new X500Principal("CN=Yahoo Athenz CA"), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
+                        keyPair, new X500Principal("CN=" + caCommonName), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
                 .setBasicConstraints(true, true)
                 .build();
 
