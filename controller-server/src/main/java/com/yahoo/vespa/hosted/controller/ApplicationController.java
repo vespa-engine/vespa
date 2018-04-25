@@ -539,6 +539,11 @@ public class ApplicationController {
 
     /** Deactivate application in the given zone */
     public void deactivate(Application application, ZoneId zone) {
+        Optional<Deployment> deployment = Optional.empty();
+        if (false && deployment.isPresent()
+            && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant()))
+            return;
+
         lockOrThrow(application.id(), lockedApplication -> store(deactivate(lockedApplication, zone)));
     }
 
