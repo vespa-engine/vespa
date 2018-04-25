@@ -281,7 +281,6 @@ public class DeploymentTester {
         assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService().jobs(),
                     buildService().remove(report.buildJob()));
 
-        clock().advance(Duration.ofMillis(1));
         applications().deploymentTrigger().notifyOfCompletion(report);
         applications().deploymentTrigger().triggerReadyJobs();
     }

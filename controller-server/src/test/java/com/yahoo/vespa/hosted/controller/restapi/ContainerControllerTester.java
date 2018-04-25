@@ -130,11 +130,6 @@ public class ContainerControllerTester {
             throw new IllegalArgumentException(report.jobType() + " is not running for " + report.applicationId());
         assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService.jobs(),
                     buildService.remove(report.buildJob()));
-        try {
-            Thread.sleep(1);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
         controller().applications().deploymentTrigger().notifyOfCompletion(report);
         controller().applications().deploymentTrigger().triggerReadyJobs();
     }
