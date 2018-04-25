@@ -161,14 +161,14 @@ public class NodeAgentImplTest {
 
     @Test
     public void absentContainerCausesStart() throws Exception {
-        final long restartGeneration = 1;
+        final Optional<Long> restartGeneration = Optional.of(1L);
         final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .state(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
+                .wantedRestartGeneration(restartGeneration.get())
+                .currentRestartGeneration(restartGeneration.get())
                 .wantedRebootGeneration(rebootGeneration)
                 .build();
 
@@ -430,7 +430,7 @@ public class NodeAgentImplTest {
         // current Docker image and vespa version should be cleared
         verify(nodeRepository, times(1)).updateNodeAttributes(
                 any(String.class), eq(new NodeAttributes()
-                        .withRestartGeneration(wantedRestartGeneration.orElse(null))
+                        .withRestartGeneration(wantedRestartGeneration)
                         .withRebootGeneration(0L)
                         .withDockerImage(new DockerImage(""))));
     }

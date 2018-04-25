@@ -4,50 +4,51 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class NodeAttributes {
 
-    private Long restartGeneration = null;
-    private Long rebootGeneration = null;
-    private DockerImage dockerImage = null;
-    private String hardwareDivergence = null;
+    private Optional<Long> restartGeneration = Optional.empty();
+    private Optional<Long> rebootGeneration = Optional.empty();
+    private Optional<DockerImage> dockerImage = Optional.empty();
+    private Optional<String> hardwareDivergence = Optional.empty();
 
     public NodeAttributes() { }
 
-    public NodeAttributes withRestartGeneration(Long restartGeneration) {
+    public NodeAttributes withRestartGeneration(Optional<Long> restartGeneration) {
         this.restartGeneration = restartGeneration;
         return this;
     }
 
-    public NodeAttributes withRebootGeneration(Long rebootGeneration) {
-        this.rebootGeneration = rebootGeneration;
+    public NodeAttributes withRebootGeneration(long rebootGeneration) {
+        this.rebootGeneration = Optional.of(rebootGeneration);
         return this;
     }
 
     public NodeAttributes withDockerImage(DockerImage dockerImage) {
-        this.dockerImage = dockerImage;
+        this.dockerImage = Optional.of(dockerImage);
         return this;
     }
 
     public NodeAttributes withHardwareDivergence(String hardwareDivergence) {
-        this.hardwareDivergence = hardwareDivergence;
+        this.hardwareDivergence = Optional.of(hardwareDivergence);
         return this;
     }
 
 
-    public Long getRestartGeneration() {
+    public Optional<Long> getRestartGeneration() {
         return restartGeneration;
     }
 
-    public Long getRebootGeneration() {
+    public Optional<Long> getRebootGeneration() {
         return rebootGeneration;
     }
 
-    public DockerImage getDockerImage() {
+    public Optional<DockerImage> getDockerImage() {
         return dockerImage;
     }
 
-    public String getHardwareDivergence() {
+    public Optional<String> getHardwareDivergence() {
         return hardwareDivergence;
     }
 
@@ -72,10 +73,10 @@ public class NodeAttributes {
     @Override
     public String toString() {
         return "NodeAttributes{" +
-                "restartGeneration=" + restartGeneration +
-                ", rebootGeneration=" + rebootGeneration +
-                ", dockerImage=" + dockerImage.asString() +
-                ", hardwareDivergence='" + hardwareDivergence + '\'' +
+                "restartGeneration=" + restartGeneration.map(String::valueOf).orElse("") +
+                ", rebootGeneration=" + rebootGeneration.map(String::valueOf).orElse("") +
+                ", dockerImage=" + dockerImage.map(DockerImage::asString).orElse("") +
+                ", hardwareDivergence='" + hardwareDivergence.orElse(null) + "'" +
                 '}';
     }
 }
