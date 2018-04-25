@@ -704,7 +704,7 @@
         <test.hide>true</test.hide>
     	<doclint>all</doclint>
         <scala.major-version>2.11</scala.major-version> <!-- TODO: factorylib magic for maven cache bootstrapping prevents moving this to container-dep-versions. -->
-        <surefire.version>2.19.1</surefire.version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
+        <surefire.version>2.21.0</surefire.version>
     </properties>
 
 </project>
