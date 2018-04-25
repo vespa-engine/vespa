@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.util;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileWriter;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,11 +39,20 @@ public class SecretAgentCheckConfig {
         return this;
     }
 
+    public void setTags(Map<String, Object> tags) {
+        this.tags.clear();
+        this.tags.putAll(tags);
+    }
+
     public void writeTo(Path yamasAgentDirectory) throws IOException {
         if (! Files.exists(yamasAgentDirectory)) yamasAgentDirectory.toFile().mkdirs();
         Path scheduleFilePath = yamasAgentDirectory.resolve(id + ".yaml");
         Files.write(scheduleFilePath, render().getBytes());
         scheduleFilePath.toFile().setReadable(true, false); // Give everyone read access to the schedule file
+    }
+
+    public FileWriter getFileWriterTo(Path destinationPath) {
+        return new FileWriter(destinationPath, this::render);
     }
 
     public String render() {
