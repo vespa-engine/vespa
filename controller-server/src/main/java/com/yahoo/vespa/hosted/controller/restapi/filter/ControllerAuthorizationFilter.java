@@ -94,7 +94,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             } else if (isTenantPipelineOperation(path, method)) {
                 verifyIsTenantPipelineOperator(principal, getTenantName(path), getApplicationName(path));
             } else {
-                throw new ForbiddenException("No access control is explicitly declared for this api.");
+                throw new ForbiddenException("No access control is declared for path: '" + path.asString() + "'");
             }
             return Optional.empty();
         } catch (WebApplicationException e) {
