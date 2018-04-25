@@ -62,7 +62,11 @@ public class NodePrincipal implements Principal {
 
     @Override
     public String getName() {
-        return identityName;
+        if (hostname == null || identityName.equals(hostname)) {
+            return identityName;
+        } else {
+            return identityName + "/" + hostname;
+        }
     }
 
     public enum Type { ATHENZ, LEGACY }
