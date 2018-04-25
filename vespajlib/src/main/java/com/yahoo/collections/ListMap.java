@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -25,7 +26,10 @@ public class ListMap<K, V> {
     @SuppressWarnings("unchecked")
     public ListMap(@SuppressWarnings("rawtypes") Class<? extends Map> implementation) {
         try {
-            this.map = implementation.newInstance();
+            this.map = implementation.getDeclaredConstructor().newInstance();
+        } catch (InvocationTargetException e) {
+            // For backwards compatibility from when this method used implementation.newInstance()
+            throw new IllegalArgumentException(e.getCause());
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }

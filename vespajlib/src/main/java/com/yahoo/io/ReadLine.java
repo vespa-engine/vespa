@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
 
+import java.nio.Buffer;
 import java.nio.charset.Charset;
 import java.nio.ByteBuffer;
 
@@ -44,9 +45,11 @@ public class ReadLine {
                     continue;
                 }
 
-                // extract string between start and i.  limit() returns
-                // a buffer so we have to up-cast again
-                String line = charset.decode((ByteBuffer) buffer.slice().limit(i - start)).toString();
+                // limit() returns a buffer (before Java 9) so we have to up-cast.
+                // The downcast to Buffer is done to avoid "redundant cast" warning on Java 9.
+                // TODO: when Java 8 is gone, remove the casts and above comments.
+                // extract string between start and i.
+                String line = charset.decode((ByteBuffer) ((Buffer)buffer.slice()).limit(i - start)).toString();
 
                 // skip remaining
                 for (; (i < buffer.limit()) && isEolChar(buffer.get(i)); i++) {
