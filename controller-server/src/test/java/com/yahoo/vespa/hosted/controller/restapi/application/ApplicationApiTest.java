@@ -746,7 +746,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
                                       .userIdentity(unauthorizedUser)
                                       .nToken(N_TOKEN),
-                              "{\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
                               403);
 
         // (Create it with the right tenant id)
@@ -761,13 +761,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
-                              "{\n  \"message\" : \"'user.myuser' is not a Screwdriver identity. Only Screwdriver is allowed to deploy to this environment.\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"'user.myuser' is not a Screwdriver identity. Only Screwdriver is allowed to deploy to this environment.\"\n}",
                               403);
 
         // Deleting an application for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(unauthorizedUser),
-                              "{\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
                               403);
 
         // (Deleting it with the right tenant id)
@@ -781,7 +781,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
                                       .userIdentity(unauthorizedUser),
-                              "{\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
                               403);
         
         // Change Athens domain
@@ -796,7 +796,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Deleting a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
                                       .userIdentity(unauthorizedUser),
-                              "{\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
                               403);
     }
 

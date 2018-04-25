@@ -48,7 +48,7 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
     }
 
     @Override
-    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
+    public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         if (request.getMethod().equals("OPTIONS")) return Optional.empty(); // Skip authentication on OPTIONS - required for Javascript CORS
 
         try {

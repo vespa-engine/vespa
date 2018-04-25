@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -66,4 +67,27 @@ public class NodePrincipal implements Principal {
 
     public enum Type { ATHENZ, LEGACY }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NodePrincipal principal = (NodePrincipal) o;
+        return Objects.equals(identityName, principal.identityName) &&
+                Objects.equals(hostname, principal.hostname) &&
+                type == principal.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(identityName, hostname, type);
+    }
+
+    @Override
+    public String toString() {
+        return "NodePrincipal{" +
+                "identityName='" + identityName + '\'' +
+                ", hostname='" + hostname + '\'' +
+                ", type=" + type +
+                '}';
+    }
 }
