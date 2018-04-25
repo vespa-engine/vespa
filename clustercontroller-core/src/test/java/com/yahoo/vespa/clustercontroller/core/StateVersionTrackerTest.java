@@ -303,6 +303,23 @@ public class StateVersionTrackerTest {
         assertFalse(tracker.bucketSpaceMergeCompletionStateHasChanged());
     }
 
+    @Test
+    public void setting_zookeeper_retrieved_bundle_sets_current_versioned_state_and_resets_candidate_state() {
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
+        versionTracker.setVersionRetrievedFromZooKeeper(100);
+        versionTracker.updateLatestCandidateStateBundle(
+                ClusterStateBundle.ofBaselineOnly(stateWithoutAnnotations("distributor:1 storage:1")));
+        versionTracker.promoteCandidateToVersionedState(12345);
+
+        ClusterStateBundle zkBundle = ClusterStateBundle.ofBaselineOnly(stateWithoutAnnotations("version:199 distributor:2 storage:2"));
+        versionTracker.setVersionRetrievedFromZooKeeper(200);
+        versionTracker.setClusterStateBundleRetrievedFromZooKeeper(zkBundle);
+
+        assertThat(versionTracker.getLatestCandidateState(), equalTo(AnnotatedClusterState.emptyState()));
+        assertThat(versionTracker.getVersionedClusterStateBundle(), equalTo(zkBundle));
+        assertThat(versionTracker.getCurrentVersion(), equalTo(200)); // Not from bundle, but from explicitly stored version
+    }
+
     private HostInfo createHostInfo(long bucketsPending) {
         return HostInfo.createHostInfo(
                 "{\n" +

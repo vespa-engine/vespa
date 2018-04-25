@@ -23,13 +23,21 @@ public class StateWaiter implements SystemStateListener {
         this.timer = timer;
     }
 
-    public void handleNewSystemState(ClusterStateBundle state) {
+    @Override
+    public void handleNewPublishedState(ClusterStateBundle state) {
         synchronized(timer) {
             current = state.getBaselineClusterState();
 
             ++stateUpdates;
             timer.notifyAll();
         }
+    }
+
+    @Override
+    public void handleNewCandidateState(ClusterStateBundle states) {
+        // Treat candidate states as if they were published for the tests that use
+        // this (deprecated) waiter class.
+        handleNewPublishedState(states);
     }
 
     public int getStateUpdates() { return Math.max(0, stateUpdates); }

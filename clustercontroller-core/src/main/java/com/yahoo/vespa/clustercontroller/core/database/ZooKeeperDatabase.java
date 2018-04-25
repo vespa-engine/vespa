@@ -1,7 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
+import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
+import com.yahoo.vespa.clustercontroller.core.rpc.EnvelopedClusterStateBundleCodec;
+import com.yahoo.vespa.clustercontroller.core.rpc.SlimeClusterStateBundleCodec;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.data.ACL;
@@ -128,6 +132,7 @@ public class ZooKeeperDatabase extends Database {
         createNode(zooKeeperRoot, "wantedstates", new byte[0]);
         createNode(zooKeeperRoot, "starttimestamps", new byte[0]);
         createNode(zooKeeperRoot, "latestversion", new Integer(0).toString().getBytes(utf8));
+        createNode(zooKeeperRoot, "published_state_bundle", new byte[0]); // TODO dedupe string constants
         byte val[] = String.valueOf(nodeIndex).getBytes(utf8);
         deleteNodeIfExists(getMyIndexPath());
         log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex +
@@ -165,6 +170,15 @@ public class ZooKeeperDatabase extends Database {
         return (!sessionOpen || watcher.getState().equals(Watcher.Event.KeeperState.Expired));
     }
 
+    private void maybeLogExceptionWarning(Exception e, String message) {
+        if (sessionOpen && reportErrors) {
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            log.log(LogLevel.WARNING, String.format("Fleetcontroller %s: %s. Exception: %s\n%s",
+                    nodeIndex, message, e.getMessage(), sw.toString()));
+        }
+    }
+
     public boolean storeMasterVote(int wantedMasterIndex) throws InterruptedException {
         byte val[] = String.valueOf(wantedMasterIndex).getBytes(utf8);
         try{
@@ -174,11 +188,7 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            if (sessionOpen && reportErrors) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to create our ephemeral node and store master vote:\n" + sw);
-            }
+            maybeLogExceptionWarning(e, "Failed to create our ephemeral node and store master vote");
         }
         return false;
     }
@@ -191,11 +201,7 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            if (sessionOpen && reportErrors) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to store latest system state version used " + version + "\n" + sw);
-            }
+            maybeLogExceptionWarning(e, "Failed to store latest system state version used " + version);
             return false;
         }
     }
@@ -211,11 +217,7 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            if (sessionOpen && reportErrors) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve latest system state version used. Returning null.\n" + sw);
-            }
+            maybeLogExceptionWarning(e, "Failed to retrieve latest system state version used. Returning null");
             return null;
         }
     }
@@ -242,11 +244,7 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            if (sessionOpen && reportErrors) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to store wanted states in zookeeper: " + e.getMessage() + "\n" + sw);
-            }
+            maybeLogExceptionWarning(e, "Failed to store wanted states in ZooKeeper");
             return false;
         }
     }
@@ -276,11 +274,7 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            if (sessionOpen && reportErrors) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve wanted states from zookeeper: " + e.getMessage() + "\n" + sw);
-            }
+            maybeLogExceptionWarning(e, "Failed to retrieve wanted states from ZooKeeper");
             return null;
         }
     }
@@ -301,11 +295,7 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            if (sessionOpen && reportErrors) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to store start timestamps in zookeeper: " + e.getMessage() + "\n" + sw);
-            }
+            maybeLogExceptionWarning(e, "Failed to store start timestamps in ZooKeeper");
             return false;
         }
     }
@@ -336,12 +326,45 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
-            if (sessionOpen && reportErrors) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to retrieve start timestamps from zookeeper: " + e.getMessage() + "\n" + sw);
-            }
+            maybeLogExceptionWarning(e, "Failed to retrieve start timestamps from ZooKeeper");
             return null;
         }
     }
+
+    @Override
+    public boolean storeLastPublishedStateBundle(ClusterStateBundle stateBundle) throws InterruptedException {
+        EnvelopedClusterStateBundleCodec envelopedBundleCodec = new SlimeClusterStateBundleCodec();
+        byte[] encodedBundle = envelopedBundleCodec.encodeWithEnvelope(stateBundle);
+        try{
+            log.log(LogLevel.DEBUG, () -> String.format("Fleetcontroller %d: Storing published state bundle %s at '%spublished_state_bundle'",
+                    nodeIndex, stateBundle, zooKeeperRoot));
+            // TODO CAS on expected zknode version
+            session.setData(zooKeeperRoot + "published_state_bundle", encodedBundle, -1);
+        } catch (InterruptedException e) {
+            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+        } catch (Exception e) {
+            maybeLogExceptionWarning(e, "Failed to store last published cluster state bundle in ZooKeeper");
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public ClusterStateBundle retrieveLastPublishedStateBundle() throws InterruptedException {
+        Stat stat = new Stat();
+        try {
+            byte[] data = session.getData(zooKeeperRoot + "published_state_bundle", false, stat);
+            if (data != null && data.length != 0) {
+                EnvelopedClusterStateBundleCodec envelopedBundleCodec = new SlimeClusterStateBundleCodec();
+                return envelopedBundleCodec.decodeWithEnvelope(data);
+            }
+        } catch (InterruptedException e) {
+            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+        } catch (Exception e) {
+            maybeLogExceptionWarning(e, "Failed to retrieve last published cluster state bundle from " +
+                    "ZooKeeper, will use an empty state as baseline");
+        }
+        return ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.emptyState());
+    }
+
 }

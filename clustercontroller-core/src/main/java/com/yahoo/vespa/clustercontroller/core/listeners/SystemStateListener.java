@@ -5,6 +5,9 @@ import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 
 public interface SystemStateListener {
 
-    void handleNewSystemState(ClusterStateBundle states);
+    // TODO consider rename to bundle
+    void handleNewPublishedState(ClusterStateBundle states);
+
+    default void handleNewCandidateState(ClusterStateBundle states) {}
 
 }

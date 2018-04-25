@@ -4,12 +4,17 @@ package com.yahoo.vespa.clustercontroller.core.testutils;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.DummyVdsNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,14 +24,14 @@ import java.util.regex.Pattern;
 public interface WaitCondition {
 
     /** Return null if met, why not if it is not met. */
-    public String isConditionMet();
+    String isConditionMet();
 
-    public abstract class StateWait implements WaitCondition {
+    abstract class StateWait implements WaitCondition {
         private final Object monitor;
         protected ClusterState currentState;
         private final SystemStateListener listener = new SystemStateListener() {
             @Override
-            public void handleNewSystemState(ClusterStateBundle state) {
+            public void handleNewPublishedState(ClusterStateBundle state) {
                 synchronized (monitor) {
                     currentState = state.getBaselineClusterState();
                     monitor.notifyAll();
@@ -36,7 +41,9 @@ public interface WaitCondition {
 
         public StateWait(FleetController fc, Object monitor) {
             this.monitor = monitor;
-            fc.addSystemStateListener(listener);
+            synchronized (this.monitor) {
+                fc.addSystemStateListener(listener);
+            }
         }
 
         public ClusterState getCurrentState() {
@@ -46,11 +53,13 @@ public interface WaitCondition {
         }
     }
 
-    public class RegexStateMatcher extends StateWait {
+    class RegexStateMatcher extends StateWait {
 
         private final Pattern pattern;
         private Collection<DummyVdsNode> nodesToCheck;
         private ClusterState lastCheckedState;
+        private boolean checkAllSpaces = false;
+        private Set<String> checkSpaceSubset = Collections.emptySet();
 
         public RegexStateMatcher(String regex, FleetController fc, Object monitor) {
             super(fc, monitor);
@@ -62,19 +71,51 @@ public interface WaitCondition {
             return this;
         }
 
+        public RegexStateMatcher checkAllSpaces(boolean checkAllSpaces) {
+            this.checkAllSpaces = checkAllSpaces;
+            return this;
+        }
+
+        public RegexStateMatcher checkSpaceSubset(Set<String> spaces) {
+            this.checkSpaceSubset = spaces;
+            return this;
+        }
+
+        private static List<ClusterState> statesInBundle(ClusterStateBundle bundle) {
+            List<ClusterState> states = new ArrayList<>(3);
+            states.add(bundle.getBaselineClusterState());
+            bundle.getDerivedBucketSpaceStates().forEach((space, state) -> states.add(state.getClusterState()));
+            return states;
+        }
+
         @Override
         public String isConditionMet() {
             if (currentState != null) {
                 lastCheckedState = currentState;
                 Matcher m = pattern.matcher(lastCheckedState.toString());
-                if (m.matches()) {
+                if (m.matches() || !checkSpaceSubset.isEmpty()) {
                     if (nodesToCheck != null) {
                         for (DummyVdsNode node : nodesToCheck) {
                             if (node.getClusterState() == null) {
                                 return "Node " + node + " has not received a cluster state yet";
                             }
-                            if (! pattern.matcher(withoutTimestamps(node.getClusterState().toString())).matches()) {
-                                return "Node " + node + " state mismatch.\n  wanted: " + pattern + "\n  is:     " + node.getClusterState().toString();
+                            // TODO refactor, simplify
+                            boolean match;
+                            if (checkAllSpaces) {
+                                match = statesInBundle(node.getClusterStateBundle()).stream()
+                                        .allMatch(state -> pattern.matcher(withoutTimestamps(state.toString())).matches());
+                            } else if (!checkSpaceSubset.isEmpty()) {
+                                match = checkSpaceSubset.stream().allMatch(space -> {
+                                    String state = node.getClusterStateBundle().getDerivedBucketSpaceStates()
+                                            .getOrDefault(space, AnnotatedClusterState.emptyState()).getClusterState().toString();
+                                    return pattern.matcher(withoutTimestamps(state)).matches();
+                                });
+                            } else {
+                                match = pattern.matcher(withoutTimestamps(node.getClusterState().toString())).matches();
+                            }
+
+                            if (!match) {
+                                return "Node " + node + " state mismatch.\n  wanted: " + pattern + "\n  is:     " + node.getClusterStateBundle().toString();
                             }
                             if (node.getStateCommunicationVersion() > 0) {
                                 if (!node.hasPendingGetNodeStateRequest()) {
@@ -141,7 +182,7 @@ public interface WaitCondition {
         }
     }
 
-    public static class MinUsedBitsMatcher extends StateWait {
+    class MinUsedBitsMatcher extends StateWait {
         private final int bitCount;
         private final int nodeCount;
 

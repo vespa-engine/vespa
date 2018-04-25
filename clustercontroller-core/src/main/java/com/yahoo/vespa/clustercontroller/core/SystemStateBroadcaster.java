@@ -40,6 +40,18 @@ public class SystemStateBroadcaster {
         return clusterStateBundle.getBaselineClusterState();
     }
 
+    public boolean hasBroadcastedClusterStateBundle() {
+        return clusterStateBundle != null;
+    }
+
+    public void resetBroadcastedClusterStateBundle() {
+        clusterStateBundle = null;
+    }
+
+    public ClusterStateBundle getClusterStateBundle() {
+        return clusterStateBundle;
+    }
+
     private void reportNodeError(boolean nodeOk, NodeInfo info, String message) {
         long time = timer.getCurrentTimeInMillis();
         Long lastReported = lastErrorReported.get(info.getNode());
@@ -113,10 +125,10 @@ public class SystemStateBroadcaster {
     void checkIfClusterStateIsAckedByAllDistributors(DatabaseHandler database,
                                                         DatabaseHandler.Context dbContext,
                                                         FleetController fleetController) throws InterruptedException {
-        final int currentStateVersion = clusterStateBundle.getVersion();
-        if ((clusterStateBundle == null) || (lastClusterStateInSync == currentStateVersion)) {
+        if ((clusterStateBundle == null) || (lastClusterStateInSync == clusterStateBundle.getVersion())) {
             return; // Nothing to do for the current state
         }
+        final int currentStateVersion = clusterStateBundle.getVersion();
         boolean anyOutdatedDistributorNodes = dbContext.getCluster().getNodeInfo().stream()
                 .filter(NodeInfo::isDistributor)
                 .anyMatch(this::nodeNeedsClusterState);
@@ -137,7 +149,7 @@ public class SystemStateBroadcaster {
 
         if (!baselineState.isOfficial()) {
             log.log(LogLevel.INFO, String.format("Publishing cluster state version %d", baselineState.getVersion()));
-            baselineState.setOfficial(true);
+            baselineState.setOfficial(true); // FIXME this violates state bundle immutability
         }
 
         List<NodeInfo> recipients = resolveStateVersionSendSet(dbContext);

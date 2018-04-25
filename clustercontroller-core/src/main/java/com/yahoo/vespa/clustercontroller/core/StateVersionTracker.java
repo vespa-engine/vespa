@@ -50,6 +50,21 @@ public class StateVersionTracker {
         this.lastZooKeeperVersion = this.currentVersion;
     }
 
+    void setClusterStateBundleRetrievedFromZooKeeper(ClusterStateBundle bundle) {
+        // There is an edge where the bundle version will mismatch with the version set
+        // via setVersionRetrievedFromZooKeeper() if the controller (or ZK) crashes before
+        // it can write both sequentially. But since we use the ZK-written version explicitly
+        // when choosing a new version for our own published states, it should not matter in
+        // practice. Worst case is that the current state reflects the same version that a
+        // previous controller had, but we will never publish this state ourselves; publishing
+        // only happens after we've generated our own, new candidate state and overwritten
+        // the empty states set below. Publishing also, as mentioned, sets a version based on
+        // the ZK version, not the version stored in the bundle itself.
+        currentClusterState = bundle;
+        currentUnversionedState = ClusterStateBundle.empty();
+        latestCandidateState = ClusterStateBundle.empty();
+    }
+
     /**
      * Sets limit on how many cluster states can be kept in the in-memory queue. Once
      * the list exceeds this limit, the oldest state is repeatedly removed until the limit
@@ -140,8 +155,7 @@ public class StateVersionTracker {
     }
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {
-        clusterStateHistory.addFirst(new ClusterStateHistoryEntry(
-                currentClusterState, currentTimeMs));
+        clusterStateHistory.addFirst(new ClusterStateHistoryEntry(currentClusterState, currentTimeMs));
         while (clusterStateHistory.size() > maxHistoryEntryCount) {
             clusterStateHistory.removeLast();
         }

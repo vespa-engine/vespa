@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core.database;
 
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 
 import java.util.Map;
 
@@ -82,4 +83,9 @@ public abstract class Database {
      * Fetch the start times of distributor and service layer nodes.
      */
     public abstract Map<Node, Long> retrieveStartTimestamps() throws InterruptedException;
+
+    public abstract boolean storeLastPublishedStateBundle(ClusterStateBundle stateBundle) throws InterruptedException;
+
+    public abstract ClusterStateBundle retrieveLastPublishedStateBundle() throws InterruptedException;
+
 }
