@@ -12,11 +12,11 @@ public class ImportedField {
 
     private final String fieldName;
     private final DocumentReference reference;
-    private final SDField targetField;
+    private final ImmutableSDField targetField;
 
     public ImportedField(String fieldName,
                          DocumentReference reference,
-                         SDField targetField) {
+                         ImmutableSDField targetField) {
         this.fieldName = fieldName;
         this.reference = reference;
         this.targetField = targetField;
@@ -30,7 +30,7 @@ public class ImportedField {
         return reference;
     }
 
-    public SDField targetField() {
+    public ImmutableSDField targetField() {
         return targetField;
     }
 

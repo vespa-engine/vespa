@@ -10,9 +10,10 @@ search child {
   import field a_ref.int_array_field as my_int_array_field {}
   import field a_ref.int_wset_field as my_int_wset_field {}
   import field a_ref.predicate_field as my_predicate_field {}
+  import field a_ref.ancient_int_field as my_ancient_int_field {}
 
   fieldset myfieldset {
-    fields: my_int_field, my_string_field
+    fields: my_int_field, my_string_field, my_ancient_int_field
   }
 
   document-summary mysummary {
@@ -22,5 +23,6 @@ search child {
     summary my_string_field type string {}
     summary my_int_array_field type array<int> {}
     summary my_int_wset_field type weightedset<int> {}
+    summary my_ancient_int_field type int {}
   }
 }
