@@ -2,7 +2,6 @@
 package com.yahoo.container.jdisc;
 
 import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.jdisc.http.SecretStore;
 
 /**
  * An secret store provider which provides a factory which throws exception on
@@ -12,17 +11,18 @@ import com.yahoo.jdisc.http.SecretStore;
  *
  * @author bratseth
  */
-public class SecretStoreProvider implements Provider<SecretStore> {
+@SuppressWarnings("deprecation")
+public class SecretStoreProvider implements Provider<com.yahoo.jdisc.http.SecretStore> {
 
     private static final ThrowingSecretStore instance = new ThrowingSecretStore();
 
     @Override
-    public SecretStore get() { return instance; }
+    public com.yahoo.jdisc.http.SecretStore get() { return instance; }
 
     @Override
     public void deconstruct() { }
 
-    private static final class ThrowingSecretStore implements SecretStore {
+    private static final class ThrowingSecretStore implements com.yahoo.jdisc.http.SecretStore {
 
         @Override
         public String getSecret(String key) {

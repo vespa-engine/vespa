@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.Ckms;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
@@ -23,15 +23,15 @@ import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.g
 @SuppressWarnings("unused") //  Injected component
 public class CkmsKeyProvider implements KeyProvider {
 
-    private final Ckms ckms;
+    private final SecretStore secretStore;
     private final String secretName;
     private final Map<Integer, KeyPair> secrets;
 
     @Inject
-    public CkmsKeyProvider(Ckms ckms,
+    public CkmsKeyProvider(SecretStore secretStore,
                            Zone zone,
                            AthenzProviderServiceConfig config) {
-        this.ckms = ckms;
+        this.secretStore = secretStore;
         this.secretName = getZoneConfig(config, zone).secretName();
         this.secrets = new HashMap<>();
     }
@@ -59,7 +59,7 @@ public class CkmsKeyProvider implements KeyProvider {
     }
 
     private KeyPair readKeyPair(int version) {
-        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(ckms.getSecret(secretName, version));
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(secretStore.getSecret(secretName, version));
         PublicKey publicKey = KeyUtils.extractPublicKey(privateKey);
         return new KeyPair(publicKey, privateKey);
     }

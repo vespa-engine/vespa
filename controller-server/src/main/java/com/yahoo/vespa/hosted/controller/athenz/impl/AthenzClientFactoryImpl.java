@@ -9,7 +9,7 @@ import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zms.ZMSClient;
 import com.yahoo.athenz.zts.ZTSClient;
-import com.yahoo.container.jdisc.Ckms;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
@@ -25,14 +25,14 @@ import java.security.PrivateKey;
  */
 public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
-    private final Ckms ckms;
+    private final SecretStore secretStore;
     private final AthenzConfig config;
     private final AthenzPrincipalAuthority athenzPrincipalAuthority;
     private final AthenzIdentityProvider identityProvider;
 
     @Inject
-    public AthenzClientFactoryImpl(Ckms ckms, AthenzIdentityProvider identityProvider, AthenzConfig config) {
-        this.ckms = ckms;
+    public AthenzClientFactoryImpl(SecretStore secretStore, AthenzIdentityProvider identityProvider, AthenzConfig config) {
+        this.secretStore = secretStore;
         this.identityProvider = identityProvider;
         this.config = config;
         this.athenzPrincipalAuthority = new AthenzPrincipalAuthority(config.principalHeaderName());
@@ -72,7 +72,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
     private PrivateKey getServicePrivateKey() {
         AthenzConfig.Service service = config.service();
-        String privateKey = ckms.getSecret(service.privateKeySecretName(), service.privateKeyVersion()).trim();
+        String privateKey = secretStore.getSecret(service.privateKeySecretName(), service.privateKeyVersion()).trim();
         return Crypto.loadPrivateKey(privateKey);
     }
 

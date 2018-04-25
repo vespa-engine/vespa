@@ -7,7 +7,9 @@ package com.yahoo.jdisc.http;
  *
  * @author bratseth
  * @author bjorncs
+ * @deprecated Use com.yahoo.container.jdisc.secretstore.SecretStore
  */
+@Deprecated
 public interface SecretStore {
 
     /** Returns the secret for this key */
