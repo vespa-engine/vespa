@@ -32,13 +32,10 @@ StateManager::StateManager(StorageComponentRegister& compReg,
                            bool testMode)
     : StorageLink("State manager"),
       framework::HtmlStatusReporter("systemstate", "Node and system state"),
-      _noThreadTestMode(testMode),
       _component(compReg, "statemanager"),
       _metricManager(metricManager),
       _stateLock(),
       _listenerLock(),
-      _grabbedExternalLock(false),
-      _notifyingListeners(false),
       _nodeState(std::make_shared<lib::NodeState>(_component.getNodeType(), lib::State::INITIALIZING)),
       _nextNodeState(),
       _systemState(std::make_shared<const ClusterStateBundle>(lib::ClusterState())),
@@ -50,7 +47,11 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _progressLastInitStateSend(-1),
       _systemStateHistory(),
       _systemStateHistorySize(50),
-      _hostInfo(std::move(hostInfo))
+      _hostInfo(std::move(hostInfo)),
+      _controllers_observed_explicit_node_state(),
+      _noThreadTestMode(testMode),
+      _grabbedExternalLock(false),
+      _notifyingListeners(false)
 {
     _nodeState->setMinUsedBits(58);
     _nodeState->setStartTimestamp(
@@ -453,8 +454,11 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
     std::shared_ptr<api::GetNodeStateReply> reply;
     {
         vespalib::LockGuard lock(_stateLock);
+        const bool is_up_to_date = (_controllers_observed_explicit_node_state.find(cmd->getSourceIndex())
+                                    != _controllers_observed_explicit_node_state.end());
         if (cmd->getExpectedState() != nullptr
-            && (*cmd->getExpectedState() == *_nodeState || sentReply))
+            && (*cmd->getExpectedState() == *_nodeState || sentReply)
+            && is_up_to_date)
         {
             LOG(debug, "Received get node state request with timeout of "
                        "%u milliseconds. Scheduling to be answered in "
@@ -478,12 +482,17 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
             lock.unlock();
             std::string nodeInfo(getNodeInfo());
             reply->setNodeInfo(nodeInfo);
+            mark_controller_as_having_observed_explicit_node_state(cmd->getSourceIndex());
         }
     }
     if (reply) {
         sendUp(reply);
     }
     return true;
+}
+
+void StateManager::mark_controller_as_having_observed_explicit_node_state(uint16_t controller_index) {
+    _controllers_observed_explicit_node_state.emplace(controller_index);
 }
 
 void
@@ -545,6 +554,7 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime,
                 replies.emplace_back(std::make_shared<api::GetNodeStateReply>(*it->second, *_nodeState));
                 auto eraseIt = it++;
                 _queuedStateRequests.erase(eraseIt);
+                mark_controller_as_having_observed_explicit_node_state(eraseIt->second->getSourceIndex());
             } else {
                 ++it;
             }
@@ -631,6 +641,11 @@ StateManager::getNodeInfo() const
 
 void StateManager::immediately_send_get_node_state_replies() {
     LOG(debug, "Immediately replying to all pending GetNodeState requests");
+    {
+        vespalib::MonitorGuard guard(_stateLock);
+        // Next GetNodeState request from any controller will be replied to instantly
+        _controllers_observed_explicit_node_state.clear();
+    }
     sendGetNodeStateReplies();
 }
 

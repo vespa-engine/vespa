@@ -24,6 +24,7 @@
 #include <vespa/vespalib/objects/floatingpointtype.h>
 #include <deque>
 #include <map>
+#include <unordered_set>
 #include <list>
 #include <atomic>
 
@@ -41,13 +42,10 @@ class StateManager : public NodeStateUpdater,
                      private framework::Runnable,
                      private vespalib::JsonStreamTypes
 {
-    bool _noThreadTestMode;
     StorageComponent _component;
     metrics::MetricManager& _metricManager;
     vespalib::Monitor _stateLock;
     vespalib::Lock _listenerLock;
-    bool _grabbedExternalLock;
-    std::atomic<bool> _notifyingListeners;
     std::shared_ptr<lib::NodeState> _nodeState;
     std::shared_ptr<lib::NodeState> _nextNodeState;
     using ClusterStateBundle = lib::ClusterStateBundle;
@@ -65,6 +63,12 @@ class StateManager : public NodeStateUpdater,
     uint32_t _systemStateHistorySize;
     std::unique_ptr<HostInfo> _hostInfo;
     framework::Thread::UP _thread;
+    // Controllers that have observed a GetNodeState response sent _after_
+    // immediately_send_get_node_state_replies() has been invoked.
+    std::unordered_set<uint16_t> _controllers_observed_explicit_node_state;
+    bool _noThreadTestMode;
+    bool _grabbedExternalLock;
+    std::atomic<bool> _notifyingListeners;
 
 public:
     explicit StateManager(StorageComponentRegister&, metrics::MetricManager&,
@@ -102,6 +106,7 @@ private:
     bool sendGetNodeStateReplies(
             framework::MilliSecTime olderThanTime = framework::MilliSecTime(0),
             uint16_t index = 0xffff);
+    void mark_controller_as_having_observed_explicit_node_state(uint16_t controller_index);
 
     lib::Node thisNode() const;
 
