@@ -78,6 +78,7 @@ import com.yahoo.vespa.hosted.controller.restapi.filter.SetBouncerPassthruHeader
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.yolean.Exceptions;
 
@@ -98,6 +99,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * This implements the application/v4 API which is used to deploy and manage applications
@@ -675,7 +677,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if ( ! systemHasVersion(version))
             throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
                                                        "Version is not active in this system. " +
-                                                       "Active versions: " + controller.versionStatus().versions());
+                                                       "Active versions: " + controller.versionStatus().versions()
+                                                                                       .stream()
+                                                                                       .map(VespaVersion::versionNumber)
+                                                                                       .map(Version::toString)
+                                                                                       .collect(Collectors.joining(", ")));
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         controller.applications().lockOrThrow(id, application -> {
@@ -736,10 +742,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
-        ActivateResult result = controller.applications().deployApplication(applicationId,
-                                                                            zone,
-                                                                            applicationPackage,
-                                                                            deployOptionsJsonClass);
+        ActivateResult result = controller.applications().deploy(applicationId,
+                                                                 zone,
+                                                                 applicationPackage,
+                                                                 deployOptionsJsonClass);
         return new SlimeJsonResponse(toSlime(result));
     }
 

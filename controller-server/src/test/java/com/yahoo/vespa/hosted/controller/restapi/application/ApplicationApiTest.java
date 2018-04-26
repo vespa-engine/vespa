@@ -106,7 +106,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testApplicationApi() throws Exception {
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
 
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID); // (Necessary but not provided in this API)
 
@@ -397,7 +397,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Setup
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
         // Create tenant
@@ -433,7 +433,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Setup
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         UserId userId = new UserId("new_user");
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, userId);
 
@@ -458,7 +458,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Setup
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
         // Create tenant
@@ -534,7 +534,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testErrorResponses() throws Exception {
         ContainerTester tester = new ContainerTester(container, responseFiles);
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
         // PUT (update) non-existing tenant
@@ -845,7 +845,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testJobStatusReporting() throws Exception {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
-        tester.containerTester().updateVersionStatus();
+        tester.containerTester().computeVersionStatus();
         long projectId = 1;
         Application app = tester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -893,7 +893,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testJobStatusReportingOutOfCapacity() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        tester.containerTester().updateVersionStatus();
+        tester.containerTester().computeVersionStatus();
 
         long projectId = 1;
         Application app = tester.createApplication();

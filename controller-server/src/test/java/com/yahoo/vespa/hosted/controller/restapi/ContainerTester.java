@@ -48,14 +48,14 @@ public class ContainerTester {
         return (ConfigServerMock) container.components().getComponent(ConfigServerMock.class.getName());
     }
 
-    public void updateVersionStatus() {
+    public void computeVersionStatus() {
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
-    public void updateVersionStatus(Version version) {
+    public void upgradeSystem(Version version) {
         controller().curator().writeControllerVersion(controller().hostname(), version);
         configServer().setDefaultVersion(version);
-        controller().updateVersionStatus(VersionStatus.compute(controller()));
+        computeVersionStatus();
     }
 
     public void assertResponse(Supplier<Request> request, File responseFile) throws IOException {

@@ -96,23 +96,21 @@ public class DeploymentTester {
         return controller().applications().require(application);
     }
 
-    public void updateVersionStatus() {
-        updateVersionStatus(tester.controller().systemVersion());
-    }
-
-    public void updateVersionStatus(Version newVersion) {
-        upgradeController(newVersion);
-        configServer().setDefaultVersion(newVersion);
+    public void computeVersionStatus() {
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
+    /** Upgrade controller to given version */
     public void upgradeController(Version newVersion) {
         controller().curator().writeControllerVersion(controller().hostname(), newVersion);
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
+    /** Upgrade entire system to given version */
     public void upgradeSystem(Version version) {
-        updateVersionStatus(version);
+        upgradeController(version);
+        configServer().setDefaultVersion(version);
+        computeVersionStatus();
         upgrader().maintain();
         readyJobTrigger().maintain();
     }
@@ -158,12 +156,6 @@ public class DeploymentTester {
     /** Simulate the full lifecycle of an application deployment to prod.us-west-1 with the given upgrade policy */
     public Application createAndDeploy(TenantName tenant, String applicationName, int projectId, String upgradePolicy) {
         return createAndDeploy(tenant, applicationName, projectId, applicationPackage(upgradePolicy));
-    }
-
-    /** Complete an ongoing deployment */
-    public void deployCompletely(String applicationName) {
-        deployCompletely(applications().require(ApplicationId.from("tenant1", applicationName, "default")),
-                         applicationPackage("default"));
     }
 
     /** Deploy application completely using the given application package */

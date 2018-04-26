@@ -43,7 +43,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
     public void testDeploymentApi() throws IOException {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
         Version version = Version.fromString("5.0");
-        tester.containerTester().updateVersionStatus(version);
+        tester.containerTester().upgradeSystem(version);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("corp-us-east-1")
@@ -66,7 +66,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         // New version released
         version = Version.fromString("5.1");
-        tester.containerTester().updateVersionStatus(version);
+        tester.containerTester().upgradeSystem(version);
 
         // Applications upgrade, 1/2 succeed
         tester.upgrader().maintain();

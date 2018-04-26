@@ -40,7 +40,7 @@ public class FailureRedeployerTest {
                 .region("us-east-3")
                 .build();
         Version version = Version.fromString("5.0");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
@@ -50,7 +50,7 @@ public class FailureRedeployerTest {
 
         // New version is released
         version = Version.fromString("5.1");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
@@ -67,7 +67,7 @@ public class FailureRedeployerTest {
 
         // Another version is released, which cancels any pending upgrades to lower versions
         version = Version.fromString("5.2");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         tester.upgrader().maintain();
         tester.jobCompletion(DeploymentJobs.JobType.productionUsEast3).application(app).unsuccessful().submit();
         assertEquals("Application starts upgrading to new version", 2, tester.buildService().jobs().size());
@@ -99,7 +99,7 @@ public class FailureRedeployerTest {
                 .region("us-east-3")
                 .build();
         Version version = Version.fromString("5.0");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
@@ -109,7 +109,7 @@ public class FailureRedeployerTest {
 
         // New version is released
         version = Version.fromString("5.1");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
@@ -120,7 +120,7 @@ public class FailureRedeployerTest {
 
         // Another version is released
         version = Version.fromString("5.2");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         tester.buildService().remove(ControllerTester.buildJob(app, systemTest));
@@ -139,8 +139,7 @@ public class FailureRedeployerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.42.1");
-        tester.configServer().setDefaultVersion(version);
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         // Load test data data
@@ -159,8 +158,7 @@ public class FailureRedeployerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.42.1");
-        tester.configServer().setDefaultVersion(version);
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         // Load test data data

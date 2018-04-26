@@ -28,12 +28,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityServ
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -72,28 +72,26 @@ public final class ControllerTester {
 
     private Controller controller;
 
-    public ControllerTester() {
-        this(new AthenzDbMock(), new ManualClock(), new ConfigServerMock(),
-             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
+    public ControllerTester(ManualClock clock, RotationsConfig rotationsConfig, MockCuratorDb curatorDb) {
+        this(new AthenzDbMock(), clock, new ConfigServerMock(),
+             new ZoneRegistryMock(), new GitHubMock(), curatorDb, rotationsConfig,
              new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
     public ControllerTester(ManualClock clock) {
-        this(new AthenzDbMock(), clock, new ConfigServerMock(),
-             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
-             new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
+        this(clock, defaultRotationsConfig(), new MockCuratorDb());
     }
 
     public ControllerTester(RotationsConfig rotationsConfig) {
-        this(new AthenzDbMock(), new ManualClock(), new ConfigServerMock(),
-             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), rotationsConfig, new MemoryNameService(),
-             new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
+        this(new ManualClock(), rotationsConfig, new MockCuratorDb());
     }
 
     public ControllerTester(MockCuratorDb curatorDb) {
-        this(new AthenzDbMock(), new ManualClock(), new ConfigServerMock(),
-             new ZoneRegistryMock(), new GitHubMock(), curatorDb, defaultRotationsConfig(),
-             new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
+        this(new ManualClock(), defaultRotationsConfig(), curatorDb);
+    }
+
+    public ControllerTester() {
+        this(new ManualClock());
     }
 
     private ControllerTester(AthenzDbMock athenzDb, ManualClock clock,
@@ -115,7 +113,7 @@ public final class ControllerTester {
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService, artifactRepository, entityService, buildService);
 
-        // Set the log output from the root logger to use timestamps from the manual clock ;)
+        // Make root logger use time from manual clock
         Logger.getLogger("").getHandlers()[0].setFilter(
                 record -> {
                     record.setMillis(clock.millis());
@@ -141,11 +139,7 @@ public final class ControllerTester {
 
     public ConfigServerMock configServer() { return configServer; }
 
-    public GitHubMock gitHub() { return gitHub; }
-
     public ArtifactRepositoryMock artifactRepository() { return artifactRepository; }
-
-    public EntityService entityService() { return entityService; }
 
     public MockBuildService buildService() { return buildService; }
 
@@ -248,13 +242,13 @@ public final class ControllerTester {
     public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().getAsLong()));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
-        controller().applications().deployApplication(application.id(),
-                                                      zone,
-                                                      applicationPackage,
-                                                      new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion));
+        controller().applications().deploy(application.id(),
+                                           zone,
+                                           applicationPackage,
+                                           new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion));
     }
 
-    // Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else
+    /** Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else */
     public static LockedApplication writable(Application application) {
         return new LockedApplication(application, new Lock("/test", new MockCurator()));
     }
@@ -273,7 +267,6 @@ public final class ControllerTester {
                                                new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
                                                configServer,
-                                               new NodeRepositoryClientMock(),
                                                new MockMetricsService(),
                                                nameService,
                                                new MockRoutingGenerator(),

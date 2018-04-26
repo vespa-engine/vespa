@@ -39,7 +39,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
     @Test
     public void testTriggerJobForApplication() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        tester.containerTester().updateVersionStatus();
+        tester.containerTester().computeVersionStatus();
 
         Application app = tester.createApplication();
         tester.controller().applications().lockOrThrow(app.id(), application ->

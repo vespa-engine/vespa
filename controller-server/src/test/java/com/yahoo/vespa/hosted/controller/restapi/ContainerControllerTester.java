@@ -90,8 +90,8 @@ public class ContainerControllerTester {
     public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone, long projectId) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(projectId));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
-        controller().applications().deployApplication(application.id(), zone, Optional.of(applicationPackage),
-                                                    new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false));
+        controller().applications().deploy(application.id(), zone, Optional.of(applicationPackage),
+                                           new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false));
         return application;
     }
 

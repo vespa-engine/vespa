@@ -116,7 +116,7 @@ public class VersionStatusTest {
         // - app3 is in production on version1, but then fails in staging test on version2
         tester.completeUpgradeWithError(app3, version2, applicationPackage, stagingTest);
 
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         List<VespaVersion> versions = tester.controller().versionStatus().versions();
         assertEquals("The two versions above exist", 2, versions.size());
 
@@ -178,7 +178,7 @@ public class VersionStatusTest {
         // Canaries upgrade to new versions and fail
         tester.completeUpgrade(canary0, version1, "canary");
         tester.completeUpgradeWithError(canary1, version1, "canary", productionUsWest1);
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         assertEquals("One canary failed: Broken",
                      Confidence.broken, confidence(tester.controller(), version1));
 
@@ -203,7 +203,7 @@ public class VersionStatusTest {
         tester.jobCompletion(systemTest).application(canary2).unsuccessful().submit();
         tester.jobCompletion(stagingTest).application(canary2).submit();
         tester.completeUpgrade(canary2, version2, "canary");
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
         assertEquals("Canaries have upgraded: Normal",
@@ -216,7 +216,7 @@ public class VersionStatusTest {
         tester.completeUpgrade(default5, version2, "default");
         tester.completeUpgrade(default6, version2, "default");
         tester.completeUpgrade(default7, version2, "default");
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
 
         // Remember confidence across restart
         tester.restartController();
@@ -232,7 +232,7 @@ public class VersionStatusTest {
         // Another default application upgrades, raising confidence to high
         tester.completeUpgrade(default8, version2, "default");
         tester.completeUpgrade(default9, version2, "default");
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
 
         assertEquals("Confidence remains unchanged for version0: High",
                      Confidence.high, confidence(tester.controller(), version0));
@@ -253,7 +253,7 @@ public class VersionStatusTest {
         tester.completeUpgradeWithError(default1, version3, "default", stagingTest);
         tester.completeUpgradeWithError(default2, version3, "default", stagingTest);
         tester.completeUpgradeWithError(default9, version3, "default", stagingTest);
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
 
         assertEquals("Confidence remains unchanged for version0: High",
                      Confidence.high, confidence(tester.controller(), version0));
@@ -278,19 +278,19 @@ public class VersionStatusTest {
 
         // Create and deploy application on current version
         Application app = tester.createAndDeploy("app", 1, "canary");
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         assertEquals(Confidence.high, confidence(tester.controller(), version0));
 
         // Override confidence
         tester.upgrader().overrideConfidence(version0, Confidence.broken);
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         assertEquals(Confidence.broken, confidence(tester.controller(), version0));
 
         // New version is released and application upgrades
         Version version1 = new Version("5.1");
         tester.upgradeSystem(version1);
         tester.completeUpgrade(app, version1, "canary");
-        tester.updateVersionStatus();
+        tester.computeVersionStatus();
         assertEquals(Confidence.high, confidence(tester.controller(), version1));
 
         // Stale override was removed

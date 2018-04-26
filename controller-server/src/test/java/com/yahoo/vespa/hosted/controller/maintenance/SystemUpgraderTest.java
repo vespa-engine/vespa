@@ -35,7 +35,7 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.updateVersionStatus(version1);
+        tester.upgradeSystem(version1);
         tester.systemUpgrader().maintain();
         assertTrue("Zones are on current version", onVersion(version1, zone1, zone2, zone3, zone4));
 
@@ -75,7 +75,7 @@ public class SystemUpgraderTest {
         tester.controllerTester().zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(zone));
 
         Version version = Version.fromString("6.5");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         tester.systemUpgrader().maintain();
         assertTrue("Zone is on current version", onVersion(version, zone));
 
