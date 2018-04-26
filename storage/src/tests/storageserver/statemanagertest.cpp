@@ -35,13 +35,23 @@ struct StateManagerTest : public CppUnit::TestFixture {
     void testReportedNodeState();
     void current_cluster_state_version_is_included_in_host_info_json();
     void can_explicitly_send_get_node_state_reply();
+    void explicit_node_state_replying_without_pending_request_immediately_replies_on_next_request();
+    void immediate_node_state_replying_is_tracked_per_controller();
 
     CPPUNIT_TEST_SUITE(StateManagerTest);
     CPPUNIT_TEST(testSystemState);
     CPPUNIT_TEST(testReportedNodeState);
     CPPUNIT_TEST(current_cluster_state_version_is_included_in_host_info_json);
     CPPUNIT_TEST(can_explicitly_send_get_node_state_reply);
+    CPPUNIT_TEST(explicit_node_state_replying_without_pending_request_immediately_replies_on_next_request);
+    CPPUNIT_TEST(immediate_node_state_replying_is_tracked_per_controller);
     CPPUNIT_TEST_SUITE_END();
+
+    void mark_reported_node_state_up();
+    void send_down_get_node_state_request(uint16_t controller_index);
+    void assert_ok_get_node_state_reply_sent_and_clear();
+    void clear_sent_replies();
+    void mark_reply_observed_from_n_controllers(uint16_t n);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(StateManagerTest);
@@ -255,26 +265,82 @@ void StateManagerTest::current_cluster_state_version_is_included_in_host_info_js
     CPPUNIT_ASSERT_EQUAL(123, version);
 }
 
-void StateManagerTest::can_explicitly_send_get_node_state_reply() {
-    {
-        auto lock = _manager->grabStateChangeLock();
-        _manager->setReportedNodeState(NodeState(NodeType::STORAGE, State::UP));
-    }
-    // Send down a GetNodeState with the same state as we currently have. This
-    // ensures that the StateManager doesn't auto-reply with the current state
-    // to inform the caller that the state has changed.
+void StateManagerTest::mark_reported_node_state_up() {
+    auto lock = _manager->grabStateChangeLock();
+    _manager->setReportedNodeState(NodeState(NodeType::STORAGE, State::UP));
+}
+
+void StateManagerTest::send_down_get_node_state_request(uint16_t controller_index) {
     auto cmd = std::make_shared<api::GetNodeStateCommand>(
             std::make_unique<NodeState>(NodeType::STORAGE, State::UP));
     cmd->setTimeout(10000000);
+    cmd->setSourceIndex(controller_index);
     _upper->sendDown(cmd);
+}
 
+void StateManagerTest::assert_ok_get_node_state_reply_sent_and_clear() {
+    CPPUNIT_ASSERT_EQUAL(size_t(1), _upper->getNumReplies());
+    std::shared_ptr<api::StorageReply> reply;
+    GET_ONLY_OK_REPLY(reply); // Implicitly clears messages from _upper
+    CPPUNIT_ASSERT_EQUAL(api::MessageType::GETNODESTATE_REPLY, reply->getType());
+}
+
+void StateManagerTest::clear_sent_replies() {
+    _upper->getRepliesOnce();
+}
+
+void StateManagerTest::mark_reply_observed_from_n_controllers(uint16_t n) {
+    for (uint16_t i = 0; i < n; ++i) {
+        send_down_get_node_state_request(i);
+        assert_ok_get_node_state_reply_sent_and_clear();
+    }
+}
+
+void StateManagerTest::can_explicitly_send_get_node_state_reply() {
+    mark_reported_node_state_up();
+    // Must "pre-trigger" that a controller has already received a GetNodeState
+    // reply, or an immediate reply will be sent by default when the first request
+    // from a controller is observed.
+    mark_reply_observed_from_n_controllers(1);
+
+    send_down_get_node_state_request(0);
     CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
 
     _manager->immediately_send_get_node_state_replies();
+    assert_ok_get_node_state_reply_sent_and_clear();
+}
 
-    std::shared_ptr<api::StorageReply> reply;
-    GET_ONLY_OK_REPLY(reply);
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::GETNODESTATE_REPLY, reply->getType());
+void StateManagerTest::explicit_node_state_replying_without_pending_request_immediately_replies_on_next_request() {
+    mark_reported_node_state_up();
+    mark_reply_observed_from_n_controllers(1);
+
+    // No pending requests at this time
+    _manager->immediately_send_get_node_state_replies();
+
+    send_down_get_node_state_request(0);
+    assert_ok_get_node_state_reply_sent_and_clear();
+    // Sending a new request should now _not_ immediately receive a reply
+    send_down_get_node_state_request(0);
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
+}
+
+void StateManagerTest::immediate_node_state_replying_is_tracked_per_controller() {
+    mark_reported_node_state_up();
+    mark_reply_observed_from_n_controllers(3);
+
+    _manager->immediately_send_get_node_state_replies();
+
+    send_down_get_node_state_request(0);
+    send_down_get_node_state_request(1);
+    send_down_get_node_state_request(2);
+    CPPUNIT_ASSERT_EQUAL(size_t(3), _upper->getNumReplies());
+    clear_sent_replies();
+
+    // Sending a new request should now _not_ immediately receive a reply
+    send_down_get_node_state_request(0);
+    send_down_get_node_state_request(1);
+    send_down_get_node_state_request(2);
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
 }
 
 } // storage
