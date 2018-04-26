@@ -260,9 +260,9 @@ public class ApplicationController {
 
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
-    public ActivateResult deployApplication(ApplicationId applicationId, ZoneId zone,
-                                            Optional<ApplicationPackage> applicationPackageFromDeployer,
-                                            DeployOptions options) {
+    public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
+                                 Optional<ApplicationPackage> applicationPackageFromDeployer,
+                                 DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             LockedApplication application = get(applicationId)
                     .map(app -> new LockedApplication(app, lock))

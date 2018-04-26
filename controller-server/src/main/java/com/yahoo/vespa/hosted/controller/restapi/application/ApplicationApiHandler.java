@@ -736,10 +736,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
-        ActivateResult result = controller.applications().deployApplication(applicationId,
-                                                                            zone,
-                                                                            applicationPackage,
-                                                                            deployOptionsJsonClass);
+        ActivateResult result = controller.applications().deploy(applicationId,
+                                                                 zone,
+                                                                 applicationPackage,
+                                                                 deployOptionsJsonClass);
         return new SlimeJsonResponse(toSlime(result));
     }
 

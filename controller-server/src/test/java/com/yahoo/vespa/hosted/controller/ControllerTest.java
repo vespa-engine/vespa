@@ -775,7 +775,7 @@ public class ControllerTest {
         // Same options as used in our integration tests
         DeployOptions options = new DeployOptions(Optional.empty(), Optional.empty(), false,
                                                   false);
-        tester.controller().applications().deployApplication(app.id(), zone, Optional.of(applicationPackage), options);
+        tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), options);
 
         assertTrue("Application deployed and activated",
                    tester.controllerTester().configServer().activated().getOrDefault(app.id(), false));
@@ -859,7 +859,7 @@ public class ControllerTest {
 
         // Deploy an application which doesn't yet exist, and which has an illegal application name.
         try {
-            tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "123"), zone, Optional.empty(), options);
+            tester.controller().applications().deploy(ApplicationId.from("tenant", application, "123"), zone, Optional.empty(), options);
             fail("Illegal application name should cause validation exception.");
         }
         catch (IllegalArgumentException e) {
@@ -870,7 +870,7 @@ public class ControllerTest {
         tester.createApplication(new ApplicationSerializer().toSlime(new Application(ApplicationId.from("tenant", application, "default"))));
 
         // Deploy a PR instance for the application, with no NToken.
-        tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options);
+        tester.controller().applications().deploy(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options);
         assertTrue(tester.controller().applications().get(ApplicationId.from("tenant", application, "456")).isPresent());
     }
 

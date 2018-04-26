@@ -242,10 +242,10 @@ public final class ControllerTester {
     public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().getAsLong()));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
-        controller().applications().deployApplication(application.id(),
-                                                      zone,
-                                                      applicationPackage,
-                                                      new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion));
+        controller().applications().deploy(application.id(),
+                                           zone,
+                                           applicationPackage,
+                                           new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion));
     }
 
     /** Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else */
