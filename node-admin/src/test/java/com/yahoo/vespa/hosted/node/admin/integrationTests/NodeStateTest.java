@@ -55,7 +55,7 @@ public class NodeStateTest {
                     .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getNode(initialNodeSpec.getHostname())
+            while (dockerTester.nodeRepositoryMock.getOptionalNode(initialNodeSpec.getHostname())
                     .filter(node -> node.getState() != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }

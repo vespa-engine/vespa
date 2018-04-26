@@ -29,7 +29,7 @@ public class MultiDockerTest {
                             .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getNode(nodeSpec2.getHostname())
+            while (dockerTester.nodeRepositoryMock.getOptionalNode(nodeSpec2.getHostname())
                     .filter(node -> node.getState() != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }

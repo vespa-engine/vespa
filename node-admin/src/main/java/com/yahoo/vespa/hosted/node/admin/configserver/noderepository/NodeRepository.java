@@ -16,7 +16,11 @@ public interface NodeRepository {
 
     List<NodeSpec> getNodes(String baseHostName);
 
-    Optional<NodeSpec> getNode(String hostName);
+    default NodeSpec getNode(String hostName) {
+        return getOptionalNode(hostName).orElseThrow(() -> new NoSuchNodeException(hostName + " not found in node-repo"));
+    }
+
+    Optional<NodeSpec> getOptionalNode(String hostName);
 
     Map<String, Acl> getAcls(String hostname);
 
