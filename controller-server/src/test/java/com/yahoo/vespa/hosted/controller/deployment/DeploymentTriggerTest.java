@@ -331,8 +331,68 @@ public class DeploymentTriggerTest {
         assertEquals(0, tester.buildService().jobs().size());
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
-        tester.deploymentTrigger().triggerReadyJobs(); // Schedules the blocked production job(s)
+        tester.deploymentTrigger().triggerReadyJobs(); // Schedules staging test for the blocked production job(s)
+        // TODO jvenstad: Required now because changes during block window used empty source -- improvement to use first untested production job with change to test :)
+        tester.deployAndNotify(app, changedApplication, true, stagingTest);
         assertEquals(singletonList(buildJob(app, productionUsWest1)), tester.buildService().jobs());
+    }
+
+    @Test
+    public void testCompletionOfPartOfChangeDuringBlockWindow() {
+        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:30:00.00Z")); // Tuesday, 17:30
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .blockChange(false, true, "tue", "18", "UTC")
+                .region("us-west-1")
+                .region("us-east-3")
+                .build();
+        Application application = tester.createAndDeploy("app1", 1, applicationPackage);
+
+        // Application on (6.1, 1.0.42)
+        Version v1 = Version.fromString("6.1");
+
+        // Application is mid-upgrade when block window begins, and has an outstanding change.
+        Version v2 = Version.fromString("6.2");
+        tester.upgradeSystem(v2);
+        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+
+        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+
+        // Entering block window will keep the outstanding change in place, but a new component run triggers a new change.
+        // This component completion should remove the older outstanding change, to avoid a later downgrade.
+        clock.advance(Duration.ofHours(1));
+        tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
+        assertEquals((Long) BuildJob.defaultBuildNumber, tester.application(application.id()).deploymentJobs().jobStatus()
+                                                               .get(productionUsWest1).lastSuccess().get().application().buildNumber().get());
+        assertEquals((Long) (BuildJob.defaultBuildNumber + 1), tester.application(application.id()).outstandingChange().application().get().buildNumber().get());
+
+        tester.readyJobTrigger().maintain();
+        assertTrue(tester.buildService().jobs().isEmpty());
+
+        // New component triggers a full deployment of new application version, leaving platform versions alone.
+        tester.jobCompletion(component).application(application).nextBuildNumber().nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
+        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
+        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
+
+        // All tests are done for now, and only the platform change remains.
+        assertTrue(tester.buildService().jobs().isEmpty());
+        assertEquals(Change.of(v2), tester.application(application.id()).change());
+
+        // Exiting block window, staging test is re-run for the last prod zone, which has the old platform.
+        clock.advance(Duration.ofHours(1));
+        tester.readyJobTrigger().maintain();
+        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
+
+        assertFalse(tester.application(application.id()).change().isPresent());
+        assertFalse(tester.application(application.id()).outstandingChange().isPresent());
     }
 
     @Test
