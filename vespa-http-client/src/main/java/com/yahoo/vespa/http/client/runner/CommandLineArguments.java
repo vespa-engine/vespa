@@ -11,6 +11,7 @@ import io.airlift.command.Command;
 import io.airlift.command.HelpOption;
 import io.airlift.command.Option;
 import io.airlift.command.SingleCommand;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.inject.Inject;
@@ -208,7 +209,7 @@ public class CommandLineArguments {
                 )
                 .setConnectionParams(
                         new ConnectionParams.Builder()
-                                .setHostnameVerifier(insecure ? SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER :
+                                .setHostnameVerifier(insecure ? NoopHostnameVerifier.INSTANCE :
                                         SSLConnectionSocketFactory.getDefaultHostnameVerifier())
                                 .setNumPersistentConnectionsPerEndpoint(16)
                                 .setEnableV3Protocol(! enableV2Protocol)
