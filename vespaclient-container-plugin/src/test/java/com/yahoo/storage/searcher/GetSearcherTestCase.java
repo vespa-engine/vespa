@@ -15,7 +15,6 @@ import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.MessagePropertyProcessor;
-import com.yahoo.java7compat.Util;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.templates.SearchRendererAdaptor;
@@ -431,9 +430,9 @@ public class GetSearcherTestCase {
                 "<errors>\n" +
                 "<error type=\"searcher\" code=\"3\" message=\"Illegal query: " +
                 "java.lang.IllegalArgumentException: No enum const" +
-                (Util.isJava7Compatible() ? "ant " : " class ") +
+                "ant " +
                 "com.yahoo.documentapi.messagebus.protocol.DocumentProtocol" +
-                (Util.isJava7Compatible() ? "." : "$") +
+                "."  +
                 "Priority.onkel_jubalon\"/>\n" +
                 "</errors>\n" +
                 "</result>\n", result);

@@ -7,7 +7,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import com.yahoo.java7compat.Util;
 import org.junit.Test;
 
 /**
@@ -33,14 +32,7 @@ public class UnicodePropertyDumpTestCase {
         toCheck.flush();
         final String result = toCheck.toString("UTF-8");
 
-        String expected;
-
-        if (Util.isJava7Compatible()) {
-            expected = "0000002e 0000 24\n000000c5 0002 1\n0001d7d3 0006 5\n";
-        } else {
-            expected = "0000002e 0000 24\n000000c5 0002 1\n0001d7d3 0010 0\n";
-        }
-
+        String expected = "0000002e 0000 24\n000000c5 0002 1\n0001d7d3 0006 5\n";
         assertEquals(expected, result);
     }
 }
