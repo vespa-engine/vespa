@@ -87,10 +87,10 @@ public class HashletTestCase {
         Hashlet<String, Integer> h = new Hashlet<>();
         h.put(A, 1);
         int indexOfA = h.getIndexOfKey(A);
-        assertEquals(new Integer(1), h.value(indexOfA));
+        assertEquals(Integer.valueOf(1), h.value(indexOfA));
         h.setValue(indexOfA, 2);
-        assertEquals(new Integer(2), h.value(indexOfA));
-        assertEquals(new Integer(2), h.get(A));
+        assertEquals(Integer.valueOf(2), h.value(indexOfA));
+        assertEquals(Integer.valueOf(2), h.get(A));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class HashletTestCase {
             String str = ("" + i + "_str_" + i);
             assertThat(hash.get(str), nullValue());
             switch (i % 2) {
-            case 1: assertThat(hash.put(str, new Integer(i)), nullValue());
+            case 1: assertThat(hash.put(str, i), nullValue());
             }
         }
         assertThat(hash.size(), is(n / 2));
@@ -179,7 +179,7 @@ public class HashletTestCase {
             String str = ("" + i + "_str_" + i);
             switch (i % 2) {
             case 0: assertThat(hash.get(str), nullValue()); break;
-            case 1: assertThat(hash.get(str), is(new Integer(i))); break;
+            case 1: assertThat(hash.get(str), is(i)); break;
             }
         }
     }

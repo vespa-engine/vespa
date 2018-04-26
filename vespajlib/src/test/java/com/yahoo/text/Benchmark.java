@@ -4,6 +4,7 @@ package com.yahoo.text;
 // import com.google.common.base.Preconditions;
 // import com.google.inject.Provider;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -27,8 +28,8 @@ class Benchmark {
         final Class<? extends Task> taskClass;
         public Task get() {
             try {
-                return taskClass.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                return taskClass.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         }
