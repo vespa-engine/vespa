@@ -42,7 +42,7 @@ public class RealNodeRepository implements NodeRepository {
 
         NodeMessageResponse response = configServerApi.post("/nodes/v2/node", nodesToPost, NodeMessageResponse.class);
         if (!Strings.isNullOrEmpty(response.errorCode)) {
-            throw new RuntimeException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
+            throw new NodeRepositoryException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
         }
     }
 
@@ -118,7 +118,7 @@ public class RealNodeRepository implements NodeRepository {
                 NodeMessageResponse.class);
 
         if (!Strings.isNullOrEmpty(response.errorCode)) {
-            throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
+            throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
         }
     }
 
@@ -134,12 +134,11 @@ public class RealNodeRepository implements NodeRepository {
         if (response.errorCode == null || response.errorCode.isEmpty()) {
             return;
         }
-        throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
+        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
     }
 
 
-    private static NodeSpec createNodeSpec(NodeRepositoryNode node)
-            throws IllegalArgumentException, NullPointerException {
+    private static NodeSpec createNodeSpec(NodeRepositoryNode node) {
         Objects.requireNonNull(node.type, "Unknown node type");
         NodeType nodeType = NodeType.valueOf(node.type);
 
