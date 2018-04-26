@@ -35,16 +35,16 @@ struct StateManagerTest : public CppUnit::TestFixture {
     void testReportedNodeState();
     void current_cluster_state_version_is_included_in_host_info_json();
     void can_explicitly_send_get_node_state_reply();
-    void explicit_node_state_send_without_pending_request_immediately_replies_on_next_request();
-    void immediate_node_state_reply_sending_is_tracked_per_controller();
+    void explicit_node_state_replying_without_pending_request_immediately_replies_on_next_request();
+    void immediate_node_state_replying_is_tracked_per_controller();
 
     CPPUNIT_TEST_SUITE(StateManagerTest);
     CPPUNIT_TEST(testSystemState);
     CPPUNIT_TEST(testReportedNodeState);
     CPPUNIT_TEST(current_cluster_state_version_is_included_in_host_info_json);
     CPPUNIT_TEST(can_explicitly_send_get_node_state_reply);
-    CPPUNIT_TEST(explicit_node_state_send_without_pending_request_immediately_replies_on_next_request);
-    CPPUNIT_TEST(immediate_node_state_reply_sending_is_tracked_per_controller);
+    CPPUNIT_TEST(explicit_node_state_replying_without_pending_request_immediately_replies_on_next_request);
+    CPPUNIT_TEST(immediate_node_state_replying_is_tracked_per_controller);
     CPPUNIT_TEST_SUITE_END();
 
     void mark_reported_node_state_up();
@@ -310,7 +310,7 @@ void StateManagerTest::can_explicitly_send_get_node_state_reply() {
     assert_ok_get_node_state_reply_sent_and_clear();
 }
 
-void StateManagerTest::explicit_node_state_send_without_pending_request_immediately_replies_on_next_request() {
+void StateManagerTest::explicit_node_state_replying_without_pending_request_immediately_replies_on_next_request() {
     mark_reported_node_state_up();
     mark_reply_observed_from_n_controllers(1);
 
@@ -324,7 +324,7 @@ void StateManagerTest::explicit_node_state_send_without_pending_request_immediat
     CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
 }
 
-void StateManagerTest::immediate_node_state_reply_sending_is_tracked_per_controller() {
+void StateManagerTest::immediate_node_state_replying_is_tracked_per_controller() {
     mark_reported_node_state_up();
     mark_reply_observed_from_n_controllers(3);
 
