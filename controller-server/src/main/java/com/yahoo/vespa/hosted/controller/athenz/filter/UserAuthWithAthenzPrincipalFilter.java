@@ -55,7 +55,7 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
             switch (getUserAuthenticationResult(request)) {
                 case USER_COOKIE_MISSING:
                 case USER_COOKIE_ALTERNATIVE_MISSING:
-                    return super.filter(request); // Cookie-based authentication failed, delegate to Athenz
+                    return super.filterRequest(request); // Cookie-based authentication failed, delegate to Athenz
                 case USER_COOKIE_OK:
                     rewriteUserPrincipalToAthenz(request);
                     return Optional.empty(); // Authenticated using user cookie
