@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
@@ -47,9 +48,11 @@ import com.yahoo.yolean.Exceptions;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -241,6 +244,25 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         registry.register(Model.getArgumentType().unfrozen());
         registry.register(Presentation.getArgumentType().unfrozen());
         registry.register(DefaultProperties.argumentType.unfrozen());
+    }
+
+    /** Returns an unmodifiable list of all the native properties under a Query */
+    public static final List<CompoundName> nativeProperties =
+            ImmutableList.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
+
+    private static List<CompoundName> namesUnder(CompoundName prefix, QueryProfileType type) {
+        if ( type == null) return Collections.emptyList(); // Names not known statically
+        List<CompoundName> names = new ArrayList<>();
+        for (Map.Entry<String, FieldDescription> field : type.fields().entrySet()) {
+            if (field.getValue().getType() instanceof QueryProfileFieldType) {
+                names.addAll(namesUnder(prefix.append(field.getKey()),
+                                        ((QueryProfileFieldType) field.getValue().getType()).getQueryProfileType()));
+            }
+            else {
+                names.add(prefix.append(field.getKey()));
+            }
+        }
+        return names;
     }
 
     //---------------- Construction ------------------------------------

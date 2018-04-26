@@ -6,6 +6,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.*;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.MatchPhase;
@@ -13,6 +14,9 @@ import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.tensor.Tensor;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,33 +28,13 @@ import java.util.Map;
  */
 public class QueryProperties extends Properties {
 
-    public static final CompoundName[] PER_SOURCE_QUERY_PROPERTIES = new CompoundName[] {
-            Query.HITS,
-            Query.OFFSET,
-            Query.TRACE_LEVEL,
-            Query.TIMEOUT,
-            Query.NO_CACHE,
-            Query.GROUPING_SESSION_CACHE,
-            CompoundName.fromComponents(Model.MODEL, Model.QUERY_STRING),
-            CompoundName.fromComponents(Model.MODEL, Model.TYPE),
-            CompoundName.fromComponents(Model.MODEL, Model.FILTER),
-            CompoundName.fromComponents(Model.MODEL, Model.DEFAULT_INDEX),
-            CompoundName.fromComponents(Model.MODEL, Model.LANGUAGE),
-            CompoundName.fromComponents(Model.MODEL, Model.ENCODING),
-            CompoundName.fromComponents(Model.MODEL, Model.SOURCES),
-            CompoundName.fromComponents(Model.MODEL, Model.SEARCH_PATH),
-            CompoundName.fromComponents(Model.MODEL, Model.RESTRICT),
-            CompoundName.fromComponents(Ranking.RANKING, Ranking.LOCATION),
-            CompoundName.fromComponents(Ranking.RANKING, Ranking.PROFILE),
-            CompoundName.fromComponents(Ranking.RANKING, Ranking.SORTING),
-            CompoundName.fromComponents(Ranking.RANKING, Ranking.FRESHNESS),
-            CompoundName.fromComponents(Ranking.RANKING, Ranking.QUERYCACHE),
-            CompoundName.fromComponents(Ranking.RANKING, Ranking.LIST_FEATURES),
-            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.BOLDING),
-            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY),
-            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.REPORT_COVERAGE),
-            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.FORMAT),
-            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY_FIELDS)};
+    /**
+     * TODO: Remove on Vespa 7
+     * @deprecated use Query.nativeProperties
+     */
+    @Deprecated
+    public static final CompoundName[] PER_SOURCE_QUERY_PROPERTIES =
+            Query.nativeProperties.toArray(new CompoundName[] {});
 
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
@@ -299,7 +283,7 @@ public class QueryProperties extends Properties {
                                               Map<String,String> context,
                                               com.yahoo.processing.request.Properties substitution) {
         Map<String, Object> properties = super.listProperties(prefix, context, substitution);
-        for (CompoundName queryProperty : PER_SOURCE_QUERY_PROPERTIES) {
+        for (CompoundName queryProperty : Query.nativeProperties) {
             if (queryProperty.hasPrefix(prefix)) {
                 Object value = this.get(queryProperty, context, substitution);
                 if (value != null)
@@ -333,4 +317,5 @@ public class QueryProperties extends Properties {
     public final Query getParentQuery() {
         return query;
     }
+
 }

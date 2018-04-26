@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
@@ -92,6 +93,8 @@ public class FederationSearcher extends ForkingSearcher {
     private final TargetSelector<?> targetSelector;
 
     private final Clock clock = Clock.systemUTC();
+
+    private static final List<CompoundName> queryAndHits = ImmutableList.of(Query.OFFSET, Query.HITS);
 
     @Inject
     public FederationSearcher(FederationConfig config, StrictContractsConfig strict,
@@ -277,11 +280,11 @@ public class FederationSearcher extends ForkingSearcher {
         switch (propagateSourceProperties) {
             case ALL:
                 propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName,
-                                                  QueryProperties.PER_SOURCE_QUERY_PROPERTIES);
+                                                  Query.nativeProperties);
                 break;
             case OFFSET_HITS:
                 propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName,
-                                                  new CompoundName[]{Query.OFFSET, Query.HITS});
+                                                  queryAndHits);
                 break;
         }
 
@@ -293,7 +296,7 @@ public class FederationSearcher extends ForkingSearcher {
 
     private void propagatePerSourceQueryProperties(Query original, Query outgoing, Window window,
                                                    String sourceName, String providerName,
-                                                   CompoundName[] queryProperties) {
+                                                   List<CompoundName> queryProperties) {
         for (CompoundName key : queryProperties) {
             Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, window.get(key));
             if (value != null)
