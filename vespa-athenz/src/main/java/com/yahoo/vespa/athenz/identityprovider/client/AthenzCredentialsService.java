@@ -10,6 +10,7 @@ import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
 import com.yahoo.vespa.athenz.tls.SignatureAlgorithm;
+import com.yahoo.vespa.athenz.tls.SubjectAlternativeName;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -17,6 +18,9 @@ import java.io.UncheckedIOException;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
+import java.util.Set;
+
+import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.IP_ADDRESS;
 
 /**
  * @author bjorncs
@@ -48,6 +52,7 @@ class AthenzCredentialsService {
                                   identityConfig.service(),
                                   document.dnsSuffix,
                                   document.providerUniqueId,
+                                  document.identityDocument.ipAddresses,
                                   keyPair);
         InstanceRegisterInformation instanceRegisterInformation =
                 new InstanceRegisterInformation(document.providerService,
@@ -67,6 +72,7 @@ class AthenzCredentialsService {
                                   identityConfig.service(),
                                   document.dnsSuffix,
                                   document.providerUniqueId,
+                                  document.identityDocument.ipAddresses,
                                   newKeyPair);
         InstanceRefreshInformation refreshInfo = new InstanceRefreshInformation(Pkcs10CsrUtils.toPem(csr));
         InstanceIdentity instanceIdentity =
@@ -101,18 +107,22 @@ class AthenzCredentialsService {
                                        String identityService,
                                        String dnsSuffix,
                                        String providerUniqueId,
+                                       Set<String> ipAddresses,
                                        KeyPair keyPair) {
         X500Principal subject = new X500Principal(String.format("CN=%s.%s", identityDomain, identityService));
         // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
         // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
-        return Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA256_WITH_RSA)
+        Pkcs10CsrBuilder pkcs10CsrBuilder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA256_WITH_RSA)
                 .addSubjectAlternativeName(String.format("%s.%s.%s",
                                                          identityService,
                                                          identityDomain.replace(".", "-"),
                                                          dnsSuffix))
                 .addSubjectAlternativeName(String.format("%s.instanceid.athenz.%s",
                                                          providerUniqueId,
-                                                         dnsSuffix))
-                .build();
+                                                         dnsSuffix));
+        if(ipAddresses != null) {
+            ipAddresses.forEach(ipaddress ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP_ADDRESS, ipaddress)));
+        }
+        return pkcs10CsrBuilder.build();
     }
 }

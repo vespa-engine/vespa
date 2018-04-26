@@ -3,6 +3,7 @@ package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -16,6 +17,7 @@ import java.util.Objects;
 /**
  * @author bjorncs
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SignedIdentityDocument {
 
     public static final int DEFAULT_KEY_VERSION = 0;
