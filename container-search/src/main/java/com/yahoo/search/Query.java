@@ -208,9 +208,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(TIMEOUT.toString(), "string", "timeout"));
         argumentType.addField(new FieldDescription(FederationSearcher.SOURCENAME.toString(),"string"));
         argumentType.addField(new FieldDescription(FederationSearcher.PROVIDERNAME.toString(),"string"));
-        argumentType.addField(new FieldDescription(Presentation.PRESENTATION,new QueryProfileFieldType(Presentation.getArgumentType())));
-        argumentType.addField(new FieldDescription(Ranking.RANKING,new QueryProfileFieldType(Ranking.getArgumentType())));
-        argumentType.addField(new FieldDescription(Model.MODEL,new QueryProfileFieldType(Model.getArgumentType())));
+        argumentType.addField(new FieldDescription(Presentation.PRESENTATION, new QueryProfileFieldType(Presentation.getArgumentType())));
+        argumentType.addField(new FieldDescription(Ranking.RANKING, new QueryProfileFieldType(Ranking.getArgumentType())));
+        argumentType.addField(new FieldDescription(Model.MODEL, new QueryProfileFieldType(Model.getArgumentType())));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }

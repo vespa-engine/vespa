@@ -13,6 +13,7 @@ import java.util.Objects;
  * @author baldersheim
  */
 public class SoftTimeout implements Cloneable {
+
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
@@ -20,9 +21,8 @@ public class SoftTimeout implements Cloneable {
     public static final String FACTOR = "factor";
     public static final String TAILCOST = "tailcost";
 
-
     static {
-        argumentType =new QueryProfileType(Ranking.SOFTTIMEOUT);
+        argumentType = new QueryProfileType(Ranking.SOFTTIMEOUT);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(TAILCOST, "double"));

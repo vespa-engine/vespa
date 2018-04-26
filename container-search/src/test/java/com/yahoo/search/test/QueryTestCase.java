@@ -21,6 +21,7 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -488,6 +489,15 @@ public class QueryTestCase {
         String[] traceLines = trace.split("\n");
         assertTrue(contains("query=dvd (value from request)", traceLines));
         assertTrue(contains("a.b=foo (value from request)", traceLines));
+    }
+
+    @Test
+    public void testNativeProperties() {
+        Set<String> nativeProperties = Query.nativeProperties.stream().map(CompoundName::toString).collect(Collectors.toSet());
+        // Sample the content
+        assertTrue(nativeProperties.contains("hits"));
+        assertTrue(nativeProperties.contains("model.sources"));
+        assertTrue(nativeProperties.contains("ranking.matchPhase.attribute"));
     }
 
     @Test
