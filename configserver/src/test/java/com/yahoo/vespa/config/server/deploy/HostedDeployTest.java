@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -72,7 +73,6 @@ public class HostedDeployTest {
 
     /** Test that unused versions are skipped in dev */
     @Test
-    @Ignore // TODO Fix this test and re-enable
     public void testDeployMultipleVersionsInDev() {
         List<Host> hosts = new ArrayList<>();
         hosts.add(createHost("host1", "6.0.0"));
@@ -100,12 +100,13 @@ public class HostedDeployTest {
         ApplicationId app = tester.deployApp("myApp", Instant.now());
         assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
 
-        assertEquals(1, factory600.creationCount());
-        assertEquals(0, factory610.creationCount());
-        assertEquals(1, factory620.creationCount());
-        assertEquals(0, factory700.creationCount());
-        assertEquals(1, factory710.creationCount());
-        assertEquals("Newest is always included", 1, factory720.creationCount());
+        // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
+        assertTrue(factory600.creationCount() > 0);
+        assertFalse(factory610.creationCount() > 0);
+        assertTrue(factory620.creationCount() > 0);
+        assertFalse(factory700.creationCount() > 0);
+        assertTrue(factory710.creationCount() > 0);
+        assertTrue("Newest is always included", factory720.creationCount() > 0);
     }
 
     @Test

@@ -70,7 +70,7 @@ public class SessionStateWatcher implements NodeCacheListener {
     }
 
     @Override
-    public void nodeChanged() throws Exception {
+    public void nodeChanged() {
         executor.execute(() -> {
             try {
                 ChildData data = fileCache.getCurrentData();
@@ -83,4 +83,5 @@ public class SessionStateWatcher implements NodeCacheListener {
             }
         });
     }
+
 }
