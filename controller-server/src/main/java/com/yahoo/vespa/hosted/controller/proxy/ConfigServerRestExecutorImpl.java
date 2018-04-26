@@ -8,9 +8,9 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzSslContextProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -62,11 +62,11 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private static final Set<String> HEADERS_TO_COPY = new HashSet<>(Arrays.asList("X-HTTP-Method-Override", "Content-Type"));
 
     private final ZoneRegistry zoneRegistry;
-    private final AthenzSslContextProvider sslContextProvider;
+    private final ServiceIdentityProvider sslContextProvider;
 
     @Inject
     public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry,
-                                        AthenzSslContextProvider sslContextProvider) {
+                                        ServiceIdentityProvider sslContextProvider) {
         this.zoneRegistry = zoneRegistry;
         this.sslContextProvider = sslContextProvider;
     }
@@ -266,7 +266,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     }
 
     private static CloseableHttpClient createHttpClient(RequestConfig config,
-                                                        AthenzSslContextProvider sslContextProvider,
+                                                        ServiceIdentityProvider sslContextProvider,
                                                         ZoneRegistry zoneRegistry,
                                                         ProxyRequest proxyRequest) {
         AthenzIdentityVerifier hostnameVerifier =
@@ -276,7 +276,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                                         ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-proxy-client")
-                .setSslcontext(sslContextProvider.get())
+                .setSslcontext(sslContextProvider.getIdentitySslContext())
                 .setHostnameVerifier(new AthenzIdentityVerifierAdapter(hostnameVerifier))
                 .setDefaultRequestConfig(config)
                 .build();

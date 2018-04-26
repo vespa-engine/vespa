@@ -5,10 +5,10 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreContext;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.defaults.Defaults;
@@ -53,7 +53,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
     private volatile KeyStore currentKeyStore;
 
     @Inject
-    public AthenzSslKeyStoreConfigurator(AthenzIdentityProvider bootstrapIdentity,
+    public AthenzSslKeyStoreConfigurator(ServiceIdentityProvider bootstrapIdentity,
                                          KeyProvider keyProvider,
                                          AthenzProviderServiceConfig config,
                                          Zone zone,

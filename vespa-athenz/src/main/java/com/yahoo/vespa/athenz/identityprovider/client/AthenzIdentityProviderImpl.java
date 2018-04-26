@@ -8,7 +8,7 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -28,7 +28,7 @@ import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
  * @author mortent
  * @author bjorncs
  */
-public final class AthenzIdentityProviderImpl extends AbstractComponent implements AthenzIdentityProvider {
+public final class AthenzIdentityProviderImpl extends AbstractComponent implements AthenzIdentityProvider, ServiceIdentityProvider {
 
     private static final Logger log = Logger.getLogger(AthenzIdentityProviderImpl.class.getName());
 
@@ -44,8 +44,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final AthenzCredentialsService athenzCredentialsService;
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
-    private final String domain;
-    private final String service;
+    private final com.yahoo.vespa.athenz.api.AthenzService identity;
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
@@ -69,8 +68,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.athenzCredentialsService = athenzCredentialsService;
         this.scheduler = scheduler;
         this.clock = clock;
-        this.domain = config.domain();
-        this.service = config.service();
+        this.identity = new com.yahoo.vespa.athenz.api.AthenzService(config.domain(), config.service());
         registerInstance();
     }
 
@@ -85,13 +83,18 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
+    public com.yahoo.vespa.athenz.api.AthenzService identity() {
+        return identity;
+    }
+
+    @Override
     public String getDomain() {
-        return domain;
+        return identity.getDomain().getName();
     }
 
     @Override
     public String getService() {
-        return service;
+        return identity.getName();
     }
 
     @Override

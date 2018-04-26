@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.yahoo.athenz.zts.InstanceRefreshRequest;
 import com.yahoo.athenz.zts.ZTSClient;
-import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
@@ -17,9 +17,9 @@ import java.security.cert.X509Certificate;
 public class AthenzCertificateClient {
 
     private final AthenzProviderServiceConfig.Zones zoneConfig;
-    private final AthenzIdentityProvider bootstrapIdentity;
+    private final ServiceIdentityProvider bootstrapIdentity;
 
-    public AthenzCertificateClient(AthenzIdentityProvider bootstrapIdentity,
+    public AthenzCertificateClient(ServiceIdentityProvider bootstrapIdentity,
                                    AthenzProviderServiceConfig.Zones zoneConfig) {
         this.bootstrapIdentity = bootstrapIdentity;
         this.zoneConfig = zoneConfig;
