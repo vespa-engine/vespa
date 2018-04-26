@@ -560,8 +560,7 @@ public class ControllerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.141.117");
-        tester.configServer().setDefaultVersion(version);
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         // Load test data data
@@ -586,11 +585,8 @@ public class ControllerTest {
 
         // New version is released
         version = Version.fromString("6.142.1");
-        tester.configServer().setDefaultVersion(version);
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
-        tester.upgrader().maintain();
-        tester.readyJobTrigger().maintain();
 
         // Test environment passes
         tester.deployAndNotify(application, applicationPackage, true, systemTest);

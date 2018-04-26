@@ -58,8 +58,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         Version version = new Version(5, 1);
-        tester.updateVersionStatus(version);
-        tester.upgrader().maintain();
+        tester.upgradeSystem(version);
 
         // Deploy completely once
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
@@ -69,9 +68,7 @@ public class DeploymentTriggerTest {
 
         // New version is released
         version = new Version(5, 2);
-        tester.updateVersionStatus(version);
-        tester.upgrader().maintain();
-        tester.readyJobTrigger().maintain();
+        tester.upgradeSystem(version);
 
         // staging-test times out and is retried
         tester.buildService().remove(buildJob(app, stagingTest));
@@ -292,7 +289,7 @@ public class DeploymentTriggerTest {
                                                                  new JobControl(tester.controllerTester().curator()));
 
         Version version = Version.fromString("5.0");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
 
         ApplicationPackageBuilder applicationPackageBuilder = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")

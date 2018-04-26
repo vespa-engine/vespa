@@ -29,7 +29,6 @@ public class OutstandingChangeDeployerTest {
     @Test
     public void testChangeDeployer() {
         DeploymentTester tester = new DeploymentTester();
-        tester.configServer().setDefaultVersion(new Version(6, 1));
         OutstandingChangeDeployer deployer = new OutstandingChangeDeployer(tester.controller(), Duration.ofMinutes(10),
                                                                            new JobControl(new MockCuratorDb()));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

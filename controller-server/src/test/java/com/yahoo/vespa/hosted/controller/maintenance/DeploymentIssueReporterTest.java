@@ -68,7 +68,7 @@ public class DeploymentIssueReporterTest {
         Long propertyId2 = 2L;
         Long propertyId3 = 3L;
 
-        tester.updateVersionStatus(Version.fromString("5.1"));
+        tester.upgradeSystem(Version.fromString("5.1"));
 
         // Create and deploy one application for each of three tenants.
         Application app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);
@@ -150,7 +150,7 @@ public class DeploymentIssueReporterTest {
 
         tester.readyJobTrigger().maintain();
         tester.completeUpgradeWithError(app2, version, canaryPackage, systemTest);
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
 
         assertFalse("We have no platform issues initially.", issues.platformIssue());
