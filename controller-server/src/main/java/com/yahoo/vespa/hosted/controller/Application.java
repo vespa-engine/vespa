@@ -130,7 +130,11 @@ public class Application {
      * Returns the change that should used for this application at the given instant, typically now.
      */
     public Change changeAt(Instant now) {
-        return change.effectiveAt(deploymentSpec, now); }
+        Change change = change();
+        if ( ! deploymentSpec.canUpgradeAt(now)) change = change.withoutPlatform();
+        if ( ! deploymentSpec.canChangeRevisionAt(now)) change = change.withoutApplication();
+        return change;
+    }
 
     /**
      * Returns whether this has an outstanding change (in the source repository), which

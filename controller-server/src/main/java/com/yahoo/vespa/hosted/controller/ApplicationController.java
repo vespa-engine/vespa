@@ -284,17 +284,18 @@ public class ApplicationController {
             } else {
                 JobType jobType = JobType.from(controller.system(), zone)
                                          .orElseThrow(() -> new IllegalArgumentException("No job found for zone " + zone));
-                Optional<JobRun> triggered = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
-                        .flatMap(JobStatus::lastTriggered);
-                // TODO jvenstad: Verify this response with a test, and see that it sorts itself when triggered.
-                if ( ! triggered.isPresent())
+                Optional<JobStatus> job = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType));
+                if (    ! job.isPresent()
+                     || ! job.get().lastTriggered().isPresent()
+                     ||   job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
                     return unexpectedDeployment(applicationId, zone);
+                JobRun triggered = job.get().lastTriggered().get();
                 platformVersion = preferOldestVersion
-                        ? triggered.get().sourcePlatform().orElse(triggered.get().platform())
-                        : triggered.get().platform();
+                        ? triggered.sourcePlatform().orElse(triggered.platform())
+                        : triggered.platform();
                 applicationVersion = preferOldestVersion
-                        ? triggered.get().sourceApplication().orElse(triggered.get().application())
-                        : triggered.get().application();
+                        ? triggered.sourceApplication().orElse(triggered.application())
+                        : triggered.application();
                 applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), applicationVersion.id()));
                 validateRun(application, zone, platformVersion, applicationVersion);
             }

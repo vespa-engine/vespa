@@ -9,7 +9,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -118,7 +117,8 @@ public class DeploymentTrigger {
                 triggering = JobRun.triggering(controller.systemVersion(), applicationVersion, empty(), empty(), "Application commit", clock.instant());
                 if (report.success()) {
                     if (acceptNewApplicationVersion(application))
-                        application = application.withChange(application.change().with(applicationVersion));
+                        application = application.withChange(application.change().with(applicationVersion))
+                                                 .withOutstandingChange(Change.empty());
                     else
                         application = application.withOutstandingChange(Change.of(applicationVersion));
                 }
@@ -208,8 +208,8 @@ public class DeploymentTrigger {
     public void cancelChange(ApplicationId applicationId, boolean keepApplicationChange) {
         applications().lockOrThrow(applicationId, application -> {
             applications().store(application.withChange(application.change().application()
+                                                                   .filter(__ -> keepApplicationChange)
                                                                    .map(Change::of)
-                                                                   .filter(change -> keepApplicationChange)
                                                                    .orElse(Change.empty())));
         });
     }
@@ -290,12 +290,11 @@ public class DeploymentTrigger {
     private List<Job> computeReadyJobs(ApplicationId id) {
         List<Job> jobs = new ArrayList<>();
         applications().get(id).ifPresent(application -> {
-            List<Step> steps = application.deploymentSpec().steps().isEmpty()
-                    ? singletonList(new DeploymentSpec.DeclaredZone(test))
-                    : application.deploymentSpec().steps();
-            List<Step> productionSteps = steps.stream().filter(step -> step.deploysTo(prod) || step.zones().isEmpty()).collect(toList());
+            List<Step> productionSteps = application.deploymentSpec().steps().stream()
+                                                    .filter(step -> step.deploysTo(prod) || step.zones().isEmpty())
+                                                    .collect(toList());
 
-            Change change = application.change();
+            Change change = application.changeAt(clock.instant());
             @SuppressWarnings("cast") // Bad compiler!
             Optional<Instant> completedAt = max((Optional<Instant>) application.deploymentJobs().statusOf(systemTest)
                                                                                .flatMap(job -> job.lastSuccess().map(JobRun::at)),
@@ -304,47 +303,72 @@ public class DeploymentTrigger {
             String reason = "New change available";
             List<Job> testJobs = null;
 
-            for (Step step : productionSteps) {
-                Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job)));
-                if (jobsByCompletion.containsKey(empty())) { // Step not complete, because some jobs remain -- trigger these if the previous step was done.
-                    for (JobType job : jobsByCompletion.get(empty())) {
-                        State target = targetFor(application, change, deploymentFor(application, job));
-                        if (isTested(application, target)) {
-                            if (completedAt.isPresent())
-                                jobs.add(deploymentJob(application, target, change, job, reason, completedAt.get(), stepJobs));
+            if (change.isPresent())
+                for (Step step : productionSteps) {
+                    Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
+                    Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job)));
+                    if (jobsByCompletion.containsKey(empty())) { // Step not complete, because some jobs remain -- trigger these if the previous step was done.
+                        for (JobType job : jobsByCompletion.get(empty())) {
+                            State target = targetFor(application, change, deploymentFor(application, job));
+                            if (isTested(application, target)) {
+                                if (completedAt.isPresent())
+                                    jobs.add(deploymentJob(application, target, change, job, reason, completedAt.get(), stepJobs));
+                            }
+                            else if (testJobs == null) {
+                                if ( ! alreadyTriggered(application, target)) // TODO jvenstad: This is always true now ...
+                                    testJobs = testJobsFor(application, target, "Testing deployment for " + job.jobName(), completedAt.orElse(clock.instant()));
+                                else
+                                    testJobs = emptyList();
+                            }
                         }
-                        else if (testJobs == null) {
-                            if ( ! alreadyTriggered(application, target))
-                                testJobs = testJobsFor(application, target, "Testing deployment for " + job.jobName(), completedAt.orElse(clock.instant()));
-                            else
-                                testJobs = emptyList();
+                    }
+                    else { // All jobs are complete -- find the time of completion of this step.
+                        if (stepJobs.isEmpty()) { // No jobs means this is delay step.
+                            Duration delay = ((DeploymentSpec.Delay) step).duration();
+                            completedAt = completedAt.map(at -> at.plus(delay)).filter(at -> ! at.isAfter(clock.instant()));
+                            reason += " after a delay of " + delay;
+                        }
+                        else {
+                            completedAt = jobsByCompletion.keySet().stream().map(Optional::get).max(naturalOrder());
+                            reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(joining(", "));
                         }
                     }
                 }
-                else { // All jobs are complete -- find the time of completion of this step.
-                    if (stepJobs.isEmpty()) { // No jobs means this is delay step.
-                        Duration delay = ((DeploymentSpec.Delay) step).duration();
-                        completedAt = completedAt.map(at -> at.plus(delay)).filter(at -> ! at.isAfter(clock.instant()));
-                        reason += " after a delay of " + delay;
-                    }
-                    else {
-                        completedAt = jobsByCompletion.keySet().stream().map(Optional::get).max(naturalOrder());
-                        reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(joining(", "));
-                    }
-                }
-            }
-
             if (testJobs == null)
                 testJobs = testJobsFor(application, targetFor(application, application.change(), empty()), "Testing last changes outside prod", clock.instant());
             jobs.addAll(testJobs);
 
-            // TODO jvenstad: Replace with completion of individual parts of Change.
-            if (steps.stream().flatMap(step -> step.zones().stream()).map(order::toJob)
-                     .allMatch(job -> completedAt(application.change(), application, job).isPresent()))
-                applications().lockIfPresent(id, lockedApplication -> applications().store(lockedApplication.withChange(Change.empty())));
+            removeCompletedChange(application);
         });
         return jobs;
+    }
+
+    private void removeCompletedChange(Application application) {
+        List<JobType> jobs = (application.deploymentSpec().steps().isEmpty()
+                ? singletonList(new DeploymentSpec.DeclaredZone(test))
+                : application.deploymentSpec().steps()).stream()
+                                                       .flatMap(step -> step.zones().stream())
+                                                       .map(order::toJob)
+                                                       .collect(toList());
+
+        boolean platformComplete = application.change().platform().map(Change::of)
+                                              .map(change -> jobs.stream().allMatch(job -> completedAt(change, application, job).isPresent()))
+                                              .orElse(false);
+
+        boolean applicationComplete = application.change().application().map(Change::of)
+                                                 .map(change -> jobs.stream().allMatch(job -> completedAt(change, application, job).isPresent()))
+                                                 .orElse(false);
+
+        if (platformComplete || applicationComplete)
+            applications().lockIfPresent(application.id(), lockedApplication -> {
+                if ( ! application.change().equals(lockedApplication.change()))
+                    return; // If new changes were added after we verified completion, we can't remove those.
+
+                Change change = application.change();
+                if (platformComplete) change = change.withoutPlatform();
+                if (applicationComplete) change = change.withoutApplication();
+                applications().store(lockedApplication.withChange(change));
+            });
     }
 
     /**
@@ -404,9 +428,11 @@ public class DeploymentTrigger {
      *
      * Any job is complete if the given change is already successful on that job.
      * A production job is also considered complete if its current change is strictly dominated by what
-     * is already deployed in its zone, i.e., no parts of the change are upgrades, and at least one
-     * part is a downgrade, regardless of the status of the job.
+     * is already deployed in its zone, i.e., no parts of the change are upgrades, and the full current
+     * change for the application downgrades the deployment, which is an acknowledgement that the deployed
+     * version is broken somehow, such that the job may be locked in failure until a new version is released.
      */
+    // TODO jvenstad: This is only used for production jobs now.
     private Optional<Instant> completedAt(Change change, Application application, JobType jobType) {
         State target = targetFor(application, change, deploymentFor(application, jobType));
         Optional<JobRun> lastSuccess = successOn(application, jobType, target);
@@ -416,8 +442,8 @@ public class DeploymentTrigger {
         return deploymentFor(application, jobType)
                 .filter(deployment ->    ! (   change.upgrades(deployment.version())
                                             || change.upgrades(deployment.applicationVersion()))
-                                      &&   (   change.downgrades(deployment.version())
-                                            || change.downgrades(deployment.applicationVersion())))
+                                      &&   (   application.change().downgrades(deployment.version())
+                                            || application.change().downgrades(deployment.applicationVersion())))
                 .map(Deployment::at);
     }
 
@@ -440,9 +466,6 @@ public class DeploymentTrigger {
         if ( ! job.concurrentlyWith.containsAll(runningProductionJobsFor(application)))
             return false;
 
-        if ( ! job.change.effectiveAt(application.deploymentSpec(), clock.instant()).isPresent())
-            return false;
-
         return true;
     }
 
@@ -457,7 +480,7 @@ public class DeploymentTrigger {
         return controller.applications();
     }
 
-    private boolean acceptNewApplicationVersion(LockedApplication application) {
+    private boolean acceptNewApplicationVersion(Application application) {
         if (application.change().application().isPresent()) return true; // More application changes are ok.
         if (application.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
         // Otherwise, allow an application change if not currently upgrading.
