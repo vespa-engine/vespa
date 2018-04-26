@@ -3,6 +3,7 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 
+import javax.net.ssl.SSLContext;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 
@@ -15,15 +16,18 @@ class AthenzCredentials {
     private final X509Certificate certificate;
     private final KeyPair keyPair;
     private final SignedIdentityDocument identityDocument;
+    private final SSLContext identitySslContext;
 
     AthenzCredentials(String nToken,
                       X509Certificate certificate,
                       KeyPair keyPair,
-                      SignedIdentityDocument identityDocument) {
+                      SignedIdentityDocument identityDocument,
+                      SSLContext identitySslContext) {
         this.nToken = nToken;
         this.certificate = certificate;
         this.keyPair = keyPair;
         this.identityDocument = identityDocument;
+        this.identitySslContext = identitySslContext;
     }
 
     String getNToken() {
@@ -42,5 +46,7 @@ class AthenzCredentials {
         return identityDocument;
     }
 
-
+    SSLContext getIdentitySslContext() {
+        return identitySslContext;
+    }
 }

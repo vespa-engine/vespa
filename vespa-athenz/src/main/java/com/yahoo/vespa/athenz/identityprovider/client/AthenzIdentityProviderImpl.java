@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.google.inject.Inject;
@@ -9,7 +9,6 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
-import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
@@ -21,8 +20,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
 
 /**
  * @author mortent
@@ -53,7 +50,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
              new AthenzCredentialsService(config,
                                           new IdentityDocumentService(config.loadBalancerAddress()),
                                           new AthenzService(),
-                                          Clock.systemUTC()),
+                                          new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"))),
              new ScheduledThreadPoolExecutor(1),
              Clock.systemUTC());
     }
@@ -99,10 +96,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override
     public SSLContext getIdentitySslContext() {
-        return new SslContextBuilder()
-                .withKeyStore(credentials.getKeyPair().getPrivate(), credentials.getCertificate())
-                .withTrustStore(new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks")), JKS)
-                .build();
+        return credentials.getIdentitySslContext();
     }
 
     @Override

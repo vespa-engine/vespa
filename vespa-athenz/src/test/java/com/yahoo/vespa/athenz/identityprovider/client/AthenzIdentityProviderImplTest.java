@@ -5,10 +5,17 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
+import com.yahoo.vespa.athenz.tls.KeyStoreUtils;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -16,6 +23,7 @@ import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
+import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -28,6 +36,9 @@ import static org.mockito.Mockito.when;
  * @author bjorncs
  */
 public class AthenzIdentityProviderImplTest {
+
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
 
     public static final Duration certificateValidity = Duration.ofDays(30);
 
@@ -45,7 +56,7 @@ public class AthenzIdentityProviderImplTest {
     }
 
     @Test
-    public void metrics_updated_on_refresh() {
+    public void metrics_updated_on_refresh() throws IOException {
         IdentityDocumentService identityDocumentService = mock(IdentityDocumentService.class);
         AthenzService athenzService = mock(AthenzService.class);
         ManualClock clock = new ManualClock(Instant.EPOCH);
@@ -66,7 +77,7 @@ public class AthenzIdentityProviderImplTest {
                 .thenReturn(new InstanceIdentity(getCertificate(getExpirationSupplier(clock)), "TOKEN"));
 
         AthenzCredentialsService credentialService =
-                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, clock);
+                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, createDummyTrustStore());
 
         AthenzIdentityProviderImpl identityProvider =
                 new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, credentialService, mock(ScheduledExecutorService.class), clock);
@@ -102,6 +113,13 @@ public class AthenzIdentityProviderImplTest {
         X509Certificate x509Certificate = mock(X509Certificate.class);
         when(x509Certificate.getNotAfter()).thenReturn(expiry.get());
         return x509Certificate;
+    }
+
+    private File createDummyTrustStore() throws IOException {
+        File file = tempDir.newFile();
+        KeyStore keyStore = KeyStoreBuilder.withType(JKS).build();
+        KeyStoreUtils.writeKeyStoreToFile(keyStore, file);
+        return file;
     }
 
     private static String getIdentityDocument() {

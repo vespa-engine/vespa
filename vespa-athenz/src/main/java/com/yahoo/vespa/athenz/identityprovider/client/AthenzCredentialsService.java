@@ -10,16 +10,20 @@ import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
 import com.yahoo.vespa.athenz.tls.SignatureAlgorithm;
+import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.SubjectAlternativeName;
 
+import javax.net.ssl.SSLContext;
 import javax.security.auth.x500.X500Principal;
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.time.Clock;
 import java.util.Set;
 
+import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
 import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.IP_ADDRESS;
 
 /**
@@ -32,16 +36,16 @@ class AthenzCredentialsService {
     private final IdentityConfig identityConfig;
     private final IdentityDocumentService identityDocumentService;
     private final AthenzService athenzService;
-    private final Clock clock;
+    private final File trustStoreJks;
 
     AthenzCredentialsService(IdentityConfig identityConfig,
                              IdentityDocumentService identityDocumentService,
                              AthenzService athenzService,
-                             Clock clock) {
+                             File trustStoreJks) {
         this.identityConfig = identityConfig;
         this.identityDocumentService = identityDocumentService;
         this.athenzService = athenzService;
-        this.clock = clock;
+        this.trustStoreJks = trustStoreJks;
     }
 
     AthenzCredentials registerInstance() {
@@ -88,11 +92,19 @@ class AthenzCredentialsService {
     }
 
     private AthenzCredentials toAthenzCredentials(InstanceIdentity instanceIdentity,
-                                                         KeyPair keyPair,
-                                                         SignedIdentityDocument identityDocument) {
+                                                  KeyPair keyPair,
+                                                  SignedIdentityDocument identityDocument) {
         X509Certificate certificate = instanceIdentity.getX509Certificate();
         String serviceToken = instanceIdentity.getServiceToken();
-        return new AthenzCredentials(serviceToken, certificate, keyPair, identityDocument);
+        SSLContext identitySslContext = createIdentitySslContext(keyPair.getPrivate(), certificate);
+        return new AthenzCredentials(serviceToken, certificate, keyPair, identityDocument, identitySslContext);
+    }
+
+    private SSLContext createIdentitySslContext(PrivateKey privateKey, X509Certificate certificate) {
+        return new SslContextBuilder()
+                .withKeyStore(privateKey, certificate)
+                .withTrustStore(trustStoreJks, JKS)
+                .build();
     }
 
     private static SignedIdentityDocument parseSignedIdentityDocument(String rawDocument) {
