@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -33,10 +34,13 @@ public class ClusterInfoMaintainer extends Maintainer {
     private static final Logger log = Logger.getLogger(ClusterInfoMaintainer.class.getName());
     
     private final Controller controller;
+    private final NodeRepositoryClientInterface nodeRepositoryClient;
 
-    ClusterInfoMaintainer(Controller controller, Duration duration, JobControl jobControl) {
+    ClusterInfoMaintainer(Controller controller, Duration duration, JobControl jobControl,
+                          NodeRepositoryClientInterface nodeRepositoryClient) {
         super(controller, duration, jobControl);
         this.controller = controller;
+        this.nodeRepositoryClient = nodeRepositoryClient;
     }
 
     private static String clusterid(NodeRepositoryNode node) {
@@ -89,11 +93,10 @@ public class ClusterInfoMaintainer extends Maintainer {
             for (Deployment deployment : application.deployments().values()) {
                 DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
                 try {
-                    NodeList nodes = controller.nodeRepository()
-                            .listNodes(deploymentId.zoneId(),
-                                       deploymentId.applicationId().tenant().value(),
-                                       deploymentId.applicationId().application().value(),
-                                       deploymentId.applicationId().instance().value());
+                    NodeList nodes = nodeRepositoryClient.listNodes(deploymentId.zoneId(),
+                                                                    deploymentId.applicationId().tenant().value(),
+                                                                    deploymentId.applicationId().application().value(),
+                                                                    deploymentId.applicationId().instance().value());
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
                     controller().applications().lockIfPresent(application.id(), lockedApplication ->
                         controller.applications().store(lockedApplication.withClusterInfo(deployment.zone(), clusterInfo)));

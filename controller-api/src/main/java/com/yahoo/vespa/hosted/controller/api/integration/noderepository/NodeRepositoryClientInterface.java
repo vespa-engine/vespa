@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
+ * A complete client for the node repository REST API.
+ *
  * @author smorgrav
  * @author bjorncs
  */
+// TODO: Get rid of all the checked exceptions
 public interface NodeRepositoryClientInterface {
 
     enum WantTo {

@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepo
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
@@ -69,7 +68,6 @@ public class Controller extends AbstractComponent {
     private final GlobalRoutingService globalRoutingService;
     private final ZoneRegistry zoneRegistry;
     private final ConfigServer configServer;
-    private final NodeRepositoryClientInterface nodeRepository;
     private final MetricsService metricsService;
     private final Chef chef;
     private final Organization organization;
@@ -84,13 +82,13 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, ConfigServer configServer, NodeRepositoryClientInterface nodeRepository,
+                      ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
                       ArtifactRepository artifactRepository, BuildService buildService) {
         this(curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
-             configServer, nodeRepository, metricsService, nameService, routingGenerator, chef,
+             configServer, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService,
              com.yahoo.net.HostName::getLocalhost);
     }
@@ -98,7 +96,7 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, ConfigServer configServer, NodeRepositoryClientInterface nodeRepository,
+                      ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
@@ -107,12 +105,11 @@ public class Controller extends AbstractComponent {
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.gitHub = Objects.requireNonNull(gitHub, "GitHub cannot be null");
-        this.entityService = Objects.requireNonNull(entityService, "EntityService cannot be null");;
+        this.entityService = Objects.requireNonNull(entityService, "EntityService cannot be null");
         this.organization = Objects.requireNonNull(organization, "Organization cannot be null");
         this.globalRoutingService = Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
-        this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");;
-        this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");;
-        this.nodeRepository = Objects.requireNonNull(nodeRepository, "NodeRepositoryClientInterface cannot be null");
+        this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
+        this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
@@ -239,10 +236,6 @@ public class Controller extends AbstractComponent {
 
     public CuratorDb curator() {
         return curator;
-    }
-
-    public NodeRepositoryClientInterface nodeRepository() {
-        return nodeRepository;
     }
 
     private static String printableVersion(Optional<VespaVersion> vespaVersion) {
