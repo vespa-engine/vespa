@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 /**
  * Utility for bytewise compressing of integers into a ByteBuffer.
  *
- * @author: baldersheim
+ * @author baldersheim
  */
 public class IntegerCompressor {
 

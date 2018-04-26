@@ -18,7 +18,7 @@ public class ExecutorsTestCase {
         static private class ThreadId extends ThreadLocal<Integer> {
             @Override
             protected Integer initialValue() {
-                return new Integer(threadCount.getAndIncrement());
+                return threadCount.getAndIncrement();
             }
         }
         static private ThreadId threadId = new ThreadId();

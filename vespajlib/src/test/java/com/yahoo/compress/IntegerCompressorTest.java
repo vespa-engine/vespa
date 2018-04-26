@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test that integers compresses correctly.
  *
- * @author: baldersheim
+ * @author baldersheim
  */
 public class IntegerCompressorTest {
     private void verifyPositiveNumber(int n, byte [] expected) {

@@ -247,7 +247,9 @@ public final class ArraySetTestCase {
     @Test
     public void testSmallEmptySet() {
         final ArraySet<Integer> t = new ArraySet<>(3);
-        Integer a = new Integer(0), b = new Integer(1), c = new Integer(2);
+        Integer a = 0;
+        Integer b = 1;
+        Integer c = 2;
         t.add(a);
         t.add(b);
         t.add(c);

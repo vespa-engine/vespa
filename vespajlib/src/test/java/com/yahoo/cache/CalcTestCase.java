@@ -4,6 +4,8 @@ package com.yahoo.cache;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Boolean.TRUE;
+
 public class CalcTestCase extends junit.framework.TestCase {
 
     private SizeCalculator calc;
@@ -26,7 +28,7 @@ public class CalcTestCase extends junit.framework.TestCase {
     }
 
     public void testBoolean() {
-        assertEquals(8+1, calc.sizeOf(new Boolean(true)));
+        assertEquals(8+1, calc.sizeOf(TRUE));
     }
 
     public void testArrayPrimitive() {
