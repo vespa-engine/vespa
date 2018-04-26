@@ -124,17 +124,11 @@ public class ContainerControllerTester {
     }
 
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
-
         MockBuildService buildService = (MockBuildService) containerTester.container().components().getComponent(MockBuildService.class.getName());
         if (report.jobType() != component && ! buildService.remove(report.buildJob()))
             throw new IllegalArgumentException(report.jobType() + " is not running for " + report.applicationId());
         assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService.jobs(),
                     buildService.remove(report.buildJob()));
-        try {
-            Thread.sleep(1);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
         controller().applications().deploymentTrigger().notifyOfCompletion(report);
         controller().applications().deploymentTrigger().triggerReadyJobs();
     }

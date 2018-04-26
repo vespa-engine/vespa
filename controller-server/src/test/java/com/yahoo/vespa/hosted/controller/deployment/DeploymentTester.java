@@ -276,12 +276,11 @@ public class DeploymentTester {
     }
 
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
-        if (report.jobType() != JobType.component && !buildService().remove(report.buildJob()))
+        if (report.jobType() != JobType.component && ! buildService().remove(report.buildJob()))
             throw new IllegalArgumentException(report.jobType() + " is not running for " + report.applicationId());
         assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService().jobs(),
                     buildService().remove(report.buildJob()));
 
-        clock().advance(Duration.ofMillis(1));
         applications().deploymentTrigger().notifyOfCompletion(report);
         applications().deploymentTrigger().triggerReadyJobs();
     }

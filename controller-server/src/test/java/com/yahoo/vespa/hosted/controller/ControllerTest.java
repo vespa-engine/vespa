@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
@@ -104,7 +105,7 @@ public class ControllerTest {
         ApplicationVersion applicationVersion = tester.controller().applications().require(app1.id()).change().application().get();
         assertTrue("Application version has been set during deployment", applicationVersion != ApplicationVersion.unknown);
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(version1, applicationVersion, Optional.empty(),"", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withTriggering(version1, applicationVersion, Optional.empty(),"", tester.clock().instant())
                               .withCompletion(42, Optional.empty(), tester.clock().instant()), app1.id(), tester.controller());
 
         // Causes first deployment job to be triggered
@@ -147,7 +148,7 @@ public class ControllerTest {
         applicationVersion = tester.application("app1").change().application().get();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant())
                               .withCompletion(42, Optional.empty(), tester.clock().instant()),
                      app1.id(), tester.controller());
         tester.jobCompletion(productionCorpUsEast1).application(app1).unsuccessful().submit();
@@ -156,7 +157,7 @@ public class ControllerTest {
         // production job succeeding now
         expectedJobStatus = expectedJobStatus
                 .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant())
-                .withCompletion(42, Optional.empty(), tester.clock().instant().plus(Duration.ofMillis(1)));
+                .withCompletion(42, Optional.empty(), tester.clock().instant());
         tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
@@ -375,13 +376,13 @@ public class ControllerTest {
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure",
-                     initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
+                     initialFailure, firstFailing(app, tester).get().at());
 
         // Failure again -- failingSince should remain the same
         tester.clock().advance(Duration.ofMillis(1000));
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at second consecutive failure",
-                     initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
+                     initialFailure, firstFailing(app, tester).get().at());
 
         // Success resets failingSince
         tester.clock().advance(Duration.ofMillis(1000));
@@ -399,13 +400,13 @@ public class ControllerTest {
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure",
-                     initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
+                     initialFailure, firstFailing(app, tester).get().at());
 
         // Failure again -- failingSince should remain the same
         tester.clock().advance(Duration.ofMillis(1000));
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at second consecutive failure",
-                     initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
+                     initialFailure, firstFailing(app, tester).get().at());
     }
 
     private Optional<JobStatus.JobRun> firstFailing(Application application, DeploymentTester tester) {
@@ -441,31 +442,29 @@ public class ControllerTest {
 
         // Abort all running jobs, so we have three candidate jobs, of which only one should be triggered at a time.
         tester.buildService().clear();
-        tester.clock().advance(Duration.ofHours(13));
 
         List<BuildService.BuildJob> jobs = new ArrayList<>();
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         tester.triggerUntilQuiescence();
         jobs.add(buildJob(app2, stagingTest));
         jobs.add(buildJob(app1, stagingTest));
         jobs.add(buildJob(app3, stagingTest));
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
         // All three jobs are now eligible, but the one for app3 should trigger first as an outOfCapacity-retry.
         tester.buildService().remove(buildJob(app1, stagingTest));
         tester.buildService().remove(buildJob(app2, stagingTest));
-        tester.clock().advance(Duration.ofHours(13));
         jobs.remove(buildJob(app1, stagingTest));
         jobs.remove(buildJob(app2, stagingTest));
         tester.jobCompletion(stagingTest).application(app3).error(JobError.outOfCapacity).submit();
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         tester.triggerUntilQuiescence();
         jobs.add(buildJob(app2, stagingTest));
         jobs.add(buildJob(app1, stagingTest));
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
         tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
@@ -474,30 +473,46 @@ public class ControllerTest {
         tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
 
         tester.upgradeSystem(new Version("6.2"));
-        assertEquals(2, tester.buildService().jobs().size());
-
-        // app1 also gets a new application change, so its time fo availability is after the version upgrade.
+        // app1 also gets a new application change, so its time of availability is after the version upgrade.
         tester.clock().advance(Duration.ofMinutes(1));
+        tester.buildService().clear();
         tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        assertEquals(3, tester.buildService().jobs().size());
-        tester.assertRunning(app1.id(), systemTest); // app1 triggers before the other of the two apps, which are only upgrading platform.
+        jobs.clear();
+        jobs.add(buildJob(app1, stagingTest));
+        jobs.add(buildJob(app1, systemTest));
+        // Tests for app1 trigger before the others since it carries an application upgrade.
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
-        // Let the last system test job start, then remove the ones for apps 1 and 2, and let app3 fail with outOfCapacity again.
+        // Let the test jobs start, remove everything expect system test for app3, which fails with outOfCapacity again.
         tester.triggerUntilQuiescence();
         tester.buildService().remove(buildJob(app1, systemTest));
         tester.buildService().remove(buildJob(app2, systemTest));
-        tester.clock().advance(Duration.ofHours(13));
+        tester.buildService().remove(buildJob(app1, stagingTest));
+        tester.buildService().remove(buildJob(app2, stagingTest));
+        tester.buildService().remove(buildJob(app3, stagingTest));
+        tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
         jobs.clear();
         jobs.add(buildJob(app1, stagingTest));
         jobs.add(buildJob(app3, systemTest));
-        tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
         tester.triggerUntilQuiescence();
+        jobs.add(buildJob(app2, stagingTest));
         jobs.add(buildJob(app1, systemTest));
+        jobs.add(buildJob(app3, stagingTest));
         jobs.add(buildJob(app2, systemTest));
-        assertEquals(jobs, tester.buildService().jobs());
+        assertJobsInOrder(jobs, tester.buildService().jobs());
 
+    }
+
+    /** Verifies that the given job lists have the same jobs, ignoring order of jobs that may have been triggered concurrently. */
+    private static void assertJobsInOrder(List<BuildService.BuildJob> expected, List<BuildService.BuildJob> actual) {
+        assertEquals(expected.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()),
+                     actual.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()));
+        assertEquals(expected.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()),
+                     actual.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()));
+        assertTrue(expected.containsAll(actual));
+        assertTrue(actual.containsAll(expected));
     }
 
     private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
@@ -683,7 +698,7 @@ public class ControllerTest {
 
         // Application 2 is deployed and assigned same rotation as application 1 had before deletion
         {
-            Application app2 = tester.createApplication("app2", "tenant2", 1, 1L);
+            Application app2 = tester.createApplication("app2", "tenant2", 2, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
                     .globalServiceId("foo")
@@ -711,6 +726,7 @@ public class ControllerTest {
 
         // Application 1 is recreated, deployed and assigned a new rotation
         {
+            tester.buildService().clear();
             Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
@@ -801,7 +817,7 @@ public class ControllerTest {
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         JobStatus expected = JobStatus.initial(stagingTest)
                              .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant().minus(Duration.ofMillis(1)))
+                                             tester.clock().instant())
                              .withCompletion(42, Optional.empty(), tester.clock().instant());
         assertStatus(expected, app.id(), tester.controller());
 
@@ -809,14 +825,14 @@ public class ControllerTest {
         expected = JobStatus.initial(productionCorpUsEast1)
                              .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
                                              tester.clock().instant())
-                             .withCompletion(42, Optional.empty(), tester.clock().instant().plus(Duration.ofMillis(1)));
+                             .withCompletion(42, Optional.empty(), tester.clock().instant());
         tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
         assertStatus(expected, app.id(), tester.controller());
 
         expected = JobStatus.initial(productionUsEast3)
                              .withTriggering(vespaVersion, version, productionUsEast3.zone(main).map(tester.application(app.id()).deployments()::get), "",
                                              tester.clock().instant())
-                             .withCompletion(42, Optional.empty(), tester.clock().instant().plus(Duration.ofMillis(1)));
+                             .withCompletion(42, Optional.empty(), tester.clock().instant());
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
         assertStatus(expected, app.id(), tester.controller());
 

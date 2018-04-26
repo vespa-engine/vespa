@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static com.yahoo.config.provision.SystemName.main;
@@ -72,16 +73,23 @@ public class DeploymentTriggerTest {
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
 
+        // staging-test times out and is retried
+        tester.buildService().remove(buildJob(app, stagingTest));
+        tester.readyJobTrigger().maintain();
+        assertEquals("Retried dead job", 2, tester.buildService().jobs().size());
+        tester.assertRunning(app.id(), stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+
+        // system-test is now the only running job -- production jobs haven't started yet, since it is unfinished.
+        tester.assertRunning(app.id(), systemTest);
+        assertEquals(1, tester.buildService().jobs().size());
+
         // system-test fails and is retried
         tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
         assertEquals("Job is retried on failure", 1, tester.buildService().jobs().size());
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
 
-        // staging-test times out and is retried
-        tester.buildService().clear();
-        tester.readyJobTrigger().maintain();
-        assertEquals("Retried dead job", 1, tester.buildService().jobs().size());
-        assertEquals(JobType.stagingTest.jobName(), tester.buildService().jobs().get(0).jobName());
+        tester.assertRunning(app.id(), productionUsWest1);
     }
 
     @Test
@@ -340,8 +348,8 @@ public class DeploymentTriggerTest {
         });
         assertEquals(0, tester.buildService().jobs().size());
         readyJobsTrigger.run();
-        assertEquals(1, tester.buildService().jobs().size());
-        assertEquals("system-test", tester.buildService().jobs().get(0).jobName());
+        tester.assertRunning(app.id(), systemTest);
+        tester.assertRunning(app.id(), stagingTest);
     }
 
     @Test
