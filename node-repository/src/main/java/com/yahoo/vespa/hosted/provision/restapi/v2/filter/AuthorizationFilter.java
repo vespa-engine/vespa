@@ -11,9 +11,11 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
-import com.yahoo.yolean.chain.After;
 
 import java.net.URI;
+import java.security.Principal;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -22,18 +24,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Authorization filter for all paths in config server. It assumes that {@link NodeIdentifierFilter} is part of filter chain.
+ * Authorization filter for all paths in config server.
  *
  * @author mpolden
  * @author bjorncs
  */
-@After("NodeIdentifierFilter")
 public class AuthorizationFilter implements SecurityRequestFilter {
 
     private static final Logger log = Logger.getLogger(AuthorizationFilter.class.getName());
 
     private final BiPredicate<NodePrincipal, URI> authorizer;
     private final BiConsumer<ErrorResponse, ResponseHandler> rejectAction;
+    private final HostAuthenticator hostAuthenticator;
 
     @Inject
     public AuthorizationFilter(Zone zone, NodeRepository nodeRepository, NodeRepositoryConfig nodeRepositoryConfig) {
@@ -45,14 +47,17 @@ public class AuthorizationFilter implements SecurityRequestFilter {
                                 Stream.of(HostName.getLocalhost()),
                                 Stream.of(nodeRepositoryConfig.hostnameWhitelist().split(","))
                         ).filter(hostname -> !hostname.isEmpty()).collect(Collectors.toSet())),
-                AuthorizationFilter::logAndReject
+                AuthorizationFilter::logAndReject,
+                new HostAuthenticator(zone, nodeRepository)
         );
     }
 
     AuthorizationFilter(BiPredicate<NodePrincipal, URI> authorizer,
-                        BiConsumer<ErrorResponse, ResponseHandler> rejectAction) {
+                        BiConsumer<ErrorResponse, ResponseHandler> rejectAction,
+                        HostAuthenticator hostAuthenticator) {
         this.authorizer = authorizer;
         this.rejectAction = rejectAction;
+        this.hostAuthenticator = hostAuthenticator;
     }
 
     @Override
@@ -63,14 +68,15 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     private Optional<ErrorResponse> validateAccess(DiscFilterRequest request) {
         try {
-            NodePrincipal hostIdentity = (NodePrincipal) request.getUserPrincipal();
-            if (hostIdentity == null)
-                return Optional.of(ErrorResponse.internalServerError(createErrorMessage(request, "Principal is missing. NodeIdentifierFilter has not been applied.")));
+            List<X509Certificate> clientCertificateChain = request.getClientCertificateChain();
+            if (clientCertificateChain.isEmpty())
+                return Optional.of(ErrorResponse.unauthorized(createErrorMessage(request, "Missing credentials")));
+            NodePrincipal hostIdentity = hostAuthenticator.authenticate(clientCertificateChain);
             if (!authorizer.test(hostIdentity, request.getUri()))
                 return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials")));
             request.setUserPrincipal(hostIdentity);
             return Optional.empty();
-        } catch (NodeIdentifier.NodeIdentifierException e) {
+        } catch (HostAuthenticator.AuthenticationException e) {
             return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials: " + e.getMessage())));
         }
     }

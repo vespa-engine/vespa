@@ -66,9 +66,7 @@ public class FilterTester {
         when(r.getLocalAddr()).thenReturn(request.localAddr());
         if (request.commonName().isPresent()) {
             X509Certificate cert = certificateFor(request.commonName().get(), keyPair());
-            List<X509Certificate> certs = Collections.singletonList(cert);
-            when(r.getClientCertificateChain()).thenReturn(certs);
-            when(r.getUserPrincipal()).thenReturn(NodePrincipal.withLegacyIdentity(request.commonName().get(), certs));
+            when(r.getClientCertificateChain()).thenReturn(Collections.singletonList(cert));
         }
         return r;
     }
