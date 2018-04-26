@@ -57,7 +57,7 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public Optional<NodeSpec> getNode(String hostName) {
+    public Optional<NodeSpec> getOptionalNode(String hostName) {
         try {
             NodeRepositoryNode nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
                     NodeRepositoryNode.class);

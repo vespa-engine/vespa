@@ -129,7 +129,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         if (currentState != RESUMED) return;
 
         try {
-            NodeSpec node = nodeRepository.getNode(dockerHostHostName)
+            NodeSpec node = nodeRepository.getOptionalNode(dockerHostHostName)
                     .orElseThrow(() -> new RuntimeException("Failed to get host's node spec from node-repo"));
             String hardwareDivergence = maintainer.getHardwareDivergence(node);
 

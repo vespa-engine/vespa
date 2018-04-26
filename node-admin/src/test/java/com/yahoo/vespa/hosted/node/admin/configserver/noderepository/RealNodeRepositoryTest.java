@@ -120,7 +120,7 @@ public class RealNodeRepositoryTest {
     @Test
     public void testGetContainer() {
         String hostname = "host4.yahoo.com";
-        Optional<NodeSpec> node = nodeRepositoryApi.getNode(hostname);
+        Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
         assertThat(node.isPresent(), is(true));
         assertThat(node.get().getHostname(), is(hostname));
     }
@@ -128,7 +128,7 @@ public class RealNodeRepositoryTest {
     @Test
     public void testGetContainerForNonExistingNode() {
         String hostname = "host-that-does-not-exist";
-        Optional<NodeSpec> node = nodeRepositoryApi.getNode(hostname);
+        Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
         assertFalse(node.isPresent());
     }
 
@@ -182,15 +182,15 @@ public class RealNodeRepositoryTest {
 
         List<AddNode> nodesToAdd = Arrays.asList(host, node);
 
-        assertFalse(nodeRepositoryApi.getNode("host123.domain.tld").isPresent());
+        assertFalse(nodeRepositoryApi.getOptionalNode("host123.domain.tld").isPresent());
         nodeRepositoryApi.addNodes(nodesToAdd);
 
-        NodeSpec hostSpecInNodeRepo = nodeRepositoryApi.getNode("host123.domain.tld")
+        NodeSpec hostSpecInNodeRepo = nodeRepositoryApi.getOptionalNode("host123.domain.tld")
                 .orElseThrow(RuntimeException::new);
 
         assertEquals(host.nodeFlavor, hostSpecInNodeRepo.getFlavor());
         assertEquals(host.nodeType, hostSpecInNodeRepo.getNodeType());
 
-        assertTrue(nodeRepositoryApi.getNode("host123-1.domain.tld").isPresent());
+        assertTrue(nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").isPresent());
     }
 }

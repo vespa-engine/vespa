@@ -42,7 +42,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public Optional<NodeSpec> getNode(String hostName) {
+    public Optional<NodeSpec> getOptionalNode(String hostName) {
         synchronized (monitor) {
             return Optional.ofNullable(nodeRepositoryNodesByHostname.get(hostName));
         }
@@ -64,7 +64,7 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public void setNodeState(String hostName, Node.State nodeState) {
-        Optional<NodeSpec> node = getNode(hostName);
+        Optional<NodeSpec> node = getOptionalNode(hostName);
 
         synchronized (monitor) {
             node.ifPresent(nrn -> updateNodeRepositoryNode(new NodeSpec.Builder(nrn)
