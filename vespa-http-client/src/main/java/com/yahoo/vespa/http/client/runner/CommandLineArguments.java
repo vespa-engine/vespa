@@ -11,6 +11,7 @@ import io.airlift.command.Command;
 import io.airlift.command.HelpOption;
 import io.airlift.command.Option;
 import io.airlift.command.SingleCommand;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.inject.Inject;
 import java.util.concurrent.TimeUnit;
@@ -174,6 +175,10 @@ public class CommandLineArguments {
             description = "Use TLS when connecting to endpoint")
     private boolean useTls = false;
 
+    @Option(name = {"--insecure"},
+            description = "Skip hostname verification when using TLS")
+    private boolean insecure = false;
+
     int getWhenVerboseEnabledPrintMessageForEveryXDocuments() {
         return whenVerboseEnabledPrintMessageForEveryXDocuments;
     }
@@ -203,6 +208,8 @@ public class CommandLineArguments {
                 )
                 .setConnectionParams(
                         new ConnectionParams.Builder()
+                                .setHostnameVerifier(insecure ? SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER :
+                                        SSLConnectionSocketFactory.getDefaultHostnameVerifier())
                                 .setNumPersistentConnectionsPerEndpoint(16)
                                 .setEnableV3Protocol(! enableV2Protocol)
                                 .setUseCompression(useCompressionArg)
