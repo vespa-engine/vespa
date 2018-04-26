@@ -3,14 +3,24 @@ package com.yahoo.document.datatypes;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
+import org.junit.Test;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class WeightedSetTestCase extends junit.framework.TestCase {
+public class WeightedSetTestCase {
+
+    @Test
     public void testSet() {
         WeightedSet<StringFieldValue> wset = new WeightedSet<>(DataType.TAG);
 
@@ -58,6 +68,7 @@ public class WeightedSetTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testAssignDoesNotIgnoreSpecialProperties() {
         DataType type = DataType.getWeightedSet(DataType.STRING);
         WeightedSet<StringFieldValue> set = new WeightedSet<>(type);
@@ -89,6 +100,7 @@ public class WeightedSetTestCase extends junit.framework.TestCase {
         assertEquals(new Integer(10), set.get(new StringFieldValue("aba")));
     }
 
+    @Test
     public void testWrappedMap() {
         WeightedSet<StringFieldValue> ws = new WeightedSet<>(DataType.getWeightedSet(DataType.STRING));
         Map<String, Integer> map = new LinkedHashMap<>();
@@ -145,6 +157,7 @@ public class WeightedSetTestCase extends junit.framework.TestCase {
         assertEquals(new Integer(1), ws.get(new StringFieldValue("sitronbrus")));
     }
 
+    @Test
     public void testAssigningWrappedSetToMapFieldValue() {
         WeightedSet<StringFieldValue> weightedSet = new WeightedSet<>(DataType.getWeightedSet(DataType.STRING));
         WeightedSet<StringFieldValue> assignmentTarget = new WeightedSet<>(DataType.getWeightedSet(DataType.STRING));
@@ -157,4 +170,5 @@ public class WeightedSetTestCase extends junit.framework.TestCase {
         assertEquals(Integer.valueOf(1), assignmentTarget.get(new StringFieldValue("foo")));
         assertEquals(Integer.valueOf(2), assignmentTarget.get(new StringFieldValue("bar")));
     }
+
 }

@@ -5,14 +5,13 @@ import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author vekterli
- * @since 6.65
  */
 public class ReferenceDataTypeTestCase {
 

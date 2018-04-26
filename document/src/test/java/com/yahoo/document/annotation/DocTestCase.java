@@ -9,6 +9,7 @@ import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,9 +19,9 @@ import java.util.ListIterator;
 /**
  * Contains code snippets that are used in the documentation. Not really a test case.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class DocTestCase extends junit.framework.TestCase {
+public class DocTestCase {
 
     private class Processing {
         private Service getService() {
@@ -36,7 +37,7 @@ public class DocTestCase extends junit.framework.TestCase {
 
     private Processing processing = null;
 
-
+    @Test
     public void testSimple1() {
         StringFieldValue text = new StringFieldValue("<html><head><title>Diary</title></head><body>I live in San Francisco</body></html>");
                                                     //012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -152,7 +153,6 @@ public class DocTestCase extends junit.framework.TestCase {
         text.setSpanTree(tree);
     }
 
-
     public void simple4() {
         //the following line works inside process(Document, Arguments, Processing) in a DocumentProcessor
         AnnotationTypeRegistry atr = processing.getService().getDocumentTypeManager().getAnnotationTypeRegistry();
@@ -230,7 +230,6 @@ public class DocTestCase extends junit.framework.TestCase {
 
         text.setSpanTree(tree);
     }
-
 
     public void simple5() {
         //the following two lines work inside process(Document, Arguments, Processing) in a DocumentProcessor

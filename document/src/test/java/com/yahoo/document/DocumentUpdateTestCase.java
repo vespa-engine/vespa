@@ -11,6 +11,8 @@ import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,29 +20,38 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * Tests applying and serializing document updates.
  *
  * @author Einar M R Rosenvinge
  */
-public class DocumentUpdateTestCase extends junit.framework.TestCase {
-    DocumentTypeManager docMan;
+public class DocumentUpdateTestCase {
 
-    DocumentType docType = null;
-    DocumentType docType2 = null;
-    DocumentUpdate docUp = null;
+    private DocumentTypeManager docMan;
 
-    FieldUpdate assignSingle = null;
-    FieldUpdate assignMultiList = null;
-    FieldUpdate assignMultiWset = null;
+    private DocumentType docType = null;
+    private DocumentType docType2 = null;
+    private DocumentUpdate docUp = null;
 
-    FieldUpdate clearSingleField = null;
-    FieldUpdate removeMultiList = null;
-    FieldUpdate removeMultiWset = null;
+    private FieldUpdate assignSingle = null;
+    private FieldUpdate assignMultiList = null;
+    private FieldUpdate assignMultiWset = null;
 
-    FieldUpdate addSingle = null;
-    FieldUpdate addMultiList = null;
-    FieldUpdate addMultiWset = null;
+    private FieldUpdate clearSingleField = null;
+    private FieldUpdate removeMultiList = null;
+    private FieldUpdate removeMultiWset = null;
+
+    private FieldUpdate addSingle = null;
+    private FieldUpdate addMultiList = null;
+    private FieldUpdate addMultiWset = null;
 
     private final String documentId = "doc:something:foooo";
     private final String tensorField = "tensorfield";
@@ -50,6 +61,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         return new Document(docMan.getDocumentType("foobar"), new DocumentId(documentId));
     }
 
+    @Before
     public void setUp() {
         docMan = new DocumentTypeManager();
 
@@ -111,6 +123,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         addMultiWset = FieldUpdate.createAddAll(docType.getField("strwset"), addSet);
     }
 
+    @Test
     public void testApplyRemoveSingle() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue("strfoo"));
@@ -121,6 +134,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertNull(doc.getFieldValue("strfoo"));
     }
 
+    @Test
     public void testApplyRemoveMultiList() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue("strarray"));
@@ -136,6 +150,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("hello hello"), docList.get(0));
     }
 
+    @Test
     public void testApplyRemoveMultiWset() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue("strwset"));
@@ -151,6 +166,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new Integer(10), docWset.get(new StringFieldValue("hello hello")));
     }
 
+    @Test
     public void testApplyAssignSingle() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue("strfoo"));
@@ -159,6 +175,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("something"), doc.getFieldValue("strfoo"));
     }
 
+    @Test
     public void testApplyAssignMultiList() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue("strarray"));
@@ -175,6 +192,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("assigned val 1"), docList.get(1));
     }
 
+    @Test
     public void testApplyAssignMultiWlist() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue("strwset"));
@@ -191,10 +209,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new Integer(10), docWset.get(new StringFieldValue("assigned val 1")));
     }
 
-    public void testApplyAddSingle() {
-        //Unneeded, we can't construct an add for single-value
-    }
-
+    @Test
     public void testApplyAddMultiList() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue("strarray"));
@@ -208,6 +223,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(values, doc.getFieldValue("strarray"));
     }
 
+    @Test
     public void testApplyAddMultiWset() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue("strwset"));
@@ -233,6 +249,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(values, doc.getFieldValue("strwset"));
     }
 
+    @Test
     public void testUpdatesToTheSameFieldAreCombining() {
         DocumentType docType = new DocumentType("my_type");
         Field field = new Field("my_int", DataType.INT);
@@ -256,6 +273,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new IntegerFieldValue(2), valueUpdate.getValue());
     }
 
+    @Test
     public void testUpdateToWrongField() {
         DocumentType docType = new DocumentType("my_type");
         DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("doc:foo:"));
@@ -267,6 +285,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testSerialize() {
         docUp.addFieldUpdate(assignSingle);
         docUp.addFieldUpdate(addMultiList);
@@ -310,6 +329,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(docUp, docUpDeser);
     }
 
+    @Test
     public void testCppDocUpd() throws IOException {
         docMan = DocumentTestCase.setUpCppDocType();
         byte[] data = DocumentTestCase.readFile("src/tests/data/serializeupdatecpp.dat");
@@ -357,6 +377,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(ValueUpdate.ValueUpdateClassID.MAP, mapUpd.getValueUpdateClassID());
     }
 
+    @Test
     public void testGenerateSerializedFile() throws IOException {
         docMan = DocumentTestCase.setUpCppDocType();
 
@@ -384,6 +405,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         fos.close();
     }
 
+    @Test
     public void testRequireThatAddAllCombinesFieldUpdates() {
         DocumentType docType = new DocumentType("my_type");
         Field field = new Field("my_int", DataType.INT);
@@ -412,6 +434,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new IntegerFieldValue(2), valueUpdate.getValue());
     }
 
+    @Test
     public void testInstantiationAndEqualsHashCode() {
         DocumentType type = new DocumentType("doo");
         DocumentUpdate d1 = new DocumentUpdate(type, new DocumentId("doc:this:is:a:test"));
@@ -425,6 +448,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(d1.hashCode(), d2.hashCode());
     }
 
+    @Test
     public void testThatApplyingToWrongTypeFails() {
         DocumentType t1 = new DocumentType("doo");
         DocumentUpdate documentUpdate = new DocumentUpdate(t1, new DocumentId("doc:this:is:a:test"));
@@ -440,7 +464,8 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         }
     }
 
-    public void testFieldUpdatesInDocUp() throws ParseException {
+    @Test
+    public void testFieldUpdatesInDocUp() {
         DocumentType t1 = new DocumentType("doo");
         Field f1 = new Field("field1", DataType.STRING);
         Field f2 = new Field("field2", DataType.STRING);
@@ -506,6 +531,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertFalse(fpUpdates.hasNext());
     }
 
+    @Test
     public void testAddAll() {
         DocumentType t1 = new DocumentType("doo");
         DocumentType t2 = new DocumentType("foo");
@@ -554,6 +580,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(value, extractedValue);
     }
 
+    @Test
     public void testRequireThatDocumentUpdateFlagsIsWorking() {
         { // create-if-non-existent = true
             assertDocumentUpdateFlag(true, 0);
@@ -573,6 +600,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testRequireThatCreateIfNonExistentFlagIsSerializedAndDeserialized() {
         docUp.setCreateIfNonExistent(true);
 
@@ -586,6 +614,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertTrue(deserialized.getCreateIfNonExistent());
     }
 
+    @Test
     public void testThatAssignValueUpdateForTensorFieldCanBeApplied() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue(tensorField));
@@ -597,6 +626,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(createTensorFieldValue("{{x:0}:2.0}"), tensor);
     }
 
+    @Test
     public void testThatAssignValueUpdateForTensorFieldCanBeSerializedAndDeserialized() {
         DocumentUpdate serializedUpdate = createTensorAssignUpdate();
         DocumentSerializer serializer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
@@ -608,6 +638,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(serializedUpdate, deserializedUpdate);
     }
 
+    @Test
     public void testThatClearValueUpdateForTensorFieldCanBeApplied() {
         Document doc = createDocument();
         doc.setFieldValue(docType.getField(tensorField), createTensorFieldValue("{{x:0}:2.0}"));

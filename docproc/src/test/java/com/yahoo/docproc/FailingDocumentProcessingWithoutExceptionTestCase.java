@@ -9,12 +9,14 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Tests a document processing where some processings fail with an exception
  *
  * @author Einar M. R. Rosenvinge
  */
-public class FailingDocumentProcessingWithoutExceptionTestCase extends junit.framework.TestCase {
+public class FailingDocumentProcessingWithoutExceptionTestCase {
 
     /**
      * Tests chaining of some processors, and execution of the processors

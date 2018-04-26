@@ -1,14 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-/**
- * @author <a href="thomasg@yahoo-inc.com>Thomas Gundersen</a>
- */
-public class FieldTestCase extends junit.framework.TestCase {
-    public FieldTestCase(String name) {
-        super(name);
-    }
+import org.junit.Test;
 
+import static org.junit.Assert.fail;
+
+/**
+ * @author Thomas Gundersen
+ */
+public class FieldTestCase {
+
+    @Test
     public void testIdSettingConflict() {
         DocumentType doc = new DocumentType("testdoc");
         Field one = doc.addField("one", DataType.STRING);
@@ -26,6 +28,7 @@ public class FieldTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testSettingReservedId() {
         DocumentType doc = new DocumentType("testdoc");
         try {

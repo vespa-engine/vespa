@@ -2,11 +2,18 @@
 package com.yahoo.document;
 
 import com.yahoo.document.datatypes.Struct;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class StructDataTypeTestCase extends junit.framework.TestCase {
+public class StructDataTypeTestCase {
+
+    @Test
     public void testSimpleInheritance() {
         StructDataType personType = new StructDataType("person");
         Field firstName = new Field("firstname", DataType.STRING);
@@ -35,6 +42,7 @@ public class StructDataTypeTestCase extends junit.framework.TestCase {
         assertEquals("lastname", employeeType.getFields().toArray(new Field[0])[2].getName());
     }
 
+    @Test
     public void testCompatibleWith() {
         StructDataType personType = new StructDataType("person");
         Field firstName = new Field("firstname", DataType.STRING);

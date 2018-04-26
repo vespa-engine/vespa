@@ -7,24 +7,28 @@ import com.yahoo.document.select.convert.SelectionExpressionConverter;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrError;
 import com.yahoo.yolean.Exceptions;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  * @author bratseth
  */
-public class DocumentSelectorTestCase extends junit.framework.TestCase {
+public class DocumentSelectorTestCase {
 
     private static DocumentTypeManager manager = new DocumentTypeManager();
 
-    public DocumentSelectorTestCase(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() {
         DocumentType type = new DocumentType("test");
         type.addHeaderField("hint", DataType.INT);
@@ -58,6 +62,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         manager.registerDocumentType(new DocumentType("usergroup"));
     }
 
+    @Test
     public void testParsing() throws ParseException {
         assertParse("3.14 > 0");
         assertParse("-999 > 0");
@@ -106,6 +111,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertParse("(music.expire / 1000) > (now() - 300)");
     }
 
+    @Test
     public void testReservedWords() throws ParseException {
         assertParse(null, "id == 'id' or id_t or idtype"); // ignore canonical form
         assertParse(null, "searchcolumn == 1 or searchcolumn_t or searchcolumntype");
@@ -122,6 +128,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertParse(null, "true or or_t or ortype");
     }
 
+    @Test
     public void testCjkParsing() throws ParseException {
         assertParse("music.artist = \"\\u4f73\\u80fd\\u7d22\\u5c3c\\u60e0\\u666e\"",
                     "music.artist = \"\u4f73\u80fd\u7d22\u5c3c\u60e0\u666e\"");
@@ -129,6 +136,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
                     "music.artist = \"\\u4f73\\u80fd\\u7d22\\u5c3c\\u60e0\\u666e\"");
     }
 
+    @Test
     public void testParseTerminals() throws ParseException {
         // Test number values.
         assertParse("true");
@@ -225,6 +233,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertParse("23 + 643 / 34 % 10 > 34", "23 + 643 / 34 % 10 > 34");
     }
 
+    @Test
     public void testParseReservedTokens() throws ParseException {
         assertParse("user.fieldName == \"fieldValue\""); // reserved word as document type name
         assertParse("documentName.user == \"fieldValue\""); // reserved word as field type name
@@ -232,12 +241,14 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertParse("documentName.group == \"fieldValue\""); // reserved word as field type name
     }
 
+    @Test
     public void testParseBranches() throws ParseException {
         assertParse("((true or false) and (false or true))");
         assertParse("(true or (not false and not true))");
         assertParse("((243) < 300 and (\"FOO\").lowercase() == (\"foo\"))");
     }
 
+    @Test
     public void testDocumentUpdate() throws ParseException {
         DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("doc:myspace:anything"));
         assertEquals(Result.TRUE, evaluate("test", upd));
@@ -250,6 +261,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         // TODO Fails: assertEquals(Result.TRUE, evaluate("test.hint + 1 > 13", upd));
     }
 
+    @Test
     public void testDocumentRemove() throws ParseException {
         assertEquals(Result.TRUE, evaluate("test", createRemove("id:ns:test::1")));
         assertEquals(Result.FALSE, evaluate("test", createRemove("id:ns:null::1")));
@@ -265,6 +277,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         return new DocumentRemove(new DocumentId(docId));
     }
 
+    @Test
     public void testInvalidLogic() throws ParseException {
         DocumentPut put = new DocumentPut(manager.getDocumentType("test"), new DocumentId("doc:scheme:"));
         DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("doc:scheme:"));
@@ -391,6 +404,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         return documents;
     }
 
+    @Test
     public void testOperators() throws ParseException {
         List<DocumentPut> documents = createDocs();
 
@@ -688,11 +702,13 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertEquals(Result.FALSE, evaluate("test.structarrmap{$x}.key == 17 AND test.stringweightedset{$x}", documents.get(1)));
     }
 
-    public void testTicket1769674() throws ParseException {
+    @Test
+    public void testTicket1769674() {
         assertParseError("music.uri=\"junk",
                          "Lexical error at line -1, column 17.  Encountered: <EOF> after : \"\\\"junk\"");
     }
 
+    @Test
     public void testThatVisitingReportsCorrectResult() throws ParseException {
         assertVisitWithValidNowWorks("music.expire > now()");
         assertVisitWithValidNowWorks("music.expire > now() and video.expire > now()");
@@ -712,6 +728,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertVisitWithInvalidNowFails("music.name.hash() > now()", "Only attribute items are supported");
     }
 
+    @Test
     public void testThatSelectionIsConvertedToQueries() throws ParseException {
         assertThatQueriesAreCreated("music.expire > now()", Arrays.asList("music"), Arrays.asList("expire:>now(0)"));
         assertThatQueriesAreCreated("music.expire > now() - 300", Arrays.asList("music"), Arrays.asList("expire:>now(300)"));
@@ -823,4 +840,5 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
             assertEquals(expectedError, e.getMessage().substring(0, expectedError.length()));
         }
     }
+
 }

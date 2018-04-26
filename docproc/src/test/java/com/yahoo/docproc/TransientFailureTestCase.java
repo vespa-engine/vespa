@@ -9,10 +9,12 @@ import com.yahoo.document.DocumentType;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author Einar M R Rosenvinge
  */
-public class TransientFailureTestCase extends junit.framework.TestCase {
+public class TransientFailureTestCase {
 
     DocumentType type;
 

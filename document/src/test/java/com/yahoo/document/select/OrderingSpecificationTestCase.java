@@ -1,19 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.select;
 
-import com.yahoo.document.select.*;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
- * Date: Sep 6, 2007
- *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
-public class OrderingSpecificationTestCase extends junit.framework.TestCase {
+public class OrderingSpecificationTestCase {
 
-    public OrderingSpecificationTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testExpressions() throws Exception {
         assertSelection("id.order(10,10) < 100", OrderingSpecification.DESCENDING,
                         new OrderingSpecification(OrderingSpecification.DESCENDING, (long)99, (short)10, (short)10));
@@ -48,4 +46,5 @@ public class OrderingSpecificationTestCase extends junit.framework.TestCase {
             assertNull(selector.getOrdering(ordering));
         }
     }
+
 }

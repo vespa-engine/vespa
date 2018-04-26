@@ -11,10 +11,16 @@ import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.serialization.*;
 import com.yahoo.io.GrowableByteBuffer;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.fail;
 
 
-public class MapTestCase extends junit.framework.TestCase {
+public class MapTestCase {
 
+    @Test
     public void testStringMap() {
         MapDataType mapType = new MapDataType(DataType.STRING, DataType.STRING);
         MapFieldValue<StringFieldValue, StringFieldValue> map = mapType.createFieldValue();
@@ -35,6 +41,7 @@ public class MapTestCase extends junit.framework.TestCase {
         assertEquals(map.get(new StringFieldValue("k3")).getWrappedValue(), "v3");
     }
 
+    @Test
     public void testAdvancedMap() {
         MapDataType stringMapType1 = new MapDataType(DataType.STRING, DataType.STRING);
         MapDataType stringMapType2 = new MapDataType(DataType.STRING, DataType.STRING);
@@ -84,6 +91,7 @@ public class MapTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testSerializationStringMap() {
         MapDataType mapType = new MapDataType(DataType.STRING, DataType.STRING);
         MapFieldValue<StringFieldValue, StringFieldValue> map = mapType.createFieldValue();
@@ -100,6 +108,7 @@ public class MapTestCase extends junit.framework.TestCase {
         assertCorrectSerialization(mapType, map);
     }
 
+    @Test
     public void testSerializationComplex() {
         ArrayDataType twoDimArray = DataType.getArray(DataType.getArray(DataType.FLOAT));
         MapDataType floatToTwoDimArray = new MapDataType(DataType.FLOAT, twoDimArray);
@@ -147,6 +156,7 @@ public class MapTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testIllegalMapAssignment() {
         MapDataType type1 = new MapDataType(DataType.INT, DataType.INT);
         MapDataType type2 = new MapDataType(DataType.STRING, DataType.STRING);

@@ -2,21 +2,22 @@
 package com.yahoo.document.serialization;
 
 import com.yahoo.document.serialization.XmlStream;
+import org.junit.Test;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for XmlStream used in document XML serialization.
  *
- * @author <a href="humbe@yahoo-inc.com>Haakon Humberset</a>
+ * @author Håkon Humberset
  */
-public class XmlStreamTestCase extends junit.framework.TestCase {
-
-    public XmlStreamTestCase(String name) {
-        super(name);
-    }
+public class XmlStreamTestCase {
 
     /** A catch all test checking that regular usage looks good. */
+    @Test
     public void testNormalUsage() {
         XmlStream xml = new XmlStream();
         xml.setIndent("  ");
@@ -55,6 +56,7 @@ public class XmlStreamTestCase extends junit.framework.TestCase {
      * Test that XML tag and attribute names are checked for validity.
      * Only the obvious illegal characters are tested currently.
      */
+    @Test
     public void testIllegalAttributeNames() {
         String illegalNames[] = {">foo", "foo<bar", " foo", "bar ", "foo bar", "foo\"bar", "&foo"};
         XmlStream xml = new XmlStream();
@@ -78,6 +80,7 @@ public class XmlStreamTestCase extends junit.framework.TestCase {
     }
 
     /** Test that XML attribute values are XML escaped. */
+    @Test
     public void testAttributeEscaping() {
         //String badString = "\"&<>'\n\r\u0000";
         String badString = "\"&<>'";
@@ -90,6 +93,7 @@ public class XmlStreamTestCase extends junit.framework.TestCase {
     }
 
     /** Test that content is XML escaped. */
+    @Test
     public void testContentEscaping() {
         //String badString = "\"&<>'\n\r\u0000";
         String badString = "\"&<>'";

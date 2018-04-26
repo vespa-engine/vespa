@@ -8,19 +8,22 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.CacheControlSearcher;
-import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.util.List;
 
 import static com.yahoo.search.searchers.CacheControlSearcher.CACHE_CONTROL_HEADER;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit test cases for CacheControlSearcher.
  *
  * @author frodelu
  */
-public class CacheControlSearcherTestCase extends TestCase {
+public class CacheControlSearcherTestCase {
 
     private Searcher getDocSource() {
         return new Searcher() {

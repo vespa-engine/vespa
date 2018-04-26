@@ -7,23 +7,34 @@ import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.serialization.*;
 import com.yahoo.io.GrowableByteBuffer;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * Tests applying and serializing document updates.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
+public class DocumentPathUpdateTestCase {
+
     DocumentTypeManager docMan;
 
     DocumentType docType = null;
     DocumentType docType2 = null;
 
+    @Before
     public void setUp() {
         docMan = new DocumentTypeManager();
 
@@ -60,7 +71,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         docMan.register(docType2);
     }
 
-    public void testRemoveField() throws Exception {
+    @Test
+    public void testRemoveField() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strfoo"));
         doc.setFieldValue("strfoo", "cocacola");
@@ -69,9 +81,10 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         docUp.addFieldPathUpdate(new RemoveFieldPathUpdate(doc.getDataType(), "strfoo", null));
         docUp.applyTo(doc);
         assertNull(doc.getFieldValue("strfoo"));
-   }
+    }
 
-    public void testApplyRemoveMultiList() throws Exception {
+    @Test
+    public void testApplyRemoveMultiList() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<>(doc.getField("strarray").getDataType());
@@ -89,7 +102,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("hello hello"), docList.get(1));
     }
 
-    public void testApplyRemoveEntireListField() throws Exception {
+    @Test
+    public void testApplyRemoveEntireListField() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<>(doc.getField("strarray").getDataType());
@@ -103,7 +117,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertNull(doc.getFieldValue("strarray"));
     }
 
-    public void testApplyRemoveMultiWset() throws Exception {
+    @Test
+    public void testApplyRemoveMultiWset() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strwset"));
         WeightedSet<StringFieldValue> strwset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
@@ -119,7 +134,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new Integer(10), docWset.get(new StringFieldValue("hello hello")));
     }
 
-    public void testApplyAssignSingle() throws Exception {
+    @Test
+    public void testApplyAssignSingle() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strfoo"));
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
@@ -128,7 +144,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("something"), doc.getFieldValue("strfoo"));
     }
 
-    public void testApplyAssignMath() throws Exception {
+    @Test
+    public void testApplyAssignMath() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         doc.setFieldValue(doc.getField("num"), new IntegerFieldValue(34));
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
@@ -137,7 +154,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new IntegerFieldValue(2), doc.getFieldValue(doc.getField("num")));
     }
 
-    public void testDivideByZero() throws Exception {
+    @Test
+    public void testDivideByZero() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         doc.setFieldValue(doc.getField("num"), new IntegerFieldValue(10));
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
@@ -146,7 +164,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new IntegerFieldValue(10), doc.getFieldValue(doc.getField("num")));
     }
 
-    public void testAssignMathFieldNotSet() throws Exception {
+    @Test
+    public void testAssignMathFieldNotSet() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         doc.setFieldValue(doc.getField("num"), new IntegerFieldValue(10));
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
@@ -155,7 +174,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new IntegerFieldValue(10), doc.getFieldValue(doc.getField("num")));
     }
 
-    public void testAssignMathMissingField() throws Exception {
+    @Test
+    public void testAssignMathMissingField() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         doc.setFieldValue(doc.getField("num"), new IntegerFieldValue(10));
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
@@ -164,7 +184,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new IntegerFieldValue(10), doc.getFieldValue(doc.getField("num")));
     }
 
-    public void testAssignMathTargetFieldNotSet() throws Exception {
+    @Test
+    public void testAssignMathTargetFieldNotSet() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "num", "", "100"));
@@ -172,7 +193,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new IntegerFieldValue(100), doc.getFieldValue(doc.getField("num")));
     }
 
-    public void testAssignMathTargetFieldNotSetWithValue() throws Exception {
+    @Test
+    public void testAssignMathTargetFieldNotSetWithValue() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "num", "", "$value + 5"));
@@ -180,7 +202,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new IntegerFieldValue(5), doc.getFieldValue(doc.getField("num")));
     }
 
-    public void testApplyAssignMultiList() throws Exception {
+    @Test
+    public void testApplyAssignMultiList() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<StringFieldValue>(doc.getField("strarray").getDataType());
@@ -200,7 +223,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("assigned val 1"), docList.get(1));
     }
 
-    public void testApplyAssignMultiWlist() throws Exception {
+    @Test
+    public void testApplyAssignMultiWlist() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strwset"));
         WeightedSet<StringFieldValue> strwset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
@@ -220,7 +244,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new Integer(10), docWset.get(new StringFieldValue("assigned val 1")));
     }
 
-    public void testAssignWsetRemoveIfZero() throws Exception {
+    @Test
+    public void testAssignWsetRemoveIfZero() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue(doc.getField("strwset")));
         WeightedSet<StringFieldValue> strwset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
@@ -238,7 +263,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new Integer(243), docWset.get(new StringFieldValue("blahdi blahdi")));
     }
 
-    public void testApplyAddMultiList() throws Exception {
+    @Test
+    public void testApplyAddMultiList() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strarray"));
 
@@ -256,7 +282,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(values, doc.getFieldValue("strarray"));
     }
 
-    public void testAddAndAssignList() throws Exception {
+    @Test
+    public void testAddAndAssignList() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strarray"));
 
@@ -282,8 +309,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("new value"), docList.get(2));
     }
 
-    public void testAssignSimpleMapValueWithVariable()
-    {
+    @Test
+    public void testAssignSimpleMapValueWithVariable() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("strmap").getDataType());
 
@@ -303,6 +330,7 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("bananas"), valueNow.get(new StringFieldValue("baz")));
     }
 
+    @Test
     public void testKeyParsing() {
         assertEquals(new FieldPathEntry.KeyParseResult("", 2), FieldPathEntry.parseKey("{}"));
         assertEquals(new FieldPathEntry.KeyParseResult("abc", 5), FieldPathEntry.parseKey("{abc}"));
@@ -356,8 +384,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         }
     }
 
-    public void testKeyWithEscapedChars()
-    {
+    @Test
+    public void testKeyWithEscapedChars() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("strmap").getDataType());
 
@@ -377,7 +405,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("bananas"), valueNow.get(new StringFieldValue("baz")));
     }
 
-    public void testAssignMap() throws Exception {
+    @Test
+    public void testAssignMap() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
         Struct fv1 = new Struct(mfv.getDataType().getValueType());
@@ -414,7 +443,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(fv3, valueNow.get(new StringFieldValue("zoo")));
     }
 
-    public void testAssignMapStruct() throws Exception {
+    @Test
+    public void testAssignMapStruct() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
         Struct fv1 = new Struct(mfv.getDataType().getValueType());
@@ -451,7 +481,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(fv3, valueNow.get(new StringFieldValue("zoo")));
     }
 
-    public void testAssignMapStructVariable() throws Exception {
+    @Test
+    public void testAssignMapStructVariable() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
         Struct fv1 = new Struct(mfv.getDataType().getValueType());
@@ -488,7 +519,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(fv3, valueNow.get(new StringFieldValue("zoo")));
     }
 
-    public void testAssignMapNoexist() throws Exception {
+    @Test
+    public void testAssignMapNoexist() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
 
@@ -504,7 +536,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(fv1, valueNow.get(new StringFieldValue("foo")));
     }
 
-    public void testAssignMapNoexistNocreate() throws Exception {
+    @Test
+    public void testAssignMapNoexistNocreate() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
 
@@ -522,7 +555,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertNull(valueNow);
     }
 
-    public void testAssignSerialization() throws Exception {
+    @Test
+    public void testAssignSerialization() {
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
         AssignFieldPathUpdate ass = new AssignFieldPathUpdate(docType, "num", "", "3");
         ass.setCreateMissingPath(false);
@@ -536,7 +570,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(docUp, docUp2);
     }
 
-    public void testAddSerialization() throws Exception {
+    @Test
+    public void testAddSerialization() {
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
         Array strArray = new Array(docType.getField("strarray").getDataType());
         strArray.add(new StringFieldValue("hello hello"));
@@ -553,7 +588,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(docUp, docUp2);
     }
 
-    public void testRemoveSerialization() throws Exception {
+    @Test
+    public void testRemoveSerialization() {
         DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
         RemoveFieldPathUpdate remove = new RemoveFieldPathUpdate(docType, "num", "foobar.num > 0");
         docUp.addFieldPathUpdate(remove);
@@ -566,7 +602,8 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         assertEquals(docUp, docUp2);
     }
 
-    public void testStartsWith() throws Exception {
+    @Test
+    public void testStartsWith() {
         FieldPath fp1 = docType.buildFieldPath("struct");
         FieldPath fp2 = docType.buildFieldPath("struct.title");
         assertTrue(fp2.startsWith(fp1));
@@ -598,6 +635,7 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         return docUp;
     }
 
+    @Test
     public void testGenerateSerializedFile() throws IOException {
         DocumentUpdate docUp = createDocumentUpdateForSerialization();
 
@@ -612,6 +650,7 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
         fos.close();
     }
 
+    @Test
     public void testReadSerializedFile() throws IOException {
         docMan = DocumentTestCase.setUpCppDocType();
         byte[] data = DocumentTestCase.readFile("src/tests/data/serialize-fieldpathupdate-cpp.dat");
@@ -623,4 +662,5 @@ public class DocumentPathUpdateTestCase extends junit.framework.TestCase {
 
         assertEquals(compare, upd);
     }
+
 }
