@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -26,7 +27,7 @@ public class ContentClusterRemovalValidator implements ChangeValidator {
             if (nextCluster == null)
                 overrides.invalid(ValidationId.contentClusterRemoval,
                                   "Content cluster '" + currentClusterId + "' is removed. " +
-                                  "This will cause loss of all data in this cluster", 
+                                  "This will cause loss of all data in this cluster",
                                   now);
         }
 
