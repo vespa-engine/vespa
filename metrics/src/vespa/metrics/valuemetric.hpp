@@ -157,7 +157,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::dec(const Values& values2)
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 void ValueMetric<AvgVal, TotVal, SumOnAdd>::addValueWithCount(
-        AvgVal avg, TotVal tot, uint32_t count)
+        AvgVal avg, TotVal tot, uint32_t count, AvgVal min, AvgVal max)
 {
     if (!checkFinite(avg, std::is_floating_point<AvgVal>())) {
         return;
@@ -167,8 +167,8 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::addValueWithCount(
         values = _values.getValues();
         values._count += count;
         values._total += tot;
-        if (avg < values._min) values._min = avg;
-        if (avg > values._max) values._max = avg;
+        if (min < values._min) values._min = min;
+        if (max > values._max) values._max = max;
         values._last = avg;
     } while (!_values.setValues(values));
 }

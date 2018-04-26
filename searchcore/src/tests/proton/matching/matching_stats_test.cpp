@@ -88,6 +88,62 @@ TEST("requireThatAverageTimesAreRecorded") {
     EXPECT_EQUAL(4u, stats.queryLatencyCount());
 }
 
+TEST("requireThatMinMaxTimesAreRecorded") {
+    MatchingStats stats;
+    EXPECT_APPROX(0.0, stats.matchTimeMin(), 0.00001);
+    EXPECT_APPROX(0.0, stats.groupingTimeMin(), 0.00001);
+    EXPECT_APPROX(0.0, stats.rerankTimeMin(), 0.00001);
+    EXPECT_APPROX(0.0, stats.queryCollateralTimeMin(), 0.00001);
+    EXPECT_APPROX(0.0, stats.queryLatencyMin(), 0.00001);
+    EXPECT_APPROX(0.0, stats.matchTimeMax(), 0.00001);
+    EXPECT_APPROX(0.0, stats.groupingTimeMax(), 0.00001);
+    EXPECT_APPROX(0.0, stats.rerankTimeMax(), 0.00001);
+    EXPECT_APPROX(0.0, stats.queryCollateralTimeMax(), 0.00001);
+    EXPECT_APPROX(0.0, stats.queryLatencyMax(), 0.00001);
+    stats.matchTime(0.01).groupingTime(0.1).rerankTime(0.5).queryCollateralTime(2.0).queryLatency(1.0);
+    EXPECT_APPROX(0.01, stats.matchTimeMin(), 0.00001);
+    EXPECT_APPROX(0.1, stats.groupingTimeMin(), 0.00001);
+    EXPECT_APPROX(0.5, stats.rerankTimeMin(), 0.00001);
+    EXPECT_APPROX(2.0, stats.queryCollateralTimeMin(), 0.00001);
+    EXPECT_APPROX(1.0, stats.queryLatencyMin(), 0.00001);
+    EXPECT_APPROX(0.01, stats.matchTimeMax(), 0.00001);
+    EXPECT_APPROX(0.1, stats.groupingTimeMax(), 0.00001);
+    EXPECT_APPROX(0.5, stats.rerankTimeMax(), 0.00001);
+    EXPECT_APPROX(2.0, stats.queryCollateralTimeMax(), 0.00001);
+    EXPECT_APPROX(1.0, stats.queryLatencyMax(), 0.00001);
+    stats.add(MatchingStats().matchTime(0.03).groupingTime(0.3).rerankTime(1.5).queryCollateralTime(6.0).queryLatency(3.0));
+    EXPECT_APPROX(0.01, stats.matchTimeMin(), 0.00001);
+    EXPECT_APPROX(0.1, stats.groupingTimeMin(), 0.00001);
+    EXPECT_APPROX(0.5, stats.rerankTimeMin(), 0.00001);
+    EXPECT_APPROX(2.0, stats.queryCollateralTimeMin(), 0.00001);
+    EXPECT_APPROX(1.0, stats.queryLatencyMin(), 0.00001);
+    EXPECT_APPROX(0.03, stats.matchTimeMax(), 0.00001);
+    EXPECT_APPROX(0.3, stats.groupingTimeMax(), 0.00001);
+    EXPECT_APPROX(1.5, stats.rerankTimeMax(), 0.00001);
+    EXPECT_APPROX(6.0, stats.queryCollateralTimeMax(), 0.00001);
+    EXPECT_APPROX(3.0, stats.queryLatencyMax(), 0.00001);
+    stats.add(MatchingStats().matchTime(0.05)
+              .groupingTime(0.5)
+              .rerankTime(2.5)
+              .queryCollateralTime(10.0)
+              .queryLatency(5.0));
+    stats.add(MatchingStats().matchTime(0.05).matchTime(0.03)
+              .groupingTime(0.5).groupingTime(0.3)
+              .rerankTime(2.5).rerankTime(1.5)
+              .queryCollateralTime(10.0).queryCollateralTime(6.0)
+              .queryLatency(5.0).queryLatency(3.0));
+    EXPECT_APPROX(0.01, stats.matchTimeMin(), 0.00001);
+    EXPECT_APPROX(0.1, stats.groupingTimeMin(), 0.00001);
+    EXPECT_APPROX(0.5, stats.rerankTimeMin(), 0.00001);
+    EXPECT_APPROX(2.0, stats.queryCollateralTimeMin(), 0.00001);
+    EXPECT_APPROX(1.0, stats.queryLatencyMin(), 0.00001);
+    EXPECT_APPROX(0.05, stats.matchTimeMax(), 0.00001);
+    EXPECT_APPROX(0.5, stats.groupingTimeMax(), 0.00001);
+    EXPECT_APPROX(2.5, stats.rerankTimeMax(), 0.00001);
+    EXPECT_APPROX(10.0, stats.queryCollateralTimeMax(), 0.00001);
+    EXPECT_APPROX(5.0, stats.queryLatencyMax(), 0.00001);
+}
+
 TEST("requireThatPartitionsAreAddedCorrectly") {
     MatchingStats all1;
     EXPECT_EQUAL(0u, all1.docidSpaceCovered());
@@ -105,6 +161,10 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0.5, subPart.wait_time_avg());
     EXPECT_EQUAL(1u, subPart.active_time_count());
     EXPECT_EQUAL(1u, subPart.wait_time_count());
+    EXPECT_EQUAL(1.0, subPart.active_time_min());
+    EXPECT_EQUAL(0.5, subPart.wait_time_min());
+    EXPECT_EQUAL(1.0, subPart.active_time_max());
+    EXPECT_EQUAL(0.5, subPart.wait_time_max());
 
     all1.merge_partition(subPart, 0);
     EXPECT_EQUAL(7u, all1.docidSpaceCovered());
@@ -120,8 +180,15 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0.5, all1.getPartition(0).wait_time_avg());
     EXPECT_EQUAL(1u, all1.getPartition(0).active_time_count());
     EXPECT_EQUAL(1u, all1.getPartition(0).wait_time_count());
-    
-    all1.merge_partition(subPart, 1);
+    EXPECT_EQUAL(1.0, all1.getPartition(0).active_time_min());
+    EXPECT_EQUAL(0.5, all1.getPartition(0).wait_time_min());
+    EXPECT_EQUAL(1.0, all1.getPartition(0).active_time_max());
+    EXPECT_EQUAL(0.5, all1.getPartition(0).wait_time_max());
+
+    MatchingStats::Partition otherSubPart;
+    otherSubPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1)
+        .active_time(0.5).wait_time(1.0);
+    all1.merge_partition(otherSubPart, 1);
     EXPECT_EQUAL(14u, all1.docidSpaceCovered());
     EXPECT_EQUAL(6u, all1.docsMatched());
     EXPECT_EQUAL(4u, all1.docsRanked());
@@ -130,12 +197,20 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(3u, all1.getPartition(1).docsMatched());
     EXPECT_EQUAL(2u, all1.getPartition(1).docsRanked());
     EXPECT_EQUAL(1u, all1.getPartition(1).docsReRanked());
-    EXPECT_EQUAL(1.0, all1.getPartition(1).active_time_avg());
-    EXPECT_EQUAL(0.5, all1.getPartition(1).wait_time_avg());
+    EXPECT_EQUAL(0.5, all1.getPartition(1).active_time_avg());
+    EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_avg());
     EXPECT_EQUAL(1u, all1.getPartition(1).active_time_count());
     EXPECT_EQUAL(1u, all1.getPartition(1).wait_time_count());
+    EXPECT_EQUAL(0.5, all1.getPartition(1).active_time_min());
+    EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_min());
+    EXPECT_EQUAL(0.5, all1.getPartition(1).active_time_max());
+    EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_max());
 
-    all1.add(all1);
+    MatchingStats all2;
+    all2.merge_partition(otherSubPart, 0);
+    all2.merge_partition(subPart, 1);
+
+    all1.add(all2);
     EXPECT_EQUAL(28u, all1.docidSpaceCovered());
     EXPECT_EQUAL(12u, all1.docsMatched());
     EXPECT_EQUAL(8u, all1.docsRanked());
@@ -144,17 +219,25 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(6u, all1.getPartition(0).docsMatched());
     EXPECT_EQUAL(4u, all1.getPartition(0).docsRanked());
     EXPECT_EQUAL(2u, all1.getPartition(0).docsReRanked());
-    EXPECT_EQUAL(1.0, all1.getPartition(0).active_time_avg());
-    EXPECT_EQUAL(0.5, all1.getPartition(0).wait_time_avg());
+    EXPECT_EQUAL(0.75, all1.getPartition(0).active_time_avg());
+    EXPECT_EQUAL(0.75, all1.getPartition(0).wait_time_avg());
     EXPECT_EQUAL(2u, all1.getPartition(0).active_time_count());
     EXPECT_EQUAL(2u, all1.getPartition(0).wait_time_count());
+    EXPECT_EQUAL(0.5, all1.getPartition(0).active_time_min());
+    EXPECT_EQUAL(0.5, all1.getPartition(0).wait_time_min());
+    EXPECT_EQUAL(1.0, all1.getPartition(0).active_time_max());
+    EXPECT_EQUAL(1.0, all1.getPartition(0).wait_time_max());
     EXPECT_EQUAL(6u, all1.getPartition(1).docsMatched());
     EXPECT_EQUAL(4u, all1.getPartition(1).docsRanked());
     EXPECT_EQUAL(2u, all1.getPartition(1).docsReRanked());
-    EXPECT_EQUAL(1.0, all1.getPartition(1).active_time_avg());
-    EXPECT_EQUAL(0.5, all1.getPartition(1).wait_time_avg());
+    EXPECT_EQUAL(0.75, all1.getPartition(1).active_time_avg());
+    EXPECT_EQUAL(0.75, all1.getPartition(1).wait_time_avg());
     EXPECT_EQUAL(2u, all1.getPartition(1).active_time_count());
     EXPECT_EQUAL(2u, all1.getPartition(1).wait_time_count());
+    EXPECT_EQUAL(0.5, all1.getPartition(1).active_time_min());
+    EXPECT_EQUAL(0.5, all1.getPartition(1).wait_time_min());
+    EXPECT_EQUAL(1.0, all1.getPartition(1).active_time_max());
+    EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_max());
 }
 
 TEST_MAIN() {
