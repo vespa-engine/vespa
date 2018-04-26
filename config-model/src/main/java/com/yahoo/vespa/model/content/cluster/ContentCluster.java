@@ -53,29 +53,30 @@ import java.util.stream.Collectors;
  * @author mostly somebody unknown
  * @author bratseth
  */
-public class ContentCluster extends AbstractConfigProducer implements StorDistributionConfig.Producer,
-        StorDistributormanagerConfig.Producer,
-        FleetcontrollerConfig.Producer,
-        MetricsmanagerConfig.Producer,
-        MessagetyperouteselectorpolicyConfig.Producer,
-        BucketspacesConfig.Producer {
+public class ContentCluster extends AbstractConfigProducer implements
+                                                           StorDistributionConfig.Producer,
+                                                           StorDistributormanagerConfig.Producer,
+                                                           FleetcontrollerConfig.Producer,
+                                                           MetricsmanagerConfig.Producer,
+                                                           MessagetyperouteselectorpolicyConfig.Producer,
+                                                           BucketspacesConfig.Producer {
 
     // TODO: Make private
     private String documentSelection;
-    ContentSearchCluster search;
+    private ContentSearchCluster search;
     private final boolean isHostedVespa;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
     // Experimental flag (TODO: remove when feature is enabled by default)
     private boolean enableMultipleBucketSpaces = false;
-    com.yahoo.vespa.model.content.StorageGroup rootGroup;
-    StorageCluster storageNodes;
-    DistributorCluster distributorNodes;
+    private com.yahoo.vespa.model.content.StorageGroup rootGroup;
+    private StorageCluster storageNodes;
+    private DistributorCluster distributorNodes;
     private Redundancy redundancy;
-    ClusterControllerConfig clusterControllerConfig;
-    PersistenceEngine.PersistenceFactory persistenceFactory;
-    String clusterName;
-    Integer maxNodesPerMerge;
+    private ClusterControllerConfig clusterControllerConfig;
+    private PersistenceEngine.PersistenceFactory persistenceFactory;
+    private String clusterName;
+    private Integer maxNodesPerMerge;
     private Zone zone;
 
     /**
@@ -87,7 +88,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     private ContainerCluster clusterControllers;
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
-    DistributionMode distributionMode;
+    private DistributionMode distributionMode;
 
     public static class Builder {
 
@@ -341,7 +342,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             List<HostResource> hostsByIndex = drawContentHostsRecursively(count, true, rootGroup);
             // if (hosts.size() < count) // supply with containers TODO: Currently disabled due to leading to topology change problems
             //     hosts.addAll(drawContainerHosts(count - hosts.size(), containers, new HashSet<>(hosts)));
-            List<HostResource> hosts = HostResource.pickHosts(hostsByName, hostsByIndex, count, 1);
+            List<HostResource> hosts = HostResource.pickHosts(hostsByName, hostsByIndex, count, 2);
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
