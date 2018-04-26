@@ -79,13 +79,13 @@ struct Fixture
         return _attr->getReference(doc);
     }
 
-    void assertRefLid(uint32_t expLid, uint32_t doc) {
+    void assertTargetLid(uint32_t expLid, uint32_t doc) {
         auto ref = getRef(doc);
         EXPECT_TRUE(ref != nullptr);
         EXPECT_EQUAL(expLid, ref->lid());
     }
 
-    void assertNoRefLid(uint32_t doc) {
+    void assertNoTargetLid(uint32_t doc) {
         auto ref = getRef(doc);
         EXPECT_TRUE(ref == nullptr);
     }
@@ -110,19 +110,19 @@ TEST_F("Test that we can use gid to lid change listener", Fixture)
     f.set(2, toGid(doc2));
     f.set(3, toGid(doc1));
     f.commit();
-    TEST_DO(f.assertRefLid(0, 1));
-    TEST_DO(f.assertRefLid(0, 2));
-    TEST_DO(f.assertRefLid(0, 3));
+    TEST_DO(f.assertTargetLid(0, 1));
+    TEST_DO(f.assertTargetLid(0, 2));
+    TEST_DO(f.assertTargetLid(0, 3));
     f.allocListener();
     f.notifyPutDone(toGid(doc1), 10);
     f.notifyPutDone(toGid(doc2), 20);
     f.notifyPutDone(toGid(doc3), 30);
-    TEST_DO(f.assertRefLid(10, 1));
-    TEST_DO(f.assertRefLid(20, 2));
-    TEST_DO(f.assertRefLid(10, 3));
+    TEST_DO(f.assertTargetLid(10, 1));
+    TEST_DO(f.assertTargetLid(20, 2));
+    TEST_DO(f.assertTargetLid(10, 3));
 }
 
-TEST_F("Test that referenced lids are populated when listener is registered", Fixture)
+TEST_F("Test that target lids are populated when listener is registered", Fixture)
 {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));
@@ -130,21 +130,21 @@ TEST_F("Test that referenced lids are populated when listener is registered", Fi
     f.set(3, toGid(doc1));
     f.set(4, toGid(doc3));
     f.commit();
-    TEST_DO(f.assertRefLid(0, 1));
-    TEST_DO(f.assertRefLid(0, 2));
-    TEST_DO(f.assertRefLid(0, 3));
-    TEST_DO(f.assertRefLid(0, 4));
-    TEST_DO(f.assertNoRefLid(5));
+    TEST_DO(f.assertTargetLid(0, 1));
+    TEST_DO(f.assertTargetLid(0, 2));
+    TEST_DO(f.assertTargetLid(0, 3));
+    TEST_DO(f.assertTargetLid(0, 4));
+    TEST_DO(f.assertNoTargetLid(5));
     std::shared_ptr<search::IGidToLidMapperFactory> factory =
         std::make_shared<MyGidToLidMapperFactory>();
     f._attr->setGidToLidMapperFactory(factory);
     f.allocListener();
     f.notifyListenerRegistered();
-    TEST_DO(f.assertRefLid(10, 1));
-    TEST_DO(f.assertRefLid(17, 2));
-    TEST_DO(f.assertRefLid(10, 3));
-    TEST_DO(f.assertRefLid(0, 4));
-    TEST_DO(f.assertNoRefLid(5));
+    TEST_DO(f.assertTargetLid(10, 1));
+    TEST_DO(f.assertTargetLid(17, 2));
+    TEST_DO(f.assertTargetLid(10, 3));
+    TEST_DO(f.assertTargetLid(0, 4));
+    TEST_DO(f.assertNoTargetLid(5));
 }
 
 }

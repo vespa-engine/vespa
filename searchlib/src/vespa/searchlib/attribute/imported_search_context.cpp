@@ -15,6 +15,7 @@ using search::attribute::ISearchContext;
 using search::attribute::ReferenceAttribute;
 using search::AttributeVector;
 
+// Classes used to map from target lid to source lids
 using ReverseMappingRefs = ReferenceAttribute::ReverseMappingRefs;
 using ReverseMapping = ReferenceAttribute::ReverseMapping;
 
@@ -36,7 +37,7 @@ ImportedSearchContext::ImportedSearchContext(
       _reference_attribute(*_imported_attribute.getReferenceAttribute()),
       _target_attribute(target_attribute),
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
-      _referencedLids(_reference_attribute.getReferencedLids()),
+      _targetLids(_reference_attribute.getTargetLids()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
       _fetchPostingsDone(false)
 {

@@ -9,9 +9,9 @@ namespace search::attribute {
 
 ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder, const uint32_t &committedDocIdLimit)
     : _reverseMappingIndices(genHolder),
-      _referencedLidLimit(0),
+      _targetLidLimit(0),
       _reverseMapping(),
-      _referencedLids(genHolder),
+      _targetLids(genHolder),
       _committedDocIdLimit(committedDocIdLimit)
 {
 }
@@ -32,24 +32,24 @@ ReferenceMappings::clearMapping(const Reference &entry)
 void
 ReferenceMappings::syncForwardMapping(const Reference &entry)
 {
-    uint32_t referencedLid = entry.lid();
+    uint32_t targetLid = entry.lid();
     EntryRef revMapIdx = entry.revMapIdx();
-    auto &referencedLids = _referencedLids;
+    auto &targetLids = _targetLids;
     _reverseMapping.foreach_unfrozen_key(revMapIdx,
-                                         [&referencedLids, referencedLid](uint32_t lid)
-                                         { referencedLids[lid] = referencedLid; });
+                                         [&targetLids, targetLid](uint32_t lid)
+                                         { targetLids[lid] = targetLid; });
 }
 
 void
 ReferenceMappings::syncReverseMappingIndices(const Reference &entry)
 {
-    uint32_t referencedLid = entry.lid();
-    if (referencedLid != 0u) {
-        _reverseMappingIndices.ensure_size(referencedLid + 1);
-        _reverseMappingIndices[referencedLid] = entry.revMapIdx();
-        if (referencedLid >= _referencedLidLimit) {
+    uint32_t targetLid = entry.lid();
+    if (targetLid != 0u) {
+        _reverseMappingIndices.ensure_size(targetLid + 1);
+        _reverseMappingIndices[targetLid] = entry.revMapIdx();
+        if (targetLid >= _targetLidLimit) {
             std::atomic_thread_fence(std::memory_order_release);
-            _referencedLidLimit = referencedLid + 1;
+            _targetLidLimit = targetLid + 1;
         }
     }
 }
@@ -62,7 +62,7 @@ ReferenceMappings::removeReverseMapping(const Reference &entry, uint32_t lid)
     std::atomic_thread_fence(std::memory_order_release);
     entry.setRevMapIdx(revMapIdx);
     syncReverseMappingIndices(entry);
-    _referencedLids[lid] = 0; // forward mapping
+    _targetLids[lid] = 0; // forward mapping
 }
 
 void
@@ -74,7 +74,7 @@ ReferenceMappings::addReverseMapping(const Reference &entry, uint32_t lid)
     std::atomic_thread_fence(std::memory_order_release);
     entry.setRevMapIdx(revMapIdx);
     syncReverseMappingIndices(entry);
-    _referencedLids[lid] = entry.lid(); // forward mapping
+    _targetLids[lid] = entry.lid(); // forward mapping
 }
 
 void
@@ -87,14 +87,14 @@ ReferenceMappings::buildReverseMapping(const Reference &entry, const std::vector
 }
 
 void
-ReferenceMappings::notifyReferencedPut(const Reference &entry, uint32_t referencedLid)
+ReferenceMappings::notifyReferencedPut(const Reference &entry, uint32_t targetLid)
 {
-    uint32_t oldReferencedLid = entry.lid();
-    if (oldReferencedLid != referencedLid) {
-        if (oldReferencedLid != 0u && oldReferencedLid < _reverseMappingIndices.size()) {
-            _reverseMappingIndices[oldReferencedLid] = EntryRef();
+    uint32_t oldTargetLid = entry.lid();
+    if (oldTargetLid != targetLid) {
+        if (oldTargetLid != 0u && oldTargetLid < _reverseMappingIndices.size()) {
+            _reverseMappingIndices[oldTargetLid] = EntryRef();
         }
-        entry.setLid(referencedLid);
+        entry.setLid(targetLid);
     }
     syncReverseMappingIndices(entry);
     syncForwardMapping(entry);
@@ -103,10 +103,10 @@ ReferenceMappings::notifyReferencedPut(const Reference &entry, uint32_t referenc
 void
 ReferenceMappings::notifyReferencedRemove(const Reference &entry)
 {
-    uint32_t oldReferencedLid = entry.lid();
-    if (oldReferencedLid != 0) {
-        if (oldReferencedLid < _reverseMappingIndices.size()) {
-            _reverseMappingIndices[oldReferencedLid] = EntryRef();
+    uint32_t oldTargetLid = entry.lid();
+    if (oldTargetLid != 0) {
+        if (oldTargetLid < _reverseMappingIndices.size()) {
+            _reverseMappingIndices[oldTargetLid] = EntryRef();
         }
         entry.setLid(0);
     }
@@ -117,27 +117,27 @@ ReferenceMappings::notifyReferencedRemove(const Reference &entry)
 void
 ReferenceMappings::onAddDocs(uint32_t docIdLimit)
 {
-    _referencedLids.reserve(docIdLimit);
+    _targetLids.reserve(docIdLimit);
 }
 
 void
 ReferenceMappings::addDoc()
 {
-    _referencedLids.push_back(0);
+    _targetLids.push_back(0);
 }
 
 void
 ReferenceMappings::onLoad(uint32_t docIdLimit)
 {
-    _referencedLids.clear();
-    _referencedLids.unsafe_reserve(docIdLimit);
-    _referencedLids.ensure_size(docIdLimit);
+    _targetLids.clear();
+    _targetLids.unsafe_reserve(docIdLimit);
+    _targetLids.ensure_size(docIdLimit);
 }
 
 void
 ReferenceMappings::shrink(uint32_t docIdLimit)
 {
-    _referencedLids.shrink(docIdLimit);
+    _targetLids.shrink(docIdLimit);
 }
 
 MemoryUsage
@@ -145,7 +145,7 @@ ReferenceMappings::getMemoryUsage()
 {
     MemoryUsage usage = _reverseMapping.getMemoryUsage();
     usage.merge(_reverseMappingIndices.getMemoryUsage());
-    usage.merge(_referencedLids.getMemoryUsage());
+    usage.merge(_targetLids.getMemoryUsage());
     return usage;
 }
 

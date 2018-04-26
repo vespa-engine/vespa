@@ -14,7 +14,7 @@ namespace search::tensor {
 /**
  * Short lived attribute vector for imported tensor attributes.
  *
- * Extra information for direct lid to referenced lid mapping with
+ * Extra information for direct lid to target lid mapping with
  * boundary check is setup during construction.
  */
 class ImportedTensorAttributeVectorReadGuard : public attribute::ImportedAttributeVectorReadGuard,

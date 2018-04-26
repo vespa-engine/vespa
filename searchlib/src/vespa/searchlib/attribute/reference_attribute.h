@@ -17,8 +17,8 @@ namespace search::attribute {
  * and their local document ids counterpart.
  *
  * The lid-2-lid mapping is updated as follows:
- * 1) In populateReferencedLids() all referenced lids are set by using the gid-2-lid mapper.
- * 1) In update() a new lid-gid pair is set and the referenced lid is set by using gid-2-lid mapper.
+ * 1) In populateTargetLids() all target lids are set by using the gid-2-lid mapper.
+ * 1) In update() a new lid-gid pair is set and the target lid is set by using gid-2-lid mapper.
  * 2) In notifyGidToLidChange() a gid-reference-lid pair is set explicitly.
  */
 class ReferenceAttribute : public NotImplementedAttribute
@@ -29,13 +29,14 @@ public:
     using ReferenceStore = datastore::UniqueStore<Reference>;
     using ReferenceStoreIndices = RcuVectorBase<EntryRef>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
-    using ReverseMappingIndices = RcuVectorBase<EntryRef>;
+    // Class used to map from target lid to source lids
     using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
                                              btree::NoAggregated,
                                              std::less<uint32_t>,
                                              btree::BTreeDefaultTraits,
                                              btree::NoAggrCalc>;
-    using ReferencedLids = ReferenceMappings::ReferencedLids;
+    using TargetLids = ReferenceMappings::TargetLids;
+    // Class used to map from target lid to source lids
     using ReverseMappingRefs = ReferenceMappings::ReverseMappingRefs;
 private:
     ReferenceStore _store;
@@ -73,22 +74,22 @@ public:
     const Reference *getReference(DocId doc);
     void setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory);
     std::shared_ptr<IGidToLidMapperFactory> getGidToLidMapperFactory() const { return _gidToLidMapperFactory; }
-    ReferencedLids getReferencedLids() const { return _referenceMappings.getReferencedLids(); }
-    DocId getReferencedLid(DocId doc) const { return _referenceMappings.getReferencedLid(doc); }
+    TargetLids getTargetLids() const { return _referenceMappings.getTargetLids(); }
+    DocId getTargetLid(DocId doc) const { return _referenceMappings.getTargetLid(doc); }
     ReverseMappingRefs getReverseMappingRefs() const { return _referenceMappings.getReverseMappingRefs(); }
     const ReverseMapping &getReverseMapping() const { return _referenceMappings.getReverseMapping(); }
 
-    void notifyReferencedPutNoCommit(const GlobalId &gid, DocId referencedLid);
-    void notifyReferencedPut(const GlobalId &gid, DocId referencedLid);
+    void notifyReferencedPutNoCommit(const GlobalId &gid, DocId targetLid);
+    void notifyReferencedPut(const GlobalId &gid, DocId targetLid);
     void notifyReferencedRemove(const GlobalId &gid);
-    void populateReferencedLids();
+    void populateTargetLids();
     virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
     virtual void onShrinkLidSpace() override;
 
     template <typename FunctionType>
     void
-    foreach_lid(uint32_t referencedLid, FunctionType &&func) const {
-        _referenceMappings.foreach_lid(referencedLid, std::forward<FunctionType>(func));
+    foreach_lid(uint32_t targetLid, FunctionType &&func) const {
+        _referenceMappings.foreach_lid(targetLid, std::forward<FunctionType>(func));
     }
 };
 

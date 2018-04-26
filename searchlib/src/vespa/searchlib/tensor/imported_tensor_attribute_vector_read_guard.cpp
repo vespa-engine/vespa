@@ -41,7 +41,7 @@ ImportedTensorAttributeVectorReadGuard::asTensorAttribute() const
 std::unique_ptr<Tensor>
 ImportedTensorAttributeVectorReadGuard::getTensor(uint32_t docId) const
 {
-    return _target_tensor_attribute.getTensor(getReferencedLid(docId));
+    return _target_tensor_attribute.getTensor(getTargetLid(docId));
 }
 
 std::unique_ptr<Tensor>
@@ -53,7 +53,7 @@ ImportedTensorAttributeVectorReadGuard::getEmptyTensor() const
 void
 ImportedTensorAttributeVectorReadGuard::getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const
 {
-    _target_tensor_attribute.getTensor(getReferencedLid(docId), tensor);
+    _target_tensor_attribute.getTensor(getTargetLid(docId), tensor);
 }
 
 vespalib::eval::ValueType

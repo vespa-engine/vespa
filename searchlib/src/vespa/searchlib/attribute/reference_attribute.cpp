@@ -317,22 +317,22 @@ ReferenceAttribute::setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFact
 }
 
 void
-ReferenceAttribute::notifyReferencedPutNoCommit(const GlobalId &gid, DocId referencedLid)
+ReferenceAttribute::notifyReferencedPutNoCommit(const GlobalId &gid, DocId targetLid)
 {
-    assert(referencedLid != 0);
+    assert(targetLid != 0);
     EntryRef ref = _store.find(gid);
     if (!ref.valid() || _store.get(ref).lid() == 0) {
         Reference refToAdd(gid);
         ref = _store.add(refToAdd).ref();
     }
     const auto &entry = _store.get(ref);
-    _referenceMappings.notifyReferencedPut(entry, referencedLid);
+    _referenceMappings.notifyReferencedPut(entry, targetLid);
 }
 
 void
-ReferenceAttribute::notifyReferencedPut(const GlobalId &gid, DocId referencedLid)
+ReferenceAttribute::notifyReferencedPut(const GlobalId &gid, DocId targetLid)
 {
-    notifyReferencedPutNoCommit(gid, referencedLid);
+    notifyReferencedPutNoCommit(gid, targetLid);
     commit();
 }
 
@@ -342,9 +342,9 @@ ReferenceAttribute::notifyReferencedRemove(const GlobalId &gid)
     EntryRef ref = _store.find(gid);
     if (ref.valid()) {
         const auto &entry = _store.get(ref);
-        uint32_t oldReferencedLid = entry.lid();
+        uint32_t oldTargetLid = entry.lid();
         _referenceMappings.notifyReferencedRemove(entry);
-        if (oldReferencedLid != 0) {
+        if (oldTargetLid != 0) {
             _store.remove(ref);
         }
         commit();
@@ -353,16 +353,16 @@ ReferenceAttribute::notifyReferencedRemove(const GlobalId &gid)
 
 namespace {
 
-class ReferencedLidPopulator : public IGidToLidMapperVisitor
+class TargetLidPopulator : public IGidToLidMapperVisitor
 {
     ReferenceAttribute &_attr;
 public:
-    ReferencedLidPopulator(ReferenceAttribute &attr)
+    TargetLidPopulator(ReferenceAttribute &attr)
         : IGidToLidMapperVisitor(),
           _attr(attr)
     {
     }
-    virtual ~ReferencedLidPopulator() override { }
+    virtual ~TargetLidPopulator() override { }
     virtual void visit(const document::GlobalId &gid, uint32_t lid) const override {
         _attr.notifyReferencedPutNoCommit(gid, lid);
     }
@@ -371,12 +371,12 @@ public:
 }
 
 void
-ReferenceAttribute::populateReferencedLids()
+ReferenceAttribute::populateTargetLids()
 {
     if (_gidToLidMapperFactory) {
         std::unique_ptr<IGidToLidMapper> mapperUP = _gidToLidMapperFactory->getMapper();
         const IGidToLidMapper &mapper = *mapperUP;
-        ReferencedLidPopulator populator(*this);
+        TargetLidPopulator populator(*this);
         mapper.foreach(populator);
     }
     commit();

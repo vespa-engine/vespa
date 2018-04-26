@@ -133,24 +133,24 @@ struct Fixture
         EXPECT_EQUAL(toGid(str), *gid);
     }
 
-    void assertRefLid(uint32_t doc, uint32_t expReferencedLid) {
+    void assertTargetLid(uint32_t doc, uint32_t expTargetLid) {
         auto ref = getRef(doc);
         EXPECT_TRUE(ref != nullptr);
-        EXPECT_EQUAL(expReferencedLid, ref->lid());
-        EXPECT_EQUAL(expReferencedLid, _attr->getReferencedLid(doc));
+        EXPECT_EQUAL(expTargetLid, ref->lid());
+        EXPECT_EQUAL(expTargetLid, _attr->getTargetLid(doc));
     }
 
-    void assertNoRefLid(uint32_t doc) {
+    void assertNoTargetLid(uint32_t doc) {
         auto ref = getRef(doc);
         EXPECT_TRUE(ref == nullptr);
-        EXPECT_EQUAL(0u, _attr->getReferencedLid(doc));
+        EXPECT_EQUAL(0u, _attr->getTargetLid(doc));
     }
 
-    void assertLids(uint32_t referencedLid, std::vector<uint32_t> expLids)
+    void assertLids(uint32_t targetLid, std::vector<uint32_t> expLids)
     {
         std::vector<uint32_t> lids;
         LidCollector collector(lids);
-        _attr->foreach_lid(referencedLid, collector);
+        _attr->foreach_lid(targetLid, collector);
         EXPECT_EQUAL(expLids, lids);
     }
 
@@ -190,7 +190,7 @@ struct Fixture
     }
     void setGidToLidMapperFactory(std::shared_ptr<MyGidToLidMapperFactory> factory) {
         _attr->setGidToLidMapperFactory(factory);
-        _attr->populateReferencedLids();
+        _attr->populateTargetLids();
     }
     uint32_t getUniqueGids() {
         return getStatus().getNumUniqueValues();
@@ -290,7 +290,7 @@ TEST_F("require that we can save and load attribute", Fixture)
     EXPECT_TRUE(vespalib::unlink("test.udat"));
 }
 
-TEST_F("require that update() uses gid-mapper to set referenced lid", Fixture)
+TEST_F("require that update() uses gid-mapper to set target lid", Fixture)
 {
     f.ensureDocIdLimit(6);
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
@@ -300,11 +300,11 @@ TEST_F("require that update() uses gid-mapper to set referenced lid", Fixture)
     f.set(4, toGid(doc1));
     f.set(5, toGid(doc3));
     f.commit();
-    TEST_DO(f.assertRefLid(1, 10));
-    TEST_DO(f.assertRefLid(2, 17));
-    TEST_DO(f.assertNoRefLid(3));
-    TEST_DO(f.assertRefLid(4, 10));
-    TEST_DO(f.assertRefLid(5, 0));
+    TEST_DO(f.assertTargetLid(1, 10));
+    TEST_DO(f.assertTargetLid(2, 17));
+    TEST_DO(f.assertNoTargetLid(3));
+    TEST_DO(f.assertTargetLid(4, 10));
+    TEST_DO(f.assertTargetLid(5, 0));
 }
 
 TEST_F("require that notifyReferencedPut() updates lid-2-lid mapping", Fixture)
@@ -314,20 +314,20 @@ TEST_F("require that notifyReferencedPut() updates lid-2-lid mapping", Fixture)
     f.set(2, toGid(doc2));
     f.set(3, toGid(doc1));
     f.commit();
-    TEST_DO(f.assertRefLid(1, 0));
-    TEST_DO(f.assertRefLid(2, 0));
-    TEST_DO(f.assertRefLid(3, 0));
+    TEST_DO(f.assertTargetLid(1, 0));
+    TEST_DO(f.assertTargetLid(2, 0));
+    TEST_DO(f.assertTargetLid(3, 0));
     f.notifyReferencedPut(toGid(doc1), 10);
     f.notifyReferencedPut(toGid(doc2), 20);
     f.notifyReferencedPut(toGid(doc3), 30);
-    TEST_DO(f.assertRefLid(1, 10));
-    TEST_DO(f.assertRefLid(2, 20));
-    TEST_DO(f.assertRefLid(3, 10));
+    TEST_DO(f.assertTargetLid(1, 10));
+    TEST_DO(f.assertTargetLid(2, 20));
+    TEST_DO(f.assertTargetLid(3, 10));
 }
 
 namespace {
 
-void preparePopulateReferencedLids(Fixture &f)
+void preparePopulateTargetLids(Fixture &f)
 {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));
@@ -335,22 +335,22 @@ void preparePopulateReferencedLids(Fixture &f)
     f.set(3, toGid(doc1));
     f.set(4, toGid(doc3));
     f.commit();
-    TEST_DO(f.assertRefLid(1, 0));
-    TEST_DO(f.assertRefLid(2, 0));
-    TEST_DO(f.assertRefLid(3, 0));
-    TEST_DO(f.assertRefLid(4, 0));
-    TEST_DO(f.assertNoRefLid(5));
+    TEST_DO(f.assertTargetLid(1, 0));
+    TEST_DO(f.assertTargetLid(2, 0));
+    TEST_DO(f.assertTargetLid(3, 0));
+    TEST_DO(f.assertTargetLid(4, 0));
+    TEST_DO(f.assertNoTargetLid(5));
 }
 
-void checkPopulateReferencedLids(Fixture &f)
+void checkPopulateTargetLids(Fixture &f)
 {
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
     f.setGidToLidMapperFactory(factory);
-    TEST_DO(f.assertRefLid(1, 10));
-    TEST_DO(f.assertRefLid(2, 17));
-    TEST_DO(f.assertRefLid(3, 10));
-    TEST_DO(f.assertRefLid(4, 0));
-    TEST_DO(f.assertNoRefLid(5));
+    TEST_DO(f.assertTargetLid(1, 10));
+    TEST_DO(f.assertTargetLid(2, 17));
+    TEST_DO(f.assertTargetLid(3, 10));
+    TEST_DO(f.assertTargetLid(4, 0));
+    TEST_DO(f.assertNoTargetLid(5));
     TEST_DO(f.assertLids(0, { }));
     TEST_DO(f.assertLids(10, { 1, 3}));
     TEST_DO(f.assertLids(17, { 2 }));
@@ -359,25 +359,25 @@ void checkPopulateReferencedLids(Fixture &f)
 
 }
 
-TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping", Fixture)
+TEST_F("require that populateTargetLids() uses gid-mapper to update lid-2-lid mapping", Fixture)
 {
-    TEST_DO(preparePopulateReferencedLids(f));
-    TEST_DO(checkPopulateReferencedLids(f));
+    TEST_DO(preparePopulateTargetLids(f));
+    TEST_DO(checkPopulateTargetLids(f));
 }
 
-TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping after load", Fixture)
+TEST_F("require that populateTargetLids() uses gid-mapper to update lid-2-lid mapping after load", Fixture)
 {
-    TEST_DO(preparePopulateReferencedLids(f));
+    TEST_DO(preparePopulateTargetLids(f));
     f.save();
     f.load();
-    TEST_DO(checkPopulateReferencedLids(f));
+    TEST_DO(checkPopulateTargetLids(f));
     EXPECT_TRUE(vespalib::unlink("test.dat"));
     EXPECT_TRUE(vespalib::unlink("test.udat"));
 }
 
 TEST_F("Require that notifyReferencedPut and notifyReferencedRemove changes reverse mapping", Fixture)
 {
-    TEST_DO(preparePopulateReferencedLids(f));
+    TEST_DO(preparePopulateTargetLids(f));
     TEST_DO(f.assertLids(10, { }));
     TEST_DO(f.assertLids(11, { }));
     f.notifyReferencedPut(toGid(doc1), 10);
@@ -400,21 +400,21 @@ TEST_F("Require that we track unique gids", Fixture)
     f.set(1, toGid(doc1));
     f.commit();
     EXPECT_EQUAL(1u, f.getUniqueGids());
-    TEST_DO(f.assertRefLid(1, 10));
+    TEST_DO(f.assertTargetLid(1, 10));
     TEST_DO(f.assertLids(10, { 1 }));
     f.set(2, toGid(doc2));
     f.commit();
     EXPECT_EQUAL(2u, f.getUniqueGids());
-    TEST_DO(f.assertRefLid(2, 0));
+    TEST_DO(f.assertTargetLid(2, 0));
     f.notifyReferencedPut(toGid(doc2), 17);
     EXPECT_EQUAL(2u, f.getUniqueGids());
-    TEST_DO(f.assertRefLid(2, 17));
+    TEST_DO(f.assertTargetLid(2, 17));
     TEST_DO(f.assertLids(17, { 2 }));
     f.clear(1);
     f.notifyReferencedRemove(toGid(doc2));
     EXPECT_EQUAL(2u, f.getUniqueGids());
-    TEST_DO(f.assertNoRefLid(1));
-    TEST_DO(f.assertRefLid(2, 0));
+    TEST_DO(f.assertNoTargetLid(1));
+    TEST_DO(f.assertTargetLid(2, 0));
     TEST_DO(f.assertLids(10, { }));
     TEST_DO(f.assertLids(17, { }));
     f.clear(2);
