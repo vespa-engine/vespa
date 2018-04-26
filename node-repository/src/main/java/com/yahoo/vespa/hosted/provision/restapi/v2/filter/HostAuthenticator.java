@@ -19,7 +19,7 @@ import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
  *
  * @author bjorncs
  */
-class NodeIdentifier {
+class HostAuthenticator {
 
     private static final String TENANT_DOCKER_HOST_IDENTITY = "vespa.vespa.tenant-host";
     private static final String TENANT_DOCKER_CONTAINER_IDENTITY = "vespa.vespa.tenant";
@@ -28,21 +28,21 @@ class NodeIdentifier {
     private final Zone zone;
     private final NodeRepository nodeRepository;
 
-    NodeIdentifier(Zone zone, NodeRepository nodeRepository) {
+    HostAuthenticator(Zone zone, NodeRepository nodeRepository) {
         this.zone = zone;
         this.nodeRepository = nodeRepository;
     }
 
-    NodePrincipal resolveNode(List<X509Certificate> certificateChain) throws NodeIdentifierException {
+    NodePrincipal authenticate(List<X509Certificate> certificateChain) throws AuthenticationException {
         X509Certificate clientCertificate = certificateChain.get(0);
         String subjectCommonName = X509CertificateUtils.getSubjectCommonNames(clientCertificate).stream()
                 .findFirst()
-                .orElseThrow(() -> new NodeIdentifierException("Certificate subject common name is missing!"));
+                .orElseThrow(() -> new AuthenticationException("Certificate subject common name is missing!"));
         if (isAthenzIssued(clientCertificate)) {
             List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(clientCertificate);
             switch (subjectCommonName) {
                 case TENANT_DOCKER_HOST_IDENTITY:
-                    return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoOrAwsCertificate(sans), certificateChain);
+                    return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoCertificate(sans), certificateChain);
                 case TENANT_DOCKER_CONTAINER_IDENTITY:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromVespaCertificate(sans), certificateChain);
                 default:
@@ -57,13 +57,8 @@ class NodeIdentifier {
     private boolean isAthenzIssued(X509Certificate certificate) {
         String issuerCommonName = X509CertificateUtils.getIssuerCommonNames(certificate).stream()
                 .findFirst()
-                .orElseThrow(() -> new NodeIdentifierException("Certificate issuer common name is missing!"));
+                .orElseThrow(() -> new AuthenticationException("Certificate issuer common name is missing!"));
         return issuerCommonName.equals("Yahoo Athenz CA") || issuerCommonName.equals("Athenz AWS CA");
-    }
-
-    // NOTE: AWS instance id is currently stored as the attribute 'openstack-id' in node repository.
-    private String getHostFromCalypsoOrAwsCertificate(List<SubjectAlternativeName> sans) {
-        return getHostFromCalypsoCertificate(sans);
     }
 
     private String getHostFromCalypsoCertificate(List<SubjectAlternativeName> sans) {
@@ -72,15 +67,15 @@ class NodeIdentifier {
                 .filter(node -> node.openStackId().equals(openstackId))
                 .map(Node::hostname)
                 .findFirst()
-                .orElseThrow(() -> new NodeIdentifierException(String.format("Cannot find node with openstack-id '%s' in node repository", openstackId)));
+                .orElseThrow(() -> new AuthenticationException(String.format("Cannot find node with openstack-id '%s' in node repository", openstackId)));
     }
 
     private String getHostFromVespaCertificate(List<SubjectAlternativeName> sans) {
         VespaUniqueInstanceId instanceId = VespaUniqueInstanceId.fromDottedString(getUniqueInstanceId(sans));
         if (!zone.environment().value().equals(instanceId.environment()))
-            throw new NodeIdentifierException("Invalid environment: " + instanceId.environment());
+            throw new AuthenticationException("Invalid environment: " + instanceId.environment());
         if (!zone.region().value().equals(instanceId.region()))
-            throw new NodeIdentifierException("Invalid region(): " + instanceId.region());
+            throw new AuthenticationException("Invalid region(): " + instanceId.region());
         List<Node> applicationNodes =
                 nodeRepository.getNodes(ApplicationId.from(instanceId.tenant(), instanceId.application(), instanceId.instance()));
         return applicationNodes.stream()
@@ -91,7 +86,7 @@ class NodeIdentifier {
                                 .orElse(false))
                 .map(Node::hostname)
                 .findFirst()
-                .orElseThrow(() -> new NodeIdentifierException("Could not find any node with instance id: " + instanceId.asDottedString()));
+                .orElseThrow(() -> new AuthenticationException("Could not find any node with instance id: " + instanceId.asDottedString()));
     }
 
     private static String getUniqueInstanceId(List<SubjectAlternativeName> sans) {
@@ -101,11 +96,11 @@ class NodeIdentifier {
                 .filter(dnsName -> (dnsName.endsWith("yahoo.cloud") || dnsName.endsWith("oath.cloud")) && dnsName.contains(INSTANCE_ID_DELIMITER))
                 .map(dnsName -> dnsName.substring(0, dnsName.indexOf(INSTANCE_ID_DELIMITER)))
                 .findFirst()
-                .orElseThrow(() -> new NodeIdentifierException("Could not find unique instance id from SAN addresses: " + sans));
+                .orElseThrow(() -> new AuthenticationException("Could not find unique instance id from SAN addresses: " + sans));
     }
 
-    static class NodeIdentifierException extends RuntimeException {
-        NodeIdentifierException(String message) {
+    static class AuthenticationException extends RuntimeException {
+        AuthenticationException(String message) {
             super(message);
         }
     }

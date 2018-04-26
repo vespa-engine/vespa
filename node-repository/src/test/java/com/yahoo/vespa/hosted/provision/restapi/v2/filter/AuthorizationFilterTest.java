@@ -29,9 +29,9 @@ public class AuthorizationFilterTest {
     @Test
     public void filter() {
         // These are just rudimentary tests of the filter. See AuthorizerTest for more exhaustive tests
-        tester.assertRequest(new Request(Method.GET, "/"), 500,
-                             "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"GET / denied for " +
-                             "remote-addr: Principal is missing. NodeIdentifierFilter has not been applied.\"}");
+        tester.assertRequest(new Request(Method.GET, "/"), 401,
+                             "{\"error-code\":\"UNAUTHORIZED\",\"message\":\"GET / denied for " +
+                             "remote-addr: Missing credentials\"}");
 
         tester.assertRequest(new Request(Method.GET, "/").commonName("foo"), 403,
                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"GET / " +
