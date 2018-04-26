@@ -208,8 +208,8 @@ public class DeploymentTrigger {
     public void cancelChange(ApplicationId applicationId, boolean keepApplicationChange) {
         applications().lockOrThrow(applicationId, application -> {
             applications().store(application.withChange(application.change().application()
+                                                                   .filter(__ -> keepApplicationChange)
                                                                    .map(Change::of)
-                                                                   .filter(change -> keepApplicationChange)
                                                                    .orElse(Change.empty())));
         });
     }
@@ -290,10 +290,9 @@ public class DeploymentTrigger {
     private List<Job> computeReadyJobs(ApplicationId id) {
         List<Job> jobs = new ArrayList<>();
         applications().get(id).ifPresent(application -> {
-            List<Step> steps = application.deploymentSpec().steps().isEmpty()
-                    ? singletonList(new DeploymentSpec.DeclaredZone(test))
-                    : application.deploymentSpec().steps();
-            List<Step> productionSteps = steps.stream().filter(step -> step.deploysTo(prod) || step.zones().isEmpty()).collect(toList());
+            List<Step> productionSteps = application.deploymentSpec().steps().stream()
+                                                    .filter(step -> step.deploysTo(prod) || step.zones().isEmpty())
+                                                    .collect(toList());
 
             Change change = application.change();
             @SuppressWarnings("cast") // Bad compiler!
@@ -339,12 +338,41 @@ public class DeploymentTrigger {
                 testJobs = testJobsFor(application, targetFor(application, application.change(), empty()), "Testing last changes outside prod", clock.instant());
             jobs.addAll(testJobs);
 
-            // TODO jvenstad: Replace with completion of individual parts of Change.
-            if (steps.stream().flatMap(step -> step.zones().stream()).map(order::toJob)
-                     .allMatch(job -> completedAt(application.change(), application, job).isPresent()))
-                applications().lockIfPresent(id, lockedApplication -> applications().store(lockedApplication.withChange(Change.empty())));
+            removeCompletedChange(application);
         });
         return jobs;
+    }
+
+    private void removeCompletedChange(Application application) {
+        List<JobType> jobs = (application.deploymentSpec().steps().isEmpty()
+                ? singletonList(new DeploymentSpec.DeclaredZone(test))
+                : application.deploymentSpec().steps()).stream()
+                                                       .flatMap(step -> step.zones().stream())
+                                                       .map(order::toJob)
+                                                       .collect(toList());
+
+        // The strange ||-conditions below are necessary because a job may be complete for the change as a whole, but not for each part of it >_<
+        boolean platformComplete = application.change().platform().map(Change::of)
+                                              .map(change -> jobs.stream().allMatch(job ->    completedAt(change, application, job).isPresent()
+                                                                                           || completedAt(application.change(), application, job).isPresent()))
+                                              // TODO jvenstad: Replace with downgrades(application.change())  in completedAt.
+                                              .orElse(false);
+
+        boolean applicationComplete = application.change().application().map(Change::of)
+                                                 .map(change -> jobs.stream().allMatch(job ->    completedAt(change, application, job).isPresent()
+                                                                                              || completedAt(application.change(), application, job).isPresent()))
+                                                 .orElse(false);
+
+        if (platformComplete || applicationComplete)
+            applications().lockIfPresent(application.id(), lockedApplication -> {
+                if ( ! application.change().equals(lockedApplication.change()))
+                    return; // If new changes were added after we verified completion, we can't remove those.
+
+                Change change = application.change();
+                if (platformComplete) change = change.withoutPlatform();
+                if (applicationComplete) change = change.withoutApplication();
+                applications().store(lockedApplication.withChange(change));
+            });
     }
 
     /**

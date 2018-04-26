@@ -39,10 +39,12 @@ public final class Change {
         this.application = application;
     }
 
-    /** Returns this change with currently blocked parts removed. */
-    public Change effectiveAt(DeploymentSpec deploymentSpec, Instant instant) {
-        return new Change(platform.filter(__ -> deploymentSpec.canUpgradeAt(instant)),
-                          application.filter(__ -> deploymentSpec.canChangeRevisionAt(instant)));
+    public Change withoutPlatform() {
+        return new Change(Optional.empty(), application);
+    }
+
+    public Change withoutApplication() {
+        return new Change(platform, Optional.empty());
     }
 
     /** Returns whether a change should currently be deployed */
