@@ -19,12 +19,30 @@ private:
     class Avg {
         double _value;
         size_t _count;
+        double _min;
+        double _max;
     public:
-        Avg() : _value(0.0), _count(0) {}
-        void set(double value) { _value = value; _count = 1; }
-        double avg() const { return !_count ? 0 : _value / _count; }
+        Avg() : _value(0.0), _count(0), _min(0.0), _max(0.0) {}
+        void set(double value) {
+            _value = value;
+            _count = 1;
+            _min = value;
+            _max = value;
+        }
+        double avg() const {
+            return (_count > 0) ? (_value / _count) : 0;
+        }
         size_t count() const { return _count; }
+        double min() const { return _min; }
+        double max() const { return _max; }
         void add(const Avg &other) {
+            if (_count == 0) {
+                _min = other._min;
+                _max = other._max;
+            } else if (other._count > 0) {
+                _min = std::min(_min, other._min);
+                _max = std::max(_max, other._max);
+            }
             _value += other._value;
             _count += other._count;
         }
@@ -68,9 +86,13 @@ public:
         Partition &active_time(double time_s) { _active_time.set(time_s); return *this; }
         double active_time_avg() const { return _active_time.avg(); }
         size_t active_time_count() const { return _active_time.count(); }
+        double active_time_min() const { return _active_time.min(); }
+        double active_time_max() const { return _active_time.max(); }
         Partition &wait_time(double time_s) { _wait_time.set(time_s); return *this; }
         double wait_time_avg() const { return _wait_time.avg(); }
         size_t wait_time_count() const { return _wait_time.count(); }
+        double wait_time_min() const { return _wait_time.min(); }
+        double wait_time_max() const { return _wait_time.max(); }
 
         Partition &add(const Partition &rhs) {
             _docsCovered += rhs.docsCovered();
@@ -136,22 +158,32 @@ public:
     MatchingStats &queryCollateralTime(double time_s) { _queryCollateralTime.set(time_s); return *this; }
     double queryCollateralTimeAvg() const { return _queryCollateralTime.avg(); }
     size_t queryCollateralTimeCount() const { return _queryCollateralTime.count(); }
+    double queryCollateralTimeMin() const { return _queryCollateralTime.min(); }
+    double queryCollateralTimeMax() const { return _queryCollateralTime.max(); }
 
     MatchingStats &queryLatency(double time_s) { _queryLatency.set(time_s); return *this; }
     double queryLatencyAvg() const { return _queryLatency.avg(); }
     size_t queryLatencyCount() const { return _queryLatency.count(); }
+    double queryLatencyMin() const { return _queryLatency.min(); }
+    double queryLatencyMax() const { return _queryLatency.max(); }
 
     MatchingStats &matchTime(double time_s) { _matchTime.set(time_s); return *this; }
     double matchTimeAvg() const { return _matchTime.avg(); }
     size_t matchTimeCount() const { return _matchTime.count(); }
+    double matchTimeMin() const { return _matchTime.min(); }
+    double matchTimeMax() const { return _matchTime.max(); }
 
     MatchingStats &groupingTime(double time_s) { _groupingTime.set(time_s); return *this; }
     double groupingTimeAvg() const { return _groupingTime.avg(); }
     size_t groupingTimeCount() const { return _groupingTime.count(); }
+    double groupingTimeMin() const { return _groupingTime.min(); }
+    double groupingTimeMax() const { return _groupingTime.max(); }
 
     MatchingStats &rerankTime(double time_s) { _rerankTime.set(time_s); return *this; }
     double rerankTimeAvg() const { return _rerankTime.avg(); }
     size_t rerankTimeCount() const { return _rerankTime.count(); }
+    double rerankTimeMin() const { return _rerankTime.min(); }
+    double rerankTimeMax() const { return _rerankTime.max(); }
 
     // used to merge in stats from each match thread
     MatchingStats &merge_partition(const Partition &partition, size_t id);

@@ -187,10 +187,10 @@ void ValueMetricTest::testSmallAverage()
 
 void ValueMetricTest::testAddValueBatch() {
     DoubleValueMetric m("test", "tag", "description");
-    m.addValueBatch(100, 3);
-    ASSERT_AVERAGE(m, 100, 100, 100, 3, 100);
-    m.addValueBatch(0, 0);
-    ASSERT_AVERAGE(m, 100, 100, 100, 3, 100);
+    m.addValueBatch(100, 3, 80, 120);
+    ASSERT_AVERAGE(m, 100, 80, 120, 3, 100);
+    m.addValueBatch(123, 0, 12, 1234);
+    ASSERT_AVERAGE(m, 100, 80, 120, 3, 100);
 }
 
 namespace {

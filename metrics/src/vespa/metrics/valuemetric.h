@@ -65,7 +65,10 @@ class ValueMetric : public AbstractValueMetric {
 
     void dec(const Values &values);
 
-    void addValueWithCount(AvgVal avg, TotVal tot, uint32_t count);
+    void addValueWithCount(AvgVal avg, TotVal tot, uint32_t count, AvgVal min, AvgVal max);
+    void addValueWithCount(AvgVal avg, TotVal tot, uint32_t count) {
+        addValueWithCount(avg, tot, count, avg, avg);
+    }
 
     // Finite number (not infinity/NaN) check using type trait tag dispatch.
     // 2nd param is instance of std::true_type iff AvgVal is floating point.
@@ -110,12 +113,20 @@ public:
         ValueMetric t(a); t += b; return t;
     }
 
-    void addAvgValueWithCount(AvgVal avg, uint32_t count)
-    { if (count) { addValueWithCount(avg, avg * count, count); } }
-    void addTotalValueWithCount(TotVal tot, uint32_t count)
-    { if (count) { addValueWithCount(tot / count, tot, count); } }
-    void addValueBatch(AvgVal avg, uint32_t count) {
-        addAvgValueWithCount(avg, count);
+    void addAvgValueWithCount(AvgVal avg, uint32_t count) {
+        if (count > 0) {
+            addValueWithCount(avg, avg * count, count);
+        }
+    }
+    void addTotalValueWithCount(TotVal tot, uint32_t count) {
+        if (count > 0) {
+            addValueWithCount(tot / count, tot, count);
+        }
+    }
+    void addValueBatch(AvgVal avg, uint32_t count, AvgVal min, AvgVal max) {
+        if (count > 0) {
+            addValueWithCount(avg, avg * count, count, min, max);
+        }
     }
     virtual void addValue(AvgVal avg) { addAvgValueWithCount(avg, 1); }
     virtual void set(AvgVal avg) { addValue(avg); }

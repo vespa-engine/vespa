@@ -41,8 +41,10 @@ LegacyDocumentDBMetrics::MatchingMetrics::update(const MatchingStats &stats)
     docsReRanked.inc(stats.docsReRanked());
     softDoomFactor.set(stats.softDoomFactor());
     queries.inc(stats.queries());
-    queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount());
-    queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount());
+    queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount(),
+                                      stats.queryCollateralTimeMin(), stats.queryCollateralTimeMax());
+    queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
+                               stats.queryLatencyMin(), stats.queryLatencyMax());
 }
 
 LegacyDocumentDBMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
@@ -92,8 +94,10 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::up
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());
     docsReRanked.inc(stats.docsReRanked());
-    active_time.addValueBatch(stats.active_time_avg(), stats.active_time_count());
-    wait_time.addValueBatch(stats.wait_time_avg(), stats.wait_time_count());
+    active_time.addValueBatch(stats.active_time_avg(), stats.active_time_count(),
+                              stats.active_time_min(), stats.active_time_max());
+    wait_time.addValueBatch(stats.wait_time_avg(), stats.wait_time_count(),
+                            stats.wait_time_min(), stats.wait_time_max());
 }
 
 void
@@ -101,9 +105,12 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
 {
     queries.inc(stats.queries());
     limited_queries.inc(stats.limited_queries());
-    matchTime.addValueBatch(stats.matchTimeAvg(), stats.matchTimeCount());
-    groupingTime.addValueBatch(stats.groupingTimeAvg(), stats.groupingTimeCount());
-    rerankTime.addValueBatch(stats.rerankTimeAvg(), stats.rerankTimeCount());
+    matchTime.addValueBatch(stats.matchTimeAvg(), stats.matchTimeCount(),
+                            stats.matchTimeMin(), stats.matchTimeMax());
+    groupingTime.addValueBatch(stats.groupingTimeAvg(), stats.groupingTimeCount(),
+                               stats.groupingTimeMin(), stats.groupingTimeMax());
+    rerankTime.addValueBatch(stats.rerankTimeAvg(), stats.rerankTimeCount(),
+                             stats.rerankTimeMin(), stats.rerankTimeMax());
     if (stats.getNumPartitions() > 0) {
         if (stats.getNumPartitions() <= partitions.size()) {
             for (size_t i(0), m(stats.getNumPartitions()); i < m; i++) {
