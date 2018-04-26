@@ -13,14 +13,6 @@ search parent_a {
     field int_wset_field type weightedset<int> {
       indexing: attribute
     }
-    field predicate_field type predicate {
-      indexing: attribute
-      index {
-        arity: 8
-        lower-bound: 5
-        upper-bound: 300
-      }
-    }
   }
   import field grandparent_ref.int_field as ancient_int_field {}
 }
