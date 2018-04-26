@@ -317,7 +317,9 @@ public class DeploymentTrigger {
                         for (JobType job : jobsByCompletion.get(empty())) {
                             State target = targetFor(application, change, deploymentFor(application, job));
                             if (isTested(application, target)) {
-                                if (completedAt.isPresent())
+                                if (   completedAt.isPresent()
+                                    && jobStateIsAmong(application, job, idle)
+                                    && stepJobs.containsAll(runningProductionJobsFor(application)))
                                     jobs.add(deploymentJob(application, target, change, job, reason, completedAt.get(), stepJobs));
                             }
                             else if (testJobs == null) {
@@ -344,7 +346,6 @@ public class DeploymentTrigger {
             if (testJobs == null)
                 testJobs = testJobsFor(application, targetFor(application, application.change(), empty()), "Testing last changes outside prod", clock.instant());
             jobs.addAll(testJobs);
-            jobs.removeIf(job -> ! canTrigger(application, job.jobType, job.concurrentlyWith));
         });
         return jobs;
     }
@@ -382,7 +383,7 @@ public class DeploymentTrigger {
             for (JobType jobType : step.zones().stream().map(order::toJob).collect(toList())) {
                 Optional<JobRun> completion = successOn(application, jobType, target)
                         .filter(run -> jobType != stagingTest || sourcesMatchIfPresent(target, run));
-                if ( ! completion.isPresent())
+                if ( ! completion.isPresent() && jobStateIsAmong(application, jobType, idle))
                     jobs.add(deploymentJob(application, target, application.change(), jobType, reason, availableSince, emptySet()));
             }
         }
