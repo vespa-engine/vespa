@@ -19,20 +19,20 @@ class ReferenceAttribute;
  *
  * Read guards are held on
  * - target attribute, to ensure that reads are safe.
- * - target document meta store, to avoid referenced lids being reused.
+ * - target document meta store, to avoid target lids being reused.
  * - reference attribute, to ensure that access to lid mapping is safe.
  *
- * Extra information for direct lid to referenced lid mapping with
+ * Extra information for direct lid to target lid mapping with
  * boundary check is setup during construction.
  */
 class ImportedAttributeVectorReadGuard : public IAttributeVector,
                                          public AttributeReadGuard
 {
 private:
-    using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
+    using TargetLids = vespalib::ConstArrayRef<uint32_t>;
     IDocumentMetaStoreContext::IReadGuard::UP _target_document_meta_store_read_guard;
     const ImportedAttributeVector   &_imported_attribute;
-    ReferencedLids                   _referencedLids;
+    TargetLids                       _targetLids;
     AttributeGuard                   _reference_attribute_guard;
     std::unique_ptr<attribute::AttributeReadGuard> _target_attribute_guard;
     const ReferenceAttribute        &_reference_attribute;
@@ -40,8 +40,8 @@ protected:
     const IAttributeVector          &_target_attribute;
 
 protected:
-    uint32_t getReferencedLid(uint32_t lid) const {
-        return _referencedLids[lid];
+    uint32_t getTargetLid(uint32_t lid) const {
+        return _targetLids[lid];
     }
 
 public:

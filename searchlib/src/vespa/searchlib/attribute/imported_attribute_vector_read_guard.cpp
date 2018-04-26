@@ -15,13 +15,13 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
     : AttributeReadGuard(this),
       _target_document_meta_store_read_guard(imported_attribute.getTargetDocumentMetaStore()->getReadGuard()),
       _imported_attribute(imported_attribute),
-      _referencedLids(),
+      _targetLids(),
       _reference_attribute_guard(imported_attribute.getReferenceAttribute()),
       _target_attribute_guard(imported_attribute.getTargetAttribute()->makeReadGuard(stableEnumGuard)),
       _reference_attribute(*imported_attribute.getReferenceAttribute()),
       _target_attribute(*_target_attribute_guard->attribute())
 {
-    _referencedLids = _reference_attribute.getReferencedLids();
+    _targetLids = _reference_attribute.getTargetLids();
 }
 
 ImportedAttributeVectorReadGuard::~ImportedAttributeVectorReadGuard() {
@@ -36,7 +36,7 @@ uint32_t ImportedAttributeVectorReadGuard::getNumDocs() const {
 }
 
 uint32_t ImportedAttributeVectorReadGuard::getValueCount(uint32_t doc) const {
-    return _target_attribute.getValueCount(getReferencedLid(doc));
+    return _target_attribute.getValueCount(getTargetLid(doc));
 }
 
 uint32_t ImportedAttributeVectorReadGuard::getMaxValueCount() const {
@@ -44,55 +44,55 @@ uint32_t ImportedAttributeVectorReadGuard::getMaxValueCount() const {
 }
 
 IAttributeVector::largeint_t ImportedAttributeVectorReadGuard::getInt(DocId doc) const {
-    return _target_attribute.getInt(getReferencedLid(doc));
+    return _target_attribute.getInt(getTargetLid(doc));
 }
 
 double ImportedAttributeVectorReadGuard::getFloat(DocId doc) const {
-    return _target_attribute.getFloat(getReferencedLid(doc));
+    return _target_attribute.getFloat(getTargetLid(doc));
 }
 
 const char *ImportedAttributeVectorReadGuard::getString(DocId doc, char *buffer, size_t sz) const {
-    return _target_attribute.getString(getReferencedLid(doc), buffer, sz);
+    return _target_attribute.getString(getTargetLid(doc), buffer, sz);
 }
 
 IAttributeVector::EnumHandle ImportedAttributeVectorReadGuard::getEnum(DocId doc) const {
-    return _target_attribute.getEnum(getReferencedLid(doc));
+    return _target_attribute.getEnum(getTargetLid(doc));
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, largeint_t *buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, double *buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, const char **buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, EnumHandle *buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedInt *buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedFloat *buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedString *buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedConstChar *buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedEnum *buffer, uint32_t sz) const {
-    return _target_attribute.get(getReferencedLid(docId), buffer, sz);
+    return _target_attribute.get(getTargetLid(docId), buffer, sz);
 }
 
 bool ImportedAttributeVectorReadGuard::findEnum(const char *value, EnumHandle &e) const {
@@ -153,14 +153,14 @@ long ImportedAttributeVectorReadGuard::onSerializeForAscendingSort(DocId doc,
                                                                    void *serTo,
                                                                    long available,
                                                                    const common::BlobConverter *bc) const {
-    return _target_attribute.serializeForAscendingSort(getReferencedLid(doc), serTo, available, bc);
+    return _target_attribute.serializeForAscendingSort(getTargetLid(doc), serTo, available, bc);
 }
 
 long ImportedAttributeVectorReadGuard::onSerializeForDescendingSort(DocId doc,
                                                                     void *serTo,
                                                                     long available,
                                                                     const common::BlobConverter *bc) const {
-    return _target_attribute.serializeForDescendingSort(getReferencedLid(doc), serTo, available, bc);
+    return _target_attribute.serializeForDescendingSort(getTargetLid(doc), serTo, available, bc);
 }
 
 }

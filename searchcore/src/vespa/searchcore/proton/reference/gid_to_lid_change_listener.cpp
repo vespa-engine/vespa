@@ -51,7 +51,7 @@ GidToLidChangeListener::notifyRegistered()
     std::promise<void> promise;
     auto future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise]() { _attr->populateReferencedLids(); promise.set_value(); });
+                                        [this, &promise]() { _attr->populateTargetLids(); promise.set_value(); });
     future.wait();
 }
 

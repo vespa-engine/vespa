@@ -14,7 +14,7 @@ class Reference {
     using EntryRef = search::datastore::EntryRef;
     using GlobalId = document::GlobalId;
     GlobalId _gid;
-    mutable uint32_t _lid;  // referenced lid
+    mutable uint32_t _lid;  // target lid
     mutable EntryRef _revMapIdx; // map from gid to lids referencing gid
 public:
     Reference()
@@ -35,7 +35,7 @@ public:
     const GlobalId &gid() const { return _gid; }
     uint32_t lid() const { return _lid; }
     EntryRef revMapIdx() const { return _revMapIdx; }
-    void setLid(uint32_t referencedLid) const { _lid = referencedLid; }
+    void setLid(uint32_t targetLid) const { _lid = targetLid; }
     void setRevMapIdx(EntryRef newRevMapIdx) const { _revMapIdx = newRevMapIdx; }
 };
 

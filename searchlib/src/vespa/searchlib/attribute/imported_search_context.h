@@ -26,7 +26,7 @@ class SearchContextParams;
  * considered a match.
  */
 class ImportedSearchContext : public ISearchContext {
-    using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
+    using TargetLids = vespalib::ConstArrayRef<uint32_t>;
     const ImportedAttributeVector&                  _imported_attribute;
     vespalib::string                                _queryTerm;
     bool                                            _useSearchCache;
@@ -35,12 +35,12 @@ class ImportedSearchContext : public ISearchContext {
     const ReferenceAttribute&                       _reference_attribute;
     const IAttributeVector                         &_target_attribute;
     std::unique_ptr<ISearchContext>                 _target_search_context;
-    ReferencedLids                                  _referencedLids;
+    TargetLids                                      _targetLids;
     PostingListMerger<int32_t>                      _merger;
     bool                                            _fetchPostingsDone;
 
-    uint32_t getReferencedLid(uint32_t lid) const {
-        return _referencedLids[lid];
+    uint32_t getTargetLid(uint32_t lid) const {
+        return _targetLids[lid];
     }
 
     void makeMergedPostings(bool isFilter);
@@ -65,11 +65,11 @@ public:
     using DocId = IAttributeVector::DocId;
 
     bool cmp(DocId docId, int32_t& weight) const {
-        return _target_search_context->cmp(getReferencedLid(docId), weight);
+        return _target_search_context->cmp(getTargetLid(docId), weight);
     }
 
     bool cmp(DocId docId) const {
-        return _target_search_context->cmp(getReferencedLid(docId));
+        return _target_search_context->cmp(getTargetLid(docId));
     }
 
     bool onCmp(uint32_t docId, int32_t &weight) const override { return cmp(docId, weight); }
