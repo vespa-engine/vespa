@@ -804,7 +804,7 @@ public class UpgraderTest {
 
         // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());
-        assertTrue("Jobs in progress", tester.deploymentTrigger().isRunning(deadLocked, systemTest));
+        tester.assertRunning(deadLocked.id(), systemTest);
         assertFalse("No change present", deadLocked.change().isPresent());
 
         // 4 out of 5 applications are repaired and confidence is restored

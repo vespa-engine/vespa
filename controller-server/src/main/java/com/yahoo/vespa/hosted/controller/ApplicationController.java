@@ -360,6 +360,7 @@ public class ApplicationController {
     }
 
     private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone) {
+
         Log logEntry = new Log();
         logEntry.level = "WARNING";
         logEntry.time = clock.instant().toEpochMilli();
