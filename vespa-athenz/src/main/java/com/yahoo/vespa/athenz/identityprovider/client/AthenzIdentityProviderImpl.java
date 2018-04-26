@@ -88,12 +88,12 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
-    public String getDomain() {
+    public String domain() {
         return identity.getDomain().getName();
     }
 
     @Override
-    public String getService() {
+    public String service() {
         return identity.getName();
     }
 
