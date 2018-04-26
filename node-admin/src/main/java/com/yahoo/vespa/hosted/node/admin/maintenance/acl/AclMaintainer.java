@@ -68,6 +68,7 @@ public class AclMaintainer implements Runnable {
     }
 
     private synchronized void configureAcls() {
+        log.info("Configuring ACLs"); // Needed to potentially nail down when ACL maintainer stopped working
         Map<String, Container> runningContainers = dockerOperations
                 .getAllManagedContainers().stream()
                 .filter(container -> container.state.isRunning())
