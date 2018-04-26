@@ -17,6 +17,7 @@ class ReferenceMappings
 {
     using GenerationHolder = vespalib::GenerationHolder;
     using EntryRef = search::datastore::EntryRef;
+    // Classes used to map from target lid to source lids
     using ReverseMappingIndices = RcuVectorBase<EntryRef>;
     using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
                                              btree::NoAggregated,
@@ -31,9 +32,9 @@ class ReferenceMappings
     // limit for target lid when accessing _reverseMappingIndices
     uint32_t              _targetLidLimit;
     // Store of B-Trees, used to map from gid or target lid to
-    // referencing lids.
+    // source lids.
     ReverseMapping _reverseMapping;
-    // vector containing target lid given referencing lid
+    // vector containing target lid given source lid
     RcuVectorBase<uint32_t> _targetLids;
     const uint32_t &_committedDocIdLimit;
 
@@ -42,6 +43,7 @@ class ReferenceMappings
 
 public:
     using TargetLids = vespalib::ConstArrayRef<uint32_t>;
+    // Class used to map from target lid to source lids
     using ReverseMappingRefs = vespalib::ConstArrayRef<EntryRef>;
 
     ReferenceMappings(GenerationHolder &genHolder, const uint32_t &committedDocIdLimit);

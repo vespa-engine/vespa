@@ -15,6 +15,7 @@ using search::attribute::ISearchContext;
 using search::attribute::ReferenceAttribute;
 using search::AttributeVector;
 
+// Classes used to map from target lid to source lids
 using ReverseMappingRefs = ReferenceAttribute::ReverseMappingRefs;
 using ReverseMapping = ReferenceAttribute::ReverseMapping;
 

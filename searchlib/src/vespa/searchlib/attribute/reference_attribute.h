@@ -29,13 +29,14 @@ public:
     using ReferenceStore = datastore::UniqueStore<Reference>;
     using ReferenceStoreIndices = RcuVectorBase<EntryRef>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
-    using ReverseMappingIndices = RcuVectorBase<EntryRef>;
+    // Class used to map from target lid to source lids
     using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
                                              btree::NoAggregated,
                                              std::less<uint32_t>,
                                              btree::BTreeDefaultTraits,
                                              btree::NoAggrCalc>;
     using TargetLids = ReferenceMappings::TargetLids;
+    // Class used to map from target lid to source lids
     using ReverseMappingRefs = ReferenceMappings::ReverseMappingRefs;
 private:
     ReferenceStore _store;
