@@ -12,6 +12,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -109,7 +110,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      * For example, if {a.d =&gt; "a.d-value" ,a.e =&gt; "a.e-value", b.d =&gt; "b.d-value", then calling listValues("a")
      * will return {"d" =&gt; "a.d-value","e" =&gt; "a.e-value"}
      */
-    public final Map<String, Object> listValues(final String prefix,Map<String,String> context) {
+    public final Map<String, Object> listValues(final String prefix,Map<String, String> context) {
         return listValues(new CompoundName(prefix), context);
     }
     /**
@@ -118,7 +119,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      * For example, if {a.d =&gt; "a.d-value" ,a.e =&gt; "a.e-value", b.d =&gt; "b.d-value", then calling listValues("a")
      * will return {"d" =&gt; "a.d-value","e" =&gt; "a.e-value"}
      */
-    public final Map<String, Object> listValues(final CompoundName prefix,Map<String,String> context) {
+    public final Map<String, Object> listValues(final CompoundName prefix,Map<String, String> context) {
         return listValues(prefix, context, null);
     }
     /**
@@ -127,7 +128,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      * For example, if {a.d =&gt; "a.d-value" ,a.e =&gt; "a.e-value", b.d =&gt; "b.d-value", then calling listValues("a")
      * will return {"d" =&gt; "a.d-value","e" =&gt; "a.e-value"}
      */
-    public Map<String, Object> listValues(CompoundName prefix, Map<String,String> context, Properties substitution) {
+    public Map<String, Object> listValues(CompoundName prefix, Map<String, String> context, Properties substitution) {
         Map<String, Object> values = new HashMap<>();
         for (Map.Entry<CompoundName, DimensionalValue<Object>> entry : entries.entrySet()) {
             if ( entry.getKey().size() <= prefix.size()) continue;
@@ -144,19 +145,19 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     }
 
     public final Object get(String name) {
-        return get(name, Collections.<String,String>emptyMap());
+        return get(name, Collections.emptyMap());
     }
-    public final Object get(String name, Map<String,String> context) {
+    public final Object get(String name, Map<String, String> context) {
         return get(name, context, new QueryProfileProperties(this));
     }
-    public final Object get(String name, Map<String,String> context, Properties substitution) {
+    public final Object get(String name, Map<String, String> context, Properties substitution) {
         return get(new CompoundName(name), context, substitution);
     }
     public final Object get(CompoundName name, Map<String, String> context, Properties substitution) {
         return substitute(entries.get(name, context), context, substitution);
     }
 
-    private Object substitute(Object value, Map<String,String> context, Properties substitution) {
+    private Object substitute(Object value, Map<String, String> context, Properties substitution) {
         if (value == null) return value;
         if (substitution == null) return value;
         if (value.getClass() != SubstituteString.class) return value;
@@ -165,7 +166,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
 
     /** Throws IllegalArgumentException if the given string is not a valid query profile name */
     private static void validateName(String name) {
-        Matcher nameMatcher=namePattern.matcher(name);
+        Matcher nameMatcher = namePattern.matcher(name);
         if ( ! nameMatcher.matches())
             throw new IllegalArgumentException("Illegal name '" + name + "'");
     }

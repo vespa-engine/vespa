@@ -13,6 +13,7 @@ import java.util.Objects;
  * @author baldersheim
  */
 public class Matching implements Cloneable {
+
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
@@ -32,6 +33,7 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(MINHITSPERTHREAD, "integer"));
         argumentType.freeze();
     }
+
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     public Double termwiseLimit = null;

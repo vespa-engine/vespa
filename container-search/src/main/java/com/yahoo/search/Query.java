@@ -111,7 +111,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         /** Converts a type argument value into a query type */
         public static Type getType(String typeString) {
             for (Type type:Type.values())
-                if(type.stringValue.equals(typeString))
+                if (type.stringValue.equals(typeString))
                     return type;
             return ALL;
         }
@@ -141,10 +141,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
 
     /** Whether this query is forbidden to access cached information */
-    private boolean noCache=false;
+    private boolean noCache = false;
 
     /** Whether or not grouping should use a session cache */
-    private boolean groupingSessionCache=false;
+    private boolean groupingSessionCache = false;
 
     //--------------  Generic property containers --------------------------------
 
@@ -212,8 +212,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    /** The aliases of query properties, these are always the same */
-    // Note: Don't make static for now as GSM calls this through reflection
+    /** The aliases of query properties */
     private static Map<String,CompoundName> propertyAliases;
     static {
         Map<String,CompoundName> propertyAliasesBuilder = new HashMap<>();
@@ -223,11 +222,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         addAliases(Presentation.getArgumentType(), propertyAliasesBuilder);
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
-    private static void addAliases(QueryProfileType arguments,Map<String,CompoundName> aliases) {
-        String prefix=getPrefix(arguments);
+    private static void addAliases(QueryProfileType arguments, Map<String, CompoundName> aliases) {
+        String prefix = getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
             for (String alias : field.getAliases())
-                aliases.put(alias,new CompoundName(prefix+field.getName()));
+                aliases.put(alias, new CompoundName(prefix+field.getName()));
         }
     }
     private static String getPrefix(QueryProfileType type) {
@@ -294,7 +293,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         startTime = System.currentTimeMillis();
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
-            Properties queryProfileProperties=new QueryProfileProperties(queryProfile);
+            Properties queryProfileProperties = new QueryProfileProperties(queryProfile);
             properties().chain(queryProfileProperties);
             // TODO: Just checking legality rather than actually setting would be faster
             setPropertiesFromRequestMap(requestMap, properties()); // Adds errors to the query for illegal set attempts
@@ -360,9 +359,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * (if any) set it to properties().
      */
     private void setFrom(Properties originalProperties,QueryProfileType arguments,Map<String,String> context) {
-        String prefix=getPrefix(arguments);
+        String prefix = getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
-            String fullName=prefix + field.getName();
+            String fullName = prefix + field.getName();
             if (field.getType() == FieldType.genericQueryProfileType) {
                 for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName,context).entrySet()) {
                     try {

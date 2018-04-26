@@ -24,37 +24,33 @@ import java.util.Map;
  */
 public class QueryProperties extends Properties {
 
-    private static final String MODEL_PREFIX = Model.MODEL + ".";
-    private static final String RANKING_PREFIX = Ranking.RANKING + ".";
-    private static final String PRESENTATION_PREFIX = Presentation.PRESENTATION + ".";
-
     public static final CompoundName[] PER_SOURCE_QUERY_PROPERTIES = new CompoundName[] {
-            new CompoundName(MODEL_PREFIX + Model.QUERY_STRING),
-            new CompoundName(MODEL_PREFIX + Model.TYPE),
-            new CompoundName(MODEL_PREFIX + Model.FILTER),
-            new CompoundName(MODEL_PREFIX + Model.DEFAULT_INDEX),
-            new CompoundName(MODEL_PREFIX + Model.LANGUAGE),
-            new CompoundName(MODEL_PREFIX + Model.ENCODING),
-            new CompoundName(MODEL_PREFIX + Model.SOURCES),
-            new CompoundName(MODEL_PREFIX + Model.SEARCH_PATH),
-            new CompoundName(MODEL_PREFIX + Model.RESTRICT),
-            new CompoundName(RANKING_PREFIX + Ranking.LOCATION),
-            new CompoundName(RANKING_PREFIX + Ranking.PROFILE),
-            new CompoundName(RANKING_PREFIX + Ranking.SORTING),
-            new CompoundName(RANKING_PREFIX + Ranking.FRESHNESS),
-            new CompoundName(RANKING_PREFIX + Ranking.QUERYCACHE),
-            new CompoundName(RANKING_PREFIX + Ranking.LIST_FEATURES),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.BOLDING),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.SUMMARY),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.REPORT_COVERAGE),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.FORMAT),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.SUMMARY_FIELDS),
             Query.HITS,
             Query.OFFSET,
             Query.TRACE_LEVEL,
             Query.TIMEOUT,
             Query.NO_CACHE,
-            Query.GROUPING_SESSION_CACHE };
+            Query.GROUPING_SESSION_CACHE,
+            CompoundName.fromComponents(Model.MODEL, Model.QUERY_STRING),
+            CompoundName.fromComponents(Model.MODEL, Model.TYPE),
+            CompoundName.fromComponents(Model.MODEL, Model.FILTER),
+            CompoundName.fromComponents(Model.MODEL, Model.DEFAULT_INDEX),
+            CompoundName.fromComponents(Model.MODEL, Model.LANGUAGE),
+            CompoundName.fromComponents(Model.MODEL, Model.ENCODING),
+            CompoundName.fromComponents(Model.MODEL, Model.SOURCES),
+            CompoundName.fromComponents(Model.MODEL, Model.SEARCH_PATH),
+            CompoundName.fromComponents(Model.MODEL, Model.RESTRICT),
+            CompoundName.fromComponents(Ranking.RANKING, Ranking.LOCATION),
+            CompoundName.fromComponents(Ranking.RANKING, Ranking.PROFILE),
+            CompoundName.fromComponents(Ranking.RANKING, Ranking.SORTING),
+            CompoundName.fromComponents(Ranking.RANKING, Ranking.FRESHNESS),
+            CompoundName.fromComponents(Ranking.RANKING, Ranking.QUERYCACHE),
+            CompoundName.fromComponents(Ranking.RANKING, Ranking.LIST_FEATURES),
+            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.BOLDING),
+            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY),
+            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.REPORT_COVERAGE),
+            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.FORMAT),
+            CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY_FIELDS)};
 
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
@@ -73,7 +69,7 @@ public class QueryProperties extends Properties {
     @Override
     public Object get(CompoundName key, Map<String,String> context,
                       com.yahoo.processing.request.Properties substitution) {
-        if (key.size()==2 && key.first().equals(Model.MODEL)) {
+        if (key.size() == 2 && key.first().equals(Model.MODEL)) {
             Model model = query.getModel();
             if (key.last().equals(Model.QUERY_STRING)) return model.getQueryString();
             if (key.last().equals(Model.TYPE)) return model.getType();
@@ -87,7 +83,7 @@ public class QueryProperties extends Properties {
         }
         else if (key.first().equals(Ranking.RANKING)) {
             Ranking ranking = query.getRanking();
-            if (key.size()==2) {
+            if (key.size() == 2) {
                 if (key.last().equals(Ranking.LOCATION)) return ranking.getLocation();
                 if (key.last().equals(Ranking.PROFILE)) return ranking.getProfile();
                 if (key.last().equals(Ranking.SORTING)) return ranking.getSorting();
@@ -156,7 +152,7 @@ public class QueryProperties extends Properties {
             if (key.toString().equals(Ranking.RANKING)) return query.getRanking();
             if (key.toString().equals(Presentation.PRESENTATION)) return query.getPresentation();
         }
-        return super.get(key,context,substitution);
+        return super.get(key, context, substitution);
     }
 
     @SuppressWarnings("deprecation")
@@ -296,6 +292,21 @@ public class QueryProperties extends Properties {
             else
                 throw new IllegalArgumentException("Could not set '" + key + "' to '" + value + "'", e);
         }
+    }
+
+    @Override
+    public Map<String, Object> listProperties(CompoundName prefix,
+                                              Map<String,String> context,
+                                              com.yahoo.processing.request.Properties substitution) {
+        Map<String, Object> properties = super.listProperties(prefix, context, substitution);
+        for (CompoundName queryProperty : PER_SOURCE_QUERY_PROPERTIES) {
+            if (queryProperty.hasPrefix(prefix)) {
+                Object value = this.get(queryProperty, context, substitution);
+                if (value != null)
+                    properties.put(queryProperty.toString(), value);
+            }
+        }
+        return properties;
     }
 
     private void setRankingFeature(Query query, String key, Object value) {

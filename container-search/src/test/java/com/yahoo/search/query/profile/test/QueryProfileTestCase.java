@@ -506,10 +506,10 @@ public class QueryProfileTestCase {
 
     @Test
     public void testRankTypeNames() {
-         QueryProfile p=new QueryProfile("test");
+         QueryProfile p = new QueryProfile("test");
          p.set("a.$b","foo", null);
-         p.set("a.query(b)","bar", null);
-         p.set("a.b.default-index","fuu", null);
+         p.set("a.query(b)", "bar", null);
+         p.set("a.b.default-index", "fuu", null);
          CompiledQueryProfile cp = p.compile(null);
 
          assertEquals("foo", cp.get("a.$b"));
@@ -529,58 +529,58 @@ public class QueryProfileTestCase {
 
     @Test
     public void testQueryProfileInlineValueReassignment() {
-        QueryProfile p=new QueryProfile("test");
-        p.set("source.rel.params.query","%{model.queryString}", null);
+        QueryProfile p = new QueryProfile("test");
+        p.set("source.rel.params.query", "%{model.queryString}", null);
         p.freeze();
         Query q = new Query(HttpRequest.createTestRequest("?query=foo", Method.GET), p.compile(null));
-        assertEquals("foo",q.properties().get("source.rel.params.query"));
-        assertEquals("foo",q.properties().listProperties().get("source.rel.params.query"));
+        assertEquals("foo", q.properties().get("source.rel.params.query"));
+        assertEquals("foo", q.properties().listProperties().get("source.rel.params.query"));
         q.getModel().setQueryString("bar");
-        assertEquals("bar",q.properties().get("source.rel.params.query"));
-        assertEquals("foo",q.properties().listProperties().get("source.rel.params.query")); // Is still foo because model variables are not supported with the list function
+        assertEquals("bar", q.properties().get("source.rel.params.query"));
+        assertEquals("bar", q.properties().listProperties().get("source.rel.params.query"));
     }
 
     @Test
     public void testQueryProfileInlineValueReassignmentSimpleName() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.set("key","%{model.queryString}", null);
         p.freeze();
         Query q = new Query(HttpRequest.createTestRequest("?query=foo", Method.GET), p.compile(null));
-        assertEquals("foo",q.properties().get("key"));
-        assertEquals("foo",q.properties().listProperties().get("key"));
+        assertEquals("foo", q.properties().get("key"));
+        assertEquals("foo", q.properties().listProperties().get("key"));
         q.getModel().setQueryString("bar");
-        assertEquals("bar",q.properties().get("key"));
-        assertEquals("foo",q.properties().listProperties().get("key")); // Is still bar because model variables are not supported with the list function
+        assertEquals("bar", q.properties().get("key"));
+        assertEquals("bar", q.properties().listProperties().get("key"));
     }
 
     @Test
     public void testQueryProfileInlineValueReassignmentSimpleNameGenericProperty() {
-        QueryProfile p=new QueryProfile("test");
-        p.set("key","%{value}", null);
+        QueryProfile p = new QueryProfile("test");
+        p.set("key", "%{value}", null);
         p.freeze();
         Query q = new Query(HttpRequest.createTestRequest("?query=test&value=foo", Method.GET), p.compile(null));
-        assertEquals("foo",q.properties().get("key"));
-        assertEquals("foo",q.properties().listProperties().get("key"));
-        q.properties().set("value","bar");
-        assertEquals("bar",q.properties().get("key"));
-        assertEquals("bar",q.properties().listProperties().get("key"));
+        assertEquals("foo", q.properties().get("key"));
+        assertEquals("foo", q.properties().listProperties().get("key"));
+        q.properties().set("value", "bar");
+        assertEquals("bar", q.properties().get("key"));
+        assertEquals("bar", q.properties().listProperties().get("key"));
     }
 
     @Test
     public void testQueryProfileModelValueListing() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.freeze();
         Query q = new Query(HttpRequest.createTestRequest("?query=bar", Method.GET), p.compile(null));
-        assertEquals("bar",q.properties().get("model.queryString"));
-        assertEquals("bar",q.properties().listProperties().get("model.queryString"));
+        assertEquals("bar", q.properties().get("model.queryString"));
+        assertEquals("bar", q.properties().listProperties().get("model.queryString"));
         q.getModel().setQueryString("baz");
-        assertEquals("baz",q.properties().get("model.queryString"));
-        assertEquals("bar",q.properties().listProperties().get("model.queryString")); // Is still bar because model variables are not supported with the list function
+        assertEquals("baz", q.properties().get("model.queryString"));
+        assertEquals("baz", q.properties().listProperties().get("model.queryString"));
     }
 
     @Test
     public void testEmptyBoolean() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.setDimensions(new String[] {"x","y"});
         p.set("clustering.something","bar", null);
         p.set("clustering.something","bar", new String[] {"x1","y1"}, null);
@@ -588,8 +588,8 @@ public class QueryProfileTestCase {
         Query q = new Query(HttpRequest.createTestRequest("?x=x1&y=y1&query=bar&clustering.timeline.kano=tur&" +
                                                           "clustering.enable=true&clustering.timeline.bucketspec=-" +
                                                           "7d/3h&clustering.timeline.tophit=false&clustering.timeli" +
-                                                          "ne=true", Method.GET),p.compile(null));
-        assertEquals(true,q.properties().getBoolean("clustering.timeline",false));
+                                                          "ne=true", Method.GET), p.compile(null));
+        assertEquals(true, q.properties().getBoolean("clustering.timeline", false));
     }
 
 }

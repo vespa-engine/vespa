@@ -56,8 +56,8 @@ public class SubstituteString {
      * Perform the substitution in this, by looking up in the given query profile,
      * and returns the resulting string
      */
-    public String substitute(Map<String,String> context,Properties substitution) {
-        StringBuilder b=new StringBuilder();
+    public String substitute(Map<String, String> context, Properties substitution) {
+        StringBuilder b = new StringBuilder();
         for (Component component : components)
             b.append(component.getValue(context,substitution));
         return b.toString();

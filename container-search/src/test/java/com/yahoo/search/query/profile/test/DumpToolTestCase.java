@@ -11,7 +11,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DumpToolTestCase {
 
-    String profileDir="src/test/java/com/yahoo/search/query/profile/config/test/multiprofile";
+    private String profileDir = "src/test/java/com/yahoo/search/query/profile/config/test/multiprofile";
 
     @Test
     public void testNoParameters() {
@@ -25,18 +25,20 @@ public class DumpToolTestCase {
 
     @Test
     public void testNoDimensionValues() {
-        assertTrue(new DumpTool().resolveAndDump("multiprofile1",profileDir).startsWith("a=general-a\n"));
+        assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir).startsWith("a=general-a\n"));
     }
 
     @Test
     public void testAllParametersSet() {
-        assertTrue(new DumpTool().resolveAndDump("multiprofile1",profileDir,"").startsWith("a=general-a\n"));
+        assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir, "").startsWith("a=general-a\n"));
     }
 
-    // This test is order dependent. Fix this!!
     @Test
     public void testVariant() {
-        assertTrue(new DumpTool().resolveAndDump("multiprofile1",profileDir,"region=us").startsWith("a=us-a\nb=us-b\nregion=us"));
+        String result = new DumpTool().resolveAndDump("multiprofile1", profileDir, "region=us");
+        assertTrue(result.contains("a=us-a"));
+        assertTrue(result.contains("b=us-b"));
+        assertTrue(result.contains("region=us"));
     }
 
 }
