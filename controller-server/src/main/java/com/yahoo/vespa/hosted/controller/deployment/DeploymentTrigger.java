@@ -351,16 +351,12 @@ public class DeploymentTrigger {
                                                        .map(order::toJob)
                                                        .collect(toList());
 
-        // The strange ||-conditions below are necessary because a job may be complete for the change as a whole, but not for each part of it >_<
         boolean platformComplete = application.change().platform().map(Change::of)
-                                              .map(change -> jobs.stream().allMatch(job ->    completedAt(change, application, job).isPresent()
-                                                                                           || completedAt(application.change(), application, job).isPresent()))
-                                              // TODO jvenstad: Replace with downgrades(application.change())  in completedAt.
+                                              .map(change -> jobs.stream().allMatch(job -> completedAt(change, application, job).isPresent()))
                                               .orElse(false);
 
         boolean applicationComplete = application.change().application().map(Change::of)
-                                                 .map(change -> jobs.stream().allMatch(job ->    completedAt(change, application, job).isPresent()
-                                                                                              || completedAt(application.change(), application, job).isPresent()))
+                                                 .map(change -> jobs.stream().allMatch(job -> completedAt(change, application, job).isPresent()))
                                                  .orElse(false);
 
         if (platformComplete || applicationComplete)
@@ -432,9 +428,11 @@ public class DeploymentTrigger {
      *
      * Any job is complete if the given change is already successful on that job.
      * A production job is also considered complete if its current change is strictly dominated by what
-     * is already deployed in its zone, i.e., no parts of the change are upgrades, and at least one
-     * part is a downgrade, regardless of the status of the job.
+     * is already deployed in its zone, i.e., no parts of the change are upgrades, and the full current
+     * change for the application downgrades the deployment, which is an acknowledgement that the deployed
+     * version is broken somehow, such that the job may be locked in failure until a new version is released.
      */
+    // TODO jvenstad: This is only used for production jobs now.
     private Optional<Instant> completedAt(Change change, Application application, JobType jobType) {
         State target = targetFor(application, change, deploymentFor(application, jobType));
         Optional<JobRun> lastSuccess = successOn(application, jobType, target);
@@ -444,8 +442,8 @@ public class DeploymentTrigger {
         return deploymentFor(application, jobType)
                 .filter(deployment ->    ! (   change.upgrades(deployment.version())
                                             || change.upgrades(deployment.applicationVersion()))
-                                      &&   (   change.downgrades(deployment.version())
-                                            || change.downgrades(deployment.applicationVersion())))
+                                      &&   (   application.change().downgrades(deployment.version())
+                                            || application.change().downgrades(deployment.applicationVersion())))
                 .map(Deployment::at);
     }
 
