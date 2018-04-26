@@ -117,7 +117,8 @@ public class DeploymentTrigger {
                 triggering = JobRun.triggering(controller.systemVersion(), applicationVersion, empty(), empty(), "Application commit", clock.instant());
                 if (report.success()) {
                     if (acceptNewApplicationVersion(application))
-                        application = application.withChange(application.change().with(applicationVersion));
+                        application = application.withChange(application.change().with(applicationVersion))
+                                                 .withOutstandingChange(Change.empty());
                     else
                         application = application.withOutstandingChange(Change.of(applicationVersion));
                 }
