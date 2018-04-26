@@ -553,8 +553,8 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime,
 
                 replies.emplace_back(std::make_shared<api::GetNodeStateReply>(*it->second, *_nodeState));
                 auto eraseIt = it++;
-                _queuedStateRequests.erase(eraseIt);
                 mark_controller_as_having_observed_explicit_node_state(eraseIt->second->getSourceIndex());
+                _queuedStateRequests.erase(eraseIt);
             } else {
                 ++it;
             }
