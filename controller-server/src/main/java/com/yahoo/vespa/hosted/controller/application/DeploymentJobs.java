@@ -91,8 +91,10 @@ public class DeploymentJobs {
 
     /** Returns whether this has some job status which is not a success */
     public boolean hasFailures() {
-        // TODO jvenstad: Ignore outOfCapacity errors from test jobs?
-        return ! JobList.from(status.values()).failing().isEmpty();
+        return ! JobList.from(status.values())
+                        .failing()
+                        .not().failingBecause(JobError.outOfCapacity)
+                        .isEmpty();
     }
 
     /** Returns the JobStatus of the given JobType, or empty. */
