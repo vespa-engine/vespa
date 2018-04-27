@@ -35,16 +35,16 @@ class AthenzCredentialsService {
 
     private final IdentityConfig identityConfig;
     private final IdentityDocumentService identityDocumentService;
-    private final AthenzService athenzService;
+    private final ZtsClient ztsClient;
     private final File trustStoreJks;
 
     AthenzCredentialsService(IdentityConfig identityConfig,
                              IdentityDocumentService identityDocumentService,
-                             AthenzService athenzService,
+                             ZtsClient ztsClient,
                              File trustStoreJks) {
         this.identityConfig = identityConfig;
         this.identityDocumentService = identityDocumentService;
-        this.athenzService = athenzService;
+        this.ztsClient = ztsClient;
         this.trustStoreJks = trustStoreJks;
     }
 
@@ -64,8 +64,8 @@ class AthenzCredentialsService {
                                                 identityConfig.service(),
                                                 rawDocument,
                                                 Pkcs10CsrUtils.toPem(csr));
-        InstanceIdentity instanceIdentity = athenzService.sendInstanceRegisterRequest(instanceRegisterInformation,
-                                                                                      document.ztsEndpoint);
+        InstanceIdentity instanceIdentity = ztsClient.sendInstanceRegisterRequest(instanceRegisterInformation,
+                                                                                  document.ztsEndpoint);
         return toAthenzCredentials(instanceIdentity, keyPair, document);
     }
 
@@ -79,13 +79,13 @@ class AthenzCredentialsService {
                                   newKeyPair);
         InstanceRefreshInformation refreshInfo = new InstanceRefreshInformation(Pkcs10CsrUtils.toPem(csr));
         InstanceIdentity instanceIdentity =
-                athenzService.sendInstanceRefreshRequest(document.providerService,
-                                                         identityConfig.domain(),
-                                                         identityConfig.service(),
-                                                         document.providerUniqueId,
-                                                         refreshInfo,
-                                                         document.ztsEndpoint,
-                                                         sslContext);
+                ztsClient.sendInstanceRefreshRequest(document.providerService,
+                                                     identityConfig.domain(),
+                                                     identityConfig.service(),
+                                                     document.providerUniqueId,
+                                                     refreshInfo,
+                                                     document.ztsEndpoint,
+                                                     sslContext);
         return toAthenzCredentials(instanceIdentity, newKeyPair, document);
     }
 

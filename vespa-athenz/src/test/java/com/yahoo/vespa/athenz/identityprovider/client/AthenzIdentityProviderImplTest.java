@@ -58,25 +58,25 @@ public class AthenzIdentityProviderImplTest {
     @Test
     public void metrics_updated_on_refresh() throws IOException {
         IdentityDocumentService identityDocumentService = mock(IdentityDocumentService.class);
-        AthenzService athenzService = mock(AthenzService.class);
+        ZtsClient ztsClient = mock(ZtsClient.class);
         ManualClock clock = new ManualClock(Instant.EPOCH);
         Metric metric = mock(Metric.class);
 
         when(identityDocumentService.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
-        when(athenzService.sendInstanceRegisterRequest(any(), any())).then(new Answer<InstanceIdentity>() {
+        when(ztsClient.sendInstanceRegisterRequest(any(), any())).then(new Answer<InstanceIdentity>() {
             @Override
             public InstanceIdentity answer(InvocationOnMock invocationOnMock) throws Throwable {
                 return new InstanceIdentity(getCertificate(getExpirationSupplier(clock)), "TOKEN");
             }
         });
 
-        when(athenzService.sendInstanceRefreshRequest(anyString(), anyString(), anyString(), anyString(), any(), any(), any()))
+        when(ztsClient.sendInstanceRefreshRequest(anyString(), anyString(), anyString(), anyString(), any(), any(), any()))
                 .thenThrow(new RuntimeException("#1"))
                 .thenThrow(new RuntimeException("#2"))
                 .thenReturn(new InstanceIdentity(getCertificate(getExpirationSupplier(clock)), "TOKEN"));
 
         AthenzCredentialsService credentialService =
-                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, createDummyTrustStore());
+                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, ztsClient, createDummyTrustStore());
 
         AthenzIdentityProviderImpl identityProvider =
                 new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, credentialService, mock(ScheduledExecutorService.class), clock);

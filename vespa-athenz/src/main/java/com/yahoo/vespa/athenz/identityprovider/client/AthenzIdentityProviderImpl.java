@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -41,7 +42,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final AthenzCredentialsService athenzCredentialsService;
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
-    private final com.yahoo.vespa.athenz.api.AthenzService identity;
+    private final AthenzService identity;
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
@@ -49,7 +50,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
              metric,
              new AthenzCredentialsService(config,
                                           new IdentityDocumentService(config.loadBalancerAddress()),
-                                          new AthenzService(),
+                                          new ZtsClient(),
                                           new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"))),
              new ScheduledThreadPoolExecutor(1),
              Clock.systemUTC());
@@ -65,7 +66,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.athenzCredentialsService = athenzCredentialsService;
         this.scheduler = scheduler;
         this.clock = clock;
-        this.identity = new com.yahoo.vespa.athenz.api.AthenzService(config.domain(), config.service());
+        this.identity = new AthenzService(config.domain(), config.service());
         registerInstance();
     }
 
@@ -80,7 +81,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
-    public com.yahoo.vespa.athenz.api.AthenzService identity() {
+    public AthenzService identity() {
         return identity;
     }
 

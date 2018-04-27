@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,7 +24,7 @@ import java.net.URI;
  * @author mortent
  * @author bjorncs
  */
-public class AthenzService {
+class ZtsClient {
 
     private static final String INSTANCE_API_PATH = "/zts/v1/instance";
 
@@ -34,7 +34,7 @@ public class AthenzService {
     /**
      * Send instance register request to ZTS, get InstanceIdentity
      */
-     public InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation,
+     InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation,
                                                          URI uri) {
         try(CloseableHttpClient client = HttpClientBuilder.create().setRetryHandler(retryHandler).build()) {
             HttpUriRequest postRequest = RequestBuilder.post()
@@ -47,13 +47,13 @@ public class AthenzService {
         }
     }
 
-    public InstanceIdentity sendInstanceRefreshRequest(String providerService,
-                                                       String instanceDomain,
-                                                       String instanceServiceName,
-                                                       String instanceId,
-                                                       InstanceRefreshInformation instanceRefreshInformation,
-                                                       URI ztsEndpoint,
-                                                       SSLContext sslContext) {
+    InstanceIdentity sendInstanceRefreshRequest(String providerService,
+                                                String instanceDomain,
+                                                String instanceServiceName,
+                                                String instanceId,
+                                                InstanceRefreshInformation instanceRefreshInformation,
+                                                URI ztsEndpoint,
+                                                SSLContext sslContext) {
         try (CloseableHttpClient client = createHttpClientWithTlsAuth(sslContext, retryHandler)) {
             URI uri = ztsEndpoint
                     .resolve(INSTANCE_API_PATH + '/')
