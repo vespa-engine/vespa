@@ -232,9 +232,6 @@ public class DeploymentTrigger {
                 .map(Job::jobType).collect(toList());
     }
 
-    // Optional<Instant> completedAt(application, step(s?), successcondition, deadlockcondition?)
-    //
-
     /** Returns whether the given job is currently running; false if completed since last triggered, asking the build service otherwise. */
     private boolean isRunning(Application application, JobType jobType) {
         return    ! application.deploymentJobs().statusOf(jobType)
