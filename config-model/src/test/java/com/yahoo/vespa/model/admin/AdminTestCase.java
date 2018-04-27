@@ -42,9 +42,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class AdminTestCase {
 
-    protected static final String TESTDIR = "src/test/cfg/admin/";
+    private static final String TESTDIR = "src/test/cfg/admin/";
 
-    protected VespaModel getVespaModel(String configPath) {
+    private VespaModel getVespaModel(String configPath) {
         return new VespaModelCreatorWithFilePkg(configPath).create();
     }
 
@@ -52,7 +52,7 @@ public class AdminTestCase {
      * Test that version 2.0 of adminconfig works as expected.
      */
     @Test
-    public void testAdmin20() throws Exception {
+    public void testAdmin20() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "adminconfig20");
 
         // Verify that the admin plugin has been loaded (always loads routing).
@@ -112,7 +112,7 @@ public class AdminTestCase {
      * adminserver, logserver, configserver and slobroks
      */
     @Test
-    public void testOnlyAdminserver() throws Exception {
+    public void testOnlyAdminserver() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "simpleadminconfig20");
 
         // Verify that the admin plugin has been loaded (always loads routing).
@@ -173,7 +173,7 @@ public class AdminTestCase {
     }
 
     @Test
-    public void testMultipleConfigServers() throws Exception {
+    public void testMultipleConfigServers() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "multipleconfigservers");
 
         // Verify that the admin plugin has been loaded (always loads routing).
@@ -215,7 +215,7 @@ public class AdminTestCase {
     }
 
     @Test
-    public void testContainerMetricsSnapshotInterval() throws Exception {
+    public void testContainerMetricsSnapshotInterval() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "metricconfig");
 
         ContainerCluster docprocCluster = vespaModel.getContainerClusters().get("cluster.music.indexing");
@@ -259,7 +259,7 @@ public class AdminTestCase {
     }
 
     @Test
-    public void testLogForwarding() throws Exception {
+    public void testLogForwarding() {
         String hosts = "<hosts>"
                 + "  <host name=\"myhost0\">"
                 + "    <alias>node0</alias>"
@@ -280,38 +280,6 @@ public class AdminTestCase {
         Set<String> configIds = vespaModel.getConfigIds();
         // 1 logforwarder on each host
         assertTrue(configIds.toString(), configIds.contains("hosts/myhost0/logforwarder"));
-    }
-
-    @Test
-    public void disableFiledistributorService() throws Exception {
-        String hosts = "<hosts>"
-                + "  <host name=\"localhost\">"
-                + "    <alias>node0</alias>"
-                + "  </host>"
-                + "</hosts>";
-
-        String services = "<services>" +
-                "  <admin version='2.0'>" +
-                "    <adminserver hostalias='node0' />" +
-                "    <filedistribution>" +
-                "      <disableFiledistributor>true</disableFiledistributor>" +
-                "    </filedistribution>" +
-                "  </admin>" +
-                "</services>";
-
-        VespaModel vespaModel = new VespaModelCreatorWithMockPkg(hosts, services).create();
-        String localhost = HostName.getLocalhost();
-        String localhostConfigId = "hosts/" + localhost;
-
-        // Verify services in the sentinel config
-        SentinelConfig.Builder b = new SentinelConfig.Builder();
-        vespaModel.getConfig(b, localhostConfigId);
-        SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertThat(sentinelConfig.service().size(), is(3));
-        assertThat(sentinelConfig.service(0).name(), is("logserver"));
-        assertThat(sentinelConfig.service(1).name(), is("slobrok"));
-        assertThat(sentinelConfig.service(2).name(), is("logd"));
-        // No filedistributor service
     }
 
     @Test
