@@ -17,7 +17,10 @@ public interface ZoneFilter {
     /** All zones from the initial pool. */
     ZoneList all();
 
-    /** Zones where which are managed by the controller. */
-    ZoneList controllerManaged();
+    /** Zones which are upgraded by the controller. */
+    ZoneList controllerUpgraded();
+
+    /** Zones where config servers are up and running. */
+    ZoneList reachable();
 
 }
