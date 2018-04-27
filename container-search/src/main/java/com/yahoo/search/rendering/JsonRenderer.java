@@ -533,10 +533,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         if (fieldName.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
 
-        RenderDecision r = lazyRenderAwareCheck(fieldName, hit);
-        if (r != RenderDecision.DO_NOT_KNOW) return r.booleanValue();
-
-        // this will trigger field decoding, so it is important the lazy decoding magic is done first
         Object field = hit.getField(fieldName);
 
         if (field instanceof CharSequence && ((CharSequence) field).length() == 0) return false;
@@ -547,18 +543,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         if (field instanceof NanNumber) return false;
 
         return true;
-    }
-
-    private RenderDecision lazyRenderAwareCheck(String fieldName, Hit hit) {
-        if ( ! (hit instanceof FastHit)) return RenderDecision.DO_NOT_KNOW;
-
-        FastHit asFastHit = (FastHit) hit;
-        if (asFastHit.fieldIsNotDecoded(fieldName)) {
-            FastHit.RawField rawField = asFastHit.fetchFieldAsUtf8(fieldName);
-            if (rawField != null)
-                return rawField.getUtf8().length == 0 ? RenderDecision.NO : RenderDecision.YES;
-        }
-        return RenderDecision.DO_NOT_KNOW;
     }
 
     private void renderSpecialCasesForGrouping(Hit hit) throws IOException {
@@ -633,9 +617,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private void renderField(String fieldName, Hit hit) throws IOException {
         generator.writeFieldName(fieldName);
-        if ( ! tryDirectRendering(fieldName, hit)) {
-            renderFieldContents(hit.getField(fieldName));
-        }
+        renderFieldContents(hit.getField(fieldName));
     }
 
     private void renderFieldContents(Object field) throws IOException {
@@ -716,26 +698,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
         generator.writeEndArray();
         generator.writeEndObject();
-    }
-
-    /**
-     * Really a private method, but package access for testability.
-     */
-    boolean tryDirectRendering(String fieldName, Hit hit) throws IOException {
-        boolean renderedAsUtf8 = false;
-        if (hit instanceof FastHit) {
-            FastHit f = (FastHit) hit;
-            if (f.fieldIsNotDecoded(fieldName)) {
-                FastHit.RawField r = f.fetchFieldAsUtf8(fieldName);
-                if (r != null) {
-                    byte[] utf8 = r.getUtf8();
-
-                    generator.writeUTF8String(utf8, 0, utf8.length);
-                    renderedAsUtf8 = true;
-                }
-            }
-        }
-        return renderedAsUtf8;
     }
 
     @Override

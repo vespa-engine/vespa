@@ -179,19 +179,7 @@ public class FastHit extends Hit {
      */
     @Override
     public Object getField(String key) {
-        Object value = super.getField(key);
-
-        if (value instanceof LazyValue) {
-            return getAndCacheLazyValue(key, (LazyValue) value);
-        } else {
-            return value;
-        }
-    }
-
-    private Object getAndCacheLazyValue(String key, LazyValue value) {
-        Object forcedValue = value.getValue(key);
-        setField(key, forcedValue);
-        return forcedValue;
+        return super.getField(key);
     }
 
     /** Returns false - this is a concrete hit containing requested content */
@@ -263,19 +251,6 @@ public class FastHit extends Hit {
         this.cacheKey = cacheKey;
     }
 
-    public boolean fieldIsNotDecoded(String name) {
-        return super.getField(name) instanceof LazyValue;
-    }
-
-    public RawField fetchFieldAsUtf8(String fieldName) {
-        Object value = super.getField(fieldName);
-        if (value instanceof LazyValue) {
-            return ((LazyValue) value).getFieldAsUtf8(fieldName);
-        } else {
-            throw new IllegalStateException("Field " + fieldName + " has already been decoded:" + value);
-        }
-    }
-
     public static final class RawField {
 
         private final boolean needXmlEscape;
@@ -290,11 +265,6 @@ public class FastHit extends Hit {
         public byte [] getUtf8() { return contents; }
         public boolean needXmlEscape() { return needXmlEscape; }
 
-    }
-
-    private static abstract class LazyValue {
-        abstract Object getValue(String fieldName);
-        abstract RawField getFieldAsUtf8(String fieldName);
     }
 
 }
