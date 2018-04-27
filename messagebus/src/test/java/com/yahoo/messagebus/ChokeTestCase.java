@@ -10,11 +10,8 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import com.yahoo.net.HostName;
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.UnknownHostException;
@@ -36,7 +33,7 @@ public class ChokeTestCase {
     DestinationSession dstSession;
 
     @Before
-    public void setUp() throws ListenFailedException, UnknownHostException {
+    public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
                                    new RPCNetworkParams().setIdentity(new Identity("dst")).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));

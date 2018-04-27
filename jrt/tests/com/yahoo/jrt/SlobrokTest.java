@@ -11,9 +11,14 @@ import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.Mirror.Entry;
 import com.yahoo.jrt.slobrok.server.Slobrok;
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
-public class SlobrokTest extends junit.framework.TestCase {
+public class SlobrokTest {
 
     private static class SpecList extends ArrayList<Mirror.Entry> {
         public SpecList add(String name, String spec) {
@@ -32,10 +37,7 @@ public class SlobrokTest extends junit.framework.TestCase {
     String     mySpec   = null;
     Slobrok    slobrok;
 
-    public SlobrokTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         slobroks = new String[1];
@@ -49,6 +51,7 @@ public class SlobrokTest extends junit.framework.TestCase {
         mySpec = new Spec("localhost", acceptor.port()).toString();
     }
 
+    @After
     public void tearDown() {
         register.shutdown();
         mirror.shutdown();
@@ -99,6 +102,7 @@ public class SlobrokTest extends junit.framework.TestCase {
         }
     }
 
+    @org.junit.Test
     public void testSlobrok() {
         String wantName = "A/x/w";
         register.registerName(wantName);
@@ -232,4 +236,5 @@ public class SlobrokTest extends junit.framework.TestCase {
     public static void err(String msg) {
         System.err.println(msg);
     }
+
 }

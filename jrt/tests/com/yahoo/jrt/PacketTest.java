@@ -1,17 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.nio.ByteBuffer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-public class PacketTest extends junit.framework.TestCase {
+public class PacketTest {
 
-    public PacketTest(String name) {
-        super(name);
-    }
-
-
+    @org.junit.Test
     public void testRequestPacket() {
 
         Values params = new Values();
@@ -53,9 +50,8 @@ public class PacketTest extends junit.framework.TestCase {
         assertEquals(params2.get(0).asInt32(), 123);
     }
 
-
+    @org.junit.Test
     public void testReplyPacket() {
-
         Values ret = new Values();
         ret.add(new Int32Value(123));
 
@@ -90,9 +86,8 @@ public class PacketTest extends junit.framework.TestCase {
         assertEquals(ret2.get(0).asInt32(), 123);
     }
 
-
+    @org.junit.Test
     public void testErrorPacket() {
-
         String errStr = "NSM";
         Packet packet =
             new ErrorPacket(0, 42, ErrorCode.NO_SUCH_METHOD, errStr);
@@ -126,4 +121,5 @@ public class PacketTest extends junit.framework.TestCase {
                      ((ErrorPacket)packet2).errorCode());
         assertEquals(errStr, ((ErrorPacket)packet2).errorMessage());
     }
+
 }

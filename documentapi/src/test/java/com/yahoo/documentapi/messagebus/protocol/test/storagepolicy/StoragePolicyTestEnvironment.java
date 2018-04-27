@@ -5,7 +5,14 @@ import com.yahoo.collections.Pair;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy;
+import com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RoutingPolicyFactory;
+import com.yahoo.documentapi.messagebus.protocol.StoragePolicy;
+import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
 import com.yahoo.documentapi.messagebus.protocol.test.PolicyTestFrame;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Message;
@@ -16,18 +23,29 @@ import com.yahoo.messagebus.routing.RoutingNode;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.RandomGen;
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
-public abstract class StoragePolicyTestEnvironment extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+public abstract class StoragePolicyTestEnvironment {
+
     protected StoragePolicyTestFactory policyFactory;
     protected PolicyTestFrame frame;
     private Set<Integer> nodes;
     protected static int[] bucketOneNodePreference = new int[]{ 3, 5, 7, 6, 8, 0, 9, 2, 1, 4 };
     protected boolean debug = true;
 
-    @Override
+    @Before
     public void setUp() throws Exception {
         DocumentTypeManager manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer.configure(manager, "file:./test/cfg/testdoc.cfg");
@@ -40,7 +58,7 @@ public abstract class StoragePolicyTestEnvironment extends TestCase {
         frame.setHop(new HopSpec("test", "[storage:cluster=foo]"));
     }
 
-    @Override
+    @After
     public void tearDown() {
         frame.destroy();
     }
@@ -66,6 +84,7 @@ public abstract class StoragePolicyTestEnvironment extends TestCase {
         cluster = cluster.substring(cluster.indexOf('.') + 1);
         return new Pair<>(cluster, distributor);
     }
+
     protected static Pair<String, Integer> getAddress(RoutingNode node) {
         Pair<String, String> pair = extractClusterAndIndexFromPattern(node.getRoute().getHop(0).toString());
         return new Pair<>(pair.getFirst(), Integer.valueOf(pair.getSecond()));

@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.util.Arrays;
 
+public class Test {
 
-public class Test extends junit.framework.TestCase {
-
-    public Test(String name) { super(name); }
+    @org.junit.Test
     public void testNothing() {}
 
     // www.random.org [2000, 9999]
@@ -233,4 +231,5 @@ public class Test extends junit.framework.TestCase {
         }
         return true;
     }
+
 }

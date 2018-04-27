@@ -14,24 +14,31 @@ import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
 import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class SendProxyTestCase extends TestCase {
+public class SendProxyTestCase {
 
     Slobrok slobrok;
     TestServer srcServer, dstServer;
     SourceSession srcSession;
     DestinationSession dstSession;
 
-    @Override
-    public void setUp() throws UnknownHostException, ListenFailedException {
+    @Before
+    public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
                                    new RPCNetworkParams().setIdentity(new Identity("dst")).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
@@ -43,7 +50,7 @@ public class SendProxyTestCase extends TestCase {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @Override
+    @After
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -52,6 +59,7 @@ public class SendProxyTestCase extends TestCase {
         srcServer.destroy();
     }
 
+    @Test
     public void testTraceByLogLevel() {
         Logger log = Logger.getLogger(SendProxy.class.getName());
         LogHandler logHandler = new LogHandler();
@@ -166,4 +174,5 @@ public class SendProxyTestCase extends TestCase {
             // empty
         }
     }
+
 }

@@ -8,12 +8,22 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleReply;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 
-public class RoutableTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
-    public void testMessageContext() throws ListenFailedException, UnknownHostException {
+public class RoutableTestCase {
+
+    private final double delta = 0.00000001;
+
+    @Test
+    public void testMessageContext() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         TestServer srcServer = new TestServer("src", null, slobrok, null);
         TestServer dstServer = new TestServer("dst", null, slobrok, null);
@@ -43,6 +53,7 @@ public class RoutableTestCase extends junit.framework.TestCase {
         slobrok.stop();
     }
 
+    @Test
     public void testMessageSwapState() {
         Message foo = new SimpleMessage("foo");
         Route fooRoute = Route.parse("foo");
@@ -68,6 +79,7 @@ public class RoutableTestCase extends junit.framework.TestCase {
         assertEquals(2, bar.getTimeRemaining());
     }
 
+    @Test
     public void testReplySwapState() {
         Reply foo = new SimpleReply("foo");
         Message fooMsg = new SimpleMessage("foo");
@@ -85,12 +97,13 @@ public class RoutableTestCase extends junit.framework.TestCase {
         foo.swapState(bar);
         assertEquals(barMsg, foo.getMessage());
         assertEquals(fooMsg, bar.getMessage());
-        assertEquals(2.0, foo.getRetryDelay());
-        assertEquals(1.0, bar.getRetryDelay());
+        assertEquals(2.0, foo.getRetryDelay(), delta);
+        assertEquals(1.0, bar.getRetryDelay(), delta);
         assertEquals(1, foo.getNumErrors());
         assertEquals(2, bar.getNumErrors());
     }
 
+    @Test
     public void testMessageDiscard() {
         Receptor handler = new Receptor();
         Message msg = new SimpleMessage("foo");
@@ -100,6 +113,7 @@ public class RoutableTestCase extends junit.framework.TestCase {
         assertNull(handler.getReply(0));
     }
 
+    @Test
     public void testReplyDiscard() {
         Receptor handler = new Receptor();
         Message msg = new SimpleMessage("foo");
@@ -111,4 +125,5 @@ public class RoutableTestCase extends junit.framework.TestCase {
 
         assertNull(handler.getReply(0));
     }
+
 }

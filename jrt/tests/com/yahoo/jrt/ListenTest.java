@@ -1,23 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import org.junit.After;
+import org.junit.Before;
 
-public class ListenTest extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class ListenTest {
 
     Supervisor server;
 
-    public ListenTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() {
         server = new Supervisor(new Transport());
     }
 
+    @After
     public void tearDown() {
         server.transport().shutdown().join();
     }
 
+    @org.junit.Test
     public void testListen() {
         try {
             Acceptor a = server.listen(new Spec(Test.PORT));
@@ -61,6 +65,7 @@ public class ListenTest extends junit.framework.TestCase {
         }
     }
 
+    @org.junit.Test
     public void testBogusListen() {
         try {
             Acceptor a = server.listen(new Spec("bogus"));
@@ -81,6 +86,7 @@ public class ListenTest extends junit.framework.TestCase {
         }
     }
 
+    @org.junit.Test
     public void testListenAnyPort() {
         try {
             Acceptor a = server.listen(new Spec("tcp/0"));
@@ -95,4 +101,5 @@ public class ListenTest extends junit.framework.TestCase {
             assertTrue(false);
         }
     }
+
 }

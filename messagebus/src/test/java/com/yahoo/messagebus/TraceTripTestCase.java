@@ -8,25 +8,27 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertTrue;
+
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class TraceTripTestCase extends junit.framework.TestCase {
+public class TraceTripTestCase {
 
     Slobrok slobrok;
     TestServer src;
     TestServer pxy;
     TestServer dst;
 
-    public TraceTripTestCase(String message) {
-        super(message);
-    }
-
-    public void setUp() throws ListenFailedException, UnknownHostException {
+    @Before
+    public void setUp() throws ListenFailedException {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME)
                                  .addHop("pxy", "test/pxy/session", Arrays.asList("test/pxy/session"))
                                  .addHop("dst", "test/dst/session", Arrays.asList("test/dst/session"))
@@ -38,6 +40,7 @@ public class TraceTripTestCase extends junit.framework.TestCase {
         dst = new TestServer("test/dst", table, slobrok, null);
     }
 
+    @After
     public void tearDown() {
         dst.destroy();
         pxy.destroy();
@@ -45,6 +48,7 @@ public class TraceTripTestCase extends junit.framework.TestCase {
         slobrok.stop();
     }
 
+    @Test
     public void testTrip() {
         Receptor src_rr = new Receptor();
         SourceSession src_s = src.mb.createSourceSession(src_rr);
@@ -113,4 +117,5 @@ public class TraceTripTestCase extends junit.framework.TestCase {
             session.reply(reply);
         }
     }
+
 }

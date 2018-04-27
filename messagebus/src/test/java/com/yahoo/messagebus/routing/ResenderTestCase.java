@@ -3,27 +3,36 @@ package com.yahoo.messagebus.routing;
 
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.DestinationSessionParams;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.net.UnknownHostException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class ResenderTestCase extends junit.framework.TestCase {
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
+public class ResenderTestCase {
 
     Slobrok slobrok;
     TestServer srcServer, dstServer;
@@ -31,8 +40,8 @@ public class ResenderTestCase extends junit.framework.TestCase {
     DestinationSession dstSession;
     RetryTransientErrorsPolicy retryPolicy;
 
-    @Override
-    public void setUp() throws ListenFailedException, UnknownHostException {
+    @Before
+    public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
                                    new RPCNetworkParams().setIdentity(new Identity("dst")).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
@@ -46,7 +55,7 @@ public class ResenderTestCase extends junit.framework.TestCase {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @Override
+    @After
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -55,12 +64,7 @@ public class ResenderTestCase extends junit.framework.TestCase {
         srcServer.destroy();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
+    @Test
     public void testRetryTag() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
         Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
@@ -79,6 +83,7 @@ public class ResenderTestCase extends junit.framework.TestCase {
         System.out.println(reply.getTrace());
     }
 
+    @Test
     public void testRetryEnabledTag() {
         Message msg = createMessage("msg");
         msg.setRetryEnabled(false);
@@ -93,6 +98,7 @@ public class ResenderTestCase extends junit.framework.TestCase {
         System.out.println(reply.getTrace());
     }
 
+    @Test
     public void testTransientError() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
         Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
@@ -106,6 +112,7 @@ public class ResenderTestCase extends junit.framework.TestCase {
         assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
     }
 
+    @Test
     public void testFatalError() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
         Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
@@ -117,6 +124,7 @@ public class ResenderTestCase extends junit.framework.TestCase {
         assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
     }
 
+    @Test
     public void testDisableRetry() {
         retryPolicy.setEnabled(false);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
@@ -130,6 +138,7 @@ public class ResenderTestCase extends junit.framework.TestCase {
         assertNull(((Receptor)dstSession.getMessageHandler()).getMessage(0));
     }
 
+    @Test
     public void testRetryDelay() {
         retryPolicy.setBaseDelay(0.01);
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
@@ -153,6 +162,7 @@ public class ResenderTestCase extends junit.framework.TestCase {
         assertTrue(trace.contains("retry 5 in 0.05"));
     }
 
+    @Test
     public void testRequestRetryDelay() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
         Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
@@ -176,12 +186,6 @@ public class ResenderTestCase extends junit.framework.TestCase {
         assertTrue(trace.contains("retry 5 in 0.08"));
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
     private static Message createMessage(String msg) {
         SimpleMessage ret = new SimpleMessage(msg);
         ret.getTrace().setLevel(9);
@@ -197,4 +201,5 @@ public class ResenderTestCase extends junit.framework.TestCase {
         reply.setRetryDelay(retryDelay);
         dstSession.reply(reply);
     }
+
 }

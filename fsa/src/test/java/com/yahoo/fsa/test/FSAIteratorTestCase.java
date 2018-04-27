@@ -2,15 +2,21 @@
 package com.yahoo.fsa.test;
 
 import com.yahoo.fsa.FSA;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author geirst
  */
-public class FSAIteratorTestCase extends junit.framework.TestCase {
+public class FSAIteratorTestCase {
 
     private FSA fsa;
 
@@ -18,11 +24,8 @@ public class FSAIteratorTestCase extends junit.framework.TestCase {
 
     private List<String> expected;
 
-    public FSAIteratorTestCase(String name) {
-        super(name);
-    }
-
-    protected void setUp() {
+    @Before
+    public void setUp() {
         fsa = new FSA("src/test/fsa/test-iterator.fsa");
         state = fsa.getState();
 
@@ -59,30 +62,36 @@ public class FSAIteratorTestCase extends junit.framework.TestCase {
         assertTrue(beginIdx == endIdx);
     }
 
+    @Test
     public void testIterator() {
         checkIterator(0, expected.size(), "");
     }
 
+    @Test
     public void testIteratorSingle() {
         state.delta("dach");
         checkIterator(6, 7, "dach");
     }
 
+    @Test
     public void testIteratorSubset() {
         state.delta("abd");
         checkIterator(3, 6, "abd");
     }
 
+    @Test
     public void testIteratorFinalState() {
         state.delta("dacia");
         checkIterator(7, 10, "dacia");
     }
 
+    @Test
     public void testIteratorFinalStateOnly() {
         state.delta("dachs");
         checkIterator(6, 7, "dachs");
     }
 
+    @Test
     public void testIteratorEmpty1() {
         state.delta("b");
         java.util.Iterator i = fsa.iterator(state);
@@ -95,6 +104,7 @@ public class FSAIteratorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testIteratorEmpty2() {
         state.delta("daciac");
         java.util.Iterator i = fsa.iterator(state);
@@ -107,6 +117,7 @@ public class FSAIteratorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testIteratorRemove() {
         java.util.Iterator i = fsa.iterator(state);
         try {
@@ -116,4 +127,5 @@ public class FSAIteratorTestCase extends junit.framework.TestCase {
             assertTrue(true);
         }
     }
+
 }

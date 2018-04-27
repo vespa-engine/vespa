@@ -2,13 +2,20 @@
 package com.yahoo.fsa.test;
 
 import com.yahoo.fsa.FSA;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.Iterator;
 import java.nio.charset.Charset;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author geirst
  */
-public class UTF8TestCase extends junit.framework.TestCase {
+public class UTF8TestCase {
 
     private Charset charset = Charset.forName("utf-8");
     private FSA fsa;
@@ -27,11 +34,8 @@ public class UTF8TestCase extends junit.framework.TestCase {
         return retval;
     }
 
-    public UTF8TestCase(String name) {
-        super(name);
-    }
-
-    protected void setUp() {
+    @Before
+    public void setUp() {
         fsa = new FSA("src/test/fsa/utf8.fsa"); // fsa with one word (6 code points, 18 bytes)
         state = fsa.getState();
         int pbuf[] = {0xe0,0xa4,0xb9};
@@ -43,11 +47,13 @@ public class UTF8TestCase extends junit.framework.TestCase {
         word = prefix + suffix;
     }
 
+    @Test
     public void testStringDelta() {
         state.delta(word);
         assertTrue(state.isFinal());
     }
 
+    @Test
     public void testCharDelta() {
         assertEquals(6, word.length());
         for (int i = 0; i < word.length(); ++i) {
@@ -57,6 +63,7 @@ public class UTF8TestCase extends junit.framework.TestCase {
         assertTrue(state.isFinal());
     }
 
+    @Test
     public void testByteDelta() {
         FSA.State state = fsa.getState();
         assertEquals(3, prefixBuf.length);
@@ -72,6 +79,7 @@ public class UTF8TestCase extends junit.framework.TestCase {
         assertTrue(state.isFinal());
     }
 
+    @Test
     public void testIteratorAtStart() {
         Iterator<FSA.Iterator.Item> itr = fsa.iterator(state);
         FSA.Iterator.Item item = itr.next();
@@ -79,6 +87,7 @@ public class UTF8TestCase extends junit.framework.TestCase {
         assertFalse(itr.hasNext());
     }
 
+    @Test
     public void testIteratorWithPrefix() {
         state.delta(prefix);
         Iterator<FSA.Iterator.Item> itr = fsa.iterator(state);
@@ -87,6 +96,7 @@ public class UTF8TestCase extends junit.framework.TestCase {
         assertFalse(itr.hasNext());
     }
 
+    @Test
     public void testIteratorWithCompleteWord() {
         state.delta(word);
         Iterator<FSA.Iterator.Item> itr = fsa.iterator(state);
@@ -94,4 +104,5 @@ public class UTF8TestCase extends junit.framework.TestCase {
         assertEquals("", item.getString());
         assertFalse(itr.hasNext());
     }
+
 }

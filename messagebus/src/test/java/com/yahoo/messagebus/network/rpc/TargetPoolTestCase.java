@@ -7,28 +7,34 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.concurrent.Timer;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class TargetPoolTestCase extends junit.framework.TestCase {
+public class TargetPoolTestCase {
 
     private Slobrok slobrok;
     private List<TestServer> servers;
     private Supervisor orb;
 
-    @Override
+    @Before
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         servers = new ArrayList<>();
         orb = new Supervisor(new Transport());
     }
 
-    @Override
+    @After
     public void tearDown() {
         slobrok.stop();
         for (TestServer server : servers) {
@@ -37,6 +43,7 @@ public class TargetPoolTestCase extends junit.framework.TestCase {
         orb.transport().shutdown().join();
     }
 
+    @Test
     public void testConnectionExpire() throws ListenFailedException, UnknownHostException {
         // Necessary setup to be able to resolve targets.
         RPCServiceAddress adr1 = registerServer();
@@ -96,7 +103,7 @@ public class TargetPoolTestCase extends junit.framework.TestCase {
         assertEquals(0, pool.size());
     }
 
-    private RPCServiceAddress registerServer() throws ListenFailedException, UnknownHostException {
+    private RPCServiceAddress registerServer() {
         servers.add(new TestServer("srv" + servers.size(), null, slobrok, null));
         return new RPCServiceAddress("foo/bar", servers.get(servers.size() - 1).mb.getConnectionSpec());
     }
@@ -109,4 +116,5 @@ public class TargetPoolTestCase extends junit.framework.TestCase {
             return millis;
         }
     }
+
 }

@@ -11,24 +11,33 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentReply;
 import com.yahoo.documentapi.messagebus.protocol.RoutableFactories50;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.DestinationSessionParams;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.Receptor;
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class RoutableFactoryTestCase extends TestCase {
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
+public class RoutableFactoryTestCase {
 
     private Slobrok slobrok;
     private DocumentProtocol srcProtocol, dstProtocol;
@@ -36,7 +45,7 @@ public class RoutableFactoryTestCase extends TestCase {
     private SourceSession srcSession;
     private DestinationSession dstSession;
 
-    @Override
+    @Before
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         DocumentTypeManager docMan = new DocumentTypeManager();
@@ -51,7 +60,7 @@ public class RoutableFactoryTestCase extends TestCase {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @Override
+    @After
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -60,12 +69,7 @@ public class RoutableFactoryTestCase extends TestCase {
         srcServer.destroy();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
+    @Test
     public void testFactory() {
         Route route = Route.parse("dst/session");
 
@@ -126,12 +130,6 @@ public class RoutableFactoryTestCase extends TestCase {
         assertFalse(reply.hasErrors());
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
     private static class MyMessageFactory extends RoutableFactories50.DocumentMessageFactory {
 
         @Override
@@ -185,4 +183,5 @@ public class RoutableFactoryTestCase extends TestCase {
             super(TYPE);
         }
     }
+
 }

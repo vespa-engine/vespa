@@ -4,12 +4,12 @@ package com.yahoo.jrt;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class ValuesTest extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-    public ValuesTest(String name) {
-        super(name);
-    }
+public class ValuesTest {
 
+    @org.junit.Test
     public void testEmpty() {
         Values src = new Values();
         assertEquals(src.bytes(), 4);
@@ -30,6 +30,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertEquals(v.bytes(), bytes);
     }
 
+    @org.junit.Test
     public void testInt8() {
         int byteSize = 4 + 1 + 1;
         Values src = new Values();
@@ -47,6 +48,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertEquals(dst.get(0).asInt8(), (byte)1);
     }
 
+    @org.junit.Test
     public void testInt8Array() {
         int byteSize = 4 + 1 + 4 + 4;
         Values src = new Values();
@@ -65,6 +67,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(dst.get(0).asInt8Array(), val));
     }
 
+    @org.junit.Test
     public void testInt16() {
         int byteSize = 4 + 1 + 2;
         Values src = new Values();
@@ -82,6 +85,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertEquals(dst.get(0).asInt16(), (short)2);
     }
 
+    @org.junit.Test
     public void testInt16Array() {
         int byteSize = 4 + 1 + 4 + 4 * 2;
         Values src = new Values();
@@ -100,6 +104,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(dst.get(0).asInt16Array(), val));
     }
 
+    @org.junit.Test
     public void testInt32() {
         int byteSize = 4 + 1 + 4;
         Values src = new Values();
@@ -117,6 +122,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertEquals(dst.get(0).asInt32(), 4);
     }
 
+    @org.junit.Test
     public void testInt32Array() {
         int byteSize = 4 + 1 + 4 + 4 * 4;
         Values src = new Values();
@@ -135,6 +141,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(dst.get(0).asInt32Array(), val));
     }
 
+    @org.junit.Test
     public void testInt64() {
         int byteSize = 4 + 1 + 8;
         Values src = new Values();
@@ -152,6 +159,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertEquals(dst.get(0).asInt64(), 8);
     }
 
+    @org.junit.Test
     public void testInt64Array() {
         int byteSize = 4 + 1 + 4 + 4 * 8;
         Values src = new Values();
@@ -170,6 +178,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(dst.get(0).asInt64Array(), val));
     }
 
+    @org.junit.Test
     public void testFloat() {
         int byteSize = 4 + 1 + 4;
         Values src = new Values();
@@ -187,6 +196,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(dst.get(0).asFloat() == (float)2.5);
     }
 
+    @org.junit.Test
     public void testFloatArray() {
         int byteSize = 4 + 1 + 4 + 4 * 4;
         Values src = new Values();
@@ -205,6 +215,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(dst.get(0).asFloatArray(), val));
     }
 
+    @org.junit.Test
     public void testDouble() {
         int byteSize = 4 + 1 + 8;
         Values src = new Values();
@@ -222,6 +233,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(dst.get(0).asDouble() == 3.75);
     }
 
+    @org.junit.Test
     public void testDoubleArray() {
         int byteSize = 4 + 1 + 4 + 4 * 8;
         Values src = new Values();
@@ -240,6 +252,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(dst.get(0).asDoubleArray(), val));
     }
 
+    @org.junit.Test
     public void testData() {
         int byteSize = 4 + 1 + 4 + 4;
         Values src = new Values();
@@ -258,6 +271,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(dst.get(0).asData(), val));
     }
 
+    @org.junit.Test
     public void testDataArray() {
         int byteSize = 4 + 1 + 4 + 4 * (4 + 4);
         Values src = new Values();
@@ -282,6 +296,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(dst.get(0).asDataArray()[3], val[3]));
     }
 
+    @org.junit.Test
     public void testString1() {
         int byteSize = 4 + 1 + 4 + 4;
         Values src = new Values();
@@ -300,6 +315,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(dst.get(0).asString().equals("test"));
     }
 
+    @org.junit.Test
     public void testString2() {
         int byteSize = 4 + 1 + 4 + 7;
         Values src = new Values();
@@ -328,6 +344,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(dst.get(0).asString().equals("H\u00E5vard"));
     }
 
+    @org.junit.Test
     public void testStringArray() {
         int byteSize = 4 + 1 + 4 + 4 * 4 + 3 + 3 + 5 + 4;
         Values src = new Values();
@@ -349,6 +366,7 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(dst.get(0).asStringArray()[3].equals("four"));
     }
 
+    @org.junit.Test
     public void testAllValues() {
         int byteSize =
             4 + 16                       // typestring
@@ -432,4 +450,5 @@ public class ValuesTest extends junit.framework.TestCase {
         assertTrue(dst.get(15).asStringArray()[2].equals("three"));
         assertTrue(dst.get(15).asStringArray()[3].equals("four"));
     }
+
 }

@@ -21,14 +21,19 @@ import com.yahoo.messagebus.test.SimpleReply;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * This is a utility class to allow easier policy test cases. The most important reason to use this is to make sure that
  * each test uses a "clean" mbus and slobrok instance.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 @SuppressWarnings("deprecation")
-public class PolicyTestFrame extends junit.framework.Assert {
+public class PolicyTestFrame {
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private String identity;
@@ -383,4 +388,5 @@ public class PolicyTestFrame extends junit.framework.Assert {
             return ret;
         }
     }
+
 }

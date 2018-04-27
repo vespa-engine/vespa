@@ -5,26 +5,32 @@ import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
-import com.yahoo.messagebus.test.*;
+import com.yahoo.messagebus.test.QueueAdapter;
+import com.yahoo.messagebus.test.Receptor;
+import com.yahoo.messagebus.test.SimpleMessage;
+import com.yahoo.messagebus.test.SimpleProtocol;
+import com.yahoo.messagebus.test.SimpleReply;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.Arrays;
 
-/**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- */
-public class ThrottlerTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @author Simon Thoresen
+ */
+public class ThrottlerTestCase {
 
     Slobrok slobrok;
     TestServer src, dst;
 
-    public void setUp() throws ListenFailedException, UnknownHostException {
+    @Before
+    public void setUp() throws ListenFailedException {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME);
         table.addHop("dst", "test/dst/session", Arrays.asList("test/dst/session"));
         table.addRoute("test", Arrays.asList("dst"));
@@ -33,18 +39,14 @@ public class ThrottlerTestCase extends junit.framework.TestCase {
         dst = new TestServer("test/dst", table, slobrok, null);
     }
 
+    @After
     public void tearDown() {
         dst.destroy();
         src.destroy();
         slobrok.stop();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
+    @Test
     public void testMaxCount() {
         // Prepare a source session with throttle enabled.
         SourceSessionParams params = new SourceSessionParams().setTimeout(600.0);
@@ -85,6 +87,7 @@ public class ThrottlerTestCase extends junit.framework.TestCase {
         dst_s.destroy();
     }
 
+    @Test
     public void testMaxSize() {
         // Prepare a source session with throttle enabled.
         SourceSessionParams params = new SourceSessionParams().setTimeout(600.0);
@@ -125,6 +128,7 @@ public class ThrottlerTestCase extends junit.framework.TestCase {
         dst_s.destroy();
     }
 
+    @Test
     public void testDynamicWindowSize() {
         CustomTimer timer = new CustomTimer();
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
@@ -146,8 +150,9 @@ public class ThrottlerTestCase extends junit.framework.TestCase {
 
         windowSize = getWindowSize(policy, timer, 100);
         assertTrue(windowSize >= 90 && windowSize <= 115);
-  }
+    }
 
+    @Test
     public void testIdleTimePeriod() {
         CustomTimer timer = new CustomTimer();
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
@@ -173,6 +178,7 @@ public class ThrottlerTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testMinWindowSize() {
         CustomTimer timer = new CustomTimer();
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
@@ -185,6 +191,7 @@ public class ThrottlerTestCase extends junit.framework.TestCase {
         assertTrue(windowSize >= 150 && windowSize <= 210);
     }
 
+    @Test
     public void testMaxWindowSize() {
         CustomTimer timer = new CustomTimer();
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
@@ -196,13 +203,6 @@ public class ThrottlerTestCase extends junit.framework.TestCase {
         double windowSize = getWindowSize(policy, timer, 100);
         assertTrue(windowSize >= 40 && windowSize <= 50);
     }
-
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
 
     private int getWindowSize(DynamicThrottlePolicy policy, CustomTimer timer, int maxPending) {
         Message msg = new SimpleMessage("foo");

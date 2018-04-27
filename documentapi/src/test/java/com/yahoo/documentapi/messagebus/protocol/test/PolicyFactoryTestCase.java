@@ -16,25 +16,24 @@ import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.test.Receptor;
-import com.yahoo.text.Utf8Array;
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class PolicyFactoryTestCase extends TestCase {
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
+public class PolicyFactoryTestCase {
 
     private Slobrok slobrok;
     private TestServer srv;
     private SourceSession src;
 
-    @Override
+    @Before
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         srv = new TestServer(new MessageBusParams().addProtocol(new DocumentProtocol(new DocumentTypeManager())),
@@ -42,19 +41,14 @@ public class PolicyFactoryTestCase extends TestCase {
         src = srv.mb.createSourceSession(new SourceSessionParams().setReplyHandler(new Receptor()));
     }
 
-    @Override
+    @After
     public void tearDown() {
         slobrok.stop();
         src.destroy();
         srv.destroy();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
+    @Test
     public void testFactory() {
         Route route = Route.parse("[MyPolicy]");
         assertTrue(src.send(createMessage(), route).isAccepted());
@@ -75,12 +69,6 @@ public class PolicyFactoryTestCase extends TestCase {
         assertEquals(1, reply.getNumErrors());
         assertEquals(DocumentProtocol.ERROR_POLICY_FAILURE, reply.getError(0).getCode());
     }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
 
     private static Message createMessage() {
         Message msg = new RemoveDocumentMessage(new DocumentId("doc:scheme:"));
@@ -121,4 +109,5 @@ public class PolicyFactoryTestCase extends TestCase {
             return null;
         }
     }
+
 }

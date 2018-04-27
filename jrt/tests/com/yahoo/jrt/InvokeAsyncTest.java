@@ -2,7 +2,14 @@
 package com.yahoo.jrt;
 
 
-public class InvokeAsyncTest extends junit.framework.TestCase {
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class InvokeAsyncTest {
 
     Supervisor   server;
     Acceptor     acceptor;
@@ -10,10 +17,7 @@ public class InvokeAsyncTest extends junit.framework.TestCase {
     Target       target;
     Test.Barrier barrier;
 
-    public InvokeAsyncTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -27,6 +31,7 @@ public class InvokeAsyncTest extends junit.framework.TestCase {
         barrier = new Test.Barrier();
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -42,8 +47,8 @@ public class InvokeAsyncTest extends junit.framework.TestCase {
                                                .get(1).asString()));
     }
 
+    @org.junit.Test
     public void testAsync() {
-
         Request req = new Request("concat");
         req.parameters().add(new StringValue("abc"));
         req.parameters().add(new StringValue("def"));
@@ -59,4 +64,5 @@ public class InvokeAsyncTest extends junit.framework.TestCase {
         assertEquals(1, req.returnValues().size());
         assertEquals("abcdef", req.returnValues().get(0).asString());
     }
+
 }
