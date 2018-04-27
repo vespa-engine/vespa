@@ -885,8 +885,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
         Inspector jobs = SlimeUtils.jsonToSlime(response.getBody()).get();
-        assertTrue("Response contains staging-test", jobs.field("staging-test").valid());
-        assertEquals("Response contains only this item", 1, jobs.children());
+        assertEquals("Response contains no items, as all jobs are triggered", 0, jobs.children());
 
     }
 

@@ -2,17 +2,14 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -94,7 +91,10 @@ public class DeploymentJobs {
 
     /** Returns whether this has some job status which is not a success */
     public boolean hasFailures() {
-        return ! JobList.from(status.values()).failing().isEmpty();
+        return ! JobList.from(status.values())
+                        .failing()
+                        .not().failingBecause(JobError.outOfCapacity)
+                        .isEmpty();
     }
 
     /** Returns the JobStatus of the given JobType, or empty. */
