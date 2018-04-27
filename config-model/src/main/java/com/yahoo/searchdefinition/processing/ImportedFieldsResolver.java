@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -9,7 +10,6 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporaryImportedField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -60,16 +60,19 @@ public class ImportedFieldsResolver extends Processor {
         Search targetSearch = reference.targetSearch();
         ImmutableSDField targetField = targetSearch.getField(targetFieldName);
         if (targetField == null) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) +
-                                ": Not found");
-        } else if (!targetField.doesAttributing()) {
-            if (validate)
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
+        }
+        if (validate) {
+            if (!targetField.doesAttributing()) {
                 fail(importedField, targetFieldAsString(targetFieldName, reference) +
-                                    ": Is not an attribute field. Only attribute fields supported");
-        } else if (targetField.doesIndexing()) {
-            if (validate)
+                        ": Is not an attribute field. Only attribute fields supported");
+            } else if (targetField.doesIndexing()) {
                 fail(importedField, targetFieldAsString(targetFieldName, reference) +
-                                    ": Is an index field. Not supported");
+                        ": Is an index field. Not supported");
+            } else if (targetField.getDataType().equals(DataType.PREDICATE)) {
+                fail(importedField, targetFieldAsString(targetFieldName, reference) +
+                        ": Is of type 'predicate'. Not supported");
+            }
         }
         return targetField;
     }

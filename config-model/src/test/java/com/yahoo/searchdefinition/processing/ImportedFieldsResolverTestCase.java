@@ -26,7 +26,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -102,6 +101,15 @@ public class ImportedFieldsResolverTestCase {
         new SearchModel()
                 .addImportedField("my_attribute_and_index", "ref", "attribute_and_index")
                 .resolve();
+    }
+
+    @Test
+    public void resolver_fails_if_imported_field_is_of_type_predicate() {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(
+                "For search 'child', import field 'my_predicate_field': " +
+                        "Field 'predicate_field' via reference field 'ref': Is of type 'predicate'. Not supported");
+        new SearchModel().addImportedField("my_predicate_field", "ref", "predicate_field").resolve();
     }
 
     static class SearchModel {
