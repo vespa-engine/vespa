@@ -3,7 +3,6 @@ package com.yahoo.vespa.athenz.identity;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
@@ -27,7 +26,7 @@ import java.util.logging.Logger;
  * @author mortent
  * @author bjorncs
  */
-public class SiaIdentityProvider extends AbstractComponent implements AthenzIdentityProvider {
+public class SiaIdentityProvider extends AbstractComponent implements ServiceIdentityProvider {
 
     private static final Logger log = Logger.getLogger(SiaIdentityProvider.class.getName());
 
@@ -83,13 +82,8 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
     }
 
     @Override
-    public String getDomain() {
-        return service.getDomain().getName();
-    }
-
-    @Override
-    public String getService() {
-        return service.getName();
+    public AthenzService identity() {
+        return service;
     }
 
     @Override

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.google.inject.Inject;
@@ -8,8 +8,7 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
-import com.yahoo.vespa.athenz.tls.SslContextBuilder;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
@@ -22,13 +21,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
-
 /**
  * @author mortent
  * @author bjorncs
  */
-public final class AthenzIdentityProviderImpl extends AbstractComponent implements AthenzIdentityProvider {
+public final class AthenzIdentityProviderImpl extends AbstractComponent implements AthenzIdentityProvider, ServiceIdentityProvider {
 
     private static final Logger log = Logger.getLogger(AthenzIdentityProviderImpl.class.getName());
 
@@ -44,8 +41,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final AthenzCredentialsService athenzCredentialsService;
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
-    private final String domain;
-    private final String service;
+    private final com.yahoo.vespa.athenz.api.AthenzService identity;
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
@@ -54,7 +50,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
              new AthenzCredentialsService(config,
                                           new IdentityDocumentService(config.loadBalancerAddress()),
                                           new AthenzService(),
-                                          Clock.systemUTC()),
+                                          new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"))),
              new ScheduledThreadPoolExecutor(1),
              Clock.systemUTC());
     }
@@ -69,8 +65,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.athenzCredentialsService = athenzCredentialsService;
         this.scheduler = scheduler;
         this.clock = clock;
-        this.domain = config.domain();
-        this.service = config.service();
+        this.identity = new com.yahoo.vespa.athenz.api.AthenzService(config.domain(), config.service());
         registerInstance();
     }
 
@@ -85,21 +80,23 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
-    public String getDomain() {
-        return domain;
+    public com.yahoo.vespa.athenz.api.AthenzService identity() {
+        return identity;
     }
 
     @Override
-    public String getService() {
-        return service;
+    public String domain() {
+        return identity.getDomain().getName();
+    }
+
+    @Override
+    public String service() {
+        return identity.getName();
     }
 
     @Override
     public SSLContext getIdentitySslContext() {
-        return new SslContextBuilder()
-                .withKeyStore(credentials.getKeyPair().getPrivate(), credentials.getCertificate())
-                .withTrustStore(new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks")), JKS)
-                .build();
+        return credentials.getIdentitySslContext();
     }
 
     @Override
