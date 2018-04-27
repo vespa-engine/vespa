@@ -21,13 +21,14 @@ public class FastHit extends Hit {
 
     private static final GlobalId emptyGlobalId = new GlobalId(new byte[GlobalId.LENGTH]);
 
-    /** The global id of this document in the backend node which produced it */
-    private GlobalId globalId = emptyGlobalId;
+    /** The index of the content node this hit originated at */
+    private int distributionKey = 0;
 
+    /** The local identifier of the content store for this hit on the node it originated at */
     private int partId;
 
-    /** The index of the content node this hit originated at*/
-    private int distributionKey = 0;
+    /** The global id of this document in the backend node which produced it */
+    private GlobalId globalId = emptyGlobalId;
 
     /** Full information pointing to the location of further data for this hit. Lazily set */
     private URI indexUri = null;
@@ -198,20 +199,12 @@ public class FastHit extends Hit {
         return false;
     }
 
-    /**
-     * Only needed when fetching summaries in 2 phase.
-     *
-     * @return distribution key of node where the hit originated from
-     */
+    /** Returns the index of the node this hit originated at */
     public int getDistributionKey() {
         return distributionKey;
     }
 
-    /**
-     * Only needed when fetching summaries in 2 phase.
-     *
-     * @param distributionKey Of node where you find this hit.
-     */
+    /** Returns the index of the node this hit originated at */
     public void setDistributionKey(int distributionKey) {
         this.distributionKey = distributionKey;
     }
@@ -232,20 +225,6 @@ public class FastHit extends Hit {
         if (super.getField(fieldName) == null) {
             setField(fieldName, value);
         }
-    }
-
-    /**
-     * Set a field to behave like a string type summary field, not decoding raw
-     * data till actually used. Added to make testing lazy docsum functionality
-     * easier. This is not a method to be used for efficiency, as it causes
-     * object allocations.
-     *
-     * @param fieldName the name of the field to insert undecoded UTF-8 into
-     * @param value an array of valid UTF-8 data
-     */
-    @Beta
-    public void setLazyStringField(String fieldName, byte[] value) {
-        setField(fieldName, new LazyString(new StringField(fieldName), new StringValue(value)));
     }
 
     /**
@@ -316,27 +295,6 @@ public class FastHit extends Hit {
     private static abstract class LazyValue {
         abstract Object getValue(String fieldName);
         abstract RawField getFieldAsUtf8(String fieldName);
-    }
-
-    private static class LazyString extends LazyValue {
-
-        private final Inspector value;
-        private final DocsumField fieldType;
-
-        LazyString(DocsumField fieldType, Inspector value) {
-            assert(value.type() == Type.STRING);
-            this.value = value;
-            this.fieldType = fieldType;
-        }
-
-        Object getValue(String fieldName) {
-            return value.asString();
-        }
-
-        RawField getFieldAsUtf8(String fieldName) {
-            return new RawField(fieldType, value.asUtf8());
-        }
-
     }
 
 }
