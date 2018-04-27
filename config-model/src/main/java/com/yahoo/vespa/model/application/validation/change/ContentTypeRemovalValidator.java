@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Checks that this does not remove a data type in a cluster, at that causes deletion
+ * Checks that this does not remove a data type in a cluster, as that causes deletion
  * of all data of that type.
  *
  * @author bratseth
