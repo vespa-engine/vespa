@@ -19,37 +19,18 @@ import com.yahoo.data.access.simple.Value.StringValue;
  */
 public class FastHit extends Hit {
 
-    public static final String SUMMARY = "summary"; // TODO: Remove on Vespa 7
-
-    private static final long serialVersionUID = 298098891191029589L;
+    private static final GlobalId emptyGlobalId = new GlobalId(new byte[GlobalId.LENGTH]);
 
     /** The global id of this document in the backend node which produced it */
-    private GlobalId globalId = new GlobalId(new byte[GlobalId.LENGTH]);
+    private GlobalId globalId = emptyGlobalId;
 
-    /** Part ID */
     private int partId;
 
-    /** DistributionKey (needed to generate getDocsumPacket, for two-phase search) */
+    /** The index of the content node this hit originated at*/
     private int distributionKey = 0;
 
-    /** The index uri of this. Lazily set */
+    /** Full information pointing to the location of further data for this hit. Lazily set */
     private URI indexUri = null;
-
-    /**
-     * The number of least significant bits in the part id which specifies the
-     * row in the search cluster which produced this hit. The other bits
-     * specifies the column. 0 if not known.
-     */
-    private int rowBits = 0;
-
-    /**
-     * Whether or not to ignore the row bits. If this is set, FastSearcher is
-     * allowed to choose an appropriate row.
-     */
-    private boolean ignoreRowBits = false;
-
-    /** Whether to use the row number in the index uri, see FastSearcher for details */
-    private boolean useRowInIndexUri = true;
 
     private transient QueryPacketData queryPacketData = null;
     private transient CacheKey cacheKey = null;
@@ -70,8 +51,8 @@ public class FastHit extends Hit {
         super.setField("uri", uri); // TODO: Remove on Vespa 7
         setRelevance(new Relevance(relevance));
         setSource(source);
-        types().add(SUMMARY); // TODO: Remove on Vespa 7
-        setPartId(0, 0);
+        types().add("summary");
+        setPartId(0);
     }
 
     @Override
@@ -117,7 +98,7 @@ public class FastHit extends Hit {
         URI uri = super.getId();
         if (uri != null) return uri;
 
-        // TODO: Remove, this should be one of the last vestiges of URL field magic
+        // TODO: Remove on Vespa 7, this should be one of the last vestiges of URL field magic
         if (fields().containsKey("uri")) {
             // trigger decoding
             Object o = getField("uri");
@@ -137,11 +118,7 @@ public class FastHit extends Hit {
     public URI getIndexUri() {
         if (indexUri != null) return indexUri;
 
-        String rowString = "-";
-        if (useRowInIndexUri)
-            rowString = String.valueOf(getRow());
-
-        indexUri = new URI("index:" + getSourceNumber() + "/" + getColumn() + "/" + rowString + "/" + asHexString(getGlobalId()));
+        indexUri = new URI("index:" + getSourceNumber() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
         return indexUri;
     }
 
@@ -165,37 +142,8 @@ public class FastHit extends Hit {
      * highest row number are the row bits, the rest are column bits.
      *
      * @param partId  partition id
-     * @param rowBits number of bits to encode row number
      */
-    public void setPartId(int partId, int rowBits) {
-        this.partId = partId;
-        this.rowBits = rowBits;
-    }
-
-    /**
-     * Sets whether to use the row in the index uri. See FastSearcher for details.
-     */
-    public void setUseRowInIndexUri(boolean useRowInIndexUri) {
-        this.useRowInIndexUri = useRowInIndexUri;
-    }
-
-    /**
-     * Returns the column number where this hit originated, or partId if not known
-     */
-    public int getColumn() {
-        return partId >>> rowBits;
-    }
-
-    /**
-     *  Returns the row number where this hit originated, or 0 if not known
-     * */
-    public int getRow() {
-        if (rowBits == 0) {
-            return 0;
-        }
-
-        return partId & ((1 << rowBits) - 1);
-    }
+    public void setPartId(int partId) { this.partId = partId; }
 
     /**
      * <p>Returns a field value from this Hit. The value is either a stored value from the Document represented by
@@ -334,14 +282,6 @@ public class FastHit extends Hit {
 
     void setCacheKey(CacheKey cacheKey) {
         this.cacheKey = cacheKey;
-    }
-
-    public void setIgnoreRowBits(boolean ignoreRowBits) {
-        this.ignoreRowBits = ignoreRowBits;
-    }
-
-    public boolean shouldIgnoreRowBits() {
-        return ignoreRowBits;
     }
 
     public boolean fieldIsNotDecoded(String name) {

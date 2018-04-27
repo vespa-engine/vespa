@@ -12,6 +12,8 @@ import java.util.Arrays;
  * Implements an incredibly light-weight version of the document global id. There is a lot of functionality in the C++
  * version of this that is missing. However, this should be sufficient for now.
  *
+ * This is immutable (by contract - not enforcable due to exposing the raw byte array).
+ *
  * @author Simon Thoresen
  */
 public class GlobalId implements Comparable {
@@ -72,21 +74,19 @@ public class GlobalId implements Comparable {
 
     /**
      * Returns the raw byte array that constitutes this global id.
-     *
-     * @return The byte array.
+     * The returned value MUST NOT be modified.
      */
     public byte[] getRawId() {
         return raw;
     }
 
-    // Inherit doc from Object.
     @Override
     public int hashCode() {
         return Arrays.hashCode(raw);
     }
 
     public BucketId toBucketId() {
-        /**
+        /*
          * Explanation time: since Java was designed so mankind could suffer,
          * shift ops on bytes have an implicit int conversion with sign-extend.
          * When a byte is negative, you end up with an int/long with a 0xFFFFFF

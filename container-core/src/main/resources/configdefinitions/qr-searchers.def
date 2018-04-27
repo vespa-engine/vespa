@@ -80,9 +80,7 @@ searchcluster[].storagecluster.routespec string default=""
 searchcluster[].dispatcher[].host string
 searchcluster[].dispatcher[].port int
 
-## The number of least significant bits of the part id used to specify the
-## row number (the rest of the bits specifies the column). Don't touch
-## this unless you know why you are doing it.
+## Not used. TODO: Remove on Vespa 7
 searchcluster[].rowbits int default=0
 
 # Per dispatcher config-id might be nice to have, remove it until needed.

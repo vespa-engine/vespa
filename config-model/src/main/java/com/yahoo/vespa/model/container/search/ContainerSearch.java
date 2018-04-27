@@ -176,7 +176,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     		scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));
     		scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));
     		if (sys instanceof IndexedSearchCluster) {
-    			scB.rowbits(sys.getRowBits());
                 for (Dispatch tld: ((IndexedSearchCluster)sys).getTLDs()) {
                 	scB.dispatcher(new QrSearchersConfig.Searchcluster.Dispatcher.Builder().
                 			host(tld.getHostname()).

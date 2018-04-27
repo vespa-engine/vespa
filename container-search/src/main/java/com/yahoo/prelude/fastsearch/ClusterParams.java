@@ -10,32 +10,31 @@ import com.yahoo.container.search.LegacyEmulationConfig;
  * @author arnej27959
  */
 public class ClusterParams {
+
     public final int clusterNumber;
     public final String searcherName;
-    public final int rowBits;
     public final LegacyEmulationConfig emulation;
 
     /**
-     * for compatibility
-     **/
-    public ClusterParams(int number, String name, int rowbits) {
-        this(number, name, rowbits, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
+     * For compatibility
+     */
+    public ClusterParams(int number, String name) {
+        this(number, name, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
     }
 
     /**
-     * for testcases only
-     **/
+     * For testcases only
+     */
     public ClusterParams(String name) {
-        this(0, name, 0);
+        this(0, name);
     }
 
     /**
-     * make up full ClusterParams
-     **/
-    public ClusterParams(int number, String name, int rowbits, LegacyEmulationConfig cfg) {
+     * Make up full ClusterParams
+     */
+    public ClusterParams(int number, String name, LegacyEmulationConfig cfg) {
         this.clusterNumber = number;
         this.searcherName = name;
-        this.rowBits = rowbits;
         this.emulation = cfg;
     }
 
