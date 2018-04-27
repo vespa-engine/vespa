@@ -42,7 +42,12 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
-    public ZoneList controllerManaged() {
+    public ZoneList controllerUpgraded() {
+        return all();
+    }
+
+    @Override
+    public ZoneList reachable() {
         return all();
     }
 
