@@ -65,7 +65,7 @@ void SanityCheckedDeleteTest::delete_bucket_fails_when_provider_out_of_sync() {
     // Send a put to another bucket to serialize the operation (guaranteed
     // since we only have 1 thread and the delete always has max priority).
     c.sendPut(syncBucket, DocumentIndex(0), PutTimestamp(1001));
-    c.top.waitForMessages(1, MSG_WAIT_TIME);
+    c.top.waitForMessages(2, MSG_WAIT_TIME);
     // Should still be able to get identical bucket info for bucket.
     spi::BucketInfoResult infoResult(
             _node->getPersistenceProvider().getBucketInfo(spiBucket));
