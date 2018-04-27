@@ -69,8 +69,7 @@ class AthenzCredentialsService {
         return toAthenzCredentials(instanceIdentity, keyPair, document);
     }
 
-    AthenzCredentials updateCredentials(AthenzCredentials currentCredentials) {
-        SignedIdentityDocument document = currentCredentials.getIdentityDocument();
+    AthenzCredentials updateCredentials(SignedIdentityDocument document, SSLContext sslContext) {
         KeyPair newKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         Pkcs10Csr csr = createCSR(identityConfig.domain(),
                                   identityConfig.service(),
@@ -86,8 +85,7 @@ class AthenzCredentialsService {
                                                          document.providerUniqueId,
                                                          refreshInfo,
                                                          document.ztsEndpoint,
-                                                         currentCredentials.getCertificate(),
-                                                         currentCredentials.getKeyPair().getPrivate());
+                                                         sslContext);
         return toAthenzCredentials(instanceIdentity, newKeyPair, document);
     }
 

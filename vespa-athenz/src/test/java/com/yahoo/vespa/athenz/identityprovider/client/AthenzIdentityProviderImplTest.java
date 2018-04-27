@@ -70,8 +70,7 @@ public class AthenzIdentityProviderImplTest {
             }
         });
 
-        when(athenzService.sendInstanceRefreshRequest(anyString(), anyString(), anyString(),
-                                                      anyString(), any(), any(), any(), any()))
+        when(athenzService.sendInstanceRefreshRequest(anyString(), anyString(), anyString(), anyString(), any(), any(), any()))
                 .thenThrow(new RuntimeException("#1"))
                 .thenThrow(new RuntimeException("#2"))
                 .thenReturn(new InstanceIdentity(getCertificate(getExpirationSupplier(clock)), "TOKEN"));

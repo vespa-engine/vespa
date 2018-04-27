@@ -121,7 +121,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try {
             AthenzCredentials newCredentials = isExpired(credentials)
                     ? athenzCredentialsService.registerInstance()
-                    : athenzCredentialsService.updateCredentials(credentials);
+                    : athenzCredentialsService.updateCredentials(credentials.getIdentityDocument(), credentials.getIdentitySslContext());
             credentials = newCredentials;
         } catch (Throwable t) {
             log.log(LogLevel.WARNING, "Failed to update credentials: " + t.getMessage(), t);

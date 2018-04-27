@@ -7,7 +7,6 @@ import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -20,15 +19,6 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 /**
  * @author mortent
@@ -63,9 +53,8 @@ public class AthenzService {
                                                        String instanceId,
                                                        InstanceRefreshInformation instanceRefreshInformation,
                                                        URI ztsEndpoint,
-                                                       X509Certificate certicate,
-                                                       PrivateKey privateKey) {
-        try (CloseableHttpClient client = createHttpClientWithTlsAuth(certicate, privateKey, retryHandler)) {
+                                                       SSLContext sslContext) {
+        try (CloseableHttpClient client = createHttpClientWithTlsAuth(sslContext, retryHandler)) {
             URI uri = ztsEndpoint
                     .resolve(INSTANCE_API_PATH + '/')
                     .resolve(providerService + '/')
@@ -99,26 +88,11 @@ public class AthenzService {
         return new StringEntity(objectMapper.writeValueAsString(value), ContentType.APPLICATION_JSON);
     }
 
-    private static CloseableHttpClient createHttpClientWithTlsAuth(X509Certificate certificate,
-                                                                   PrivateKey privateKey,
+    private static CloseableHttpClient createHttpClientWithTlsAuth(SSLContext sslContext,
                                                                    HttpRequestRetryHandler retryHandler) {
-        try {
-            String dummyPassword = "athenz";
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(null);
-            keyStore.setKeyEntry("athenz", privateKey, dummyPassword.toCharArray(), new Certificate[]{certificate});
-            SSLContext sslContext = new SSLContextBuilder()
-                    .loadKeyMaterial(keyStore, dummyPassword.toCharArray())
-                    .build();
             return HttpClientBuilder.create()
                     .setRetryHandler(retryHandler)
                     .setSslcontext(sslContext)
                     .build();
-        } catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException |
-                KeyManagementException | CertificateException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }
