@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.application.validation.change.ClusterSizeReductionV
 import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
-import com.yahoo.vespa.model.application.validation.change.ContentTypeRemovalValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
@@ -76,7 +75,6 @@ public class Validation {
                 new StreamingSearchClusterChangeValidator(),
                 new ConfigValueChangeValidator(logger),
                 new StartupCommandChangeValidator(),
-                new ContentTypeRemovalValidator(),
                 new ContentClusterRemovalValidator(),
                 new ClusterSizeReductionValidator(),
                 new ContainerRestartValidator(),

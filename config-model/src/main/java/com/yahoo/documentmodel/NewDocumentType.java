@@ -392,5 +392,4 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     public Set<Name> getDocumentReferences() {
         return documentReferences;
     }
-
 }
