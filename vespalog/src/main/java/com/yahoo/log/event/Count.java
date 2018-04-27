@@ -23,7 +23,7 @@ public class Count extends Event {
     @Override
     public Event setValue (String name, String value) {
         if (name.equals("value")) {
-            super.setValue(name, Long.toString((new Double(value)).longValue()));
+            super.setValue(name, Long.toString((Double.valueOf(value)).longValue()));
         } else {
             super.setValue(name , value);
         }

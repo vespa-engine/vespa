@@ -322,7 +322,7 @@ public abstract class Event implements Serializable {
 
         Event event;
         try {
-            event = (Event) Class.forName(className).newInstance();
+            event = (Event) Class.forName(className).getDeclaredConstructor().newInstance();
         }
         catch (ClassNotFoundException e) {
             event = new Unknown().setName(eventName);
