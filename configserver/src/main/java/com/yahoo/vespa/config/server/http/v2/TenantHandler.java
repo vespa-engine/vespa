@@ -10,13 +10,13 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.tenant.Tenants;
 
 /**
  * Handler to create, get and delete a tenant, and listing of tenants.
@@ -26,19 +26,19 @@ import com.yahoo.vespa.config.server.tenant.Tenants;
 public class TenantHandler extends HttpHandler {
 
     private static final String TENANT_NAME_REGEXP = "[\\w-]+";
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
 
     @Inject
-    public TenantHandler(HttpHandler.Context ctx, Tenants tenants) {
+    public TenantHandler(HttpHandler.Context ctx, TenantRepository tenantRepository) {
         super(ctx);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
     }
 
     @Override
     protected HttpResponse handlePUT(HttpRequest request) {
         TenantName tenantName = getAndValidateTenantFromRequest(request);
         try {
-            tenants.addTenant(tenantName);
+            tenantRepository.addTenant(tenantName);
         } catch (Exception e) {
             throw new InternalServerException(Exceptions.toMessageString(e));
         }
@@ -49,10 +49,10 @@ public class TenantHandler extends HttpHandler {
     protected HttpResponse handleGET(HttpRequest request) {
         if (isGetTenantRequest(request)) {
             final TenantName tenantName = getTenantNameFromRequest(request);
-            Utils.checkThatTenantExists(tenants, tenantName);
+            Utils.checkThatTenantExists(tenantRepository, tenantName);
             return new TenantGetResponse(tenantName);
         } else if (isListTenantsRequest(request)) {
-            return new ListTenantsResponse(tenants.getAllTenantNames());
+            return new ListTenantsResponse(tenantRepository.getAllTenantNames());
         } else {
             throw new BadRequestException(request.getUri().toString());
         }
@@ -61,14 +61,14 @@ public class TenantHandler extends HttpHandler {
     @Override
     protected HttpResponse handleDELETE(HttpRequest request) {
         final TenantName tenantName = getTenantNameFromRequest(request);
-        Utils.checkThatTenantExists(tenants, tenantName);
+        Utils.checkThatTenantExists(tenantRepository, tenantName);
         // TODO: Move logic to ApplicationRepository
-        Tenant tenant = tenants.getTenant(tenantName);
+        Tenant tenant = tenantRepository.getTenant(tenantName);
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         final List<ApplicationId> activeApplications = applicationRepo.listApplications();
         if (activeApplications.isEmpty()) {
             try {
-                tenants.deleteTenant(tenantName);
+                tenantRepository.deleteTenant(tenantName);
             } catch (IllegalArgumentException e) {
                 throw e;
             } catch (Exception e) {
@@ -101,7 +101,7 @@ public class TenantHandler extends HttpHandler {
     }
 
     private void checkThatTenantDoesNotExist(TenantName tenantName) {
-        if (tenants.checkThatTenantExists(tenantName))
+        if (tenantRepository.checkThatTenantExists(tenantName))
             throw new BadRequestException("There already exists a tenant '" + tenantName + "'");
     }
 

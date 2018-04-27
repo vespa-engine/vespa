@@ -13,13 +13,13 @@ import org.junit.Before;
  */
 public class TestWithTenant extends TestWithCurator {
 
-    protected Tenants tenants;
+    protected TenantRepository tenantRepository;
     protected Tenant tenant;
 
     @Before
     public void setupTenant() throws Exception {
-        tenants = new Tenants(new TestComponentRegistry.Builder().curator(curator).build());
-        tenant = tenants.defaultTenant();
+        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().curator(curator).build());
+        tenant = tenantRepository.defaultTenant();
     }
 
 }

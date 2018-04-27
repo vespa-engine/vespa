@@ -10,7 +10,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -42,7 +42,7 @@ public class RoutingProducerTest {
         Map<TenantName, Map<ApplicationId, ApplicationInfo>> tMap = new LinkedHashMap<>();
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
-        TenantName routing = TenantName.from(Tenants.HOSTED_VESPA_TENANT.value());
+        TenantName routing = TenantName.from(TenantRepository.HOSTED_VESPA_TENANT.value());
         tMap.put(foo, createTestApplications(foo, deployStateBuilder));
         tMap.put(bar, createTestApplications(bar, deployStateBuilder));
         tMap.put(routing, createTestApplications(routing, deployStateBuilder));

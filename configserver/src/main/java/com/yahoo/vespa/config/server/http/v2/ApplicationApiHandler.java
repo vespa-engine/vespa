@@ -13,7 +13,7 @@ import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,18 +30,18 @@ public class ApplicationApiHandler extends SessionHandler {
     public final static String APPLICATION_X_GZIP = "application/x-gzip";
     public final static String APPLICATION_ZIP = "application/zip";
     public final static String contentTypeHeader = "Content-Type";
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final Duration zookeeperBarrierTimeout;
     private final Zone zone;
 
     @Inject
     public ApplicationApiHandler(Context ctx,
                                  ApplicationRepository applicationRepository,
-                                 Tenants tenants,
+                                 TenantRepository tenantRepository,
                                  ConfigserverConfig configserverConfig,
                                  Zone zone) {
         super(ctx, applicationRepository);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
         this.zone = zone;
     }
@@ -84,8 +84,8 @@ public class ApplicationApiHandler extends SessionHandler {
 
     private Tenant getExistingTenant(HttpRequest request) {
         TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
-        Utils.checkThatTenantExists(tenants, tenantName);
-        return tenants.getTenant(tenantName);
+        Utils.checkThatTenantExists(tenantRepository, tenantName);
+        return tenantRepository.getTenant(tenantName);
     }
 
 }

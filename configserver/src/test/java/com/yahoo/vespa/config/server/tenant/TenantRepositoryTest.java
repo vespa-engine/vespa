@@ -31,8 +31,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class TenantsTestCase extends TestWithCurator {
-    private Tenants tenants;
+public class TenantRepositoryTest extends TestWithCurator {
+    private TenantRepository tenantRepository;
     private TestComponentRegistry globalComponentRegistry;
     private TenantRequestHandlerTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
@@ -46,26 +46,26 @@ public class TenantsTestCase extends TestWithCurator {
         listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         tenantListener.tenantsLoaded = false;
-        tenants = new Tenants(globalComponentRegistry);
+        tenantRepository = new TenantRepository(globalComponentRegistry);
         assertTrue(tenantListener.tenantsLoaded);
-        tenants.addTenant(tenant1);
-        tenants.addTenant(tenant2);
+        tenantRepository.addTenant(tenant1);
+        tenantRepository.addTenant(tenant2);
     }
 
     @After
     public void closeSessions() {
-        tenants.close();
+        tenantRepository.close();
     }
 
     @Test
     public void testStartUp() {
-        assertEquals(tenants.getTenant(tenant1).getName(), tenant1);
-        assertEquals(tenants.getTenant(tenant2).getName(), tenant2);
+        assertEquals(tenantRepository.getTenant(tenant1).getName(), tenant1);
+        assertEquals(tenantRepository.getTenant(tenant2).getName(), tenant2);
     }
 
     @Test
     public void testListenersAdded() throws IOException, SAXException {
-        tenants.getTenant(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(
+        tenantRepository.getTenant(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(
                 new Application(new VespaModel(MockApplicationPackage.createEmpty()), new ServerCache(), 4l,
                         Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), ApplicationId.defaultId())));
         assertThat(listener.reloaded.get(), is(1));
@@ -77,22 +77,22 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Test
     public void testTenantListenersNotified() throws Exception {
-        tenants.addTenant(tenant3);
-        assertThat("tenant3 not the last created tenant. Tenants: " + tenants.getAllTenantNames() +
+        tenantRepository.addTenant(tenant3);
+        assertThat("tenant3 not the last created tenant. Tenants: " + tenantRepository.getAllTenantNames() +
                         ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"),
                 tenantListener.tenantCreatedName, is(tenant3));
-        tenants.deleteTenant(tenant2);
-        assertFalse(tenants.getAllTenantNames().contains(tenant2));
+        tenantRepository.deleteTenant(tenant2);
+        assertFalse(tenantRepository.getAllTenantNames().contains(tenant2));
         assertThat(tenantListener.tenantDeletedName, is(tenant2));
     }
 
     @Test
     public void testAddTenant() {
-        Set<TenantName> allTenants = tenants.getAllTenantNames();
+        Set<TenantName> allTenants = tenantRepository.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
-        tenants.addTenant(tenant3);
-        allTenants = tenants.getAllTenantNames();
+        tenantRepository.addTenant(tenant3);
+        allTenants = tenantRepository.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
         assertTrue(allTenants.contains(tenant3));
@@ -100,18 +100,18 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Test
     public void testPutAdd() throws Exception {
-        tenants.addTenant(tenant3);
-        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant3)));
+        tenantRepository.addTenant(tenant3);
+        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(tenant3)));
     }
     
     @Test
     public void testDelete() throws Exception {
-        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant1)));
-        tenants.deleteTenant(tenant1);
-        assertFalse(tenants.getAllTenantNames().contains(tenant1));
+        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(tenant1)));
+        tenantRepository.deleteTenant(tenant1);
+        assertFalse(tenantRepository.getAllTenantNames().contains(tenant1));
 
         try {
-            tenants.deleteTenant(TenantName.from("non-existing"));
+            tenantRepository.deleteTenant(TenantName.from("non-existing"));
             fail("deletion of non-existing tenant should fail");
         } catch (IllegalArgumentException e) {
             // expected
@@ -121,33 +121,33 @@ public class TenantsTestCase extends TestWithCurator {
     @Test(expected = IllegalArgumentException.class)
     public void testDeleteOfDefaultTenant()  {
         try {
-            assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(TenantName.defaultName())));
+            assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(TenantName.defaultName())));
         } catch (Exception e) {
             fail("default tenant does not exist");
         }
-        tenants.deleteTenant(TenantName.defaultName());
+        tenantRepository.deleteTenant(TenantName.defaultName());
     }
     
     @Test
     public void testTenantsChanged() throws Exception {
-        tenants = new Tenants(globalComponentRegistry, new ArrayList<>());
-        tenants.addTenant(tenant2);
-        tenants.createTenants();
-        Set<TenantName> allTenants = tenants.getAllTenantNames();
+        tenantRepository = new TenantRepository(globalComponentRegistry, new ArrayList<>());
+        tenantRepository.addTenant(tenant2);
+        tenantRepository.createTenants();
+        Set<TenantName> allTenants = tenantRepository.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
-        tenants.deleteTenant(tenant1);
-        tenants.deleteTenant(tenant2);
-        tenants.createTenants();
-        allTenants = tenants.getAllTenantNames();
+        tenantRepository.deleteTenant(tenant1);
+        tenantRepository.deleteTenant(tenant2);
+        tenantRepository.createTenants();
+        allTenants = tenantRepository.getAllTenantNames();
         assertFalse(allTenants.contains(tenant1));
         assertFalse(allTenants.contains(tenant2));
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
-        tenants.addTenant(tenant2);
-        tenants.addTenant(foo);
-        tenants.addTenant(bar);
-        tenants.createTenants();
-        allTenants = tenants.getAllTenantNames();
+        tenantRepository.addTenant(tenant2);
+        tenantRepository.addTenant(foo);
+        tenantRepository.addTenant(bar);
+        tenantRepository.createTenants();
+        allTenants = tenantRepository.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
         assertTrue(allTenants.contains(foo));
         assertTrue(allTenants.contains(bar));
@@ -158,20 +158,20 @@ public class TenantsTestCase extends TestWithCurator {
         TenantName newTenant = TenantName.from("newTenant");
         List<TenantName> expectedTenants = Arrays.asList(TenantName.defaultName(), newTenant);
         try {
-            tenants.addTenant(newTenant);
+            tenantRepository.addTenant(newTenant);
             // Poll for the watcher to pick up the tenant from zk, and add it
             int tries=0;
             while(true) {
                 if (tries > 5000) fail("Didn't react on watch");
-                if (tenants.getAllTenantNames().containsAll(expectedTenants)) {
+                if (tenantRepository.getAllTenantNames().containsAll(expectedTenants)) {
                     break;
                 }
                 tries++;
                 Thread.sleep(10);
             }
         } finally {
-            assertTrue(tenants.getAllTenantNames().containsAll(expectedTenants));
-            tenants.close();
+            assertTrue(tenantRepository.getAllTenantNames().containsAll(expectedTenants));
+            tenantRepository.close();
         }
     }
 

@@ -7,7 +7,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestWithCurator;
 
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -59,7 +59,7 @@ public class TenantApplicationsTest extends TestWithCurator {
         ApplicationId baz = createApplicationId("baz");
         // No data in node
         curatorFramework.create().creatingParentsIfNeeded()
-                .forPath(Tenants.getApplicationsPath(tenantName).append(baz.serializedForm()).getAbsolute());
+                .forPath(TenantRepository.getApplicationsPath(tenantName).append(baz.serializedForm()).getAbsolute());
         TenantApplications repo = createZKAppRepo();
         repo.getSessionIdForApplication(baz);
     }
@@ -69,7 +69,7 @@ public class TenantApplicationsTest extends TestWithCurator {
         TenantApplications repo = createZKAppRepo();
         ApplicationId myapp = createApplicationId("myapp");
         repo.createPutApplicationTransaction(myapp, 3l).commit();
-        String path = Tenants.getApplicationsPath(tenantName).append(myapp.serializedForm()).getAbsolute();
+        String path = TenantRepository.getApplicationsPath(tenantName).append(myapp.serializedForm()).getAbsolute();
         assertTrue(curatorFramework.checkExists().forPath(path) != null);
         assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("3"));
         repo.createPutApplicationTransaction(myapp, 5l).commit();
@@ -162,7 +162,7 @@ public class TenantApplicationsTest extends TestWithCurator {
         curatorFramework
                 .create()
                 .creatingParentsIfNeeded()
-                .forPath(Tenants.getApplicationsPath(tenantName).append(applicationId).getAbsolute(),
+                .forPath(TenantRepository.getApplicationsPath(tenantName).append(applicationId).getAbsolute(),
                          Utf8.toAsciiBytes(sessionId));
     }
 }

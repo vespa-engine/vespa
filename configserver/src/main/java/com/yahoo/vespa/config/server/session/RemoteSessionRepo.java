@@ -14,7 +14,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.server.ReloadHandler;
@@ -63,7 +63,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
                              MetricUpdater metricUpdater,
                              ExecutorService executorService) {
         this.curator = curator;
-        this.sessionsPath = Tenants.getSessionsPath(tenant);
+        this.sessionsPath = TenantRepository.getSessionsPath(tenant);
         this.applicationRepo = applicationRepo;
         this.remoteSessionFactory = remoteSessionFactory;
         this.reloadHandler = reloadHandler;
@@ -79,7 +79,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.curator = null;
         this.remoteSessionFactory = null;
         this.reloadHandler = null;
-        this.sessionsPath = Tenants.getSessionsPath(tenantName);
+        this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.metrics = null;
         this.directoryCache = null;
         this.applicationRepo = null;

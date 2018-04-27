@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,7 +39,7 @@ public class DeployHandlerLogger implements DeployLogger {
             !verbose) {
             return;
         }
-        String fullMsg = Tenants.logPre(app) + message;
+        String fullMsg = TenantRepository.logPre(app) + message;
         Cursor entry = logroot.addObject();
         entry.setLong("time", System.currentTimeMillis());
         entry.setString("level", level.getName());

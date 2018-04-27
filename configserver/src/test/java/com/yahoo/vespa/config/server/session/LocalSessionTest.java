@@ -13,7 +13,7 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -111,7 +111,7 @@ public class LocalSessionTest {
     public void require_that_session_can_be_deleted() throws Exception {
         TenantName tenantName = TenantName.defaultName();
         LocalSession session = createSession(tenantName, 3);
-        String sessionNode = Tenants.getSessionsPath(tenantName).append(String.valueOf(3)).getAbsolute();
+        String sessionNode = TenantRepository.getSessionsPath(tenantName).append(String.valueOf(3)).getAbsolute();
         assertTrue(configCurator.exists(sessionNode));
         assertTrue(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
         long gen = superModelGenerationCounter.get();
@@ -160,7 +160,7 @@ public class LocalSessionTest {
     private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer, Optional<AllocatedHosts> allocatedHosts) throws Exception {
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenant, sessionId, allocatedHosts);
         zkc.createWriteStatusTransaction(Session.Status.NEW).commit();
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, Tenants.getSessionsPath(tenant).append(String.valueOf(sessionId)));
+        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         if (allocatedHosts.isPresent()) {
             zkClient.write(allocatedHosts.get());
         }

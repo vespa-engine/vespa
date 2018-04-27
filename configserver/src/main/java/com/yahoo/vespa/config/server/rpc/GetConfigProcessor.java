@@ -13,7 +13,7 @@ import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.config.protocol.*;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.util.Optional;
@@ -102,7 +102,7 @@ class GetConfigProcessor implements Runnable {
             return;
         }
 
-        this.logPre = Tenants.logPre(context.applicationId());
+        this.logPre = TenantRepository.logPre(context.applicationId());
         ConfigResponse config;
         try {
             config = rpcServer.resolveConfig(request, context, vespaVersion);

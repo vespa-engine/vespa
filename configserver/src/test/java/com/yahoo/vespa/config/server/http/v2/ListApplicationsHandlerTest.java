@@ -5,11 +5,10 @@ import com.yahoo.config.provision.*;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Test;
 import org.junit.Before;
 
@@ -38,10 +37,10 @@ public class ListApplicationsHandlerTest {
         testBuilder.createTenant(foobar);
         applicationRepo = testBuilder.tenants().get(mytenant).getApplicationRepo();
         applicationRepo2 = testBuilder.tenants().get(foobar).getApplicationRepo();
-        Tenants tenants = testBuilder.createTenants();
+        TenantRepository tenantRepository = testBuilder.createTenants();
         handler = new ListApplicationsHandler(
                 ListApplicationsHandler.testOnlyContext(),
-                tenants,
+                tenantRepository,
                 new Zone(Environment.dev, RegionName.from("us-east")));
     }
 

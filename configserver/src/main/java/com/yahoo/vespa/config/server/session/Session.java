@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 /**
  * A session represents an instance of an application that can be edited, prepared and activated. This
@@ -65,7 +65,7 @@ public abstract class Session {
      * @return log preamble
      */
     public String logPre() {
-        return Tenants.logPre(getTenant());
+        return TenantRepository.logPre(getTenant());
     }
 
 }

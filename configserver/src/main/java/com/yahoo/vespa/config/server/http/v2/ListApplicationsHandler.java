@@ -8,10 +8,9 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.HttpHandler;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.config.server.http.Utils;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 /**
  * Handler for listing currently active applications for a tenant.
@@ -28,14 +26,14 @@ import java.util.concurrent.Executor;
  * @since 5.1
  */
 public class ListApplicationsHandler extends HttpHandler {
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final Zone zone;
 
     @Inject
     public ListApplicationsHandler(HttpHandler.Context ctx,
-                                   Tenants tenants, Zone zone) {
+                                   TenantRepository tenantRepository, Zone zone) {
         super(ctx);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
         this.zone = zone;
     }
 
@@ -55,8 +53,8 @@ public class ListApplicationsHandler extends HttpHandler {
     }
 
     private List<ApplicationId> listApplicationIds(TenantName tenantName) {
-        Utils.checkThatTenantExists(tenants, tenantName);
-        Tenant tenant = tenants.getTenant(tenantName);
+        Utils.checkThatTenantExists(tenantRepository, tenantName);
+        Tenant tenant = tenantRepository.getTenant(tenantName);
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return applicationRepo.listApplications();
     }

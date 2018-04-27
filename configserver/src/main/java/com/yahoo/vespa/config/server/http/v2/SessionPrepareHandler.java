@@ -9,7 +9,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 
@@ -23,16 +23,16 @@ import java.time.Instant;
  */
 public class SessionPrepareHandler extends SessionHandler {
 
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final Duration zookeeperBarrierTimeout;
 
     @Inject
     public SessionPrepareHandler(SessionHandler.Context ctx,
                                  ApplicationRepository applicationRepository,
-                                 Tenants tenants,
+                                 TenantRepository tenantRepository,
                                  ConfigserverConfig configserverConfig) {
         super(ctx, applicationRepository);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
     }
 
@@ -62,7 +62,7 @@ public class SessionPrepareHandler extends SessionHandler {
 
     private Tenant getExistingTenant(HttpRequest request) {
         TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
-        Utils.checkThatTenantExists(tenants, tenantName);
-        return tenants.getTenant(tenantName);
+        Utils.checkThatTenantExists(tenantRepository, tenantName);
+        return tenantRepository.getTenant(tenantName);
     }
 }

@@ -18,7 +18,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
@@ -178,9 +178,9 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     @Override
     public String logPre() {
         if (getApplicationId().equals(ApplicationId.defaultId())) {
-            return Tenants.logPre(getTenant());
+            return TenantRepository.logPre(getTenant());
         } else {
-            return Tenants.logPre(getApplicationId());
+            return TenantRepository.logPre(getApplicationId());
         }
     }
 

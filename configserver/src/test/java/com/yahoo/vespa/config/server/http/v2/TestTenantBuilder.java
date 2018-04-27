@@ -11,12 +11,12 @@ import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.util.*;
 
 /**
- * Test utility for creating tenants used for testing and setup wiring of tenant stuff.
+ * Test utility for creating tenantRepository used for testing and setup wiring of tenant stuff.
  *
  * @author Ulf Lilleengen
  */
@@ -44,7 +44,7 @@ public class TestTenantBuilder {
         return Collections.unmodifiableMap(tenantMap);
     }
 
-    public Tenants createTenants() {
+    public TenantRepository createTenants() {
         Collection<Tenant> tenantList = Collections2.transform(tenantMap.values(), new Function<TenantBuilder, Tenant>() {
             @Override
             public Tenant apply(TenantBuilder builder) {
@@ -55,6 +55,6 @@ public class TestTenantBuilder {
                 }
             }
         });
-        return new Tenants(componentRegistry, tenantList);
+        return new TenantRepository(componentRegistry, tenantList);
     }
 }

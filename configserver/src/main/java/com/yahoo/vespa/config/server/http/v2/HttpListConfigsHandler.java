@@ -4,19 +4,18 @@ package com.yahoo.vespa.config.server.http.v2;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
-import java.util.concurrent.Executor;
+
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
@@ -30,22 +29,22 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.*;
  * @since 5.3
  */
 public class HttpListConfigsHandler extends HttpHandler {
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final Zone zone;
     
     @Inject
     public HttpListConfigsHandler(HttpHandler.Context ctx,
-                                  Tenants tenants, Zone zone)
+                                  TenantRepository tenantRepository, Zone zone)
     {
         super(ctx);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
         this.zone = zone;
     }
     
     @Override
     public HttpResponse handleGET(HttpRequest req) {
         HttpListConfigsRequest listReq = HttpListConfigsRequest.createFromListRequest(req);
-        RequestHandler requestHandler = HttpConfigRequests.getRequestHandler(tenants, listReq);
+        RequestHandler requestHandler = HttpConfigRequests.getRequestHandler(tenantRepository, listReq);
         ApplicationId appId = listReq.getApplicationId();
         Set<ConfigKey<?>> configs = requestHandler.listConfigs(appId, Optional.empty(), listReq.isRecursive());
         String urlBase = getUrlBase(req, listReq, appId, zone);

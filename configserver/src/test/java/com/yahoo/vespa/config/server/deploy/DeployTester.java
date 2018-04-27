@@ -35,7 +35,7 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
@@ -61,7 +61,7 @@ public class DeployTester {
     private static final TenantName tenantName = TenantName.from("deploytester");
 
     private final Clock clock;
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final File testApp;
     private final ApplicationRepository applicationRepository;
 
@@ -106,17 +106,17 @@ public class DeployTester {
                                                                           provisioner);
         try {
             this.testApp = new File(appPath);
-            this.tenants = new Tenants(componentRegistry, Collections.emptySet());
-            tenants.addTenant(tenantName);
+            this.tenantRepository = new TenantRepository(componentRegistry, Collections.emptySet());
+            tenantRepository.addTenant(tenantName);
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        applicationRepository = new ApplicationRepository(tenants, new ProvisionerAdapter(provisioner), clock);
+        applicationRepository = new ApplicationRepository(tenantRepository, new ProvisionerAdapter(provisioner), clock);
     }
 
     public Tenant tenant() {
-        return tenants.getTenant(tenantName);
+        return tenantRepository.getTenant(tenantName);
     }
     
     /** Create a model factory for the version of this source*/

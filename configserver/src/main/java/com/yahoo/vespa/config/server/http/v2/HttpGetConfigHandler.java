@@ -4,17 +4,15 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 
 import java.util.Optional;
-import java.util.concurrent.Executor;
 
 /**
  * HTTP handler for a getConfig operation
@@ -24,20 +22,20 @@ import java.util.concurrent.Executor;
  */
 public class HttpGetConfigHandler extends HttpHandler {
 
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
 
     @Inject
     public HttpGetConfigHandler(HttpHandler.Context ctx,
-                                Tenants tenants)
+                                TenantRepository tenantRepository)
     {
         super(ctx);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
     }
     
     @Override
     public HttpResponse handleGET(HttpRequest req) {
         HttpConfigRequest request = HttpConfigRequest.createFromRequestV2(req);       
-        RequestHandler requestHandler = HttpConfigRequests.getRequestHandler(tenants, request);
+        RequestHandler requestHandler = HttpConfigRequests.getRequestHandler(tenantRepository, request);
         HttpConfigRequest.validateRequestKey(request.getConfigKey(), requestHandler, request.getApplicationId());
         return HttpConfigResponse.createFromConfig(resolveConfig(request, requestHandler));
     }

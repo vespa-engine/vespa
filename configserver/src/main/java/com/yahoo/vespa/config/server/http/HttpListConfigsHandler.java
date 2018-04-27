@@ -4,19 +4,17 @@ package com.yahoo.vespa.config.server.http;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.config.provision.ApplicationId;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
-import java.util.concurrent.Executor;
 
 import static com.yahoo.jdisc.http.HttpResponse.Status.*;
 
@@ -32,8 +30,8 @@ public class HttpListConfigsHandler extends HttpHandler {
     private final RequestHandler requestHandler;
 
     @Inject
-    public HttpListConfigsHandler(HttpHandler.Context ctx, Tenants tenants) {
-        this(ctx, tenants.defaultTenant().getRequestHandler());
+    public HttpListConfigsHandler(HttpHandler.Context ctx, TenantRepository tenantRepository) {
+        this(ctx, tenantRepository.defaultTenant().getRequestHandler());
     }
 
     public HttpListConfigsHandler(HttpHandler.Context ctx, RequestHandler requestHandler) {

@@ -40,7 +40,7 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
@@ -222,13 +222,13 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Override
     public void configActivated(TenantName tenant, ApplicationSet applicationSet) {
         ApplicationId applicationId = applicationSet.getId();
-        configReloaded(delayedConfigResponses.drainQueue(applicationId), Tenants.logPre(applicationId));
+        configReloaded(delayedConfigResponses.drainQueue(applicationId), TenantRepository.logPre(applicationId));
         reloadSuperModel(tenant, applicationSet);
     }
 
     private void reloadSuperModel(TenantName tenant, ApplicationSet applicationSet) {
         superModelRequestHandler.reloadConfig(tenant, applicationSet);
-        configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), Tenants.logPre(ApplicationId.global()));
+        configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), TenantRepository.logPre(ApplicationId.global()));
     }
 
     private void configReloaded(List<DelayedConfigResponses.DelayedConfigResponse> responses, String logPre) {
@@ -286,8 +286,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Override
     public void applicationRemoved(ApplicationId applicationId) {
         superModelRequestHandler.removeApplication(applicationId);
-        configReloaded(delayedConfigResponses.drainQueue(applicationId), Tenants.logPre(applicationId));
-        configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), Tenants.logPre(ApplicationId.global()));
+        configReloaded(delayedConfigResponses.drainQueue(applicationId), TenantRepository.logPre(applicationId));
+        configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), TenantRepository.logPre(ApplicationId.global()));
     }
 
     public void respond(JRTServerConfigRequest request) {
@@ -370,7 +370,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
         TenantName tenant = optionalTenant.orElse(TenantName.defaultName()); // perhaps needed for non-hosted?
         if ( ! hasRequestHandler(tenant)) {
-            String msg = Tenants.logPre(tenant) + "Unable to find request handler for tenant. Requested from host '" + request.getClientHostName() + "'";
+            String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant. Requested from host '" + request.getClientHostName() + "'";
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
             log.log(LogLevel.WARNING, msg);
@@ -401,7 +401,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void onTenantDelete(TenantName tenant) {
-        log.log(LogLevel.DEBUG, Tenants.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
         if (tenantProviders.containsKey(tenant)) {
             tenantProviders.remove(tenant);
         }
@@ -416,7 +416,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void onTenantCreate(TenantName tenant, TenantHandlerProvider tenantHandlerProvider) {
-        log.log(LogLevel.DEBUG, Tenants.logPre(tenant)+"Tenant created, adding request handler");
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant)+"Tenant created, adding request handler");
         tenantProviders.put(tenant, tenantHandlerProvider);
     }
 

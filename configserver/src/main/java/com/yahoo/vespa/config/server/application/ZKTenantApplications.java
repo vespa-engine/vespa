@@ -10,7 +10,7 @@ import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ReloadHandler;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -58,9 +58,9 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
         try {
-            return new ZKTenantApplications(curator, Tenants.getApplicationsPath(tenant), reloadHandler, tenant);
+            return new ZKTenantApplications(curator, TenantRepository.getApplicationsPath(tenant), reloadHandler, tenant);
         } catch (Exception e) {
-            throw new RuntimeException(Tenants.logPre(tenant) + "Error creating application repo", e);
+            throw new RuntimeException(TenantRepository.logPre(tenant) + "Error creating application repo", e);
         }
     }
 
@@ -69,7 +69,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         try {
             return Long.parseLong(Utf8.toString(curator.framework().getData().forPath(path)));
         } catch (Exception e) {
-            throw new IllegalArgumentException(Tenants.logPre(appId) + "Unable to read the session id from '" + path + "'", e);
+            throw new IllegalArgumentException(TenantRepository.logPre(appId) + "Unable to read the session id from '" + path + "'", e);
         }
     }
 
@@ -83,7 +83,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
             }
             return applicationIds;
         } catch (Exception e) {
-            throw new RuntimeException(Tenants.logPre(tenant)+"Unable to list applications", e);
+            throw new RuntimeException(TenantRepository.logPre(tenant)+"Unable to list applications", e);
         }
     }
 
@@ -91,7 +91,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         try {
             return Optional.of(ApplicationId.fromSerializedForm(appNode));
         } catch (IllegalArgumentException e) {
-            log.log(LogLevel.INFO, Tenants.logPre(tenant)+"Unable to parse application with id '" + appNode + "', ignoring.");
+            log.log(LogLevel.INFO, TenantRepository.logPre(tenant)+"Unable to parse application with id '" + appNode + "', ignoring.");
             return Optional.empty();
         }
     }
@@ -145,11 +145,11 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private void applicationRemoved(ApplicationId applicationId) {
         reloadHandler.removeApplication(applicationId);
-        log.log(LogLevel.INFO, Tenants.logPre(applicationId) + "Application removed: " + applicationId);
+        log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Application removed: " + applicationId);
     }
 
     private void applicationAdded(ApplicationId applicationId) {
-        log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application added: " + applicationId);
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
     }
 
     public void removeUnusedApplications() {

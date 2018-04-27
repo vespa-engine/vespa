@@ -13,9 +13,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
-import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.SessionHandler;
@@ -35,16 +34,16 @@ public class SessionCreateHandler extends SessionHandler {
 
     private static final String fromPattern = "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*";
 
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final Duration zookeeperBarrierTimeout;
 
     @Inject
     public SessionCreateHandler(SessionHandler.Context ctx,
                                 ApplicationRepository applicationRepository,
-                                Tenants tenants,
+                                TenantRepository tenantRepository,
                                 ConfigserverConfig configserverConfig) {
         super(ctx, applicationRepository);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
     }
 
@@ -52,8 +51,8 @@ public class SessionCreateHandler extends SessionHandler {
     protected HttpResponse handlePOST(HttpRequest request) {
         Slime deployLog = createDeployLog();
         final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
-        Utils.checkThatTenantExists(tenants, tenantName);
-        Tenant tenant = tenants.getTenant(tenantName);
+        Utils.checkThatTenantExists(tenantRepository, tenantName);
+        Tenant tenant = tenantRepository.getTenant(tenantName);
         TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, zookeeperBarrierTimeout);
         DeployLogger logger = createLogger(request, deployLog, tenantName);
         long sessionId;

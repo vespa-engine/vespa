@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  * implemented support for it).
  *
  * This instance is called from two different threads, the http handler threads and the zookeeper watcher threads.
- * To create or delete a tenant, the handler calls {@link Tenants#addTenant} and {@link Tenants#deleteTenant} methods.
+ * To create or delete a tenant, the handler calls {@link TenantRepository#addTenant} and {@link TenantRepository#deleteTenant} methods.
  * This will delete shared state from zookeeper, and return, so it does not mean a tenant is immediately deleted.
  *
  * Once a tenant is deleted from zookeeper, the zookeeper watcher thread will get notified on all config servers, and
@@ -52,8 +52,7 @@ import java.util.logging.Logger;
  * @author Vegard Havdal
  * @author Ulf Lilleengen
  */
-// TODO: Rename to TenantRepository
-public class Tenants implements ConnectionStateListener, PathChildrenCacheListener {
+public class TenantRepository implements ConnectionStateListener, PathChildrenCacheListener {
 
     public static final TenantName HOSTED_VESPA_TENANT = TenantName.from("hosted-vespa");
     private static final TenantName DEFAULT_TENANT = TenantName.defaultName();
@@ -61,7 +60,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     private static final Path tenantsPath = Path.fromString("/config/v2/tenants/");
     private static final Path vespaPath = Path.fromString("/vespa");
     private static final Duration checkForRemovedApplicationsInterval = Duration.ofMinutes(1);
-    private static final Logger log = Logger.getLogger(Tenants.class.getName());
+    private static final Logger log = Logger.getLogger(TenantRepository.class.getName());
 
     private final Map<TenantName, Tenant> tenants = new LinkedHashMap<>();
     private final GlobalComponentRegistry globalComponentRegistry;
@@ -69,7 +68,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     private final Curator curator;
 
     private final MetricUpdater metricUpdater;
-    private final ExecutorService pathChildrenExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(Tenants.class.getName()));
+    private final ExecutorService pathChildrenExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
     private final Curator.DirectoryCache directoryCache;
 
@@ -80,7 +79,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      */
     @Inject
-    public Tenants(GlobalComponentRegistry globalComponentRegistry) {
+    public TenantRepository(GlobalComponentRegistry globalComponentRegistry) {
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
@@ -110,7 +109,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * @param tenants a collection of {@link Tenant}s
      */
     // TODO: Get rid of the second argument and let callers use addTenant() instead
-    public Tenants(GlobalComponentRegistry globalComponentRegistry, Collection<Tenant> tenants) {
+    public TenantRepository(GlobalComponentRegistry globalComponentRegistry, Collection<Tenant> tenants) {
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
@@ -132,7 +131,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         for (Tenant t : newTenants) {
             tenants.put(t.getName(), t);
         }
-        log.log(LogLevel.DEBUG, "Tenants at startup: " + tenants);
+        log.log(LogLevel.DEBUG, "TenantRepository at startup: " + tenants);
         metricUpdater.setTenants(this.tenants.size());
         return tenants;
     }
@@ -261,9 +260,9 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * Removes the given tenant from ZooKeeper and filesystem. Assumes that tenant exists.
      *
      * @param name name of the tenant
-     * @return this Tenants instance
+     * @return this TenantRepository instance
      */
-    public synchronized Tenants deleteTenant(TenantName name) {
+    public synchronized TenantRepository deleteTenant(TenantName name) {
         if (name.equals(DEFAULT_TENANT))
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
         log.log(LogLevel.DEBUG, "Deleting tenant '" + name + "'");

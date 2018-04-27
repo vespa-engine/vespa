@@ -17,7 +17,7 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;
@@ -147,7 +147,7 @@ public class Application implements ModelResult {
     }
 
     private void debug(String message) {
-        log.log(LogLevel.DEBUG, Tenants.logPre(getId())+message);
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(getId())+message);
     }
 
     private ConfigDefinition getTargetDef(GetConfigRequest req) {

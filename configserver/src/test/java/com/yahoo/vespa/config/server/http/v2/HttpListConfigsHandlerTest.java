@@ -5,10 +5,9 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -44,13 +43,13 @@ public class HttpListConfigsHandlerTest {
             }} );
         TestTenantBuilder tb = new TestTenantBuilder();
         tb.createTenant(TenantName.from("mytenant")).withRequestHandler(mockRequestHandler).build();
-        Tenants tenants = tb.createTenants();
+        TenantRepository tenantRepository = tb.createTenants();
         handler = new HttpListConfigsHandler(
                 HttpListConfigsHandler.testOnlyContext(),
-                tenants, Zone.defaultZone());
+                tenantRepository, Zone.defaultZone());
         namedHandler = new HttpListNamedConfigsHandler(
                 HttpListConfigsHandler.testOnlyContext(),
-                tenants, Zone.defaultZone());
+                tenantRepository, Zone.defaultZone());
     }
     
     @Test
