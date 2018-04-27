@@ -88,7 +88,7 @@ public class IdentityDocumentGenerator {
                 HostName.getLocalhost(),
                 node.hostname(),
                 Instant.now(),
-                node.ipAddresses());
+                null);
     }
 
     private static String toZoneDnsSuffix(Zone zone, String dnsSuffix) {
