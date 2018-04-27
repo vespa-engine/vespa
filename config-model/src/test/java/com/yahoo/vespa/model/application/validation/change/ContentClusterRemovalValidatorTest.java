@@ -5,9 +5,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -18,7 +15,7 @@ import static org.junit.Assert.fail;
 public class ContentClusterRemovalValidatorTest {
 
     @Test
-    public void testContentRemovalValidation() throws IOException, SAXException {
+    public void testContentRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel previous = tester.deploy(null, getServices("contentClusterId"), null).getFirst();
@@ -33,7 +30,7 @@ public class ContentClusterRemovalValidatorTest {
     }
 
     @Test
-    public void testOverridingContentRemovalValidation() throws IOException, SAXException {
+    public void testOverridingContentRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel previous = tester.deploy(null, getServices("contentClusterId"), null).getFirst();

@@ -14,6 +14,7 @@ public enum ValidationId {
     indexModeChange("indexing-mode-change"), // Changing the index mode (streaming, indexed, store-only) of documents 
     fieldTypeChange("field-type-change"), // Field type changes
     clusterSizeReduction("cluster-size-reduction"), // Large reductions in cluster size
+    contentTypeRemoval("content-type-removal"), // Removal of a data type (causes deletion of all data)
     contentClusterRemoval("content-cluster-removal"), // Removal (or id change) of content clusters
     deploymentRemoval("deployment-removal"), // Removal of production zones from deployment.xml
     skipAutomaticTenantUpgradeTests("skip-automatic-tenant-upgrade-test"), // Skip platform supplied staging tests
