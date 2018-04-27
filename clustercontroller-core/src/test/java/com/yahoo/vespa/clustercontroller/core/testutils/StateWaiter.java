@@ -37,6 +37,21 @@ public class StateWaiter implements SystemStateListener {
     public void handleNewCandidateState(ClusterStateBundle states) {
         // Treat candidate states as if they were published for the tests that use
         // this (deprecated) waiter class.
+        //
+        // Since the tests using StateWaiter expects to observe _both_ versioned and
+        // unversioned (candidate) states, we ignore candidate states iff they are
+        // equal to the versioned state we have already observed. Otherwise, tests
+        // waiting for a _versioned_ state risk never observing the version number
+        // itself (only a candidate following it) and hang until they time out.
+        synchronized (timer) {
+            if (current != null) {
+                ClusterState versionPatchedState = states.getBaselineClusterState().clone();
+                versionPatchedState.setVersion(current.getVersion());
+                if (versionPatchedState.equals(current)) {
+                    return;
+                }
+            }
+        }
         handleNewPublishedState(states);
     }
 
