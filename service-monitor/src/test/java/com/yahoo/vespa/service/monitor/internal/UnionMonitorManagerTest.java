@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.applicationmodel.ClusterId.NODE_ADMIN;
 import static com.yahoo.vespa.applicationmodel.ServiceType.CONTAINER;
-import static com.yahoo.vespa.service.monitor.internal.ZoneApplication.ZONE_APPLICATION_ID;
+import static com.yahoo.vespa.service.monitor.application.ZoneApplication.ZONE_APPLICATION_ID;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
