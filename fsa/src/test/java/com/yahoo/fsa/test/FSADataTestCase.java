@@ -2,6 +2,8 @@
 package com.yahoo.fsa.test;
 
 import com.yahoo.fsa.FSA;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,10 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.nio.BufferUnderflowException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author geirst
  */
-public class FSADataTestCase extends junit.framework.TestCase {
+public class FSADataTestCase {
 
     private static class Worker extends Thread {
         FSA.State state;
@@ -48,14 +53,12 @@ public class FSADataTestCase extends junit.framework.TestCase {
 
     private FSA fsa;
 
-    public FSADataTestCase(String name) {
-        super(name);
-    }
-
-    protected void setUp() throws IOException {
+    @Before
+    public void setUp() throws IOException {
         fsa = new FSA(new FileInputStream("src/test/fsa/test-data.fsa"));
     }
 
+    @Test
     public void testBasic() {
         FSA.State state = fsa.getState();
         state.delta("aa");
@@ -78,6 +81,7 @@ public class FSADataTestCase extends junit.framework.TestCase {
         assertEquals("dddddd data", state.dataString());
     }
 
+    @Test
     public void testMultipleThreads() {
         long numRuns = 10000;
         List<Worker> workers = new ArrayList<Worker>();

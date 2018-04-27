@@ -1,9 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import org.junit.After;
+import org.junit.Before;
+
 import java.util.Random;
 
-public class SchedulerTest extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class SchedulerTest {
 
     long      now;       // fake time
     Scheduler scheduler;
@@ -88,19 +95,18 @@ public class SchedulerTest extends junit.framework.TestCase {
         }
     }
 
-    public SchedulerTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() {
         now = 0;
         scheduler = new Scheduler(now);
     }
 
+    @After
     public void tearDown() {
         scheduler = null;
     }
 
+    @org.junit.Test
     public void testTimeliness() {
         Random rand = new Random(73201242);
 
@@ -130,6 +136,7 @@ public class SchedulerTest extends junit.framework.TestCase {
         }
     }
 
+    @org.junit.Test
     public void testUnschedule() {
         MyTask t1 = new MyTask(1000);
         MyTask t2 = new MyTask(1000);
@@ -204,6 +211,7 @@ public class SchedulerTest extends junit.framework.TestCase {
         assertEquals(cnt, rt5.cnt());
     }
 
+    @org.junit.Test
     public void testSlowEventLoop() {
         scheduler.checkTasks(now);
         now += 10000;
@@ -235,4 +243,5 @@ public class SchedulerTest extends junit.framework.TestCase {
         }
         assertTrue(cnt2 > 10 && cnt2 < 30);
     }
+
 }

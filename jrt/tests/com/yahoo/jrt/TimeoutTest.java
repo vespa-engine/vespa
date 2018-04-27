@@ -2,7 +2,13 @@
 package com.yahoo.jrt;
 
 
-public class TimeoutTest extends junit.framework.TestCase {
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class TimeoutTest {
 
     Supervisor   server;
     Acceptor     acceptor;
@@ -10,10 +16,7 @@ public class TimeoutTest extends junit.framework.TestCase {
     Target       target;
     Test.Barrier barrier;
 
-    public TimeoutTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -27,6 +30,7 @@ public class TimeoutTest extends junit.framework.TestCase {
         barrier = new Test.Barrier();
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -42,6 +46,7 @@ public class TimeoutTest extends junit.framework.TestCase {
                                                .get(1).asString()));
     }
 
+    @org.junit.Test
     public void testTimeout() {
         Request req = new Request("concat");
         req.parameters().add(new StringValue("abc"));
@@ -60,6 +65,7 @@ public class TimeoutTest extends junit.framework.TestCase {
         assertEquals(0, req.returnValues().size());
     }
 
+    @org.junit.Test
     public void testNotTimeout() {
         Request req = new Request("concat");
         req.parameters().add(new StringValue("abc"));
@@ -75,4 +81,5 @@ public class TimeoutTest extends junit.framework.TestCase {
         assertEquals(1, req.returnValues().size());
         assertEquals("abcdef", req.returnValues().get(0).asString());
     }
+
 }

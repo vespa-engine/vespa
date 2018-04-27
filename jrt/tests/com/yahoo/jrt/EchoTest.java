@@ -2,7 +2,12 @@
 package com.yahoo.jrt;
 
 
-public class EchoTest extends junit.framework.TestCase {
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertTrue;
+
+public class EchoTest {
 
     Supervisor server;
     Acceptor   acceptor;
@@ -10,10 +15,7 @@ public class EchoTest extends junit.framework.TestCase {
     Target     target;
     Values     refValues;
 
-    public EchoTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -51,6 +53,7 @@ public class EchoTest extends junit.framework.TestCase {
         refValues.add(new StringArray(stringArray));
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -71,6 +74,7 @@ public class EchoTest extends junit.framework.TestCase {
         }
     }
 
+    @org.junit.Test
     public void testEcho() {
         Request req = new Request("echo");
         Values p = req.parameters();
@@ -83,4 +87,5 @@ public class EchoTest extends junit.framework.TestCase {
         assertTrue(Test.equals(req.returnValues(), refValues));
         assertTrue(Test.equals(req.parameters(), refValues));
     }
+
 }

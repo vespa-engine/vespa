@@ -3,8 +3,16 @@ package com.yahoo.messagebus.routing;
 
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.DestinationSessionParams;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
@@ -12,27 +20,29 @@ import com.yahoo.messagebus.routing.test.CustomPolicyFactory;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 
-/**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- */
-public class AdvancedRoutingTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @author Simon Thoresen
+ */
+public class AdvancedRoutingTestCase {
 
     Slobrok slobrok;
     TestServer srcServer, dstServer;
     SourceSession srcSession;
     DestinationSession dstFoo, dstBar, dstBaz;
 
-    @Override
-    public void setUp() throws ListenFailedException, UnknownHostException {
+    @Before
+    public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
                                    new RPCNetworkParams().setIdentity(new Identity("dst")).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
@@ -46,7 +56,7 @@ public class AdvancedRoutingTestCase extends junit.framework.TestCase {
         assertTrue(srcServer.waitSlobrok("dst/*", 3));
     }
 
-    @Override
+    @After
     public void tearDown() {
         slobrok.stop();
         dstFoo.destroy();
@@ -57,12 +67,7 @@ public class AdvancedRoutingTestCase extends junit.framework.TestCase {
         srcServer.destroy();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
+    @Test
     public void testAdvanced() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(false, ErrorCode.NO_ADDRESS_FOR_SERVICE));
@@ -116,4 +121,5 @@ public class AdvancedRoutingTestCase extends junit.framework.TestCase {
         assertEquals(ErrorCode.FATAL_ERROR, reply.getError(0).getCode());
         assertEquals(ErrorCode.NO_ADDRESS_FOR_SERVICE, reply.getError(1).getCode());
     }
+
 }

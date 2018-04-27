@@ -2,11 +2,9 @@
 package com.yahoo.documentapi;
 
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.documentapi.ProgressToken;
-import com.yahoo.documentapi.VisitorIterator;
-import junit.framework.TestCase;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -14,13 +12,19 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests for VisitorIterator and ProgressToken (kept in one test case because their
  * interactions are so tightly coupled)
- * @author <a href="mailto:vekterli@yahoo-inc.com">Tor Brede Vekterli</a>
+ *
+ * @author vekterli
  */
-public class VisitorIteratorTestCase extends TestCase {
+public class VisitorIteratorTestCase {
 
+    @Test
     public void testIterationSingleBucketUpdate() throws ParseException {
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken progress = new ProgressToken();
@@ -72,6 +76,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(iter.getRemainingBucketCount(), 0);
     }
 
+    @Test
     public void testProgressSerializationRange() throws ParseException {
         int distBits = 4;
 
@@ -256,6 +261,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(progress.toString(), finished.toString());
     }
 
+    @Test
     public void testProgressSerializationExplicit() throws ParseException {
         int distBits = 16;
 
@@ -409,8 +415,8 @@ public class VisitorIteratorTestCase extends TestCase {
     /**
      * Test that doing update() on a bucket several times in a row (without re-fetching
      * from getNext first) works
-     * @throws ParseException
      */
+    @Test
     public void testActiveUpdate() throws ParseException {
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken progress = new ProgressToken();
@@ -443,8 +449,8 @@ public class VisitorIteratorTestCase extends TestCase {
     /**
      * Test that ensures doing update(superbucket, 0) simply puts the bucket back in
      * pending
-     * @throws ParseException
      */
+    @Test
     public void testNullAndSuperUpdate() throws ParseException {
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken progress = new ProgressToken();
@@ -491,6 +497,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(progress.getActiveBucketCount(), 1);
     }
 
+    @Test
     public void testDeserializedFinishedProgress() {
         StringBuilder finished = new StringBuilder();
         finished.append("VDS bucket progress file\n"); // legacy; no completion percentage
@@ -518,6 +525,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(token2.isFinished());
     }
 
+    @Test
     public void testBucketProgressFraction() {
         double epsilon = 0.00001;
         // No progress
@@ -553,6 +561,7 @@ public class VisitorIteratorTestCase extends TestCase {
                 new BucketId(0xb0000fff00000000L)), 1.0, epsilon);
     }
 
+    @Test
     public void testProgressEstimation() throws ParseException {
         int distBits = 4;
 
@@ -606,6 +615,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(progress.percentFinished(), 100, epsilon);
     }
 
+    @Test
     public void testBucketKeyWrapperOrdering() {
         ProgressToken.BucketKeyWrapper bk1 = new ProgressToken.BucketKeyWrapper(0x0000000000000001L);
         ProgressToken.BucketKeyWrapper bk2 = new ProgressToken.BucketKeyWrapper(0x7FFFFFFFFFFFFFFFL);
@@ -648,6 +658,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(consistentKeys);
     }
 
+    @Test
     public void testBucketKeyGeneration() {
         // Due to the number of objects needed to be allocated, only test for a
         // small set of distribution bits
@@ -656,6 +667,7 @@ public class VisitorIteratorTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testSingleBucketSplits() throws ParseException {
         int db = 2;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -716,6 +728,7 @@ public class VisitorIteratorTestCase extends TestCase {
      * source with no finished, active or pending buckets
      * @throws ParseException upon docsel parse failure (shouldn't happen)
      */
+    @Test
     public void testRangeDistributionBitIncrease1NoPending() throws ParseException {
         int db = 2;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -739,6 +752,7 @@ public class VisitorIteratorTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testRangeDistributionBitIncrease1AllBucketStates() throws ParseException {
         int db = 3;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -793,6 +807,7 @@ public class VisitorIteratorTestCase extends TestCase {
         // Assume correct from here on
     }
 
+    @Test
     public void testRangeDistributionIncreaseMultipleBits() throws ParseException {
         int db = 16;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -854,6 +869,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(iter.getNext().getSuperbucket(), new BucketId(20, 0x6000));
     }
 
+    @Test
     public void testSingleBucketMerge() throws ParseException {
         int db = 2;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -875,6 +891,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(bp.getSuperbucket(), new BucketId(db, 0));
     }
 
+    @Test
     public void testRangeDistributionBitDecrease1() throws ParseException {
         int db = 16;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -931,6 +948,7 @@ public class VisitorIteratorTestCase extends TestCase {
 
     // Test that splitting and merging from and to the same db count gives
     // back the initial state
+    @Test
     public void testRangeDistributionBitIncreaseDecrease() throws ParseException {
         int db = 16;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -974,6 +992,7 @@ public class VisitorIteratorTestCase extends TestCase {
     // Test that intermittent changes in distribution are handled properly, e.g.
     // changing from 11 -> 9 with X active and then before all those are flushed,
     // the distribution goes up to 12
+    @Test
     public void testRangeDistributionBitChangeWithoutDone() throws ParseException {
         int db = 11;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -1042,6 +1061,7 @@ public class VisitorIteratorTestCase extends TestCase {
     }
 
     // Test a drop from 31->11 bits upon iteration start
+    @Test
     public void testRangeDistributionBitInitialDrop() throws ParseException {
         int db = 31;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -1084,6 +1104,7 @@ public class VisitorIteratorTestCase extends TestCase {
     // Similar to testRangeDistributionBitInitialDrop, but going from 1 to 11
     // This tests that doing so may be done in an optimized way rather than
     // attempting to split enough buckets to cover the entire bucket space!
+    @Test
     public void testRangeDistributionLosslessReset() throws ParseException {
         int db = 1;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -1151,6 +1172,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(bp[0].getSuperbucket(), new BucketId(11, 0));
     }
 
+    @Test
     public void testExplicitDistributionBitIncrease() throws ParseException {
         int distBits = 12;
 
@@ -1176,6 +1198,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(p.getTotalBucketCount(), 3);
     }
 
+    @Test
     public void testExplicitDistributionBitDecrease() throws ParseException {
         int distBits = 20;
 
@@ -1201,6 +1224,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(p.getTotalBucketCount(), 3);
     }
 
+    @Test
     public void testExplicitDistributionImportNoTruncation() throws ParseException {
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken p = new ProgressToken();
@@ -1227,6 +1251,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(3, p2.getTotalBucketCount());
     }
 
+    @Test
     public void testImportProgressWithOutdatedDistribution() throws ParseException {
         String input = "VDS bucket progress file\n" +
                 "10\n" +
@@ -1266,6 +1291,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(p2.getBucketCursor(), 503 << 2);
     }
 
+    @Test
     public void testImportInconsistentProgressIncrease() throws ParseException {
         // Bucket progress "file" that upon time of changing from 4 to 7
         // distribution bits and writing the progress had an active bucket
@@ -1311,6 +1337,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(iter.hasNext());
     }
 
+    @Test
     public void testImportInconsistentProgressDecrease() throws ParseException {
         // Bucket progress "file" that upon time of changing from 4 to 7
         // distribution bits and writing the progress had an active bucket
@@ -1342,6 +1369,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(iter.hasNext());
     }
 
+    @Test
     public void testEntireBucketSpaceCovered() throws ParseException {
         int db = 4;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -1382,6 +1410,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(buckets.isEmpty());
     }
 
+    @Test
     public void testExceptionOnWrongDocumentSelection() throws ParseException {
         BucketIdFactory idFactory = new BucketIdFactory();
         // Since we don't store the actual original document selection in the
@@ -1423,6 +1452,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(caughtIt);
     }
 
+    @Test
     public void testIsBucketFinished() throws ParseException {
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken p = new ProgressToken();
@@ -1449,6 +1479,7 @@ public class VisitorIteratorTestCase extends TestCase {
 
     // Test that altering distribution bit count sets ProgressToken as
     // inconsistent when there are active buckets
+    @Test
     public void testInconsistentState() throws ParseException {
         int db = 16;
         BucketIdFactory idFactory = new BucketIdFactory();
@@ -1479,6 +1510,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertFalse(p.isInconsistentState());
     }
 
+    @Test
     public void testMalformedProgressFile() {
         boolean caughtIt = false;
         try {
@@ -1495,6 +1527,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(caughtIt);
     }
 
+    @Test
     public void testFailOnTooFewLinesInFile() {
         boolean caughtIt = false;
         try {
@@ -1507,6 +1540,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(caughtIt);
     }
 
+    @Test
     public void testUnknownFirstHeaderLine() {
         boolean caughtIt = false;
         try {
@@ -1523,6 +1557,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertTrue(caughtIt);
     }
 
+    @Test
     public void testBinaryProgressSerialization() {
         String input = "VDS bucket progress file (48.828125% completed)\n" +
                 "10\n" +
@@ -1537,4 +1572,5 @@ public class VisitorIteratorTestCase extends TestCase {
         ProgressToken p2 = new ProgressToken(buf);
         assertEquals(input, p2.toString());
     }
- }
+
+}

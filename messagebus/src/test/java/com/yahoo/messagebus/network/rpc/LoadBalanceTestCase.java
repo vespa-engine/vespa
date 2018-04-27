@@ -9,15 +9,20 @@ import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.QueueAdapter;
 import com.yahoo.messagebus.test.SimpleMessage;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 
-/**
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
- */
-public class LoadBalanceTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-    public void testLoadBalance() throws ListenFailedException, UnknownHostException {
+/**
+ * @author havardpe
+ */
+public class LoadBalanceTestCase {
+
+    @Test
+    public void testLoadBalance() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         TestServer src = new TestServer("src", null, slobrok, null);
         TestServer dst1 = new TestServer("dst/1", null, slobrok, null);
@@ -93,4 +98,5 @@ public class LoadBalanceTestCase extends junit.framework.TestCase {
             return cnt;
         }
     }
+
 }

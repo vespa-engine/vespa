@@ -2,10 +2,14 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.messagebus.test.SimpleMessage;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class RateThrottlingTestCase extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
+public class RateThrottlingTestCase {
+
+    @Test
     public void testPending() {
         CustomTimer timer = new CustomTimer();
         RateThrottlingPolicy policy = new RateThrottlingPolicy(5.0, timer);
@@ -30,10 +34,12 @@ public class RateThrottlingTestCase extends TestCase {
         return ok;
     }
 
+    @Test
     public void testRates() {
         assertEquals(10, getActualRate(0.1), 1);
         assertEquals(1000, getActualRate(10), 100);
         assertEquals(500, getActualRate(5), 50);
         assertEquals(100, getActualRate(1), 10);
     }
+
 }

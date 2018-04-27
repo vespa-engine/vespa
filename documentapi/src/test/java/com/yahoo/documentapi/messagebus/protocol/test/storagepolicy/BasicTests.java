@@ -5,12 +5,18 @@ import com.yahoo.collections.Pair;
 import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.routing.RoutingNode;
+import org.junit.Test;
 
 import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 public class BasicTests extends StoragePolicyTestEnvironment {
 
     /** Test that we can send a message through the policy. */
+    @Test
     public void testNormalUsage() {
         setClusterNodes(new int[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
             // First we want a wrong distribution reply, so make sure we don't try correct node on random
@@ -22,6 +28,7 @@ public class BasicTests extends StoragePolicyTestEnvironment {
     }
 
     /** Test that we can identify newest cluster state and hang on to correct one. */
+    @Test
     public void testRepliesWrongOrderDuringStateChange() throws Exception{
         {
             setClusterNodes(new int[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
@@ -47,6 +54,7 @@ public class BasicTests extends StoragePolicyTestEnvironment {
      * bucket 1, which we will be using in the tests. To avoid doing this ahead of every test, we still hardcode the
      * values, though only one place, and have this test to verify they are correct, and make it easy to update the values.
      */
+    @Test
     public void testVerifyBucketOneNodePreferenceInTenNodeDefaultCluster() {
         int result[] = new int[10];
         setClusterNodes(new int[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });

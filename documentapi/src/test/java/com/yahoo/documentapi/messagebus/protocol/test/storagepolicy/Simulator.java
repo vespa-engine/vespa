@@ -14,6 +14,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public abstract class Simulator extends StoragePolicyTestEnvironment {
 
     enum FailureType {

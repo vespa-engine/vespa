@@ -2,20 +2,24 @@
 package com.yahoo.jrt;
 
 
+import org.junit.After;
+import org.junit.Before;
+
 import java.util.HashSet;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-public class MandatoryMethodsTest extends junit.framework.TestCase {
+
+public class MandatoryMethodsTest {
 
     Supervisor server;
     Acceptor   acceptor;
     Supervisor client;
     Target     target;
 
-    public MandatoryMethodsTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -23,6 +27,7 @@ public class MandatoryMethodsTest extends junit.framework.TestCase {
         target   = client.connect(new Spec("localhost", Test.PORT));
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -30,8 +35,8 @@ public class MandatoryMethodsTest extends junit.framework.TestCase {
         server.transport().shutdown().join();
     }
 
+    @org.junit.Test
     public void testPing() {
-
         Request req = new Request("frt.rpc.ping");
         target.invokeSync(req, 5.0);
 
@@ -39,8 +44,8 @@ public class MandatoryMethodsTest extends junit.framework.TestCase {
         assertEquals(0, req.returnValues().size());
     }
 
+    @org.junit.Test
     public void testGetMethodList() {
-
         Request req = new Request("frt.rpc.getMethodList");
         target.invokeSync(req, 5.0);
 
@@ -72,6 +77,7 @@ public class MandatoryMethodsTest extends junit.framework.TestCase {
         assertTrue(foundSet.contains("frt.rpc.getMethodInfo"));
     }
 
+    @org.junit.Test
     public void testGetMethodInfo() {
         Request req = new Request("frt.rpc.getMethodInfo");
         req.parameters().add(new StringValue("frt.rpc.getMethodInfo"));
@@ -94,4 +100,5 @@ public class MandatoryMethodsTest extends junit.framework.TestCase {
         assertEquals(7, retName.length);
         assertTrue(retName.length == retDesc.length);
     }
+
 }

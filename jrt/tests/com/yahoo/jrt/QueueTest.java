@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-public class QueueTest extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-    public QueueTest(String name) {
-        super(name);
-    }
+public class QueueTest {
 
+    @org.junit.Test
     public void testEmpty() {
         Queue queue = new Queue();
 
@@ -19,6 +20,7 @@ public class QueueTest extends junit.framework.TestCase {
         assertFalse(queue.dequeue() == null);
     }
 
+    @org.junit.Test
     public void testEnqueueDequeue() {
         Queue queue = new Queue();
         Integer int1 = new Integer(1);
@@ -69,6 +71,7 @@ public class QueueTest extends junit.framework.TestCase {
         assertEquals(queue.size(), 0);
     }
 
+    @org.junit.Test
     public void testFlush() {
         Queue src = new Queue();
         Queue dst = new Queue();
@@ -94,4 +97,5 @@ public class QueueTest extends junit.framework.TestCase {
         assertTrue(dst.dequeue() == int2);
         assertTrue(dst.dequeue() == int3);
     }
+
 }

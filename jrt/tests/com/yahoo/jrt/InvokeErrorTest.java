@@ -2,7 +2,14 @@
 package com.yahoo.jrt;
 
 
-public class InvokeErrorTest extends junit.framework.TestCase {
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class InvokeErrorTest {
+
     final double timeout=60.0;
     Supervisor   server;
     Acceptor     acceptor;
@@ -10,10 +17,7 @@ public class InvokeErrorTest extends junit.framework.TestCase {
     Target       target;
     Test.Barrier barrier;
 
-    public InvokeErrorTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -25,6 +29,7 @@ public class InvokeErrorTest extends junit.framework.TestCase {
         barrier = new Test.Barrier();
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -51,6 +56,7 @@ public class InvokeErrorTest extends junit.framework.TestCase {
         barrier.waitFor();
     }
 
+    @org.junit.Test
     public void testNoError() {
         Request req1 = new Request("test");
         req1.parameters().add(new Int32Value(42));
@@ -62,6 +68,7 @@ public class InvokeErrorTest extends junit.framework.TestCase {
         assertEquals(42, req1.returnValues().get(0).asInt32());
     }
 
+    @org.junit.Test
     public void testNoSuchMethod() {
         Request req1 = new Request("bogus");
         target.invokeSync(req1, timeout);
@@ -70,6 +77,7 @@ public class InvokeErrorTest extends junit.framework.TestCase {
         assertEquals(ErrorCode.NO_SUCH_METHOD, req1.errorCode());
     }
 
+    @org.junit.Test
     public void testWrongParameters() {
         Request req1 = new Request("test");
         req1.parameters().add(new Int32Value(42));
@@ -99,6 +107,7 @@ public class InvokeErrorTest extends junit.framework.TestCase {
         assertEquals(ErrorCode.WRONG_PARAMS, req3.errorCode());
     }
 
+    @org.junit.Test
     public void testWrongReturnValues() {
         Request req1 = new Request("test");
         req1.parameters().add(new Int32Value(42));
@@ -110,6 +119,7 @@ public class InvokeErrorTest extends junit.framework.TestCase {
         assertEquals(ErrorCode.WRONG_RETURN, req1.errorCode());
     }
 
+    @org.junit.Test
     public void testMethodFailed() {
         Request req1 = new Request("test");
         req1.parameters().add(new Int32Value(42));
@@ -130,6 +140,7 @@ public class InvokeErrorTest extends junit.framework.TestCase {
         assertEquals(75000, req2.errorCode());
     }
 
+    @org.junit.Test
     public void testConnectionError() {
         Test.Waiter w = new Test.Waiter();
         Request req1 = new Request("test_barrier");
@@ -146,4 +157,5 @@ public class InvokeErrorTest extends junit.framework.TestCase {
         assertEquals(0, req1.returnValues().size());
         assertEquals(ErrorCode.CONNECTION, req1.errorCode());
     }
+
 }

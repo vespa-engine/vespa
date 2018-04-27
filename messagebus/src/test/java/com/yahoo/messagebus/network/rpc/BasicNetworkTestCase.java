@@ -13,22 +13,30 @@ import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 
 /**
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
-public class BasicNetworkTestCase extends junit.framework.TestCase {
+public class BasicNetworkTestCase {
 
     Slobrok     slobrok;
     TestServer src;
     TestServer  pxy;
     TestServer  dst;
 
-    public void setUp() throws ListenFailedException, UnknownHostException {
+    @Before
+    public void setUp() throws ListenFailedException {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME);
         table.addHop("pxy", "test/pxy/session", Arrays.asList("test/pxy/session"));
         table.addHop("dst", "test/dst/session", Arrays.asList("test/dst/session"));
@@ -39,6 +47,7 @@ public class BasicNetworkTestCase extends junit.framework.TestCase {
         dst = new TestServer("test/dst", table, slobrok, null);
     }
 
+    @After
     public void tearDown() {
         dst.destroy();
         pxy.destroy();
@@ -46,6 +55,7 @@ public class BasicNetworkTestCase extends junit.framework.TestCase {
         slobrok.stop();
     }
 
+    @Test
     public void testNetwork() {
         // set up receptors
         Receptor src_rr = new Receptor();
@@ -115,6 +125,7 @@ public class BasicNetworkTestCase extends junit.framework.TestCase {
         ds.destroy();
     }
 
+    @Test
     public void testTimeoutsFollowMessage() {
         SourceSessionParams params = new SourceSessionParams().setTimeout(600.0);
         SourceSession ss = src.mb.createSourceSession(new Receptor(), params);
@@ -149,4 +160,5 @@ public class BasicNetworkTestCase extends junit.framework.TestCase {
         ss.destroy();
         ds.destroy();
     }
+
 }

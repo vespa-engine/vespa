@@ -2,12 +2,16 @@
 package com.yahoo.documentapi.messagebus.loadtypes.test;
 
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author thomasg
  */
-public class LoadTypesTestCase extends TestCase {
+public class LoadTypesTestCase {
+
+    @Test
     public void testIdGeneration() {
         LoadTypeSet set = new LoadTypeSet();
         set.addType("vespagrim", "VERY_HIGH");
@@ -21,4 +25,5 @@ public class LoadTypesTestCase extends TestCase {
 
         assertEquals(0xc21803d4, set.getNameMap().get("vespagrim").getId());
     }
+
 }

@@ -1,8 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import org.junit.After;
+import org.junit.Before;
 
-public class BackTargetTest extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class BackTargetTest {
 
     Supervisor server;
     Acceptor   acceptor;
@@ -13,10 +18,7 @@ public class BackTargetTest extends junit.framework.TestCase {
     Target     serverBackTarget;
     Target     clientBackTarget;
 
-    public BackTargetTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -39,6 +41,7 @@ public class BackTargetTest extends junit.framework.TestCase {
         clientBackTarget = null;
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -77,6 +80,7 @@ public class BackTargetTest extends junit.framework.TestCase {
         assertTrue(client == (clientBackTarget != null));
     }
 
+    @org.junit.Test
     public void testBackTarget() {
         checkTargets(false, false);
         target.invokeSync(new Request("sample_target"), 5.0);
@@ -100,6 +104,7 @@ public class BackTargetTest extends junit.framework.TestCase {
         checkValues(3, 3);
     }
 
+    @org.junit.Test
     public void testBogusBackTarget() {
         Request req = new Request("inc");
         try {
@@ -107,4 +112,5 @@ public class BackTargetTest extends junit.framework.TestCase {
             assertTrue(false);
         } catch (IllegalStateException e) {}
     }
+
 }

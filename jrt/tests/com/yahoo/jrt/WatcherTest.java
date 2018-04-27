@@ -2,7 +2,14 @@
 package com.yahoo.jrt;
 
 
-public class WatcherTest extends junit.framework.TestCase {
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class WatcherTest {
 
     private static class Watcher implements TargetWatcher {
         private int notifyCnt = 0;
@@ -25,10 +32,7 @@ public class WatcherTest extends junit.framework.TestCase {
     Supervisor client;
     Target     target;
 
-    public WatcherTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -36,6 +40,7 @@ public class WatcherTest extends junit.framework.TestCase {
         target   = client.connect(new Spec("localhost", Test.PORT));
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -43,6 +48,7 @@ public class WatcherTest extends junit.framework.TestCase {
         server.transport().shutdown().join();
     }
 
+    @org.junit.Test
     public void testNotify() {
         Watcher w1 = new Watcher();
         Watcher w2 = new Watcher();
@@ -95,4 +101,5 @@ public class WatcherTest extends junit.framework.TestCase {
         assertEquals(0, w4.cnt());
         assertEquals(0, w5.cnt());
     }
+
 }

@@ -3,12 +3,15 @@ package com.yahoo.documentapi.messagebus.test;
 
 import com.yahoo.documentapi.ThroughputLimitQueue;
 import com.yahoo.concurrent.Timer;
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author thomasg
  */
-public class ThroughputLimitQueueTestCase extends TestCase {
+public class ThroughputLimitQueueTestCase {
+
      class TestTimer implements Timer {
         public long milliTime = 0;
 
@@ -17,15 +20,7 @@ public class ThroughputLimitQueueTestCase extends TestCase {
         }
     }
 
-
-    public void setUp() {
-
-    }
-
-    public void tearDown() {
-
-    }
-
+    @Test
     public void testCapacity() {
         TestTimer t = new TestTimer();
         t.milliTime = 10;
@@ -50,4 +45,5 @@ public class ThroughputLimitQueueTestCase extends TestCase {
 
         assertEquals(20, q.capacity());
     }
+
 }

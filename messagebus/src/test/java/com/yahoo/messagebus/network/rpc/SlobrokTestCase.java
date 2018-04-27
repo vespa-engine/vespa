@@ -7,6 +7,9 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.network.Identity;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -14,11 +17,13 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import static org.junit.Assert.assertTrue;
+
 
 /**
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
-public class SlobrokTestCase extends junit.framework.TestCase {
+public class SlobrokTestCase {
 
     private static class Res {
         private List<Mirror.Entry> lst = new ArrayList<>();
@@ -29,11 +34,6 @@ public class SlobrokTestCase extends junit.framework.TestCase {
         public Mirror.Entry[] toArray() {
             return lst.toArray(new Mirror.Entry[lst.size()]);
         }
-    }
-
-
-    public SlobrokTestCase(String message) {
-        super(message);
     }
 
     Slobrok    slobrok;
@@ -83,7 +83,8 @@ public class SlobrokTestCase extends junit.framework.TestCase {
         assertTrue(false);
     }
 
-    public void setUp() throws ListenFailedException, UnknownHostException {
+    @Before
+    public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         String slobrokCfgId = "raw:slobrok[1]\nslobrok[0].connectionspec \"" + new Spec("localhost", slobrok.port()).toString() + "\"\n";
         net1 = new RPCNetwork(new RPCNetworkParams().setIdentity(new Identity("net/a")).setSlobrokConfigId(slobrokCfgId));
@@ -94,6 +95,7 @@ public class SlobrokTestCase extends junit.framework.TestCase {
         port3 = net3.getPort();
     }
 
+    @After
     public void tearDown() {
         net3.shutdown();
         net2.shutdown();
@@ -101,6 +103,7 @@ public class SlobrokTestCase extends junit.framework.TestCase {
         slobrok.stop();
     }
 
+    @Test
     public void testSlobrok() {
         net1.registerSession("foo");
         net2.registerSession("foo");
@@ -148,4 +151,5 @@ public class SlobrokTestCase extends junit.framework.TestCase {
               .add("net/b/foo", net2.getConnectionSpec())
               .add("net/c/foo", net3.getConnectionSpec()).toArray());
     }
+
 }

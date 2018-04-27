@@ -8,19 +8,21 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import com.yahoo.jrt.tool.RpcInvoker;
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
-public class InvokeSyncTest extends junit.framework.TestCase {
+public class InvokeSyncTest {
 
     Supervisor server;
     Acceptor   acceptor;
     Supervisor client;
     Target     target;
     
-    public InvokeSyncTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -35,6 +37,7 @@ public class InvokeSyncTest extends junit.framework.TestCase {
                           .methodDesc("Method taking all types of params"));
     }
 
+    @After
     public void tearDown() {
         System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
         target.close();
@@ -54,6 +57,7 @@ public class InvokeSyncTest extends junit.framework.TestCase {
         req.returnValues().add(new StringValue("This was alltypes. The string param was: "+req.parameters().get(6).asString()));
     }
     
+    @org.junit.Test
     public void testSync() {
         Request req = new Request("concat");
         req.parameters().add(new StringValue("abc"));
@@ -65,7 +69,8 @@ public class InvokeSyncTest extends junit.framework.TestCase {
         assertEquals(1, req.returnValues().size());
         assertEquals("abcdef", req.returnValues().get(0).asString());
     }
-    
+
+    @org.junit.Test
     public void testRpcInvoker() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         System.setOut(new PrintStream(baos));

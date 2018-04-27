@@ -2,15 +2,21 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.messagebus.test.SimpleMessage;
+import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.Queue;
 
-/**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- */
-public class SequencerTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+/**
+ * @author Simon Thoresen
+ */
+public class SequencerTestCase {
+
+    @Test
     public void testSyncNone() {
         TestQueue src = new TestQueue();
         TestQueue dst = new TestQueue();
@@ -42,6 +48,7 @@ public class SequencerTestCase extends junit.framework.TestCase {
         assertEquals(0, dst.size());
     }
 
+    @Test
     public void testSyncId() {
         TestQueue src = new TestQueue();
         TestQueue dst = new TestQueue();
@@ -175,5 +182,6 @@ public class SequencerTestCase extends junit.framework.TestCase {
             return seqId;
         }
     }
+
 }
 

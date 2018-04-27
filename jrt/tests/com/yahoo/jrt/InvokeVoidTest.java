@@ -2,17 +2,20 @@
 package com.yahoo.jrt;
 
 
-public class InvokeVoidTest extends junit.framework.TestCase {
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class InvokeVoidTest {
 
     Test.Orb server;
     Acceptor acceptor;
     Test.Orb client;
     Target   target;
 
-    public InvokeVoidTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Test.Orb(new Transport());
         client   = new Test.Orb(new Transport());
@@ -29,6 +32,7 @@ public class InvokeVoidTest extends junit.framework.TestCase {
                          .returnDesc(0, "value", "the stored value"));
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -48,8 +52,8 @@ public class InvokeVoidTest extends junit.framework.TestCase {
         req.returnValues().add(new Int32Value(value));
     }
 
+    @org.junit.Test
     public void testInvokeVoid() {
-
         Request req = new Request("set");
         req.parameters().add(new Int32Value(40));
         target.invokeSync(req, 5.0);
@@ -71,4 +75,5 @@ public class InvokeVoidTest extends junit.framework.TestCase {
         assertTrue(server.readBytes == client.writeBytes);
         assertTrue(client.readBytes == server.writeBytes);
     }
+
 }

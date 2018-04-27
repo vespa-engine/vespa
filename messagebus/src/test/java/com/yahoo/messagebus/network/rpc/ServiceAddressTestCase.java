@@ -6,21 +6,26 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.network.Identity;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class ServiceAddressTestCase extends junit.framework.TestCase {
+public class ServiceAddressTestCase {
 
     private Slobrok slobrok;
     private RPCNetwork network;
 
-    public ServiceAddressTestCase(String msg) {
-        super(msg);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException, UnknownHostException {
         slobrok = new Slobrok();
         network = new RPCNetwork(new RPCNetworkParams()
@@ -29,11 +34,13 @@ public class ServiceAddressTestCase extends junit.framework.TestCase {
                                                      new Spec("localhost", slobrok.port()).toString() + "\"\n"));
     }
 
+    @After
     public void tearDown() {
         network.shutdown();
         slobrok.stop();
     }
 
+    @Test
     public void testAddrServiceAddress() {
         assertNullAddress("tcp");
         assertNullAddress("tcp/");
@@ -47,6 +54,7 @@ public class ServiceAddressTestCase extends junit.framework.TestCase {
         assertNullAddress("tcp/:/session");
     }
 
+    @Test
     public void testNameServiceAddress() {
         network.unregisterSession("session");
         assertTrue(waitSlobrok("foo/session", 0));
@@ -87,4 +95,5 @@ public class ServiceAddressTestCase extends junit.framework.TestCase {
             assertEquals(expectedSession, obj.getSessionName());
         }
     }
+
 }

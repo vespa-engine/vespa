@@ -1,8 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import org.junit.After;
+import org.junit.Before;
 
-public class AbortTest extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class AbortTest {
 
     Supervisor   server;
     Acceptor     acceptor;
@@ -10,10 +15,7 @@ public class AbortTest extends junit.framework.TestCase {
     Target       target;
     Test.Barrier barrier;
 
-    public AbortTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
@@ -23,6 +25,7 @@ public class AbortTest extends junit.framework.TestCase {
         barrier = new Test.Barrier();
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -36,6 +39,7 @@ public class AbortTest extends junit.framework.TestCase {
         req.returnValues().add(new Int32Value(value));
     }
 
+    @org.junit.Test
     public void testAbort() {
         Test.Waiter w = new Test.Waiter();
         Request req = new Request("test");
@@ -65,6 +69,7 @@ public class AbortTest extends junit.framework.TestCase {
         assertEquals(0, req.returnValues().size());
     }
 
+    @org.junit.Test
     public void testBogusAbort() {
         Request req = new Request("test");
         req.parameters().add(new Int32Value(40));
@@ -73,4 +78,5 @@ public class AbortTest extends junit.framework.TestCase {
             assertTrue(false);
         } catch (IllegalStateException e) {}
     }
+
 }

@@ -11,15 +11,19 @@ import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
+import org.junit.Test;
 
-import java.net.UnknownHostException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class SimpleTripTestCase extends junit.framework.TestCase {
+public class SimpleTripTestCase {
 
-    public void testSimpleTrip() throws ListenFailedException, UnknownHostException {
+    @Test
+    public void testSimpleTrip() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         TestServer server = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
                                            new RPCNetworkParams()
@@ -50,4 +54,5 @@ public class SimpleTripTestCase extends junit.framework.TestCase {
         dst.destroy();
         server.destroy();
     }
+
 }

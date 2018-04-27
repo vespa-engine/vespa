@@ -2,52 +2,59 @@
 package com.yahoo.fsa.test;
 
 import com.yahoo.fsa.FSA;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author bratseth
  */
-public class FSATestCase extends junit.framework.TestCase {
+public class FSATestCase {
 
     private FSA fsa;
 
     private FSA.State state;
 
-    public FSATestCase(String name) {
-        super(name);
-    }
-
-    protected void setUp() throws IOException {
+    @Before
+    public void setUp() throws IOException {
         fsa=new FSA(new FileInputStream("src/test/fsa/test-fsa.fsa"));
         state=fsa.getState();
     }
 
+    @Test
     public void testSingleWordDelta() {
         state.delta("aword");
         assertTrue(state.isValid());
         assertTrue(state.isFinal());
     }
 
+    @Test
     public void testSingleWordDeltaWord() {
         state.deltaWord("aword");
         assertTrue(state.isValid());
         assertTrue(state.isFinal());
     }
 
+    @Test
     public void testSingleWordDeltaPartialMatch() {
         state.delta("awo");
         assertTrue(state.isValid());
         assertFalse(state.isFinal());
     }
 
+    @Test
     public void testSingleWordDeltaPartialMatchWord() {
         state.deltaWord("awo");
         assertTrue(state.isValid());
         assertFalse(state.isFinal());
     }
 
+    @Test
     public void testMultiWordDelta() {
         state.delta("th");
         assertFalse(state.isFinal());
@@ -62,6 +69,7 @@ public class FSATestCase extends junit.framework.TestCase {
         assertTrue(state.isFinal());
     }
 
+    @Test
     public void testMultiWordDeltaWord() {
         state.deltaWord("this");
         assertFalse(state.isFinal());
@@ -74,6 +82,7 @@ public class FSATestCase extends junit.framework.TestCase {
         assertTrue(state.isFinal());
     }
 
+    @Test
     public void testMultiWordDeltaWordInvalid() {
         state.deltaWord("th");
         assertFalse(state.isFinal());
@@ -82,6 +91,7 @@ public class FSATestCase extends junit.framework.TestCase {
         assertFalse(state.isValid());
     }
 
+    @Test
     public void testMultiWordDeltaTry() {
         assertFalse(state.tryDeltaWord("thiss"));
         assertTrue(state.isValid());
@@ -94,7 +104,6 @@ public class FSATestCase extends junit.framework.TestCase {
         assertTrue(state.tryDeltaWord("test"));
         assertTrue(state.isValid());
         assertTrue(state.isFinal());
-
     }
 
 }

@@ -2,33 +2,36 @@
 package com.yahoo.jrt.tool;
 
 import com.yahoo.jrt.Request;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author bratseth
  */
-public class RpcInvokerTest extends junit.framework.TestCase {
+public class RpcInvokerTest {
 
-    public RpcInvokerTest(String name) {
-        super(name);
-    }
-
+    @Test
     public void test0Args() {
         assertCorrectArguments("");
     }
 
+    @Test
     public void test1StringShorthanArgs() {
         assertCorrectArguments("foo");
     }
 
+    @Test
     public void test2StringArgs() {
         assertCorrectArguments("s:foo s:bar");
     }
 
+    @Test
     public void test2StringShorthandArgs() {
         assertCorrectArguments("foo bar");
     }

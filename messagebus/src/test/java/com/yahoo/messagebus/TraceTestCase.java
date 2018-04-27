@@ -1,11 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-/**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- */
-public class TraceTestCase extends junit.framework.TestCase {
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * @author Simon Thoresen
+ */
+public class TraceTestCase {
+
+    @Test
     public void testEncodeDecode() {
         assertEquals("()", TraceNode.decode("").encode());
         assertEquals("()", TraceNode.decode("[xyz").encode());
@@ -91,6 +97,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testReservedChars() {
         TraceNode t = new TraceNode();
         t.addChild("abc(){}[]\\xyz");
@@ -109,6 +116,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testAdd() {
         TraceNode t1 = TraceNode.decode("([x])");
         TraceNode t2 = TraceNode.decode("([y])");
@@ -128,12 +136,14 @@ public class TraceTestCase extends junit.framework.TestCase {
         assertEquals("([y]([y])([y]([y])))", t2.encode());
     }
 
+    @Test
     public void testStrict() {
         assertEquals("{}", TraceNode.decode("()").setStrict(false).encode());
         assertEquals("{[x]}", TraceNode.decode("([x])").setStrict(false).encode());
         assertEquals("{[x][y]}", TraceNode.decode("([x][y])").setStrict(false).encode());
     }
 
+    @Test
     public void testTraceLevel() {
         Trace t = new Trace();
         t.setLevel(4);
@@ -160,6 +170,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         assertEquals(5, t.getRoot().getNumChildren());
     }
 
+    @Test
     public void testCompact() {
         assertEquals("()", TraceNode.decode("()").compact().encode());
         assertEquals("()", TraceNode.decode("(())").compact().encode());
@@ -189,6 +200,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         assertEquals("({[a][b][c][d][e][f]})", TraceNode.decode("({({[a][b]})({[c][d]})({[e][f]})})").compact().encode());
     }
 
+    @Test
     public void testSort() {
         assertEquals("([b][a][c])", TraceNode.decode("([b][a][c])").sort().encode());
         assertEquals("({[a][b][c]})", TraceNode.decode("({[b][a][c]})").sort().encode());
@@ -198,6 +210,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         assertEquals("({([b]){[a][c]}})", TraceNode.decode("({{[c][a]}([b])})").sort().encode());
     }
 
+    @Test
     public void testNormalize() {
         TraceNode t1 = TraceNode.decode("({([a][b]{[x][y]([p][q])})([c][d])([e][f])})");
         TraceNode t2 = TraceNode.decode("({([a][b]{[y][x]([p][q])})([c][d])([e][f])})");
@@ -238,6 +251,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         assertEquals("({([c][d])([e][f])([a][b]{[x][y]([p][q])})})", t1.normalize().encode());
     }
 
+    @Test
     public void testTraceDump() {
         {
             Trace big = new Trace();
@@ -283,4 +297,5 @@ public class TraceTestCase extends junit.framework.TestCase {
             assertEquals(s2.toString(27), s2.toString());
         }
     }
+
 }

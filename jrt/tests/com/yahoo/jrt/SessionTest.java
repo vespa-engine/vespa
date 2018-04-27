@@ -2,8 +2,14 @@
 package com.yahoo.jrt;
 
 
-public class SessionTest extends junit.framework.TestCase
-    implements SessionHandler {
+import org.junit.After;
+import org.junit.Before;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class SessionTest implements SessionHandler {
 
     private static class Session {
         private static int     cnt   = 0;
@@ -102,10 +108,7 @@ public class SessionTest extends junit.framework.TestCase
     Target        target;
     Test.Receptor receptor;
 
-    public SessionTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         Session.reset();
         server   = new Test.Orb(new Transport());
@@ -127,6 +130,7 @@ public class SessionTest extends junit.framework.TestCase
         receptor = new Test.Receptor();
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -238,6 +242,7 @@ public class SessionTest extends junit.framework.TestCase
         client.transport().sync().sync();
     }
 
+    @org.junit.Test
     public void testConnDownLast() {
         waitState(2, 1, 1, 0, 0, 1, 1, 0, 0);
         assertEquals(2, Session.cnt());
@@ -287,6 +292,7 @@ public class SessionTest extends junit.framework.TestCase
         assertFalse(Session.getError());
     }
 
+    @org.junit.Test
     public void testReqDoneLast() {
         waitState(2, 1, 1, 0, 0, 1, 1, 0, 0);
         assertEquals(2, Session.cnt());
@@ -353,6 +359,7 @@ public class SessionTest extends junit.framework.TestCase
         assertFalse(Session.getError());
     }
 
+    @org.junit.Test
     public void testNeverLive() {
         waitState(2, 1, 1, 0, 0, 1, 1, 0, 0);
         assertEquals(2, Session.cnt());
@@ -392,6 +399,7 @@ public class SessionTest extends junit.framework.TestCase
         assertFalse(Session.getError());
     }
 
+    @org.junit.Test
     public void testTransportDown() {
         waitState(2, 1, 1, 0, 0, 1, 1, 0, 0);
         assertEquals(2, Session.cnt());
@@ -448,4 +456,5 @@ public class SessionTest extends junit.framework.TestCase
         assertEquals(3, client.finiCount);
         assertFalse(Session.getError());
     }
+
 }

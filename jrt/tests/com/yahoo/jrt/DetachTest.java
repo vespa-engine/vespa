@@ -1,8 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import org.junit.After;
+import org.junit.Before;
 
-public class DetachTest extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class DetachTest {
 
     Test.Orb      server;
     Acceptor      acceptor;
@@ -11,10 +16,7 @@ public class DetachTest extends junit.framework.TestCase {
     Test.Receptor receptor;
     Test.Barrier  barrier;
 
-    public DetachTest(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() throws ListenFailedException {
         server   = new Test.Orb(new Transport());
         client   = new Test.Orb(new Transport());
@@ -31,6 +33,7 @@ public class DetachTest extends junit.framework.TestCase {
         barrier = new Test.Barrier();
     }
 
+    @After
     public void tearDown() {
         target.close();
         acceptor.shutdown().join();
@@ -61,6 +64,7 @@ public class DetachTest extends junit.framework.TestCase {
         barrier.waitFor();
     }
 
+    @org.junit.Test
     public void testDetach() {
         Test.Waiter w1 = new Test.Waiter();
         Request req1 = new Request("d_inc");
@@ -103,6 +107,7 @@ public class DetachTest extends junit.framework.TestCase {
         assertTrue(client.readBytes == server.writeBytes);
     }
 
+    @org.junit.Test
     public void testBogusDetach() {
         Request req1 = new Request("inc_b");
         req1.parameters().add(new Int32Value(200));
@@ -133,4 +138,5 @@ public class DetachTest extends junit.framework.TestCase {
         assertEquals(1, req3.returnValues().size());
         assertEquals(101, req3.returnValues().get(0).asInt32());
     }
+
 }

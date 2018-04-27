@@ -4,13 +4,17 @@ package com.yahoo.messagebus.network.rpc;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class ServicePoolTestCase extends TestCase {
+public class ServicePoolTestCase {
 
+    @Test
     public void testMaxSize() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         RPCNetwork net = new RPCNetwork(new RPCNetworkParams().setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
@@ -54,4 +58,5 @@ public class ServicePoolTestCase extends TestCase {
 
         slobrok.stop();
     }
+
 }

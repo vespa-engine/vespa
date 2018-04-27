@@ -1,18 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-public class BufferTest extends junit.framework.TestCase {
+public class BufferTest {
 
-    public BufferTest(String name) {
-        super(name);
-    }
-
-
+    @org.junit.Test
     public void testBuffer() {
 
         int        size = Buffer.MAX_IO + (Buffer.MAX_IO / 10);
@@ -65,6 +63,7 @@ public class BufferTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(x, y));
     }
 
+    @org.junit.Test
     public void testBufferCompact() {
         Buffer buf = new Buffer(10);
         buf.getWritable(3).put((byte)10).put((byte)20).put((byte)30);
@@ -103,8 +102,8 @@ public class BufferTest extends junit.framework.TestCase {
         }
     }
 
+    @org.junit.Test
     public void testBufferMax() {
-
         int        size = Buffer.MAX_IO + (Buffer.MAX_IO / 10);
         Buffer     buf  = new Buffer(1024);
         ByteBuffer b    = null;
@@ -159,6 +158,7 @@ public class BufferTest extends junit.framework.TestCase {
         assertTrue(Arrays.equals(x, y));
     }
 
+    @org.junit.Test
     public void testBufferShrink() {
         Buffer     buf = new Buffer(500);
         ByteBuffer b   = null;
@@ -262,4 +262,5 @@ public class BufferTest extends junit.framework.TestCase {
             assertEquals(50, b.get());
         }
     }
+
 }

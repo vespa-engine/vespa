@@ -3,12 +3,16 @@ package com.yahoo.documentapi.messagebus.test;
 
 import com.yahoo.documentapi.messagebus.ScheduledEventQueue;
 import com.yahoo.concurrent.Timer;
-import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.util.concurrent.RejectedExecutionException;
 
-public class ScheduledEventQueueTestCase extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class ScheduledEventQueueTestCase {
 
     class TestTask implements Runnable {
         public long timestamp = 0;
