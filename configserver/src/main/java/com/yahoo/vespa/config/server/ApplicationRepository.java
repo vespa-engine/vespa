@@ -45,7 +45,7 @@ import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,7 +77,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private static final Logger log = Logger.getLogger(ApplicationRepository.class.getName());
 
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
     private final ApplicationConvergenceChecker convergeChecker;
     private final HttpProxy httpProxy;
@@ -88,32 +88,32 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final FileDistributionStatus fileDistributionStatus;
 
     @Inject
-    public ApplicationRepository(Tenants tenants,
+    public ApplicationRepository(TenantRepository tenantRepository,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  ApplicationConvergenceChecker applicationConvergenceChecker,
                                  HttpProxy httpProxy, 
                                  ConfigserverConfig configserverConfig) {
-        this(tenants, hostProvisionerProvider.getHostProvisioner(),
+        this(tenantRepository, hostProvisionerProvider.getHostProvisioner(),
              applicationConvergenceChecker, httpProxy, configserverConfig, Clock.systemUTC(), new FileDistributionStatus());
     }
 
     // For testing
-    public ApplicationRepository(Tenants tenants,
+    public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
                                  Clock clock) {
-        this(tenants, Optional.of(hostProvisioner),
+        this(tenantRepository, Optional.of(hostProvisioner),
              new ApplicationConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
              new ConfigserverConfig(new ConfigserverConfig.Builder()), clock, new FileDistributionStatus());
     }
 
-    private ApplicationRepository(Tenants tenants,
+    private ApplicationRepository(TenantRepository tenantRepository,
                                   Optional<Provisioner> hostProvisioner,
                                   ApplicationConvergenceChecker applicationConvergenceChecker,
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
                                   Clock clock,
                                   FileDistributionStatus fileDistributionStatus) {
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
         this.convergeChecker = applicationConvergenceChecker;
         this.httpProxy = httpProxy;
@@ -134,7 +134,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
         ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
         logConfigChangeActions(actions, logger);
-        log.log(LogLevel.INFO, Tenants.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+        log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
         return new PrepareResult(sessionId, actions, deployLog);
     }
 
@@ -146,7 +146,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
-        Tenant tenant = tenants.getTenant(prepareParams.getApplicationId().tenant());
+        Tenant tenant = tenantRepository.getTenant(prepareParams.getApplicationId().tenant());
         return deploy(tenant, in, prepareParams, false, false, clock.instant());
     }
 
@@ -181,7 +181,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      */
     @Override
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application, Duration timeout) {
-        Tenant tenant = tenants.getTenant(application.tenant());
+        Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
         LocalSession activeSession = getActiveSession(tenant, application);
         if (activeSession == null) return Optional.empty();
@@ -222,7 +222,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the remove transaction fails. This method is exception safe.
      */
     public boolean remove(ApplicationId applicationId) {
-        Optional<Tenant> owner = Optional.ofNullable(tenants.getTenant(applicationId.tenant()));
+        Optional<Tenant> owner = Optional.ofNullable(tenantRepository.getTenant(applicationId.tenant()));
         if ( ! owner.isPresent()) return false;
 
         TenantApplications tenantApplications = owner.get().getApplicationRepo();
@@ -277,7 +277,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, LocalSession.Mode mode) {
-        Tenant tenant = tenants.getTenant(tenantName);
+        Tenant tenant = tenantRepository.getTenant(tenantName);
         return getLocalSession(tenant, sessionId).getApplicationFile(Path.fromString(path), mode);
     }
 
@@ -307,7 +307,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return the active session, or null if there is no active session for the given application id.
      */
     public LocalSession getActiveSession(ApplicationId applicationId) {
-        return getActiveSession(tenants.getTenant(applicationId.tenant()), applicationId);
+        return getActiveSession(tenantRepository.getTenant(applicationId.tenant()), applicationId);
     }
 
     public long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
@@ -354,10 +354,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
         TenantName tenantName = applicationId.tenant();
-        if (!tenants.checkThatTenantExists(tenantName)) {
+        if (!tenantRepository.checkThatTenantExists(tenantName)) {
             throw new IllegalArgumentException("Tenant " + tenantName + " was not found.");
         }
-        Tenant tenant = tenants.getTenant(tenantName);
+        Tenant tenant = tenantRepository.getTenant(tenantName);
         List<ApplicationId> applicationIds = listApplicationIds(tenant);
         if (!applicationIds.contains(applicationId)) {
             throw new IllegalArgumentException("No such application id: " + applicationId);
@@ -439,7 +439,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                 new DaemonThreadFactory("redeploy apps"));
         // Keep track of deployment per application
         Map<ApplicationId, Future<?>> futures = new HashMap<>();
-        tenants.getAllTenants()
+        tenantRepository.getAllTenants()
                 .forEach(tenant -> listApplicationIds(tenant)
                         .forEach(appId -> deployFromLocalActive(appId).ifPresent(
                                 deployment -> futures.put(appId,executor.submit(deployment::activate)))));

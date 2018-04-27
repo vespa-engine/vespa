@@ -4,14 +4,13 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.config.provision.*;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,7 +31,7 @@ public class HostHandlerTest {
     private HostHandler handler;
     private final static TenantName mytenant = TenantName.from("mytenant");
     private final static String hostname = "testhost";
-    private Tenants tenants;
+    private TenantRepository tenantRepository;
     private HostRegistries hostRegistries;
     private HostHandler hostHandler;
 
@@ -41,7 +40,7 @@ public class HostHandlerTest {
         TestTenantBuilder testBuilder = new TestTenantBuilder();
         testBuilder.createTenant(mytenant).withReloadHandler(new MockReloadHandler());
 
-        tenants = testBuilder.createTenants();
+        tenantRepository = testBuilder.createTenants();
         handler = createHostHandler();
     }
 
@@ -63,14 +62,14 @@ public class HostHandlerTest {
         assertThat(hostRegistries, is(hostHandler.hostRegistries));
         long sessionId = 1;
         ApplicationId id = ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName());
-        ApplicationHandlerTest.addMockApplication(tenants.getTenant(mytenant), id, sessionId, Clock.systemUTC());
+        ApplicationHandlerTest.addMockApplication(tenantRepository.getTenant(mytenant), id, sessionId, Clock.systemUTC());
         assertApplicationForHost(hostname, mytenant, id, Zone.defaultZone());
     }
 
     @Test
     public void require_that_handler_gives_error_for_unknown_hostname() throws Exception {
         long sessionId = 1;
-        ApplicationHandlerTest.addMockApplication(tenants.getTenant(mytenant), ApplicationId.defaultId(), sessionId, Clock.systemUTC());
+        ApplicationHandlerTest.addMockApplication(tenantRepository.getTenant(mytenant), ApplicationId.defaultId(), sessionId, Clock.systemUTC());
         final String hostname = "unknown";
         assertErrorForHost(hostname,
                 Response.Status.NOT_FOUND,

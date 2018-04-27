@@ -17,7 +17,7 @@ import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,8 +48,8 @@ public class RemoteSessionRepoTest extends TestWithCurator {
                                              tenantName)
                 .build();
         this.remoteSessionRepo = tenant.getRemoteSessionRepo();
-        curator.create(Tenants.getTenantPath(tenantName).append("/applications"));
-        curator.create(Tenants.getSessionsPath(tenantName));
+        curator.create(TenantRepository.getTenantPath(tenantName).append("/applications"));
+        curator.create(TenantRepository.getSessionsPath(tenantName));
         createSession(1l, false);
         createSession(2l, false);
     }
@@ -59,7 +59,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
     }
 
     private void createSession(long sessionId, boolean wait, TenantName tenantName) {
-        Path sessionsPath = Tenants.getSessionsPath(tenantName);
+        Path sessionsPath = TenantRepository.getSessionsPath(tenantName);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath.append(String.valueOf(sessionId)));
         zkc.createNewSession(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         if (wait) {
@@ -88,7 +88,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
         assertStatusChange(sessionId, Session.Status.PREPARE);
         assertStatusChange(sessionId, Session.Status.ACTIVATE);
 
-        Path session = Tenants.getSessionsPath(tenantName).append("" + sessionId);
+        Path session = TenantRepository.getSessionsPath(tenantName).append("" + sessionId);
         curator.delete(session);
         assertSessionRemoved(sessionId);
         assertNull(remoteSessionRepo.getSession(sessionId));
@@ -106,7 +106,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
         Tenant tenant = TenantBuilder.create(new TestComponentRegistry.Builder().curator(curator).build(), mytenant)
                 .withApplicationRepo(applicationRepo)
                 .build();
-        curator.create(Tenants.getSessionsPath(mytenant));
+        curator.create(TenantRepository.getSessionsPath(mytenant));
         remoteSessionRepo = tenant.getRemoteSessionRepo();
         assertThat(remoteSessionRepo.listSessions().size(), is(0));
         createSession(sessionId, true, mytenant);
@@ -114,7 +114,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
     }
 
     private void assertStatusChange(long sessionId, Session.Status status) throws Exception {
-        Path statePath = Tenants.getSessionsPath(tenantName).append("" + sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+        Path statePath = TenantRepository.getSessionsPath(tenantName).append("" + sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
         curator.create(statePath);
         curatorFramework.setData().forPath(statePath.getAbsolute(), Utf8.toBytes(status.toString()));
         System.out.println("Setting status " + status + " for " + sessionId);

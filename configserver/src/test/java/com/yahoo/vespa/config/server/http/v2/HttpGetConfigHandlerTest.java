@@ -13,6 +13,7 @@ import java.util.HashSet;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Test;
 import com.yahoo.config.SimpletypesConfig;
@@ -20,12 +21,10 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
-import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.HandlerTest;
@@ -48,10 +47,10 @@ public class HttpGetConfigHandlerTest {
             }} );        
         TestTenantBuilder tb = new TestTenantBuilder();
         tb.createTenant(tenant).withRequestHandler(mockRequestHandler).build();
-        Tenants tenants = tb.createTenants();        
+        TenantRepository tenantRepository = tb.createTenants();
         handler = new HttpGetConfigHandler(
                 HttpGetConfigHandler.testOnlyContext(),
-                tenants);
+                tenantRepository);
     }
 
     @Test

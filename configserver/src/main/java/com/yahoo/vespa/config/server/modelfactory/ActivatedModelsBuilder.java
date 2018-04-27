@@ -12,12 +12,11 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
@@ -109,7 +108,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 applicationId,
                 configserverConfig,
                 zone(),
-                new Rotations(curator, Tenants.getTenantPath(tenant)).readRotationsFromZooKeeper(applicationId));
+                new Rotations(curator, TenantRepository.getTenantPath(tenant)).readRotationsFromZooKeeper(applicationId));
     }
 
 }

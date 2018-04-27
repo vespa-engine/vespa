@@ -11,7 +11,7 @@ import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
@@ -46,9 +46,9 @@ public class ApplicationRepositoryTest {
     @Before
     public void setup() {
         Curator curator = new MockCurator();
-        Tenants tenants = new Tenants(new TestComponentRegistry.Builder()
-                                              .curator(curator)
-                                              .build());
+        TenantRepository tenants = new TenantRepository(new TestComponentRegistry.Builder()
+                                                                .curator(curator)
+                                                                .build());
         tenants.addTenant(tenantName);
         tenant = tenants.getTenant(tenantName);
         Provisioner provisioner = new SessionHandlerTest.MockProvisioner();

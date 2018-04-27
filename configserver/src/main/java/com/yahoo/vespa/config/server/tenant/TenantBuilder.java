@@ -48,7 +48,7 @@ public class TenantBuilder {
 
     private TenantBuilder(GlobalComponentRegistry componentRegistry, TenantName tenant) {
         this.componentRegistry = componentRegistry;
-        this.tenantPath = Tenants.getTenantPath(tenant);
+        this.tenantPath = TenantRepository.getTenantPath(tenant);
         this.tenant = tenant;
     }
 

@@ -9,7 +9,7 @@ import java.util.concurrent.Executor;
 
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.http.SessionResponse;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.After;
 import org.junit.Before;
 
@@ -21,20 +21,20 @@ import org.junit.Before;
  */
 public class TenantTest extends TestWithCurator {
 
-    protected Tenants tenants;
+    protected TenantRepository tenantRepository;
 
     @Before
     public void setupTenants() throws Exception {
-        tenants = createTenants();
+        tenantRepository = createTenants();
     }
 
     @After
     public void closeTenants() throws IOException {
-        tenants.close();
+        tenantRepository.close();
     }
 
-    protected Tenants createTenants() throws Exception {
-        return new Tenants(new TestComponentRegistry.Builder().curator(curator).build());
+    protected TenantRepository createTenants() throws Exception {
+        return new TenantRepository(new TestComponentRegistry.Builder().curator(curator).build());
     }
 
     protected Executor testExecutor() {

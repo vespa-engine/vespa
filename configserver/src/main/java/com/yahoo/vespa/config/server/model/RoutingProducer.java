@@ -7,7 +7,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.util.Map;
 
@@ -40,7 +40,7 @@ public class RoutingProducer implements RoutingConfig.Producer {
     }
 
     private boolean isHostedVespaRoutingApplication(ApplicationId applicationId) {
-        return Tenants.HOSTED_VESPA_TENANT.equals(applicationId.tenant()) &&
+        return TenantRepository.HOSTED_VESPA_TENANT.equals(applicationId.tenant()) &&
                 (ROUTING_APPLICATION.equals(applicationId.application()));
     }
 

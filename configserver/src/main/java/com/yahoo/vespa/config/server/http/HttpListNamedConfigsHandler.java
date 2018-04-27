@@ -5,16 +5,14 @@ import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.config.provision.ApplicationId;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 /**
  * Handler for a list configs of given name operation. Lists all configs in model for a given config name.
@@ -33,8 +31,8 @@ public class HttpListNamedConfigsHandler extends HttpHandler {
 
     @Inject
     public HttpListNamedConfigsHandler(HttpHandler.Context ctx,
-                                       Tenants tenants) {
-        this(ctx, tenants.defaultTenant().getRequestHandler());
+                                       TenantRepository tenantRepository) {
+        this(ctx, tenantRepository.defaultTenant().getRequestHandler());
     }
     
     @Override

@@ -29,12 +29,12 @@ public class TenantHandlerTest extends TenantTest {
     public void setup() throws Exception {
         handler = new TenantHandler(
                 TenantHandler.testOnlyContext(),
-                tenants);
+                tenantRepository);
     }
 
     @Test
     public void testTenantCreate() throws Exception {
-        assertNull(tenants.getTenant(a));
+        assertNull(tenantRepository.getTenant(a));
         TenantCreateResponse response = putSync(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant a created.\"}");
@@ -43,7 +43,7 @@ public class TenantHandlerTest extends TenantTest {
     @Test
     public void testTenantCreateWithAllPossibleCharactersInName() throws Exception {
         TenantName tenantName = TenantName.from("aB-9999_foo");
-        assertNull(tenants.getTenant(tenantName));
+        assertNull(tenantRepository.getTenant(tenantName));
         TenantCreateResponse response = putSync(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + tenantName, Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant " + tenantName + " created.\"}");
@@ -56,7 +56,7 @@ public class TenantHandlerTest extends TenantTest {
  
     @Test
     public void testGetAndList() throws Exception {
-        tenants.addTenant(a);
+        tenantRepository.addTenant(a);
         assertResponseEquals((TenantGetResponse) handler.handleGET(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.GET)),
                 "{\"message\":\"Tenant 'a' exists.\"}");
@@ -67,28 +67,28 @@ public class TenantHandlerTest extends TenantTest {
 
     @Test(expected=BadRequestException.class)
     public void testCreateExisting() throws Exception {
-        assertNull(tenants.getTenant(a));
+        assertNull(tenantRepository.getTenant(a));
         TenantCreateResponse response = putSync(HttpRequest.createTestRequest(
                 "http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant a created.\"}");
-        assertEquals(tenants.getTenant(a).getName(), a);
+        assertEquals(tenantRepository.getTenant(a).getName(), a);
         handler.handlePUT(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
     }
 
     @Test
     public void testDelete() throws IOException, InterruptedException {
         putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
-        assertEquals(tenants.getTenant(a).getName(), a);
+        assertEquals(tenantRepository.getTenant(a).getName(), a);
         TenantDeleteResponse delResp = (TenantDeleteResponse) handler.handleDELETE(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.DELETE));
         assertResponseEquals(delResp, "{\"message\":\"Tenant a deleted.\"}");
-        assertNull(tenants.getTenant(a));
+        assertNull(tenantRepository.getTenant(a));
     }
 
     @Test
     public void testDeleteTenantWithActiveApplications() throws Exception {
         putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.PUT));
-        Tenant tenant = tenants.getTenant(a);
+        Tenant tenant = tenantRepository.getTenant(a);
         assertEquals(a, tenant.getName());
 
         int sessionId = 1;

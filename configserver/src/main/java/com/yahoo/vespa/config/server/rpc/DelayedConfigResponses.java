@@ -10,7 +10,7 @@ import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -104,7 +104,7 @@ public class DelayedConfigResponses {
         public ApplicationId getAppId() { return app; }
         
         String logPre() {
-            return Tenants.logPre(app);
+            return TenantRepository.logPre(app);
         }
 
         synchronized void cancelAndRemove() {

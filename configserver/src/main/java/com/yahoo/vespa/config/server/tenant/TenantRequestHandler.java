@@ -65,7 +65,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
         Application application = getApplication(appId, vespaVersion);
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, Tenants.logPre(appId) + "Resolving for tenant '" + tenant + "' with handler for application '" + application + "'");
+            log.log(LogLevel.DEBUG, TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant + "' with handler for application '" + application + "'");
         }
         return application.resolveConfig(req, responseFactory);
     }
@@ -195,7 +195,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
         try {
             return applicationMapper.getForVersion(appId, vespaVersion, clock.instant());
         } catch (VersionDoesNotExistException ex) {
-            throw new NotFoundException(String.format("%sNo such application (id %s): %s", Tenants.logPre(tenant), appId, ex.getMessage()));
+            throw new NotFoundException(String.format("%sNo such application (id %s): %s", TenantRepository.logPre(tenant), appId, ex.getMessage()));
         }
     }
     

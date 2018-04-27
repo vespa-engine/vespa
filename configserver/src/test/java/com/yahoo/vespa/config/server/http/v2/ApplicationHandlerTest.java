@@ -35,7 +35,7 @@ import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Assert;
@@ -73,7 +73,7 @@ public class ApplicationHandlerTest {
     private ListApplicationsHandler listApplicationsHandler;
     private final static TenantName mytenantName = TenantName.from("mytenant");
     private final static TenantName foobar = TenantName.from("foobar");
-    private Tenants tenants;
+    private TenantRepository tenantRepository;
     private SessionHandlerTest.MockProvisioner provisioner;
     private MockStateApiFactory stateApiFactory = new MockStateApiFactory();
     private final HttpProxy mockHttpProxy = mock(HttpProxy.class);
@@ -84,7 +84,7 @@ public class ApplicationHandlerTest {
         testBuilder.createTenant(mytenantName).withReloadHandler(new MockReloadHandler());
         testBuilder.createTenant(foobar).withReloadHandler(new MockReloadHandler());
 
-        tenants = testBuilder.createTenants();
+        tenantRepository = testBuilder.createTenants();
         provisioner = new SessionHandlerTest.MockProvisioner();
         mockHandler = createMockApplicationHandler(
                 provisioner,
@@ -92,7 +92,7 @@ public class ApplicationHandlerTest {
                 mockHttpProxy);
         listApplicationsHandler = new ListApplicationsHandler(
                 ListApplicationsHandler.testOnlyContext(),
-                tenants, Zone.defaultZone());
+                tenantRepository, Zone.defaultZone());
     }
 
     private ApplicationHandler createMockApplicationHandler(
@@ -102,18 +102,18 @@ public class ApplicationHandlerTest {
         return new ApplicationHandler(
                 ApplicationHandler.testOnlyContext(),
                 Zone.defaultZone(),
-                new ApplicationRepository(tenants,
+                new ApplicationRepository(tenantRepository,
                                           HostProvisionerProvider.withProvisioner(provisioner),
                                           convergeChecker,
                                           httpProxy,
                                           new ConfigserverConfig(new ConfigserverConfig.Builder())));
     }
 
-    private ApplicationHandler createApplicationHandler(Tenants tenants) {
+    private ApplicationHandler createApplicationHandler(TenantRepository tenantRepository) {
         return new ApplicationHandler(
                 ApplicationHandler.testOnlyContext(),
                 Zone.defaultZone(),
-                new ApplicationRepository(tenants,
+                new ApplicationRepository(tenantRepository,
                                           HostProvisionerProvider.withProvisioner(provisioner),
                                           new ApplicationConvergenceChecker(stateApiFactory),
                                           new HttpProxy(new SimpleHttpFetcher()),
@@ -131,9 +131,9 @@ public class ApplicationHandlerTest {
             // This block is a real test of the interplay of (most of) the components of the config server
             // TODO: Extract it to ApplicationRepositoryTest, rewrite to bypass the HTTP layer and extend
             //       as login is moved from the HTTP layer into ApplicationRepository
-            Tenants tenants = addApplication(defaultId, sessionId);
-            ApplicationHandler handler = createApplicationHandler(tenants);
-            Tenant mytenant = tenants.getTenant(defaultId.tenant());
+            TenantRepository tenantRepository = addApplication(defaultId, sessionId);
+            ApplicationHandler handler = createApplicationHandler(tenantRepository);
+            Tenant mytenant = tenantRepository.getTenant(defaultId.tenant());
             LocalSession applicationData = mytenant.getLocalSessionRepo().getSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
@@ -150,7 +150,7 @@ public class ApplicationHandlerTest {
         
         sessionId++;
         {
-            addMockApplication(tenants.getTenant(mytenantName), defaultId, sessionId, clock);
+            addMockApplication(tenantRepository.getTenant(mytenantName), defaultId, sessionId, clock);
             deleteAndAssertOKResponseMocked(defaultId, true);
 
             ApplicationId fooId = new ApplicationId.Builder()
@@ -159,8 +159,8 @@ public class ApplicationHandlerTest {
 
             sessionId++;
 
-            addMockApplication(tenants.getTenant(mytenantName), fooId, sessionId, clock);
-            addMockApplication(tenants.getTenant(foobar), fooId, sessionId, clock);
+            addMockApplication(tenantRepository.getTenant(mytenantName), fooId, sessionId, clock);
+            addMockApplication(tenantRepository.getTenant(foobar), fooId, sessionId, clock);
             assertApplicationExists(mytenantName, fooId, Zone.defaultZone());
             assertApplicationExists(foobar, fooId, Zone.defaultZone());
             deleteAndAssertOKResponseMocked(fooId, true);
@@ -175,7 +175,7 @@ public class ApplicationHandlerTest {
             ApplicationId baliId = new ApplicationId.Builder()
                     .tenant(mytenantName)
                     .applicationName("bali").instanceName("quux").build();
-            addMockApplication(tenants.getTenant(mytenantName), baliId, sessionId, clock);
+            addMockApplication(tenantRepository.getTenant(mytenantName), baliId, sessionId, clock);
             deleteAndAssertOKResponseMocked(baliId, true);
             assertApplicationExists(mytenantName, null, Zone.defaultZone());
         }
@@ -185,7 +185,7 @@ public class ApplicationHandlerTest {
     public void testGet() throws Exception {
         long sessionId = 1;
         ApplicationId defaultId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), defaultId, sessionId, Clock.systemUTC());
+        addMockApplication(tenantRepository.getTenant(mytenantName), defaultId, sessionId, Clock.systemUTC());
         assertApplicationGeneration(defaultId, Zone.defaultZone(), 1, true);
         assertApplicationGeneration(defaultId, Zone.defaultZone(), 1, false);
     }
@@ -194,7 +194,7 @@ public class ApplicationHandlerTest {
     public void testRestart() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
+        addMockApplication(tenantRepository.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
         assertFalse(provisioner.restarted);
         restart(application, Zone.defaultZone());
         assertTrue(provisioner.restarted);
@@ -205,7 +205,7 @@ public class ApplicationHandlerTest {
     public void testConverge() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
+        addMockApplication(tenantRepository.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
         converge(application, Zone.defaultZone());
     }
 
@@ -213,7 +213,7 @@ public class ApplicationHandlerTest {
     public void testClusterControllerStatus() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
+        addMockApplication(tenantRepository.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
         String host = "foo.yahoo.com";
         String url = toUrlPath(application, Zone.defaultZone(), true) + "/clustercontroller/" + host + "/status/v1/clusterName1";
 
@@ -238,7 +238,7 @@ public class ApplicationHandlerTest {
                 new ApplicationConvergenceChecker(stateApiFactory),
                 new HttpProxy(new SimpleHttpFetcher()));
         final ApplicationId applicationId = ApplicationId.defaultId();
-        addMockApplication(tenants.getTenant(mytenantName), applicationId, 1, Clock.systemUTC());
+        addMockApplication(tenantRepository.getTenant(mytenantName), applicationId, 1, Clock.systemUTC());
         assertApplicationExists(mytenantName, applicationId, Zone.defaultZone());
         provisioner.activated = true;
 
@@ -262,7 +262,7 @@ public class ApplicationHandlerTest {
     public void testFileDistributionStatus() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
+        addMockApplication(tenantRepository.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
         Zone zone = Zone.defaultZone();
 
         HttpResponse response = fileDistributionStatus(application, zone);
@@ -279,13 +279,13 @@ public class ApplicationHandlerTest {
                      SessionHandlerTest.getRenderedString(responseForUnknown));
     }
 
-    private static Tenants addApplication(ApplicationId applicationId, long sessionId) throws Exception {
+    private static TenantRepository addApplication(ApplicationId applicationId, long sessionId) throws Exception {
         // This method is a good illustration of the spaghetti wiring resulting from no design
         // TODO: When this setup looks sane we have refactored sufficiently that there is a design
 
         TenantName tenantName = applicationId.tenant();
         
-        Path tenantPath = Tenants.getTenantPath(tenantName);
+        Path tenantPath = TenantRepository.getTenantPath(tenantName);
         Path sessionPath = tenantPath.append(Tenant.SESSIONS).append(String.valueOf(sessionId));
 
         MockCurator curator = new MockCurator();
@@ -295,9 +295,9 @@ public class ApplicationHandlerTest {
                         Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
                 .build();
         
-        Tenants tenants = new Tenants(componentRegistry); // Creates the application path element in zk
-        tenants.addTenant(tenantName);
-        Tenant tenant = tenants.getTenant(tenantName);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry); // Creates the application path element in zk
+        tenantRepository.addTenant(tenantName);
+        Tenant tenant = tenantRepository.getTenant(tenantName);
 
         tenant.getApplicationRepo().createPutApplicationTransaction(applicationId, sessionId).commit();
         ApplicationPackage app = FilesApplicationPackage.fromFile(testApp);
@@ -317,7 +317,7 @@ public class ApplicationHandlerTest {
                                   componentRegistry,
                                   sessionClient,
                                   Clock.systemUTC()));
-        return tenants;
+        return tenantRepository;
     }
 
     private void assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {
@@ -327,9 +327,9 @@ public class ApplicationHandlerTest {
     }
 
     private void deleteAndAssertOKResponseMocked(ApplicationId applicationId, boolean fullAppIdInUrl) throws IOException {
-        long sessionId = tenants.getTenant(applicationId.tenant()).getApplicationRepo().getSessionIdForApplication(applicationId);
+        long sessionId = tenantRepository.getTenant(applicationId.tenant()).getApplicationRepo().getSessionIdForApplication(applicationId);
         deleteAndAssertResponse(mockHandler, applicationId, Zone.defaultZone(), Response.Status.OK, null, fullAppIdInUrl);
-        assertNull(tenants.getTenant(applicationId.tenant()).getLocalSessionRepo().getSession(sessionId));
+        assertNull(tenantRepository.getTenant(applicationId.tenant()).getLocalSessionRepo().getSession(sessionId));
     }
 
     private void deleteAndAssertOKResponse(ApplicationHandler handler, Tenant tenant, ApplicationId applicationId) throws IOException {

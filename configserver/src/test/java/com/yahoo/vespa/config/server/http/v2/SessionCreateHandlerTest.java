@@ -16,7 +16,7 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -239,7 +239,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         return null;
     }
 
-    private SessionCreateHandler createHandler(Tenants tenants) throws Exception {
+    private SessionCreateHandler createHandler(TenantRepository tenantRepository) throws Exception {
         TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
         final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         return new SessionCreateHandler(
@@ -247,7 +247,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                 new ApplicationRepository(testTenantBuilder.createTenants(),
                                           new SessionHandlerTest.MockProvisioner(),
                                           Clock.systemUTC()),
-                tenants, configserverConfig);
+                tenantRepository, configserverConfig);
 
     }
 

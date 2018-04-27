@@ -3,16 +3,14 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpHandler;
@@ -25,22 +23,22 @@ import com.yahoo.vespa.config.server.http.HttpHandler;
  */
 public class HttpListNamedConfigsHandler extends HttpHandler {
 
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final Zone zone;
     
     @Inject
     public HttpListNamedConfigsHandler(HttpHandler.Context ctx,
-                                       Tenants tenants, Zone zone)
+                                       TenantRepository tenantRepository, Zone zone)
     {
         super(ctx);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
         this.zone = zone;
     }
     
     @Override
     public HttpResponse handleGET(HttpRequest req) {
         HttpListConfigsRequest listReq = HttpListConfigsRequest.createFromNamedListRequest(req);
-        RequestHandler requestHandler = HttpConfigRequests.getRequestHandler(tenants, listReq);
+        RequestHandler requestHandler = HttpConfigRequests.getRequestHandler(tenantRepository, listReq);
         ApplicationId appId = listReq.getApplicationId();
         HttpConfigRequest.validateRequestKey(listReq.getKey(), requestHandler, appId);
         Set<ConfigKey<?>> configs = requestHandler.listNamedConfigs(appId, Optional.empty(), listReq.getKey(), listReq.isRecursive());

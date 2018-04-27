@@ -16,7 +16,6 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
@@ -43,7 +42,7 @@ import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -218,7 +217,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient, Clock clock) throws IOException {
         zkClient.writeStatus(status);
-        ZooKeeperClient zkC = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, Tenants.getSessionsPath(tenant).append(String.valueOf(sessionId)));
+        ZooKeeperClient zkC = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkC.write(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
         zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
         RemoteSession session = new RemoteSession(TenantName.from("default"), sessionId, componentRegistry, zkClient, clock);

@@ -5,7 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.net.URI;
 
@@ -43,8 +43,8 @@ public class Utils {
         return request.getUri().getScheme() + "://" + request.getHost() + ":" + request.getPort() + pathPrefix;
     }
 
-    public static void checkThatTenantExists(Tenants tenants, TenantName tenantName) {
-        if ( ! tenants.checkThatTenantExists(tenantName))
+    public static void checkThatTenantExists(TenantRepository tenantRepository, TenantName tenantName) {
+        if ( ! tenantRepository.checkThatTenantExists(tenantName))
             throw new NotFoundException("Tenant '" + tenantName + "' was not found.");
     }
 

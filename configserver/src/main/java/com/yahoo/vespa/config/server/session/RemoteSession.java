@@ -7,7 +7,7 @@ import com.yahoo.vespa.config.server.*;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.KeeperException;
 
@@ -90,10 +90,10 @@ public class RemoteSession extends Session {
     @Override
     public String logPre() {
         if (applicationSet != null) {
-            return Tenants.logPre(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId());
+            return TenantRepository.logPre(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId());
         }
 
-        return Tenants.logPre(getTenant());
+        return TenantRepository.logPre(getTenant());
     }
 
     public void confirmUpload() {

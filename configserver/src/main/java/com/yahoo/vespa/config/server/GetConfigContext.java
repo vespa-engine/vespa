@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 /**
  * Contains the context for serving getconfig requests so that this information does not have to be looked up multiple times.
@@ -53,6 +53,6 @@ public class GetConfigContext {
      * @return log msg preamble
      */
     public String logPre() {
-        return Tenants.logPre(app);
+        return TenantRepository.logPre(app);
     }
 }

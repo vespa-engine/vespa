@@ -8,7 +8,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.util.Optional;
 
@@ -29,8 +29,8 @@ public class HttpGetConfigHandler extends HttpHandler {
 
     @SuppressWarnings("unused") // injected
     @Inject
-    public HttpGetConfigHandler(HttpHandler.Context ctx, Tenants tenants) {
-        this(ctx, tenants.defaultTenant().getRequestHandler());
+    public HttpGetConfigHandler(HttpHandler.Context ctx, TenantRepository tenantRepository) {
+        this(ctx, tenantRepository.defaultTenant().getRequestHandler());
     }
 
     @Override

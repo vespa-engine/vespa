@@ -6,15 +6,12 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentRequest;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
-
-import java.util.concurrent.Executor;
 
 /**
  * A handler that will return content or content status for files or directories
@@ -24,16 +21,16 @@ import java.util.concurrent.Executor;
  * @since 5.1
  */
 public class SessionContentHandler extends SessionHandler {
-    private final Tenants tenants;
+    private final TenantRepository tenantRepository;
     private final ContentHandler contentHandler = new ContentHandler();
 
     @Inject
     public SessionContentHandler(SessionHandler.Context ctx,
                                  ApplicationRepository applicationRepository,
-                                 Tenants tenants)
+                                 TenantRepository tenantRepository)
     {
         super(ctx, applicationRepository);
-        this.tenants = tenants;
+        this.tenantRepository = tenantRepository;
     }
 
     @Override
@@ -52,7 +49,7 @@ public class SessionContentHandler extends SessionHandler {
     }
 
     private void validateRequest(TenantName tenantName) {
-        Utils.checkThatTenantExists(tenants, tenantName);
+        Utils.checkThatTenantExists(tenantRepository, tenantName);
     }
 
     private SessionContentRequestV2 getContentRequest(HttpRequest request) {

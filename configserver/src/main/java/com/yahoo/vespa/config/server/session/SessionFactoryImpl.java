@@ -16,8 +16,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostValidator;
-import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
@@ -67,7 +66,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.curator = globalComponentRegistry.getCurator();
         this.configCurator = globalComponentRegistry.getConfigCurator();
         this.sessionCounter = sessionCounter;
-        this.sessionsPath = Tenants.getSessionsPath(tenant);
+        this.sessionsPath = TenantRepository.getSessionsPath(tenant);
         this.applicationRepo = applicationRepo;
         this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.superModelGenerationCounter = globalComponentRegistry.getSuperModelGenerationCounter();
@@ -107,15 +106,15 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                       SessionZooKeeperClient sessionZKClient,
                                                       TimeoutBudget timeoutBudget,
                                                       Clock clock) {
-        log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Creating session " + sessionId + " in ZooKeeper");
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Creating session " + sessionId + " in ZooKeeper");
         sessionZKClient.createNewSession(clock.instant().toEpochMilli(), TimeUnit.MILLISECONDS);
-        log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Creating upload waiter for session " + sessionId);
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Creating upload waiter for session " + sessionId);
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Done creating upload waiter for session " + sessionId);
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Done creating upload waiter for session " + sessionId);
         LocalSession session = new LocalSession(tenant, sessionId, sessionPreparer, new SessionContext(applicationPackage, sessionZKClient, getSessionAppDir(sessionId), applicationRepo, hostRegistry, superModelGenerationCounter));
-        log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Waiting on upload waiter for session " + sessionId);
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Waiting on upload waiter for session " + sessionId);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
-        log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Done waiting on upload waiter for session " + sessionId);
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Done waiting on upload waiter for session " + sessionId);
         return session;
     }
 
@@ -138,7 +137,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     private LocalSession create(File applicationFile, String applicationName, long currentlyActiveSession, TimeoutBudget timeoutBudget) {
         long sessionId = sessionCounter.nextSessionId();
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
-        log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Next session id is " + sessionId + " , sessionIdPath=" + sessionIdPath.getAbsolute());
+        log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Next session id is " + sessionId + " , sessionIdPath=" + sessionIdPath.getAbsolute());
         try {
             ensureZKPathDoesNotExist(sessionIdPath);
             SessionZooKeeperClient sessionZooKeeperClient = new SessionZooKeeperClient(curator,

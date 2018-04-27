@@ -9,7 +9,7 @@ import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.application.UriPattern.Match;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 
 /**
@@ -45,8 +45,8 @@ public class HttpConfigRequests {
     }
 
 
-    static RequestHandler getRequestHandler(Tenants tenants, TenantRequest request) {
-        Tenant tenant = tenants.getTenant(request.getApplicationId().tenant());
+    static RequestHandler getRequestHandler(TenantRepository tenantRepository, TenantRequest request) {
+        Tenant tenant = tenantRepository.getTenant(request.getApplicationId().tenant());
         if (tenant==null) throw new NotFoundException("No such tenant: "+request.getApplicationId().tenant());
         return tenant.getRequestHandler();
     }
