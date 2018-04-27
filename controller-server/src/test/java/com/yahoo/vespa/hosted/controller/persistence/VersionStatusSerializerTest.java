@@ -50,7 +50,7 @@ public class VersionStatusSerializerTest {
             assertEquals(a.isControllerVersion(), b.isControllerVersion());
             assertEquals(a.isSystemVersion(), b.isSystemVersion());
             assertEquals(a.statistics(), b.statistics());
-            assertEquals(a.configServerHostnames(), b.configServerHostnames());
+            assertEquals(a.systemApplicationHostnames(), b.systemApplicationHostnames());
             assertEquals(a.confidence(), b.confidence());
         }
 

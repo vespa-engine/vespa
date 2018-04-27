@@ -68,7 +68,7 @@ public class VersionStatusSerializer {
         object.setBool(isSystemVersionField, version.isSystemVersion());
         deploymentStatisticsToSlime(version.statistics(), object.setObject(deploymentStatisticsField));
         object.setString(confidenceField, version.confidence().name());
-        configServersToSlime(version.configServerHostnames(), object.setArray(configServersField));
+        configServersToSlime(version.systemApplicationHostnames(), object.setArray(configServersField));
     }
 
     private void configServersToSlime(Set<HostName> configServerHostnames, Cursor array) {

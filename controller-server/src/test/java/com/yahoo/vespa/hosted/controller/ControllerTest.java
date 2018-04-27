@@ -92,7 +92,7 @@ public class ControllerTest {
                 .build();
 
         // staging job - succeeding
-        Version version1 = tester.defaultVespaVersion();
+        Version version1 = tester.defaultPlatformVersion();
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
         assertEquals("Application version is known from completion of initial job",
@@ -309,7 +309,7 @@ public class ControllerTest {
                 versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.committedAt(),
                                                  false,
                                                  false,
-                                                 c.configServerHostnames(),
+                                                 c.systemApplicationHostnames(),
                                                  c.confidence()));
         }
         versions.add(newSystemVespaVersion);
@@ -774,7 +774,7 @@ public class ControllerTest {
         tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), options);
 
         assertTrue("Application deployed and activated",
-                   tester.controllerTester().configServer().activated().getOrDefault(app.id(), false));
+                   tester.controllerTester().configServer().application(app.id()).get().activated());
 
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
@@ -806,7 +806,7 @@ public class ControllerTest {
 
     private void runDeployment(DeploymentTester tester, Application app, ApplicationVersion version,
                                Optional<Version> upgrade, Optional<ApplicationPackage> applicationPackage) {
-        Version vespaVersion = upgrade.orElseGet(tester::defaultVespaVersion);
+        Version vespaVersion = upgrade.orElseGet(tester::defaultPlatformVersion);
 
         // Deploy in test
         tester.deployAndNotify(app, applicationPackage, true, systemTest);

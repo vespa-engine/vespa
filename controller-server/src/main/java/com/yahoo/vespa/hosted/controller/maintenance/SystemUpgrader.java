@@ -2,18 +2,23 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
-import java.net.URI;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Maintenance job which schedules upgrades of the system.
+ * Maintenance job which upgrades system applications.
  *
  * @author mpolden
  */
@@ -32,34 +37,50 @@ public class SystemUpgrader extends Maintainer {
             return;
         }
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
-            if (!completeUpgrade(zones, target.get())) {
+            // The order here is important. Config servers should always upgrade first
+            if (!deploy(zones, SystemApplication.configServer, target.get())) {
+                break;
+            }
+            if (!deploy(zones, SystemApplication.zone, target.get())) {
                 break;
             }
         }
     }
 
-    /** Returns true if upgrade of given zones is complete */
-    private boolean completeUpgrade(List<ZoneId> zones, Version version) {
+    /** Deploy application on given version. Returns true when all allocated nodes are on requested version */
+    private boolean deploy(List<ZoneId> zones, SystemApplication application, Version version) {
         boolean completed = true;
         for (ZoneId zone : zones) {
-            startUpgrade(zone, version);
-            completed = completed && !isUpgrading(zone);
+            if (!wantedVersion(zone, application.id()).equals(version)) {
+                log.info(String.format("Deploying %s version %s in %s", application.id(), version, zone));
+                controller().applications().deploy(application, zone, version);
+            }
+            completed = completed && currentVersion(zone, application.id()).equals(version);
         }
         return completed;
     }
 
-    /** Returns true if any config servers in given zone are upgrading */
-    private boolean isUpgrading(ZoneId zone) {
-        return configServerUris(zone).stream().anyMatch(uri -> controller().configServer().version(uri).upgrading());
+    private Version wantedVersion(ZoneId zone, ApplicationId application) {
+        return minVersion(zone, application, Node::wantedVersion);
     }
 
-    /** Schedule upgrade of config servers in given zone, if necessary  */
-    private void startUpgrade(ZoneId zone, Version version) {
-        configServerUris(zone).stream()
-                              .filter(uri -> !controller().configServer().version(uri).wanted().equals(version))
-                              .peek(uri -> log.info(String.format("Upgrading config server %s in %s", uri.getHost(),
-                                                                  zone)))
-                              .forEach(uri -> controller().configServer().upgrade(uri, version));
+    private Version currentVersion(ZoneId zone, ApplicationId application) {
+        return minVersion(zone, application, Node::currentVersion);
+    }
+
+    private Version minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
+        try {
+            return controller().configServer()
+                               .nodeRepository()
+                               .list(zone, application)
+                               .stream()
+                               .map(versionField)
+                               .min(Comparator.naturalOrder())
+                               .orElse(Version.emptyVersion);
+        } catch (Exception e) {
+            log.log(Level.WARNING, String.format("Failed to get version for %s in %s", application, zone), e);
+            return Version.emptyVersion;
+        }
     }
 
     /** Returns target version for the system */
@@ -67,10 +88,6 @@ public class SystemUpgrader extends Maintainer {
         return controller().versionStatus().controllerVersion()
                            .filter(vespaVersion -> !vespaVersion.isSystemVersion())
                            .map(VespaVersion::versionNumber);
-    }
-
-    private List<URI> configServerUris(ZoneId zone) {
-        return controller().zoneRegistry().getConfigServerUris(zone);
     }
 
 }

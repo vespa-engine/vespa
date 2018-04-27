@@ -12,6 +12,8 @@ import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
 import com.yahoo.vespa.hosted.controller.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.ComparisonFailure;
 
@@ -54,7 +56,9 @@ public class ContainerTester {
 
     public void upgradeSystem(Version version) {
         controller().curator().writeControllerVersion(controller().hostname(), version);
-        configServer().setDefaultVersion(version);
+        for (ZoneId zone : controller().zoneRegistry().zones().all().ids()) {
+            configServer().setVersion(version, zone, SystemApplication.all());
+        }
         computeVersionStatus();
     }
 

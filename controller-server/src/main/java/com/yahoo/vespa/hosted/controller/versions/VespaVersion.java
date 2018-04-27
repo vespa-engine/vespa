@@ -28,19 +28,19 @@ public class VespaVersion implements Comparable<VespaVersion> {
     private final boolean isControllerVersion;
     private final boolean isSystemVersion;
     private final DeploymentStatistics statistics;
-    private final ImmutableSet<HostName> configServerHostnames;
+    private final ImmutableSet<HostName> systemApplicationHostnames;
     private final Confidence confidence;
 
     public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant committedAt,
                         boolean isControllerVersion, boolean isSystemVersion,
-                        Collection<HostName> configServerHostnames,
+                        Collection<HostName> systemApplicationHostnames,
                         Confidence confidence) {
         this.statistics = statistics;
         this.releaseCommit = releaseCommit;
         this.committedAt = committedAt;
         this.isControllerVersion = isControllerVersion;
         this.isSystemVersion = isSystemVersion;
-        this.configServerHostnames = ImmutableSet.copyOf(configServerHostnames);
+        this.systemApplicationHostnames = ImmutableSet.copyOf(systemApplicationHostnames);
         this.confidence = confidence;
     }
 
@@ -103,8 +103,8 @@ public class VespaVersion implements Comparable<VespaVersion> {
      */
     public boolean isSystemVersion() { return isSystemVersion; }
 
-    /** Returns the host names of the config servers (across all zones) which are currently of this version */
-    public Set<HostName> configServerHostnames() { return configServerHostnames; }
+    /** Returns the hosts allocated to system applications (across all zones) which are currently of this version */
+    public Set<HostName> systemApplicationHostnames() { return systemApplicationHostnames; }
     
     /** Returns the confidence we have in this versions suitability for production */
     public Confidence confidence() { return confidence; }

@@ -35,18 +35,18 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
-import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.Exceptions;
 
@@ -330,18 +330,36 @@ public class ApplicationController {
 
             // Carry out deployment
             options = withVersion(platformVersion, options);
-
-            DeploymentId deploymentId = new DeploymentId(applicationId, zone);
-            ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
-            // TODO: Set new deployment after convergence, rather than after deployment call, succeeds.
+            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames, cnames);
             application = application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant());
-
             store(application);
-
-            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
-                                      applicationPackage.zippedContent().length);
+            return result;
         }
+    }
+
+    /** Deploy a system application to given zone */
+    public void deploy(SystemApplication application, ZoneId zone, Version version) {
+        if (!application.hasApplicationPackage()) {
+            // Deploy by calling node repository directly
+            configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
+            return;
+        }
+        ApplicationPackage applicationPackage = new ApplicationPackage(
+                artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
+        );
+        DeployOptions options = withVersion(version, DeployOptions.none());
+        deploy(application.id(), applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
+    }
+
+    private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
+                                  ZoneId zone, DeployOptions deployOptions,
+                                  Set<String> rotationNames, Set<String> cnames) {
+        DeploymentId deploymentId = new DeploymentId(application, zone);
+        ConfigServer.PreparedApplication preparedApplication =
+                configServer.deploy(deploymentId, deployOptions, cnames, rotationNames,
+                                    applicationPackage.zippedContent());
+        return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
+                                  applicationPackage.zippedContent().length);
     }
 
     /** Makes sure the application has a global rotation, if eligible. */

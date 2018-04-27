@@ -2,8 +2,10 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
 import java.util.HashMap;
@@ -42,6 +44,11 @@ public class ArtifactRepositoryMock extends AbstractComponent implements Artifac
         }
         artifact.recordHit();
         return artifact.data;
+    }
+
+    @Override
+    public byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version) {
+        return new byte[0];
     }
 
     private static int artifactHash(ApplicationId applicationId, String applicationVersion) {

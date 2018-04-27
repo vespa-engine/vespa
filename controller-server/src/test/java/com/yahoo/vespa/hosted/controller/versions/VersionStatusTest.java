@@ -10,14 +10,16 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import org.junit.Test;
 
-import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,9 +48,9 @@ public class VersionStatusTest {
 
     @Test
     public void testSystemVersionIsControllerVersionIfConfigServersAreNewer() {
-        ControllerTester tester = new ControllerTester();
+        DeploymentTester tester = new DeploymentTester();
         Version largerThanCurrent = new Version(Vtag.currentVersion.getMajor() + 1);
-        tester.configServer().setDefaultVersion(largerThanCurrent);
+        tester.upgradeSystemApplications(largerThanCurrent);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(Vtag.currentVersion, versionStatus.systemVersion().get().versionNumber());
     }
@@ -57,7 +59,13 @@ public class VersionStatusTest {
     public void testSystemVersionIsVersionOfOldestConfigServer() {
         ControllerTester tester = new ControllerTester();
         Version oldest = new Version(5);
-        tester.configServer().versions().put(URI.create("https://cfg.prod.corp-us-east-1.test:4443"), oldest);
+        for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
+            for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
+                tester.configServer().nodeRepository().add(zone, new Node(node.hostname(), node.type(), node.owner(),
+                                                                          oldest, node.wantedVersion()));
+                break;
+            }
+        }
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(oldest, versionStatus.systemVersion().get().versionNumber());
     }

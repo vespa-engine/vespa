@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -10,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,12 +44,6 @@ public interface ConfigServer {
 
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
 
-    /** Returns the version of this config server */
-    ConfigServerVersion version(URI configServerUri);
-
-    /** Upgrade config server at URI to the given version */
-    void upgrade(URI configServerUri, Version version);
-
     /**
      * Set new status on en endpoint in one zone.
      *
@@ -71,5 +63,8 @@ public interface ConfigServer {
      * @throws IOException If trouble contacting the server
      */
     EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) throws IOException;
+
+    /** The node repository on this config server */
+    NodeRepository nodeRepository();
 
 }

@@ -4,9 +4,11 @@ package com.yahoo.vespa.hosted.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
@@ -14,9 +16,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
@@ -26,33 +30,55 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author mortent
  */
 public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
-    private final Map<ApplicationId, Boolean> applicationActivated = new HashMap<>();
+    private final Map<ApplicationId, Application> applications = new LinkedHashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final Map<URI, Version> versions = new HashMap<>();
-    private final Map<URI, Version> wantedVersions = new HashMap<>();
+    private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
 
-    private Version defaultVersion = new Version(6, 1, 0);
+    private Version initialVersion = new Version(6, 1, 0);
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
+
+    @Inject
+    public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
+        bootstrap(zoneRegistry.zones().all().ids());
+    }
+
+    public void bootstrap(List<ZoneId> zones) {
+        nodeRepository().clear();
+        for (ZoneId zone : zones) {
+            for (SystemApplication application : SystemApplication.all()) {
+                List<Node> nodes = IntStream.rangeClosed(1, 3)
+                                            .mapToObj(i -> new Node(
+                                                    HostName.from("node-" + i + "-" + application.id().application()
+                                                                                                 .value()),
+                                                    application.nodeType(),
+                                                    Optional.of(application.id()),
+                                                    initialVersion,
+                                                    initialVersion
+                                            ))
+                                            .collect(Collectors.toList());
+                nodeRepository().add(zone, nodes);
+            }
+        }
+    }
 
     /** The version given in the previous prepare call, or empty if no call has been made */
     public Optional<Version> lastPrepareVersion() {
         return Optional.ofNullable(lastPrepareVersion);
-    }
-
-    /** Return map of applications that may have been activated */
-    public Map<ApplicationId, Boolean> activated() {
-        return Collections.unmodifiableMap(applicationActivated);
     }
 
     /** The exception to throw on the next prepare run, or null to continue normally */
@@ -68,34 +94,45 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return versions;
     }
 
+    /** Set version for system applications in given zone */
+    public void setVersion(Version version, ZoneId zone, List<SystemApplication> applications) {
+        for (SystemApplication application : applications) {
+            for (Node node : nodeRepository().list(zone, application.id())) {
+                nodeRepository().add(zone, new Node(node.hostname(), node.type(), node.owner(), version, version));
+            }
+        }
+    }
+
+    /** The initial version of this config server */
+    public Version initialVersion() {
+        return initialVersion;
+    }
+
+    /** Get deployed application by ID */
+    public Optional<Application> application(ApplicationId id) {
+        return Optional.ofNullable(applications.get(id));
+    }
+
     @Override
-    public void upgrade(URI configServerUri, Version version) {
-        wantedVersions.put(configServerUri, version);
-    }
-
-    /** Set the default config server version */
-    public void setDefaultVersion(Version version) {
-        this.defaultVersion = version;
-    }
-
-    public Version getDefaultVersion() {
-        return defaultVersion;
+    public NodeRepositoryMock nodeRepository() {
+        return nodeRepository;
     }
 
     @Override
     public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames,
                                        Set<String> rotationNames, byte[] content) {
-        lastPrepareVersion = deployOptions.vespaVersion.map(Version::new).orElse(null);
+        lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
             this.prepareException = null;
             throw prepareException;
         }
-        applicationActivated.put(deployment.applicationId(), false);
+        applications.put(deployment.applicationId(), new Application(deployment.applicationId(), lastPrepareVersion));
 
         return new PreparedApplication() {
+
             @Override
-            public void activate() { /* Nothing to do, done in  */}
+            public void activate() {}
 
             @Override
             public List<Log> messages() {
@@ -114,7 +151,15 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
             @Override
             public PrepareResponse prepareResponse() {
-                applicationActivated.put(deployment.applicationId(), true);
+                Application application = applications.get(deployment.applicationId());
+                application.activate();
+                for (Node node : nodeRepository.list(deployment.zoneId(), deployment.applicationId())) {
+                    nodeRepository.add(deployment.zoneId(), new Node(node.hostname(),
+                                                                     node.type(),
+                                                                     node.owner(),
+                                                                     node.currentVersion(),
+                                                                     application.version().get()));
+                }
 
                 PrepareResponse prepareResponse = new PrepareResponse();
                 prepareResponse.message = "foo";
@@ -123,6 +168,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 prepareResponse.tenant = new TenantId("tenant");
                 return prepareResponse;
             }
+
         };
     }
 
@@ -132,7 +178,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public void deactivate(DeploymentId deployment) {
-        applicationActivated.remove(deployment.applicationId());
+        applications.remove(deployment.applicationId());
     }
 
     @Override
@@ -176,12 +222,6 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         root.put("resources", resources);
         return root;
     }
-    
-    @Override
-    public ConfigServerVersion version(URI configServerUri) {
-        return new ConfigServerVersion(versions.getOrDefault(configServerUri, defaultVersion),
-                                       wantedVersions.getOrDefault(configServerUri, defaultVersion));
-    }
 
     @Override
     public void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status) {
@@ -192,6 +232,35 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) {
         EndpointStatus result = new EndpointStatus(EndpointStatus.Status.in, "", "", 1497618757L);
         return endpoints.getOrDefault(endpoint, result);
+    }
+
+    public static class Application {
+
+        private final ApplicationId id;
+        private final Version version;
+        private boolean activated;
+
+        private Application(ApplicationId id, Version version) {
+            this.id = id;
+            this.version = version;
+        }
+
+        public ApplicationId id() {
+            return id;
+        }
+
+        public Optional<Version> version() {
+            return Optional.ofNullable(version);
+        }
+
+        public boolean activated() {
+            return activated;
+        }
+
+        private void activate() {
+            this.activated = true;
+        }
+
     }
 
 }

@@ -14,10 +14,12 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
@@ -96,21 +98,29 @@ public class DeploymentTester {
         return controller().applications().require(application);
     }
 
+    /** Re-compute and write version status */
     public void computeVersionStatus() {
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
     /** Upgrade controller to given version */
-    public void upgradeController(Version newVersion) {
-        controller().curator().writeControllerVersion(controller().hostname(), newVersion);
-        controller().updateVersionStatus(VersionStatus.compute(controller()));
+    public void upgradeController(Version version) {
+        controller().curator().writeControllerVersion(controller().hostname(), version);
+        computeVersionStatus();
+    }
+
+    /** Upgrade system applications in all zones to given version */
+    public void upgradeSystemApplications(Version version) {
+        for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
+            tester.configServer().setVersion(version, zone, SystemApplication.all());
+        }
+        computeVersionStatus();
     }
 
     /** Upgrade entire system to given version */
     public void upgradeSystem(Version version) {
         upgradeController(version);
-        configServer().setDefaultVersion(version);
-        computeVersionStatus();
+        upgradeSystemApplications(version);
         upgrader().maintain();
         readyJobTrigger().maintain();
     }
@@ -119,8 +129,8 @@ public class DeploymentTester {
         while (deploymentTrigger().triggerReadyJobs() > 0);
     }
 
-    public Version defaultVespaVersion() {
-        return configServer().getDefaultVersion();
+    public Version defaultPlatformVersion() {
+        return configServer().initialVersion();
     }
 
     public Application createApplication(String applicationName, String tenantName, long projectId, Long propertyId) {
