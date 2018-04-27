@@ -30,7 +30,7 @@ public class Diversity implements Cloneable {
 
 
     static {
-        argumentType =new QueryProfileType(Ranking.DIVERSITY);
+        argumentType = new QueryProfileType(Ranking.DIVERSITY);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(ATTRIBUTE, "string"));

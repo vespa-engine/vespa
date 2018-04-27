@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
@@ -47,9 +48,11 @@ import com.yahoo.yolean.Exceptions;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -111,7 +114,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         /** Converts a type argument value into a query type */
         public static Type getType(String typeString) {
             for (Type type:Type.values())
-                if(type.stringValue.equals(typeString))
+                if (type.stringValue.equals(typeString))
                     return type;
             return ALL;
         }
@@ -141,10 +144,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
 
     /** Whether this query is forbidden to access cached information */
-    private boolean noCache=false;
+    private boolean noCache = false;
 
     /** Whether or not grouping should use a session cache */
-    private boolean groupingSessionCache=false;
+    private boolean groupingSessionCache = false;
 
     //--------------  Generic property containers --------------------------------
 
@@ -205,15 +208,14 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(TIMEOUT.toString(), "string", "timeout"));
         argumentType.addField(new FieldDescription(FederationSearcher.SOURCENAME.toString(),"string"));
         argumentType.addField(new FieldDescription(FederationSearcher.PROVIDERNAME.toString(),"string"));
-        argumentType.addField(new FieldDescription(Presentation.PRESENTATION,new QueryProfileFieldType(Presentation.getArgumentType())));
-        argumentType.addField(new FieldDescription(Ranking.RANKING,new QueryProfileFieldType(Ranking.getArgumentType())));
-        argumentType.addField(new FieldDescription(Model.MODEL,new QueryProfileFieldType(Model.getArgumentType())));
+        argumentType.addField(new FieldDescription(Presentation.PRESENTATION, new QueryProfileFieldType(Presentation.getArgumentType())));
+        argumentType.addField(new FieldDescription(Ranking.RANKING, new QueryProfileFieldType(Ranking.getArgumentType())));
+        argumentType.addField(new FieldDescription(Model.MODEL, new QueryProfileFieldType(Model.getArgumentType())));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    /** The aliases of query properties, these are always the same */
-    // Note: Don't make static for now as GSM calls this through reflection
+    /** The aliases of query properties */
     private static Map<String,CompoundName> propertyAliases;
     static {
         Map<String,CompoundName> propertyAliasesBuilder = new HashMap<>();
@@ -223,11 +225,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         addAliases(Presentation.getArgumentType(), propertyAliasesBuilder);
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
-    private static void addAliases(QueryProfileType arguments,Map<String,CompoundName> aliases) {
-        String prefix=getPrefix(arguments);
+    private static void addAliases(QueryProfileType arguments, Map<String, CompoundName> aliases) {
+        String prefix = getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
             for (String alias : field.getAliases())
-                aliases.put(alias,new CompoundName(prefix+field.getName()));
+                aliases.put(alias, new CompoundName(prefix+field.getName()));
         }
     }
     private static String getPrefix(QueryProfileType type) {
@@ -242,6 +244,25 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         registry.register(Model.getArgumentType().unfrozen());
         registry.register(Presentation.getArgumentType().unfrozen());
         registry.register(DefaultProperties.argumentType.unfrozen());
+    }
+
+    /** Returns an unmodifiable list of all the native properties under a Query */
+    public static final List<CompoundName> nativeProperties =
+            ImmutableList.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
+
+    private static List<CompoundName> namesUnder(CompoundName prefix, QueryProfileType type) {
+        if ( type == null) return Collections.emptyList(); // Names not known statically
+        List<CompoundName> names = new ArrayList<>();
+        for (Map.Entry<String, FieldDescription> field : type.fields().entrySet()) {
+            if (field.getValue().getType() instanceof QueryProfileFieldType) {
+                names.addAll(namesUnder(prefix.append(field.getKey()),
+                                        ((QueryProfileFieldType) field.getValue().getType()).getQueryProfileType()));
+            }
+            else {
+                names.add(prefix.append(field.getKey()));
+            }
+        }
+        return names;
     }
 
     //---------------- Construction ------------------------------------
@@ -294,7 +315,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         startTime = System.currentTimeMillis();
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
-            Properties queryProfileProperties=new QueryProfileProperties(queryProfile);
+            Properties queryProfileProperties = new QueryProfileProperties(queryProfile);
             properties().chain(queryProfileProperties);
             // TODO: Just checking legality rather than actually setting would be faster
             setPropertiesFromRequestMap(requestMap, properties()); // Adds errors to the query for illegal set attempts
@@ -360,9 +381,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * (if any) set it to properties().
      */
     private void setFrom(Properties originalProperties,QueryProfileType arguments,Map<String,String> context) {
-        String prefix=getPrefix(arguments);
+        String prefix = getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
-            String fullName=prefix + field.getName();
+            String fullName = prefix + field.getName();
             if (field.getType() == FieldType.genericQueryProfileType) {
                 for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName,context).entrySet()) {
                     try {

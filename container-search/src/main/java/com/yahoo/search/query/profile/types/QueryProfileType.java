@@ -299,20 +299,20 @@ public class QueryProfileType extends FreezableSimpleComponent {
         }
     }
 
-    private void addAlias(String alias,String field) {
+    private void addAlias(String alias, String field) {
         ensureNotFrozen();
-        if (aliases==null)
-            aliases=new HashMap<>();
-        aliases.put(toLowerCase(alias),field);
+        if (aliases == null)
+            aliases = new HashMap<>();
+        aliases.put(toLowerCase(alias), field);
     }
 
     /** Returns all the fields of this profile type and all types it inherits as a read-only map */
-    public Map<String,FieldDescription> fields() {
+    public Map<String, FieldDescription> fields() {
         if (isFrozen()) return fields;
-        if (inherited().size()==0) return Collections.unmodifiableMap(fields);
+        if (inherited().size() == 0) return Collections.unmodifiableMap(fields);
 
         // Collapse inherited
-        Map<String,FieldDescription> allFields=new HashMap<>(fields);
+        Map<String, FieldDescription> allFields = new HashMap<>(fields);
         for (QueryProfileType inheritedType : inherited)
             allFields.putAll(inheritedType.fields());
         return Collections.unmodifiableMap(allFields);
@@ -322,7 +322,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
      * Returns the alias to field mapping of this type as a read-only map. This is never null.
      * Note that all keys are lower-cased because aliases are case-insensitive
      */
-    public Map<String,String> aliases() {
+    public Map<String, String> aliases() {
         if (isFrozen()) return aliases;
         if (aliases == null) return Collections.emptyMap();
         return Collections.unmodifiableMap(aliases);
@@ -330,9 +330,9 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
     /** Returns the field name of an alias or field name */
     public String unalias(String aliasOrField) {
-        if (aliases==null || aliases.isEmpty()) return aliasOrField;
-        String field=aliases.get(toLowerCase(aliasOrField));
-        if (field!=null) return field;
+        if (aliases == null || aliases.isEmpty()) return aliasOrField;
+        String field = aliases.get(toLowerCase(aliasOrField));
+        if (field != null) return field;
         return aliasOrField;
     }
 

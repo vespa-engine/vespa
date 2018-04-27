@@ -100,7 +100,8 @@ public class QueryProfileProperties extends Properties {
                     if (i == name.size()-1 && fieldDescription != null) { // at the end of the path, check the assignment type
                         value = fieldDescription.getType().convertFrom(value, profile.getRegistry());
                         if (value == null)
-                            throw new IllegalArgumentException("'" + value + "' is not a " + fieldDescription.getType().toInstanceDescription());
+                            throw new IllegalArgumentException("'" + value + "' is not a " +
+                                                               fieldDescription.getType().toInstanceDescription());
                     }
                 }
             }
@@ -138,7 +139,6 @@ public class QueryProfileProperties extends Properties {
         if (context == null) context = Collections.emptyMap();
 
         Map<String, Object> properties = profile.listValues(path, context, substitution);
-
         properties.putAll(super.listProperties(path, context, substitution));
 
         if (references != null) {

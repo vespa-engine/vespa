@@ -41,7 +41,7 @@ public final class CompoundName {
      *
      * @throws NullPointerException if name is null
      */
-    public CompoundName(final String name) {
+    public CompoundName(String name) {
         this(name, parse(name));
     }
 

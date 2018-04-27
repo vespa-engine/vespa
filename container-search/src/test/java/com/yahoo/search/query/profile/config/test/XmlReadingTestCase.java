@@ -121,7 +121,7 @@ public class XmlReadingTestCase {
         assertEquals("test", q.properties().get("query"));
         assertEquals("test", q.properties().get("QueRY"));
         assertEquals("test", q.properties().get("model.queryString"));
-        assertEquals("test",q.getModel().getQueryString());
+        assertEquals("test", q.getModel().getQueryString());
     }
 
     /** Tests a subset of the configuration in the system test of this */
@@ -137,23 +137,22 @@ public class XmlReadingTestCase {
         Properties p = query.properties();
 
         assertEquals("test", query.getModel().getQueryString());
-        assertEquals("test",p.get("query"));
-        assertEquals("test",p.get("QueRY"));
-        assertEquals("test",p.get("model.queryString"));
-        assertEquals("bar",p.get("foo"));
-        assertEquals(5,p.get("hits"));
-        assertEquals("tit",p.get("subst"));
-        assertEquals("le",p.get("subst.end"));
-        assertEquals("title",p.get("model.defaultIndex"));
+        assertEquals("test", p.get("query"));
+        assertEquals("test", p.get("QueRY"));
+        assertEquals("test", p.get("model.queryString"));
+        assertEquals("bar", p.get("foo"));
+        assertEquals(5, p.get("hits"));
+        assertEquals("tit", p.get("subst"));
+        assertEquals("le", p.get("subst.end"));
+        assertEquals("title", p.get("model.defaultIndex"));
 
         Map<String,Object> ps = p.listProperties();
-        assertEquals(6,ps.size());
-        assertEquals("bar",ps.get("foo"));
-        assertEquals("5",ps.get("hits"));
-        assertEquals("tit",ps.get("subst"));
-        assertEquals("le",ps.get("subst.end"));
-        assertEquals("title",ps.get("model.defaultIndex"));
-        assertEquals("test",ps.get("model.queryString"));
+        assertEquals("bar", ps.get("foo"));
+        assertEquals(5, ps.get("hits"));
+        assertEquals("tit", ps.get("subst"));
+        assertEquals("le", ps.get("subst.end"));
+        assertEquals("title", ps.get("model.defaultIndex"));
+        assertEquals("test", ps.get("model.queryString"));
     }
 
     @Test

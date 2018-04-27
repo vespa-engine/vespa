@@ -21,6 +21,7 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -444,28 +445,28 @@ public class QueryTestCase {
 
     @Test
     public void testQueryPropertyResolveTracing() {
-        QueryProfile testProfile=new QueryProfile("test");
+        QueryProfile testProfile = new QueryProfile("test");
         testProfile.setOverridable("u", false, null);
         testProfile.set("d","e", null);
         testProfile.set("u","11", null);
         testProfile.set("foo.bar", "wiz", null);
         Query q = new Query(QueryTestCase.httpEncode("?query=a:>5&a=b&traceLevel=5&sources=a,b&u=12&foo.bar2=wiz2&c.d=foo&queryProfile=test"),testProfile.compile(null));
-        String trace=q.getContext(false).getTrace().toString();
-        String[] traceLines=trace.split("\n");
+        String trace = q.getContext(false).getTrace().toString();
+        String[] traceLines = trace.split("\n");
         for (String line : traceLines)
             System.out.println(line);
-        assertTrue(contains("query=a:>5 (value from request)",traceLines));
-        assertTrue(contains("traceLevel=5 (value from request)",traceLines));
-        assertTrue(contains("a=b (value from request)",traceLines));
-        assertTrue(contains("sources=[a, b] (value from request)",traceLines));
-        assertTrue(contains("d=e (value from query profile)",traceLines));
-        assertTrue(contains("u=11 (value from query profile - unoverridable, ignoring request value)",traceLines));
+        assertTrue(contains("query=a:>5 (value from request)", traceLines));
+        assertTrue(contains("traceLevel=5 (value from request)", traceLines));
+        assertTrue(contains("a=b (value from request)", traceLines));
+        assertTrue(contains("sources=[a, b] (value from request)", traceLines));
+        assertTrue(contains("d=e (value from query profile)", traceLines));
+        assertTrue(contains("u=11 (value from query profile - unoverridable, ignoring request value)", traceLines));
     }
 
     @Test
     public void testNonleafInRequestDoesNotOverrideProfile() {
-        QueryProfile testProfile=new QueryProfile("test");
-        testProfile.set("a.b", "foo", (QueryProfileRegistry)null);
+        QueryProfile testProfile = new QueryProfile("test");
+        testProfile.set("a.b", "foo", null);
         testProfile.freeze();
         {
             Query q = new Query("?", testProfile.compile(null));
@@ -481,54 +482,61 @@ public class QueryTestCase {
 
     @Test
     public void testQueryPropertyResolveTracing2() {
-        QueryProfile defaultProfile=new QueryProfile("default");
+        QueryProfile defaultProfile = new QueryProfile("default");
         defaultProfile.freeze();
         Query q = new Query(QueryTestCase.httpEncode("?query=dvd&a.b=foo&tracelevel=9"), defaultProfile.compile(null));
-        String trace=q.getContext(false).getTrace().toString();
-        String[] traceLines=trace.split("\n");
-        assertTrue(contains("query=dvd (value from request)",traceLines));
-        assertTrue(contains("a.b=foo (value from request)",traceLines));
+        String trace = q.getContext(false).getTrace().toString();
+        String[] traceLines = trace.split("\n");
+        assertTrue(contains("query=dvd (value from request)", traceLines));
+        assertTrue(contains("a.b=foo (value from request)", traceLines));
+    }
+
+    @Test
+    public void testNativeProperties() {
+        Set<String> nativeProperties = Query.nativeProperties.stream().map(CompoundName::toString).collect(Collectors.toSet());
+        // Sample the content
+        assertTrue(nativeProperties.contains("hits"));
+        assertTrue(nativeProperties.contains("model.sources"));
+        assertTrue(nativeProperties.contains("ranking.matchPhase.attribute"));
     }
 
     @Test
     public void testQueryPropertyListingAndTrace() {
-        QueryProfile defaultProfile=new QueryProfile("default");
+        QueryProfile defaultProfile = new QueryProfile("default");
         defaultProfile.setDimensions(new String[]{"x"});
-        defaultProfile.set("a.b","a.b-x1-value",new String[] {"x1"}, null);
+        defaultProfile.set("a.b","a.b-x1-value", new String[] {"x1"}, null);
         defaultProfile.set("a.b", "a.b-x2-value", new String[]{"x2"}, null);
         defaultProfile.freeze();
 
         {
             Query q = new Query(QueryTestCase.httpEncode("?tracelevel=9&x=x1"),defaultProfile.compile(null));
-            Map<String,Object> propertyList=q.properties().listProperties();
-            assertEquals(3,propertyList.size());
-            assertEquals("a.b-x1-value",propertyList.get("a.b"));
-            String trace=q.getContext(false).getTrace().toString();
-            String[] traceLines=trace.split("\n");
-            assertTrue(contains("a.b=a.b-x1-value (value from query profile)",traceLines));
+            Map<String,Object> propertyList = q.properties().listProperties();
+            assertEquals("a.b-x1-value", propertyList.get("a.b"));
+            String trace = q.getContext(false).getTrace().toString();
+            String[] traceLines = trace.split("\n");
+            assertTrue(contains("a.b=a.b-x1-value (value from query profile)", traceLines));
         }
 
         {
-            Query q = new Query(QueryTestCase.httpEncode("?tracelevel=9&x=x1"),defaultProfile.compile(null));
-            Map<String,Object> propertyList=q.properties().listProperties("a");
-            assertEquals(1,propertyList.size());
-            assertEquals("a.b-x1-value",propertyList.get("b"));
+            Query q = new Query(QueryTestCase.httpEncode("?tracelevel=9&x=x1"), defaultProfile.compile(null));
+            Map<String,Object> propertyList = q.properties().listProperties("a");
+            assertEquals(1, propertyList.size());
+            assertEquals("a.b-x1-value", propertyList.get("b"));
         }
 
         {
             Query q = new Query(QueryTestCase.httpEncode("?tracelevel=9&x=x2"),defaultProfile.compile(null));
-            Map<String,Object> propertyList=q.properties().listProperties();
-            assertEquals(3,propertyList.size());
-            assertEquals("a.b-x2-value",propertyList.get("a.b"));
-            String trace=q.getContext(false).getTrace().toString();
-            String[] traceLines=trace.split("\n");
-            assertTrue(contains("a.b=a.b-x2-value (value from query profile)",traceLines));
+            Map<String,Object> propertyList = q.properties().listProperties();
+            assertEquals("a.b-x2-value", propertyList.get("a.b"));
+            String trace = q.getContext(false).getTrace().toString();
+            String[] traceLines = trace.split("\n");
+            assertTrue(contains("a.b=a.b-x2-value (value from query profile)", traceLines));
         }
     }
 
     @Test
     public void testQueryPropertyListingThreeLevel() {
-        QueryProfile defaultProfile=new QueryProfile("default");
+        QueryProfile defaultProfile = new QueryProfile("default");
         defaultProfile.setDimensions(new String[] {"x"});
         defaultProfile.set("a.b.c", "a.b.c-x1-value", new String[]{"x1"}, null);
         defaultProfile.set("a.b.c", "a.b.c-x2-value", new String[]{"x2"}, null);
@@ -536,47 +544,45 @@ public class QueryTestCase {
 
         {
             Query q = new Query(QueryTestCase.httpEncode("?tracelevel=9&x=x1"),defaultProfile.compile(null));
-            Map<String,Object> propertyList=q.properties().listProperties();
-            assertEquals(3,propertyList.size());
-            assertEquals("a.b.c-x1-value",propertyList.get("a.b.c"));
+            Map<String,Object> propertyList = q.properties().listProperties();
+            assertEquals("a.b.c-x1-value", propertyList.get("a.b.c"));
         }
 
         {
             Query q = new Query(QueryTestCase.httpEncode("?tracelevel=9&x=x1"),defaultProfile.compile(null));
-            Map<String,Object> propertyList=q.properties().listProperties("a");
-            assertEquals(1,propertyList.size());
-            assertEquals("a.b.c-x1-value",propertyList.get("b.c"));
+            Map<String,Object> propertyList = q.properties().listProperties("a");
+            assertEquals(1, propertyList.size());
+            assertEquals("a.b.c-x1-value", propertyList.get("b.c"));
         }
 
         {
             Query q = new Query(QueryTestCase.httpEncode("?tracelevel=9&x=x1"),defaultProfile.compile(null));
-            Map<String,Object> propertyList=q.properties().listProperties("a.b");
-            assertEquals(1,propertyList.size());
-            assertEquals("a.b.c-x1-value",propertyList.get("c"));
+            Map<String,Object> propertyList = q.properties().listProperties("a.b");
+            assertEquals(1, propertyList.size());
+            assertEquals("a.b.c-x1-value", propertyList.get("c"));
         }
 
         {
             Query q = new Query(QueryTestCase.httpEncode("?tracelevel=9&x=x2"),defaultProfile.compile(null));
-            Map<String,Object> propertyList=q.properties().listProperties();
-            assertEquals(3,propertyList.size());
-            assertEquals("a.b.c-x2-value",propertyList.get("a.b.c"));
+            Map<String,Object> propertyList = q.properties().listProperties();
+            assertEquals("a.b.c-x2-value", propertyList.get("a.b.c"));
         }
     }
 
     @Test
     public void testQueryPropertyReplacement() {
-        QueryProfile defaultProfile=new QueryProfile("default");
-        defaultProfile.set("model.queryString","myquery", (QueryProfileRegistry)null);
-        defaultProfile.set("queryUrl","http://provider:80?query=%{model.queryString}", (QueryProfileRegistry)null);
+        QueryProfile defaultProfile = new QueryProfile("default");
+        defaultProfile.set("model.queryString","myquery", null);
+        defaultProfile.set("queryUrl","http://provider:80?query=%{model.queryString}", null);
         defaultProfile.freeze();
 
-        Query q1 = new Query(QueryTestCase.httpEncode(""),defaultProfile.compile(null));
-        assertEquals("myquery",q1.getModel().getQueryString());
-        assertEquals("http://provider:80?query=myquery",q1.properties().get("queryUrl"));
+        Query q1 = new Query(QueryTestCase.httpEncode(""), defaultProfile.compile(null));
+        assertEquals("myquery", q1.getModel().getQueryString());
+        assertEquals("http://provider:80?query=myquery", q1.properties().get("queryUrl"));
 
-        Query q2 = new Query(QueryTestCase.httpEncode("?model.queryString=foo"),defaultProfile.compile(null));
-        assertEquals("foo",q2.getModel().getQueryString());
-        assertEquals("http://provider:80?query=foo",q2.properties().get("queryUrl"));
+        Query q2 = new Query(QueryTestCase.httpEncode("?model.queryString=foo"), defaultProfile.compile(null));
+        assertEquals("foo", q2.getModel().getQueryString());
+        assertEquals("http://provider:80?query=foo", q2.properties().get("queryUrl"));
 
         Query q3 = new Query(QueryTestCase.httpEncode("?query=foo"),defaultProfile.compile(null));
         assertEquals("foo",q3.getModel().getQueryString());
@@ -588,7 +594,7 @@ public class QueryTestCase {
     }
 
     @Test
-    public void testNoQueryString() throws IOException {
+    public void testNoQueryString() {
         Query q = new Query(httpEncode("?tracelevel=1"));
         Chain<Searcher> chain = new Chain<>(new RandomSearcher());
         new Execution(chain, Execution.Context.createContextStub()).search(q);
@@ -598,7 +604,7 @@ public class QueryTestCase {
     @Test
     public void testSetCollapseField() {
         Query q = new Query(httpEncode("?collapsefield=foo&presentation.format=tiled"));
-        assertEquals("foo",q.properties().get("collapsefield"));
+        assertEquals("foo", q.properties().get("collapsefield"));
         assertEquals("tiled", q.properties().get("presentation.format"));
         assertEquals("tiled", q.getPresentation().getFormat());
     }
@@ -606,23 +612,23 @@ public class QueryTestCase {
     @Test
     public void testSetNullProperty() {
         QueryProfile profile = new QueryProfile("test");
-        profile.set("property","initialValue", (QueryProfileRegistry)null);
+        profile.set("property","initialValue", null);
         Query query = new Query(httpEncode("?query=test"), profile.compile(null));
         assertEquals("initialValue",query.properties().get("property"));
-        query.properties().set("property",null);
+        query.properties().set("property", null);
         assertNull(query.properties().get("property"));
     }
 
     @Test
     public void testSetNullPropertyNoQueryProfile() {
-        Query query=new Query();
-        query.properties().set("a",null);
+        Query query = new Query();
+        query.properties().set("a", null);
         assertNull(query.properties().get("a"));
     }
 
     @Test
     public void testMissingParameter() {
-        Query q=new Query("?query=foo&hits=");
+        Query q = new Query("?query=foo&hits=");
         assertEquals(0, q.errors().size());
     }
 
@@ -631,23 +637,25 @@ public class QueryTestCase {
         {
             Query query = new Query();
             query.properties().set("model.searchPath", "foo");
-            assertEquals("Set dynamic get dynamic works","foo",query.properties().get("model.searchPath"));
-            assertEquals("Set dynamic get static works","foo",query.getModel().getSearchPath());
+            assertEquals("Set dynamic get dynamic works","foo", query.properties().get("model.searchPath"));
+            assertEquals("Set dynamic get static works","foo", query.getModel().getSearchPath());
+            Map<String, Object> properties = query.properties().listProperties();
+            assertEquals("Listing built-in properties works", "foo", properties.get("model.searchPath"));
         }
 
         {
-            Query query=new Query();
+            Query query = new Query();
             query.getModel().setSearchPath("foo");
-            assertEquals("Set static get dynamic works","foo",query.properties().get("model.searchPath"));
-            assertEquals("Set static get static works","foo",query.getModel().getSearchPath());
+            assertEquals("Set static get dynamic works","foo", query.properties().get("model.searchPath"));
+            assertEquals("Set static get static works","foo", query.getModel().getSearchPath());
         }
 
         {
-            Query query=new Query();
-            query.properties().set("a","bar");
-            assertEquals("bar",query.properties().get("a"));
-            query.properties().set("a.b","baz");
-            assertEquals("baz",query.properties().get("a.b"));
+            Query query = new Query();
+            query.properties().set("a", "bar");
+            assertEquals("bar", query.properties().get("a"));
+            query.properties().set("a.b", "baz");
+            assertEquals("baz", query.properties().get("a.b"));
         }
     }
 

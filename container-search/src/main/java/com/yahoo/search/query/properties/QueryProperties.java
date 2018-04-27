@@ -6,6 +6,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.*;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.MatchPhase;
@@ -13,6 +14,9 @@ import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.tensor.Tensor;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,37 +28,13 @@ import java.util.Map;
  */
 public class QueryProperties extends Properties {
 
-    private static final String MODEL_PREFIX = Model.MODEL + ".";
-    private static final String RANKING_PREFIX = Ranking.RANKING + ".";
-    private static final String PRESENTATION_PREFIX = Presentation.PRESENTATION + ".";
-
-    public static final CompoundName[] PER_SOURCE_QUERY_PROPERTIES = new CompoundName[] {
-            new CompoundName(MODEL_PREFIX + Model.QUERY_STRING),
-            new CompoundName(MODEL_PREFIX + Model.TYPE),
-            new CompoundName(MODEL_PREFIX + Model.FILTER),
-            new CompoundName(MODEL_PREFIX + Model.DEFAULT_INDEX),
-            new CompoundName(MODEL_PREFIX + Model.LANGUAGE),
-            new CompoundName(MODEL_PREFIX + Model.ENCODING),
-            new CompoundName(MODEL_PREFIX + Model.SOURCES),
-            new CompoundName(MODEL_PREFIX + Model.SEARCH_PATH),
-            new CompoundName(MODEL_PREFIX + Model.RESTRICT),
-            new CompoundName(RANKING_PREFIX + Ranking.LOCATION),
-            new CompoundName(RANKING_PREFIX + Ranking.PROFILE),
-            new CompoundName(RANKING_PREFIX + Ranking.SORTING),
-            new CompoundName(RANKING_PREFIX + Ranking.FRESHNESS),
-            new CompoundName(RANKING_PREFIX + Ranking.QUERYCACHE),
-            new CompoundName(RANKING_PREFIX + Ranking.LIST_FEATURES),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.BOLDING),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.SUMMARY),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.REPORT_COVERAGE),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.FORMAT),
-            new CompoundName(PRESENTATION_PREFIX + Presentation.SUMMARY_FIELDS),
-            Query.HITS,
-            Query.OFFSET,
-            Query.TRACE_LEVEL,
-            Query.TIMEOUT,
-            Query.NO_CACHE,
-            Query.GROUPING_SESSION_CACHE };
+    /**
+     * TODO: Remove on Vespa 7
+     * @deprecated use Query.nativeProperties
+     */
+    @Deprecated
+    public static final CompoundName[] PER_SOURCE_QUERY_PROPERTIES =
+            Query.nativeProperties.toArray(new CompoundName[] {});
 
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
@@ -73,7 +53,7 @@ public class QueryProperties extends Properties {
     @Override
     public Object get(CompoundName key, Map<String,String> context,
                       com.yahoo.processing.request.Properties substitution) {
-        if (key.size()==2 && key.first().equals(Model.MODEL)) {
+        if (key.size() == 2 && key.first().equals(Model.MODEL)) {
             Model model = query.getModel();
             if (key.last().equals(Model.QUERY_STRING)) return model.getQueryString();
             if (key.last().equals(Model.TYPE)) return model.getType();
@@ -87,7 +67,7 @@ public class QueryProperties extends Properties {
         }
         else if (key.first().equals(Ranking.RANKING)) {
             Ranking ranking = query.getRanking();
-            if (key.size()==2) {
+            if (key.size() == 2) {
                 if (key.last().equals(Ranking.LOCATION)) return ranking.getLocation();
                 if (key.last().equals(Ranking.PROFILE)) return ranking.getProfile();
                 if (key.last().equals(Ranking.SORTING)) return ranking.getSorting();
@@ -156,7 +136,7 @@ public class QueryProperties extends Properties {
             if (key.toString().equals(Ranking.RANKING)) return query.getRanking();
             if (key.toString().equals(Presentation.PRESENTATION)) return query.getPresentation();
         }
-        return super.get(key,context,substitution);
+        return super.get(key, context, substitution);
     }
 
     @SuppressWarnings("deprecation")
@@ -298,6 +278,21 @@ public class QueryProperties extends Properties {
         }
     }
 
+    @Override
+    public Map<String, Object> listProperties(CompoundName prefix,
+                                              Map<String,String> context,
+                                              com.yahoo.processing.request.Properties substitution) {
+        Map<String, Object> properties = super.listProperties(prefix, context, substitution);
+        for (CompoundName queryProperty : Query.nativeProperties) {
+            if (queryProperty.hasPrefix(prefix)) {
+                Object value = this.get(queryProperty, context, substitution);
+                if (value != null)
+                    properties.put(queryProperty.toString(), value);
+            }
+        }
+        return properties;
+    }
+
     private void setRankingFeature(Query query, String key, Object value) {
         if (value instanceof Tensor)
             query.getRanking().getFeatures().put(key, (Tensor)value);
@@ -322,4 +317,5 @@ public class QueryProperties extends Properties {
     public final Query getParentQuery() {
         return query;
     }
+
 }

@@ -234,17 +234,18 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * will return {"d" =&gt; "a.d-value","e" =&gt; "a.e-value"}
      */
     public Map<String, Object> listValues(CompoundName prefix, Map<String, String> context, Properties substitution) {
-        DimensionBinding dimensionBinding=DimensionBinding.createFrom(getDimensions(),context);
+        DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(),context);
 
-        AllValuesQueryProfileVisitor visitor=new AllValuesQueryProfileVisitor(prefix);
+        AllValuesQueryProfileVisitor visitor = new AllValuesQueryProfileVisitor(prefix);
         accept(visitor,dimensionBinding, null);
-        Map<String,Object>  values=visitor.getResult();
+        Map<String,Object>  values = visitor.getResult();
 
-        if (substitution==null) return values;
+        if (substitution == null) return values;
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             if (entry.getValue().getClass() == String.class) continue; // Shortcut
-            if (entry.getValue() instanceof SubstituteString)
-                entry.setValue(((SubstituteString)entry.getValue()).substitute(context,substitution));
+            if (entry.getValue() instanceof SubstituteString) {
+                entry.setValue(((SubstituteString) entry.getValue()).substitute(context, substitution));
+            }
         }
         return values;
     }

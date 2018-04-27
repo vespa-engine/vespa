@@ -102,7 +102,7 @@ public class Properties implements Cloneable {
         if (chained() == null)
             return new HashMap<>();
         else
-            return chained().listProperties(path, context, this);
+            return chained().listProperties(path, context, substitution);
     }
 
     /**
