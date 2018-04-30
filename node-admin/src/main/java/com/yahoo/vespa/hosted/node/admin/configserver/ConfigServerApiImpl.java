@@ -109,12 +109,11 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     private ConfigServerApiImpl(Collection<URI> configServerUris,
                                 SSLConnectionSocketFactory sslConnectionSocketFactory) {
-        this(randomizeConfigServerUris(configServerUris),
-                new SelfCloseableHttpClient(sslConnectionSocketFactory));
+        this(configServerUris, new SelfCloseableHttpClient(sslConnectionSocketFactory));
     }
 
-    private ConfigServerApiImpl(List<URI> configServerHosts, SelfCloseableHttpClient client) {
-        this.configServerHosts = configServerHosts;
+    private ConfigServerApiImpl(Collection<URI> configServerHosts, SelfCloseableHttpClient client) {
+        this.configServerHosts = randomizeConfigServerUris(configServerHosts);
         this.client = client;
     }
 
