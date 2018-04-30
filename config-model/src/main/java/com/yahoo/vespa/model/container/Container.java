@@ -247,7 +247,7 @@ public class Container extends AbstractService implements
      */
     public int getPortCount() {
         int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts + 2; // TODO remove +2, only here to keep irrelevant unit tests from failing.
-        int rpcPorts = (isRpcServerEnabled()) ? numRpcServerPorts : 0;
+        int rpcPorts = (rpcServerEnabled()) ? numRpcServerPorts : 0;
         return httpPorts + rpcPorts;
     }
 
@@ -263,7 +263,7 @@ public class Container extends AbstractService implements
     }
 
     private int getRpcPort() {
-        return isRpcServerEnabled() ? getRelativePort(numHttpServerPorts + 1) : 0;
+        return rpcServerEnabled() ? getRelativePort(numHttpServerPorts + 1) : 0;
     }
 
     private int getMessagingPort() {
@@ -289,15 +289,11 @@ public class Container extends AbstractService implements
         return "PRELOAD=" + getPreLoad() + " exec vespa-start-container-daemon " + getJvmArgs() + " ";
     }
 
-    private boolean isRpcServerEnabled() {
-        return ((ContainerCluster) parent).rpcServerEnabled();
-    }
-
     @Override
     public void getConfig(QrConfig.Builder builder) {
         builder.
                 rpc(new Rpc.Builder()
-                        .enabled(isRpcServerEnabled())
+                        .enabled(rpcServerEnabled())
                         .port(getRpcPort())
                         .slobrokId(serviceSlobrokId())).
                 filedistributor(filedistributorConfig());

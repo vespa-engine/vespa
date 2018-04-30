@@ -126,6 +126,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
         addBundlesForPlatformComponents(cluster);
+        cluster.setRpcServerEnabled(rpcServerEnabled);
+        cluster.setHttpServerEnabled(httpServerEnabled);
         model.setCluster(cluster);
     }
 
@@ -174,8 +176,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
-        cluster.setRpcServerEnabled(rpcServerEnabled);
-        cluster.setHttpServerEnabled(httpServerEnabled);
     }
 
     private void addSecretStore(ContainerCluster cluster, Element spec) {
