@@ -20,6 +20,8 @@ import static org.hamcrest.CoreMatchers.is;
  *
  * @author Bjorn Borud
  */
+// TODO: Remove annotation and replace setMillis with setInstant when we don't support Java 8 anymore.
+@SuppressWarnings("deprecation")
 public class LogSetupTestCase {
     // For testing zookeeper log records
     protected static LogRecord zookeeperLogRecord;

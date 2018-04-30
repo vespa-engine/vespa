@@ -20,6 +20,8 @@ import static org.junit.Assert.*;
 /**
  * @author  Bjorn Borud
  */
+// TODO: Remove annotation and replace setMillis with setInstant when we don't support Java 8 anymore.
+@SuppressWarnings("deprecation")
 public class VespaLogHandlerTestCase {
     protected static String hostname;
     protected static String pid;
