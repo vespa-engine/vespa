@@ -13,7 +13,7 @@ import java.util.HashMap;
  */
 public class HTML {
     static Object[][] entities = {
-        // {"#39", new Integer(39)},     // ' - apostrophe
+        // {"#39", Integer.valueOf(39)},     // ' - apostrophe
         {"quot", 34},    // " - double-quote
         {"amp", 38},     // & - ampersand
         {"lt", 60},      // < - less-than

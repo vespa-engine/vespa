@@ -418,7 +418,7 @@ public class Properties implements Cloneable {
             if (stringValue.isEmpty())
                 return defaultValue;
 
-            return new Integer(stringValue);
+            return Integer.valueOf(stringValue);
         } catch (IllegalArgumentException e) {
             throw new NumberFormatException("Not a valid integer");
         }

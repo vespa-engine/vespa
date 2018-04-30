@@ -477,8 +477,8 @@ public class JsonReaderTestCase {
         assertSame(WeightedSet.class, f.getClass());
         WeightedSet<?> w = (WeightedSet<?>) f;
         assertEquals(2, w.size());
-        assertEquals(new Integer(2), w.get(new StringFieldValue("nalle")));
-        assertEquals(new Integer(7), w.get(new StringFieldValue("tralle")));
+        assertEquals(Integer.valueOf(2), w.get(new StringFieldValue("nalle")));
+        assertEquals(Integer.valueOf(7), w.get(new StringFieldValue("tralle")));
     }
 
     @Test
@@ -700,8 +700,8 @@ public class JsonReaderTestCase {
         AssignValueUpdate assign = (AssignValueUpdate) x.getValueUpdate(0);
         WeightedSet<?> w = (WeightedSet<?>) assign.getValue();
         assertEquals(2, w.size());
-        assertEquals(new Integer(37), w.get(new StringFieldValue("person")));
-        assertEquals(new Integer(41), w.get(new StringFieldValue("another person")));
+        assertEquals(Integer.valueOf(37), w.get(new StringFieldValue("person")));
+        assertEquals(Integer.valueOf(41), w.get(new StringFieldValue("another person")));
     }
 
 

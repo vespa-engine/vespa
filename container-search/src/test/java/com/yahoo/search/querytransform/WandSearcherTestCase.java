@@ -197,9 +197,9 @@ public class WandSearcherTestCase {
 
     private void assertWeightedSetItem(WeightedSetItem item) {
         assertEquals(3, item.getNumTokens());
-        assertEquals(new Integer(1), item.getTokenWeight("a"));
-        assertEquals(new Integer(2), item.getTokenWeight("b"));
-        assertEquals(new Integer(3), item.getTokenWeight("c"));
+        assertEquals(Integer.valueOf(1), item.getTokenWeight("a"));
+        assertEquals(Integer.valueOf(2), item.getTokenWeight("b"));
+        assertEquals(Integer.valueOf(3), item.getTokenWeight("c"));
     }
 
     @Test

@@ -179,10 +179,10 @@ public class FieldCollapsingSearcher extends Searcher {
                 if (numHitsThisField < collapseSize) {
                     result.hits().add(hit);
                     ++numHitsThisField;
-                    knownCollapses.put(collapseId, new Integer(numHitsThisField));
+                    knownCollapses.put(collapseId, Integer.valueOf(numHitsThisField));
                 }
             } else {
-                knownCollapses.put(collapseId, new Integer(1));
+                knownCollapses.put(collapseId, Integer.valueOf(1));
                 result.hits().add(hit);
             }
         }

@@ -112,7 +112,7 @@ public class ConfigDefinitionBuilder {
 
     static void addNode(ConfigDefinition def, LeafCNode.IntegerLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
-            def.addIntDef(leaf.getName(), new Integer(leaf.getDefaultValue().getValue()));
+            def.addIntDef(leaf.getName(), Integer.valueOf(leaf.getDefaultValue().getValue()));
         } else {
             def.addIntDef(leaf.getName());
         }

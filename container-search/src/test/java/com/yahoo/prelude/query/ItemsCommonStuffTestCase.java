@@ -388,7 +388,7 @@ public class ItemsCommonStuffTestCase {
     @Test
     public final void testTermTypeBasic() {
         assertFalse(TermType.AND.equals(TermType.DEFAULT));
-        assertFalse(TermType.AND.equals(new Integer(10)));
+        assertFalse(TermType.AND.equals(Integer.valueOf(10)));
         assertTrue(TermType.AND.equals(TermType.AND));
         assertSame(AndItem.class, TermType.DEFAULT.createItemClass().getClass());
         assertSame(CompositeItem.class, TermType.DEFAULT.getItemClass());

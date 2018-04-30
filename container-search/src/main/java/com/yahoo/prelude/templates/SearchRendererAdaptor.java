@@ -164,7 +164,7 @@ public final class SearchRendererAdaptor extends Renderer {
 
         HitContext hitContext = new HitContext(hit, context);
         hitContext.put("hit", hit);
-        hitContext.put("hitno", new Integer(hitno));
+        hitContext.put("hitno", Integer.valueOf(hitno));
         hitContext.put("relevancy",hit.getRelevance());
         templates.hit(hitContext, writer);
 
@@ -173,7 +173,7 @@ public final class SearchRendererAdaptor extends Renderer {
 
         // Put these back - may have been changed by nested rendering
         hitContext.put("hit", hit);
-        hitContext.put("hitno", new Integer(hitno));
+        hitContext.put("hitno", Integer.valueOf(hitno));
         templates.hitFooter(hitContext, writer);
 
 

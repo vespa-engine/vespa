@@ -1037,7 +1037,7 @@ final class ProgramParser {
 		case yqlplusParser.RULE_fixed_or_parameter: {
 			ParseTree firstChild = parseTree.getChild(0);
 			if (getParseTreeIndex(firstChild) == yqlplusParser.INT) {
-				return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.LITERAL, new Integer(firstChild.getText()));
+				return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.LITERAL, Integer.valueOf(firstChild.getText()));
 			} else {
 				return convertExpr(firstChild, scope);
 			}
@@ -1369,7 +1369,7 @@ final class ProgramParser {
         String text = literal.getChild(0).getText();
         switch(parseTreeIndex) {
             case yqlplusParser.INT:
-                return new Integer(text);
+                return Integer.valueOf(text);
             case yqlplusParser.FLOAT:
                 return new Double(text);
             case yqlplusParser.STRING:
