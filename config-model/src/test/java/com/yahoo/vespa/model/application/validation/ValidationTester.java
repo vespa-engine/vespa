@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -10,6 +11,8 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
+import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SEARCHDEFINITION;
+import static com.yahoo.config.model.test.MockApplicationPackage.BOOK_SEARCHDEFINITION;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -46,7 +49,7 @@ public class ValidationTester {
         Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
         ApplicationPackage newApp = new MockApplicationPackage.Builder()
                 .withServices(services)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .withSearchDefinitions(ImmutableList.of(MUSIC_SEARCHDEFINITION, BOOK_SEARCHDEFINITION))
                 .withValidationOverrides(validationOverrides)
                 .build();
         VespaModelCreatorWithMockPkg newModelCreator = new VespaModelCreatorWithMockPkg(newApp);
