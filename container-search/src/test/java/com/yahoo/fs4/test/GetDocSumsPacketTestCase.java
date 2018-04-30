@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNull;
 /**
  * Tests the GetDocsumsPacket
  *
- * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class GetDocSumsPacketTestCase {
 
@@ -33,14 +33,7 @@ public class GetDocSumsPacketTestCase {
 
     @Test
     public void testEncodingWithQuery() throws BufferTooSmallException {
-        FastHit hit = new FastHit();
-        hit.setIgnoreRowBits(true);
-        assertPacket(true, hit, new byte[] { 0, 0, 0, 57, 0, 0, 0, -37, 0, 0, 40, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
-                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7,
-                100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111, 0, 0, 0, 3 });
-
-        hit = new FastHit();
-        hit.setIgnoreRowBits(false);
+        Hit hit = new FastHit();
         assertPacket(true, hit, new byte[] {0, 0, 0, 57, 0, 0, 0, -37, 0, 0, 40, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
                 IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7,
                 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111, 0, 0, 0, 2});
@@ -48,15 +41,7 @@ public class GetDocSumsPacketTestCase {
 
     @Test
     public void testEncodingWithoutQuery() throws BufferTooSmallException {
-        FastHit hit = new FastHit();
-        hit.setIgnoreRowBits(true);
-        assertPacket(false, hit, new byte[] { 0, 0, 0, 43, 0, 0, 0, -37, 0, 0, 40, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
-                     IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7,
-                     100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 3
-        });
-
-        hit = new FastHit();
-        hit.setIgnoreRowBits(false);
+        Hit hit = new FastHit();
         assertPacket(false, hit, new byte[] { 0, 0, 0, 43, 0, 0, 0, -37, 0, 0, 40, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
                 IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 2
         });

@@ -257,62 +257,41 @@ public final class SyncDefaultRenderer extends Renderer {
         }
     }
 
-    private void renderSingularHit(XMLWriter writer, Hit hit) throws IOException {
+    private void renderSingularHit(XMLWriter writer, Hit hit) {
         writer.openTag(HIT);
         renderHitAttributes(writer, hit);
         writer.closeStartTag();
         renderHitFields(writer, hit);
     }
 
-    private void renderHitFields(XMLWriter writer, Hit hit) throws IOException {
+    private void renderHitFields(XMLWriter writer, Hit hit) {
         renderSyntheticRelevanceField(writer, hit);
         for (Iterator<Map.Entry<String, Object>> it = hit.fieldIterator(); it.hasNext(); ) {
             renderField(writer, hit, it);
         }
     }
 
-    private void renderField(XMLWriter writer, Hit hit, Iterator<Map.Entry<String, Object>> it) throws IOException {
+    private void renderField(XMLWriter writer, Hit hit, Iterator<Map.Entry<String, Object>> it) {
         Map.Entry<String, Object> entry = it.next();
-        boolean isProbablyNotDecoded = false;
-        if (hit instanceof FastHit) {
-            FastHit f = (FastHit) hit;
-            isProbablyNotDecoded = f.fieldIsNotDecoded(entry.getKey());
-        }
-        renderGenericFieldPossiblyNotDecoded(writer, hit, entry, isProbablyNotDecoded);
-    }
-
-    private void renderGenericFieldPossiblyNotDecoded(XMLWriter writer, Hit hit, Map.Entry<String, Object> entry, boolean probablyNotDecoded) throws IOException {
         String fieldName = entry.getKey();
 
-        if (!shouldRenderField(hit, fieldName)) return;
+        if ( ! shouldRenderField(hit, fieldName)) return;
         if (fieldName.startsWith("$")) return; // Don't render fields that start with $ // TODO: Move to should render
 
         writeOpenFieldElement(writer, fieldName);
-        renderFieldContentPossiblyNotDecoded(writer, hit, probablyNotDecoded, fieldName);
+        renderFieldContent(writer, hit, fieldName);
         writeCloseFieldElement(writer);
     }
 
-    private void renderFieldContentPossiblyNotDecoded(XMLWriter writer, Hit hit, boolean probablyNotDecoded, String fieldName) throws IOException {
-        boolean dumpedRaw = false;
-        if (probablyNotDecoded && (hit instanceof FastHit)) {
-            writer.closeStartTag();
-            if ((writer.getWriter() instanceof ByteWriter) && context.isUtf8Output()) {
-                dumpedRaw = UserTemplate.dumpBytes((ByteWriter) writer.getWriter(), (FastHit) hit, fieldName);
-            }
-            if (dumpedRaw) {
-                writer.content("", false); // let the xml writer note that this tag had content
-            }
+    private void renderFieldContent(XMLWriter writer, Hit hit, String fieldName) {
+        String xmlval = hit.getFieldXML(fieldName);
+        if (xmlval == null) {
+            xmlval = "(null)";
         }
-        if (!dumpedRaw) {
-            String xmlval = hit.getFieldXML(fieldName);
-            if (xmlval == null) {
-                xmlval = "(null)";
-            }
-            writer.escapedContent(xmlval, false);
-        }
+        writer.escapedContent(xmlval, false);
     }
 
-    private void renderSyntheticRelevanceField(XMLWriter writer, Hit hit) throws IOException {
+    private void renderSyntheticRelevanceField(XMLWriter writer, Hit hit) {
         final String relevancyFieldName = "relevancy";
         final Relevance relevance = hit.getRelevance();
 
@@ -321,17 +300,17 @@ public final class SyncDefaultRenderer extends Renderer {
         }
     }
 
-    private void renderSimpleField(XMLWriter writer, String relevancyFieldName, Relevance relevance) throws IOException {
+    private void renderSimpleField(XMLWriter writer, String relevancyFieldName, Relevance relevance) {
         writeOpenFieldElement(writer, relevancyFieldName);
         writer.content(relevance.toString(), false);
         writeCloseFieldElement(writer);
     }
 
-    private void writeCloseFieldElement(XMLWriter writer) throws IOException {
+    private void writeCloseFieldElement(XMLWriter writer) {
         writer.closeTag();
     }
 
-    private void writeOpenFieldElement(XMLWriter writer, String relevancyFieldName) throws IOException {
+    private void writeOpenFieldElement(XMLWriter writer, String relevancyFieldName) {
         Utf8String utf8 = fieldNameMap.get(relevancyFieldName);
         if (utf8 == null) {
             utf8 = new Utf8String(relevancyFieldName);
@@ -346,7 +325,7 @@ public final class SyncDefaultRenderer extends Renderer {
         return true;
     }
 
-    private void renderHitAttributes(XMLWriter writer, Hit hit) throws IOException {
+    private void renderHitAttributes(XMLWriter writer, Hit hit) {
         writer.attribute(TYPE, hit.getTypeString());
         if (hit.getRelevance() != null) {
             writer.attribute(RELEVANCY, hit.getRelevance().toString());
@@ -365,20 +344,20 @@ public final class SyncDefaultRenderer extends Renderer {
         }
     }
 
-    private void renderGroup(XMLWriter writer, HitGroup hit) throws IOException {
+    private void renderGroup(XMLWriter writer, HitGroup hit) {
         writer.openTag(GROUP);
         renderHitAttributes(writer, hit);
         writer.closeStartTag();
     }
 
-    private void renderHitGroupOfTypeGroupHit(XMLWriter writer, HitGroup hit) throws IOException {
+    private void renderHitGroupOfTypeGroupHit(XMLWriter writer, HitGroup hit) {
         writer.openTag(HIT);
         renderHitAttributes(writer, hit);
         renderId(writer, hit);
         writer.closeStartTag();
     }
 
-    private void renderId(XMLWriter writer, HitGroup hit) throws IOException {
+    private void renderId(XMLWriter writer, HitGroup hit) {
         URI uri = hit.getId();
         if (uri != null) {
             writer.openTag(ID).content(uri.stringValue(),false).closeTag();

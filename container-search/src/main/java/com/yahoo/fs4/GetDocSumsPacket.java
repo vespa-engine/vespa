@@ -122,9 +122,6 @@ public class GetDocSumsPacket extends Packet {
             Hit h = i.next();
             if (h instanceof FastHit) {
                 FastHit hit = (FastHit)h;
-                if (hit.shouldIgnoreRowBits()) {
-                    flags |= GDFLAG_IGNORE_ROW;
-                }
                 QueryPacketData tag = hit.getQueryPacketData();
                 if (tag != null) {
                     this.queryPacketData = tag;

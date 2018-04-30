@@ -22,7 +22,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class HitConverterTestCase {
 
@@ -35,11 +35,11 @@ public class HitConverterTestCase {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(new Hit("hit:ctx")));
         assertNotNull(hit);
-        assertEquals(new URI("index:0/1/0/" + FastHit.asHexString(createGlobalId(2))), hit.getId());
+        assertEquals(new URI("index:0/1/" + FastHit.asHexString(createGlobalId(2))), hit.getId());
 
         hit = converter.toSearchHit("default", new FS4Hit(4, createGlobalId(5), 6).setContext(new Hit("hit:ctx")));
         assertNotNull(hit);
-        assertEquals(new URI("index:0/4/0/" + FastHit.asHexString(createGlobalId(5))), hit.getId());
+        assertEquals(new URI("index:0/4/" + FastHit.asHexString(createGlobalId(5))), hit.getId());
     }
 
     @Test

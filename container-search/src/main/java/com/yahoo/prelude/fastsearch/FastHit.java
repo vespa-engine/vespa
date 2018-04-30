@@ -19,37 +19,19 @@ import com.yahoo.data.access.simple.Value.StringValue;
  */
 public class FastHit extends Hit {
 
-    public static final String SUMMARY = "summary"; // TODO: Remove on Vespa 7
+    private static final GlobalId emptyGlobalId = new GlobalId(new byte[GlobalId.LENGTH]);
 
-    private static final long serialVersionUID = 298098891191029589L;
-
-    /** The global id of this document in the backend node which produced it */
-    private GlobalId globalId = new GlobalId(new byte[GlobalId.LENGTH]);
-
-    /** Part ID */
-    private int partId;
-
-    /** DistributionKey (needed to generate getDocsumPacket, for two-phase search) */
+    /** The index of the content node this hit originated at */
     private int distributionKey = 0;
 
-    /** The index uri of this. Lazily set */
+    /** The local identifier of the content store for this hit on the node it originated at */
+    private int partId;
+
+    /** The global id of this document in the backend node which produced it */
+    private GlobalId globalId = emptyGlobalId;
+
+    /** Full information pointing to the location of further data for this hit. Lazily set */
     private URI indexUri = null;
-
-    /**
-     * The number of least significant bits in the part id which specifies the
-     * row in the search cluster which produced this hit. The other bits
-     * specifies the column. 0 if not known.
-     */
-    private int rowBits = 0;
-
-    /**
-     * Whether or not to ignore the row bits. If this is set, FastSearcher is
-     * allowed to choose an appropriate row.
-     */
-    private boolean ignoreRowBits = false;
-
-    /** Whether to use the row number in the index uri, see FastSearcher for details */
-    private boolean useRowInIndexUri = true;
 
     private transient QueryPacketData queryPacketData = null;
     private transient CacheKey cacheKey = null;
@@ -70,8 +52,8 @@ public class FastHit extends Hit {
         super.setField("uri", uri); // TODO: Remove on Vespa 7
         setRelevance(new Relevance(relevance));
         setSource(source);
-        types().add(SUMMARY); // TODO: Remove on Vespa 7
-        setPartId(0, 0);
+        types().add("summary");
+        setPartId(0);
     }
 
     @Override
@@ -117,7 +99,7 @@ public class FastHit extends Hit {
         URI uri = super.getId();
         if (uri != null) return uri;
 
-        // TODO: Remove, this should be one of the last vestiges of URL field magic
+        // TODO: Remove on Vespa 7, this should be one of the last vestiges of URL field magic
         if (fields().containsKey("uri")) {
             // trigger decoding
             Object o = getField("uri");
@@ -137,11 +119,7 @@ public class FastHit extends Hit {
     public URI getIndexUri() {
         if (indexUri != null) return indexUri;
 
-        String rowString = "-";
-        if (useRowInIndexUri)
-            rowString = String.valueOf(getRow());
-
-        indexUri = new URI("index:" + getSourceNumber() + "/" + getColumn() + "/" + rowString + "/" + asHexString(getGlobalId()));
+        indexUri = new URI("index:" + getSourceNumber() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
         return indexUri;
     }
 
@@ -165,37 +143,8 @@ public class FastHit extends Hit {
      * highest row number are the row bits, the rest are column bits.
      *
      * @param partId  partition id
-     * @param rowBits number of bits to encode row number
      */
-    public void setPartId(int partId, int rowBits) {
-        this.partId = partId;
-        this.rowBits = rowBits;
-    }
-
-    /**
-     * Sets whether to use the row in the index uri. See FastSearcher for details.
-     */
-    public void setUseRowInIndexUri(boolean useRowInIndexUri) {
-        this.useRowInIndexUri = useRowInIndexUri;
-    }
-
-    /**
-     * Returns the column number where this hit originated, or partId if not known
-     */
-    public int getColumn() {
-        return partId >>> rowBits;
-    }
-
-    /**
-     *  Returns the row number where this hit originated, or 0 if not known
-     * */
-    public int getRow() {
-        if (rowBits == 0) {
-            return 0;
-        }
-
-        return partId & ((1 << rowBits) - 1);
-    }
+    public void setPartId(int partId) { this.partId = partId; }
 
     /**
      * <p>Returns a field value from this Hit. The value is either a stored value from the Document represented by
@@ -230,19 +179,7 @@ public class FastHit extends Hit {
      */
     @Override
     public Object getField(String key) {
-        Object value = super.getField(key);
-
-        if (value instanceof LazyValue) {
-            return getAndCacheLazyValue(key, (LazyValue) value);
-        } else {
-            return value;
-        }
-    }
-
-    private Object getAndCacheLazyValue(String key, LazyValue value) {
-        Object forcedValue = value.getValue(key);
-        setField(key, forcedValue);
-        return forcedValue;
+        return super.getField(key);
     }
 
     /** Returns false - this is a concrete hit containing requested content */
@@ -250,20 +187,12 @@ public class FastHit extends Hit {
         return false;
     }
 
-    /**
-     * Only needed when fetching summaries in 2 phase.
-     *
-     * @return distribution key of node where the hit originated from
-     */
+    /** Returns the index of the node this hit originated at */
     public int getDistributionKey() {
         return distributionKey;
     }
 
-    /**
-     * Only needed when fetching summaries in 2 phase.
-     *
-     * @param distributionKey Of node where you find this hit.
-     */
+    /** Returns the index of the node this hit originated at */
     public void setDistributionKey(int distributionKey) {
         this.distributionKey = distributionKey;
     }
@@ -284,20 +213,6 @@ public class FastHit extends Hit {
         if (super.getField(fieldName) == null) {
             setField(fieldName, value);
         }
-    }
-
-    /**
-     * Set a field to behave like a string type summary field, not decoding raw
-     * data till actually used. Added to make testing lazy docsum functionality
-     * easier. This is not a method to be used for efficiency, as it causes
-     * object allocations.
-     *
-     * @param fieldName the name of the field to insert undecoded UTF-8 into
-     * @param value an array of valid UTF-8 data
-     */
-    @Beta
-    public void setLazyStringField(String fieldName, byte[] value) {
-        setField(fieldName, new LazyString(new StringField(fieldName), new StringValue(value)));
     }
 
     /**
@@ -336,27 +251,6 @@ public class FastHit extends Hit {
         this.cacheKey = cacheKey;
     }
 
-    public void setIgnoreRowBits(boolean ignoreRowBits) {
-        this.ignoreRowBits = ignoreRowBits;
-    }
-
-    public boolean shouldIgnoreRowBits() {
-        return ignoreRowBits;
-    }
-
-    public boolean fieldIsNotDecoded(String name) {
-        return super.getField(name) instanceof LazyValue;
-    }
-
-    public RawField fetchFieldAsUtf8(String fieldName) {
-        Object value = super.getField(fieldName);
-        if (value instanceof LazyValue) {
-            return ((LazyValue) value).getFieldAsUtf8(fieldName);
-        } else {
-            throw new IllegalStateException("Field " + fieldName + " has already been decoded:" + value);
-        }
-    }
-
     public static final class RawField {
 
         private final boolean needXmlEscape;
@@ -370,32 +264,6 @@ public class FastHit extends Hit {
 
         public byte [] getUtf8() { return contents; }
         public boolean needXmlEscape() { return needXmlEscape; }
-
-    }
-
-    private static abstract class LazyValue {
-        abstract Object getValue(String fieldName);
-        abstract RawField getFieldAsUtf8(String fieldName);
-    }
-
-    private static class LazyString extends LazyValue {
-
-        private final Inspector value;
-        private final DocsumField fieldType;
-
-        LazyString(DocsumField fieldType, Inspector value) {
-            assert(value.type() == Type.STRING);
-            this.value = value;
-            this.fieldType = fieldType;
-        }
-
-        Object getValue(String fieldName) {
-            return value.asString();
-        }
-
-        RawField getFieldAsUtf8(String fieldName) {
-            return new RawField(fieldType, value.asUtf8());
-        }
 
     }
 

@@ -53,9 +53,6 @@ import java.util.logging.Level;
 @SuppressWarnings("deprecation")
 public abstract class VespaBackEndSearcher extends PingableSearcher {
 
-    private static final CompoundName grouping=new CompoundName("grouping");
-    private static final CompoundName combinerows=new CompoundName("combinerows");
-
     protected static final CompoundName PACKET_COMPRESSION_LIMIT = new CompoundName("packetcompressionlimit");
     protected static final CompoundName PACKET_COMPRESSION_TYPE = new CompoundName("packetcompressiontype");
     protected static final CompoundName TRACE_DISABLE = new CompoundName("trace.disable");
@@ -77,12 +74,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     /** Cache wrapper */
     protected CacheControl cacheControl = null;
-    /**
-     * The number of last significant bits in the partId which specifies the
-     * row number in this backend,
-     * the rest specifies the column. 0 if not known.
-     */
-    private int rowBits = 0;
+
     /** Searchcluster number */
     private int sourceNumber;
 
@@ -177,7 +169,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                            DocumentdbInfoConfig documentdbInfoConfig) {
         this.name = clusterParams.searcherName;
         this.sourceNumber = clusterParams.clusterNumber;
-        this.rowBits = clusterParams.rowBits;
 
         Validator.ensureNotNull("Name of Vespa backend integration", getName());
 
@@ -535,7 +526,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             FastHit hit = new FastHit();
             hit.setQuery(myQuery);
 
-            hit.setUseRowInIndexUri(useRowInIndexUri(result));
             hit.setFillable();
             hit.setCached(true);
 
@@ -565,10 +555,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return filledAllOfEm;
     }
 
-    private boolean useRowInIndexUri(Result result) {
-        return ! ((result.getQuery().properties().getString(grouping) != null) || result.getQuery().properties().getBoolean(combinerows));
-    }
-
     private void extractDocumentInfo(FastHit hit, DocumentInfo document) {
         hit.setSourceNumber(sourceNumber);
         hit.setSource(getName());
@@ -579,7 +565,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
         hit.setDistributionKey(document.getDistributionKey());
         hit.setGlobalId(document.getGlobalId());
-        hit.setPartId(document.getPartId(), rowBits);
+        hit.setPartId(document.getPartId());
     }
 
     protected PacketWrapper cacheLookupTwoPhase(CacheKey cacheKey, Result result, String summaryClass) {
@@ -637,7 +623,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * @param queryPacketData binary data from first phase of search, or null
      * @param cacheKey the key this hit should match in the packet cache, or null
      */
-    protected boolean addUnfilledHits(Result result, List<DocumentInfo> documents, boolean fromCache, QueryPacketData queryPacketData, CacheKey cacheKey) {
+    boolean addUnfilledHits(Result result, List<DocumentInfo> documents, boolean fromCache, QueryPacketData queryPacketData, CacheKey cacheKey) {
         boolean allHitsOK = true;
         Query myQuery = result.getQuery();
 
@@ -650,7 +636,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                     hit.setQueryPacketData(queryPacketData);
                 hit.setCacheKey(cacheKey);
 
-                hit.setUseRowInIndexUri(useRowInIndexUri(result));
                 hit.setFillable();
                 hit.setCached(fromCache);
 

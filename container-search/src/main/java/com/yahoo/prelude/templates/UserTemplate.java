@@ -292,20 +292,6 @@ public abstract class UserTemplate<T extends Writer> extends GenericTemplateSet 
     public static boolean dumpBytes(ByteWriter writer,
                                     FastHit hit,
                                     String fieldName) throws java.io.IOException {
-        FastHit.RawField asBytes;
-        try {
-            asBytes = hit.fetchFieldAsUtf8(fieldName);
-        } catch (RuntimeException e) {
-            asBytes = null;
-        }
-        if (asBytes != null) {
-            if (asBytes.needXmlEscape()) {
-                dumpAndXMLQuoteUTF8(writer, asBytes.getUtf8());
-            } else {
-                writer.append(asBytes.getUtf8());
-            }
-            return true;
-        }
         return false;
     }
 

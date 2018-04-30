@@ -9,6 +9,7 @@ package com.yahoo.prelude.fastsearch;
  * @author arnej27959
  */
 public class CacheParams {
+
     public int cacheMegaBytes = 0;
     public double cacheTimeOutSeconds = 0;
     public CacheControl cacheControl = null;

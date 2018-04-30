@@ -133,7 +133,7 @@ public class FillTestCase {
 
     private FastHit createHit(int sourceNodeId, int hitId) {
         FastHit hit = new FastHit("hit:" + hitId, 1.0);
-        hit.setPartId(sourceNodeId, 0);
+        hit.setPartId(sourceNodeId);
         hit.setDistributionKey(sourceNodeId);
         hit.setGlobalId(client.globalIdFrom(hitId));
         return hit;

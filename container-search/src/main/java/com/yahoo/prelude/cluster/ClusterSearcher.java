@@ -195,7 +195,6 @@ public class ClusterSearcher extends Searcher {
                                                    int dispatchIndex) {
         return new ClusterParams(searchclusterIndex,
                                  "sc" + searchclusterIndex + ".num" + dispatchIndex,
-                                 searchClusterConfig.rowbits(),
                                  emulConfig);
     }
 

@@ -148,17 +148,17 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
     }
 
     @Override
-    public void error(Context context, XMLWriter writer) throws IOException {
+    public void error(Context context, XMLWriter writer) {
         ErrorMessage error=((Result)context.get("result")).hits().getError();
         writer.openTag(ERROR).attribute(CODE,error.getCode()).content(error.getMessage(),false).closeTag();
     }
 
     @Override
-    public void noHits(Context context, XMLWriter writer) throws IOException {
+    public void noHits(Context context, XMLWriter writer) {
         // no hits, do nothing :)
     }
 
-    protected static void renderCoverageAttributes(Coverage coverage, XMLWriter writer) throws IOException {
+    protected static void renderCoverageAttributes(Coverage coverage, XMLWriter writer) {
         if (coverage == null) return;
         writer.attribute(COVERAGE_DOCS,coverage.getDocs());
         writer.attribute(COVERAGE_NODES,coverage.getNodes());
@@ -211,7 +211,7 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
     }
 
 
-    protected void renderId(URI uri, XMLWriter writer) throws IOException {
+    protected void renderId(URI uri, XMLWriter writer) {
         if (uri != null) {
             writer.openTag(ID).content(uri.stringValue(),false).closeTag();
         }
@@ -228,7 +228,7 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
         }
     }
 
-    private void renderSyntheticRelevancyField(Hit hit, XMLWriter writer) throws IOException {
+    private void renderSyntheticRelevancyField(Hit hit, XMLWriter writer) {
         final String relevancyFieldName = "relevancy";
         final Relevance relevance = hit.getRelevance();
 
@@ -248,7 +248,7 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
         writeCloseFieldElement(writer);
     }
 
-    private void writeOpenFieldElement(String fieldName, XMLWriter writer) throws IOException {
+    private void writeOpenFieldElement(String fieldName, XMLWriter writer) {
         Utf8String utf8 = fieldNameMap.get(fieldName);
         if (utf8 == null) {
             utf8 = new Utf8String(fieldName);
@@ -258,34 +258,19 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
         writer.closeStartTag();
     }
 
-    private void writeCloseFieldElement(XMLWriter writer) throws IOException { // TODO: Collapse
+    private void writeCloseFieldElement(XMLWriter writer) {
         writer.closeTag();
     }
 
-    protected void renderFieldContent(Context context, Hit hit,
-                                      String name, XMLWriter writer)
-            throws IOException {
-
-        boolean dumpedRaw = false;
-        if (hit instanceof FastHit && ((FastHit)hit).fieldIsNotDecoded(name)) {
-            writer.closeStartTag();
-            if ((writer.getWriter() instanceof ByteWriter) && context.isUtf8Output()) {
-                dumpedRaw = dumpBytes((ByteWriter) writer.getWriter(), (FastHit) hit, name);
-            }
-            if (dumpedRaw) {
-                writer.content("",false); // let the xml writer note that this tag had content
-            }
+    protected void renderFieldContent(Context context, Hit hit, String name, XMLWriter writer) {
+        String xmlval = hit.getFieldXML(name);
+        if (xmlval == null) {
+            xmlval = "(null)";
         }
-        if (!dumpedRaw) {
-            String xmlval = hit.getFieldXML(name);
-            if (xmlval == null) {
-                xmlval = "(null)";
-            }
-            writer.escapedContent(xmlval,false);
-        }
+        writer.escapedContent(xmlval,false);
     }
 
-    private void renderSimpleField(String fieldName, Object fieldValue, XMLWriter writer) throws IOException {
+    private void renderSimpleField(String fieldName, Object fieldValue, XMLWriter writer) {
         writeOpenFieldElement(fieldName, writer);
         writer.content(fieldValue.toString(),false);
         writeCloseFieldElement(writer);

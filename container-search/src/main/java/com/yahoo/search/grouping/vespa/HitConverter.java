@@ -47,7 +47,7 @@ class HitConverter implements ResultBuilder.HitConverter {
         FastHit hit = new FastHit();
         hit.setRelevance(groupHit.getRank());
         hit.setGlobalId(groupHit.getGlobalId());
-        hit.setPartId(groupHit.getPath(), 0);
+        hit.setPartId(groupHit.getPath());
         hit.setDistributionKey(groupHit.getDistributionKey());
         hit.setFillable();
         hit.setSearcherSpecificMetaData(searcher, summaryClass);

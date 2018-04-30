@@ -73,8 +73,6 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     // this is shared between umpteen threads by design
     private final CopyOnWriteHashMap<String, Utf8String> fieldNameMap = new CopyOnWriteHashMap<>();
 
-    private boolean utf8Output = false;
-
     private XMLWriter writer;
 
     public DefaultRenderer() {
@@ -92,13 +90,11 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     @Override
     public void init() {
         super.init();
-        utf8Output = false;
         writer = null;
     }
 
     @Override
     public String getEncoding() {
-
         if (getResult() == null
                 || getResult().getQuery() == null
                 || getResult().getQuery().getModel().getEncoding() == null) {
@@ -119,7 +115,6 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
 
     private void header(XMLWriter writer, Result result) throws IOException {
         // TODO: move setting this to Result
-        utf8Output = "utf-8".equalsIgnoreCase(getRequestedEncoding(result.getQuery()));
         writer.xmlHeader(getRequestedEncoding(result.getQuery()));
         writer.openTag(RESULT).attribute(TOTAL_HIT_COUNT, String.valueOf(result.getTotalHitCount()));
         renderCoverageAttributes(result.getCoverage(false), writer);
@@ -128,9 +123,7 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     }
 
     private void renderTime(XMLWriter writer, Result result) {
-        if (!result.getQuery().getPresentation().getTiming()) {
-            return;
-        }
+        if ( ! result.getQuery().getPresentation().getTiming()) return;
 
         final String threeDecimals = "%.3f";
         final double milli = .001d;
@@ -159,12 +152,10 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
         writer.attribute(RESULTS,coverage.getResultSets());
     }
 
-
     public void error(XMLWriter writer, Result result) throws IOException {
         ErrorMessage error = result.hits().getError();
         writer.openTag(ERROR).attribute(CODE,error.getCode()).content(error.getMessage(),false).closeTag();
     }
-
 
     @SuppressWarnings("UnusedParameters")
     protected void emptyResult(XMLWriter writer, Result result) throws IOException {}
@@ -180,63 +171,43 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
         }
     }
 
-
-    private void renderSingularHit(XMLWriter writer, Hit hit) throws IOException {
+    private void renderSingularHit(XMLWriter writer, Hit hit) {
         writer.openTag(HIT);
         renderHitAttributes(writer, hit);
         writer.closeStartTag();
         renderHitFields(writer, hit);
     }
 
-    private void renderHitFields(XMLWriter writer, Hit hit) throws IOException {
+    private void renderHitFields(XMLWriter writer, Hit hit) {
         renderSyntheticRelevanceField(writer, hit);
         for (Iterator<Map.Entry<String, Object>> it = hit.fieldIterator(); it.hasNext(); ) {
             renderField(writer, hit, it);
         }
     }
 
-    private void renderField(XMLWriter writer, Hit hit, Iterator<Map.Entry<String, Object>> it) throws IOException {
-        Map.Entry<String, Object> entry = it.next();
-        boolean isProbablyNotDecoded = false;
-        if (hit instanceof FastHit) {
-            FastHit f = (FastHit) hit;
-            isProbablyNotDecoded = f.fieldIsNotDecoded(entry.getKey());
-        }
-        renderGenericFieldPossiblyNotDecoded(writer, hit, entry, isProbablyNotDecoded);
+    private void renderField(XMLWriter writer, Hit hit, Iterator<Map.Entry<String, Object>> it) {
+        renderGenericField(writer, hit, it.next());
     }
 
-    private void renderGenericFieldPossiblyNotDecoded(XMLWriter writer, Hit hit, Map.Entry<String, Object> entry, boolean probablyNotDecoded) throws IOException {
+    private void renderGenericField(XMLWriter writer, Hit hit, Map.Entry<String, Object> entry) {
         String fieldName = entry.getKey();
 
         // skip depending on hit type
         if (fieldName.startsWith("$")) return; // Don't render fields that start with $ // TODO: Move to should render
 
         writeOpenFieldElement(writer, fieldName);
-        renderFieldContentPossiblyNotDecoded(writer, hit, probablyNotDecoded, fieldName);
+        renderFieldContent(writer, hit, fieldName);
         writeCloseFieldElement(writer);
     }
 
-    private void renderFieldContentPossiblyNotDecoded(XMLWriter writer, Hit hit, boolean probablyNotDecoded, String fieldName) throws IOException {
-        boolean dumpedRaw = false;
-        if (probablyNotDecoded && (hit instanceof FastHit)) {
-            writer.closeStartTag();
-            if ((writer.getWriter() instanceof ByteWriter) && utf8Output) {
-                dumpedRaw = UserTemplate.dumpBytes((ByteWriter) writer.getWriter(), (FastHit) hit, fieldName);
-            }
-            if (dumpedRaw) {
-                writer.content("", false); // let the xml writer note that this tag had content
-            }
-        }
-        if (!dumpedRaw) {
-            String xmlval = hit.getFieldXML(fieldName);
-            if (xmlval == null) {
-                xmlval = "(null)";
-            }
-            writer.escapedContent(xmlval, false);
-        }
+    private void renderFieldContent(XMLWriter writer, Hit hit, String fieldName) {
+        String xmlval = hit.getFieldXML(fieldName);
+        if (xmlval == null)
+            xmlval = "(null)";
+        writer.escapedContent(xmlval, false);
     }
 
-    private void renderSyntheticRelevanceField(XMLWriter writer, Hit hit) throws IOException {
+    private void renderSyntheticRelevanceField(XMLWriter writer, Hit hit) {
         final String relevancyFieldName = "relevancy";
         final Relevance relevance = hit.getRelevance();
 
@@ -246,17 +217,17 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
         }
     }
 
-    private void renderSimpleField(XMLWriter writer, String relevancyFieldName, Relevance relevance) throws IOException {
+    private void renderSimpleField(XMLWriter writer, String relevancyFieldName, Relevance relevance) {
         writeOpenFieldElement(writer, relevancyFieldName);
         writer.content(relevance.toString(), false);
         writeCloseFieldElement(writer);
     }
 
-    private void writeCloseFieldElement(XMLWriter writer) throws IOException {
+    private void writeCloseFieldElement(XMLWriter writer) {
         writer.closeTag();
     }
 
-    private void writeOpenFieldElement(XMLWriter writer, String relevancyFieldName) throws IOException {
+    private void writeOpenFieldElement(XMLWriter writer, String relevancyFieldName) {
         Utf8String utf8 = fieldNameMap.get(relevancyFieldName);
         if (utf8 == null) {
             utf8 = new Utf8String(relevancyFieldName);
@@ -266,7 +237,7 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
         writer.closeStartTag();
     }
 
-    private void renderHitAttributes(XMLWriter writer, Hit hit) throws IOException {
+    private void renderHitAttributes(XMLWriter writer, Hit hit) {
         writer.attribute(TYPE, hit.getTypeString());
         if (hit.getRelevance() != null) {
             writer.attribute(RELEVANCY, hit.getRelevance().toString());
@@ -285,20 +256,20 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
         }
     }
 
-    private void renderGroup(XMLWriter writer, HitGroup hit) throws IOException {
+    private void renderGroup(XMLWriter writer, HitGroup hit) {
         writer.openTag(GROUP);
         renderHitAttributes(writer, hit);
         writer.closeStartTag();
     }
 
-    private void renderHitGroupOfTypeGroupHit(XMLWriter writer, HitGroup hit) throws IOException {
+    private void renderHitGroupOfTypeGroupHit(XMLWriter writer, HitGroup hit) {
         writer.openTag(HIT);
         renderHitAttributes(writer, hit);
         renderId(writer, hit);
         writer.closeStartTag();
     }
 
-    private void renderId(XMLWriter writer, HitGroup hit) throws IOException {
+    private void renderId(XMLWriter writer, HitGroup hit) {
         URI uri = hit.getId();
         if (uri != null) {
             writer.openTag(ID).content(uri.stringValue(),false).closeTag();
@@ -420,17 +391,13 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     }
 
     @Override
-    public void beginList(DataList<?> list)
-            throws IOException {
-        if (getRecursionLevel() == 1) {
-            return;
-        }
+    public void beginList(DataList<?> list) throws IOException {
+        if (getRecursionLevel() == 1) return;
+
         HitGroup hit = (HitGroup) list;
         boolean renderedSimple = simpleRenderHit(writer, hit);
+        if (renderedSimple) return;
 
-        if (renderedSimple) {
-            return;
-        }
         renderHitGroup(writer, hit);
     }
 
@@ -438,25 +405,20 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     public void data(Data data) throws IOException {
         Hit hit = (Hit) data;
         boolean renderedSimple = simpleRenderHit(writer, hit);
+        if (renderedSimple) return;
 
-        if (renderedSimple) {
-            return;
-        }
         renderSingularHit(writer, hit);
         writer.closeTag();
     }
 
     @Override
-    public void endList(DataList<?> list)
-            throws IOException {
-        if (getRecursionLevel() == 1) {
-            return;
-        }
-        writer.closeTag();
+    public void endList(DataList<?> list) {
+        if (getRecursionLevel() > 1)
+            writer.closeTag();
     }
 
     @Override
-    public void endResponse() throws IOException {
+    public void endResponse() {
         writer.closeTag();
         writer.close();
     }

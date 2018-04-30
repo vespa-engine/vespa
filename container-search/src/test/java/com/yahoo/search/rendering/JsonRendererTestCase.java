@@ -680,26 +680,6 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testLazyDecoding() throws IOException {
-        FastHit f = new FastHit("http://a.b/c", 0.5);
-        String checkWeCanDecode = "bamse";
-        String dontCare = "don't care";
-        final String fieldName = "checkWeCanDecode";
-        f.setLazyStringField(fieldName, Utf8.toBytes(checkWeCanDecode));
-        final String fieldName2 = "dontCare";
-        f.setLazyStringField(fieldName2, Utf8.toBytes(dontCare));
-        assertEquals(checkWeCanDecode, f.getField(fieldName));
-
-        JsonGenerator mock = Mockito.mock(JsonGenerator.class);
-
-        renderer.setGenerator(mock);
-        assertTrue(renderer.tryDirectRendering(fieldName2, f));
-
-        byte[] expectedBytes = Utf8.toBytes(dontCare);
-        Mockito.verify(mock, times(1)).writeUTF8String(expectedBytes, 0, expectedBytes.length);
-    }
-
-    @Test
     public void testHitWithSource() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
