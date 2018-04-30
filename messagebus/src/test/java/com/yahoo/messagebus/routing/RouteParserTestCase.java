@@ -1,11 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.routing;
 
-/**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- */
-public class RouteParserTestCase extends junit.framework.TestCase {
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * @author Simon Thoresen
+ */
+public class RouteParserTestCase {
+
+    @Test
     public void testHopParser() {
         Hop hop = Hop.parse("foo");
         assertNotNull(hop);
@@ -64,6 +71,7 @@ public class RouteParserTestCase extends junit.framework.TestCase {
                               "route[0].feed \"myfeed\"");
     }
 
+    @Test
     public void testHopParserErrors() {
         assertError(Hop.parse(""), "Failed to parse empty string.");
         assertError(Hop.parse("[foo"), "Unterminated '[' in '[foo'");
@@ -71,6 +79,7 @@ public class RouteParserTestCase extends junit.framework.TestCase {
         assertError(Hop.parse("foo bar"), "Failed to completely parse 'foo bar'.");
     }
 
+    @Test
     public void testShortRoute() {
         Route shortRoute = Route.parse("c");
         assertNotNull(shortRoute);
@@ -81,6 +90,7 @@ public class RouteParserTestCase extends junit.framework.TestCase {
         assertVerbatimDirective(hop.getDirective(0), "c");
     }
 
+    @Test
     public void testShortHops() {
         Route shortRoute = Route.parse("a b c");
         assertNotNull(shortRoute);
@@ -91,6 +101,7 @@ public class RouteParserTestCase extends junit.framework.TestCase {
         assertVerbatimDirective(hop.getDirective(0), "a");
     }
 
+    @Test
     public void testRouteParser() {
         Route route = Route.parse("foo bar/baz");
         assertNotNull(route);
@@ -114,6 +125,7 @@ public class RouteParserTestCase extends junit.framework.TestCase {
         assertVerbatimDirective(hop.getDirective(0), "default");
     }
 
+    @Test
     public void testRouteParserErrors() {
         assertError(Route.parse(""), "Failed to parse empty string.");
         assertError(Route.parse("foo [bar"), "Unterminated '[' in '[bar'");
@@ -165,4 +177,5 @@ public class RouteParserTestCase extends junit.framework.TestCase {
         assertTrue(dir instanceof VerbatimDirective);
         assertEquals(image, ((VerbatimDirective)dir).getImage());
     }
+
 }

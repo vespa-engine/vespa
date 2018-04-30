@@ -1,10 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
-public class MetricSetTest extends TestCase {
+public class MetricSetTest {
+
+    private final double delta = 0.000000001;
 
     class TestMetricVisitor extends MetricVisitor {
         String output = "";
@@ -28,8 +33,8 @@ public class MetricSetTest extends TestCase {
         }
     }
 
-    public void testNormalUsage()
-    {
+    @Test
+    public void testNormalUsage() {
         // Set up some metrics to test..
         MetricSet set = new SimpleMetricSet("a", "foo", "");
         SummedDoubleValueMetric v1 = new SummedDoubleValueMetric("c", "foo", "", set);
@@ -111,6 +116,7 @@ public class MetricSetTest extends TestCase {
     }
 
     @SuppressWarnings("rawtypes")
+    @Test
     public void testSumInSet() {
         MetricSet ms_a = new SimpleMetricSet("a", "", "", null);
         MyTimer timer = new MyTimer();
@@ -151,11 +157,11 @@ public class MetricSetTest extends TestCase {
         ValueMetric av_2 = (ValueMetric)sms.getMetric("v2");
         ValueMetric av_3 = (ValueMetric)sms.getMetric("v3");
 
-        assertEquals(10.0, av_sum.getDoubleValue("total"));
-        assertEquals(4, av_sum.getLongValue("count"));
-        assertEquals(4.0, av_1.getDoubleValue("total"));
-        assertEquals(4.0, av_2.getDoubleValue("total"));
-        assertEquals(2.0, av_3.getDoubleValue("total"));
+        assertEquals(10.0, av_sum.getDoubleValue("total"), delta);
+        assertEquals(4, av_sum.getLongValue("count"), delta);
+        assertEquals(4.0, av_1.getDoubleValue("total"), delta);
+        assertEquals(4.0, av_2.getDoubleValue("total"), delta);
+        assertEquals(2.0, av_3.getDoubleValue("total"), delta);
 
         timer.timeNow = 301;
         manager.takeSnapshots(301);

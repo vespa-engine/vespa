@@ -3,7 +3,7 @@ package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.DimensionRenamer;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 public class DimensionRenamerTest {
 
@@ -43,7 +43,6 @@ public class DimensionRenamerTest {
         assertTrue(secondDimensionOfXName.compareTo(firstDimensionOfWName) == 0);
         assertTrue(firstDimensionOfXName.compareTo(secondDimensionOfWName) < 0);
         assertTrue(secondDimensionOfWName.compareTo(firstDimensionOfBName) == 0);
-
-
     }
+
 }

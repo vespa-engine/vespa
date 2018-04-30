@@ -8,13 +8,18 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import com.yahoo.container.StatisticsConfig;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Test set for groups of counters.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class CounterGroupTestCase extends junit.framework.TestCase {
+public class CounterGroupTestCase {
+
     private volatile boolean gotRecord = false;
 
     private class CounterGroupHandler extends Handler {
@@ -40,6 +45,7 @@ public class CounterGroupTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testBasic() {
         Logger logger = Logger.getLogger(CounterGroup.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();
@@ -64,6 +70,7 @@ public class CounterGroupTestCase extends junit.framework.TestCase {
         logger.setUseParentHandlers(initUseParentHandlers);
     }
 
+    @Test
     public void testObjectContracts() {
         CounterGroup c = new CounterGroup("test", Statistics.nullImplementation, false);
         CounterGroup c2 = new CounterGroup("test", Statistics.nullImplementation, false);
@@ -77,6 +84,7 @@ public class CounterGroupTestCase extends junit.framework.TestCase {
                 c.equals(c2));
     }
 
+    @Test
     public void testConfigStuff() {
         Logger logger = Logger.getLogger(CounterGroup.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();

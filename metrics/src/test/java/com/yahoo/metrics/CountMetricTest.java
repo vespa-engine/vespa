@@ -1,13 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author thomasg
  */
-public class CountMetricTest extends TestCase {
+public class CountMetricTest {
 
+    @Test
     public void testCountMetric() {
         CountMetric m = new CountMetric("test", "tag", "description", null);
         assertEquals(false, m.used());
@@ -36,7 +39,7 @@ public class CountMetricTest extends TestCase {
 
         assertEquals("<test description=\"description\" count=\"96\"/>\n", m2.toXml(0, 2));
         assertEquals("<test description=\"description\" count=\"96\" average_change_per_second=\"9.60\"/>\n", m2.toXml(10, 2));
-        assertEquals(96.0, m2.getDoubleValue("value"));
+        assertEquals(96.0, m2.getDoubleValue("value"), 0.00000001);
         assertEquals(96, m2.getLongValue("value"));
     }
 

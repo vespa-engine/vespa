@@ -7,13 +7,19 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import com.yahoo.container.StatisticsConfig;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test set for groups of values.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class ValueGroupTestCase extends junit.framework.TestCase {
+public class ValueGroupTestCase {
+
     private volatile boolean gotRecord = false;
 
     private class ValueGroupHandler extends Handler {
@@ -39,6 +45,7 @@ public class ValueGroupTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testBasic() {
         Logger logger = Logger.getLogger(ValueGroup.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();
@@ -64,6 +71,7 @@ public class ValueGroupTestCase extends junit.framework.TestCase {
         logger.setUseParentHandlers(initUseParentHandlers);
     }
 
+    @Test
     public void testOverlappingSubnames() {
         final MockStatistics manager = new MockStatistics();
         ValueGroup v = new ValueGroup("jappe", manager);
@@ -76,6 +84,7 @@ public class ValueGroupTestCase extends junit.framework.TestCase {
         assertEquals(2, manager.registerCount);
     }
 
+    @Test
     public void testObjectContracts() {
         ValueGroup v = new ValueGroup("test", new MockStatistics());
         ValueGroup v2 = new ValueGroup("test", new MockStatistics());

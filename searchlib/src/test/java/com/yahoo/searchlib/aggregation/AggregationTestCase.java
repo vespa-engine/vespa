@@ -9,13 +9,19 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author baldersheim
  */
-public class AggregationTestCase extends TestCase {
+public class AggregationTestCase {
 
+    private static final double delta = 0.0000000001;
+
+    @Test
     public void testSumAggregationResult() {
         SumAggregationResult a = new SumAggregationResult();
         a.setExpression(new AttributeNode("attributeA"));
@@ -27,6 +33,7 @@ public class AggregationTestCase extends TestCase {
         assertEquals(b.getSum().getInteger(), 14);
     }
 
+    @Test
     public void testXorAggregationResult() {
         XorAggregationResult a = new XorAggregationResult(6);
         a.setExpression(new AttributeNode("attributeA"));
@@ -39,6 +46,7 @@ public class AggregationTestCase extends TestCase {
         assertEquals(b.getXor(), 0);
     }
 
+    @Test
     public void testCountAggregationResult() {
         CountAggregationResult a = new CountAggregationResult(6);
         a.setExpression(new AttributeNode("attributeA"));
@@ -51,6 +59,7 @@ public class AggregationTestCase extends TestCase {
         assertEquals(b.getCount(), 14);
     }
 
+    @Test
     public void testMinAggregationResult() {
         MinAggregationResult a = new MinAggregationResult(new IntegerResultNode(6));
         a.setExpression(new AttributeNode("attributeA"));
@@ -64,6 +73,7 @@ public class AggregationTestCase extends TestCase {
         assertEquals(b.getMin().getInteger(), 6);
     }
 
+    @Test
     public void testMaxAggregationResult() {
         MaxAggregationResult a = new MaxAggregationResult(new IntegerResultNode(6));
         a.setExpression(new AttributeNode("attributeA"));
@@ -77,6 +87,7 @@ public class AggregationTestCase extends TestCase {
         assertEquals(b.getMax().getInteger(), 7);
     }
 
+    @Test
     public void testAverageAggregationResult() {
         AverageAggregationResult a = new AverageAggregationResult(new FloatResultNode(72), 6);
         a.setExpression(new AttributeNode("attributeA"));
@@ -99,6 +110,7 @@ public class AggregationTestCase extends TestCase {
         return new GlobalId((new DocumentId("doc:test:" + docId)).getGlobalId());
     }
 
+    @Test
     public void testFs4HitsAggregationResult() {
         double rank1 = 1;
         double rank2 = 2;
@@ -118,10 +130,10 @@ public class AggregationTestCase extends TestCase {
         assertEquals(a, b);
         a.postMerge();
         assertEquals(2, a.getHits().size());
-        assertEquals(2.0, a.getHits().get(0).getRank());
+        assertEquals(2.0, a.getHits().get(0).getRank(), delta);
         a.setMaxHits(1).postMerge();
         assertEquals(1, a.getHits().size());
-        assertEquals(2.0, a.getHits().get(0).getRank());
+        assertEquals(2.0, a.getHits().get(0).getRank(), delta);
 
         HitsAggregationResult hits = new HitsAggregationResult(3)
             .addHit(new FS4Hit(1, createGlobalId(3), 1))
@@ -160,6 +172,7 @@ public class AggregationTestCase extends TestCase {
         assertFS4Hits(request, 4, 5, 0);
     }
 
+    @Test
     public void testVdsHitsAggregationResult() {
         double rank1 = 1;
         double rank2 = 2;
@@ -176,8 +189,6 @@ public class AggregationTestCase extends TestCase {
         assertEquals(0, a.getHits().size());
         a.setExpression(new AttributeNode("attributeA"));
         a.addHit(new VdsHit("1", s2, rank1));
-//        a.addHit(new VdsHit("5", s7, rank2));
-//        assertEquals(2, a.getHits().size());
         HitsAggregationResult b = (HitsAggregationResult)serializeDeserialize(a);
         assertEquals(a, b);
 
@@ -218,7 +229,6 @@ public class AggregationTestCase extends TestCase {
         assertVdsHits(request, 4, 5, 0);
     }
 
-
     private void assertFS4Hits(Grouping request, int firstLevel, int lastLevel, int expected) {
         CountFS4Hits obj = new CountFS4Hits();
         request.setFirstLevel(firstLevel);
@@ -255,6 +265,7 @@ public class AggregationTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testGroup() {
         Group a = new Group();
         a.setId(new IntegerResultNode(17));
@@ -262,6 +273,7 @@ public class AggregationTestCase extends TestCase {
         serializeDeserialize1(a);
     }
 
+    @Test
     public void testGrouping() {
         Grouping a = new Grouping();
         GroupingLevel level = new GroupingLevel();
@@ -293,7 +305,6 @@ public class AggregationTestCase extends TestCase {
         a.getRoot().addChild(g);
         serializeDeserialize1(a);
 
-
         Grouping foo = new Grouping();
         foo.addLevel(level);
         int hashBefore = foo.hashCode();
@@ -320,7 +331,7 @@ public class AggregationTestCase extends TestCase {
         buf.flip();
         Identifiable b = Identifiable.create(buf);
         assertEquals(a.getClass(), b.getClass());
-        assertEquals(buf.getBuf().hasRemaining(), false);
+        assertFalse(buf.getBuf().hasRemaining());
         Identifiable c = b.clone();
         assertEquals(b.getClass(), c.getClass());
         BufferSerializer  bb = new BufferSerializer(new GrowableByteBuffer());
@@ -343,4 +354,5 @@ public class AggregationTestCase extends TestCase {
         assertEquals(a.getExpression().getClass(), b.getExpression().getClass());
         return b;
     }
+
 }

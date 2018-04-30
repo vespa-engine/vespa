@@ -18,9 +18,9 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 /**
  * tests basic operation of the node repository
@@ -178,4 +178,5 @@ public class NodeRepositoryTest {
                 .map(Node::hostname)
                 .collect(Collectors.toSet());
     }
+
 }

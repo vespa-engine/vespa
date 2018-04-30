@@ -2,20 +2,22 @@
 package com.yahoo.searchlib.ranking.features.fieldmatch.reference.test;
 
 import com.yahoo.searchlib.ranking.features.fieldmatch.reference.OptimalStringAlignmentDistance;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author  bratseth
  */
-public class OptimalStringAlignmentTestCase extends junit.framework.TestCase {
+public class OptimalStringAlignmentTestCase {
 
-    public OptimalStringAlignmentTestCase(String name) {
-        super(name);
-    }
+    private final double delta = 0.0000000001;
 
+    @Test
     public void testEditDistance() {
         // Edit distance, substitution, deletion, insertion, transposition, query, field, print?
 
-        boolean print=false;
+        boolean print = false;
         assertEditDistance(0,0,0,0,0,"niels bohr","niels bohr",print);
         assertEditDistance(1,1,0,0,0,"niels","bohr",print);
         assertEditDistance(1,0,0,1,0,"niels","niels bohr",print);
@@ -27,8 +29,9 @@ public class OptimalStringAlignmentTestCase extends junit.framework.TestCase {
         assertEditDistance(3,2,0,1,0,"niels bohr i kopenhagen","niels henrik bor i stockholm",print);
     }
 
+    @Test
     public void testEditDistanceAsRelevance() {
-        boolean print=false;
+        boolean print = false;
         assertEditDistance(2,0,0,2,0,"niels bohr","niels blah blah bohr",print);
         assertEditDistance(4,0,1,3,0,"niels bohr","bohr blah blah niels",print); // Not desired
         assertEditDistance(4,2,0,2,0,"niels bohr","koko blah blah bahia",print);
@@ -48,11 +51,11 @@ public class OptimalStringAlignmentTestCase extends junit.framework.TestCase {
             System.out.println();
         }
 
-        assertEquals("Substitutions",(float)substitution,e.getSubstitutions());
-        assertEquals("Deletions",(float)deletion,e.getDeletions());
-        assertEquals("Insertions",(float)insertion,e.getInsertions());
-        assertEquals("Transpositions",(float)transposition,e.getTranspositions());
-        assertEquals("Total",(float)total,e.getTotal());
+        assertEquals("Substitutions",(float)substitution,e.getSubstitutions(), delta);
+        assertEquals("Deletions",(float)deletion,e.getDeletions(), delta);
+        assertEquals("Insertions",(float)insertion,e.getInsertions(), delta);
+        assertEquals("Transpositions",(float)transposition,e.getTranspositions(), delta);
+        assertEquals("Total",(float)total,e.getTotal(), delta);
     }
 
 }

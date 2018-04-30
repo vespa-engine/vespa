@@ -5,19 +5,26 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.test.ProcessorLibrary;
+import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-/**
- * @author  bratseth
- */
-public class ExecutionContextTestCase extends junit.framework.TestCase  {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-    private Chain<Processor> chain=new Chain<Processor>(new ProcessorLibrary.DataSource());
+/**
+ * @author bratseth
+ */
+public class ExecutionContextTestCase {
+
+    private final Chain<Processor> chain = new Chain<Processor>(new ProcessorLibrary.DataSource());
 
     /** Tests combined use of trace messages, context values and access log entries */
+    @Test
     public void testtrace() {
         Execution execution1=Execution.createRoot(chain,2,Execution.Environment.createEmpty());
         execution1.trace().setProperty("a","a1");

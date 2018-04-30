@@ -1,11 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class ValueMetricTest extends TestCase {
-    public void testAveragedDoubleValueMetric()
-    {
+import static org.junit.Assert.assertEquals;
+
+public class ValueMetricTest {
+
+    private static final double delta = 0.000000001;
+
+    @Test
+    public void testAveragedDoubleValueMetric() {
         AveragedDoubleValueMetric m = new AveragedDoubleValueMetric("test", "tag", "description", null);
         m.addValue(100.0);
         assertEquals("count=\"1\" min=\"100.00\" max=\"100.00\" last=\"100.00\" total=\"100.00\" average=\"100.00\"", m.toString());
@@ -43,13 +48,13 @@ public class ValueMetricTest extends TestCase {
 
         assertEquals("<test description=\"description\" average=\"343.33\" last=\"2000.00\" min=\"40.00\" max=\"2000.00\" count=\"9\" total=\"3090.00\"/>\n", sum.toXml(0, 2));
 
-        assertEquals(80.0, m2.getDoubleValue("value"));
-        assertEquals(80.0, m2.getDoubleValue("average"));
-        assertEquals(40.0, m2.getDoubleValue("min"));
-        assertEquals(100.0, m2.getDoubleValue("max"));
-        assertEquals(40.0, m2.getDoubleValue("last"));
-        assertEquals(3.0, m2.getDoubleValue("count"));
-        assertEquals(240.0, m2.getDoubleValue("total"));
+        assertEquals(80.0, m2.getDoubleValue("value"), delta);
+        assertEquals(80.0, m2.getDoubleValue("average"), delta);
+        assertEquals(40.0, m2.getDoubleValue("min"), delta);
+        assertEquals(100.0, m2.getDoubleValue("max"), delta);
+        assertEquals(40.0, m2.getDoubleValue("last"), delta);
+        assertEquals(3.0, m2.getDoubleValue("count"), delta);
+        assertEquals(240.0, m2.getDoubleValue("total"), delta);
 
         assertEquals(80, m2.getLongValue("value"));
         assertEquals(80, m2.getLongValue("average"));
@@ -60,20 +65,22 @@ public class ValueMetricTest extends TestCase {
         assertEquals(240, m2.getLongValue("total"));
     }
 
+    @Test
     public void testDoubleValueMetricNotUpdatedOnNaN() {
         AveragedDoubleValueMetric m = new AveragedDoubleValueMetric("test", "tag", "description", null);
         m.addValue(Double.NaN);
         assertEquals("count=\"0\" min=\"0\" max=\"0\" last=\"0\" total=\"0\" average=\"0.00\"", m.toString());
     }
 
+    @Test
     public void testDoubleValueMetricNotUpdatedOnInfinity() {
         AveragedDoubleValueMetric m = new AveragedDoubleValueMetric("test", "tag", "description", null);
         m.addValue(Double.POSITIVE_INFINITY);
         assertEquals("count=\"0\" min=\"0\" max=\"0\" last=\"0\" total=\"0\" average=\"0.00\"", m.toString());
     }
 
-    public void testSummedDoubleValueMetric()
-    {
+    @Test
+    public void testSummedDoubleValueMetric() {
         SummedDoubleValueMetric m = new SummedDoubleValueMetric("test", "tag", "description", null);
         m.addValue(100.0);
         assertEquals("count=\"1\" min=\"100.00\" max=\"100.00\" last=\"100.00\" total=\"100.00\" average=\"100.00\"", m.toString());
@@ -109,13 +116,13 @@ public class ValueMetricTest extends TestCase {
 
         assertEquals("<test description=\"description\" average=\"2313.33\" last=\"2440.00\" min=\"40.00\" max=\"2000.00\" count=\"7\" total=\"16193.33\"/>\n", sum.toXml(0, 2));
 
-        assertEquals(40.0, m2.getDoubleValue("value"));
-        assertEquals(80.0, m2.getDoubleValue("average"));
-        assertEquals(40.0, m2.getDoubleValue("min"));
-        assertEquals(100.0, m2.getDoubleValue("max"));
-        assertEquals(40.0, m2.getDoubleValue("last"));
-        assertEquals(3.0, m2.getDoubleValue("count"));
-        assertEquals(240.0, m2.getDoubleValue("total"));
+        assertEquals(40.0, m2.getDoubleValue("value"), delta);
+        assertEquals(80.0, m2.getDoubleValue("average"), delta);
+        assertEquals(40.0, m2.getDoubleValue("min"), delta);
+        assertEquals(100.0, m2.getDoubleValue("max"), delta);
+        assertEquals(40.0, m2.getDoubleValue("last"), delta);
+        assertEquals(3.0, m2.getDoubleValue("count"), delta);
+        assertEquals(240.0, m2.getDoubleValue("total"), delta);
 
         assertEquals(40, m2.getLongValue("value"));
         assertEquals(80, m2.getLongValue("average"));
@@ -126,12 +133,12 @@ public class ValueMetricTest extends TestCase {
         assertEquals(240, m2.getLongValue("total"));
     }
 
-    public void testAveragedLongValueMetric()
-    {
+    @Test
+    public void testAveragedLongValueMetric() {
         AveragedLongValueMetric m = new AveragedLongValueMetric("test", "tag", "description", null);
 
-        assertEquals(0l, m.getLongValue("max"));
-        assertEquals(0l, m.getLongValue("min"));
+        assertEquals(0L, m.getLongValue("max"));
+        assertEquals(0L, m.getLongValue("min"));
 
         m.addValue((long)100);
         assertEquals("count=\"1\" min=\"100\" max=\"100\" last=\"100\" total=\"100\" average=\"100.00\"", m.toString());
@@ -177,6 +184,5 @@ public class ValueMetricTest extends TestCase {
         assertEquals(3, m2.getLongValue("count"));
         assertEquals(240, m2.getLongValue("total"));
     }
-
 
 }

@@ -11,30 +11,27 @@ import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class RoutingContextTestCase extends junit.framework.TestCase {
-    public static final int TIMEOUT_SECS = 120;
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
+    public static final int TIMEOUT_SECS = 120;
 
     Slobrok slobrok;
     TestServer srcServer, dstServer;
     SourceSession srcSession;
     DestinationSession dstSession;
 
-    @Override
-    public void setUp() throws ListenFailedException, UnknownHostException {
+    @Before
+    public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
                                    new RPCNetworkParams().setIdentity(new Identity("dst")).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
@@ -46,7 +43,7 @@ public class RoutingContextTestCase extends junit.framework.TestCase {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @Override
+    @After
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -55,12 +52,7 @@ public class RoutingContextTestCase extends junit.framework.TestCase {
         srcServer.destroy();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
+    @Test
     public void testSingleDirective() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(
@@ -81,6 +73,7 @@ public class RoutingContextTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testMoreDirectives() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(
@@ -103,6 +96,7 @@ public class RoutingContextTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testRecipientsRemain() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("First", new CustomPolicyFactory(true, Arrays.asList("foo/bar"), Arrays.asList("foo/[Second]")));
@@ -121,10 +115,12 @@ public class RoutingContextTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testToString() {
         assertEquals("node : null, directive: 1, errors: [], selectOnRetry: true context: null", new RoutingContext(null, 1).toString());
     }
 
+    @Test
     public void testConstRoute() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("DocumentRouteSelector",
@@ -145,12 +141,6 @@ public class RoutingContextTestCase extends junit.framework.TestCase {
             assertFalse(reply.hasErrors());
         }
     }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
 
     private Message createMessage(String msg) {
         Message ret = new SimpleMessage(msg);
