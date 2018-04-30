@@ -8,12 +8,17 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.athenz.tls.KeyStoreType;
+import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -38,12 +43,14 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
 
     private volatile AthenzCredentials credentials;
+    private final ZtsClient ztsClient = new ZtsClient();
     private final Metric metric;
     private final AthenzCredentialsService athenzCredentialsService;
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
     private final AthenzService identity;
 
+    // TODO IdentityConfig should contain ZTS uri and dns suffix
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
         this(config,
@@ -51,7 +58,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
              new AthenzCredentialsService(config,
                                           new IdentityDocumentService(config.loadBalancerAddress()),
                                           new ZtsClient(),
-                                          new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"))),
+                                          getDefaultTrustStoreLocation()),
              new ScheduledThreadPoolExecutor(1),
              Clock.systemUTC());
     }
@@ -101,6 +108,45 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
+    public SSLContext getRoleSslContext(String domain, String role) {
+        // This ssl context should ideally be cached as it is quite expensive to create.
+        PrivateKey privateKey = credentials.getKeyPair().getPrivate();
+        X509Certificate roleCertificate = ztsClient.getRoleCertificate(
+                new AthenzDomain(domain),
+                role,
+                credentials.getIdentityDocument().dnsSuffix,
+                credentials.getIdentityDocument().ztsEndpoint,
+                identity,
+                privateKey,
+                credentials.getIdentitySslContext());
+        return new SslContextBuilder()
+                .withKeyStore(privateKey, roleCertificate)
+                .withTrustStore(getDefaultTrustStoreLocation(), KeyStoreType.JKS)
+                .build();
+    }
+
+    @Override
+    public String getRoleToken(String domain) {
+        return ztsClient
+                .getRoleToken(
+                        new AthenzDomain(domain),
+                        credentials.getIdentityDocument().ztsEndpoint,
+                        credentials.getIdentitySslContext())
+                .getRawToken();
+    }
+
+    @Override
+    public String getRoleToken(String domain, String role) {
+        return ztsClient
+                .getRoleToken(
+                        new AthenzDomain(domain),
+                        role,
+                        credentials.getIdentityDocument().ztsEndpoint,
+                        credentials.getIdentitySslContext())
+                .getRawToken();
+    }
+
+    @Override
     public void deconstruct() {
         try {
             scheduler.shutdownNow();
@@ -108,6 +154,10 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static File getDefaultTrustStoreLocation() {
+        return new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"));
     }
 
     private boolean isExpired(AthenzCredentials credentials) {
