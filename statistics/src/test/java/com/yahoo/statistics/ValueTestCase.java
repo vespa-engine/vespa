@@ -9,14 +9,22 @@ import java.util.logging.Logger;
 
 import com.yahoo.container.StatisticsConfig;
 import static com.yahoo.container.StatisticsConfig.Values.Operations;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.yahoo.statistics.Value.Parameters;
+import org.junit.Test;
 
 /**
  * Check correct statistics are generated for basic values.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class ValueTestCase extends junit.framework.TestCase {
+public class ValueTestCase {
+
+    private static final double delta = 0.0000000001;
 
     private static final String NALLE = "nalle";
     private static final double SECOND = 43.0d;
@@ -36,6 +44,7 @@ public class ValueTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testMean() {
         Value v = new Value("thingie", Statistics.nullImplementation, new Parameters().setLogMean(true));
         v.put(1.0);
@@ -48,6 +57,7 @@ public class ValueTestCase extends junit.framework.TestCase {
         assertTrue("Value should have been reset.", 0.0d == v.getMean());
     }
 
+    @Test
     public void testMin() {
         Value v = new Value("thingie", Statistics.nullImplementation, new Parameters().setLogMin(true));
         v.put(2.0);
@@ -59,6 +69,7 @@ public class ValueTestCase extends junit.framework.TestCase {
         assertTrue("Min should be -1.0", -1.0 == v.getMin());
     }
 
+    @Test
     public void testMax() {
         Value v = new Value("thingie", Statistics.nullImplementation, new Parameters().setLogMax(true));
         v.put(-1.0);
@@ -71,6 +82,7 @@ public class ValueTestCase extends junit.framework.TestCase {
         assertTrue("Max should be 4.0", 4.0 == v.getMax());
     }
 
+    @Test
     public void testHistogram() {
         Value v = new Value("thingie", Statistics.nullImplementation, new Parameters()
                 .setLogHistogram(true).setHistogramId(HistogramType.REGULAR)
@@ -84,6 +96,7 @@ public class ValueTestCase extends junit.framework.TestCase {
                 " thingie (1) < 0.0 (1) < 1.0 (1) < 2.0 (2)"));
     }
 
+    @Test
     public void testCallback() {
         Logger logger = Logger.getLogger(Value.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();
@@ -91,14 +104,15 @@ public class ValueTestCase extends junit.framework.TestCase {
         Value v = new Value("thingie", Statistics.nullImplementation, new Parameters()
                 .setLogRaw(true).setCallback(new TrivialCallback()));
         v.run();
-        assertEquals(FIRST, v.get());
+        assertEquals(FIRST, v.get(), delta);
         v.run();
-        assertEquals(SECOND, v.get());
+        assertEquals(SECOND, v.get(), delta);
         v.run();
-        assertEquals(SECOND, v.get());
+        assertEquals(SECOND, v.get(), delta);
         logger.setUseParentHandlers(initUseParentHandlers);
     }
 
+    @Test
     public void testParameter() {
         Value.Parameters p = new Value.Parameters().setLogInsertions(true)
                 .setNameExtension(true).setAppendChar('_');
@@ -148,6 +162,7 @@ public class ValueTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testParameterFromConfig() {
         Logger logger = Logger.getLogger(Value.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();
@@ -173,13 +188,14 @@ public class ValueTestCase extends junit.framework.TestCase {
         Value v = Value.buildValue(NALLE, m, null);
         final double x = 79.0d;
         v.put(x);
-        assertEquals(x, v.getMean());
+        assertEquals(x, v.getMean(), delta);
         v.run();
         assertEquals(true, h.gotRecord);
         logger.removeHandler(h);
         logger.setUseParentHandlers(initUseParentHandlers);
     }
 
+    @Test
     public void testReverseHistogram() {
         Logger logger = Logger.getLogger(Value.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();
@@ -209,6 +225,7 @@ public class ValueTestCase extends junit.framework.TestCase {
         logger.setUseParentHandlers(initUseParentHandlers);
     }
 
+    @Test
     public void testCumulativeHistogram() {
         Logger logger = Logger.getLogger(Value.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();
@@ -238,6 +255,7 @@ public class ValueTestCase extends junit.framework.TestCase {
         logger.setUseParentHandlers(initUseParentHandlers);
     }
 
+    @Test
     public void testObjectContracts() {
         final String valueName = "test";
         Value v = new Value(valueName, Statistics.nullImplementation, Value.defaultParameters());
@@ -255,7 +273,6 @@ public class ValueTestCase extends junit.framework.TestCase {
         assertEquals(prefix, image.substring(0, prefix.length()));
         assertEquals(valueName, image.substring(image.length() - valueName.length()));
     }
-
 
     public class MockStatistics implements Statistics {
         public StatisticsConfig config = null;

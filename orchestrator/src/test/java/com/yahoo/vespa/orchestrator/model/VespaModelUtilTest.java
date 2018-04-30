@@ -21,15 +21,16 @@ import java.util.Optional;
 
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceInstanceSet;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * @author hakonhall
  */
 public class VespaModelUtilTest {
+
     // Cluster Controller Service Cluster
 
     private static final ClusterId CONTENT_CLUSTER_ID = new ClusterId("content-cluster-0");
@@ -174,25 +175,25 @@ public class VespaModelUtilTest {
         List<HostName> controllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, CONTENT_CLUSTER_ID);
         List<HostName> expectedControllers = Arrays.asList(controller0.hostName(), controller1.hostName());
 
-        assertThat(controllers).isEqualTo(expectedControllers);
+        assertEquals(expectedControllers, controllers);
     }
 
     @Test
     public void testGetControllerHostName() {
         HostName host = VespaModelUtil.getControllerHostName(application, CONTENT_CLUSTER_ID);
-        assertThat(host).isEqualTo(controller0Host);
+        assertEquals(controller0Host, host);
     }
 
     @Test
     public void testGetContentClusterName() {
         ClusterId contentClusterName = VespaModelUtil.getContentClusterName(application, distributor0.hostName());
-        assertThat(CONTENT_CLUSTER_ID).isEqualTo(contentClusterName);
+        assertEquals(CONTENT_CLUSTER_ID, contentClusterName);
     }
 
     @Test
     public void testGetContentClusterNameForSecondaryContentCluster() {
         ClusterId contentClusterName = VespaModelUtil.getContentClusterName(application, secondaryDistributor0.hostName());
-        assertThat(SECONDARY_CONTENT_CLUSTER_ID).isEqualTo(contentClusterName);
+        assertEquals(contentClusterName, SECONDARY_CONTENT_CLUSTER_ID);
     }
 
     @Test
@@ -200,7 +201,7 @@ public class VespaModelUtilTest {
         Optional<ServiceInstance> service =
                 VespaModelUtil.getStorageNodeAtHost(application, storage0Host);
         assertTrue(service.isPresent());
-        assertThat(service.get()).isEqualTo(storage0);
+        assertEquals(storage0, service.get());
     }
 
     @Test
@@ -213,13 +214,13 @@ public class VespaModelUtilTest {
     @Test
     public void testGetClusterControllerIndex() {
         ConfigId configId = new ConfigId("admin/cluster-controllers/2");
-        assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(2);
+        assertEquals(2, VespaModelUtil.getClusterControllerIndex(configId));
     }
 
     @Test
     public void testGetClusterControllerIndexWithStandaloneClusterController() {
         ConfigId configId = new ConfigId("fantasy_sports/standalone/fantasy_sports-controllers/1");
-        assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(1);
+        assertEquals(1, VespaModelUtil.getClusterControllerIndex(configId));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -232,6 +233,7 @@ public class VespaModelUtilTest {
     @Test
     public void testGetStorageNodeIndex() {
         ConfigId configId = TestUtil.storageNodeConfigId(CONTENT_CLUSTER_ID.toString(), 3);
-        assertThat(VespaModelUtil.getStorageNodeIndex(configId)).isEqualTo(3);
+        assertEquals(3, VespaModelUtil.getStorageNodeIndex(configId));
     }
+
 }

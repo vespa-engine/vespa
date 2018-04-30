@@ -6,11 +6,12 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class IntervalPostingListTest {
+
     @Test
     public void requireThatPostingListCanIterate() {
         PredicateIntervalStore.Builder builder = new PredicateIntervalStore.Builder();

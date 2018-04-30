@@ -2,20 +2,20 @@
 package com.yahoo.statistics;
 
 
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Some low level checking of the histograms.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 
-public class HistogramTestCase extends junit.framework.TestCase {
+public class HistogramTestCase {
 
-    public HistogramTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testFindBucket() {
         Limits l = new Limits();
         double[] thresholds = {.5, 1.0, 5.0};
@@ -32,6 +32,7 @@ public class HistogramTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testMerge() {
         Limits l = new Limits();
         double[] thresholds = {.5, 1.0, 5.0};
@@ -46,6 +47,7 @@ public class HistogramTestCase extends junit.framework.TestCase {
         assertEquals("(0) < 0.5 (3) < 1.0 (0) < 5.0 (0)", h2.toString());
     }
 
+    @Test
     public void testMultiDimensionalMerge() {
         Limits l = new Limits();
         double[] thresholds = {.5, 1.0, 5.0};
@@ -63,6 +65,7 @@ public class HistogramTestCase extends junit.framework.TestCase {
                      h.toString());
     }
 
+    @Test
     public void testEmptyHistogram() {
         try {
             new Histogram(new Limits());

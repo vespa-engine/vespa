@@ -3,21 +3,23 @@ package com.yahoo.vdslib;
 
 import com.yahoo.document.*;
 import com.yahoo.document.datatypes.FloatFieldValue;
-import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.document.update.FieldUpdate;
+import org.junit.Test;
 
-import java.io.EOFException;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DocumentListTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+public class DocumentListTestCase {
+
+    @Test
     @SuppressWarnings("deprecation")
     public void testSelfSerializationAndWriteJavaFile() throws Exception {
         DocumentTypeManager docMan = new DocumentTypeManager();
@@ -34,7 +36,7 @@ public class DocumentListTestCase extends junit.framework.TestCase {
         DocumentUpdate docUp = new DocumentUpdate(docMan.getDocumentType("benchmark"), new DocumentId("userdoc:foo:99999999:4"));
         docUp.addFieldUpdate(FieldUpdate.createAssign(docUp.getType().getField("bodystring"), new StringFieldValue("ballooooo")));
 
-        List<Entry> entries = new ArrayList<Entry>();
+        List<Entry> entries = new ArrayList<>();
         entries.add(Entry.create(put1));
         entries.add(Entry.create(doc2));
         entries.add(Entry.create(put3));
@@ -92,6 +94,7 @@ public class DocumentListTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("ballooooo"),((DocumentUpdate) entry4.getDocumentOperation()).getFieldUpdate(0).getValueUpdate(0).getValue());
     }
 
+    @Test
     public void testContains() {
         DocumentTypeManager manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer.configure(manager, "file:src/test/files/documentmanager.cfg");
@@ -119,17 +122,17 @@ public class DocumentListTestCase extends junit.framework.TestCase {
 
         DocumentList documentList2 = DocumentList.create(entries2);
 
-        assert(documentList.containsAll(documentList2));
+        assertTrue(documentList.containsAll(documentList2));
 
         Long t = put4.getDocument().getLastModified();
         put4.getDocument().setLastModified(13L);
-        assert(!documentList.containsAll(documentList2));
+        assertTrue(!documentList.containsAll(documentList2));
         put4.getDocument().setLastModified(t);
 
         assert(documentList.containsAll(documentList2));
 
         entries.remove(2);
-        assert(!documentList.containsAll(documentList2));
-
+        assertTrue(!documentList.containsAll(documentList2));
     }
+
 }

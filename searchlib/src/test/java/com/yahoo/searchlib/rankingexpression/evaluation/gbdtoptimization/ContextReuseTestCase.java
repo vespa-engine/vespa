@@ -6,9 +6,12 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * This tests reuse of a optimized context which is not initialized with
@@ -16,9 +19,9 @@ import java.io.IOException;
  *
  * @author bratseth
  */
-public class ContextReuseTestCase extends junit.framework.TestCase  {
+public class ContextReuseTestCase {
 
-    private String contextString=
+    private String contextString =
             "CONCEPTTYPE = 0.0\n" +
             "REGEXTYPE = 0.0\n" +
             "POS_18 = 0.0\n" +
@@ -43,6 +46,7 @@ public class ContextReuseTestCase extends junit.framework.TestCase  {
             "EXTENDEDTYPE = 0.0\n" +
             "ENTITYPLACETYPE = 0.0\n";
 
+    @Test
     public void testIt() throws ParseException, IOException {
         // Prepare
         RankingExpression expression=new RankingExpression(IOUtils.readFile(new File("src/test/files/s-expression.vre")));
@@ -55,7 +59,7 @@ public class ContextReuseTestCase extends junit.framework.TestCase  {
             String[] contextValueParts = contextValueString.split("=");
             context.put(contextValueParts[0].trim(), Double.valueOf(contextValueParts[1].trim()));
         }
-        assertEquals(-2.3450294999999994, expression.evaluate(context).asDouble());
+        assertEquals(-2.3450294999999994, expression.evaluate(context).asDouble(), 0.000000000001);
     }
 
 }

@@ -8,8 +8,11 @@ import com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsComputer
 import com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsParameters;
 import com.yahoo.searchlib.ranking.features.fieldmatch.QueryTerm;
 import com.yahoo.searchlib.ranking.features.fieldmatch.Query;
+import org.junit.Test;
 
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests of calculation of all the string match metrics.
@@ -17,12 +20,9 @@ import java.util.List;
  *
  * @author bratseth
  */
-public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
+public class FieldMatchMetricsTestCase {
 
-    public FieldMatchMetricsTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testOutOfOrder() {
         assertMetrics("outOfOrder:0","a","a");
         assertMetrics("outOfOrder:0","a b c","a b c");
@@ -33,6 +33,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("outOfOrder:2", "a b c d e", "c x a b x x x x x e x x d");
     }
 
+    @Test
     public void testSegments() {
         assertMetrics("segments:1","a","a");
         assertMetrics("segments:1","a b c","a b c");
@@ -45,6 +46,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("segments:2 gaps:1","a y y b c","x x x b x x c x x x x x x x x x x x x x x x x x x x a x x");
     }
 
+    @Test
     public void testGaps() {
         assertMetrics("gaps:0","a","a");
         assertMetrics("gaps:0","x�a","a");
@@ -59,6 +61,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("gaps:0","y a b c","a b c x");
     }
 
+    @Test
     public void testHead() {
         assertMetrics("head:0","a","a");
         assertMetrics("head:0","y","a");
@@ -68,6 +71,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("head:2", "a b c", "x x c x x x x x x x x x x x x x x x a b");
     }
 
+    @Test
     public void testTail() {
         assertMetrics("tail:0","a","a");
         assertMetrics("tail:0","y","a");
@@ -77,6 +81,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("tail:0","a b c","x x c x x x x x x x x x x x x x x x a b");
     }
 
+    @Test
     public void testLongestSequence() {
         assertMetrics("longestSequence:1","a","a");
         assertMetrics("longestSequence:1","a","a b c");
@@ -89,6 +94,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("longestSequence:4 segments:1","a b c d","x x a b x x x x x x x x x x x x x x x x x c d x x a b c d");
     }
 
+    @Test
     public void testMatches() {
         assertMetrics("matches:1 queryCompleteness:1   fieldCompleteness:1",   "a","a");
         assertMetrics("matches:3 queryCompleteness:1   fieldCompleteness:1",   "a b c","a b c");
@@ -96,6 +102,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("matches:3 queryCompleteness:0.5 fieldCompleteness:0.25","a y y b c y","a x x b c x a x a b x x");
     }
 
+    @Test
     public void testCompleteness() {
         assertMetrics("completeness:1     queryCompleteness:1   fieldCompleteness:1",  "a","a");
         assertMetrics("completeness:0     queryCompleteness:0   fieldCompleteness:0",  "a","x");
@@ -109,6 +116,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("completeness:0.97  queryCompleteness:1   fieldCompleteness:0.4","a b","a b b b b");
     }
 
+    @Test
     public void testOrderness() {
         assertMetrics("orderness:1",  "a","a");
         assertMetrics("orderness:1",  "a","x");
@@ -120,6 +128,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("orderness:1",  "a b","b x x x x x x x x x x x x x x x x x x x x x a");
     }
 
+    @Test
     public void testRelatedness() {
         assertMetrics("relatedness:1",  "a","a");
         assertMetrics("relatedness:0",  "a","x");
@@ -129,6 +138,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("relatedness:0.5","a y b y y y c","a b x x x x x x x x x x x x x x x x x x x x x x x c");
     }
 
+    @Test
     public void testLongestSequenceRatio() {
         assertMetrics("longestSequenceRatio:1",  "a","a");
         assertMetrics("longestSequenceRatio:0",  "a","x");
@@ -140,6 +150,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("longestSequenceRatio:0.75","a b c d","x x a b x a x c d a b c x d x");
     }
 
+    @Test
     public void testEarliness() {
         assertMetrics("earliness:1",     "a","a");
         assertMetrics("earliness:0",     "a","x");
@@ -151,6 +162,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("earliness:0.2",   "a b c","x b c a x x x x a x x x x x x x a b c x x");
     }
 
+    @Test
     public void testWeight() {
         assertMetrics("weight:1",     "a","a");
         assertMetrics("weight:0",     "y","a");
@@ -216,6 +228,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
     }
 
     /** Calculated the same way as weight */
+    @Test
     public void testSignificance() {
         assertMetrics("significance:1",     "a","a");
         assertMetrics("significance:0",     "a","x");
@@ -280,6 +293,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("significance:0","a%0 b%0","",0.3f);
     }
 
+    @Test
     public void testImportance() {
         assertMetrics("importance:0.75","a b c",    "a x x b x c c c",600);
         assertMetrics("importance:0.85","a b!500 c","a x x b x c c c",1000);
@@ -290,6 +304,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("importance:0.85","a b!500%0.5 c","a x x b x c c c",1000);
     }
 
+    @Test
     public void testOccurrence() {
         assertMetrics("occurrence:0","a","x");
         assertMetrics("occurrence:1","a","a");
@@ -313,6 +328,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("occurrence:1",     "a b","a a a a a a a a a a a b b b b b b b b b b b",false,c); // Field is too large to consider field length
     }
 
+    @Test
     public void testAbsoluteOccurrence() {
         assertMetrics("absoluteOccurrence:0",  "a","x");
         assertMetrics("absoluteOccurrence:0.01","a","a");
@@ -336,6 +352,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("absoluteOccurrence:1",  "a b","a a a a a a a a a a a b b b b b b b b b b b",false,c); // Field is too large to consider field length
     }
 
+    @Test
     public void testWeightedOccurrence() {
         assertMetrics("weightedOccurrence:0","a!200","x");
         assertMetrics("weightedOccurrence:1","a!200","a");
@@ -378,6 +395,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("weightedOccurrence:1",     "a!200 b","a a a a a a a a a a a b b b b b b b b b b b",false,c); // Field is too large to consider field length
     }
 
+    @Test
     public void testWeightedAbsoluteOccurrence() {
         assertMetrics("weightedAbsoluteOccurrence:0",    "a!200","x");
         assertMetrics("weightedAbsoluteOccurrence:0.01", "a!200","a");
@@ -420,6 +438,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("weightedAbsoluteOccurrence:1",     "a!200 b","a a a a a a a a a a a b b b b b b b b b b b",false,c); // Field is too large to consider field length
     }
 
+    @Test
     public void testSignificantOccurrence() {
         assertMetrics("significantOccurrence:0","a%0.2","x");
         assertMetrics("significantOccurrence:1","a%0.2","a");
@@ -462,6 +481,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("significantOccurrence:1",     "a%0.2 b","a a a a a a a a a a a b b b b b b b b b b b",false,c); // Field is too large to consider field length
     }
 
+    @Test
     public void testUnweightedProximity() {
         assertMetrics("unweightedProximity:1",    "a","a");
         assertMetrics("unweightedProximity:1",    "a b c","a b c");
@@ -476,6 +496,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("unweightedProximity:0.5",  "y a b c","a x x b x x c x");
     }
 
+    @Test
     public void testReverseProximity() {
         assertMetrics("unweightedProximity:0.33",  "a b","b a");
         assertMetrics("unweightedProximity:0.62",  "a b c","c a b");
@@ -485,6 +506,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("unweightedProximity:0.9275","a b c d e","a b x c d e");
     }
 
+    @Test
     public void testProximity() {
         assertMetrics("absoluteProximity:0.1    proximity:1",     "a b","a b");
         assertMetrics("absoluteProximity:0.3    proximity:1",     "a 0.3:b","a b");
@@ -509,6 +531,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
      * Tests exactness (using field exactness only - nothing additional of interest to test with query exactness
      * as that is just another number multiplied with the term exactness)
      */
+    @Test
     public void testExactness() {
         assertMetrics("exactness:1",     "a b c","a x b x x c");
         assertMetrics("exactness:0.9",   "a b c","a x b:0.7 x x c");
@@ -517,12 +540,14 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("exactness:0.65",  "a b c!200","a x b:0.6 x x c:0.5");
     }
 
+    @Test
     public void testMultiSegmentProximity() {
         assertMetrics("absoluteProximity:0.1    proximity:1",  "a b c",  "a b x x x x x x x x x x x x x x x x x x x x x x c");
         assertMetrics("absoluteProximity:0.05   proximity:0.5","a b c",  "a x x b x x x x x x x x x x x x x x x x x x x x x x c");
         assertMetrics("absoluteProximity:0.075  proximity:0.75","a b c d","a x x b x x x x x x x x x x x x x x x x x x x x x x c d");
     }
 
+    @Test
     public void testSegmentDistance() {
         assertMetrics("segmentDistance:13 absoluteProximity:0.1",  "a b c","a b x x x x x x x x x x c");
         assertMetrics("segmentDistance:13 absoluteProximity:0.5",  "a 0.5:b c","a b x x x x x x x x x x c");
@@ -534,6 +559,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("segmentDistance:25 absoluteProximity:0.1",  "a b c","c x x x x x x x x x x x b x x x x x x x x x x a");
     }
 
+    @Test
     public void testSegmentProximity() {
         assertMetrics("segmentProximity:1",  "a","a");
         assertMetrics("segmentProximity:0",  "a","x");
@@ -546,6 +572,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
     }
 
     /** Test cases where we choose between multiple different segmentations */
+    @Test
     public void testSegmentSelection() {
         assertMetrics("segments:2 absoluteProximity:0.1 proximity:1 segmentStarts:19,41",
                       "a b c d e","x a b x c x x x x x x x x x x x x x x a b c x x x x x x x x x e x d x c d x x x c d e");
@@ -567,12 +594,14 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("segments:1 segmentStarts:0","a b c d","a b x x x x x x x x c d x x x x x x x x x x x a b x x x x x x x x x x x c d");
     }
 
+    @Test
     public void testMoreThanASegmentLengthOfUnmatchedQuery() {
         assertMetrics("absoluteProximity:0.1 proximity:1","a b y y y y y y y y y y y y y y y","a b");
         assertMetrics("segments:2 absoluteProximity:0.1 proximity:1","a b c d y y y y y y y y y y y y y y y","a b x x x x x x x x x x x x x x x x x x c d");
         assertMetrics("segments:2 absoluteProximity:0.1 proximity:1","a b y y y y y y y y y y y y y y y c d","a b x x x x x x x x x x x x x x x x x x c d");
     }
 
+    @Test
     public void testQueryRepeats() {
         // Not really handled perfectly, but good enough
         assertMetrics("absoluteProximity:0.1    proximity:1      head:0 tail:0",            "a a a","a");
@@ -588,6 +617,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("matches:2 fieldCompleteness:1","a b b b","a b");
     }
 
+    @Test
     public void testZeroCases() {
         assertMetrics("absoluteProximity:0.1 proximity:1 matches:0 exactness:0","y","a");
         assertMetrics("absoluteProximity:0.1 proximity:1 matches:0 exactness:0","a","x");
@@ -596,8 +626,8 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("absoluteProximity:0.1 proximity:1 matches:0 exactness:0","","");
     }
 
+    @Test
     public void testExceedingIterationLimit() {
-
         {   // Segments found: a x x b   and   c d
             FieldMatchMetricsParameters p=new FieldMatchMetricsParameters();
             p.setMaxAlternativeSegmentations(0);
@@ -620,6 +650,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testMatch() {
         // Ordered by decreasing match score per query
         assertMetrics("match:1",     "a","a");
@@ -647,6 +678,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         assertMetrics("match:0.2927","a b!200 c","x x a x b:0.7 x x x x x x x x x x x x x x x x x x x x x x");
     }
 
+    @Test
     public void testRepeatedMatch() {
         // gap==1 caused by finding two possible segments due to repeated matching
         assertMetrics("fieldCompleteness:1 queryCompleteness:0.6667 segments:1 earliness:1 gaps:1",
@@ -654,6 +686,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
     }
 
     /** Three segments - improving the score on the first should impact the last */
+    @Test
     public void testNestedAlternatives() {
         assertMetrics("segmentStarts:6,19,32 proximity:1",
                       "a b c d e f",
@@ -664,6 +697,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
     }
 
     /** Nice demonstration of the limitations of this algorithm: Segment end points are determined greedily */
+    @Test
     public void testSegmentationGreedyness() {
         assertMetrics("match:0.3717","a b c","a x b x x x x x x x x b c");
         assertMetrics("match:0.4981","a b c","a x z x x x x x x x x b c");
@@ -715,7 +749,7 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
             }
             else {
                 float correctValue=Float.parseFloat(correctValueString);
-                assertEquals(metricName, correctValue, (float)Math.round(metrics.get(metricName)*10000)/10000 );
+                assertEquals(metricName, correctValue, (float)Math.round(metrics.get(metricName)*10000)/10000, 0.000000001);
             }
         }
     }
@@ -754,4 +788,5 @@ public class FieldMatchMetricsTestCase extends junit.framework.TestCase {
         }
         return new Field(terms.build());
     }
+
 }

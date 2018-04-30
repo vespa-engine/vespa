@@ -4,12 +4,17 @@ package com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.*;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
  */
-public class GBDTForestOptimizerTestCase extends junit.framework.TestCase {
+public class GBDTForestOptimizerTestCase {
 
+    @Test
     public void testForestOptimization() throws ParseException {
         String gbdtString =
                 "if (LW_NEWS_SEARCHES_RATIO < 1.72971, 0.0697159, if (LW_USERS < 0.10496, if (SEARCHES < 0.0329127, 0.151257, 0.117501), if (SUGG_OVERLAP < 18.5, 0.0897622, 0.0756903))) + \n" +
@@ -55,6 +60,7 @@ public class GBDTForestOptimizerTestCase extends junit.framework.TestCase {
         assertEqualish(result3, oResult3);
     }
 
+    @Test
     public void testForestOptimizationWithSetMembershipConditions() throws ParseException {
         String gbdtString =
         "if (MYSTRING in [\"string 1\",\"string 2\"], 0.0697159, if (LW_USERS < 0.10496, if (SEARCHES < 0.0329127, 0.151257, 0.117501), if (MYSTRING in [\"string 2\"], 0.0897622, 0.0756903))) + \n" +

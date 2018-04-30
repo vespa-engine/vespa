@@ -1,12 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author thomasg
  */
-public class SumMetricTest extends TestCase {
+public class SumMetricTest {
+
+    private final double delta = 0.000000001;
+
+    @Test
     public void testSummedCountMetric() {
         MetricSet parent = new SimpleMetricSet("parent", "", "");
         SumMetric sum = new SumMetric("foo", "", "foodesc", parent);
@@ -33,6 +39,7 @@ public class SumMetricTest extends TestCase {
         assertEquals(20, sum.getLongValue("value"));
     }
 
+    @Test
     public void testSummedValueMetric() {
         MetricSet parent = new SimpleMetricSet("parent", "", "");
         SumMetric sum = new SumMetric("foo", "", "foodesc", parent);
@@ -60,7 +67,7 @@ public class SumMetricTest extends TestCase {
         assertEquals(10, sum.getLongValue("max"));
     }
 
-
+    @Test
     public void testAveragedValueMetric() {
         MetricSet parent = new SimpleMetricSet("parent", "", "");
         SumMetric sum = new SumMetric("foo", "", "foodesc", parent);
@@ -83,11 +90,12 @@ public class SumMetricTest extends TestCase {
 
         assertEquals("<foo description=\"foodesc\" average=\"5.40\" last=\"10.00\" min=\"2.00\" max=\"10.00\" count=\"5\" total=\"27.00\"/>\n", sum.toXml(0,2));
 
-        assertEquals(5.40, sum.getDoubleValue("value"));
-        assertEquals(2.0, sum.getDoubleValue("min"));
-        assertEquals(10.0, sum.getDoubleValue("max"));
+        assertEquals(5.40, sum.getDoubleValue("value"), delta);
+        assertEquals(2.0, sum.getDoubleValue("min"), delta);
+        assertEquals(10.0, sum.getDoubleValue("max"), delta);
     }
 
+    @Test
     public void testMetricSet() {
         MetricSet parent = new SimpleMetricSet("parent", "", "");
         SumMetric sum = new SumMetric("foo", "", "bar", parent);
@@ -118,9 +126,8 @@ public class SumMetricTest extends TestCase {
 
     }
 
-
-    public void testRemove()
-    {
+    @Test
+    public void testRemove() {
         MetricSet parent = new SimpleMetricSet("parent", "", "");
         SumMetric sum = new SumMetric("foo", "", "foodesc", parent);
 
@@ -145,6 +152,7 @@ public class SumMetricTest extends TestCase {
         assertEquals("<foo description=\"foodesc\" average=\"14.50\" last=\"17.00\" min=\"5.00\" max=\"10.00\" count=\"3\" total=\"43.50\"/>\n", sum.toXml(0,2));
    }
 
+   @Test
    public void testEmpty() {
        SumMetric sum = new SumMetric("foo", "", "foodesc", null);
        assertEquals("<foo description=\"foodesc\"/>\n", sum.toXml(0,2));

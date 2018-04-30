@@ -2,18 +2,22 @@
 package com.yahoo.vdslib;
 
 import com.yahoo.document.BucketId;
+import org.junit.Test;
 
 import java.util.Random;
 
+import static org.junit.Assert.assertEquals;
+
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class BucketDistributionTestCase extends junit.framework.TestCase {
+public class BucketDistributionTestCase {
 
     private static final int NUM_COLUMNS = 16;
     private static final int MIN_BUCKETBITS = 4;
     private static final int MAX_BUCKETBITS = 9;
 
+    @Test
     public void printExpected() {
         System.out.println("        int[][] expected = new int[][] {");
         for (int numBucketBits = MIN_BUCKETBITS; numBucketBits <= MAX_BUCKETBITS; ++numBucketBits) {
@@ -38,6 +42,7 @@ public class BucketDistributionTestCase extends junit.framework.TestCase {
         System.out.println("        };");
     }
 
+    @Test
     public void testDistribution() {
         int[][] expected = new int[][] {
             new int[] {
@@ -90,6 +95,7 @@ public class BucketDistributionTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testNumBucketBits() {
         Random rnd = new Random();
 
@@ -108,4 +114,5 @@ public class BucketDistributionTestCase extends junit.framework.TestCase {
             assertEquals(0, bd.getColumn(new BucketId(32, (rnd.nextLong() << 16) & i)));
         }
     }
+
 }

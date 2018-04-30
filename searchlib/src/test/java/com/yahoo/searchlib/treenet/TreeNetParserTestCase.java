@@ -4,17 +4,24 @@ package com.yahoo.searchlib.treenet;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.treenet.parser.ParseException;
 import com.yahoo.searchlib.treenet.parser.TreeNetParser;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+
+import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class TreeNetParserTestCase extends TestCase {
+public class TreeNetParserTestCase {
 
     private static final boolean WRITE_FILES = false;
 
+    @Test
     public void testRankingExpression() {
         for (int i = 1; i <= 8; ++i) {
             String inputFile  = String.format("src/test/files/treenet%02d.model", i);
@@ -76,4 +83,5 @@ public class TreeNetParserTestCase extends TestCase {
             throw new AssertionError(e);
         }
     }
+
 }

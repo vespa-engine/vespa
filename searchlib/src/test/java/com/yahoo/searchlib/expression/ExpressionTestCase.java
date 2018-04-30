@@ -5,16 +5,24 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Identifiable;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * @author baldersheim
  */
-public class ExpressionTestCase extends TestCase {
+public class ExpressionTestCase {
 
+    private static final double delta = 0.00000001;
+
+    @Test
     public void testRangeBucketPreDefFunctionNode() {
         assertMultiArgFunctionNode(new RangeBucketPreDefFunctionNode(new StringBucketResultNodeVector().add(new StringBucketResultNode("10", "20")), new AttributeNode("foo")));
         assertEquals(new RangeBucketPreDefFunctionNode(), new RangeBucketPreDefFunctionNode());
@@ -26,6 +34,7 @@ public class ExpressionTestCase extends TestCase {
                         new RangeBucketPreDefFunctionNode(new StringBucketResultNodeVector().add(new StringBucketResultNode("10", "20")), new AttributeNode("bar")));
     }
 
+    @Test
     public void testFixedWidthBucketFunctionNode() {
         assertMultiArgFunctionNode(new FixedWidthBucketFunctionNode());
         assertEquals(new FixedWidthBucketFunctionNode(), new FixedWidthBucketFunctionNode());
@@ -37,6 +46,7 @@ public class ExpressionTestCase extends TestCase {
                         new FixedWidthBucketFunctionNode(new IntegerResultNode(5), new AttributeNode("bar")));
     }
 
+    @Test
     public void testIntegerBucketResultNodeVector() {
         assertResultNode(new IntegerBucketResultNodeVector().add(new IntegerBucketResultNode(10, 20)));
         assertEquals(new IntegerBucketResultNodeVector().add(new IntegerBucketResultNode(10, 20)),
@@ -47,6 +57,7 @@ public class ExpressionTestCase extends TestCase {
                         new IntegerBucketResultNodeVector().add(new IntegerBucketResultNode(11, 20)));
     }
 
+    @Test
     public void testFloatBucketResultNodeVector() {
         assertResultNode(new FloatBucketResultNodeVector().add(new FloatBucketResultNode(10, 20)));
         assertEquals(new FloatBucketResultNodeVector().add(new FloatBucketResultNode(10, 20)),
@@ -57,6 +68,7 @@ public class ExpressionTestCase extends TestCase {
                         new FloatBucketResultNodeVector().add(new FloatBucketResultNode(11, 20)));
     }
 
+    @Test
     public void testStringBucketResultNodeVector() {
         assertResultNode(new StringBucketResultNodeVector().add(new StringBucketResultNode("10", "20")));
         assertEquals(new StringBucketResultNodeVector().add(new StringBucketResultNode("10", "20")),
@@ -67,6 +79,7 @@ public class ExpressionTestCase extends TestCase {
                         new StringBucketResultNodeVector().add(new StringBucketResultNode("11", "20")));
     }
 
+    @Test
     public void testIntegerBucketResultNode() {
         assertResultNode(new IntegerBucketResultNode(10, 20));
         assertEquals(new IntegerBucketResultNode(10, 20), new IntegerBucketResultNode(10, 20));
@@ -74,6 +87,7 @@ public class ExpressionTestCase extends TestCase {
         assertNotEquals(new IntegerBucketResultNode(10, 20), new IntegerBucketResultNode(10, 21));
     }
 
+    @Test
     public void testFloatBucketResultNode() {
         assertResultNode(new FloatBucketResultNode(10.0, 20.0));
         assertEquals(new FloatBucketResultNode(10.0, 20.0), new FloatBucketResultNode(10.0, 20.0));
@@ -81,6 +95,7 @@ public class ExpressionTestCase extends TestCase {
         assertNotEquals(new FloatBucketResultNode(10.0, 20.0), new FloatBucketResultNode(10.0, 21.0));
     }
 
+    @Test
     public void testStringBucketResultNode() {
         assertResultNode(new StringBucketResultNode("10.0", "20.0"));
         assertEquals(new StringBucketResultNode("10.0", "20.0"), new StringBucketResultNode("10.0", "20.0"));
@@ -99,6 +114,7 @@ public class ExpressionTestCase extends TestCase {
                 new StringBucketResultNode("11.0", "19.0"), new StringBucketResultNode("11.0", "20.0"));
     }
 
+    @Test
     public void testPositiveInfinity() {
         PositiveInfinityResultNode inf = new PositiveInfinityResultNode();
         PositiveInfinityResultNode inf2 = new PositiveInfinityResultNode();
@@ -106,6 +122,7 @@ public class ExpressionTestCase extends TestCase {
         assertEquals(inf, inf2);
     }
 
+    @Test
     public void testAddFunctionNode() {
         assertMultiArgFunctionNode(new AddFunctionNode());
         assertFunctionNode(new AddFunctionNode().addArg(new ConstantNode(new IntegerResultNode(2)))
@@ -119,6 +136,7 @@ public class ExpressionTestCase extends TestCase {
                            5, 5.0, "5.0", doubleAsRaw(5.0));
     }
 
+    @Test
     public void testAndFunctionNode() {
         assertMultiArgFunctionNode(new AndFunctionNode());
         assertFunctionNode(new AndFunctionNode().addArg(new ConstantNode(new IntegerResultNode(3)))
@@ -126,11 +144,13 @@ public class ExpressionTestCase extends TestCase {
                            3, 3.0, "3", longAsRaw(3));
     }
 
+    @Test
     public void testZCurveFunctionNode() {
         assertMultiArgFunctionNode(
                 new ZCurveFunctionNode(new ConstantNode(new IntegerResultNode(7)), ZCurveFunctionNode.Dimension.Y));
     }
 
+    @Test
     public void testTimeStampFunctionNode() {
         assertMultiArgFunctionNode(new TimeStampFunctionNode(new AttributeNode("testattribute"), TimeStampFunctionNode.TimePart.Hour, true));
         assertEquals(new TimeStampFunctionNode(new AttributeNode("testattribute"), TimeStampFunctionNode.TimePart.Hour, true),
@@ -152,11 +172,13 @@ public class ExpressionTestCase extends TestCase {
                                           false));
     }
 
+    @Test
     public void testExpressionRefNode() {
         AggregationRefNode ref = new AggregationRefNode(3);
         assertEquals(3, ref.getIndex());
     }
 
+    @Test
     public void testAttributeNode() {
         try {
             new AttributeNode(null);
@@ -192,6 +214,7 @@ public class ExpressionTestCase extends TestCase {
         assertFalse(b.equals(c));
     }
 
+    @Test
     public void testInterpolatedLookupNode() {
         ExpressionNode argA = new ConstantNode(new FloatResultNode(2.71828182846));
         ExpressionNode argB = new ConstantNode(new FloatResultNode(3.14159265359));
@@ -236,6 +259,7 @@ public class ExpressionTestCase extends TestCase {
         assertFalse(a1.equals(a2));
     }
 
+    @Test
     public void testCatFunctionNode() {
         assertMultiArgFunctionNode(new CatFunctionNode());
         assertFunctionNode(new CatFunctionNode().addArg(new ConstantNode(new RawResultNode(asRaw('1', '2'))))
@@ -243,6 +267,7 @@ public class ExpressionTestCase extends TestCase {
                            0, 0.0, "1234", asRaw('1', '2', '3', '4'));
     }
 
+    @Test
     public void testStrCatFunctionNode() {
         assertMultiArgFunctionNode(new StrCatFunctionNode());
         assertFunctionNode(new StrCatFunctionNode().addArg(new ConstantNode(new StringResultNode("foo")))
@@ -250,6 +275,7 @@ public class ExpressionTestCase extends TestCase {
                            0, 0.0, "foobar", stringAsRaw("foobar"));
     }
 
+    @Test
     public void testDivideFunctionNode() {
         assertMultiArgFunctionNode(new DivideFunctionNode());
         assertFunctionNode(new DivideFunctionNode().addArg(new ConstantNode(new IntegerResultNode(10)))
@@ -263,6 +289,7 @@ public class ExpressionTestCase extends TestCase {
                            1, 0.5, "0.5", doubleAsRaw(0.5));
     }
 
+    @Test
     public void testDocumentFieldNode() {
         try {
             new DocumentFieldNode(null);
@@ -298,10 +325,11 @@ public class ExpressionTestCase extends TestCase {
         assertFalse(b.equals(c));
     }
 
+    @Test
     public void testFloatResultNode() {
         FloatResultNode a = new FloatResultNode(7.3);
         assertEquals(a.getInteger(), 7);
-        assertEquals(a.getFloat(), 7.3);
+        assertEquals(a.getFloat(), 7.3, delta);
         assertEquals(a.getString(), "7.3");
         assertEquals(a.getNumber(), new Double(7.3));
         byte[] raw = a.getRaw();
@@ -313,11 +341,12 @@ public class ExpressionTestCase extends TestCase {
 
         FloatResultNode b = new FloatResultNode(7.5);
         assertEquals(b.getInteger(), 8);
-        assertEquals(b.getFloat(), 7.5);
+        assertEquals(b.getFloat(), 7.5, delta);
         assertEquals(b.getString(), "7.5");
         assertEquals(b.getNumber(), new Double(7.5));
     }
 
+    @Test
     public void testGetDocIdNamespaceSpecificFunctionNode() {
         GetDocIdNamespaceSpecificFunctionNode a = new GetDocIdNamespaceSpecificFunctionNode(new IntegerResultNode(7));
         assertTrue(a.getResult() instanceof IntegerResultNode);
@@ -340,6 +369,7 @@ public class ExpressionTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testGetYMUMChecksumFunctionNode() {
         GetYMUMChecksumFunctionNode a = new GetYMUMChecksumFunctionNode();
         assertTrue(a.getResult() instanceof IntegerResultNode);
@@ -358,10 +388,11 @@ public class ExpressionTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testIntegerResultNode() {
         IntegerResultNode a = new IntegerResultNode(7);
         assertEquals(a.getInteger(), 7);
-        assertEquals(a.getFloat(), 7.0);
+        assertEquals(a.getFloat(), 7.0, delta);
         assertEquals(a.getString(), "7");
         assertEquals(a.getNumber(), new Long(7));
         byte[] raw = a.getRaw();
@@ -371,6 +402,7 @@ public class ExpressionTestCase extends TestCase {
         compare(new IntegerResultNode(-1), new IntegerResultNode(0), new IntegerResultNode(0x80000000L));
     }
 
+    @Test
     public void testMaxFunctionNode() {
         assertMultiArgFunctionNode(new MaxFunctionNode());
         assertFunctionNode(new MaxFunctionNode().addArg(new ConstantNode(new IntegerResultNode(3)))
@@ -381,6 +413,7 @@ public class ExpressionTestCase extends TestCase {
                            5, 5.0, "5.0", doubleAsRaw(5.0));
     }
 
+    @Test
     public void testMD5BitFunctionNode() {
         try {
             new MD5BitFunctionNode(null, 64);
@@ -403,6 +436,7 @@ public class ExpressionTestCase extends TestCase {
         assertUnaryBitFunctionNode(new MD5BitFunctionNode());
     }
 
+    @Test
     public void testMinFunctionNode() {
         assertMultiArgFunctionNode(new MinFunctionNode());
         assertFunctionNode(new MinFunctionNode().addArg(new ConstantNode(new IntegerResultNode(3)))
@@ -413,6 +447,7 @@ public class ExpressionTestCase extends TestCase {
                            5, 4.9999999, "4.9999999", doubleAsRaw(4.9999999));
     }
 
+    @Test
     public void testModuloFunctionNode() {
         assertMultiArgFunctionNode(new ModuloFunctionNode());
         assertFunctionNode(new ModuloFunctionNode().addArg(new ConstantNode(new IntegerResultNode(13)))
@@ -423,6 +458,7 @@ public class ExpressionTestCase extends TestCase {
                            5, 4.9999999, "4.9999999", doubleAsRaw(4.9999999));
     }
 
+    @Test
     public void testMultiplyFunctionNode() {
         assertMultiArgFunctionNode(new MultiplyFunctionNode());
         assertFunctionNode(new MultiplyFunctionNode().addArg(new ConstantNode(new IntegerResultNode(3)))
@@ -433,6 +469,7 @@ public class ExpressionTestCase extends TestCase {
                            23, 22.5, "22.5", doubleAsRaw(22.5));
     }
 
+    @Test
     public void testNegateFunctionNode() {
         assertMultiArgFunctionNode(new NegateFunctionNode());
         assertFunctionNode(new NegateFunctionNode().addArg(new ConstantNode(new IntegerResultNode(3))),
@@ -441,73 +478,80 @@ public class ExpressionTestCase extends TestCase {
                            -3, -3.0, "-3.0", doubleAsRaw(-3.0));
     }
 
+    @Test
     public void testSortFunctionNode() {
         assertMultiArgFunctionNode(new SortFunctionNode());
-
     }
 
+    @Test
     public void testReverseFunctionNode() {
         assertMultiArgFunctionNode(new ReverseFunctionNode());
     }
 
+    @Test
     public void testToIntFunctionNode() {
         assertMultiArgFunctionNode(new ToIntFunctionNode());
         assertFunctionNode(new ToIntFunctionNode().addArg(new ConstantNode(new StringResultNode("1337"))),
                            1337, 1337.0, "1337", longAsRaw(1337));
     }
 
+    @Test
     public void testToFloatFunctionNode() {
         assertMultiArgFunctionNode(new ToFloatFunctionNode());
         assertFunctionNode(new ToFloatFunctionNode().addArg(new ConstantNode(new FloatResultNode(3.14))),
                            3, 3.14, "3.14", doubleAsRaw(3.14));
     }
 
+    @Test
     public void testMathFunctionNode() {
         assertMultiArgFunctionNode(new MathFunctionNode(MathFunctionNode.Function.LOG10));
         assertFunctionNode(new MathFunctionNode(MathFunctionNode.Function.LOG10).addArg(new ConstantNode(new IntegerResultNode(100000))),
                            5, 5.0, "5.0", doubleAsRaw(5.0));
     }
 
+    @Test
     public void testStrLenFunctionNode() {
         assertMultiArgFunctionNode(new StrLenFunctionNode());
         assertFunctionNode(new StrLenFunctionNode().addArg(new ConstantNode(new StringResultNode("foo"))),
                            3, 3.0, "3", longAsRaw(3));
     }
 
+    @Test
     public void testNormalizeSubjectFunctionNode() {
         assertMultiArgFunctionNode(new NormalizeSubjectFunctionNode());
         assertFunctionNode(new NormalizeSubjectFunctionNode().addArg(new ConstantNode(new StringResultNode("Re: Your mail"))),
                            0, 0, "Your mail", stringAsRaw("Your mail"));
     }
 
+    @Test
     public void testNormalizeSubjectFunctionNode2() {
         assertMultiArgFunctionNode(new NormalizeSubjectFunctionNode());
         assertFunctionNode(new NormalizeSubjectFunctionNode().addArg(new ConstantNode(new StringResultNode("Your mail"))),
                            0, 0, "Your mail", stringAsRaw("Your mail"));
     }
 
+    @Test
     public void testNumElemFunctionNode() {
         assertMultiArgFunctionNode(new NumElemFunctionNode());
         assertFunctionNode(new NumElemFunctionNode().addArg(new ConstantNode(new IntegerResultNode(1337))),
                            1, 1.0, "1", longAsRaw(1));
     }
 
+    @Test
     public void testToStringFunctionNode() {
         assertMultiArgFunctionNode(new ToStringFunctionNode());
         assertFunctionNode(new ToStringFunctionNode().addArg(new ConstantNode(new IntegerResultNode(1337))),
                            1337, 1337.0, "1337", stringAsRaw("1337"));
     }
 
+    @Test
     public void testToRawFunctionNode() {
         assertMultiArgFunctionNode(new ToRawFunctionNode());
         assertFunctionNode(new ToRawFunctionNode().addArg(new ConstantNode(new IntegerResultNode(1337))),
                            1337, 1337.0, "1337", longAsRaw(1337));
     }
 
-    public void testNullResultNode() {
-        // TODO: Implement.
-    }
-
+    @Test
     public void testOrFunctionNode() {
         assertMultiArgFunctionNode(new OrFunctionNode());
         assertFunctionNode(new OrFunctionNode().addArg(new ConstantNode(new IntegerResultNode(2)))
@@ -515,6 +559,7 @@ public class ExpressionTestCase extends TestCase {
                            6, 6.0, "6", longAsRaw(6));
     }
 
+    @Test
     public void testDebugWaitFunctionNode() {
     	assertFunctionNode(
                 new DebugWaitFunctionNode(new OrFunctionNode().addArg(new ConstantNode(new IntegerResultNode(2)))
@@ -543,6 +588,7 @@ public class ExpressionTestCase extends TestCase {
     	assertTrue(end - start > 450);
     }
 
+    @Test
     public void testRawResultNode() {
         try {
             new RawResultNode(null);
@@ -564,7 +610,7 @@ public class ExpressionTestCase extends TestCase {
         assertEquals(raw[1], '.');
         assertEquals(raw[2], '4');
         assertEquals(a.getInteger(), 0);
-        assertEquals(a.getFloat(), 0.0);
+        assertEquals(a.getFloat(), 0.0, delta);
         assertEquals(a.getString(), "7.4");
         assertResultNode(a);
         compare(new RawResultNode(), new RawResultNode(new byte [] {'z'}), new RawResultNode(new byte [] {'z', 'z'}));
@@ -647,6 +693,7 @@ public class ExpressionTestCase extends TestCase {
         assertEquals(0, large.compareTo(large));
     }
 
+    @Test
     public void testStringResultNode() {
         try {
             new StringResultNode(null);
@@ -662,7 +709,7 @@ public class ExpressionTestCase extends TestCase {
         }
         StringResultNode a = new StringResultNode("7.3");
         assertEquals(a.getInteger(), 0);
-        assertEquals(a.getFloat(), 7.3);
+        assertEquals(a.getFloat(), 7.3, delta);
         assertEquals(a.getString(), "7.3");
         byte[] raw = a.getRaw();
         assertEquals(raw.length, 3);
@@ -672,6 +719,7 @@ public class ExpressionTestCase extends TestCase {
         compare(new StringResultNode("a"), new StringResultNode("zz"), new PositiveInfinityResultNode());
     }
 
+    @Test
     public void testXorBitFunctionNode() {
         try {
             new XorBitFunctionNode(null, 64);
@@ -694,6 +742,7 @@ public class ExpressionTestCase extends TestCase {
         assertUnaryBitFunctionNode(new XorBitFunctionNode());
     }
 
+    @Test
     public void testUcaFunctionNode() {
         try {
             new UcaFunctionNode(null, "foo");
@@ -716,6 +765,7 @@ public class ExpressionTestCase extends TestCase {
         assertUcaFunctionNode(new UcaFunctionNode(new ConstantNode(new IntegerResultNode(1337)), "foo", "bar"));
     }
 
+    @Test
     public void testNestedFunctions() {
         assertFunctionNode(new AddFunctionNode()
                                    .addArg(new MultiplyFunctionNode().addArg(new ConstantNode(new IntegerResultNode(3)))
@@ -725,6 +775,7 @@ public class ExpressionTestCase extends TestCase {
                            14, 14.0, "14.0", doubleAsRaw(14.0));
     }
 
+    @Test
     public void testArithmeticNodes() {
         ExpressionNode i1 = new ConstantNode(new IntegerResultNode(1));
         ExpressionNode i2 = new ConstantNode(new IntegerResultNode(2));
@@ -761,6 +812,7 @@ public class ExpressionTestCase extends TestCase {
         assertTrue(add4.getResult() instanceof IntegerResultNode);
     }
 
+    @Test
     public void testArithmeticOperations() {
         ExpressionNode i1 = new ConstantNode(new IntegerResultNode(1793253241));
         ExpressionNode i2 = new ConstantNode(new IntegerResultNode(1676521321));
@@ -860,14 +912,14 @@ public class ExpressionTestCase extends TestCase {
         node.prepare();
         node.execute();
         assertEquals(lexpected, node.getResult().getInteger());
-        assertEquals(dexpected, node.getResult().getFloat());
+        assertEquals(dexpected, node.getResult().getFloat(), delta);
     }
 
     public void assertFunctionNode(FunctionNode node, long lexpected, double dexpected, String sexpected, byte[] rexpected) {
         node.prepare();
         node.execute();
         assertEquals(lexpected, node.getResult().getInteger());
-        assertEquals(dexpected, node.getResult().getFloat());
+        assertEquals(dexpected, node.getResult().getFloat(), delta);
         assertEquals(sexpected, node.getResult().getString());
         assertTrue(Arrays.equals(rexpected, node.getResult().getRaw()));
     }
@@ -882,7 +934,7 @@ public class ExpressionTestCase extends TestCase {
         buf.flip();
         node.deserialize(buf);
         assertEquals(oldInteger, node.getInteger());
-        assertEquals(oldFloat, node.getFloat());
+        assertEquals(oldFloat, node.getFloat(), delta);
         assertEquals(oldString, node.getString());
         assertEquals(oldRaw.length, node.getRaw().length);
 
@@ -891,7 +943,7 @@ public class ExpressionTestCase extends TestCase {
         buf.flip();
         node.deserializeWithId(buf);
         assertEquals(oldInteger, node.getInteger());
-        assertEquals(oldFloat, node.getFloat());
+        assertEquals(oldFloat, node.getFloat(), delta);
         assertEquals(oldString, node.getString());
         assertEquals(oldRaw.length, node.getRaw().length);
 
@@ -900,7 +952,7 @@ public class ExpressionTestCase extends TestCase {
         buf.flip();
         ResultNode obj = (ResultNode)Identifiable.create(buf);
         assertEquals(oldInteger, obj.getInteger());
-        assertEquals(oldFloat, obj.getFloat());
+        assertEquals(oldFloat, obj.getFloat(), delta);
         assertEquals(oldString, obj.getString());
         assertEquals(oldRaw.length, obj.getRaw().length);
 
@@ -913,7 +965,7 @@ public class ExpressionTestCase extends TestCase {
         buf.flip();
         Identifiable created = Identifiable.create(buf);
         assertEquals(node, created);
-        assertEquals(buf.getBuf().hasRemaining(), false);
+        assertFalse(buf.getBuf().hasRemaining());
         Identifiable cloned = created.clone();
         assertEquals(node, cloned);
         BufferSerializer createdBuffer = new BufferSerializer(new GrowableByteBuffer());
@@ -929,4 +981,5 @@ public class ExpressionTestCase extends TestCase {
         }
         return created;
     }
+
 }
