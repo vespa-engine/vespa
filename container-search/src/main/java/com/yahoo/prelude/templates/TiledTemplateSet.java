@@ -2,6 +2,9 @@
 package com.yahoo.prelude.templates;
 
 import com.yahoo.container.ConfigHack;
+import com.yahoo.prelude.hitfield.HitField;
+import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.prelude.templates.FormattingOptions.SubtypeFieldWithPrefix;
 import com.yahoo.search.Result;
 import com.yahoo.search.pagetemplates.model.Renderer;
@@ -9,6 +12,8 @@ import com.yahoo.search.pagetemplates.model.Source;
 import com.yahoo.search.pagetemplates.result.SectionHitGroup;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
+import com.yahoo.search.result.StructuredData;
+import com.yahoo.text.XML;
 import com.yahoo.text.XMLWriter;
 
 import java.io.IOException;
@@ -328,9 +333,19 @@ public class TiledTemplateSet extends DefaultTemplateSet {
         } else {
             writer.openTag(name);
         }
-        writer.escapedContent(hit.getFieldXML(name),false).closeTag();
+        writer.escapedContent(asXML(hit.getField(name)),false).closeTag();
     }
 
+    private String asXML(Object value) {
+        if (value == null)
+            return "(null)";
+        else if (value instanceof HitField)
+            return ((HitField)value).quotedContent(false);
+        else if (value instanceof StructuredData || value instanceof XMLString || value instanceof JSONString)
+            return value.toString();
+        else
+            return XML.xmlEscape(value.toString(), false, '\u001f');
+    }
 
     public String toString() { return "tiled result template"; }
 

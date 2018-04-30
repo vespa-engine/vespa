@@ -391,6 +391,7 @@ public class HitField {
         return bareContent.toString();
     }
 
+    @Override
     public String toString() {
         return getContent();
     }

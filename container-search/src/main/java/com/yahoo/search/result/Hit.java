@@ -647,13 +647,14 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
-    // TODO: Deprecate
     /**
      * Returns a field of this hit XML escaped and without token
      * delimiters.
      *
+     * @deprecated do not use
      * @return a field of this hit, or null if the property is not set
      */
+    @Deprecated // TODO: Remove on Vespa 7
     public String getFieldXML(String key) {
         Object p = getField(key);
 
@@ -661,9 +662,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
             return null;
         } else if (p instanceof HitField) {
             return ((HitField)p).quotedContent(false);
-        } else if (p instanceof StructuredData) {
-            return p.toString();
-        } else if (p instanceof XMLString || p instanceof JSONString) {
+        } else if (p instanceof StructuredData || p instanceof XMLString || p instanceof JSONString) {
             return p.toString();
         } else {
             return XML.xmlEscape(p.toString(), false, '\u001f');
