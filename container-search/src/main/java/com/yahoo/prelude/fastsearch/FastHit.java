@@ -116,7 +116,7 @@ public class FastHit extends Hit {
      *
      * @return uri to the index.
      */
-    public URI getIndexUri() {
+    private URI getIndexUri() {
         if (indexUri != null) return indexUri;
 
         indexUri = new URI("index:" + getSourceNumber() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
@@ -249,22 +249,6 @@ public class FastHit extends Hit {
 
     void setCacheKey(CacheKey cacheKey) {
         this.cacheKey = cacheKey;
-    }
-
-    public static final class RawField {
-
-        private final boolean needXmlEscape;
-
-        private final byte[] contents;
-
-        public RawField(DocsumField fieldType, byte[] contents) {
-            needXmlEscape = ! (fieldType instanceof XMLField);
-            this.contents = contents;
-        }
-
-        public byte [] getUtf8() { return contents; }
-        public boolean needXmlEscape() { return needXmlEscape; }
-
     }
 
 }
