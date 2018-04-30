@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,11 +37,12 @@ public class HostHandlerTest {
     private HostHandler hostHandler;
 
     @Before
-    public void setup() throws Exception {
-        TestTenantBuilder testBuilder = new TestTenantBuilder();
-        testBuilder.createTenant(mytenant).withReloadHandler(new MockReloadHandler());
-
-        tenantRepository = testBuilder.createTenants();
+    public void setup() {
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantBuilder tb = TenantBuilder.create(componentRegistry, mytenant)
+                .withReloadHandler(new MockReloadHandler());
+        tenantRepository.addTenant(tb);
         handler = createHostHandler();
     }
 

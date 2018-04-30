@@ -106,7 +106,7 @@ public class DeployTester {
                                                                           provisioner);
         try {
             this.testApp = new File(appPath);
-            this.tenantRepository = new TenantRepository(componentRegistry, Collections.emptySet());
+            this.tenantRepository = new TenantRepository(componentRegistry);
             tenantRepository.addTenant(tenantName);
         }
         catch (Exception e) {

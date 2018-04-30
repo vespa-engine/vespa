@@ -35,6 +35,7 @@ import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -80,11 +81,17 @@ public class ApplicationHandlerTest {
 
     @Before
     public void setup() {
-        TestTenantBuilder testBuilder = new TestTenantBuilder();
-        testBuilder.createTenant(mytenantName).withReloadHandler(new MockReloadHandler());
-        testBuilder.createTenant(foobar).withReloadHandler(new MockReloadHandler());
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+        tenantRepository = new TenantRepository(componentRegistry, false);
 
-        tenantRepository = testBuilder.createTenants();
+        TenantBuilder tenantBuilder1 = TenantBuilder.create(componentRegistry, mytenantName)
+                .withReloadHandler(new MockReloadHandler());
+        tenantRepository.addTenant(tenantBuilder1);
+
+        TenantBuilder tenantBuilder2 = TenantBuilder.create(componentRegistry, foobar)
+                .withReloadHandler(new MockReloadHandler());
+        tenantRepository.addTenant(tenantBuilder2);
+
         provisioner = new SessionHandlerTest.MockProvisioner();
         mockHandler = createMockApplicationHandler(
                 provisioner,

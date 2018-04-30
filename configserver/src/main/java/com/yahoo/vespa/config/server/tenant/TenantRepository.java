@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -70,16 +71,27 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
     private final MetricUpdater metricUpdater;
     private final ExecutorService pathChildrenExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
-    private final Curator.DirectoryCache directoryCache;
+    private final Optional<Curator.DirectoryCache> directoryCache;
 
 
     /**
-     * New instance from the tenants in the given component registry's ZooKeeper data.
+     * Creates a new tenant repository
      * 
      * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      */
     @Inject
     public TenantRepository(GlobalComponentRegistry globalComponentRegistry) {
+        this(globalComponentRegistry, true);
+    }
+
+    /**
+     * Creates a new tenant repository
+     *
+     * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
+     * @param useZooKeeperWatchForTenantChanges set to false for tests where you want to control adding and deleting
+     *                                          tenants yourself
+     */
+    public TenantRepository(GlobalComponentRegistry globalComponentRegistry, boolean useZooKeeperWatchForTenantChanges) {
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
@@ -90,9 +102,13 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
         createSystemTenants(globalComponentRegistry.getConfigserverConfig());
         curator.create(vespaPath);
 
-        this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
-        directoryCache.start();
-        directoryCache.addListener(this);
+        if (useZooKeeperWatchForTenantChanges) {
+            this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor));
+            this.directoryCache.get().start();
+            this.directoryCache.get().addListener(this);
+        } else {
+            this.directoryCache = Optional.empty();
+        }
         log.log(LogLevel.DEBUG, "Creating all tenants");
         createTenants();
         notifyTenantsLoaded();
@@ -103,42 +119,20 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
                                                                   TimeUnit.SECONDS);
     }
 
-    /**
-     * New instance containing the given tenants. Creates no system tenants and no Zookeeper watches. For testing only.
-     * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry} instance
-     * @param tenants a collection of {@link Tenant}s
-     */
-    // TODO: Get rid of the second argument and let callers use addTenant() instead
-    public TenantRepository(GlobalComponentRegistry globalComponentRegistry, Collection<Tenant> tenants) {
-        this.globalComponentRegistry = globalComponentRegistry;
-        this.curator = globalComponentRegistry.getCurator();
-        metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
-        this.tenantListeners.add(globalComponentRegistry.getTenantListener());
-        curator.create(tenantsPath);
-        this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
-        this.tenants.putAll(addTenants(tenants));
-    }
-
     private void notifyTenantsLoaded() {
         for (TenantListener tenantListener : tenantListeners) {
             tenantListener.onTenantsLoaded();
         }
     }
 
-    // Pre-condition: tenants path needs to exist in zk
-    private LinkedHashMap<TenantName, Tenant> addTenants(Collection<Tenant> newTenants) {
-        LinkedHashMap<TenantName, Tenant> tenants = new LinkedHashMap<>();
-        for (Tenant t : newTenants) {
-            tenants.put(t.getName(), t);
-        }
-        log.log(LogLevel.DEBUG, "TenantRepository at startup: " + tenants);
-        metricUpdater.setTenants(this.tenants.size());
-        return tenants;
-    }
-    
     public synchronized void addTenant(TenantName tenantName) {
-        writeTenantPath(tenantName);
-        createTenant(tenantName);
+        addTenant(TenantBuilder.create(globalComponentRegistry, tenantName));
+    }
+
+    // For testing
+    public synchronized void addTenant(TenantBuilder builder) {
+        writeTenantPath(builder.getTenantName());
+        createTenant(builder);
     }
 
     /**
@@ -186,11 +180,17 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
     }
 
     private void createTenant(TenantName tenantName) {
+        createTenant(TenantBuilder.create(globalComponentRegistry, tenantName));
+    }
+
+    // TODO: Fix exception handling and make method return tenant
+    private void createTenant(TenantBuilder builder) {
+        TenantName tenantName = builder.getTenantName();
         if (tenants.containsKey(tenantName)) return;
 
         try {
-            log.log(LogLevel.DEBUG, "Creating tenant '" + tenantName + "'");
-            Tenant tenant = TenantBuilder.create(globalComponentRegistry, tenantName).build();
+            log.log(LogLevel.INFO, "Creating tenant '" + tenantName + "'");
+            Tenant tenant = builder.build();
             notifyNewTenant(tenant);
             tenants.putIfAbsent(tenantName, tenant);
         } catch (Exception e) {
@@ -340,7 +340,7 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
     }
 
     public void close() {
-        directoryCache.close();
+        directoryCache.ifPresent(Curator.DirectoryCache::close);
         pathChildrenExecutor.shutdown();
         checkForRemovedApplicationsService.shutdown();
     }

@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
@@ -15,7 +15,7 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
-import com.yahoo.vespa.config.server.session.SessionFactory;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -40,7 +40,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author hmusum
@@ -48,8 +47,10 @@ import static org.junit.Assert.fail;
 public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     private static final TenantName tenant = TenantName.from("test");
-
     private static final HashMap<String, String> postHeaders = new HashMap<>();
+
+    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+    private final Clock clock = componentRegistry.getClock();
 
     private String pathPrefix = "/application/v2/session/";
     private String createdMessage = " created.\"";
@@ -58,15 +59,24 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public File testApp = new File("src/test/apps/app");
     private LocalSessionRepo localSessionRepo;
     private TenantApplications applicationRepo;
+    private TenantRepository tenantRepository;
+    private MockSessionFactory sessionFactory;
 
     static {
         postHeaders.put(ApplicationApiHandler.contentTypeHeader, ApplicationApiHandler.APPLICATION_X_GZIP);
     }
 
     @Before
-    public void setupRepo() throws Exception {
+    public void setupRepo() {
         applicationRepo = new MemoryTenantApplications();
         localSessionRepo = new LocalSessionRepo(Clock.systemUTC());
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        sessionFactory = new MockSessionFactory();
+        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenant)
+                .withSessionFactory(sessionFactory)
+                .withLocalSessionRepo(localSessionRepo)
+                .withApplicationRepo(applicationRepo);
+        tenantRepository.addTenant(tenantBuilder);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         createdMessage = " for tenant '" + tenant + "' created.\"";
         tenantMessage = ",\"tenant\":\"test\"";
@@ -98,20 +108,18 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public void require_that_application_name_is_given_from_parameter() throws IOException {
         Map<String, String> params = Collections.singletonMap("name", "ulfio");
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
-        MockSessionFactory factory = new MockSessionFactory();
-        createHandler(factory).handle(post(outFile, postHeaders, params));
-        assertTrue(factory.createCalled);
-        assertThat(factory.applicationName, is("ulfio"));
+        createHandler().handle(post(outFile, postHeaders, params));
+        assertTrue(sessionFactory.createCalled);
+        assertThat(sessionFactory.applicationName, is("ulfio"));
     }
 
     private void assertFromParameter(String expected, String from) throws IOException {
         HttpRequest request = post(Collections.singletonMap("from", from));
-        MockSessionFactory factory = new MockSessionFactory();
-        factory.applicationPackage = testApp;
-        HttpResponse response = createHandler(factory).handle(request);
+        sessionFactory.applicationPackage = testApp;
+        HttpResponse response = createHandler().handle(request);
         assertNotNull(response);
         assertThat(response.getStatus(), is(OK));
-        assertTrue(factory.createFromCalled);
+        assertTrue(sessionFactory.createFromCalled);
         assertThat(SessionHandlerTest.getRenderedString(response),
                    is("{\"log\":[]" + tenantMessage + ",\"session-id\":\"" + expected + "\",\"prepared\":\"http://" + hostname + ":" + port + pathPrefix +
                               expected + "/prepared\",\"content\":\"http://" + hostname + ":" + port + pathPrefix +
@@ -139,9 +147,8 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_session_factory_is_called() throws IOException {
-        MockSessionFactory sessionFactory = new MockSessionFactory();
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
-        createHandler(sessionFactory).handle(post(outFile));
+        createHandler().handle(post(outFile));
         assertTrue(sessionFactory.createCalled);
     }
 
@@ -155,10 +162,9 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_internal_error_when_exception() throws IOException {
-        MockSessionFactory factory = new MockSessionFactory();
-        factory.doThrow = true;
+        sessionFactory.doThrow = true;
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
-        HttpResponse response = createHandler(factory).handle(post(outFile));
+        HttpResponse response = createHandler().handle(post(outFile));
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, INTERNAL_SERVER_ERROR,
                                                             HttpErrorResponse.errorCodes.INTERNAL_SERVER_ERROR,
                                                             "foo");
@@ -166,9 +172,8 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_handler_unpacks_application() throws IOException {
-        MockSessionFactory sessionFactory = new MockSessionFactory();
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
-        createHandler(sessionFactory).handle(post(outFile));
+        createHandler().handle(post(outFile));
         assertTrue(sessionFactory.createCalled);
         final File applicationPackage = sessionFactory.applicationPackage;
         assertNotNull(applicationPackage);
@@ -181,7 +186,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Test
     public void require_that_session_is_stored_in_repo() throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
-        createHandler(new MockSessionFactory()).handle(post(outFile));
+        createHandler().handle(post(outFile));
         assertNotNull(localSessionRepo.getSession(0l));
     }
 
@@ -217,37 +222,13 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     }
 
     private SessionCreateHandler createHandler() {
-        try {
-            return createHandler(new MockSessionFactory());
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
-        return null;
-    }
-
-    private SessionCreateHandler createHandler(SessionFactory sessionFactory) {
-        try {
-            TestTenantBuilder testBuilder = new TestTenantBuilder();
-            testBuilder.createTenant(tenant).withSessionFactory(sessionFactory)
-                                            .withLocalSessionRepo(localSessionRepo)
-                                            .withApplicationRepo(applicationRepo);
-            return createHandler(testBuilder.createTenants());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private SessionCreateHandler createHandler(TenantRepository tenantRepository) throws Exception {
-        TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
-        final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         return new SessionCreateHandler(
                 SessionCreateHandler.testOnlyContext(),
-                new ApplicationRepository(testTenantBuilder.createTenants(),
+                new ApplicationRepository(tenantRepository,
                                           new SessionHandlerTest.MockProvisioner(),
-                                          Clock.systemUTC()),
-                tenantRepository, configserverConfig);
+                                          clock),
+                tenantRepository,
+                componentRegistry.getConfigserverConfig());
 
     }
 

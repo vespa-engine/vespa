@@ -12,7 +12,9 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,17 +42,15 @@ public class HttpGetConfigHandlerTest {
     private HttpGetConfigHandler handler;
 
     @Before
-    public void setUp() throws Exception {        
+    public void setUp() {
         mockRequestHandler = new MockRequestHandler();
         mockRequestHandler.setAllConfigs(new HashSet<ConfigKey<?>>() {{ 
             add(new ConfigKey<>("bar", "myid", "foo"));
-            }} );        
-        TestTenantBuilder tb = new TestTenantBuilder();
-        tb.createTenant(tenant).withRequestHandler(mockRequestHandler).build();
-        TenantRepository tenantRepository = tb.createTenants();
-        handler = new HttpGetConfigHandler(
-                HttpGetConfigHandler.testOnlyContext(),
-                tenantRepository);
+            }} );
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenant).withRequestHandler(mockRequestHandler));
+        handler = new HttpGetConfigHandler(HttpGetConfigHandler.testOnlyContext(), tenantRepository);
     }
 
     @Test

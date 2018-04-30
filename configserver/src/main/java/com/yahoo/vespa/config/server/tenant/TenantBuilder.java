@@ -197,12 +197,9 @@ public class TenantBuilder {
         }
     }
 
-
-    public LocalSessionRepo getLocalSessionRepo() {
-        return localSessionRepo;
-    }
-
     public TenantApplications getApplicationRepo() {
         return applicationRepo;
     }
+
+    public TenantName getTenantName() { return tenant; }
 }

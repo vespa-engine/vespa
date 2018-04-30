@@ -39,9 +39,9 @@ import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionContext;
-import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
@@ -86,6 +86,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private MockProvisioner hostProvisioner;
     private VespaModelFactory modelFactory;
     private TestComponentRegistry componentRegistry;
+    private TenantRepository tenantRepository;
+    private SessionActiveHandler handler;
 
     @Before
     public void setup() {
@@ -102,6 +104,14 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                 .configCurator(configCurator)
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
                 .build();
+        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
+                .withSessionFactory(new MockSessionFactory())
+                .withLocalSessionRepo(localRepo)
+                .withRemoteSessionRepo(remoteSessionRepo)
+                .withApplicationRepo(applicationRepo);
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(tenantBuilder);
+        handler = createHandler();
     }
 
     @Test
@@ -119,7 +129,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     @Test
     public void testUnknownSession() {
-        HttpResponse response = createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 9999L, "?timeout=1.0"));
+        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 9999L, "?timeout=1.0"));
         assertEquals(response.getStatus(), NOT_FOUND);
     }
 
@@ -152,7 +162,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     @Test
     public void testAlreadyActivatedSession() throws Exception {
         activateAndAssertOK(1, 0);
-        HttpResponse response = createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1l));
+        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1l));
         String message = getRenderedString(response);
         assertThat(message, response.getStatus(), Is.is(BAD_REQUEST));
         assertThat(message, containsString("Session 1 is already active"));
@@ -245,7 +255,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     }
 
     private void testUnsupportedMethod(com.yahoo.container.jdisc.HttpRequest request) throws Exception {
-        HttpResponse response = createHandler().handle(request);
+        HttpResponse response = handler.handle(request);
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response,
                                                             METHOD_NOT_ALLOWED,
                                                             HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
@@ -256,7 +266,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
         private long sessionId;
         private RemoteSession session;
-        private SessionHandler handler;
         private HttpResponse actResponse;
         private Session.Status initialStatus;
         private DeployData deployData;
@@ -303,7 +312,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
             session = createRemoteSession(sessionId, initialStatus, zkClient, clock);
             addLocalSession(sessionId, deployData, zkClient);
             metaData = localRepo.getSession(sessionId).getMetaData();
-            handler = createHandler();
             actResponse = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             return this;
         }
@@ -342,20 +350,11 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         zkc.writeApplicationId(id);
     }
 
-    private SessionHandler createHandler() {
-        final SessionFactory sessionFactory = new MockSessionFactory();
-        TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
-        testTenantBuilder.createTenant(tenantName)
-                .withSessionFactory(sessionFactory)
-                .withLocalSessionRepo(localRepo)
-                .withRemoteSessionRepo(remoteSessionRepo)
-                .withApplicationRepo(applicationRepo)
-                .build();
-        return new SessionActiveHandler(
-                SessionActiveHandler.testOnlyContext(),
-                new ApplicationRepository(testTenantBuilder.createTenants(), hostProvisioner, clock),
-                testTenantBuilder.createTenants(),
-                Zone.defaultZone());
+    private SessionActiveHandler createHandler() {
+        return new SessionActiveHandler(SessionActiveHandler.testOnlyContext(),
+                                        new ApplicationRepository(tenantRepository, hostProvisioner, clock),
+                                        tenantRepository,
+                                        Zone.defaultZone());
     }
 
 }

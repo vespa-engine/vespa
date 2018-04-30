@@ -6,12 +6,15 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,39 +27,46 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
+    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+    private final Clock clock = componentRegistry.getClock();
 
     private ApplicationHandler handler;
-    private TenantName tenant1 = TenantName.from("mofet");
-    private TenantName tenant2 = TenantName.from("bla");
+    private TenantName tenantName1 = TenantName.from("mofet");
+    private TenantName tenantName2 = TenantName.from("bla");
     private String baseServer = "http://foo:1337";
 
     private ApplicationId idTenant1 = new ApplicationId.Builder()
-                                      .tenant(tenant1)
+                                      .tenant(tenantName1)
                                       .applicationName("foo").instanceName("quux").build();
     private ApplicationId idTenant2 = new ApplicationId.Builder()
-                                      .tenant(tenant2)
+                                      .tenant(tenantName2)
                                       .applicationName("foo").instanceName("quux").build();
     private MockSession session2;
 
     @Before
-    public void setupHandler() throws Exception {
-        TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
-        testTenantBuilder.createTenant(tenant1);
-        testTenantBuilder.createTenant(tenant2);
+    public void setupHandler() {
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenantName1));
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenantName2));
+
         session2 = new MockSession(2l, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
-        testTenantBuilder.tenants().get(tenant1).getLocalSessionRepo().addSession(session2);
-        testTenantBuilder.tenants().get(tenant2).getLocalSessionRepo().addSession(new MockSession(3l, FilesApplicationPackage.fromFile(new File("src/test/apps/content2"))));
-        testTenantBuilder.tenants().get(tenant1).getApplicationRepo().createPutApplicationTransaction(idTenant1, 2l).commit();
-        testTenantBuilder.tenants().get(tenant2).getApplicationRepo().createPutApplicationTransaction(idTenant2, 3l).commit();
+        Tenant tenant1 = tenantRepository.getTenant(tenantName1);
+        tenant1.getLocalSessionRepo().addSession(session2);
+        tenant1.getApplicationRepo().createPutApplicationTransaction(idTenant1, 2l).commit();
+
+        MockSession session3 = new MockSession(3l, FilesApplicationPackage.fromFile(new File("src/test/apps/content2")));
+        Tenant tenant2 = tenantRepository.getTenant(tenantName2);
+        tenant2.getLocalSessionRepo().addSession(session3);
+        tenant2.getApplicationRepo().createPutApplicationTransaction(idTenant2, 3l).commit();
+
         handler = new ApplicationHandler(ApplicationHandler.testOnlyContext(),
                                          Zone.defaultZone(),
-                                         new ApplicationRepository(testTenantBuilder.createTenants(),
+                                         new ApplicationRepository(tenantRepository,
                                                                    new MockProvisioner(),
-                                                                   Clock.systemUTC()));
+                                                                   clock));
         pathPrefix = createPath(idTenant1, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
     }
@@ -76,7 +86,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     }
 
     @Test
-    public void require_that_nonexistant_application_returns_not_found() throws IOException {
+    public void require_that_nonexistant_application_returns_not_found() {
         assertNotFound(HttpRequest.createTestRequest(baseServer + createPath(new ApplicationId.Builder()
                                                                              .tenant("tenant")
                                                                              .applicationName("notexist").instanceName("baz").build(), Zone.defaultZone()),
