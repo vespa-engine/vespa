@@ -173,13 +173,6 @@ PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace) const
     return _handlers.getHandlerSnapshot(bucketSpace);
 }
 
-PersistenceEngine::HandlerSnapshot::UP
-PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace, const DocumentId &id) const
-{
-    std::lock_guard<std::mutex> guard(_lock);
-    return _handlers.getHandlerSnapshot(bucketSpace, id);
-}
-
 PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter,
                                      ssize_t defaultSerializedSize, bool ignoreMaxBytes)
     : AbstractPersistenceProvider(),
@@ -356,17 +349,17 @@ PersistenceEngine::RemoveResult
 PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
+    assert(did.hasDocType());
+    DocTypeName docType(did.getDocType());
     LOG(spam, "remove(%s, %" PRIu64 ", \"%s\")", b.toString().c_str(),
         static_cast<uint64_t>(t.getValue()), did.toString().c_str());
-    HandlerSnapshot::UP snap = getHandlerSnapshot(b.getBucketSpace(), did);
-    if (!snap) {
-        return RemoveResult(false);
+    IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
+    if (!handler) {
+        return RemoveResult(Result::PERMANENT_ERROR,
+                            make_string("No handler for document type '%s'", docType.toString().c_str()));
     }
-    TransportLatch latch(snap->size());
-    for (; snap->handlers().valid(); snap->handlers().next()) {
-        IPersistenceHandler *handler = snap->handlers().get();
-        handler->handleRemove(feedtoken::make(latch), b, t, did);
-    }
+    TransportLatch latch(1);
+    handler->handleRemove(feedtoken::make(latch), b, t, did);
     latch.await();
     return latch.getRemoveResult();
 }

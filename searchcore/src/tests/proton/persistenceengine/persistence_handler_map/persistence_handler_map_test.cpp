@@ -127,16 +127,6 @@ TEST_F("require that handler snapshot can be retrieved for given bucket space", 
     TEST_DO(assertSnapshot({}, f.map.getHandlerSnapshot(space_null)));
 }
 
-TEST_F("require that handler snapshot can be retrieved for given document type (in bucket space)", Fixture)
-{
-    // Note: Document id doesn't contain document type -> all handlers returned
-    TEST_DO(assertSnapshot({handler_a, handler_b},
-                           f.map.getHandlerSnapshot(space_1, DocumentId("userdoc:namespace:1234:namespace"))));
-    TEST_DO(assertSnapshot({handler_a},
-                           f.map.getHandlerSnapshot(space_1, DocumentId("id:namespace:a::doc1"))));
-    EXPECT_TRUE(f.map.getHandlerSnapshot(space_1, DocumentId("id:namespace:c::doc2")).get() == nullptr);
-}
-
 TEST_MAIN()
 {
     TEST_RUN_ALL();

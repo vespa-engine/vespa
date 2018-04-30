@@ -94,18 +94,4 @@ public:
 
 }
 
-HandlerSnapshot::UP
-PersistenceHandlerMap::getHandlerSnapshot(document::BucketSpace bucketSpace,
-                                          const document::DocumentId &id) const
-{
-    if (!id.hasDocType()) {
-        return getHandlerSnapshot(bucketSpace);
-    }
-    IPersistenceHandler::SP handler = getHandler(bucketSpace, DocTypeName(id.getDocType()));
-    if (!handler.get()) {
-        return HandlerSnapshot::UP();
-    }
-    return std::make_unique<HandlerSnapshot>(SequenceOfOne::make(handler.get()), 1);
-}
-
 }
