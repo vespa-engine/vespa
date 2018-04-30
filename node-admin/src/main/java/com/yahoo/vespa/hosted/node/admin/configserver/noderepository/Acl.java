@@ -51,7 +51,7 @@ public class Acl {
         rules.add("-A INPUT -p " + ipVersion.icmpProtocol() + " -j ACCEPT");
 
         // Allow trusted ports if any
-        String commaSeparatedPorts = trustedPorts.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","));
+        String commaSeparatedPorts = trustedPorts.stream().map(i -> Integer.toString(i)).sorted().collect(Collectors.joining(","));
         if (!commaSeparatedPorts.isEmpty())
             rules.add("-A INPUT -p tcp -m multiport --dports " + commaSeparatedPorts + " -j ACCEPT");
 
@@ -59,6 +59,7 @@ public class Acl {
         trustedNodes.stream()
                 .filter(ipVersion::match)
                 .map(ipAddress -> "-A INPUT -s " + InetAddresses.toAddrString(ipAddress) + ipVersion.singleHostCidr() + " -j ACCEPT")
+                .sorted()
                 .forEach(rules::add);
 
         // We reject instead of dropping to give us an easier time to figure out potential network issues

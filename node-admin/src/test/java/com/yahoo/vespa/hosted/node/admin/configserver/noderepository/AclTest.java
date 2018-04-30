@@ -69,6 +69,16 @@ public class AclTest {
                         "-A INPUT -j REJECT --reject-with icmp6-port-unreachable", listRulesIpv6);
     }
 
+    @Test
+    public void ipv6_rules_stable() {
+        Acl aclCommonDifferentOrder = new Acl(
+                createPortList(453, 1234),
+                createTrustedNodes("fe80::2", "192.1.2.2", "fb00::1", "fe80::3"));
+
+        for (IPVersion ipVersion: IPVersion.values()) {
+            Assert.assertEquals(aclCommon.toRules(ipVersion), aclCommonDifferentOrder.toRules(ipVersion));
+        }
+    }
 
     private List<Integer> createPortList(Integer... ports) {
         return Arrays.asList(ports);
