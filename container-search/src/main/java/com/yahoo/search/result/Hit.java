@@ -549,13 +549,19 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *
      * Used to order equal relevant hit by add order. -1 if this hit
      * has never been added to a result.
+     *
+     * @deprecated do not use
      */
+    @Deprecated // TODO: Make package private on Vespa 7
     public int getAddNumber() { return addNumber; }
 
     /**
      * Sets the add number, assigned when adding the hit to a Result,
-     * used to order equal relevant hit by add order
+     * used to order equal relevant hit by add order.
+     *
+     * @deprecated do not use
      */
+    @Deprecated // TODO: Make package private on Vespa 7
     public void setAddNumber(int addNumber) { this.addNumber = addNumber; }
 
     /**
@@ -671,8 +677,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     /**
      * @deprecated do not use
-     * 
-     * @return a field without bolding markup
      */
     @Deprecated // TODO: Remove on Vespa 7
     public String getUnboldedField(String key, boolean escape) {
@@ -726,11 +730,11 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /**
-     * For vespa internal use only.
-     * This is only for the ones specially interested. It will replace the backing
-     * for filled.
+     * Internal - do not use
+     *
      * @param filled the backing set
      */
+    // TODO: Make package private on Vespa 7
     protected final void setFilledInternal(Set<String> filled) {
         this.filled = filled;
         unmodifiableFilled = (filled != null) ? Collections.unmodifiableSet(filled) : null;
@@ -743,15 +747,16 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *
      * @return the set of filled summaries.
      */
+    // TODO: Make package private on Vespa 7
     protected final Set<String> getFilledInternal() {
         return filled;
     }
 
-    private Map<String,Object> getFieldMap() {
+    private Map<String, Object> getFieldMap() {
         return getFieldMap(16);
     }
 
-    private Map<String,Object> getFieldMap(int minSize) {
+    private Map<String, Object> getFieldMap(int minSize) {
         if (fields == null) {
             // Compensate for loadfactor and then some, rounded up....
             fields = new LinkedHashMap<>(2*minSize);
@@ -759,7 +764,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return fields;
     }
 
-    private Map<String,Object> getUnmodifiableFieldMap() {
+    private Map<String, Object> getUnmodifiableFieldMap() {
         if (unmodifiableFieldMap == null) {
             if (fields == null) {
                 return Collections.emptyMap();
@@ -770,6 +775,10 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return unmodifiableFieldMap;
     }
 
+    /**
+     * @deprecated do not use
+     */
+    @Deprecated // TODO: Remove on Vespa 7
     public static String stripCharacter(char strip, String toStripFrom) {
         StringBuilder builder = null;
 
@@ -796,6 +805,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
+    /** Releases the resources held by this, making it irreversibly unusable */
     protected void close() {
         query = null;
         fields = null;
