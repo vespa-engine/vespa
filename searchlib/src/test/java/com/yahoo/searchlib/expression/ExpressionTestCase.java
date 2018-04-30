@@ -303,7 +303,7 @@ public class ExpressionTestCase extends TestCase {
         assertEquals(a.getInteger(), 7);
         assertEquals(a.getFloat(), 7.3);
         assertEquals(a.getString(), "7.3");
-        assertEquals(a.getNumber(), new Double(7.3));
+        assertEquals(a.getNumber(), Double.valueOf(7.3));
         byte[] raw = a.getRaw();
         assertEquals(raw.length, 8);
         assertResultNode(a);
@@ -315,7 +315,7 @@ public class ExpressionTestCase extends TestCase {
         assertEquals(b.getInteger(), 8);
         assertEquals(b.getFloat(), 7.5);
         assertEquals(b.getString(), "7.5");
-        assertEquals(b.getNumber(), new Double(7.5));
+        assertEquals(b.getNumber(), Double.valueOf(7.5));
     }
 
     public void testGetDocIdNamespaceSpecificFunctionNode() {

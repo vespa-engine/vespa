@@ -136,7 +136,7 @@ public class ConfigDefinitionBuilder {
 
     static void addNode(ConfigDefinition def, LeafCNode.DoubleLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
-            def.addDoubleDef(leaf.getName(), new Double(leaf.getDefaultValue().getValue()));
+            def.addDoubleDef(leaf.getName(), Double.valueOf(leaf.getDefaultValue().getValue()));
         } else {
             def.addDoubleDef(leaf.getName());
         }

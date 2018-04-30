@@ -1371,7 +1371,7 @@ final class ProgramParser {
             case yqlplusParser.INT:
                 return Integer.valueOf(text);
             case yqlplusParser.FLOAT:
-                return new Double(text);
+                return Double.valueOf(text);
             case yqlplusParser.STRING:
                 return StringUnescaper.unquote(text);
             case yqlplusParser.TRUE:

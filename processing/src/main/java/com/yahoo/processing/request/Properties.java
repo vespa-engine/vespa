@@ -550,7 +550,7 @@ public class Properties implements Cloneable {
             if (stringValue.isEmpty())
                 return defaultValue;
 
-            return new Double(value.toString());
+            return Double.valueOf(value.toString());
         } catch (IllegalArgumentException e) {
             throw new NumberFormatException("Not a valid double");
         }

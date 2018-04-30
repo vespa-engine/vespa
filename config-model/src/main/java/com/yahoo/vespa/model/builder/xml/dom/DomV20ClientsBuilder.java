@@ -275,10 +275,10 @@ public class DomV20ClientsBuilder {
                         retryenabled = Boolean.valueOf(childval);
                         break;
                     case "retrydelay":
-                        retrydelay = new Double(childval);
+                        retrydelay = Double.valueOf(childval);
                         break;
                     case "timeout":
-                        timeout = new Double(childval);
+                        timeout = Double.valueOf(childval);
                         break;
                     case "route":
                         route = childval;

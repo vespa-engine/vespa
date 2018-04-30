@@ -157,7 +157,7 @@ public class IntItem extends TermItem {
         catch (NumberFormatException e) {
             return new BigInteger(numberString);
         }
-        return new Double(numberString);
+        return Double.valueOf(numberString);
     }
 
     /** Sets the number expression of this - a number or range */
