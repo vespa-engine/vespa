@@ -18,7 +18,6 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -129,8 +128,8 @@ public class TenantRepositoryTest extends TestWithCurator {
     }
     
     @Test
-    public void testTenantsChanged() throws Exception {
-        tenantRepository = new TenantRepository(globalComponentRegistry, new ArrayList<>());
+    public void testTenantsChanged() {
+        tenantRepository = new TenantRepository(globalComponentRegistry);
         tenantRepository.addTenant(tenant2);
         tenantRepository.createTenants();
         Set<TenantName> allTenants = tenantRepository.getAllTenantNames();

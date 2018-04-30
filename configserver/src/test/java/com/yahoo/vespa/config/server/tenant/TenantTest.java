@@ -3,10 +3,9 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.google.common.testing.EqualsTester;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
-import com.yahoo.vespa.config.server.http.v2.TestTenantBuilder;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,6 +18,7 @@ import static org.junit.Assert.*;
  * @since 5.3
  */
 public class TenantTest extends TestWithCurator {
+    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
 
     private Tenant t1;
     private Tenant t2;
@@ -26,15 +26,20 @@ public class TenantTest extends TestWithCurator {
     private Tenant t4;
 
     @Before
-    public void setupTenant() throws Exception {
+    public void setupTenant() {
         t1 = createTenant("foo");
         t2 = createTenant("foo");
         t3 = createTenant("bar");
         t4 = createTenant("baz");
     }
 
-    private Tenant createTenant(String name) throws Exception {
-        return new TestTenantBuilder().createTenant(TenantName.from(name)).build();
+    private Tenant createTenant(String name) {
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantName tenantName = TenantName.from(name);
+        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
+                .withApplicationRepo(new MemoryTenantApplications());
+        tenantRepository.addTenant(tenantBuilder);
+        return tenantRepository.getTenant(tenantName);
     }
 
     @Test

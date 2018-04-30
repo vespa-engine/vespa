@@ -6,8 +6,10 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.Response;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Test;
 import org.junit.Before;
@@ -21,27 +23,27 @@ import static org.junit.Assert.assertThat;
 import static com.yahoo.jdisc.http.HttpRequest.Method.*;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ListApplicationsHandlerTest {
+    private static final TenantName mytenant = TenantName.from("mytenant");
+    private static final TenantName foobar = TenantName.from("foobar");
+
+    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+
     private TenantApplications applicationRepo, applicationRepo2;
     private ListApplicationsHandler handler;
 
     @Before
-    public void setup() throws Exception {
-        TestTenantBuilder testBuilder = new TestTenantBuilder();
-        TenantName mytenant = TenantName.from("mytenant");
-        TenantName foobar = TenantName.from("foobar");
-        testBuilder.createTenant(mytenant);
-        testBuilder.createTenant(foobar);
-        applicationRepo = testBuilder.tenants().get(mytenant).getApplicationRepo();
-        applicationRepo2 = testBuilder.tenants().get(foobar).getApplicationRepo();
-        TenantRepository tenantRepository = testBuilder.createTenants();
-        handler = new ListApplicationsHandler(
-                ListApplicationsHandler.testOnlyContext(),
-                tenantRepository,
-                new Zone(Environment.dev, RegionName.from("us-east")));
+    public void setup() {
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, mytenant));
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
+        applicationRepo = tenantRepository.getTenant(mytenant).getApplicationRepo();
+        applicationRepo2 = tenantRepository.getTenant(foobar).getApplicationRepo();
+        handler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
+                                              tenantRepository,
+                                              new Zone(Environment.dev, RegionName.from("us-east")));
     }
 
     @Test

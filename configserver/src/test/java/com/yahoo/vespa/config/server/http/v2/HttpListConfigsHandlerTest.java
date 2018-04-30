@@ -6,7 +6,9 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -26,30 +28,33 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.*;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class HttpListConfigsHandlerTest {
-    
+
+    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+
     private MockRequestHandler mockRequestHandler;
     private HttpListConfigsHandler handler;
     private HttpListNamedConfigsHandler namedHandler;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockRequestHandler = new MockRequestHandler();
         mockRequestHandler.setAllConfigs(new HashSet<ConfigKey<?>>() {{ 
             add(new ConfigKey<>("bar", "conf/id", "foo"));
             }} );
-        TestTenantBuilder tb = new TestTenantBuilder();
-        tb.createTenant(TenantName.from("mytenant")).withRequestHandler(mockRequestHandler).build();
-        TenantRepository tenantRepository = tb.createTenants();
-        handler = new HttpListConfigsHandler(
-                HttpListConfigsHandler.testOnlyContext(),
-                tenantRepository, Zone.defaultZone());
-        namedHandler = new HttpListNamedConfigsHandler(
-                HttpListConfigsHandler.testOnlyContext(),
-                tenantRepository, Zone.defaultZone());
+        TenantName tenantName = TenantName.from("mytenant");
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
+                .withRequestHandler(mockRequestHandler);
+        tenantRepository.addTenant(tenantBuilder);
+        handler = new HttpListConfigsHandler(HttpListConfigsHandler.testOnlyContext(),
+                                             tenantRepository,
+                                             Zone.defaultZone());
+        namedHandler = new HttpListNamedConfigsHandler(HttpListConfigsHandler.testOnlyContext(),
+                                                       tenantRepository,
+                                                       Zone.defaultZone());
     }
     
     @Test

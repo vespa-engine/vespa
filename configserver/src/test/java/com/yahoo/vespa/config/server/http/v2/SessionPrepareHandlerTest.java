@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -13,7 +12,6 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.path.Path;
 import com.yahoo.slime.JsonDecoder;
@@ -23,13 +21,14 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.MockRefeedAction;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.http.*;
 import com.yahoo.vespa.config.server.session.*;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
@@ -57,30 +56,36 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
- *
- * @since 5.1.14
  */
 public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private static final TenantName tenant = TenantName.from("test");
-    private TestTenantBuilder builder;
+
+    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+    private final Clock clock = componentRegistry.getClock();
 
     private Curator curator;
-    private SessionZooKeeperClient zooKeeperClient;
     private LocalSessionRepo localRepo;
-    private TenantApplications applicationRepo;
 
     private String preparedMessage = " prepared.\"}";
     private String tenantMessage = "";
+    private RemoteSessionRepo remoteSessionRepo;
+    private TenantRepository tenantRepository;
 
     @Before
-    public void setupRepo() throws Exception {
-        applicationRepo = new MemoryTenantApplications();
+    public void setupRepo() {
         curator = new MockCurator();
-        localRepo = new LocalSessionRepo(Clock.systemUTC());
+        localRepo = new LocalSessionRepo(clock);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
         tenantMessage = ",\"tenant\":\"" + tenant + "\"";
-        builder = new TestTenantBuilder();
+        tenantRepository = new TenantRepository(componentRegistry, false);
+        remoteSessionRepo = new RemoteSessionRepo(tenant);
+        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenant)
+                .withSessionFactory(new MockSessionFactory())
+                .withLocalSessionRepo(localRepo)
+                .withRemoteSessionRepo(remoteSessionRepo)
+                .withApplicationRepo(new MemoryTenantApplications());
+        tenantRepository.addTenant(tenantBuilder);
     }
 
     @Test
@@ -144,30 +149,31 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     /**
-     * A mock remote session repo based on contents of local repo
+     * A mock remote session repo based on contents of local repo. Only works when there is just one session in local repo
      */
-    private RemoteSessionRepo fromLocalSessionRepo(LocalSessionRepo localRepo, Clock clock) {
-        RemoteSessionRepo remoteRepo = new RemoteSessionRepo(tenant);
+    // TODO: Fix this mess
+    private SessionZooKeeperClient fromLocalSessionRepo(LocalSessionRepo localRepo) {
+        SessionZooKeeperClient zooKeeperClient = null;
         for (LocalSession ls : localRepo.listSessions()) {
-
             zooKeeperClient = new MockSessionZKClient(curator, tenant, ls.getSessionId());
             if (ls.getStatus()!=null) zooKeeperClient.writeStatus(ls.getStatus());
             RemoteSession remSess = new RemoteSession(tenant, ls.getSessionId(),
                                                       new TestComponentRegistry.Builder().curator(curator).build(),
                                                       zooKeeperClient,
                                                       clock);
-            remoteRepo.addSession(remSess);
+            remoteSessionRepo.addSession(remSess);
         }
-        return remoteRepo;
+        return zooKeeperClient;
     }
 
     @Test
     public void require_get_response_activate_url_on_ok() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
+        SessionHandler sessHandler = createHandler();
         sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         session.setStatus(Session.Status.PREPARE);
+        SessionZooKeeperClient zooKeeperClient = fromLocalSessionRepo(localRepo);
         zooKeeperClient.writeStatus(Session.Status.PREPARE);
         HttpResponse getResponse = sessHandler.handle(
                 SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
@@ -179,8 +185,9 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_get_response_error_on_not_prepared() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
+        SessionHandler sessHandler = createHandler();
         session.setStatus(Session.Status.NEW);
+        SessionZooKeeperClient zooKeeperClient = fromLocalSessionRepo(localRepo);
         zooKeeperClient.writeStatus(Session.Status.NEW);
         HttpResponse getResponse = sessHandler.handle(
                 SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
@@ -201,7 +208,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
         session.setStatus(Session.Status.ACTIVATE);
-        SessionHandler sessionHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
+        SessionHandler sessionHandler = createHandler();
         HttpResponse putResponse = sessionHandler.handle(
                 SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         assertHttpStatusCodeErrorCodeAndMessage(putResponse, BAD_REQUEST,
@@ -213,7 +220,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_get_response_error_when_session_id_does_not_exist() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
+        SessionHandler sessHandler = createHandler();
         HttpResponse getResponse = sessHandler.handle(
                 SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 9999L));
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, NOT_FOUND,
@@ -235,12 +242,15 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
-        // Need different repos for 'default' tenant as opposed to the 'test' tenant
-        LocalSessionRepo localRepoDefault = new LocalSessionRepo(Clock.systemUTC());
-        final TenantName defaultTenant = TenantName.defaultName();
-        addTenant(defaultTenant, localRepoDefault, new RemoteSessionRepo(tenant), new MockSessionFactory());
-        addTestTenant();
-        final SessionHandler handler = createHandler(builder);
+        // Need different repo for 'test2' tenant
+        LocalSessionRepo localRepoDefault = new LocalSessionRepo(clock);
+        final TenantName defaultTenant = TenantName.from("test2");
+        TenantBuilder defaultTenantBuilder = TenantBuilder.create(componentRegistry, defaultTenant)
+                .withLocalSessionRepo(localRepoDefault)
+                .withRemoteSessionRepo(new RemoteSessionRepo(defaultTenant))
+                .withSessionFactory(new MockSessionFactory());
+        tenantRepository.addTenant(defaultTenantBuilder);
+        final SessionHandler handler = createHandler();
 
         long sessionId = 1;
         // Deploy with default tenant
@@ -370,37 +380,14 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private SessionHandler createHandler() {
-        return createHandler(addTestTenant());
-    }
-
-    private SessionHandler createHandler(RemoteSessionRepo remoteSessionRepo) {
-        return createHandler(addTenant(tenant, localRepo, remoteSessionRepo, new MockSessionFactory()));
-    }
-
-    private TestTenantBuilder addTestTenant() {
-        return addTenant(tenant, localRepo, new RemoteSessionRepo(tenant), new MockSessionFactory());
-    }
-
-    private SessionHandler createHandler(TestTenantBuilder builder) {
-        final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         return new SessionPrepareHandler(
                 SessionPrepareHandler.testOnlyContext(),
-                new ApplicationRepository(builder.createTenants(),
+                new ApplicationRepository(tenantRepository,
                                           new MockProvisioner(),
-                                          Clock.systemUTC()),
-                builder.createTenants(), configserverConfig);
+                                          clock),
+                tenantRepository,
+                componentRegistry.getConfigserverConfig());
 
-    }
-
-    private TestTenantBuilder addTenant(TenantName tenantName,
-                                        LocalSessionRepo localSessionRepo,
-                                        RemoteSessionRepo remoteSessionRepo,
-                                        SessionFactory sessionFactory) {
-        builder.createTenant(tenantName).withSessionFactory(sessionFactory)
-                .withLocalSessionRepo(localSessionRepo)
-                .withRemoteSessionRepo(remoteSessionRepo)
-                .withApplicationRepo(applicationRepo);
-        return builder;
     }
 
     public static class SessionThrowingException extends LocalSession {
