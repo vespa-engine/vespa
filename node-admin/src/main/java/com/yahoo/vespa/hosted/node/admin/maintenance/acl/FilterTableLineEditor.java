@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,12 +15,12 @@ class FilterTableLineEditor implements LineEditor {
 
     private final LinkedList<String> wantedRules;
 
-    FilterTableLineEditor(List<String> wantedRules) {
+    private FilterTableLineEditor(List<String> wantedRules) {
         this.wantedRules = new LinkedList<>(wantedRules);
     }
 
     static FilterTableLineEditor from(Acl acl, IPVersion ipVersion) {
-        List<String> rules = Arrays.asList(acl.toRules(ipVersion).split("\n"));
+        List<String> rules = acl.toRules(ipVersion);
         return new FilterTableLineEditor(rules);
     }
 
