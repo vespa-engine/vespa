@@ -120,7 +120,7 @@ public class ConfigDefinitionBuilder {
 
     static void addNode(ConfigDefinition def, LeafCNode.LongLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
-            def.addLongDef(leaf.getName(), new Long(leaf.getDefaultValue().getValue()));
+            def.addLongDef(leaf.getName(), Long.valueOf(leaf.getDefaultValue().getValue()));
         } else {
             def.addLongDef(leaf.getName());
         }

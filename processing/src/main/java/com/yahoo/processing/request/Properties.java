@@ -484,7 +484,7 @@ public class Properties implements Cloneable {
             if (stringValue.isEmpty())
                 return defaultValue;
 
-            return new Long(value.toString());
+            return Long.valueOf(value.toString());
         } catch (IllegalArgumentException e) {
             throw new NumberFormatException("Not a valid long");
         }

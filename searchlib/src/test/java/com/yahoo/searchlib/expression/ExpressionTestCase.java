@@ -363,7 +363,7 @@ public class ExpressionTestCase extends TestCase {
         assertEquals(a.getInteger(), 7);
         assertEquals(a.getFloat(), 7.0);
         assertEquals(a.getString(), "7");
-        assertEquals(a.getNumber(), new Long(7));
+        assertEquals(a.getNumber(), Long.valueOf(7));
         byte[] raw = a.getRaw();
         assertEquals(raw.length, 8);
         assertResultNode(a);

@@ -1137,7 +1137,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("doc:testdoc:timetest"));
         assertNull(doc.getLastModified());
         doc.setLastModified(4350129845023985L);
-        assertEquals(new Long(4350129845023985L), doc.getLastModified());
+        assertEquals(Long.valueOf(4350129845023985L), doc.getLastModified());
         doc.setLastModified(null);
         assertNull(doc.getLastModified());
 

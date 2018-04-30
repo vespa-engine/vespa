@@ -152,7 +152,7 @@ public class IntItem extends TermItem {
 
     private Number asNumber(String numberString) {
         try {
-            if (!numberString.contains(".")) return new Long(numberString);
+            if (!numberString.contains(".")) return Long.valueOf(numberString);
         }
         catch (NumberFormatException e) {
             return new BigInteger(numberString);
