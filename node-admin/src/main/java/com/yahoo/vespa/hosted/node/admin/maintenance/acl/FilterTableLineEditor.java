@@ -26,6 +26,9 @@ class FilterTableLineEditor implements LineEditor {
 
     @Override
     public LineEdit edit(String line) {
+        // We have already added all the lines we wanted, remove the remainer
+        if (wantedRules.isEmpty()) return LineEdit.remove();
+
         String wantedRule = wantedRules.pop();
         return wantedRule.equals(line) ? LineEdit.none() : LineEdit.replaceWith(wantedRule);
     }
