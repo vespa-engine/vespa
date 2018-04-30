@@ -84,8 +84,6 @@ private:
                                        const DocTypeName &docType) const;
     HandlerSnapshot::UP getHandlerSnapshot() const;
     HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
-    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace,
-                                           const document::DocumentId &docId) const;
 
     void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
     ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;

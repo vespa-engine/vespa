@@ -62,8 +62,6 @@ public:
                                     const DocTypeName &docType) const;
     HandlerSnapshot::UP getHandlerSnapshot() const;
     HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
-    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace,
-                                           const document::DocumentId &id) const;
 };
 
 }
