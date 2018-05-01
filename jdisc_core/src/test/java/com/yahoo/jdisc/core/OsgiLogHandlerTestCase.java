@@ -70,6 +70,8 @@ public class OsgiLogHandlerTestCase {
     }
 
     @Test
+    // TODO: Remove deprecation annotation and replace calls to LogRecord.setMillis() when we no longer have to support Java 8
+    @SuppressWarnings("deprecation")
     public void requireThatJdk14PropertiesAreAvailableThroughServiceReference() {
         MyLogService logService = new MyLogService();
 

@@ -96,12 +96,12 @@ public class VespaXMLReaderTestCase {
         assertEquals(new FloatFieldValue(10.0f), floatArr.get(1));
 
         WeightedSet intWset = (WeightedSet)doc.getFieldValue("weightedsetint");
-        assertEquals(new Integer(11), intWset.get(new IntegerFieldValue(11)));
-        assertEquals(new Integer(12), intWset.get(new IntegerFieldValue(12)));
+        assertEquals(Integer.valueOf(11), intWset.get(new IntegerFieldValue(11)));
+        assertEquals(Integer.valueOf(12), intWset.get(new IntegerFieldValue(12)));
 
         WeightedSet strWset = (WeightedSet)doc.getFieldValue("weightedsetstring");
-        assertEquals(new Integer(13), strWset.get(new StringFieldValue("string13")));
-        assertEquals(new Integer(14), strWset.get(new StringFieldValue("string14")));
+        assertEquals(Integer.valueOf(13), strWset.get(new StringFieldValue("string13")));
+        assertEquals(Integer.valueOf(14), strWset.get(new StringFieldValue("string14")));
 
         MapFieldValue strMap = (MapFieldValue)doc.getFieldValue("stringmap");
         assertEquals(new StringFieldValue("slovakia"), strMap.get(new StringFieldValue("italia")));
@@ -196,14 +196,14 @@ public class VespaXMLReaderTestCase {
         //weightedsetint
         WeightedSet weightedsetint =
                 (WeightedSet)docUpdate.getFieldUpdate("weightedsetint").getValueUpdate(0).getValue();
-        assertEquals(new Integer(11), weightedsetint.get(new IntegerFieldValue(11)));
-        assertEquals(new Integer(12), weightedsetint.get(new IntegerFieldValue(12)));
+        assertEquals(Integer.valueOf(11), weightedsetint.get(new IntegerFieldValue(11)));
+        assertEquals(Integer.valueOf(12), weightedsetint.get(new IntegerFieldValue(12)));
 
         //weightedsetstring
         WeightedSet weightedsetstring =
                 (WeightedSet)docUpdate.getFieldUpdate("weightedsetstring").getValueUpdate(0).getValue();
-        assertEquals(new Integer(13), weightedsetstring.get(new StringFieldValue("assign13")));
-        assertEquals(new Integer(14), weightedsetstring.get(new StringFieldValue("assign14")));
+        assertEquals(Integer.valueOf(13), weightedsetstring.get(new StringFieldValue("assign13")));
+        assertEquals(Integer.valueOf(14), weightedsetstring.get(new StringFieldValue("assign14")));
 
     }
 
@@ -255,8 +255,8 @@ public class VespaXMLReaderTestCase {
         //weightedsetint
         WeightedSet weightedsetint =
                 (WeightedSet)docUpdate.getFieldUpdate("weightedsetint").getValueUpdate(0).getValue();
-        assertEquals(new Integer(11), weightedsetint.get(new IntegerFieldValue(11)));
-        assertEquals(new Integer(12), weightedsetint.get(new IntegerFieldValue(12)));
+        assertEquals(Integer.valueOf(11), weightedsetint.get(new IntegerFieldValue(11)));
+        assertEquals(Integer.valueOf(12), weightedsetint.get(new IntegerFieldValue(12)));
 
         //weightedsetstring
         assertNull(docUpdate.getFieldUpdate("weightedsetstring"));
@@ -309,17 +309,17 @@ public class VespaXMLReaderTestCase {
 
         //weightedsetint
         assertEquals(new IntegerFieldValue(11), docUpdate.getFieldUpdate("weightedsetint").getValueUpdate(0).getValue());
-        assertEquals(new Integer(11),
+        assertEquals(Integer.valueOf(11),
                      (Integer)((AddValueUpdate)docUpdate.getFieldUpdate("weightedsetint").getValueUpdate(0))
                              .getWeight());
         assertEquals(new IntegerFieldValue(12), docUpdate.getFieldUpdate("weightedsetint").getValueUpdate(1).getValue());
-        assertEquals(new Integer(12),
+        assertEquals(Integer.valueOf(12),
                      (Integer)((AddValueUpdate)docUpdate.getFieldUpdate("weightedsetint").getValueUpdate(1))
                              .getWeight());
 
         //weightedsetstring
         assertEquals(new StringFieldValue("add13"), docUpdate.getFieldUpdate("weightedsetstring").getValueUpdate(0).getValue());
-        assertEquals(new Integer(1),
+        assertEquals(Integer.valueOf(1),
                      (Integer)((AddValueUpdate)docUpdate.getFieldUpdate("weightedsetstring").getValueUpdate(0))
                              .getWeight());
     }
@@ -575,12 +575,12 @@ public class VespaXMLReaderTestCase {
             assertEquals(new FloatFieldValue(10.0f), floatArr.get(1));
 
             WeightedSet intWset = (WeightedSet)doc.getFieldValue("weightedsetint");
-            assertEquals(new Integer(11), intWset.get(new IntegerFieldValue(11)));
-            assertEquals(new Integer(12), intWset.get(new IntegerFieldValue(12)));
+            assertEquals(Integer.valueOf(11), intWset.get(new IntegerFieldValue(11)));
+            assertEquals(Integer.valueOf(12), intWset.get(new IntegerFieldValue(12)));
 
             WeightedSet strWset = (WeightedSet)doc.getFieldValue("weightedsetstring");
-            assertEquals(new Integer(13), strWset.get(new StringFieldValue("string13")));
-            assertEquals(new Integer(14), strWset.get(new StringFieldValue("string14")));
+            assertEquals(Integer.valueOf(13), strWset.get(new StringFieldValue("string13")));
+            assertEquals(Integer.valueOf(14), strWset.get(new StringFieldValue("string14")));
         }
         {
             VespaXMLFeedReader.Operation op = new VespaXMLFeedReader.Operation();
@@ -613,16 +613,16 @@ public class VespaXMLReaderTestCase {
             assertNull(upd.getFieldUpdate("floatarr"));
 
             assertEquals(new IntegerFieldValue(11), upd.getFieldUpdate("weightedsetint").getValueUpdate(0).getValue());
-            assertEquals(new Integer(11),
+            assertEquals(Integer.valueOf(11),
                          (Integer)((AddValueUpdate)upd.getFieldUpdate("weightedsetint").getValueUpdate(0))
                                  .getWeight());
             assertEquals(new IntegerFieldValue(12), upd.getFieldUpdate("weightedsetint").getValueUpdate(1).getValue());
-            assertEquals(new Integer(12),
+            assertEquals(Integer.valueOf(12),
                          (Integer)((AddValueUpdate)upd.getFieldUpdate("weightedsetint").getValueUpdate(1))
                                  .getWeight());
 
             assertEquals(new StringFieldValue("add13"), upd.getFieldUpdate("weightedsetstring").getValueUpdate(0).getValue());
-            assertEquals(new Integer(1),
+            assertEquals(Integer.valueOf(1),
                          (Integer)((AddValueUpdate)upd.getFieldUpdate("weightedsetstring").getValueUpdate(0))
                                  .getWeight());
         }
@@ -653,8 +653,8 @@ public class VespaXMLReaderTestCase {
             assertNull(upd.getFieldUpdate("floatarr"));
 
             WeightedSet intWset = (WeightedSet)upd.getFieldUpdate("weightedsetint").getValueUpdate(0).getValue();
-            assertEquals(new Integer(11), intWset.get(new IntegerFieldValue(11)));
-            assertEquals(new Integer(12), intWset.get(new IntegerFieldValue(12)));
+            assertEquals(Integer.valueOf(11), intWset.get(new IntegerFieldValue(11)));
+            assertEquals(Integer.valueOf(12), intWset.get(new IntegerFieldValue(12)));
 
             assertNull(upd.getFieldUpdate("weightedsetstring"));
         }
@@ -738,15 +738,15 @@ public class VespaXMLReaderTestCase {
             AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(10);
             assertEquals("weightedsetint", ass.getOriginalFieldPath());
             WeightedSet set = (WeightedSet)ass.getNewValue();
-            assertEquals(new Integer(11), set.get(new IntegerFieldValue(11)));
-            assertEquals(new Integer(12), set.get(new IntegerFieldValue(12)));
+            assertEquals(Integer.valueOf(11), set.get(new IntegerFieldValue(11)));
+            assertEquals(Integer.valueOf(12), set.get(new IntegerFieldValue(12)));
         }
         {
             AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(11);
             assertEquals("weightedsetstring", ass.getOriginalFieldPath());
             WeightedSet set = (WeightedSet)ass.getNewValue();
-            assertEquals(new Integer(13), set.get(new StringFieldValue("assign13")));
-            assertEquals(new Integer(14), set.get(new StringFieldValue("assign14")));
+            assertEquals(Integer.valueOf(13), set.get(new StringFieldValue("assign13")));
+            assertEquals(Integer.valueOf(14), set.get(new StringFieldValue("assign14")));
         }
         {
             AddFieldPathUpdate ass = (AddFieldPathUpdate)docUpdate.getFieldPathUpdates().get(12);

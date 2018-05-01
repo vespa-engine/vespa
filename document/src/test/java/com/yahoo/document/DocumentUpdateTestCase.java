@@ -163,7 +163,7 @@ public class DocumentUpdateTestCase {
         docUp.applyTo(doc);
         assertEquals(1, ((WeightedSet)doc.getFieldValue("strwset")).size());
         WeightedSet docWset = (WeightedSet)doc.getFieldValue("strwset");
-        assertEquals(new Integer(10), docWset.get(new StringFieldValue("hello hello")));
+        assertEquals(Integer.valueOf(10), docWset.get(new StringFieldValue("hello hello")));
     }
 
     @Test
@@ -205,8 +205,8 @@ public class DocumentUpdateTestCase {
         docUp.applyTo(doc);
         assertEquals(2, ((WeightedSet)doc.getFieldValue("strwset")).size());
         WeightedSet docWset = (WeightedSet)doc.getFieldValue("strwset");
-        assertEquals(new Integer(5), docWset.get(new StringFieldValue("assigned val 0")));
-        assertEquals(new Integer(10), docWset.get(new StringFieldValue("assigned val 1")));
+        assertEquals(Integer.valueOf(5), docWset.get(new StringFieldValue("assigned val 0")));
+        assertEquals(Integer.valueOf(10), docWset.get(new StringFieldValue("assigned val 1")));
     }
 
     @Test

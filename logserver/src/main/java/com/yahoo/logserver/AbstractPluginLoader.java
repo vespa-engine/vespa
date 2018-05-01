@@ -5,6 +5,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.plugin.Plugin;
 import com.yahoo.plugin.SystemPropertyConfig;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
 
 /**
@@ -20,8 +21,8 @@ public abstract class AbstractPluginLoader implements PluginLoader {
     protected void loadFromClass(Class<? extends Plugin> pluginClass) {
         Plugin plugin;
         try {
-            plugin = (Plugin) pluginClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            plugin = pluginClass.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             log.log(LogLevel.ERROR, pluginClass.getName() + ": load failed: " + e);
             throw new RuntimeException(e);
         }

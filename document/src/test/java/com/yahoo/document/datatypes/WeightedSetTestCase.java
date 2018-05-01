@@ -33,7 +33,7 @@ public class WeightedSetTestCase {
         assertEquals(5, ok);
 
         assertEquals(1, wset.size());
-        assertEquals(wset.get(new StringFieldValue("this is a test")), new Integer(10));
+        assertEquals(wset.get(new StringFieldValue("this is a test")), Integer.valueOf(10));
 
         //REMOVE:
 
@@ -75,8 +75,8 @@ public class WeightedSetTestCase {
         set.put(new StringFieldValue("hello"), 5);
         set.put(new StringFieldValue("aba"), 10);
         assertEquals(2, set.size());
-        assertEquals(new Integer(5), set.get(new StringFieldValue("hello")));
-        assertEquals(new Integer(10), set.get(new StringFieldValue("aba")));
+        assertEquals(Integer.valueOf(5), set.get(new StringFieldValue("hello")));
+        assertEquals(Integer.valueOf(10), set.get(new StringFieldValue("aba")));
 
         DataType type2 = DataType.getWeightedSet(DataType.STRING, true, true);
         WeightedSet<StringFieldValue> set2 = new WeightedSet<>(type2);
@@ -84,9 +84,9 @@ public class WeightedSetTestCase {
         set2.put(new StringFieldValue("bye"), 13);
         set2.put(new StringFieldValue("see you"), 15);
         assertEquals(3, set2.size());
-        assertEquals(new Integer(6), set2.get(new StringFieldValue("hi")));
-        assertEquals(new Integer(13), set2.get(new StringFieldValue("bye")));
-        assertEquals(new Integer(15), set2.get(new StringFieldValue("see you")));
+        assertEquals(Integer.valueOf(6), set2.get(new StringFieldValue("hi")));
+        assertEquals(Integer.valueOf(13), set2.get(new StringFieldValue("bye")));
+        assertEquals(Integer.valueOf(15), set2.get(new StringFieldValue("see you")));
 
         try {
             set.assign(set2);
@@ -96,8 +96,8 @@ public class WeightedSetTestCase {
         }
 
         assertEquals(2, set.size());
-        assertEquals(new Integer(5), set.get(new StringFieldValue("hello")));
-        assertEquals(new Integer(10), set.get(new StringFieldValue("aba")));
+        assertEquals(Integer.valueOf(5), set.get(new StringFieldValue("hello")));
+        assertEquals(Integer.valueOf(10), set.get(new StringFieldValue("aba")));
     }
 
     @Test
@@ -154,7 +154,7 @@ public class WeightedSetTestCase {
         assertEquals(3, ws.size());
         assertEquals(3, map.size());
 
-        assertEquals(new Integer(1), ws.get(new StringFieldValue("sitronbrus")));
+        assertEquals(Integer.valueOf(1), ws.get(new StringFieldValue("sitronbrus")));
     }
 
     @Test

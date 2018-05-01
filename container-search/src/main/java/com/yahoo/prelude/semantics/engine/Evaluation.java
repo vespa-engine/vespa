@@ -102,9 +102,9 @@ public class Evaluation {
     /** Returns whether stemmed matches are allowed. True by default */
     public boolean getStemming() { return stemming; }
 
-    void addMatchDigest(int digest) { matchDigests.add(new Integer(digest)); }
+    void addMatchDigest(int digest) { matchDigests.add(Integer.valueOf(digest)); }
 
-    boolean hasMatchDigest(int matchDigest) { return matchDigests.contains(new Integer(matchDigest)); }
+    boolean hasMatchDigest(int matchDigest) { return matchDigests.contains(Integer.valueOf(matchDigest)); }
 
     int getPreviousQuerySize() { return previousQuerySize; }
 

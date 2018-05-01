@@ -52,7 +52,7 @@ public class FS4Channel
     }
 
     static public FS4Channel createPingChannel(Backend backend) {
-        FS4Channel pingChannel = new FS4Channel(backend, new Integer(0));
+        FS4Channel pingChannel = new FS4Channel(backend, Integer.valueOf(0));
         pingChannel.isPingChannel = true;
         return pingChannel;
     }
