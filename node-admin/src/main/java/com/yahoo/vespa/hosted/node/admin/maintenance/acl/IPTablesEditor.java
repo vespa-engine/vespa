@@ -59,6 +59,7 @@ class IPTablesEditor {
             ProcessResult currentRulesResult =
                     dockerOperations.executeCommandInNetworkNamespace(containerName, ipVersion.iptablesCmd(), "-S", "-t", table);
             return Arrays.stream(currentRulesResult.getOutput().split("\n"))
+                    .map(String::trim)
                     .collect(Collectors.toList());
         };
     }

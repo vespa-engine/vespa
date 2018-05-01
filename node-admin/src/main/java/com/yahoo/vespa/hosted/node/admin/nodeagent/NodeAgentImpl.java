@@ -232,7 +232,6 @@ public class NodeAgentImpl implements NodeAgent {
         if (! resumeScriptRun) {
             storageMaintainer.writeMetricsConfig(containerName, node);
             storageMaintainer.writeFilebeatConfig(containerName, node);
-            aclMaintainer.run();
             stopFilebeatSchedulerIfNeeded();
             currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
                     () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
@@ -490,6 +489,7 @@ public class NodeAgentImpl implements NodeAgent {
                     containerState = STARTING;
                     startContainer(node);
                     containerState = UNKNOWN;
+                    aclMaintainer.run();
                 }
 
                 runLocalResumeScriptIfNeeded(node);

@@ -131,7 +131,7 @@ public class AclMaintainerTest {
                 "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
                 "-A INPUT -i lo -j ACCEPT\n" +
                 "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 4321,2345,22 -j ACCEPT\n" +
+                "-A INPUT -p tcp -m multiport --dports 22,2345,4321 -j ACCEPT\n" +
                 "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
                 "-A INPUT -s fd01:1234::4321/128 -j ACCEPT\n" +
                 "-A INPUT -j REJECT --reject-with icmp6-port-unreachable";
@@ -165,7 +165,7 @@ public class AclMaintainerTest {
                 "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
                 "-A INPUT -i lo -j ACCEPT\n" +
                 "-A INPUT -p icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 22,4443,2222 -j ACCEPT\n" +
+                "-A INPUT -p tcp -m multiport --dports 22,2222,4443 -j ACCEPT\n" +
                 "-A INPUT -s 192.64.13.2/32 -j ACCEPT\n" +
                 "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
 
@@ -175,7 +175,7 @@ public class AclMaintainerTest {
                 "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
                 "-A INPUT -i lo -j ACCEPT\n" +
                 "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 22,4443,2222 -j ACCEPT\n" +
+                "-A INPUT -p tcp -m multiport --dports 22,2222,4443 -j ACCEPT\n" +
                 "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
                 "-A INPUT -j REJECT --reject-with icmp6-port-unreachable";
 
