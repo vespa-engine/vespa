@@ -55,7 +55,6 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     private final Clock clock;
 
     public SessionFactoryImpl(GlobalComponentRegistry globalComponentRegistry,
-                              SessionCounter sessionCounter,
                               TenantApplications applicationRepo,
                               TenantFileSystemDirs tenantFileSystemDirs,
                               HostValidator<ApplicationId> hostRegistry,
@@ -65,7 +64,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.sessionPreparer = globalComponentRegistry.getSessionPreparer();
         this.curator = globalComponentRegistry.getCurator();
         this.configCurator = globalComponentRegistry.getConfigCurator();
-        this.sessionCounter = sessionCounter;
+        this.sessionCounter = new SessionCounter(globalComponentRegistry.getConfigCurator(), tenant);;
         this.sessionsPath = TenantRepository.getSessionsPath(tenant);
         this.applicationRepo = applicationRepo;
         this.tenantFileSystemDirs = tenantFileSystemDirs;

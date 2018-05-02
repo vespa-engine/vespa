@@ -26,10 +26,8 @@ public class TenantHandlerTest extends TenantTest {
     private final TenantName a = TenantName.from("a");
 
     @Before
-    public void setup() throws Exception {
-        handler = new TenantHandler(
-                TenantHandler.testOnlyContext(),
-                tenantRepository);
+    public void setup() {
+        handler = new TenantHandler(TenantHandler.testOnlyContext(), tenantRepository);
     }
 
     @Test
@@ -50,7 +48,7 @@ public class TenantHandlerTest extends TenantTest {
     }
 
     @Test(expected=NotFoundException.class)
-    public void testGetNonExisting() throws Exception {
+    public void testGetNonExisting() {
         handler.handleGET(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/x", Method.GET));
     }
  
@@ -76,7 +74,7 @@ public class TenantHandlerTest extends TenantTest {
     }
 
     @Test
-    public void testDelete() throws IOException, InterruptedException {
+    public void testDelete() throws IOException {
         putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
         assertEquals(tenantRepository.getTenant(a).getName(), a);
         TenantDeleteResponse delResp = (TenantDeleteResponse) handler.handleDELETE(
@@ -86,7 +84,7 @@ public class TenantHandlerTest extends TenantTest {
     }
 
     @Test
-    public void testDeleteTenantWithActiveApplications() throws Exception {
+    public void testDeleteTenantWithActiveApplications() {
         putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.PUT));
         Tenant tenant = tenantRepository.getTenant(a);
         assertEquals(a, tenant.getName());
@@ -109,7 +107,7 @@ public class TenantHandlerTest extends TenantTest {
     }
     
     @Test(expected=BadRequestException.class)
-    public void testIllegalNameSlashes() throws InterruptedException {
+    public void testIllegalNameSlashes() {
         putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a/b", Method.PUT));
     }
 

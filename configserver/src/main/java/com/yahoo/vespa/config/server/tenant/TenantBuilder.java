@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.*;
-import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
@@ -39,7 +38,6 @@ public class TenantBuilder {
     private SessionFactory sessionFactory;
     private LocalSessionLoader localSessionLoader;
     private TenantApplications applicationRepo;
-    private SessionCounter sessionCounter;
     private ReloadHandler reloadHandler;
     private RequestHandler requestHandler;
     private RemoteSessionFactory remoteSessionFactory;
@@ -81,11 +79,6 @@ public class TenantBuilder {
         return this;
     }
 
-    public TenantBuilder withReloadHandler(ReloadHandler reloadHandler) {
-        this.reloadHandler = reloadHandler;
-        return this;
-    }
-
     /**
      * Create a real tenant from the properties given by this builder.
      *
@@ -96,7 +89,6 @@ public class TenantBuilder {
         createApplicationRepo();
         createRemoteSessionFactory(componentRegistry.getClock());
         createRemoteSessionRepo();
-        createSessionCounter();
         createServerDbDirs();
         createSessionFactory();
         createLocalSessionRepo();
@@ -120,8 +112,8 @@ public class TenantBuilder {
 
     private void createSessionFactory() {
         if (sessionFactory == null || localSessionLoader == null) {
-            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, sessionCounter,
-                                                             applicationRepo, tenantFileSystemDirs, hostValidator, tenant);
+            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, applicationRepo,
+                                                             tenantFileSystemDirs, hostValidator, tenant);
             if (sessionFactory == null) {
                 sessionFactory = impl;
             }
@@ -134,12 +126,6 @@ public class TenantBuilder {
     private void createApplicationRepo() {
         if (applicationRepo == null) {
             applicationRepo = ZKTenantApplications.create(componentRegistry.getCurator(), reloadHandler, tenant);
-        }
-    }
-
-    private void createSessionCounter() {
-        if (sessionCounter == null) {
-            sessionCounter = new SessionCounter(componentRegistry.getConfigCurator(), tenant);
         }
     }
 
@@ -156,9 +142,7 @@ public class TenantBuilder {
             if (requestHandler == null) {
                 requestHandler = impl;
             }
-            if (reloadHandler == null) {
-                reloadHandler = impl;
-            }
+            reloadHandler = impl;
         }
     }
 
