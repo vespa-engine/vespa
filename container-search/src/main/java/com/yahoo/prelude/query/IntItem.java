@@ -152,12 +152,12 @@ public class IntItem extends TermItem {
 
     private Number asNumber(String numberString) {
         try {
-            if (!numberString.contains(".")) return new Long(numberString);
+            if (!numberString.contains(".")) return Long.valueOf(numberString);
         }
         catch (NumberFormatException e) {
             return new BigInteger(numberString);
         }
-        return new Double(numberString);
+        return Double.valueOf(numberString);
     }
 
     /** Sets the number expression of this - a number or range */

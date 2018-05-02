@@ -90,7 +90,7 @@ public class DataTypeTestCase {
             Map<String, Integer> wsetMap = new LinkedHashMap<>();
             wsetMap.put("foo", 1);
             WeightedSet<StringFieldValue> ws = (WeightedSet<StringFieldValue>) DataType.getWeightedSet(DataType.STRING).createFieldValue(wsetMap);
-            assertEquals(ws.get(new StringFieldValue("foo")), new Integer(1));
+            assertEquals(ws.get(new StringFieldValue("foo")), Integer.valueOf(1));
         }
         {
             List<String> arrayArray = new ArrayList<>();

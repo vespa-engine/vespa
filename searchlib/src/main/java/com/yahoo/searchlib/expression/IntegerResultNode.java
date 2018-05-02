@@ -138,7 +138,7 @@ public class IntegerResultNode extends NumericResultNode {
 
     @Override
     public Object getNumber() {
-        return new Long(value);
+        return Long.valueOf(value);
     }
 
     @Override

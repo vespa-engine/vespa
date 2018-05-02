@@ -118,7 +118,7 @@ public class AsyncTest {
             op.setResult("123");
             assertEquals(true, deleteRequest.isDone());
             assertEquals(true, deleteRequest.isSuccess());
-            assertEquals(new Integer(123), deleteRequest.getResult());
+            assertEquals(Integer.valueOf(123), deleteRequest.getResult());
             assertEquals("desc", deleteRequest.getDescription());
             assertEquals("test", deleteRequest.getName());
             assertEquals(1, result.size());
@@ -161,7 +161,7 @@ public class AsyncTest {
             source.setResult("5");
             assertTrue(target.isDone());
             assertTrue(target.isSuccess());
-            assertEquals(new Integer(5), target.getResult());
+            assertEquals(Integer.valueOf(5), target.getResult());
         }
         {
             final AsyncOperationImpl<Integer> target = new AsyncOperationImpl<>("foo");

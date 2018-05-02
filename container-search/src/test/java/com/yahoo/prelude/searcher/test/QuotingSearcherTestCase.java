@@ -114,12 +114,12 @@ public class QuotingSearcherTestCase {
         Hit hit = new FastHit();
         hit.setId("http://abc.html");
         hit.setRelevance(new Relevance(1));
-        hit.setField("title", new Integer(42));
+        hit.setField("title", Integer.valueOf(42));
         r.hits().add(hit);
         docsource.addResultSet(q, r);
         Result check = doSearch(s, q, 0, 10, chained);
         // should not quote non-string properties
-        assertEquals(new Integer(42), check.hits().get(0).getField("title"));
+        assertEquals(Integer.valueOf(42), check.hits().get(0).getField("title"));
     }
 
     private Result doSearch(Searcher searcher, Query query, int offset, int hits, Map<Searcher, Searcher> chained) {
