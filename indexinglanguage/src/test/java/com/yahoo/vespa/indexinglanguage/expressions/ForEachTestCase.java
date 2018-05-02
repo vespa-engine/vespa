@@ -158,8 +158,8 @@ public class ForEachTestCase {
 
         WeightedSet after = (WeightedSet)val;
         assertEquals(2, after.size());
-        assertEquals(Integer.valueOf(9), after.get(new IntegerFieldValue(6)));
-        assertEquals(Integer.valueOf(6), after.get(new IntegerFieldValue(9)));
+        assertEquals(new Integer(9), after.get(new IntegerFieldValue(6)));
+        assertEquals(new Integer(6), after.get(new IntegerFieldValue(9)));
     }
 
     @Test

@@ -23,11 +23,11 @@ public class QueueTest {
     @org.junit.Test
     public void testEnqueueDequeue() {
         Queue queue = new Queue();
-        Integer int1 = 1;
-        Integer int2 = 2;
-        Integer int3 = 3;
-        Integer int4 = 4;
-        Integer int5 = 5;
+        Integer int1 = new Integer(1);
+        Integer int2 = new Integer(2);
+        Integer int3 = new Integer(3);
+        Integer int4 = new Integer(4);
+        Integer int5 = new Integer(5);
 
         assertEquals(queue.size(), 0);
         queue.enqueue(int1);
@@ -75,9 +75,9 @@ public class QueueTest {
     public void testFlush() {
         Queue src = new Queue();
         Queue dst = new Queue();
-        Integer int1 = 1;
-        Integer int2 = 2;
-        Integer int3 = 3;
+        Integer int1 = new Integer(1);
+        Integer int2 = new Integer(2);
+        Integer int3 = new Integer(3);
 
         assertTrue(src.flush(dst) == 0);
         assertEquals(src.size(), 0);

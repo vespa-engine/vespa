@@ -129,7 +129,7 @@ public class FloatResultNode extends NumericResultNode {
 
     @Override
     public Object getNumber() {
-        return Double.valueOf(value);
+        return new Double(value);
     }
 
     @Override

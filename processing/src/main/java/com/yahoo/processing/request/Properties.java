@@ -418,7 +418,7 @@ public class Properties implements Cloneable {
             if (stringValue.isEmpty())
                 return defaultValue;
 
-            return Integer.valueOf(stringValue);
+            return new Integer(stringValue);
         } catch (IllegalArgumentException e) {
             throw new NumberFormatException("Not a valid integer");
         }
@@ -484,7 +484,7 @@ public class Properties implements Cloneable {
             if (stringValue.isEmpty())
                 return defaultValue;
 
-            return Long.valueOf(value.toString());
+            return new Long(value.toString());
         } catch (IllegalArgumentException e) {
             throw new NumberFormatException("Not a valid long");
         }
@@ -550,7 +550,7 @@ public class Properties implements Cloneable {
             if (stringValue.isEmpty())
                 return defaultValue;
 
-            return Double.valueOf(value.toString());
+            return new Double(value.toString());
         } catch (IllegalArgumentException e) {
             throw new NumberFormatException("Not a valid double");
         }

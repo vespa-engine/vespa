@@ -261,7 +261,7 @@ public class Backend implements ConnectionFactory {
      *         set of active channels.
      */
     public FS4Channel getChannel (int id) {
-        return getChannel(Integer.valueOf(id));
+        return getChannel(new Integer(id));
     }
 
     /**

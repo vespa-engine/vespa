@@ -58,7 +58,7 @@ public class Response {
     public long getRequestId() { return requestId; }
 
     public int hashCode() {
-        return (Long.valueOf(requestId).hashCode()) + (textMessage == null ? 0 : textMessage.hashCode()) +
+        return (new Long(requestId).hashCode()) + (textMessage == null ? 0 : textMessage.hashCode()) +
                 (success ? 1 : 0);
     }
 

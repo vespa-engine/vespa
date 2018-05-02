@@ -345,7 +345,7 @@ public class LogFileHandler extends StreamHandler {
                 etc = true;
                 break;
             }
-            list.add(Long.valueOf(times.substring(j,i)));
+            list.add(new Long(times.substring(j,i)));
         }
 
         int size = list.size();

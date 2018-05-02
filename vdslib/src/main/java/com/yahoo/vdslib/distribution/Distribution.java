@@ -149,7 +149,7 @@ public class Distribution {
         @Override
         public int compareTo(ScoredGroup o) {
             // Sorts by highest first.
-            return Double.valueOf(o.score).compareTo(score);
+            return new Double(o.score).compareTo(score);
         }
     }
     private class ScoredNode {

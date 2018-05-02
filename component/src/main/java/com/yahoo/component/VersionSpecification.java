@@ -121,19 +121,19 @@ public final class VersionSpecification implements Comparable<VersionSpecificati
             if (components.length > 0) {
                 String s = components[0];
                 if (! s.equals("*")) {
-                    major = Integer.valueOf(s);
+                    major = new Integer(s);
                 }
             }
             if (components.length > 1) {
                 String s = components[1];
                 if (! s.equals("*")) {
-                    minor = Integer.valueOf(s);
+                    minor = new Integer(s);
                 }
             }
             if (components.length > 2) {
                 String s = components[2];
                 if (! s.equals("*")) {
-                    micro = Integer.valueOf(s);
+                    micro = new Integer(s);
                 }
             }
             if (components.length > 3) {

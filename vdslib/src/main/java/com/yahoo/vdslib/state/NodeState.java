@@ -103,7 +103,7 @@ public class NodeState implements Cloneable {
         return true;
     }
     public int hashCode() {
-        return state.hashCode() ^ diskStates.hashCode() ^ Double.valueOf(capacity).hashCode() ^ Double.valueOf(reliability).hashCode();
+        return state.hashCode() ^ diskStates.hashCode() ^ new Double(capacity).hashCode() ^ new Double(reliability).hashCode();
     }
 
     /**

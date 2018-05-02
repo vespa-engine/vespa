@@ -236,7 +236,7 @@ public class FS4Connection implements Connection
                         receiver = backend.getPingChannel();
                 }
                 else {
-                    receiver = backend.getChannel(Integer.valueOf(queryId));
+                    receiver = backend.getChannel(new Integer(queryId));
                 }
                 packet = PacketDecoder.extractPacket(readBuffer);
 
