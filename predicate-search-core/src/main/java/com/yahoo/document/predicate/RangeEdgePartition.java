@@ -35,8 +35,10 @@ public class RangeEdgePartition extends RangePartition {
 
     @Override
     public int hashCode() {
-        return super.hashCode() + new Long(value).hashCode() +
-                new Integer(lowerBound).hashCode() + new Integer(upperBound).hashCode();
+        return super.hashCode()
+                + Long.valueOf(value).hashCode()
+                + Integer.valueOf(lowerBound).hashCode()
+                + Integer.valueOf(upperBound).hashCode();
     }
 
     @Override

@@ -580,7 +580,7 @@ public class ClusterSearcherTestCase {
 
     @Test
     public void testThatQueryTimeoutIsCappedWithSpecifiedMax() {
-        QueryTimeoutFixture f = new QueryTimeoutFixture(new Double(70), null);
+        QueryTimeoutFixture f = new QueryTimeoutFixture(Double.valueOf(70), null);
         f.query.setTimeout(70001);
         f.search();
         assertEquals(70000, f.query.getTimeout());
@@ -606,7 +606,7 @@ public class ClusterSearcherTestCase {
 
     @Test
     public void testThatQueryCacheIsDisabledIfTimeoutIsLargerThanConfiguredMax() {
-        QueryTimeoutFixture f = new QueryTimeoutFixture(null, new Double(5));
+        QueryTimeoutFixture f = new QueryTimeoutFixture(null, Double.valueOf(5));
         f.query.setTimeout(5001);
         f.query.getRanking().setQueryCache(true);
         f.search();

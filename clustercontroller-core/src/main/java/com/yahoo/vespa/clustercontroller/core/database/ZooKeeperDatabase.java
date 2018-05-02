@@ -131,7 +131,7 @@ public class ZooKeeperDatabase extends Database {
         createNode(zooKeeperRoot, "indexes", new byte[0]);
         createNode(zooKeeperRoot, "wantedstates", new byte[0]);
         createNode(zooKeeperRoot, "starttimestamps", new byte[0]);
-        createNode(zooKeeperRoot, "latestversion", new Integer(0).toString().getBytes(utf8));
+        createNode(zooKeeperRoot, "latestversion", Integer.valueOf(0).toString().getBytes(utf8));
         createNode(zooKeeperRoot, "published_state_bundle", new byte[0]); // TODO dedupe string constants
         byte val[] = String.valueOf(nodeIndex).getBytes(utf8);
         deleteNodeIfExists(getMyIndexPath());

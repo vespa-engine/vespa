@@ -19,6 +19,7 @@ public final class ContentInputStream extends UnsafeContentInputStream {
     }
 
     @Override
+    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
     public void finalize() throws Throwable {
         try {
             close();

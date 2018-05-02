@@ -553,7 +553,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
             FieldValue fv = doc.getRecursiveValue("l1s1.ss.iarray");
 
-            assertFalse(((Array)fv).contains(new Integer(12)));
+            assertFalse(((Array)fv).contains(Integer.valueOf(12)));
             assertEquals(3, ((Array)fv).size());
         }
 
@@ -690,8 +690,8 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         assertEquals(new FloatFieldValue(2.0f), array.get(1));
 
         WeightedSet<StringFieldValue> wset = (WeightedSet<StringFieldValue>)doc.getFieldValue("wsfield");
-        assertEquals(new Integer(50), wset.get(new StringFieldValue("Weighted 0")));
-        assertEquals(new Integer(199), wset.get(new StringFieldValue("Weighted 1")));
+        assertEquals(Integer.valueOf(50), wset.get(new StringFieldValue("Weighted 0")));
+        assertEquals(Integer.valueOf(199), wset.get(new StringFieldValue("Weighted 1")));
     }
 
     @Test
@@ -722,8 +722,8 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         assertEquals(new DocumentId("doc:docindoc:http://embedded"), docindoc.getId());
 
         WeightedSet wset = (WeightedSet)doc.getFieldValue("wsfield");
-        assertEquals(new Integer(50), wset.get(new StringFieldValue("Weighted 0")));
-        assertEquals(new Integer(199), wset.get(new StringFieldValue("Weighted 1")));
+        assertEquals(Integer.valueOf(50), wset.get(new StringFieldValue("Weighted 0")));
+        assertEquals(Integer.valueOf(199), wset.get(new StringFieldValue("Weighted 1")));
     }
 
     @Test
@@ -1137,7 +1137,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("doc:testdoc:timetest"));
         assertNull(doc.getLastModified());
         doc.setLastModified(4350129845023985L);
-        assertEquals(new Long(4350129845023985L), doc.getLastModified());
+        assertEquals(Long.valueOf(4350129845023985L), doc.getLastModified());
         doc.setLastModified(null);
         assertNull(doc.getLastModified());
 

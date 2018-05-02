@@ -24,28 +24,28 @@ public class WeightedSetItemTestCase {
         assertNull(ws.getTokenWeight("bogus"));
 
         // insert tokens
-        assertEquals(new Integer(1), ws.addToken("foo"));
-        assertEquals(new Integer(2), ws.addToken("bar", 2));
-        assertEquals(new Integer(3), ws.addToken("baz", 3));
+        assertEquals(Integer.valueOf(1), ws.addToken("foo"));
+        assertEquals(Integer.valueOf(2), ws.addToken("bar", 2));
+        assertEquals(Integer.valueOf(3), ws.addToken("baz", 3));
 
         // check state
         assertEquals(3, ws.getNumTokens());
-        assertEquals(new Integer(1), ws.getTokenWeight("foo"));
-        assertEquals(new Integer(2), ws.getTokenWeight("bar"));
-        assertEquals(new Integer(3), ws.getTokenWeight("baz"));
+        assertEquals(Integer.valueOf(1), ws.getTokenWeight("foo"));
+        assertEquals(Integer.valueOf(2), ws.getTokenWeight("bar"));
+        assertEquals(Integer.valueOf(3), ws.getTokenWeight("baz"));
 
         // add duplicate tokens
-        assertEquals(new Integer(2), ws.addToken("foo", 2));
-        assertEquals(new Integer(3), ws.addToken("baz", 2));
+        assertEquals(Integer.valueOf(2), ws.addToken("foo", 2));
+        assertEquals(Integer.valueOf(3), ws.addToken("baz", 2));
 
         // check state
         assertEquals(3, ws.getNumTokens());
-        assertEquals(new Integer(2), ws.getTokenWeight("foo"));
-        assertEquals(new Integer(2), ws.getTokenWeight("bar"));
-        assertEquals(new Integer(3), ws.getTokenWeight("baz"));
+        assertEquals(Integer.valueOf(2), ws.getTokenWeight("foo"));
+        assertEquals(Integer.valueOf(2), ws.getTokenWeight("bar"));
+        assertEquals(Integer.valueOf(3), ws.getTokenWeight("baz"));
 
         // remove token
-        assertEquals(new Integer(2), ws.removeToken("bar"));
+        assertEquals(Integer.valueOf(2), ws.removeToken("bar"));
         assertEquals(2, ws.getNumTokens());
         assertNull(ws.getTokenWeight("bar"));
 
@@ -57,9 +57,9 @@ public class WeightedSetItemTestCase {
     @Test
     public void testNegativeWeight() {
         WeightedSetItem ws = new WeightedSetItem("index");
-        assertEquals(new Integer(-10), ws.addToken("bad", -10));
+        assertEquals(Integer.valueOf(-10), ws.addToken("bad", -10));
         assertEquals(1, ws.getNumTokens());
-        assertEquals(new Integer(-10), ws.getTokenWeight("bad"));        
+        assertEquals(Integer.valueOf(-10), ws.getTokenWeight("bad"));        
     }
 
     static class FakeWSItem extends CompositeIndexedItem {
