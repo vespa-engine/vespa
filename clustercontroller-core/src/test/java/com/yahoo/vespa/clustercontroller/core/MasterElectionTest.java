@@ -502,8 +502,9 @@ public class MasterElectionTest extends FleetControllerTest {
         startingTest("MasterElectionTest::previously_published_state_is_taken_into_account_for_default_space_when_controller_bootstraps");
         FleetControllerOptions options = new FleetControllerOptions("mycluster");
         options.enableMultipleBucketSpaces = true;
+        options.clusterHasGlobalDocumentTypes = true;
         options.masterZooKeeperCooldownPeriod = 1;
-        options.minTimeBeforeFirstSystemStateBroadcast = 10000;
+        options.minTimeBeforeFirstSystemStateBroadcast = 100000;
         setUpFleetController(3, true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
@@ -537,6 +538,22 @@ public class MasterElectionTest extends FleetControllerTest {
         // We should NOT publish a state where all storage nodes are in Maintenance, since they were
         // marked as Up in the last published cluster state.
         log.info("Bundle after restart cycle: " + fleetControllers.get(0).getClusterStateBundle());
+        waitForStateInAllSpaces("version:\\d+ distributor:10 storage:10");
+    }
+
+    @Test
+    public void default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types() throws Exception {
+        startingTest("MasterElectionTest::default_space_nodes_not_marked_as_maintenance_when_cluster_has_no_global_document_types");
+        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        options.enableMultipleBucketSpaces = true;
+        options.clusterHasGlobalDocumentTypes = false;
+        options.masterZooKeeperCooldownPeriod = 1;
+        options.minTimeBeforeFirstSystemStateBroadcast = 100000;
+        setUpFleetController(3, true, options);
+        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
+        waitForMaster(0);
+        waitForStableSystem();
         waitForStateInAllSpaces("version:\\d+ distributor:10 storage:10");
     }
 

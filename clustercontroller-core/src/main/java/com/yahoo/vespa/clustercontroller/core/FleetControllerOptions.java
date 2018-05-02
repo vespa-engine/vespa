@@ -122,6 +122,8 @@ public class FleetControllerOptions implements Cloneable {
     // TODO replace this flag with a set of bucket spaces instead
     public boolean enableMultipleBucketSpaces = false;
 
+    public boolean clusterHasGlobalDocumentTypes = false;
+
     // TODO: Choose a default value
     public double minMergeCompletionRatio = 1.0;
 
@@ -232,6 +234,7 @@ public class FleetControllerOptions implements Cloneable {
         sb.append("<tr><td><nobr>Wanted distribution bits</nobr></td><td align=\"right\">").append(distributionBits).append("</td></tr>");
         sb.append("<tr><td><nobr>Max deferred task version wait time</nobr></td><td align=\"right\">").append(maxDeferredTaskVersionWaitTime.toMillis()).append("ms</td></tr>");
         sb.append("<tr><td><nobr>Multiple bucket spaces enabled</nobr></td><td align=\"right\">").append(enableMultipleBucketSpaces).append("</td></tr>");
+        sb.append("<tr><td><nobr>Cluster has global document types configured</nobr></td><td align=\"right\">").append(clusterHasGlobalDocumentTypes).append("</td></tr>");
 
         sb.append("</table>");
     }

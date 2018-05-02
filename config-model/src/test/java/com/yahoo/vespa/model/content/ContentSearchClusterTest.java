@@ -44,20 +44,39 @@ public class ContentSearchClusterTest {
                 createSearchDefinitions("global", "regular"));
     }
 
-    private static ContentCluster createClusterWithMultipleBucketSpacesEnabled() throws Exception {
-        ContentClusterBuilder builder = createClusterBuilderWithGlobalType();
+    private static ContentCluster createClusterFromBuilderAndDocTypes(ContentClusterBuilder builder, String... docTypes) throws Exception {
         builder.groupXml(joinLines("<group>",
                 "<node distribution-key='0' hostalias='mockhost'/>",
                 "<node distribution-key='1' hostalias='mockhost'/>",
                 "</group>"));
         builder.enableMultipleBucketSpaces(true);
         String clusterXml = builder.getXml();
-        return createCluster(clusterXml, createSearchDefinitions("global", "regular"));
+        return createCluster(clusterXml, createSearchDefinitions(docTypes));
+    }
+
+    private static ContentCluster createClusterWithMultipleBucketSpacesEnabled() throws Exception {
+        return createClusterFromBuilderAndDocTypes(createClusterBuilderWithGlobalType(), "global", "regular");
+    }
+
+    private static ContentCluster createClusterWithMultipleBucketSpacesEnabledButNoGlobalDocs() throws Exception {
+        return createClusterFromBuilderAndDocTypes(createClusterBuilderWithOnlyDefaultTypes(), "marve", "fleksnes");
+    }
+
+    private static ContentCluster createClusterWithGlobalDocsButNotMultipleSpacesEnabled() throws Exception {
+        return createCluster(createClusterBuilderWithGlobalType()
+                        .enableMultipleBucketSpaces(false)
+                        .getXml(),
+                createSearchDefinitions("global", "regular"));
     }
 
     private static ContentClusterBuilder createClusterBuilderWithGlobalType() {
         return new ContentClusterBuilder()
                 .docTypes(Arrays.asList(DocType.indexGlobal("global"), DocType.index("regular")));
+    }
+
+    private static ContentClusterBuilder createClusterBuilderWithOnlyDefaultTypes() {
+        return new ContentClusterBuilder()
+                .docTypes(Arrays.asList(DocType.index("marve"), DocType.index("fleksnes")));
     }
 
     private static ProtonConfig getProtonConfig(ContentCluster cluster) {
@@ -176,6 +195,24 @@ public class ContentSearchClusterTest {
         {
             assertTrue(getFleetcontrollerConfig(cluster).enable_multiple_bucket_spaces());
         }
+    }
+
+    @Test
+    public void cluster_with_global_document_types_sets_cluster_controller_global_docs_config_option() throws Exception {
+        ContentCluster cluster = createClusterWithMultipleBucketSpacesEnabled();
+        assertTrue(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
+    }
+
+    @Test
+    public void cluster_without_global_document_types_unsets_cluster_controller_global_docs_config_option() throws Exception {
+        ContentCluster cluster = createClusterWithMultipleBucketSpacesEnabledButNoGlobalDocs();
+        assertFalse(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
+    }
+
+    @Test
+    public void controller_global_documents_config_forced_to_false_if_multiple_spaces_not_enabled() throws Exception {
+        ContentCluster cluster = createClusterWithGlobalDocsButNotMultipleSpacesEnabled();
+        assertFalse(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
     }
 
 }

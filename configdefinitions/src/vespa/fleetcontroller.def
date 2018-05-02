@@ -158,6 +158,12 @@ max_deferred_task_version_wait_time_sec double default=30.0
 ## Switch to enable multiple bucket spaces in cluster controller.
 enable_multiple_bucket_spaces bool default=false
 
+## Whether or not the content cluster the controller has responsibility for
+## contains any document types that are tagged as global. If this is true,
+## global document-specific behavior is enabled that marks nodes down in the
+## default space if they have merges pending in the global bucket space.
+cluster_has_global_document_types bool default=false
+
 ## The minimum merge completion ratio of buckets in a bucket space before it is considered complete.
 ##
 ## Bucket merges are considered complete when:
