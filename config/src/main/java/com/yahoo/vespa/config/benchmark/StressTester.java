@@ -109,7 +109,7 @@ public class StressTester {
             threadList.clear();
             testRunners.clear();
             for (int i = 0; i < threads; i++) {
-                Tester tester = (Tester) testClass.newInstance();
+                Tester tester = (Tester) testClass.getDeclaredConstructor().newInstance();
                 TestRunner testRunner = new TestRunner(tester);
                 testRunners.add(testRunner);
                 Thread t = new Thread(testRunner);
