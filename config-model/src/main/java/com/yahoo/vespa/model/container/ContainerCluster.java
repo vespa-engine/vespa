@@ -14,7 +14,6 @@ import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
@@ -152,6 +151,8 @@ public final class ContainerCluster
 
     public static final String ROOT_HANDLER_BINDING = "*://*/";
 
+    private static final boolean messageBusEnabled = true;
+
     private final String name;
 
     private List<Container> containers = new ArrayList<>();
@@ -164,6 +165,8 @@ public final class ContainerCluster
     private SecretStore secretStore;
 
     private MbusParams mbusParams;
+    private boolean rpcServerEnabled = true;
+    private boolean httpServerEnabled = true;
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
     private final Set<Path> platformBundles = new LinkedHashSet<>();
@@ -804,6 +807,16 @@ public final class ContainerCluster
      * or empty if this is not specified by the application.
      */
     public Optional<Integer> getMemoryPercentage() { return memoryPercentage; }
+
+    boolean messageBusEnabled() { return messageBusEnabled; }
+
+    public void setRpcServerEnabled(boolean rpcServerEnabled) { this.rpcServerEnabled = rpcServerEnabled; }
+
+    boolean rpcServerEnabled() { return rpcServerEnabled; }
+
+    boolean httpServerEnabled() { return httpServerEnabled; }
+
+    public void setHttpServerEnabled(boolean httpServerEnabled) { this.httpServerEnabled = httpServerEnabled; }
 
     @Override
     public String toString() {

@@ -1,20 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.statistics;
 
-
 import java.util.Arrays;
 import java.util.logging.Logger;
 
 import com.yahoo.container.StatisticsConfig;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Check counters work.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 
-public class CounterTestCase extends junit.framework.TestCase {
+public class CounterTestCase {
 
+    @Test
     public void testBasic() {
         Counter c = new Counter("test", Statistics.nullImplementation, false);
         c.increment();
@@ -32,6 +36,7 @@ public class CounterTestCase extends junit.framework.TestCase {
         assertEquals(0, c.get());
     }
 
+    @Test
     public void testObjectContracts() {
         final String counterName = "test";
         Counter c = new Counter(counterName, Statistics.nullImplementation, false);
@@ -51,6 +56,7 @@ public class CounterTestCase extends junit.framework.TestCase {
         assertEquals(prefix, image.substring(0, prefix.length()));
     }
 
+    @Test
     public void testConfigStuff() {
         Logger logger = Logger.getLogger(Counter.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();

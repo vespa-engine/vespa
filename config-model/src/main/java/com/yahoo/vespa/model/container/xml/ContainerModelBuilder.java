@@ -71,7 +71,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -87,13 +86,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     /**
      * Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
      */
-    static final String HOSTED_VESPA_STATUS_FILE_INSTALL_SETTING = "cloudconfig_server__tenant_vip_status_file";
+    private static final String HOSTED_VESPA_STATUS_FILE_INSTALL_SETTING = "cloudconfig_server__tenant_vip_status_file";
 
     public enum Networking { disable, enable }
 
     private ApplicationPackage app;
     private final boolean standaloneBuilder;
     private final Networking networking;
+    private final boolean rpcServerEnabled;
+    private final boolean httpServerEnabled;
     protected DeployLogger log;
 
     public static final List<ConfigModelId> configModelIds =  
@@ -102,12 +103,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
 
-    private static final Logger logger = Logger.getLogger(ContainerModelBuilder.class.getName());
-
     public ContainerModelBuilder(boolean standaloneBuilder, Networking networking) {
         super(ContainerModel.class);
         this.standaloneBuilder = standaloneBuilder;
         this.networking = networking;
+        // Always disable rpc server for standalone container
+        this.rpcServerEnabled = !standaloneBuilder;
+        this.httpServerEnabled = networking == Networking.enable;
     }
 
     @Override
@@ -124,6 +126,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
         addBundlesForPlatformComponents(cluster);
+        cluster.setRpcServerEnabled(rpcServerEnabled);
+        cluster.setHttpServerEnabled(httpServerEnabled);
         model.setCluster(cluster);
     }
 
@@ -159,7 +163,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addDefaultHandlers(cluster);
         addStatusHandlers(cluster, context);
-        addDefaultComponents(cluster);
         setDefaultMetricConsumerFactory(cluster);
 
         addHttp(spec, cluster);
@@ -239,9 +242,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             addConfiguredComponents(cluster, components, "component");
         }
         addConfiguredComponents(cluster, spec, "component");
-    }
-
-    protected void addDefaultComponents(ContainerCluster cluster) {
     }
 
     protected void setDefaultMetricConsumerFactory(ContainerCluster cluster) {
@@ -442,8 +442,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Container node = new Container(cluster, "container.0", 0);
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
-            if ( ! node.isInitialized() ) // TODO: Fold this into initService
-                node.initService();
+            node.initService();
             cluster.addContainers(Collections.singleton(node));
         }
         else {

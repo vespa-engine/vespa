@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 
@@ -33,26 +34,38 @@ public final class ApplicationSet {
         latestVersion = applications.keySet().stream().max((a, b) -> a.compareTo(b)).get();
     }
 
+    /**
+     * Returns the specified version, or the latest if not specified, or if the given version is not
+     * available and the latest is a permissible substitution.
+     *
+     * @throws VersionDoesNotExistException if the specified version is not available and the latest version is not
+     *                                      a permissible substitution
+     */
     public Application getForVersionOrLatest(Optional<Version> optionalVersion, Instant now) {
-        return resolveForVersion(optionalVersion.orElse(latestVersion), now);
+        Version version = optionalVersion.orElse(latestVersion);
+        return resolveForVersion(version, now)
+                 .orElseThrow(() -> new VersionDoesNotExistException(applicationId + " has no model for Vespa version " + version));
     }
 
-    private Application resolveForVersion(Version vespaVersion, Instant now) {
+    private Optional<Application> resolveForVersion(Version vespaVersion, Instant now) {
         Application application = applications.get(vespaVersion);
         if (application != null)
-            return application;
+            return Optional.of(application);
 
         // Does the latest version specify we can use it regardless?
         Application latest = applications.get(latestVersion);
         if (latest.getModel().allowModelVersionMismatch(now))
-            return latest;
+            return Optional.of(latest);
 
-        throw new VersionDoesNotExistException("No application with Vespa version " + vespaVersion + " exists");
+        return Optional.empty();
     }
 
-    public ApplicationId getId() {
-        return applicationId;
+    /** Returns the application for the given version, if available */
+    public Optional<Application> get(Version version) {
+        return Optional.ofNullable(applications.get(version));
     }
+
+    public ApplicationId getId() { return applicationId; }
 
     public static ApplicationSet fromList(List<Application> applications) {
         return new ApplicationSet(applications);

@@ -1,14 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request.test;
 
-import com.yahoo.processing.Request;
 import com.yahoo.processing.request.ErrorMessage;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author  bratseth
  */
-public class ErrorMessageTestCase extends junit.framework.TestCase {
+public class ErrorMessageTestCase {
 
     @Test
     public void testToString() {
@@ -44,11 +46,16 @@ public class ErrorMessageTestCase extends junit.framework.TestCase {
                      new ErrorMessage("message"));
         assertEquals(new ErrorMessage("message",new Exception()),
                      new ErrorMessage("message"));
-        assertFalse(new ErrorMessage("message").equals(new ErrorMessage("message","detail")));
-        assertFalse(new ErrorMessage(37,"message").equals(new ErrorMessage("message")));
-        assertFalse(new ErrorMessage(37,"message").equals(new ErrorMessage(38,"message")));
-        assertFalse(new ErrorMessage("message","detail1").equals(new ErrorMessage("message","detail2")));
-        assertFalse(new ErrorMessage("message1").equals(new ErrorMessage("message2")));
+        assertNotEquals(new ErrorMessage("message"),
+                        new ErrorMessage("message","detail"));
+        assertNotEquals(new ErrorMessage(37,"message"),
+                        new ErrorMessage("message"));
+        assertNotEquals(new ErrorMessage(37,"message"),
+                        new ErrorMessage(38,"message"));
+        assertNotEquals(new ErrorMessage("message","detail1"),
+                        new ErrorMessage("message","detail2"));
+        assertNotEquals(new ErrorMessage("message1"),
+                        new ErrorMessage("message2"));
     }
 
 }

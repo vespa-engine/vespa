@@ -16,7 +16,7 @@ import org.junit.Before;
 /**
  * Supertype for tests in the multi tenant application API
  * 
- * @author vegardh
+ * @author Vegard Havdal
  *
  */
 public class TenantTest extends TestWithCurator {
@@ -24,29 +24,20 @@ public class TenantTest extends TestWithCurator {
     protected TenantRepository tenantRepository;
 
     @Before
-    public void setupTenants() throws Exception {
+    public void setupTenants() {
         tenantRepository = createTenants();
     }
 
     @After
-    public void closeTenants() throws IOException {
+    public void closeTenants() {
         tenantRepository.close();
     }
 
-    protected TenantRepository createTenants() throws Exception {
+    private TenantRepository createTenants() {
         return new TenantRepository(new TestComponentRegistry.Builder().curator(curator).build());
     }
 
-    protected Executor testExecutor() {
-        return new Executor() {            
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        };
-    }
-    
-    protected void assertResponseEquals(SessionResponse response, String payload) throws IOException {
+    void assertResponseEquals(SessionResponse response, String payload) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
         assertEquals(baos.toString("UTF-8"), payload);

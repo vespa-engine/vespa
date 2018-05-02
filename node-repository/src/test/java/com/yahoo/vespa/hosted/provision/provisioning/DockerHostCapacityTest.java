@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -16,9 +15,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author smorgrav
@@ -28,8 +27,8 @@ public class DockerHostCapacityTest {
     private DockerHostCapacity capacity;
     private List<Node> nodes;
     private Node host1, host2, host3;
-    Node nodeA, nodeB, nodeC, nodeD, nodeE;
-    Flavor flavorDocker, flavorDocker2;
+    private Node nodeA, nodeB, nodeC, nodeD, nodeE;
+    private Flavor flavorDocker, flavorDocker2;
 
     @Before
     public void setup() {
@@ -132,10 +131,4 @@ public class DockerHostCapacityTest {
         return additionalIps;
     }
 
-    private ApplicationId app(String tenant) {
-        return new ApplicationId.Builder()
-                .tenant(tenant)
-                .applicationName("test")
-                .instanceName("default").build();
-    }
 }

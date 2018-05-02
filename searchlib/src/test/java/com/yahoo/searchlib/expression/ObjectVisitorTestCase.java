@@ -2,18 +2,18 @@
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.ObjectDumper;
-import com.yahoo.searchlib.expression.FixedWidthBucketFunctionNode;
-import com.yahoo.searchlib.expression.IntegerResultNode;
-import com.yahoo.searchlib.expression.AttributeNode;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.Arrays;
 
-/**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- */
-public class ObjectVisitorTestCase extends TestCase {
+import static org.junit.Assert.assertEquals;
 
+/**
+ * @author Simon Thoresen
+ */
+public class ObjectVisitorTestCase {
+
+    @Test
     public void testObjectDumper() {
         assertDump("test: <NULL>\n", null);
         assertDump("test: 1\n", 1);
@@ -58,4 +58,5 @@ public class ObjectVisitorTestCase extends TestCase {
         dump.visit("test", obj);
         assertEquals(expected, dump.toString());
     }
+
 }

@@ -565,12 +565,15 @@ TEST_F("require that removes are routed to handlers", SimpleFixture)
     assertHandler(bucket0, tstamp0, docId0, f.hset.handler1);
     assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
     EXPECT_FALSE(rr.wasFound());
+    EXPECT_TRUE(rr.hasError());
+    EXPECT_EQUAL(Result(Result::PERMANENT_ERROR, "No handler for document type 'type3'"), rr);
 
     f.hset.handler1.setExistingTimestamp(tstamp2);
     rr = f.engine.remove(bucket1, tstamp1, docId1, context);
     assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
     assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
     EXPECT_TRUE(rr.wasFound());
+    EXPECT_FALSE(rr.hasError());
 
     f.hset.handler1.setExistingTimestamp(tstamp0);
     f.hset.handler2.setExistingTimestamp(tstamp3);
@@ -578,12 +581,14 @@ TEST_F("require that removes are routed to handlers", SimpleFixture)
     assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
     assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
     EXPECT_TRUE(rr.wasFound());
+    EXPECT_FALSE(rr.hasError());
 
     f.hset.handler2.setExistingTimestamp(tstamp0);
     rr = f.engine.remove(bucket1, tstamp1, docId2, context);
     assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
     assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
     EXPECT_FALSE(rr.wasFound());
+    EXPECT_FALSE(rr.hasError());
 }
 
 

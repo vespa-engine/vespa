@@ -3,24 +3,23 @@ package com.yahoo.messagebus.routing;
 
 import com.yahoo.messagebus.ConfigAgent;
 import com.yahoo.messagebus.ConfigHandler;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class RoutingSpecTestCase extends TestCase {
+public class RoutingSpecTestCase {
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
+    @Test
     public void testConfig() {
         assertConfig(new RoutingSpec());
         assertConfig(new RoutingSpec().addTable(new RoutingTableSpec("mytable1")));
@@ -71,6 +70,7 @@ public class RoutingSpecTestCase extends TestCase {
                                      .addRoute(new RouteSpec("myroute1").addHop("myhop1"))).toString());
     }
 
+    @Test
     public void testApplicationSpec() {
         assertApplicationSpec(Arrays.asList("foo"),
                               Arrays.asList("foo",
@@ -101,6 +101,7 @@ public class RoutingSpecTestCase extends TestCase {
                                             "*/*/*"));
     }
 
+    @Test
     public void testVeriyfOk() {
         assertVerifyOk(new RoutingSpec().addTable(new RoutingTableSpec("mytable")
                 .addHop(new HopSpec("hop1", "myservice1"))),
@@ -125,6 +126,7 @@ public class RoutingSpecTestCase extends TestCase {
                                .addService("mytable", "foo/1/baz"));
     }
 
+    @Test
     public void testVerifyToggle() {
         assertVerifyOk(new RoutingSpec(false)
                 .addTable(new RoutingTableSpec("mytable"))
@@ -142,6 +144,7 @@ public class RoutingSpecTestCase extends TestCase {
                          new ApplicationSpec());
     }
 
+    @Test
     public void testVerifyFail() {
         // Duplicate table.
         assertVerifyFail(new RoutingSpec()
@@ -274,12 +277,6 @@ public class RoutingSpecTestCase extends TestCase {
                                        "Selector 'bar/[baz]/cox' does not match recipient 'cox/0/bar' in hop 'hop5' in routing table 'mytable'."));
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
     private static void assertVerifyOk(RoutingSpec routing, ApplicationSpec app) {
         assertVerifyFail(routing, app, new ArrayList<String>());
     }
@@ -333,4 +330,5 @@ public class RoutingSpecTestCase extends TestCase {
             this.routing = routing;
         }
     }
+
 }

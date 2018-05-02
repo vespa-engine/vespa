@@ -33,7 +33,6 @@ import java.util.Set;
  * and other queries against the model.
  *
  * @author Harald Musum
- * @since 2010-12-08
  */
 public class Application implements ModelResult {
 

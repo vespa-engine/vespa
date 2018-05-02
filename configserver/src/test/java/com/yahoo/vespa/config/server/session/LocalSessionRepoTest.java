@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -50,10 +49,9 @@ public class LocalSessionRepoTest extends TestWithCurator {
         }
         clock = new ManualClock(Instant.ofEpochSecond(1));
         LocalSessionLoader loader = new SessionFactoryImpl(globalComponentRegistry,
-                new SessionCounter(globalComponentRegistry.getConfigCurator(), tenantName),
-                new MemoryTenantApplications(),
-                tenantFileSystemDirs, new HostRegistry<>(),
-                tenantName);
+                                                           new MemoryTenantApplications(),
+                                                           tenantFileSystemDirs, new HostRegistry<>(),
+                                                           tenantName);
         repo = new LocalSessionRepo(tenantFileSystemDirs, loader, clock, 5);
     }
 

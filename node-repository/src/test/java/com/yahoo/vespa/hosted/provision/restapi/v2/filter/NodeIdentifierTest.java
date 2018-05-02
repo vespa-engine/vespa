@@ -34,14 +34,15 @@ import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
  */
 public class NodeIdentifierTest {
+
     private static final String HOSTNAME = "myhostname";
     private static final String OPENSTACK_ID = "OPENSTACK-ID";
     private static final String AWS_INSTANCE_ID = "i-abcdef123456";
@@ -188,4 +189,5 @@ public class NodeIdentifierTest {
         b.addFlavor("docker", 1., 2., 50, Flavor.Type.DOCKER_CONTAINER).cost(1);
         return b.build();
     }
+
 }

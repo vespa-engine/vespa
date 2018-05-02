@@ -1,91 +1,86 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
+import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
+import com.yahoo.vespa.athenz.tls.SslContextBuilder;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
-import com.yahoo.vespa.hosted.node.admin.configserver.certificate.ConfigServerKeyStoreRefresher;
-import com.yahoo.vespa.hosted.node.admin.configserver.certificate.ConfigServerKeyStoreRefresherFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
+import static java.util.Collections.singleton;
+
 /**
- * Responsible for updating SSLConnectionSocketFactory on ConfigServerApiImpl asynchronously
- * and as required by embedded certificate expiry
+ * Responsible for updating {@link SSLConnectionSocketFactory} on {@link ConfigServerApiImpl} asynchronously
+ * using SIA based certificates (through {@link SiaIdentityProvider}).
  *
+ * @author bjorncs
  * @author hakon
  */
 public class SslConnectionSocketFactoryUpdater implements AutoCloseable {
-    private final ConfigServerInfo configServerInfo;
-    private final SslConnectionSocketFactoryCreator socketFactoryCreator;
-    // Internal ConfigServerApi used to refresh the key store
-    private final ConfigServerApiImpl configServerApi;
-    private final Optional<ConfigServerKeyStoreRefresher> keyStoreRefresher;
 
     private final Object monitor = new Object();
-    private SSLConnectionSocketFactory socketFactory = null;
+    private final HostnameVerifier configServerHostnameVerifier;
+    private final SiaIdentityProvider sia;
+
     private final Set<ConfigServerApi> configServerApis = new HashSet<>();
+    private SSLConnectionSocketFactory socketFactory;
 
     /**
      * Creates an updater with valid initial {@link SSLConnectionSocketFactory}
      *
-     * @param hostname         the hostname of localhost
      * @throws RuntimeException if e.g. key store options have been specified, but was unable
      *                          create a create a key store with a valid certificate
      */
-    public static SslConnectionSocketFactoryUpdater createAndRefreshKeyStoreIfNeeded(
-            ConfigServerInfo configServerInfo, String hostname) {
-        return new SslConnectionSocketFactoryUpdater(
-                configServerInfo,
-                hostname,
-                ConfigServerKeyStoreRefresher::new,
-                new SslConnectionSocketFactoryCreator());
+    public static SslConnectionSocketFactoryUpdater createAndRefreshKeyStoreIfNeeded(ConfigServerInfo configServerInfo) {
+        SiaIdentityProvider siaIdentityProvider = configServerInfo.getSiaConfig()
+                .map(siaConfig ->
+                             new SiaIdentityProvider(
+                                     (AthenzService) AthenzIdentities.from(siaConfig.hostIdentityName()),
+                                     Paths.get(siaConfig.credentialsPath()),
+                                     new File(siaConfig.trustStoreFile())))
+                .orElse(null);
+        HostnameVerifier configServerHostnameVerifier = configServerInfo.getSiaConfig()
+                .map(siaConfig -> createHostnameVerifier(AthenzIdentities.from(siaConfig.configserverIdentityName())))
+                .orElseGet(SSLConnectionSocketFactory::getDefaultHostnameVerifier);
+        return new SslConnectionSocketFactoryUpdater(siaIdentityProvider, configServerHostnameVerifier);
     }
 
-    /** Non-private for testing only */
-    SslConnectionSocketFactoryUpdater(
-            ConfigServerInfo configServerInfo,
-            String hostname,
-            ConfigServerKeyStoreRefresherFactory refresherFactory,
-            SslConnectionSocketFactoryCreator socketFactoryCreator) {
-        this.configServerInfo = configServerInfo;
-        this.socketFactoryCreator = socketFactoryCreator;
+    SslConnectionSocketFactoryUpdater(SiaIdentityProvider siaIdentityProvider,
+                                      HostnameVerifier configServerHostnameVerifier) {
+        this.configServerHostnameVerifier = configServerHostnameVerifier;
+        this.sia = siaIdentityProvider;
+        if (siaIdentityProvider != null) {
+            siaIdentityProvider.addReloadListener(this::updateSocketFactory);
+            socketFactory = createSocketFactory(siaIdentityProvider.getIdentitySslContext());
+        } else {
+            socketFactory = createDefaultSslConnectionSocketFactory();
+        }
+    }
 
-        // ConfigServerApi used to refresh the key store. Does not itself rely on a socket
-        // factory with key store, of course.
-        SSLConnectionSocketFactory socketFactoryWithoutKeyStore =
-                socketFactoryCreator.createSocketFactory(configServerInfo, Optional.empty());
-        configServerApi = ConfigServerApiImpl.createWithSocketFactory(
-                configServerInfo.getConfigServerUris(), socketFactoryWithoutKeyStore);
-
-        // If we have keystore options, we should make sure we use the keystore with the latest certificate,
-        // start the keystore refresher.
-        keyStoreRefresher = configServerInfo.getKeyStoreOptions().map(keyStoreOptions -> {
-            ConfigServerKeyStoreRefresher keyStoreRefresher = refresherFactory.create(
-                    keyStoreOptions,
-                    this::updateSslConnectionSocketFactory,
-                    configServerApi,
-                    hostname);
-
-            // Run the refresh once manually to make sure that we have a valid certificate, otherwise fail.
-            try {
-                keyStoreRefresher.refreshKeyStoreIfNeeded();
-                updateSslConnectionSocketFactory();
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to acquire certificate to config server", e);
-            }
-
-            keyStoreRefresher.start();
-            return keyStoreRefresher;
-        });
+    private void updateSocketFactory(SSLContext sslContext) {
+        synchronized (monitor) {
+            socketFactory = createSocketFactory(sslContext);
+            configServerApis.forEach(api -> api.setSSLConnectionSocketFactory(socketFactory));
+        }
     }
 
     public SSLConnectionSocketFactory getCurrentSocketFactory() {
-        return socketFactory;
+        synchronized (monitor) {
+            return socketFactory;
+        }
     }
 
-    /** Register a {@link ConfigServerApi} whose SSLConnectionSocketFactory will be kept up to date */
+    /** Register a {@link ConfigServerApi} whose {@link SSLConnectionSocketFactory} will be kept up to date */
     public void registerConfigServerApi(ConfigServerApi configServerApi) {
         synchronized (monitor) {
             configServerApi.setSSLConnectionSocketFactory(socketFactory);
@@ -101,17 +96,22 @@ public class SslConnectionSocketFactoryUpdater implements AutoCloseable {
 
     @Override
     public void close() {
-        keyStoreRefresher.ifPresent(ConfigServerKeyStoreRefresher::stop);
-        configServerApi.close();
-    }
-
-    private void updateSslConnectionSocketFactory() {
-        synchronized (monitor) {
-            socketFactory = socketFactoryCreator.createSocketFactory(
-                    configServerInfo,
-                    configServerInfo.getKeyStoreOptions());
-
-            configServerApis.forEach(api -> api.setSSLConnectionSocketFactory(socketFactory));
+        if (sia != null) {
+            sia.deconstruct();
         }
     }
+
+    private SSLConnectionSocketFactory createSocketFactory(SSLContext sslContext) {
+        return new SSLConnectionSocketFactory(sslContext, configServerHostnameVerifier);
+    }
+
+    private SSLConnectionSocketFactory createDefaultSslConnectionSocketFactory() {
+        SSLContext sslContext = new SslContextBuilder().build();
+        return createSocketFactory(sslContext);
+    }
+
+    private static HostnameVerifier createHostnameVerifier(AthenzIdentity identity) {
+        return new AthenzIdentityVerifier(singleton(identity));
+    }
+
 }

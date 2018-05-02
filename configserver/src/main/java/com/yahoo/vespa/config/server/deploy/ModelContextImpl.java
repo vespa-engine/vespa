@@ -74,19 +74,13 @@ public class ModelContextImpl implements ModelContext {
     }
 
     @Override
-    public ApplicationPackage applicationPackage() {
-        return applicationPackage;
-    }
+    public ApplicationPackage applicationPackage() { return applicationPackage; }
 
     @Override
-    public Optional<Model> previousModel() {
-        return previousModel;
-    }
+    public Optional<Model> previousModel() { return previousModel; }
 
     @Override
-    public Optional<ApplicationPackage> permanentApplicationPackage() {
-        return permanentApplicationPackage;
-    }
+    public Optional<ApplicationPackage> permanentApplicationPackage() { return permanentApplicationPackage; }
 
     /** 
      * Returns the host provisioner to use, or empty to use the default provisioner, 
@@ -94,34 +88,22 @@ public class ModelContextImpl implements ModelContext {
      */
     // TODO: Don't allow empty here but create the right provisioner when this is set up instead
     @Override
-    public Optional<HostProvisioner> hostProvisioner() {
-        return hostProvisioner;
-    }
+    public Optional<HostProvisioner> hostProvisioner() { return hostProvisioner; }
 
     @Override
-    public DeployLogger deployLogger() {
-        return deployLogger;
-    }
+    public DeployLogger deployLogger() { return deployLogger; }
 
     @Override
-    public ConfigDefinitionRepo configDefinitionRepo() {
-        return configDefinitionRepo;
-    }
+    public ConfigDefinitionRepo configDefinitionRepo() { return configDefinitionRepo; }
 
     @Override
-    public FileRegistry getFileRegistry() {
-        return fileRegistry;
-    }
+    public FileRegistry getFileRegistry() { return fileRegistry; }
 
     @Override
-    public ModelContext.Properties properties() {
-        return properties;
-    }
+    public ModelContext.Properties properties() { return properties; }
 
     @Override
-    public Optional<File> appDir() {
-        return appDir;
-    }
+    public Optional<File> appDir() { return appDir; }
 
     @Override
     public Version modelVespaVersion() { return modelVespaVersion; }
@@ -129,9 +111,6 @@ public class ModelContextImpl implements ModelContext {
     @Override
     public Version wantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
-    /**
-     * @author Ulf Lilleengen
-     */
     public static class Properties implements ModelContext.Properties {
 
         private final ApplicationId applicationId;
@@ -159,34 +138,22 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override
-        public boolean multitenant() {
-            return multitenant;
-        }
+        public boolean multitenant() { return multitenant; }
 
         @Override
-        public ApplicationId applicationId() {
-            return applicationId;
-        }
+        public ApplicationId applicationId() { return applicationId; }
 
         @Override
-        public List<ConfigServerSpec> configServerSpecs() {
-            return configServerSpecs;
-        }
+        public List<ConfigServerSpec> configServerSpecs() { return configServerSpecs; }
 
         @Override
-        public HostName loadBalancerName() {
-            return loadBalancerName;
-        }
+        public HostName loadBalancerName() { return loadBalancerName; }
 
         @Override
-        public boolean hostedVespa() {
-            return hostedVespa;
-        }
+        public boolean hostedVespa() { return hostedVespa; }
 
         @Override
-        public Zone zone() {
-            return zone;
-        }
+        public Zone zone() { return zone; }
 
         @Override
         public Set<Rotation> rotations() { return rotations; }

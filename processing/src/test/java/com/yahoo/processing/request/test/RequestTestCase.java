@@ -8,12 +8,17 @@ import com.yahoo.processing.request.Properties;
 import com.yahoo.processing.request.properties.PropertyMap;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 /**
  * Tests using requests
  *
  * @author bratseth
  */
-public class RequestTestCase extends junit.framework.TestCase {
+public class RequestTestCase {
+
+    private static final double delta = 0.0000000001;
 
     @Test
     public void testProperties() {
@@ -33,53 +38,53 @@ public class RequestTestCase extends junit.framework.TestCase {
         assertEquals("default", r.properties().get(new CompoundName("c"), "default"));
         assertNull(r.properties().get(new CompoundName("c")));
 
-        assertEquals("b1",r.properties().getString("b"));
-        assertEquals("b1",r.properties().getString("b","default"));
-        assertEquals("default",r.properties().getString("c","default"));
-        assertEquals(null,r.properties().getString("c"));
-        assertEquals("b1",r.properties().getString(new CompoundName("b")));
-        assertEquals("b1",r.properties().getString(new CompoundName("b"),"default"));
-        assertEquals("default",r.properties().getString(new CompoundName("c"),"default"));
-        assertEquals(null,r.properties().getString(new CompoundName("c")));
+        assertEquals("b1", r.properties().getString("b"));
+        assertEquals("b1", r.properties().getString("b","default"));
+        assertEquals("default", r.properties().getString("c","default"));
+        assertEquals(null, r.properties().getString("c"));
+        assertEquals("b1", r.properties().getString(new CompoundName("b")));
+        assertEquals("b1", r.properties().getString(new CompoundName("b"),"default"));
+        assertEquals("default", r.properties().getString(new CompoundName("c"),"default"));
+        assertEquals(null, r.properties().getString(new CompoundName("c")));
 
         r.properties().set("i",7);
-        assertEquals(7,(int)r.properties().getInteger("i"));
-        assertEquals(7,(int)r.properties().getInteger("i",3));
-        assertEquals(3,(int)r.properties().getInteger("n",3));
+        assertEquals(7, (int)r.properties().getInteger("i"));
+        assertEquals(7, (int)r.properties().getInteger("i",3));
+        assertEquals(3, (int)r.properties().getInteger("n",3));
         assertNull(r.properties().getInteger("n"));
-        assertEquals(7,(int)r.properties().getInteger(new CompoundName("i")));
-        assertEquals(7,(int)r.properties().getInteger(new CompoundName("i"),3));
-        assertEquals(3,(int)r.properties().getInteger(new CompoundName("n"),3));
+        assertEquals(7, (int)r.properties().getInteger(new CompoundName("i")));
+        assertEquals(7, (int)r.properties().getInteger(new CompoundName("i"),3));
+        assertEquals(3, (int)r.properties().getInteger(new CompoundName("n"),3));
         assertNull(r.properties().getInteger("n"));
 
-        r.properties().set(new CompoundName("l"),7);
+        r.properties().set(new CompoundName("l"), 7);
         assertEquals(7, (long) r.properties().getLong("l"));
-        assertEquals(7,(long)r.properties().getLong("l",3l));
-        assertEquals(3,(long)r.properties().getLong("m",3l));
+        assertEquals(7, (long)r.properties().getLong("l",3l));
+        assertEquals(3, (long)r.properties().getLong("m",3l));
         assertNull(r.properties().getInteger("m"));
-        assertEquals(7,(long)r.properties().getLong(new CompoundName("l")));
-        assertEquals(7,(long)r.properties().getLong(new CompoundName("l"),3l));
-        assertEquals(3,(long)r.properties().getLong(new CompoundName("m"),3l));
+        assertEquals(7, (long)r.properties().getLong(new CompoundName("l")));
+        assertEquals(7, (long)r.properties().getLong(new CompoundName("l"),3l));
+        assertEquals(3, (long)r.properties().getLong(new CompoundName("m"),3l));
         assertNull(r.properties().getInteger("m"));
 
-        r.properties().set("d",7.3);
-        assertEquals(7.3,r.properties().getDouble("d"));
-        assertEquals(7.3,r.properties().getDouble("d",3.4d));
-        assertEquals(3.4,r.properties().getDouble("f",3.4d));
+        r.properties().set("d", 7.3);
+        assertEquals(7.3, r.properties().getDouble("d"), delta);
+        assertEquals(7.3, r.properties().getDouble("d",3.4d), delta);
+        assertEquals(3.4, r.properties().getDouble("f",3.4d), delta);
         assertNull(r.properties().getDouble("f"));
-        assertEquals(7.3,r.properties().getDouble(new CompoundName("d")));
-        assertEquals(7.3,r.properties().getDouble(new CompoundName("d"),3.4d));
-        assertEquals(3.4,r.properties().getDouble(new CompoundName("f"),3.4d));
+        assertEquals(7.3, r.properties().getDouble(new CompoundName("d")), delta);
+        assertEquals(7.3, r.properties().getDouble(new CompoundName("d"),3.4d), delta);
+        assertEquals(3.4, r.properties().getDouble(new CompoundName("f"),3.4d), delta);
         assertNull(r.properties().getDouble("f"));
 
         r.properties().set("o",true);
-        assertEquals(true,r.properties().getBoolean("o"));
-        assertEquals(true,r.properties().getBoolean("o",true));
-        assertEquals(true,r.properties().getBoolean("g",true));
+        assertEquals(true, r.properties().getBoolean("o"));
+        assertEquals(true, r.properties().getBoolean("o",true));
+        assertEquals(true, r.properties().getBoolean("g",true));
         assertEquals(false, r.properties().getBoolean("g"));
-        assertEquals(true,r.properties().getBoolean(new CompoundName("o")));
-        assertEquals(true,r.properties().getBoolean(new CompoundName("o"),true));
-        assertEquals(true,r.properties().getBoolean(new CompoundName("g"),true));
+        assertEquals(true, r.properties().getBoolean(new CompoundName("o")));
+        assertEquals(true, r.properties().getBoolean(new CompoundName("o"),true));
+        assertEquals(true, r.properties().getBoolean(new CompoundName("g"),true));
         assertEquals(false, r.properties().getBoolean("g"));
 
         r.properties().set(new CompoundName("x.y"), "x1.y1");
@@ -99,9 +104,8 @@ public class RequestTestCase extends junit.framework.TestCase {
         r.errors().add(new ErrorMessage("foo"));
         r.errors().add(new ErrorMessage("bar"));
         assertEquals(2,r.errors().size());
-        assertEquals("foo",r.errors().get(0).getMessage());
-        assertEquals("bar",r.errors().get(1).getMessage());
-
+        assertEquals("foo", r.errors().get(0).getMessage());
+        assertEquals("bar", r.errors().get(1).getMessage());
     }
 
     @Test

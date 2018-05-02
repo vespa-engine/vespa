@@ -2,13 +2,18 @@
 package com.yahoo.messagebus.routing;
 
 import com.yahoo.messagebus.ErrorCode;
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class RetryPolicyTestCase extends TestCase {
+public class RetryPolicyTestCase {
 
+    @Test
     public void testSimpleRetryPolicy() {
         RetryTransientErrorsPolicy policy = new RetryTransientErrorsPolicy();
         for (int i = 0; i < 5; ++i) {
@@ -29,4 +34,5 @@ public class RetryPolicyTestCase extends TestCase {
             }
         }
     }
+
 }

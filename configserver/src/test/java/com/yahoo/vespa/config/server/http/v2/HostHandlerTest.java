@@ -40,8 +40,7 @@ public class HostHandlerTest {
     public void setup() {
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-        TenantBuilder tb = TenantBuilder.create(componentRegistry, mytenant)
-                .withReloadHandler(new MockReloadHandler());
+        TenantBuilder tb = TenantBuilder.create(componentRegistry, mytenant);
         tenantRepository.addTenant(tb);
         handler = createHostHandler();
     }

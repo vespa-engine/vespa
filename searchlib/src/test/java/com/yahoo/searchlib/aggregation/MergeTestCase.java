@@ -3,22 +3,32 @@ package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.GlobalId;
-import com.yahoo.searchlib.expression.*;
-import junit.framework.TestCase;
+import com.yahoo.searchlib.expression.AggregationRefNode;
+import com.yahoo.searchlib.expression.AttributeNode;
+import com.yahoo.searchlib.expression.ConstantNode;
+import com.yahoo.searchlib.expression.FloatBucketResultNode;
+import com.yahoo.searchlib.expression.FloatResultNode;
+import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.MultiplyFunctionNode;
+import com.yahoo.searchlib.expression.StringResultNode;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class MergeTestCase extends TestCase {
+public class MergeTestCase {
 
     private GlobalId createGlobalId(int docId) {
         return new GlobalId((new DocumentId("doc:test:" + docId)).getGlobalId());
     }
 
     // Test merging of hits.
+    @Test
     public void testMergeHits() {
         Grouping request = new Grouping()
             .setFirstLevel(0)
@@ -33,7 +43,7 @@ public class MergeTestCase extends TestCase {
                        .addHit(new FS4Hit(10, createGlobalId(10), 10))
                        .addHit(new FS4Hit(5, createGlobalId(9), 9))
                        .addHit(new FS4Hit(6, createGlobalId(8), 8))
-                       .setExpression(new ConstantNode( new IntegerResultNode(0))));
+                       .setExpression(new ConstantNode(new IntegerResultNode(0))));
 
         Group a = new Group()
             .addAggregationResult(new HitsAggregationResult()
@@ -68,6 +78,7 @@ public class MergeTestCase extends TestCase {
     }
 
     // Test merging the sum of the values from a single attribute vector that was collected directly into the root node.
+    @Test
     public void testMergeSimpleSum() {
         Grouping lhs = new Grouping()
             .setRoot(new Group()
@@ -90,6 +101,7 @@ public class MergeTestCase extends TestCase {
     }
 
     // Test merging of the value from a single attribute vector in level 1.
+    @Test
     public void testMergeSingleChild() {
         Grouping lhs = new Grouping()
             .setFirstLevel(0)
@@ -119,6 +131,7 @@ public class MergeTestCase extends TestCase {
     }
 
     // Test merging of the value from a multiple attribute vectors in level 1.
+    @Test
     public void testMergeMultiChild() {
         Grouping lhs = new Grouping()
             .setFirstLevel(0)
@@ -171,6 +184,7 @@ public class MergeTestCase extends TestCase {
     }
 
     // Verify that frozen levels are not touched during merge.
+    @Test
     public void testMergeLevels() {
         Grouping request = new Grouping()
             .addLevel(new GroupingLevel()
@@ -340,6 +354,7 @@ public class MergeTestCase extends TestCase {
 
     // Verify that the number of groups for a level is pruned down to maxGroups, that the remaining groups are the
     // highest ranked ones, and that they are sorted by group id.
+    @Test
     public void testMergeGroups() {
         Grouping request = new Grouping()
             .addLevel(new GroupingLevel()
@@ -393,6 +408,7 @@ public class MergeTestCase extends TestCase {
         assertMerge(request, rhs, lhs, expectAll);
     }
 
+    @Test
     public void testMergeBuckets() {
           Grouping lhs = new Grouping()
                 .setRoot(new Group().setTag(0)
@@ -423,6 +439,7 @@ public class MergeTestCase extends TestCase {
     }
 
     // Merge two trees that are ordered by an expression, and verify that the resulting order after merge is correct.
+    @Test
     public void testMergeExpressions() {
         Grouping a = new Grouping()
                 .setFirstLevel(0)
@@ -465,6 +482,7 @@ public class MergeTestCase extends TestCase {
     }
 
     // Merge two relatively complex tree structures and verify that the end result is as expected.
+    @Test
     public void testMergeTrees() {
         Grouping request = new Grouping()
             .addLevel(new GroupingLevel()
@@ -732,4 +750,5 @@ public class MergeTestCase extends TestCase {
         assertEquals(expect.toString(), tmp.getRoot().toString());
         assertEquals(expect, tmp.getRoot());
     }
+
 }
