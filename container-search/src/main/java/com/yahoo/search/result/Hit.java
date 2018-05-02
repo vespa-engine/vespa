@@ -13,7 +13,14 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
 import com.yahoo.text.XML;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * <p>A search hit. The identifier of the hit is the uri
@@ -293,22 +300,16 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         String id = null;
 
         Object idField = getField(DOCUMENT_ID);
-        if (idField != null) {
+        if (idField != null)
             id = idField.toString();
-        }
-        if (id == null) {
+        if (id == null)
             id = getId() == null ? null : getId().toString();
-        }
         return id;
     }
 
-    /**
-     * Sets the relevance of this hit
-     *
-     * @param relevance the relevance of this hit
-     */
+    /** Sets the relevance of this hit */
     public void setRelevance(Relevance relevance) {
-        if (relevance==null) throw new NullPointerException("Cannot assign null as relevance");
+        if (relevance == null) throw new NullPointerException("Cannot assign null as relevance");
         this.relevance = relevance;
     }
 
@@ -396,14 +397,16 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Returns the name of the source creating this hit */
     public String getSource() { return source; }
 
-    /** Returns the fields of this as a read-only map. This is more costly than the preferred iterator(), as
+    /**
+     * Returns the fields of this as a read-only map. This is more costly than the preferred iterator(), as
      * it uses Collections.unmodifiableMap()
+     *
      * @return An readonly map of the fields
-     **/
+     */
     //TODO Should it be deprecated ?
     public final Map<String,Object> fields() { return getUnmodifiableFieldMap(); }
 
-    /** Aallocate room for the given number of fields to avoid resizing. */
+    /** Allocate room for the given number of fields to avoid resizing. */
     public void reserve(int minSize) {
         getFieldMap(minSize);
     }
@@ -500,51 +503,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /**
-     * Returns true if the argument is a hit having the same uri as this
-     */
-    public boolean equals(Object object) {
-        if (!(object instanceof Hit)) {
-            return false;
-        }
-        return getId().equals(((Hit) object).getId());
-    }
-
-    /**
-     * Returns the hashCode of this hit, which is the hashcode of its uri.
-     */
-    public int hashCode() {
-        if (getId() == null)
-            throw new IllegalStateException("Id has not been set.");
-
-        return getId().hashCode();
-    }
-
-    /** Compares this hit to another hit */
-    public int compareTo(Hit other) {
-        // higher relevance is better
-        int result = other.getRelevance().compareTo(getRelevance());
-        if (result != 0) {
-            return result;
-        }
-        // lower addnumber is better
-        result = this.getAddNumber() - other.getAddNumber();
-        if (result != 0) {
-            return result;
-        }
-
-        // if all else fails, compare URIs (alphabetically)
-        if (this.getId() == null && other.getId() == null) {
-            return 0;
-        } else if (other.getId() == null) {
-            return -1;
-        } else if (this.getId() == null) {
-            return 1;
-        } else {
-            return this.getId().compareTo(other.getId());
-        }
-    }
-
-    /**
      * Returns the add number, assigned when adding the hit to a Result.
      *
      * Used to order equal relevant hit by add order. -1 if this hit
@@ -584,14 +542,18 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return isMeta() || auxiliary;
     }
 
-    public void setAuxiliary(boolean auxiliary) { this.auxiliary=auxiliary; }
+    public void setAuxiliary(boolean auxiliary) { this.auxiliary = auxiliary; }
 
-    /** Removes all fields from this */
+    /** Removes all fields of this */
     public void clearFields() {
         getFieldMap().clear();
     }
 
-    /** Removes a field from this */
+    /**
+     * Removes a field from this
+     *
+     * @return the removed value of the field, or null if none
+     */
     public Object removeField(String field) {
         return getFieldMap().remove(field);
     }
@@ -613,26 +575,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         Map<String,Object> fieldMap = getFieldMap();
         Object value=fieldMap.remove(oldKey);
         fieldMap.put(newKey,value);
-    }
-
-    /**
-     * Returns a string describing this hit
-     */
-    public String toString() {
-        return "hit " + getId() + " (relevance " + getRelevance() + ")";
-    }
-
-    public Hit clone() {
-        Hit hit = (Hit) super.clone();
-
-        hit.fields = fields != null ? new LinkedHashMap<>(fields) : null;
-        hit.unmodifiableFieldMap = null;
-        hit.types = new LinkedHashSet<>(types);
-        if (filled != null) {
-            hit.setFilledInternal(new HashSet<>(filled));
-        }
-
-        return hit;
     }
 
     public int getSourceNumber() { return sourceNumber; }
@@ -810,6 +752,67 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         query = null;
         fields = null;
         unmodifiableFieldMap = null;
+    }
+
+    /** Returns true if the argument is a hit having the same uri as this */
+    @Override
+    public boolean equals(Object object) {
+        if ( ! (object instanceof Hit))
+            return false;
+        return getId().equals(((Hit) object).getId());
+    }
+
+    /** Returns the hashCode of this hit, which is the hashcode of its uri. */
+    @Override
+    public int hashCode() {
+        if (getId() == null)
+            throw new IllegalStateException("Id has not been set.");
+
+        return getId().hashCode();
+    }
+
+    /** Compares this hit to another hit */
+    @SuppressWarnings("deprecation")
+    @Override
+    public int compareTo(Hit other) {
+        // higher relevance is before
+        int result = other.getRelevance().compareTo(getRelevance());
+        if (result != 0)
+            return result;
+
+        // lower addnumber is before
+        result = this.getAddNumber() - other.getAddNumber();
+        if (result != 0)
+            return result;
+
+        // if all else fails, compare URIs (alphabetically)
+        if (this.getId() == null && other.getId() == null)
+            return 0;
+        else if (other.getId() == null)
+            return -1;
+        else if (this.getId() == null)
+            return 1;
+        else
+            return this.getId().compareTo(other.getId());
+    }
+
+    @Override
+    public Hit clone() {
+        Hit hit = (Hit) super.clone();
+
+        hit.fields = fields != null ? new LinkedHashMap<>(fields) : null;
+        hit.unmodifiableFieldMap = null;
+        hit.types = new LinkedHashSet<>(types);
+        if (filled != null) {
+            hit.setFilledInternal(new HashSet<>(filled));
+        }
+
+        return hit;
+    }
+
+    @Override
+    public String toString() {
+        return "hit " + getId() + " (relevance " + getRelevance() + ")";
     }
 
 }

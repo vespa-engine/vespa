@@ -47,7 +47,7 @@ public final class ApplicationSet {
         if (latest.getModel().allowModelVersionMismatch(now))
             return latest;
 
-        throw new VersionDoesNotExistException(String.format("No application with vespa version %s exists", vespaVersion.toString()));
+        throw new VersionDoesNotExistException("No application with Vespa version " + vespaVersion + " exists");
     }
 
     public ApplicationId getId() {

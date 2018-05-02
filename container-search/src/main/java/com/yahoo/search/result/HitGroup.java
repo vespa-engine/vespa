@@ -682,6 +682,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     // -------------- State bookkeeping
 
     /** Ensures result invariants. Must be called when a hit is added to this result. */
+    @SuppressWarnings("deprecation")
     private void handleNewHit(Hit hit) {
         if (!hit.isAuxiliary())
             concreteHitCount++;
