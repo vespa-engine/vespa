@@ -8,7 +8,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.29
+ * @deprecated Do not use!
  */
+@Deprecated
 public class DocumentBuilderFactoryProvider implements Provider<DocumentBuilderFactory> {
     public static final String FACTORY_CLASS = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
 

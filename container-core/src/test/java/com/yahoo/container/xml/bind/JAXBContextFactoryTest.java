@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.xml.bind;
 
-import com.yahoo.container.xml.providers.JAXBContextFactoryProvider;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -13,13 +12,14 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  * @since 5.3
  */
+@SuppressWarnings("deprecation")
 public class JAXBContextFactoryTest {
     @Test
     public void testInstantiationAndDestruction() {
 
-        JAXBContextFactoryProvider provider = new JAXBContextFactoryProvider();
+        com.yahoo.container.xml.providers.JAXBContextFactoryProvider provider = new com.yahoo.container.xml.providers.JAXBContextFactoryProvider();
         JAXBContextFactory factory = provider.get();
-        assertThat(factory.getClass().getName(), equalTo(JAXBContextFactoryProvider.FACTORY_CLASS));
+        assertThat(factory.getClass().getName(), equalTo(com.yahoo.container.xml.providers.JAXBContextFactoryProvider.FACTORY_CLASS));
 
         try {
             JAXBContextFactory.getContextPath((Class) null);

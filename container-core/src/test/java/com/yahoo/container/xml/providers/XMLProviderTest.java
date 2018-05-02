@@ -1,18 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.xml.providers;
 
-import com.yahoo.container.Server;
-import com.yahoo.container.xml.bind.JAXBContextFactory;
-import com.yahoo.container.xml.providers.DatatypeFactoryProvider;
-import com.yahoo.container.xml.providers.DocumentBuilderFactoryProvider;
-import com.yahoo.container.xml.providers.JAXBContextFactoryProvider;
-import com.yahoo.container.xml.providers.SAXParserFactoryProvider;
-import com.yahoo.container.xml.providers.SchemaFactoryProvider;
-import com.yahoo.container.xml.providers.TransformerFactoryProvider;
-import com.yahoo.container.xml.providers.XMLEventFactoryProvider;
-import com.yahoo.container.xml.providers.XMLInputFactoryProvider;
-import com.yahoo.container.xml.providers.XMLOutputFactoryProvider;
-import com.yahoo.container.xml.providers.XPathFactoryProvider;
 import org.junit.Test;
 
 import javax.xml.datatype.DatatypeFactory;
@@ -27,12 +15,12 @@ import javax.xml.xpath.XPathFactory;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.29
  */
+@SuppressWarnings("deprecation")
 public class XMLProviderTest {
 
     @Test

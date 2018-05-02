@@ -16,7 +16,9 @@ import javax.xml.bind.JAXBException;
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @author gjoranv
  * @since 5.3
+ * @deprecated Do not use!
  */
+@Deprecated
 public class JAXBContextFactory {
     public static final String FACTORY_CLASS = "com.sun.xml.internal.bind.v2.ContextFactory";
 

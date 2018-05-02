@@ -31,16 +31,6 @@ import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
-import com.yahoo.container.xml.providers.DatatypeFactoryProvider;
-import com.yahoo.container.xml.providers.DocumentBuilderFactoryProvider;
-import com.yahoo.container.xml.providers.JAXBContextFactoryProvider;
-import com.yahoo.container.xml.providers.SAXParserFactoryProvider;
-import com.yahoo.container.xml.providers.SchemaFactoryProvider;
-import com.yahoo.container.xml.providers.TransformerFactoryProvider;
-import com.yahoo.container.xml.providers.XMLEventFactoryProvider;
-import com.yahoo.container.xml.providers.XMLInputFactoryProvider;
-import com.yahoo.container.xml.providers.XMLOutputFactoryProvider;
-import com.yahoo.container.xml.providers.XPathFactoryProvider;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.metrics.simple.runtime.MetricProperties;
@@ -298,17 +288,18 @@ public final class ContainerCluster
         addComponent(statsHandler);
     }
 
-    public void addJaxProviders() {
-        addSimpleComponent(DatatypeFactoryProvider.class);
-        addSimpleComponent(DocumentBuilderFactoryProvider.class);
-        addSimpleComponent(JAXBContextFactoryProvider.class);
-        addSimpleComponent(SAXParserFactoryProvider.class);
-        addSimpleComponent(SchemaFactoryProvider.class);
-        addSimpleComponent(TransformerFactoryProvider.class);
-        addSimpleComponent(XMLEventFactoryProvider.class);
-        addSimpleComponent(XMLInputFactoryProvider.class);
-        addSimpleComponent(XMLOutputFactoryProvider.class);
-        addSimpleComponent(XPathFactoryProvider.class);
+    @SuppressWarnings("deprecation")
+    private void addJaxProviders() {
+        addSimpleComponent(com.yahoo.container.xml.providers.DatatypeFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.DocumentBuilderFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.JAXBContextFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.SAXParserFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.SchemaFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.TransformerFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.XMLEventFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.XMLInputFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.XMLOutputFactoryProvider.class);
+        addSimpleComponent(com.yahoo.container.xml.providers.XPathFactoryProvider.class);
     }
 
     public final void addComponent(Component<?, ?> component) {

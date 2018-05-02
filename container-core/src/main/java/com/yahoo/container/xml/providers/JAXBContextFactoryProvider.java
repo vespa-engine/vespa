@@ -2,18 +2,20 @@
 package com.yahoo.container.xml.providers;
 
 import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.container.xml.bind.JAXBContextFactory;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.29
+ * @deprecated Do not use!
  */
-public class JAXBContextFactoryProvider implements Provider<JAXBContextFactory> {
-    public static final String FACTORY_CLASS = JAXBContextFactory.class.getName();
+@Deprecated
+@SuppressWarnings("deprecation")
+public class JAXBContextFactoryProvider implements Provider<com.yahoo.container.xml.bind.JAXBContextFactory> {
+    public static final String FACTORY_CLASS = com.yahoo.container.xml.bind.JAXBContextFactory.class.getName();
 
     @Override
-    public JAXBContextFactory get() {
-        return new JAXBContextFactory();
+    public com.yahoo.container.xml.bind.JAXBContextFactory get() {
+        return new com.yahoo.container.xml.bind.JAXBContextFactory();
     }
 
     @Override
