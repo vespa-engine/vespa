@@ -83,29 +83,20 @@ public class LogMetricsTestCase {
         assertEquals(levelCount.entrySet().size(), 5);
         for (Map.Entry<String, Long> entry : levelCount.entrySet()) {
             String key = entry.getKey();
-            switch (key) {
-                case "config":
-                    assertEquals(entry.getValue(), Long.valueOf(1));
-                    break;
-                case "info":
-                    assertEquals(entry.getValue(), Long.valueOf(4));
-                    break;
-                case "warning":
-                    assertEquals(entry.getValue(), Long.valueOf(1));
-                    break;
-                case "severe":
-                    assertEquals(entry.getValue(), Long.valueOf(0));
-                    break;
-                case "error":
-                    assertEquals(entry.getValue(), Long.valueOf(1));
-                    break;
-                case "fatal":
-                    assertEquals(entry.getValue(), Long.valueOf(1));
-                    break;
-                case "debug":
-                    assertEquals(entry.getValue(), Long.valueOf(0));  // always 0
-
-                    break;
+            if (key.equals("config")) {
+                assertEquals(entry.getValue(), new Long(1));
+            } else if (key.equals("info")) {
+                assertEquals(entry.getValue(), new Long(4));
+            } else if (key.equals("warning")) {
+                assertEquals(entry.getValue(), new Long(1));
+            } else if (key.equals("severe")) {
+                assertEquals(entry.getValue(), new Long(0));
+            } else if (key.equals("error")) {
+                assertEquals(entry.getValue(), new Long(1));
+            } else if (key.equals("fatal")) {
+                assertEquals(entry.getValue(), new Long(1));
+            } else if (key.equals("debug")) {
+                assertEquals(entry.getValue(), new Long(0));  // always 0
             }
         }
         a.close();

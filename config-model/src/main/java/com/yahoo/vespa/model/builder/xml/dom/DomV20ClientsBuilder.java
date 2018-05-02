@@ -266,28 +266,28 @@ public class DomV20ClientsBuilder {
                         abortondocumenterror = Boolean.valueOf(childval);
                         break;
                     case "maxpendingdocs":
-                        maxpendingdocs = Integer.valueOf(childval);
+                        maxpendingdocs = new Integer(childval);
                         break;
                     case "maxpendingbytes":
-                        maxpendingbytes = Integer.valueOf(childval);
+                        maxpendingbytes = new Integer(childval);
                         break;
                     case "retryenabled":
                         retryenabled = Boolean.valueOf(childval);
                         break;
                     case "retrydelay":
-                        retrydelay = Double.valueOf(childval);
+                        retrydelay = new Double(childval);
                         break;
                     case "timeout":
-                        timeout = Double.valueOf(childval);
+                        timeout = new Double(childval);
                         break;
                     case "route":
                         route = childval;
                         break;
                     case "tracelevel":
-                        tracelevel = Integer.valueOf(childval);
+                        tracelevel = new Integer(childval);
                         break;
                     case "mbusport":
-                        mbusport = Integer.valueOf(childval);
+                        mbusport = new Integer(childval);
                         break;
                     case "docprocchain":
                         docprocChain = childval;

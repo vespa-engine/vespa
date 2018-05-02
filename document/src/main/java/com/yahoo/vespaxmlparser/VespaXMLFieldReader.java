@@ -302,7 +302,7 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
         try {
             String dataParsed = reader.getElementText();
             try {
-                value.assign(Double.valueOf(dataParsed));
+                value.assign(new Double(dataParsed));
             } catch (Exception e) {
                 throw newDeserializeException(field, "Invalid double \"" + dataParsed + "\".");
             }

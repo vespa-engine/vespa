@@ -112,7 +112,7 @@ public class ConfigDefinitionBuilder {
 
     static void addNode(ConfigDefinition def, LeafCNode.IntegerLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
-            def.addIntDef(leaf.getName(), Integer.valueOf(leaf.getDefaultValue().getValue()));
+            def.addIntDef(leaf.getName(), new Integer(leaf.getDefaultValue().getValue()));
         } else {
             def.addIntDef(leaf.getName());
         }
@@ -120,7 +120,7 @@ public class ConfigDefinitionBuilder {
 
     static void addNode(ConfigDefinition def, LeafCNode.LongLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
-            def.addLongDef(leaf.getName(), Long.valueOf(leaf.getDefaultValue().getValue()));
+            def.addLongDef(leaf.getName(), new Long(leaf.getDefaultValue().getValue()));
         } else {
             def.addLongDef(leaf.getName());
         }
@@ -136,7 +136,7 @@ public class ConfigDefinitionBuilder {
 
     static void addNode(ConfigDefinition def, LeafCNode.DoubleLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
-            def.addDoubleDef(leaf.getName(), Double.valueOf(leaf.getDefaultValue().getValue()));
+            def.addDoubleDef(leaf.getName(), new Double(leaf.getDefaultValue().getValue()));
         } else {
             def.addDoubleDef(leaf.getName());
         }

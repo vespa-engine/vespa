@@ -122,7 +122,7 @@ public class Int32ResultNode extends NumericResultNode {
 
     @Override
     public Object getNumber() {
-        return Integer.valueOf(value);
+        return new Integer(value);
     }
 
     @Override

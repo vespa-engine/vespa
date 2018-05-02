@@ -90,8 +90,8 @@ public class DocumentCalculatorTestCase {
     @Test
     public void testVariables() throws Exception {
         HashMap<String, Object> vars = new HashMap<>();
-        vars.put("x", Double.valueOf(3.0));
-        vars.put("y", Double.valueOf(5.0));
+        vars.put("x", new Double(3.0));
+        vars.put("y", new Double(5.0));
         DocumentCalculator calculator = new DocumentCalculator("($x + $y) / 2");
         assertEquals(4.0, calculator.evaluate(doc, vars));
     }

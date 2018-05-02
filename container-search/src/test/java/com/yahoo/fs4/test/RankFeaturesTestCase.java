@@ -24,7 +24,7 @@ public class RankFeaturesTestCase {
     public void requireThatRankPropertiesTakesBothStringAndObject() {
         RankProperties p = new RankProperties();
         p.put("string", "b");
-        p.put("object", Integer.valueOf(7));
+        p.put("object", new Integer(7));
         assertEquals("7", p.get("object").get(0));
         assertEquals("b", p.get("string").get(0));
     }

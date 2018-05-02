@@ -25,10 +25,10 @@ class UnicodePropertyDump {
         boolean debug = false;
 
         if (arg.length > 0) {
-            start = Integer.valueOf(arg[0]).intValue();
+            start = new Integer(arg[0]).intValue();
         }
         if (arg.length > 1) {
-            end = Integer.valueOf(arg[1]).intValue();
+            end = new Integer(arg[1]).intValue();
         }
         if (arg.length > 2) {
             debug = new Boolean(arg[2]).booleanValue();

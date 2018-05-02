@@ -15,11 +15,11 @@ class OrderedReadyNodes {
     private class PriorityComparator implements Comparator<Node> {
         @Override
         public int compare(Node lhs, Node rhs) {
-            int result = Integer.valueOf(lhs.classPriority()).compareTo(rhs.classPriority());
+            int result = new Integer(lhs.classPriority()).compareTo(rhs.classPriority());
 
             return result != 0 ?
                     result :
-                    Integer.valueOf(lhs.priority).compareTo(rhs.priority);
+                    new Integer(lhs.priority).compareTo(rhs.priority);
         }
     }
 

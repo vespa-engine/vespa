@@ -24,7 +24,7 @@ public class TimeParser {
         if (matcher.group(3) != null) {
             value /= milliSecondsPerSecond;
         }
-        return Double.valueOf(value);
+        return new Double(value);
     }
 
     public static int asMilliSeconds(String timeout) {

@@ -50,6 +50,9 @@ public class Server implements Runnable {
 
     private final boolean isInitialized;
 
+    /**
+     * Server constructor
+     */
     private Server() {
         dispatch = new LogDispatcher();
         dispatch.setBatchedMode(true);
@@ -72,7 +75,7 @@ public class Server implements Runnable {
         return ht;
     }
 
-    private void registerPluginLoader(PluginLoader loader) {
+    public void registerPluginLoader(PluginLoader loader) {
         loader.loadPlugins();
     }
 
@@ -87,7 +90,7 @@ public class Server implements Runnable {
         unregisterLogHandler(lh, threadName);
     }
 
-    private void unregisterLogHandler(LogHandler lh, String threadName) {
+    public void unregisterLogHandler(LogHandler lh, String threadName) {
         HandlerThread ht = getHandlerThread(threadName);
         ht.unregisterHandler(lh);
         threadNameForHandler.remove(lh);

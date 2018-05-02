@@ -57,7 +57,7 @@ public class Group implements Comparable<Group> {
 
     @Override
     public int compareTo(Group o) {
-        return Integer.valueOf(index).compareTo(o.getIndex());
+        return new Integer(index).compareTo(o.getIndex());
     }
 
     @Override
