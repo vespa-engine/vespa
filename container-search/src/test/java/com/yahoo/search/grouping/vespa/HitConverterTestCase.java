@@ -35,18 +35,17 @@ public class HitConverterTestCase {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(new Hit("hit:ctx")));
         assertNotNull(hit);
-        assertEquals(new URI("index:0/1/" + FastHit.asHexString(createGlobalId(2))), hit.getId());
+        assertEquals(new URI("index:null/1/" + FastHit.asHexString(createGlobalId(2))), hit.getId());
 
         hit = converter.toSearchHit("default", new FS4Hit(4, createGlobalId(5), 6).setContext(new Hit("hit:ctx")));
         assertNotNull(hit);
-        assertEquals(new URI("index:0/4/" + FastHit.asHexString(createGlobalId(5))), hit.getId());
+        assertEquals(new URI("index:null/4/" + FastHit.asHexString(createGlobalId(5))), hit.getId());
     }
 
     @Test
     public void requireThatContextDataIsCopied() {
         Hit ctxHit = new Hit("hit:ctx");
         ctxHit.setSource("69");
-        ctxHit.setSourceNumber(69);
         Query ctxQuery = new Query();
         ctxHit.setQuery(ctxQuery);
 
@@ -58,7 +57,6 @@ public class HitConverterTestCase {
         assertEquals(createGlobalId(2), ((FastHit)hit).getGlobalId());
         assertSame(ctxQuery, hit.getQuery());
         assertEquals(ctxHit.getSource(), hit.getSource());
-        assertEquals(ctxHit.getSourceNumber(), hit.getSourceNumber());
     }
 
     @Test

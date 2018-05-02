@@ -57,7 +57,6 @@ class HitConverter implements ResultBuilder.HitConverter {
             throw new NullPointerException("Hit has no context.");
         }
         hit.setSource(ctxHit.getSource());
-        hit.setSourceNumber(ctxHit.getSourceNumber());
         hit.setQuery(ctxHit.getQuery());
 
         if (ctxHit instanceof GroupingListHit) {

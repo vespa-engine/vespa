@@ -545,7 +545,7 @@ public class FastSearcherTestCase {
                 hit.getField("TITLE"));
         assertEquals("352", hit.getField("WORDS").toString());
         assertEquals(2003., hit.getRelevance().getScore(), 0.01d);
-        assertEquals("index:0/234/" + FastHit.asHexString(hit.getGlobalId()), hit.getId().toString());
+        assertEquals("index:testhittype/234/" + FastHit.asHexString(hit.getGlobalId()), hit.getId().toString());
         assertEquals("9190", hit.getField("BYTES").toString());
         assertEquals("testhittype", hit.getSource());
     }

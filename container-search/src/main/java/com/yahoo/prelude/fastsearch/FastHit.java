@@ -59,17 +59,13 @@ public class FastHit extends Hit {
     /** Returns false - this is a concrete hit containing requested content */
     public boolean isMeta() { return false; }
 
-    @Override
-    public URI getId() {
-        return getUri(); // Make sure we decode it if the id is encoded
-    }
-
     /**
      * Returns the explicitly set uri if available, returns "index:[source]/[partid]/[id]" otherwise
      *
      * @return uri of hit
      */
-    public URI getUri() {
+    @Override
+    public URI getId() {
         URI uri = super.getId();
         if (uri != null) return uri;
 
@@ -83,7 +79,7 @@ public class FastHit extends Hit {
 
         // Fallback to index:[source]/[partid]/[id]
         if (indexUri != null) return indexUri;
-        indexUri = new URI("index:" + getSourceNumber() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
+        indexUri = new URI("index:" + getSource() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
         return indexUri;
     }
 

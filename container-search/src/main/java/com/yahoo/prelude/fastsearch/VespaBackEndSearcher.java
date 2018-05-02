@@ -421,7 +421,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             GroupingListHit hit = new GroupingListHit(list, getDocsumDefinitionSet(query));
             hit.setQuery(result.getQuery());
             hit.setSource(getName());
-            hit.setSourceNumber(sourceNumber);
             hit.setQueryPacketData(queryPacketData);
             result.hits().add(hit);
         }
@@ -556,7 +555,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     }
 
     private void extractDocumentInfo(FastHit hit, DocumentInfo document) {
-        hit.setSourceNumber(sourceNumber);
         hit.setSource(getName());
 
         Number rank = document.getMetric();

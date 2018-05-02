@@ -571,24 +571,27 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * Changes the key under which a value is found. This is useful because it allows keys to be changed
      * without accessing the value (which may be lazily created).
      */
-    public void changeFieldKey(String oldKey,String newKey) {
+    public void changeFieldKey(String oldKey, String newKey) {
         Map<String,Object> fieldMap = getFieldMap();
-        Object value=fieldMap.remove(oldKey);
-        fieldMap.put(newKey,value);
+        Object value = fieldMap.remove(oldKey);
+        fieldMap.put(newKey, value);
     }
 
+    /** @deprecated do not use */
+    @Deprecated
     public int getSourceNumber() { return sourceNumber; }
 
+    /** @deprecated do not use */
+    @Deprecated
     public void setSourceNumber(int number) { this.sourceNumber = number; }
 
     /** Returns the query which produced this hit, or null if not known */
     public Query getQuery() { return query; }
 
+    /** Returns the query which produced this hit as a request, or null if not known */
     public Request request() { return query; }
 
-    // TODO: rethink hit tagging
-    // hit group -> need option to retag
-    // hit -> should only set query once
+    /** Sets the query which produced this. This is ignored (except if this is a HitGroup) if a query is already set */
     public final void setQuery(Query query) {
         if (this.query == null || this instanceof HitGroup) {
             this.query = query;
@@ -639,11 +642,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
-    /**
-     * Set meta data describing how a given searcher should treat this hit.
-     * It is currently recommended that the invoker == searcher.
-     * <b>Internal. Do not use!</b>
-     */
+    /** Attach some data to this hit for this searcher */
     public void setSearcherSpecificMetaData(Searcher searcher, Object data) {
         if (searcherSpecificMetaData == null) {
             searcherSpecificMetaData = Collections.singletonMap(searcher, data);
@@ -662,11 +661,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
-    /**
-     * get meta data describing how a given searcher should treat this hit.
-     * It is currently recommended that the invoker == searcher
-     * <b>Internal. Do not use!</b>
-     */
+    /** Returns data attached to this hit for this searcher, or null if none */
     public Object getSearcherSpecificMetaData(Searcher searcher) {
         return searcherSpecificMetaData != null ? searcherSpecificMetaData.get(searcher) : null;
     }
