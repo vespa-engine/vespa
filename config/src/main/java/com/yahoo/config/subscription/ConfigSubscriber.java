@@ -436,6 +436,7 @@ public class ConfigSubscriber {
      * this is not a performance critical object as it will be deconstructed typically container reconfig.
      */
     @Override
+    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
     protected void finalize() throws Throwable {
         try {
             if (!isClosed()) {
