@@ -48,10 +48,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final MetricsReporter metricsReporter;
 
     private final JobControl jobControl;
+    private final InfrastructureVersions infrastructureVersions;
 
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer,
-                                     HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
+                                     HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig) {
         this(nodeRepository, deployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
@@ -64,6 +65,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      ConfigserverConfig configserverConfig) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
         jobControl = new JobControl(nodeRepository.database());
+        infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
 
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), metric, jobControl, configserverConfig);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
@@ -100,6 +102,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     }
 
     public JobControl jobControl() { return jobControl; }
+
+    public InfrastructureVersions infrastructureVersions() {
+        return infrastructureVersions;
+    }
 
     private static Optional<Duration> durationFromEnv(String envVariable) {
         return Optional.ofNullable(System.getenv(envPrefix + envVariable)).map(Long::parseLong).map(Duration::ofSeconds);

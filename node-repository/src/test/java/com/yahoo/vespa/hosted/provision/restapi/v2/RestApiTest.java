@@ -495,6 +495,44 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
     }
 
+    @Test
+    public void test_upgrade() throws IOException {
+        // Initially, no versions are set
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"), "{\"versions\":{}}");
+
+        // Set version for config and confighost
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
+                        Utf8.toBytes("{\"version\": \"6.123.456\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set version for config to 6.123.456\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": \"6.123.456\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set version for confighost to 6.123.456\"}");
+
+        // Verify versions are set
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\"}}");
+
+        // Downgrade without force fails
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": \"6.123.1\"}"),
+                        Request.Method.PATCH),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade version without setting 'force'. " +
+                        "Current wanted version: 6.123.456, attempted to set wanted version: 6.123.1\"}");
+
+        // Downgrade with force is OK
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": \"6.123.1\",\"force\":true}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set version for confighost to 6.123.1\"}");
+
+        // Verify version has been updated
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"}}");
+    }
+
     /** Tests the rendering of each node separately to make it easier to find errors */
     @Test
     public void test_single_node_rendering() throws Exception {
