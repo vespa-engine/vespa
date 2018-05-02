@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -253,16 +254,16 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @throws IllegalArgumentException if the given relevance is not between 0 and 1000
      */
     public Hit(String id, Relevance relevance, String source, Query query) {
-        this.id=new URI(id);
+        this.id = new URI(id);
         this.relevance = relevance;
-        this.source=source;
+        this.source = source;
         this.query = query;
     }
 
     /** Calls setId(new URI(id)) */
     public void setId(String id) {
-        if (this.id!=null) throw new IllegalStateException("Attempt to change id of " + this + " to " + id);
-        if (id==null) throw new NullPointerException("Attempt to assign id of " + this + " to null");
+        if (this.id != null) throw new IllegalStateException("Attempt to change id of " + this + " to " + id);
+        if (id == null) throw new NullPointerException("Attempt to assign id of " + this + " to null");
         assignId(new URI(id));
     }
 
@@ -274,7 +275,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @throws IllegalStateException if the uri of this hit is already set
      */
     public void setId(URI id) {
-        if (this.id!=null) throw new IllegalStateException("Attempt to change id of " + this + " to " + id);
+        if (this.id != null) throw new IllegalStateException("Attempt to change id of " + this + " to " + id);
         assignId(id);
     }
 
@@ -284,8 +285,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * using this method.
      */
     protected final void assignId(URI id) {
-        if (id==null) throw new NullPointerException("Attempt to assign id of " + this + " to null");
-        this.id=id;
+        if (id == null) throw new NullPointerException("Attempt to assign id of " + this + " to null");
+        this.id = id;
     }
 
     /** Returns the hit id */
@@ -404,12 +405,21 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *
      * @return An readonly map of the fields
      */
-    //TODO Should it be deprecated ?
-    public final Map<String,Object> fields() { return getUnmodifiableFieldMap(); }
+    // TODO Should it be deprecated ?
+    public final Map<String, Object> fields() { return getUnmodifiableFieldMap(); }
 
     /** Allocate room for the given number of fields to avoid resizing. */
     public void reserve(int minSize) {
         getFieldMap(minSize);
+    }
+
+    /**
+     * Sets the value of a field
+     *
+     * @return the previous value, or null if none
+     */
+    public Object setField(String key, Object value) {
+        return getFieldMap().put(key, value);
     }
 
     /**
@@ -422,37 +432,79 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Returns a field value */
     public Object getField(String value) { return fields != null ? fields.get(value) : null; }
 
+    /** Removes all fields of this */
+    public void clearFields() {
+        getFieldMap().clear();
+    }
+
     /**
-     * Generate a HitField from a field if the field exists. 
-     * 
-     * @deprecated do not use
+     * Removes a field from this
+     *
+     * @return the removed value of the field, or null if none
      */
-    // TODO: Remove on Vespa 7
-    @Deprecated
+    public Object removeField(String field) {
+        return getFieldMap().remove(field);
+    }
+
+    /**
+     * Returns the keys of the fields of this hit as a modifiable view.
+     * This follows the rules of key sets returned from maps: Key removals are reflected
+     * in the map, add and addAll is not supported.
+     */
+    public Set<String> fieldKeys() {
+        return getFieldMap().keySet();
+    }
+
+    /**
+     * Changes the key under which a value is found. This is useful because it allows keys to be changed
+     * without accessing the value (which may be lazily created).
+     */
+    public void changeFieldKey(String oldKey, String newKey) {
+        Map<String,Object> fieldMap = getFieldMap();
+        Object value = fieldMap.remove(oldKey);
+        fieldMap.put(newKey, value);
+    }
+
+    private Map<String, Object> getFieldMap() {
+        return getFieldMap(16);
+    }
+
+    private Map<String, Object> getFieldMap(int minSize) {
+        if (fields == null) {
+            // Compensate for loadfactor and then some, rounded up....
+            fields = new LinkedHashMap<>(2*minSize);
+        }
+        return fields;
+    }
+
+    private Map<String, Object> getUnmodifiableFieldMap() {
+        if (unmodifiableFieldMap == null) {
+            if (fields == null) {
+                return Collections.emptyMap();
+            } else {
+                unmodifiableFieldMap = Collections.unmodifiableMap(fields);
+            }
+        }
+        return unmodifiableFieldMap;
+    }
+
+    /** Generate a HitField from a field if the field exists */
     public HitField buildHitField(String key) {
         return buildHitField(key, false);
     }
 
-    /**
-     * Generate a HitField from a field if the field exists. 
-     *
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated
+    /** Generate a HitField from a field if the field exists */
+    @SuppressWarnings("deprecation")
     public HitField buildHitField(String key, boolean forceNoPreTokenize) {
         return buildHitField(key, forceNoPreTokenize, false);
     }
 
+    // TODO: Remove third parameter on Vespa 7
+    @Deprecated
     public HitField buildHitField(String key, boolean forceNoPreTokenize, boolean forceStringHandling) {
         Object o = getField(key);
-        if (o == null) {
-            return null;
-        }
-
-        if (o instanceof HitField) {
-            return (HitField) o;
-        }
+        if (o == null) return null;
+        if (o instanceof HitField) return (HitField)o;
 
         HitField h;
         if (forceNoPreTokenize) {
@@ -473,26 +525,10 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return h;
     }
 
-    /**
-     * Sets the value of a field
-     *
-     * @return the previous value, or null if none
-     */
-    public Object setField(String key, Object value) {
-        return getFieldMap().put(key, value);
-    }
-
     /** Returns the types of this as a modifiable set. Modifications to this set are directly reflected in this hit */
     public Set<String> types() { return types; }
 
-    /**
-     * Returns all types of this hit as a space-separated string
-     *
-     * @return all the types of this hit on the form "type1 type2 type3"
-     *         (in no particular order). An empty string (never null) if
-     *         no types are added
-     * @deprecated do not use
-     */
+    /** @deprecated do not use */
     @Deprecated
     public String getTypeString() {
         return types().stream().collect(Collectors.joining(" "));
@@ -539,39 +575,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     public void setAuxiliary(boolean auxiliary) { this.auxiliary = auxiliary; }
-
-    /** Removes all fields of this */
-    public void clearFields() {
-        getFieldMap().clear();
-    }
-
-    /**
-     * Removes a field from this
-     *
-     * @return the removed value of the field, or null if none
-     */
-    public Object removeField(String field) {
-        return getFieldMap().remove(field);
-    }
-
-    /**
-     * Returns the keys of the fields of this hit as a modifiable view.
-     * This follows the rules of key sets returned from maps: Key removals are reflected
-     * in the map, add and addAll is not supported.
-     */
-    public Set<String> fieldKeys() {
-        return getFieldMap().keySet();
-    }
-
-    /**
-     * Changes the key under which a value is found. This is useful because it allows keys to be changed
-     * without accessing the value (which may be lazily created).
-     */
-    public void changeFieldKey(String oldKey, String newKey) {
-        Map<String,Object> fieldMap = getFieldMap();
-        Object value = fieldMap.remove(oldKey);
-        fieldMap.put(newKey, value);
-    }
 
     /** @deprecated do not use */
     @Deprecated // TODO: Remove on Vespa 7
@@ -683,29 +686,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     // TODO: Make package private on Vespa 7
     protected final Set<String> getFilledInternal() {
         return filled;
-    }
-
-    private Map<String, Object> getFieldMap() {
-        return getFieldMap(16);
-    }
-
-    private Map<String, Object> getFieldMap(int minSize) {
-        if (fields == null) {
-            // Compensate for loadfactor and then some, rounded up....
-            fields = new LinkedHashMap<>(2*minSize);
-        }
-        return fields;
-    }
-
-    private Map<String, Object> getUnmodifiableFieldMap() {
-        if (unmodifiableFieldMap == null) {
-            if (fields == null) {
-                return Collections.emptyMap();
-            } else {
-                unmodifiableFieldMap = Collections.unmodifiableMap(fields);
-            }
-        }
-        return unmodifiableFieldMap;
     }
 
     /**

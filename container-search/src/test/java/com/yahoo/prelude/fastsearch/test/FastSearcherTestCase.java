@@ -187,13 +187,13 @@ public class FastSearcherTestCase {
 
         assertEquals(100, fastSearcher.getCacheControl().capacity()); // Default cache =100MB
 
-        Result result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 10);
+        Result result = doSearch(fastSearcher, new Query("?query=ignored"), 0, 10);
 
         Execution execution = new Execution(chainedAsSearchChain(fastSearcher), Execution.Context.createContextStub());
         assertEquals(2, result.getHitCount());
         execution.fill(result);
-        assertCorrectHit1((FastHit) result.hits().get(0));
-        assertCorrectTypes1((FastHit) result.hits().get(0));
+        assertCorrectHit1((FastHit)result.hits().get(0));
+        assertCorrectTypes1((FastHit)result.hits().get(0));
         for (int idx = 0; idx < result.getHitCount(); idx++) {
             assertTrue(!result.hits().get(idx).isCached());
         }
