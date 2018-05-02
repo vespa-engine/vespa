@@ -17,7 +17,6 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
@@ -83,23 +82,15 @@ public class ApplicationHandlerTest {
     public void setup() {
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-
-        TenantBuilder tenantBuilder1 = TenantBuilder.create(componentRegistry, mytenantName)
-                .withReloadHandler(new MockReloadHandler());
-        tenantRepository.addTenant(tenantBuilder1);
-
-        TenantBuilder tenantBuilder2 = TenantBuilder.create(componentRegistry, foobar)
-                .withReloadHandler(new MockReloadHandler());
-        tenantRepository.addTenant(tenantBuilder2);
-
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, mytenantName));
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
         provisioner = new SessionHandlerTest.MockProvisioner();
-        mockHandler = createMockApplicationHandler(
-                provisioner,
-                new ApplicationConvergenceChecker(stateApiFactory),
-                mockHttpProxy);
-        listApplicationsHandler = new ListApplicationsHandler(
-                ListApplicationsHandler.testOnlyContext(),
-                tenantRepository, Zone.defaultZone());
+        mockHandler = createMockApplicationHandler(provisioner,
+                                                   new ApplicationConvergenceChecker(stateApiFactory),
+                                                   mockHttpProxy);
+        listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
+                                                              tenantRepository,
+                                                              Zone.defaultZone());
     }
 
     private ApplicationHandler createMockApplicationHandler(
