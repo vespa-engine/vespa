@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * <p>A search hit. The identifier of the hit is the uri
@@ -490,16 +491,11 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @return all the types of this hit on the form "type1 type2 type3"
      *         (in no particular order). An empty string (never null) if
      *         no types are added
+     * @deprecated do not use
      */
+    @Deprecated
     public String getTypeString() {
-        StringBuilder buffer = new StringBuilder(types.size() * 7);
-
-        for (Iterator<String> i = types.iterator(); i.hasNext();) {
-            buffer.append(i.next());
-            if (i.hasNext())
-                buffer.append(" ");
-        }
-        return buffer.toString();
+        return types().stream().collect(Collectors.joining(" "));
     }
 
     /**
@@ -578,11 +574,11 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /** @deprecated do not use */
-    @Deprecated
+    @Deprecated // TODO: Remove on Vespa 7
     public int getSourceNumber() { return sourceNumber; }
 
     /** @deprecated do not use */
-    @Deprecated
+    @Deprecated // TODO: Remove on Vespa 7
     public void setSourceNumber(int number) { this.sourceNumber = number; }
 
     /** Returns the query which produced this hit, or null if not known */

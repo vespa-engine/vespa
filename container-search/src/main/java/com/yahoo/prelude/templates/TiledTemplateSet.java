@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A template set which implements the 'tiled' format.
@@ -147,13 +148,13 @@ public class TiledTemplateSet extends DefaultTemplateSet {
     @Override
     protected void renderHitAttributes(Hit hit, XMLWriter writer) throws IOException {
     	if (hit instanceof HitGroup) {
-    		String type = hit.getTypeString(); // TODO: This logic is somewhat crazy
-    		if("group".equals(type))
+    		String type = hit.types().stream().collect(Collectors.joining(" "));
+    		if ("group".equals(type))
     			type = String.valueOf(hit.getField("type"));
     		writer.attribute("type", type);
     	}
         else {
-    		writer.attribute("type", hit.getTypeString());
+    		writer.attribute("type", hit.types().stream().collect(Collectors.joining(" ")));
     	}
 
     	if (hit.getRelevance() != null)

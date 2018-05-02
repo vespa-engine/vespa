@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <p>A template set which provides XML rendering of results and hits.</p>
@@ -175,8 +176,8 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
     /**
      * Writes a hit's default attributes like 'type', 'source', 'relevancy'.
      */
-    protected void renderHitAttributes(Hit hit,XMLWriter writer) throws IOException {
-        writer.attribute(TYPE,hit.getTypeString());
+    protected void renderHitAttributes(Hit hit, XMLWriter writer) throws IOException {
+        writer.attribute(TYPE, hit.types().stream().collect(Collectors.joining(" ")));
     	if (hit.getRelevance() != null) {
             writer.attribute(RELEVANCY, hit.getRelevance().toString());
         }

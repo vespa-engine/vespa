@@ -35,6 +35,7 @@ import java.nio.charset.CharsetEncoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 // TODO: Rename to XmlRenderer and make this a deprecated empty subclass.
 
@@ -250,10 +251,9 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     }
 
     private void renderHitAttributes(XMLWriter writer, Hit hit) {
-        writer.attribute(TYPE, hit.getTypeString());
-        if (hit.getRelevance() != null) {
+        writer.attribute(TYPE, hit.types().stream().collect(Collectors.joining(" ")));
+        if (hit.getRelevance() != null)
             writer.attribute(RELEVANCY, hit.getRelevance().toString());
-}
         writer.attribute(SOURCE, hit.getSource());
     }
 

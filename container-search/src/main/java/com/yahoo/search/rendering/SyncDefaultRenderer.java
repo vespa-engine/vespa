@@ -32,6 +32,7 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author tonytv
@@ -337,7 +338,7 @@ public final class SyncDefaultRenderer extends Renderer {
     }
 
     private void renderHitAttributes(XMLWriter writer, Hit hit) {
-        writer.attribute(TYPE, hit.getTypeString());
+        writer.attribute(TYPE, hit.types().stream().collect(Collectors.joining(" ")));
         if (hit.getRelevance() != null) {
             writer.attribute(RELEVANCY, hit.getRelevance().toString());
 }
