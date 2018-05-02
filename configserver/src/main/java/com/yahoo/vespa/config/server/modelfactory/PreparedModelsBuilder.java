@@ -15,6 +15,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -89,17 +90,14 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());
 
         // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
-        Optional<HostProvisioner> hostProvisioner = createHostProvisioner(allocatedHosts);        
-        Optional<Model> previousModel = currentActiveApplicationSet
-                .map(set -> set.getForVersionOrLatest(Optional.of(modelVersion), now).getModel());
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
-                previousModel,
+                modelOf(modelVersion),
                 permanentApplicationPackage.applicationPackage(),
                 logger,
                 configDefinitionRepo,
                 fileDistributionProvider.getFileRegistry(),
-                hostProvisioner,
+                createHostProvisioner(allocatedHosts),
                 properties,
                 getAppDir(applicationPackage),
                 new com.yahoo.component.Version(modelVersion.toString()),
@@ -110,6 +108,11 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         validateModelHosts(context.getHostValidator(), applicationId, result.getModel());
         log.log(LogLevel.DEBUG, "Done building model " + modelVersion + " for " + applicationId);
         return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
+    }
+
+    private Optional<Model> modelOf(Version version) {
+        if ( ! currentActiveApplicationSet.isPresent()) return Optional.empty();
+        return currentActiveApplicationSet.get().get(version).map(Application::getModel);
     }
 
     // This method is an excellent demonstration of what happens when one is too liberal with Optional   
