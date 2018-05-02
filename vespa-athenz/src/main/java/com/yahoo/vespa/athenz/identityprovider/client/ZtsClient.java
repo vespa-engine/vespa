@@ -1,13 +1,19 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.athenz.zts.RoleCertificateRequest;
+import com.yahoo.athenz.zts.RoleToken;
+import com.yahoo.athenz.zts.ZTSClient;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.ZToken;
+import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -20,21 +26,15 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 
 /**
  * @author mortent
  * @author bjorncs
  */
-public class AthenzService {
+class ZtsClient {
 
     private static final String INSTANCE_API_PATH = "/zts/v1/instance";
 
@@ -44,7 +44,7 @@ public class AthenzService {
     /**
      * Send instance register request to ZTS, get InstanceIdentity
      */
-     public InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation,
+     InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation,
                                                          URI uri) {
         try(CloseableHttpClient client = HttpClientBuilder.create().setRetryHandler(retryHandler).build()) {
             HttpUriRequest postRequest = RequestBuilder.post()
@@ -57,15 +57,14 @@ public class AthenzService {
         }
     }
 
-    public InstanceIdentity sendInstanceRefreshRequest(String providerService,
-                                                       String instanceDomain,
-                                                       String instanceServiceName,
-                                                       String instanceId,
-                                                       InstanceRefreshInformation instanceRefreshInformation,
-                                                       URI ztsEndpoint,
-                                                       X509Certificate certicate,
-                                                       PrivateKey privateKey) {
-        try (CloseableHttpClient client = createHttpClientWithTlsAuth(certicate, privateKey, retryHandler)) {
+    InstanceIdentity sendInstanceRefreshRequest(String providerService,
+                                                String instanceDomain,
+                                                String instanceServiceName,
+                                                String instanceId,
+                                                InstanceRefreshInformation instanceRefreshInformation,
+                                                URI ztsEndpoint,
+                                                SSLContext sslContext) {
+        try (CloseableHttpClient client = createHttpClientWithTlsAuth(sslContext, retryHandler)) {
             URI uri = ztsEndpoint
                     .resolve(INSTANCE_API_PATH + '/')
                     .resolve(providerService + '/')
@@ -80,6 +79,43 @@ public class AthenzService {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    ZToken getRoleToken(AthenzDomain domain,
+                        URI ztsEndpoint,
+                        SSLContext sslContext) {
+         // TODO ztsEndpoint should contain '/zts/v1' as path
+        URI correctedZtsEndpoint = ztsEndpoint.resolve("/zts/v1");
+        return new ZToken(
+                new ZTSClient(correctedZtsEndpoint.toString(), sslContext)
+                        .getRoleToken(domain.getName()).getToken());
+    }
+
+    ZToken getRoleToken(AthenzDomain domain,
+                        String roleName,
+                        URI ztsEndpoint,
+                        SSLContext sslContext) {
+        // TODO ztsEndpoint should contain '/zts/v1' as path
+        URI correctedZtsEndpoint = ztsEndpoint.resolve("/zts/v1");
+        return new ZToken(
+                new ZTSClient(correctedZtsEndpoint.toString(), sslContext)
+                        .getRoleToken(domain.getName(), roleName).getToken());
+    }
+
+    X509Certificate getRoleCertificate(AthenzDomain roleDomain,
+                                       String roleName,
+                                       String dnsSuffix,
+                                       URI ztsEndpoint,
+                                       AthenzService identity,
+                                       PrivateKey privateKey,
+                                       SSLContext sslContext) {
+        // TODO ztsEndpoint should contain '/zts/v1' as path
+        URI correctedZtsEndpoint = ztsEndpoint.resolve("/zts/v1");
+        ZTSClient ztsClient = new ZTSClient(correctedZtsEndpoint.toString(), sslContext);
+        RoleCertificateRequest rcr = ZTSClient.generateRoleCertificateRequest(
+                identity.getDomain().getName(), identity.getName(), roleDomain.getName(), roleName, privateKey, dnsSuffix, (int) Duration.ofHours(1).getSeconds());
+        RoleToken pemCert = ztsClient.postRoleCertificateRequest(roleDomain.getName(), roleName, rcr);
+        return X509CertificateUtils.fromPem(pemCert.token);
     }
 
     private InstanceIdentity getInstanceIdentity(CloseableHttpClient client, HttpUriRequest postRequest)
@@ -99,26 +135,11 @@ public class AthenzService {
         return new StringEntity(objectMapper.writeValueAsString(value), ContentType.APPLICATION_JSON);
     }
 
-    private static CloseableHttpClient createHttpClientWithTlsAuth(X509Certificate certificate,
-                                                                   PrivateKey privateKey,
+    private static CloseableHttpClient createHttpClientWithTlsAuth(SSLContext sslContext,
                                                                    HttpRequestRetryHandler retryHandler) {
-        try {
-            String dummyPassword = "athenz";
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(null);
-            keyStore.setKeyEntry("athenz", privateKey, dummyPassword.toCharArray(), new Certificate[]{certificate});
-            SSLContext sslContext = new SSLContextBuilder()
-                    .loadKeyMaterial(keyStore, dummyPassword.toCharArray())
-                    .build();
             return HttpClientBuilder.create()
                     .setRetryHandler(retryHandler)
                     .setSslcontext(sslContext)
                     .build();
-        } catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException |
-                KeyManagementException | CertificateException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }

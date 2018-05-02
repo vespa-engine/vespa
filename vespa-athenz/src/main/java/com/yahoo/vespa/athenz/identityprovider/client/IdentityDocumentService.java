@@ -74,8 +74,7 @@ public class IdentityDocumentService {
                     .setScheme("https")
                     .setHost(loadBalancerName)
                     .setPort(4443)
-                    .setPath("/athenz/v1/provider/identity-document")
-                    .addParameter("hostname", Defaults.getDefaults().vespaHostname())
+                    .setPath("/athenz/v1/provider/identity-document/tenant/" + Defaults.getDefaults().vespaHostname())
                     .build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);

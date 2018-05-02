@@ -10,4 +10,7 @@ public interface AthenzIdentityProvider {
     String domain();
     String service();
     SSLContext getIdentitySslContext();
+    SSLContext getRoleSslContext(String domain, String role);
+    String getRoleToken(String domain);
+    String getRoleToken(String domain, String role);
 }
