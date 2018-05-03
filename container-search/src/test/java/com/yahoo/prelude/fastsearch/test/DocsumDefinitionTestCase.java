@@ -72,7 +72,7 @@ public class DocsumDefinitionTestCase {
         assertEquals("1", hit.getField("EXTINFOSOURCE").toString());
         assertEquals("10", hit.getField("LANG1").toString());
         assertEquals("352", hit.getField("WORDS").toString());
-        assertEquals("index:0/0/" + FastHit.asHexString(hit.getGlobalId()), hit.getId().toString());
+        assertEquals("index:null/0/" + FastHit.asHexString(hit.getGlobalId()), hit.getId().toString());
     }
 
     public static GlobalId createGlobalId(int docId) {

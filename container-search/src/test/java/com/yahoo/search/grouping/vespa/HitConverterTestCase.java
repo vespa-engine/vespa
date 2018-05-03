@@ -19,6 +19,8 @@ import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.VdsHit;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static org.junit.Assert.*;
 
 /**
@@ -33,20 +35,19 @@ public class HitConverterTestCase {
     @Test
     public void requireThatHitsAreConverted() {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
-        Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(new Hit("hit:ctx")));
+        Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(context()));
         assertNotNull(hit);
-        assertEquals(new URI("index:0/1/" + FastHit.asHexString(createGlobalId(2))), hit.getId());
+        assertEquals(new URI("index:null/1/" + FastHit.asHexString(createGlobalId(2))), hit.getId());
 
-        hit = converter.toSearchHit("default", new FS4Hit(4, createGlobalId(5), 6).setContext(new Hit("hit:ctx")));
+        hit = converter.toSearchHit("default", new FS4Hit(4, createGlobalId(5), 6).setContext(context()));
         assertNotNull(hit);
-        assertEquals(new URI("index:0/4/" + FastHit.asHexString(createGlobalId(5))), hit.getId());
+        assertEquals(new URI("index:null/4/" + FastHit.asHexString(createGlobalId(5))), hit.getId());
     }
 
     @Test
     public void requireThatContextDataIsCopied() {
-        Hit ctxHit = new Hit("hit:ctx");
+        Hit ctxHit = context();
         ctxHit.setSource("69");
-        ctxHit.setSourceNumber(69);
         Query ctxQuery = new Query();
         ctxHit.setQuery(ctxQuery);
 
@@ -58,13 +59,12 @@ public class HitConverterTestCase {
         assertEquals(createGlobalId(2), ((FastHit)hit).getGlobalId());
         assertSame(ctxQuery, hit.getQuery());
         assertEquals(ctxHit.getSource(), hit.getSource());
-        assertEquals(ctxHit.getSourceNumber(), hit.getSourceNumber());
     }
 
     @Test
     public void requireThatHitTagIsCopiedFromGroupingListContext() {
         QueryPacketData ctxTag = new QueryPacketData();
-        GroupingListHit ctxHit = new GroupingListHit(null, null);
+        GroupingListHit ctxHit = context();
         ctxHit.setQueryPacketData(ctxTag);
 
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
@@ -78,7 +78,7 @@ public class HitConverterTestCase {
     public void requireThatSummaryClassIsSet() {
         Searcher searcher = new MySearcher();
         HitConverter converter = new HitConverter(searcher, new Query());
-        Hit hit = converter.toSearchHit("69", new FS4Hit(1, createGlobalId(2), 3).setContext(new Hit("hit:ctx")));
+        Hit hit = converter.toSearchHit("69", new FS4Hit(1, createGlobalId(2), 3).setContext(context()));
         assertNotNull(hit);
         assertTrue(hit instanceof FastHit);
         assertEquals("69", hit.getSearcherSpecificMetaData(searcher));
@@ -106,6 +106,10 @@ public class HitConverterTestCase {
         } catch (UnsupportedOperationException e) {
 
         }
+    }
+
+    private static GroupingListHit context() {
+        return new GroupingListHit(Collections.emptyList(), null);
     }
 
     private static DocumentdbInfoConfig.Documentdb sixtynine() {

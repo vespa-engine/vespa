@@ -270,9 +270,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
             hitBuffer.append(", relevancy: ");
             hitBuffer.append(hit.getRelevance());
 
-            hitBuffer.append(", addno: ");
-            hitBuffer.append(hit.getAddNumber());
-
             hitBuffer.append(", source: ");
             hitBuffer.append(hit.getSource());
 

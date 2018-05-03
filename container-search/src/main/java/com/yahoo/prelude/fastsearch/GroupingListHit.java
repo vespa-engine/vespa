@@ -7,8 +7,8 @@ import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.searchlib.aggregation.Grouping;
 
-// TODO: Author!
 public class GroupingListHit extends Hit {
+
     private static final long serialVersionUID = -6645125887873082234L;
 
     /** for unit tests only, may give problems if grouping contains docsums */
@@ -16,13 +16,12 @@ public class GroupingListHit extends Hit {
         this(groupingList, null);
     }
 
-    public GroupingListHit(List<Grouping> groupingList,
-                           DocsumDefinitionSet defs)
-    {
+    public GroupingListHit(List<Grouping> groupingList, DocsumDefinitionSet defs) {
         super("meta:grouping", 0);
         this.groupingList = groupingList;
         this.defs = defs;
     }
+
     public boolean isMeta() { return true; }
 
     public List<Grouping> getGroupingList() { return groupingList; }
@@ -40,4 +39,5 @@ public class GroupingListHit extends Hit {
     public QueryPacketData getQueryPacketData() {
         return queryPacketData;
     }
+
 }

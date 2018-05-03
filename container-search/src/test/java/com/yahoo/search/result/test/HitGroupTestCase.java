@@ -25,16 +25,6 @@ import static org.junit.Assert.assertTrue;
 public class HitGroupTestCase {
 
     @Test
-    public void testStringStripping() {
-        assertEquals("avabarne", Hit.stripCharacter('j', "javabjarne"));
-        assertEquals("", Hit.stripCharacter('j', ""));
-        assertEquals("", Hit.stripCharacter('j', "j"));
-        assertEquals("frank", Hit.stripCharacter('j', "frank"));
-        assertEquals("foo", Hit.stripCharacter('j', "fooj"));
-        assertEquals("", Hit.stripCharacter('j', "jjjjj"));
-    }
-    
-    @Test
     public void testErrorsConsistencyUsingErrorOperations() {
         HitGroup hits = new HitGroup();
 

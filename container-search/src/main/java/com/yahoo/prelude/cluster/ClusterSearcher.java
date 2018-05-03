@@ -155,8 +155,8 @@ public class ClusterSearcher extends Searcher {
                     if (! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
                         Backend b = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
                         FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool,
-                                searchClusterConfig, cacheParams, emulationConfig, docSumParams,
-                                documentDbConfig, b, dispatcher, dispatcherIndex);
+                                                               cacheParams, emulationConfig, docSumParams,
+                                                               documentDbConfig, b, dispatcher, dispatcherIndex);
                         addBackendSearcher(searcher);
                     }
                 } catch (UnknownHostException e) {
@@ -190,7 +190,6 @@ public class ClusterSearcher extends Searcher {
     }
 
     private static ClusterParams makeClusterParams(int searchclusterIndex,
-                                                   QrSearchersConfig.Searchcluster searchClusterConfig,
                                                    LegacyEmulationConfig emulConfig,
                                                    int dispatchIndex) {
         return new ClusterParams(searchclusterIndex,
@@ -200,7 +199,6 @@ public class ClusterSearcher extends Searcher {
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
                                                FS4ResourcePool fs4ResourcePool,
-                                               QrSearchersConfig.Searchcluster searchClusterConfig,
                                                CacheParams cacheParams,
                                                LegacyEmulationConfig emulConfig,
                                                SummaryParameters docSumParams,
@@ -208,7 +206,7 @@ public class ClusterSearcher extends Searcher {
                                                Backend backend,
                                                Dispatcher dispatcher,
                                                int dispatcherIndex) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, searchClusterConfig,
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
                                                         emulConfig, dispatcherIndex);
         return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, 
                                 documentdbInfoConfig);
@@ -220,7 +218,7 @@ public class ClusterSearcher extends Searcher {
                                                    LegacyEmulationConfig emulConfig,
                                                    SummaryParameters docSumParams,
                                                    DocumentdbInfoConfig documentdbInfoConfig) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, searchClusterConfig, emulConfig, 0);
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, emulConfig, 0);
         VdsStreamingSearcher searcher = (VdsStreamingSearcher) VespaBackEndSearcher
                 .getSearcher("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher");
         searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());

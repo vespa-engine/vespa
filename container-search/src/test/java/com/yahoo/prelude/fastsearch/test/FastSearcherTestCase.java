@@ -187,13 +187,13 @@ public class FastSearcherTestCase {
 
         assertEquals(100, fastSearcher.getCacheControl().capacity()); // Default cache =100MB
 
-        Result result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 10);
+        Result result = doSearch(fastSearcher, new Query("?query=ignored"), 0, 10);
 
         Execution execution = new Execution(chainedAsSearchChain(fastSearcher), Execution.Context.createContextStub());
         assertEquals(2, result.getHitCount());
         execution.fill(result);
-        assertCorrectHit1((FastHit) result.hits().get(0));
-        assertCorrectTypes1((FastHit) result.hits().get(0));
+        assertCorrectHit1((FastHit)result.hits().get(0));
+        assertCorrectTypes1((FastHit)result.hits().get(0));
         for (int idx = 0; idx < result.getHitCount(); idx++) {
             assertTrue(!result.hits().get(idx).isCached());
         }
@@ -545,7 +545,7 @@ public class FastSearcherTestCase {
                 hit.getField("TITLE"));
         assertEquals("352", hit.getField("WORDS").toString());
         assertEquals(2003., hit.getRelevance().getScore(), 0.01d);
-        assertEquals("index:0/234/" + FastHit.asHexString(hit.getGlobalId()), hit.getId().toString());
+        assertEquals("index:testhittype/234/" + FastHit.asHexString(hit.getGlobalId()), hit.getId().toString());
         assertEquals("9190", hit.getField("BYTES").toString());
         assertEquals("testhittype", hit.getSource());
     }

@@ -13,7 +13,15 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
 import com.yahoo.text.XML;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * <p>A search hit. The identifier of the hit is the uri
@@ -38,6 +46,9 @@ import java.util.*;
  */
 public class Hit extends ListenableFreezableClass implements Data, Comparable<Hit>, Cloneable {
 
+    // Collection fields in hits are, when possible lazy because much of the work of a container
+    // consists of allocating and then garbage collecting hits
+
     private static final String DOCUMENT_ID = "documentid";
 
     /** A collection of string keyed object properties. */
@@ -53,7 +64,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private URI id;
 
     /** The types of this hit */
-    private Set<String> types = new ArraySet<>(2);
+    private Set<String> types = new ArraySet<>(1);
 
     /** The relevance of this hit */
     private Relevance relevance;
@@ -245,16 +256,16 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @throws IllegalArgumentException if the given relevance is not between 0 and 1000
      */
     public Hit(String id, Relevance relevance, String source, Query query) {
-        this.id=new URI(id);
+        this.id = new URI(id);
         this.relevance = relevance;
-        this.source=source;
+        this.source = source;
         this.query = query;
     }
 
     /** Calls setId(new URI(id)) */
     public void setId(String id) {
-        if (this.id!=null) throw new IllegalStateException("Attempt to change id of " + this + " to " + id);
-        if (id==null) throw new NullPointerException("Attempt to assign id of " + this + " to null");
+        if (this.id != null) throw new IllegalStateException("Attempt to change id of " + this + " to " + id);
+        if (id == null) throw new NullPointerException("Attempt to assign id of " + this + " to null");
         assignId(new URI(id));
     }
 
@@ -266,7 +277,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @throws IllegalStateException if the uri of this hit is already set
      */
     public void setId(URI id) {
-        if (this.id!=null) throw new IllegalStateException("Attempt to change id of " + this + " to " + id);
+        if (this.id != null) throw new IllegalStateException("Attempt to change id of " + this + " to " + id);
         assignId(id);
     }
 
@@ -276,8 +287,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * using this method.
      */
     protected final void assignId(URI id) {
-        if (id==null) throw new NullPointerException("Attempt to assign id of " + this + " to null");
-        this.id=id;
+        if (id == null) throw new NullPointerException("Attempt to assign id of " + this + " to null");
+        this.id = id;
     }
 
     /** Returns the hit id */
@@ -293,22 +304,16 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         String id = null;
 
         Object idField = getField(DOCUMENT_ID);
-        if (idField != null) {
+        if (idField != null)
             id = idField.toString();
-        }
-        if (id == null) {
+        if (id == null)
             id = getId() == null ? null : getId().toString();
-        }
         return id;
     }
 
-    /**
-     * Sets the relevance of this hit
-     *
-     * @param relevance the relevance of this hit
-     */
+    /** Sets the relevance of this hit */
     public void setRelevance(Relevance relevance) {
-        if (relevance==null) throw new NullPointerException("Cannot assign null as relevance");
+        if (relevance == null) throw new NullPointerException("Cannot assign null as relevance");
         this.relevance = relevance;
     }
 
@@ -396,16 +401,27 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Returns the name of the source creating this hit */
     public String getSource() { return source; }
 
-    /** Returns the fields of this as a read-only map. This is more costly than the preferred iterator(), as
+    /**
+     * Returns the fields of this as a read-only map. This is more costly than the preferred iterator(), as
      * it uses Collections.unmodifiableMap()
+     *
      * @return An readonly map of the fields
-     **/
-    //TODO Should it be deprecated ?
-    public final Map<String,Object> fields() { return getUnmodifiableFieldMap(); }
+     */
+    // TODO Should it be deprecated ?
+    public final Map<String, Object> fields() { return getUnmodifiableFieldMap(); }
 
-    /** Aallocate room for the given number of fields to avoid resizing. */
+    /** Allocate room for the given number of fields to avoid resizing. */
     public void reserve(int minSize) {
         getFieldMap(minSize);
+    }
+
+    /**
+     * Sets the value of a field
+     *
+     * @return the previous value, or null if none
+     */
+    public Object setField(String key, Object value) {
+        return getFieldMap().put(key, value);
     }
 
     /**
@@ -418,37 +434,79 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Returns a field value */
     public Object getField(String value) { return fields != null ? fields.get(value) : null; }
 
+    /** Removes all fields of this */
+    public void clearFields() {
+        getFieldMap().clear();
+    }
+
     /**
-     * Generate a HitField from a field if the field exists. 
-     * 
-     * @deprecated do not use
+     * Removes a field from this
+     *
+     * @return the removed value of the field, or null if none
      */
-    // TODO: Remove on Vespa 7
-    @Deprecated
+    public Object removeField(String field) {
+        return getFieldMap().remove(field);
+    }
+
+    /**
+     * Returns the keys of the fields of this hit as a modifiable view.
+     * This follows the rules of key sets returned from maps: Key removals are reflected
+     * in the map, add and addAll is not supported.
+     */
+    public Set<String> fieldKeys() {
+        return getFieldMap().keySet();
+    }
+
+    /**
+     * Changes the key under which a value is found. This is useful because it allows keys to be changed
+     * without accessing the value (which may be lazily created).
+     */
+    public void changeFieldKey(String oldKey, String newKey) {
+        Map<String,Object> fieldMap = getFieldMap();
+        Object value = fieldMap.remove(oldKey);
+        fieldMap.put(newKey, value);
+    }
+
+    private Map<String, Object> getFieldMap() {
+        return getFieldMap(16);
+    }
+
+    private Map<String, Object> getFieldMap(int minSize) {
+        if (fields == null) {
+            // Compensate for loadfactor and then some, rounded up....
+            fields = new LinkedHashMap<>(2*minSize);
+        }
+        return fields;
+    }
+
+    private Map<String, Object> getUnmodifiableFieldMap() {
+        if (unmodifiableFieldMap == null) {
+            if (fields == null) {
+                return Collections.emptyMap();
+            } else {
+                unmodifiableFieldMap = Collections.unmodifiableMap(fields);
+            }
+        }
+        return unmodifiableFieldMap;
+    }
+
+    /** Generate a HitField from a field if the field exists */
     public HitField buildHitField(String key) {
         return buildHitField(key, false);
     }
 
-    /**
-     * Generate a HitField from a field if the field exists. 
-     *
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated
+    /** Generate a HitField from a field if the field exists */
+    @SuppressWarnings("deprecation")
     public HitField buildHitField(String key, boolean forceNoPreTokenize) {
         return buildHitField(key, forceNoPreTokenize, false);
     }
 
+    // TODO: Remove third parameter on Vespa 7
+    @Deprecated
     public HitField buildHitField(String key, boolean forceNoPreTokenize, boolean forceStringHandling) {
         Object o = getField(key);
-        if (o == null) {
-            return null;
-        }
-
-        if (o instanceof HitField) {
-            return (HitField) o;
-        }
+        if (o == null) return null;
+        if (o instanceof HitField) return (HitField)o;
 
         HitField h;
         if (forceNoPreTokenize) {
@@ -469,79 +527,13 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return h;
     }
 
-    /**
-     * Sets the value of a field
-     *
-     * @return the previous value, or null if none
-     */
-    public Object setField(String key, Object value) {
-        return getFieldMap().put(key, value);
-    }
-
     /** Returns the types of this as a modifiable set. Modifications to this set are directly reflected in this hit */
     public Set<String> types() { return types; }
 
-    /**
-     * Returns all types of this hit as a space-separated string
-     *
-     * @return all the types of this hit on the form "type1 type2 type3"
-     *         (in no particular order). An empty string (never null) if
-     *         no types are added
-     */
+    /** @deprecated do not use */
+    @Deprecated
     public String getTypeString() {
-        StringBuilder buffer = new StringBuilder(types.size() * 7);
-
-        for (Iterator<String> i = types.iterator(); i.hasNext();) {
-            buffer.append(i.next());
-            if (i.hasNext())
-                buffer.append(" ");
-        }
-        return buffer.toString();
-    }
-
-    /**
-     * Returns true if the argument is a hit having the same uri as this
-     */
-    public boolean equals(Object object) {
-        if (!(object instanceof Hit)) {
-            return false;
-        }
-        return getId().equals(((Hit) object).getId());
-    }
-
-    /**
-     * Returns the hashCode of this hit, which is the hashcode of its uri.
-     */
-    public int hashCode() {
-        if (getId() == null)
-            throw new IllegalStateException("Id has not been set.");
-
-        return getId().hashCode();
-    }
-
-    /** Compares this hit to another hit */
-    public int compareTo(Hit other) {
-        // higher relevance is better
-        int result = other.getRelevance().compareTo(getRelevance());
-        if (result != 0) {
-            return result;
-        }
-        // lower addnumber is better
-        result = this.getAddNumber() - other.getAddNumber();
-        if (result != 0) {
-            return result;
-        }
-
-        // if all else fails, compare URIs (alphabetically)
-        if (this.getId() == null && other.getId() == null) {
-            return 0;
-        } else if (other.getId() == null) {
-            return -1;
-        } else if (this.getId() == null) {
-            return 1;
-        } else {
-            return this.getId().compareTo(other.getId());
-        }
+        return types().stream().collect(Collectors.joining(" "));
     }
 
     /**
@@ -549,13 +541,19 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *
      * Used to order equal relevant hit by add order. -1 if this hit
      * has never been added to a result.
+     *
+     * @deprecated do not use
      */
+    @Deprecated // TODO: Make package private on Vespa 7
     public int getAddNumber() { return addNumber; }
 
     /**
      * Sets the add number, assigned when adding the hit to a Result,
-     * used to order equal relevant hit by add order
+     * used to order equal relevant hit by add order.
+     *
+     * @deprecated do not use
      */
+    @Deprecated // TODO: Make package private on Vespa 7
     public void setAddNumber(int addNumber) { this.addNumber = addNumber; }
 
     /**
@@ -578,82 +576,37 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return isMeta() || auxiliary;
     }
 
-    public void setAuxiliary(boolean auxiliary) { this.auxiliary=auxiliary; }
+    public void setAuxiliary(boolean auxiliary) { this.auxiliary = auxiliary; }
 
-    /** Removes all fields from this */
-    public void clearFields() {
-        getFieldMap().clear();
-    }
-
-    /** Removes a field from this */
-    public Object removeField(String field) {
-        return getFieldMap().remove(field);
-    }
-
-    /**
-     * Returns the keys of the fields of this hit as a modifiable view.
-     * This follows the rules of key sets returned from maps: Key removals are reflected
-     * in the map, add and addAll is not supported.
-     */
-    public Set<String> fieldKeys() {
-        return getFieldMap().keySet();
-    }
-
-    /**
-     * Changes the key under which a value is found. This is useful because it allows keys to be changed
-     * without accessing the value (which may be lazily created).
-     */
-    public void changeFieldKey(String oldKey,String newKey) {
-        Map<String,Object> fieldMap = getFieldMap();
-        Object value=fieldMap.remove(oldKey);
-        fieldMap.put(newKey,value);
-    }
-
-    /**
-     * Returns a string describing this hit
-     */
-    public String toString() {
-        return "hit " + getId() + " (relevance " + getRelevance() + ")";
-    }
-
-    public Hit clone() {
-        Hit hit = (Hit) super.clone();
-
-        hit.fields = fields != null ? new LinkedHashMap<>(fields) : null;
-        hit.unmodifiableFieldMap = null;
-        hit.types = new LinkedHashSet<>(types);
-        if (filled != null) {
-            hit.setFilledInternal(new HashSet<>(filled));
-        }
-
-        return hit;
-    }
-
+    /** @deprecated do not use */
+    @Deprecated // TODO: Remove on Vespa 7
     public int getSourceNumber() { return sourceNumber; }
 
+    /** @deprecated do not use */
+    @Deprecated // TODO: Remove on Vespa 7
     public void setSourceNumber(int number) { this.sourceNumber = number; }
 
     /** Returns the query which produced this hit, or null if not known */
     public Query getQuery() { return query; }
 
+    /** Returns the query which produced this hit as a request, or null if not known */
     public Request request() { return query; }
 
-    // TODO: rethink hit tagging
-    // hit group -> need option to retag
-    // hit -> should only set query once
+    /** Sets the query which produced this. This is ignored (except if this is a HitGroup) if a query is already set */
     public final void setQuery(Query query) {
         if (this.query == null || this instanceof HitGroup) {
             this.query = query;
         }
     }
 
-    // TODO: Deprecate
     /**
      * Returns a field of this hit XML escaped and without token
      * delimiters.
      *
+     * @deprecated do not use
      * @return a field of this hit, or null if the property is not set
      */
+    @Deprecated // TODO: Remove on Vespa 7
     public String getFieldXML(String key) {
         Object p = getField(key);
 
@@ -661,9 +614,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
             return null;
         } else if (p instanceof HitField) {
             return ((HitField)p).quotedContent(false);
-        } else if (p instanceof StructuredData) {
-            return p.toString();
-        } else if (p instanceof XMLString || p instanceof JSONString) {
+        } else if (p instanceof StructuredData || p instanceof XMLString || p instanceof JSONString) {
             return p.toString();
         } else {
             return XML.xmlEscape(p.toString(), false, '\u001f');
@@ -672,8 +623,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     /**
      * @deprecated do not use
-     * 
-     * @return a field without bolding markup
      */
     @Deprecated // TODO: Remove on Vespa 7
     public String getUnboldedField(String key, boolean escape) {
@@ -694,11 +643,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
-    /**
-     * Set meta data describing how a given searcher should treat this hit.
-     * It is currently recommended that the invoker == searcher.
-     * <b>Internal. Do not use!</b>
-     */
+    /** Attach some data to this hit for this searcher */
     public void setSearcherSpecificMetaData(Searcher searcher, Object data) {
         if (searcherSpecificMetaData == null) {
             searcherSpecificMetaData = Collections.singletonMap(searcher, data);
@@ -717,21 +662,17 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
-    /**
-     * get meta data describing how a given searcher should treat this hit.
-     * It is currently recommended that the invoker == searcher
-     * <b>Internal. Do not use!</b>
-     */
+    /** Returns data attached to this hit for this searcher, or null if none */
     public Object getSearcherSpecificMetaData(Searcher searcher) {
         return searcherSpecificMetaData != null ? searcherSpecificMetaData.get(searcher) : null;
     }
 
     /**
-     * For vespa internal use only.
-     * This is only for the ones specially interested. It will replace the backing
-     * for filled.
+     * Internal - do not use
+     *
      * @param filled the backing set
      */
+    // TODO: Make package private on Vespa 7
     protected final void setFilledInternal(Set<String> filled) {
         this.filled = filled;
         unmodifiableFilled = (filled != null) ? Collections.unmodifiableSet(filled) : null;
@@ -744,33 +685,15 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *
      * @return the set of filled summaries.
      */
+    // TODO: Make package private on Vespa 7
     protected final Set<String> getFilledInternal() {
         return filled;
     }
 
-    private Map<String,Object> getFieldMap() {
-        return getFieldMap(16);
-    }
-
-    private Map<String,Object> getFieldMap(int minSize) {
-        if (fields == null) {
-            // Compensate for loadfactor and then some, rounded up....
-            fields = new LinkedHashMap<>(2*minSize);
-        }
-        return fields;
-    }
-
-    private Map<String,Object> getUnmodifiableFieldMap() {
-        if (unmodifiableFieldMap == null) {
-            if (fields == null) {
-                return Collections.emptyMap();
-            } else {
-                unmodifiableFieldMap = Collections.unmodifiableMap(fields);
-            }
-        }
-        return unmodifiableFieldMap;
-    }
-
+    /**
+     * @deprecated do not use
+     */
+    @Deprecated // TODO: Remove on Vespa 7
     public static String stripCharacter(char strip, String toStripFrom) {
         StringBuilder builder = null;
 
@@ -797,10 +720,72 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
+    /** Releases the resources held by this, making it irreversibly unusable */
     protected void close() {
         query = null;
         fields = null;
         unmodifiableFieldMap = null;
+    }
+
+    /** Returns true if the argument is a hit having the same uri as this */
+    @Override
+    public boolean equals(Object object) {
+        if ( ! (object instanceof Hit))
+            return false;
+        return getId().equals(((Hit) object).getId());
+    }
+
+    /** Returns the hashCode of this hit, which is the hashcode of its uri. */
+    @Override
+    public int hashCode() {
+        if (getId() == null)
+            throw new IllegalStateException("Id has not been set.");
+
+        return getId().hashCode();
+    }
+
+    /** Compares this hit to another hit */
+    @SuppressWarnings("deprecation")
+    @Override
+    public int compareTo(Hit other) {
+        // higher relevance is before
+        int result = other.getRelevance().compareTo(getRelevance());
+        if (result != 0)
+            return result;
+
+        // lower addnumber is before
+        result = this.getAddNumber() - other.getAddNumber();
+        if (result != 0)
+            return result;
+
+        // if all else fails, compare URIs (alphabetically)
+        if (this.getId() == null && other.getId() == null)
+            return 0;
+        else if (other.getId() == null)
+            return -1;
+        else if (this.getId() == null)
+            return 1;
+        else
+            return this.getId().compareTo(other.getId());
+    }
+
+    @Override
+    public Hit clone() {
+        Hit hit = (Hit) super.clone();
+
+        hit.fields = fields != null ? new LinkedHashMap<>(fields) : null;
+        hit.unmodifiableFieldMap = null;
+        hit.types = new LinkedHashSet<>(types);
+        if (filled != null) {
+            hit.setFilledInternal(new HashSet<>(filled));
+        }
+
+        return hit;
+    }
+
+    @Override
+    public String toString() {
+        return "hit " + getId() + " (relevance " + getRelevance() + ")";
     }
 
 }

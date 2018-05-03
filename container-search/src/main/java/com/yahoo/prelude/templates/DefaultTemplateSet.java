@@ -5,16 +5,21 @@ import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.io.ByteWriter;
 import com.yahoo.net.URI;
 import com.yahoo.prelude.fastsearch.FastHit;
+import com.yahoo.prelude.hitfield.HitField;
+import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.result.HitRenderer;
 import com.yahoo.search.result.*;
 import com.yahoo.text.Utf8String;
+import com.yahoo.text.XML;
 import com.yahoo.text.XMLWriter;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <p>A template set which provides XML rendering of results and hits.</p>
@@ -171,8 +176,8 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
     /**
      * Writes a hit's default attributes like 'type', 'source', 'relevancy'.
      */
-    protected void renderHitAttributes(Hit hit,XMLWriter writer) throws IOException {
-        writer.attribute(TYPE,hit.getTypeString());
+    protected void renderHitAttributes(Hit hit, XMLWriter writer) throws IOException {
+        writer.attribute(TYPE, hit.types().stream().collect(Collectors.joining(" ")));
     	if (hit.getRelevance() != null) {
             writer.attribute(RELEVANCY, hit.getRelevance().toString());
         }
@@ -263,11 +268,18 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
     }
 
     protected void renderFieldContent(Context context, Hit hit, String name, XMLWriter writer) {
-        String xmlval = hit.getFieldXML(name);
-        if (xmlval == null) {
-            xmlval = "(null)";
-        }
-        writer.escapedContent(xmlval,false);
+        writer.escapedContent(asXML(hit.getField(name)), false);
+    }
+
+    private String asXML(Object value) {
+        if (value == null)
+            return "(null)";
+        else if (value instanceof HitField)
+            return ((HitField)value).quotedContent(false);
+        else if (value instanceof StructuredData || value instanceof XMLString || value instanceof JSONString)
+            return value.toString();
+        else
+            return XML.xmlEscape(value.toString(), false, '\u001f');
     }
 
     private void renderSimpleField(String fieldName, Object fieldValue, XMLWriter writer) {

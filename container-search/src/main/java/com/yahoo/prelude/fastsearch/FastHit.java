@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.net.URI;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.data.access.Inspector;
-import com.yahoo.data.access.Type;
-import com.yahoo.data.access.simple.Value.StringValue;
 
 /**
  * A regular hit from a Vespa backend
@@ -56,46 +53,16 @@ public class FastHit extends Hit {
         setPartId(0);
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + " [fasthit, globalid: " + globalId + ", partId: "
-               + partId + ", distributionkey: " + distributionKey + "]";
-    }
-
-    public static String asHexString(GlobalId gid) {
-        StringBuilder sb = new StringBuilder();
-        byte[] rawGid = gid.getRawId();
-        for (byte b : rawGid) {
-            String hex = Integer.toHexString(0xFF & b);
-            if (hex.length() == 1) {
-                sb.append('0');
-            }
-            sb.append(hex);
-        }
-        return sb.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        if (getId() == null) {
-            throw new IllegalStateException("This hit must have a 'uri' field, and this fild must be filled through " +
-                                            "Execution.fill(Result)) before hashCode() is accessed.");
-        } else {
-            return super.hashCode();
-        }
-    }
-
-    @Override
-    public URI getId() {
-        return getUri(); // Make sure we decode it if the id is encoded
-    }
+    /** Returns false - this is a concrete hit containing requested content */
+    public boolean isMeta() { return false; }
 
     /**
      * Returns the explicitly set uri if available, returns "index:[source]/[partid]/[id]" otherwise
      *
      * @return uri of hit
      */
-    public URI getUri() {
+    @Override
+    public URI getId() {
         URI uri = super.getId();
         if (uri != null) return uri;
 
@@ -107,44 +74,71 @@ public class FastHit extends Hit {
             return super.getId();
         }
 
-        return getIndexUri();
-    }
-
-    /**
-     * The uri of the index location of this hit ("index:[source]/[partid]/[id]").
-     * This is the uri if no other uri is assigned
-     *
-     * @return uri to the index.
-     */
-    public URI getIndexUri() {
+        // Fallback to index:[source]/[partid]/[id]
         if (indexUri != null) return indexUri;
-
-        indexUri = new URI("index:" + getSourceNumber() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
+        indexUri = new URI("index:" + getSource() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
         return indexUri;
     }
 
     /** Returns the global id of this document in the backend node which produced it */
-    public GlobalId getGlobalId() {
-        return globalId;
-    }
+    public GlobalId getGlobalId() { return globalId; }
 
-    public void setGlobalId(GlobalId globalId) {
-        this.globalId = globalId;
-    }
+    public void setGlobalId(GlobalId globalId) { this.globalId = globalId; }
 
-    public int getPartId() {
-        return partId;
-    }
+    public int getPartId() { return partId; }
 
     /**
      * Sets the part id number, which specifies the node where this hit is
      * found. The row count is used to decode the part id into a column and a
      * row number: the number of n least significant bits required to hold the
      * highest row number are the row bits, the rest are column bits.
-     *
-     * @param partId  partition id
      */
     public void setPartId(int partId) { this.partId = partId; }
+
+    /** Returns the index of the node this hit originated at */
+    public int getDistributionKey() { return distributionKey; }
+
+    /** Returns the index of the node this hit originated at */
+    public void setDistributionKey(int distributionKey) { this.distributionKey = distributionKey; }
+
+    /**
+     * Add the binary data common for the query packet to a Vespa backend and a
+     * summary fetch packet to a Vespa backend. This method can only be called
+     * once for a single hit.
+     *
+     * @param queryPacketData binary data from a query packet resulting in this hit
+     * @throws IllegalStateException if the method is called more than once
+     * @throws NullPointerException if trying to set query packet data to null
+     */
+    public void setQueryPacketData(QueryPacketData queryPacketData) {
+        if (this.queryPacketData != null)
+            throw new IllegalStateException("Query packet data already set to "
+                                            + this.queryPacketData + ", tried to set it to " + queryPacketData);
+        if (queryPacketData == null)
+            throw new NullPointerException("Query packet data reference can not be set to null.");
+        this.queryPacketData = queryPacketData;
+    }
+
+    /** Returns a serial encoding of the query which produced this hit, ot null if not available. */
+    public QueryPacketData getQueryPacketData() { return queryPacketData; }
+
+    CacheKey getCacheKey() { return cacheKey; }
+
+    void setCacheKey(CacheKey cacheKey) { this.cacheKey = cacheKey; }
+
+    /** For internal use */
+    public void addSummary(DocsumDefinition docsumDef, Inspector value) {
+        reserve(docsumDef.getFieldCount());
+        for (DocsumField field : docsumDef.getFields()) {
+            String fieldName = field.getName();
+            Inspector f = value.field(fieldName);
+            if (field.getEmulConfig().forceFillEmptyFields() || f.valid()) {
+                if (super.getField(fieldName) == null) {
+                    setField(fieldName, field.convert(f));
+                }
+            }
+        }
+    }
 
     /**
      * <p>Returns a field value from this Hit. The value is either a stored value from the Document represented by
@@ -182,89 +176,33 @@ public class FastHit extends Hit {
         return super.getField(key);
     }
 
-    /** Returns false - this is a concrete hit containing requested content */
-    public boolean isMeta() {
-        return false;
+    @Override
+    public String toString() {
+        return super.toString() + " [fasthit, globalid: " + globalId + ", partId: "
+               + partId + ", distributionkey: " + distributionKey + "]";
     }
 
-    /** Returns the index of the node this hit originated at */
-    public int getDistributionKey() {
-        return distributionKey;
+    @Override
+    public int hashCode() {
+        if (getId() == null) {
+            throw new IllegalStateException("This hit must have a 'uri' field, and this fild must be filled through " +
+                                            "Execution.fill(Result)) before hashCode() is accessed.");
+        } else {
+            return super.hashCode();
+        }
     }
 
-    /** Returns the index of the node this hit originated at */
-    public void setDistributionKey(int distributionKey) {
-        this.distributionKey = distributionKey;
-    }
-
-    /** For internal use */
-    public void addSummary(DocsumDefinition docsumDef, Inspector value) {
-        reserve(docsumDef.getFieldCount());
-        for (DocsumField field : docsumDef.getFields()) {
-            String fieldName = field.getName();
-            Inspector f = value.field(fieldName);
-            if (field.getEmulConfig().forceFillEmptyFields() || f.valid()) {
-                setDocsumFieldIfNotPresent(fieldName, field.convert(f));
+    public static String asHexString(GlobalId gid) {
+        StringBuilder sb = new StringBuilder();
+        byte[] rawGid = gid.getRawId();
+        for (byte b : rawGid) {
+            String hex = Integer.toHexString(0xFF & b);
+            if (hex.length() == 1) {
+                sb.append('0');
             }
+            sb.append(hex);
         }
-    }
-
-    private void setDocsumFieldIfNotPresent(String fieldName, Object value) {
-        if (super.getField(fieldName) == null) {
-            setField(fieldName, value);
-        }
-    }
-
-    /**
-     * Add the binary data common for the query packet to a Vespa backend and a
-     * summary fetch packet to a Vespa backend. This method can only be called
-     * once for a single hit.
-     *
-     * @param queryPacketData binary data from a query packet resulting in this hit
-     * @throws IllegalStateException if the method is called more than once
-     * @throws NullPointerException if trying to set query packet data to null
-     */
-    public void setQueryPacketData(QueryPacketData queryPacketData) {
-        if (this.queryPacketData != null)
-            throw new IllegalStateException("Query packet data already set to "
-                                            + this.queryPacketData + ", tried to set it to " + queryPacketData);
-        if (queryPacketData == null)
-            throw new NullPointerException("Query packet data reference can not be set to null.");
-        this.queryPacketData = queryPacketData;
-    }
-
-    /**
-     * Fetch binary data from the query packet which produced this hit. These
-     * data may not be available, this method will then return null.
-     *
-     * @return wrapped binary data from a query packet, or null
-     */
-    public QueryPacketData getQueryPacketData() {
-        return queryPacketData;
-    }
-
-    CacheKey getCacheKey() {
-        return cacheKey;
-    }
-
-    void setCacheKey(CacheKey cacheKey) {
-        this.cacheKey = cacheKey;
-    }
-
-    public static final class RawField {
-
-        private final boolean needXmlEscape;
-
-        private final byte[] contents;
-
-        public RawField(DocsumField fieldType, byte[] contents) {
-            needXmlEscape = ! (fieldType instanceof XMLField);
-            this.contents = contents;
-        }
-
-        public byte [] getUtf8() { return contents; }
-        public boolean needXmlEscape() { return needXmlEscape; }
-
+        return sb.toString();
     }
 
 }

@@ -7,6 +7,9 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.net.URI;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
+import com.yahoo.prelude.hitfield.HitField;
+import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.prelude.templates.Context;
 import com.yahoo.prelude.templates.DefaultTemplateSet;
 import com.yahoo.prelude.templates.MapContext;
@@ -17,6 +20,7 @@ import com.yahoo.search.grouping.result.HitRenderer;
 import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.search.result.*;
 import com.yahoo.text.Utf8String;
+import com.yahoo.text.XML;
 import com.yahoo.text.XMLWriter;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
@@ -28,6 +32,7 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author tonytv
@@ -284,11 +289,18 @@ public final class SyncDefaultRenderer extends Renderer {
     }
 
     private void renderFieldContent(XMLWriter writer, Hit hit, String fieldName) {
-        String xmlval = hit.getFieldXML(fieldName);
-        if (xmlval == null) {
-            xmlval = "(null)";
-        }
-        writer.escapedContent(xmlval, false);
+        writer.escapedContent(asXML(hit.getField(fieldName)), false);
+    }
+
+    private String asXML(Object value) {
+        if (value == null)
+            return "(null)";
+        else if (value instanceof HitField)
+            return ((HitField)value).quotedContent(false);
+        else if (value instanceof StructuredData || value instanceof XMLString || value instanceof JSONString)
+            return value.toString();
+        else
+            return XML.xmlEscape(value.toString(), false, '\u001f');
     }
 
     private void renderSyntheticRelevanceField(XMLWriter writer, Hit hit) {
@@ -326,7 +338,7 @@ public final class SyncDefaultRenderer extends Renderer {
     }
 
     private void renderHitAttributes(XMLWriter writer, Hit hit) {
-        writer.attribute(TYPE, hit.getTypeString());
+        writer.attribute(TYPE, hit.types().stream().collect(Collectors.joining(" ")));
         if (hit.getRelevance() != null) {
             writer.attribute(RELEVANCY, hit.getRelevance().toString());
 }

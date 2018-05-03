@@ -18,7 +18,7 @@ public final class Docsum {
     /** The offsets into the packet data of each field, given the fields index, computed lazily */
     private final int[] fieldOffsets;
     /** The largest stored offset */
-    private int largestStoredOffset=-1;
+    private int largestStoredOffset = -1;
 
     public Docsum(DocsumDefinition definition, byte[] packet) {
         this.definition = definition;
@@ -28,37 +28,10 @@ public final class Docsum {
 
     public DocsumDefinition getDefinition() { return definition; }
 
-    public Integer getFieldIndex(String fieldName) {
-        return definition.getFieldIndex(fieldName);
-    }
-
     public Object decode(int fieldIndex) {
         ByteBuffer b=packetAsBuffer();
         setAndReturnOffsetToField(b, fieldIndex);
         return definition.getField(fieldIndex).decode(b);
-    }
-
-    /** Fetches the field as raw utf-8 if it is a text field. Returns null otherwise */
-    public FastHit.RawField fetchFieldAsUtf8(int fieldIndex) {
-        DocsumField dataType = definition.getField(fieldIndex);
-        if ( ! (dataType instanceof LongstringField || dataType instanceof XMLField || dataType instanceof StringField))
-            return null;
-
-        ByteBuffer b=packetAsBuffer();
-        DocsumField field = definition.getField(fieldIndex);
-        int fieldStart = setAndReturnOffsetToField(b, fieldIndex); // set buffer.pos = start of field
-        if (field.isCompressed(b)) return null;
-        int length = field.getLength(b); // scan to end of field
-        if (field instanceof VariableLengthField) {
-            int fieldLength = ((VariableLengthField) field).sizeOfLength();
-            b.position(fieldStart + fieldLength); // reset to start of field
-            length -= fieldLength;
-        } else {
-            b.position(fieldStart); // reset to start of field
-        }
-        byte[] bufferView = new byte[length];
-        b.get(bufferView);
-        return new FastHit.RawField(dataType, bufferView);
     }
 
     public ByteBuffer packetAsBuffer() {

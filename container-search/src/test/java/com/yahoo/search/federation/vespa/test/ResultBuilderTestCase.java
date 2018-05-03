@@ -75,7 +75,7 @@ public class ResultBuilderTestCase {
         assertEquals("reward_for_thumb", g1.get(1).getField("id").toString());
         assertEquals(10, g2.size());
         HitGroup g3 = (HitGroup) g2.get(3);
-        assertEquals("badge", g3.getTypeString());
+        assertEquals("badge", g3.types().iterator().next());
         assertEquals(2, g3.size());
         assertEquals("badge/Topic Explorer 5", g3.get(0).getField("name").toString());
     }
