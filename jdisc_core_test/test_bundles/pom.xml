@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.yahoo.vespa.jdisc_core</groupId>
-        <artifactId>parent</artifactId>
+        <artifactId>integration-test-parent</artifactId>
         <version>6-SNAPSHOT</version>
     </parent>
     <artifactId>test_bundles</artifactId>
