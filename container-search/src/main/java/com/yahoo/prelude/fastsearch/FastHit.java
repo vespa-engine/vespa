@@ -119,12 +119,7 @@ public class FastHit extends Hit {
         this.queryPacketData = queryPacketData;
     }
 
-    /**
-     * Fetch binary data from the query packet which produced this hit. These
-     * data may not be available, this method will then return null.
-     *
-     * @return wrapped binary data from a query packet, or null
-     */
+    /** Returns a serial encoding of the query which produced this hit, ot null if not available. */
     public QueryPacketData getQueryPacketData() { return queryPacketData; }
 
     CacheKey getCacheKey() { return cacheKey; }
