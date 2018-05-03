@@ -85,8 +85,8 @@ public:
     BlobSet getBlobSet() const;
 private:
     CompressionConfig::Type _compression;
-    BlobSet::Positions                _positions;
-    vespalib::MallocPtr               _buffer;
+    BlobSet::Positions      _positions;
+    std::shared_ptr<vespalib::MallocPtr> _buffer;
 };
 
 /**
