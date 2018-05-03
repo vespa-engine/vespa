@@ -24,11 +24,11 @@ import java.security.NoSuchAlgorithmException;
  * @author mortent
  * @author bjorncs
  */
-public class IdentityDocumentService {
+public class IdentityDocumentClient {
 
     private final URI identityDocumentApiUri;
 
-    public IdentityDocumentService(String loadBalancerName) {
+    public IdentityDocumentClient(String loadBalancerName) {
         this.identityDocumentApiUri = createIdentityDocumentApiUri(loadBalancerName);
     }
 
