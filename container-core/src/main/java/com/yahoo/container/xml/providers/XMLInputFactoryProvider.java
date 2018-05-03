@@ -16,6 +16,7 @@ public class XMLInputFactoryProvider implements Provider<XMLInputFactory> {
     public static final String FACTORY_CLASS = "com.sun.xml.internal.stream.XMLInputFactoryImpl";
 
     @Override
+    @SuppressWarnings("deprecation")
     public XMLInputFactory get() {
         //ugly, but must be done
         System.setProperty(INPUT_FACTORY_INTERFACE, FACTORY_CLASS);

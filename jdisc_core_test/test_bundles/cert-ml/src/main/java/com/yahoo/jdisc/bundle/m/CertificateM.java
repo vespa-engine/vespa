@@ -12,7 +12,7 @@ public class CertificateM implements Callable<Integer> {
     @SuppressWarnings({ "unchecked" })
     public Integer call() throws Exception {
         Class<?> certClass = Class.forName("com.yahoo.jdisc.bundle.l.CertificateL");
-        Callable<Integer> cert = (Callable<Integer>)certClass.newInstance();
+        Callable<Integer> cert = (Callable<Integer>)certClass.getDeclaredConstructor().newInstance();
         return cert.call();
     }
 }

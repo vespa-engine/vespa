@@ -186,6 +186,12 @@
                 <version>${javax.ws.rs-api.version}</version>
             </dependency>
             <dependency>
+                <!-- TODO: Remove (also from child modules) when container-core:JAXBContextFactory is removed. -->
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>2.2.7</version>
+            </dependency>
+            <dependency>
                 <groupId>net.jcip</groupId>
                 <artifactId>jcip-annotations</artifactId>
                 <version>1.0</version>
