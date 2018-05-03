@@ -301,7 +301,8 @@ public class DeploymentTrigger {
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                             }
                             else if (testJobs.isEmpty()) {
-                                testJobs = testJobs(application, versions, "Testing deployment for " + job.jobName(), completedAt.orElse(clock.instant()));
+                                testJobs = testJobs(application, versions, String.format("Testing deployment for %s (%s)", job.jobName(), versions.toString()),
+                                                    completedAt.orElse(clock.instant()));
                             }
                         }
                         completedAt = Optional.empty();
@@ -535,6 +536,19 @@ public class DeploymentTrigger {
             this.sourceApplication = sourceApplication;
         }
 
+        @Override
+        public String toString() {
+            return String.format("platform %s%s, application %s%s",
+                                 sourcePlatform.filter(src -> !src.equals(targetPlatform))
+                                               .map(src -> src + " -> ")
+                                               .orElse(""),
+                                 targetPlatform,
+                                 sourceApplication.filter(src -> !src.equals(targetApplication))
+                                                  .map(ApplicationVersion::id)
+                                                  .map(src -> src + " -> ")
+                                                  .orElse(""),
+                                 targetApplication.id());
+        }
     }
 
 }
