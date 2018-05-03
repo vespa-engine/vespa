@@ -110,6 +110,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
     }
 
     @Override
+    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
     public void finalize() throws Throwable {
         super.finalize();
         mirror.shutdown();
