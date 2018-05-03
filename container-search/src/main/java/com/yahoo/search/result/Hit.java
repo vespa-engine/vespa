@@ -46,6 +46,9 @@ import java.util.stream.Collectors;
  */
 public class Hit extends ListenableFreezableClass implements Data, Comparable<Hit>, Cloneable {
 
+    // Collection fields in hits are, when possible lazy because much of the work of a container
+    // consists of allocating and then garbage collecting hits
+
     private static final String DOCUMENT_ID = "documentid";
 
     /** A collection of string keyed object properties. */
@@ -61,7 +64,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private URI id;
 
     /** The types of this hit */
-    private Set<String> types = new ArraySet<>(2);
+    private Set<String> types = new ArraySet<>(1);
 
     /** The relevance of this hit */
     private Relevance relevance;

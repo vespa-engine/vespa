@@ -52,21 +52,13 @@ class HitConverter implements ResultBuilder.HitConverter {
         hit.setFillable();
         hit.setSearcherSpecificMetaData(searcher, summaryClass);
 
-        Hit ctxHit = (Hit)groupHit.getContext();
-        if (ctxHit == null) {
+        GroupingListHit hitContext = (GroupingListHit)groupHit.getContext();
+        if (hitContext == null)
             throw new NullPointerException("Hit has no context.");
-        }
-        hit.setSource(ctxHit.getSource());
-        hit.setQuery(ctxHit.getQuery());
-
-        if (ctxHit instanceof GroupingListHit) {
-            // in a live system the ctxHit can only by GroupingListHit, but because the code used Hit prior to version
-            // 5.10 we need to check to avoid breaking existing unit tests -- both internally and with customers
-            QueryPacketData queryPacketData = ((GroupingListHit)ctxHit).getQueryPacketData();
-            if (queryPacketData != null) {
-                hit.setQueryPacketData(queryPacketData);
-            }
-        }
+        hit.setSource(hitContext.getSource());
+        hit.setQuery(hitContext.getQuery());
+        if (hitContext.getQueryPacketData() != null)
+            hit.setQueryPacketData(hitContext.getQueryPacketData());
         return hit;
     }
 
