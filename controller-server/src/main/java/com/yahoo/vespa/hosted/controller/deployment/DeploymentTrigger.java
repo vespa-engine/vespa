@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -291,13 +290,13 @@ public class DeploymentTrigger {
             if (change.isPresent())
                 for (Step step : productionSteps) {
                     Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                    Map<Instant, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job).orElse(Instant.EPOCH)));
-                    if (jobsByCompletion.containsKey(Instant.EPOCH)) { // Step incomplete because some jobs remain, trigger those if the previous step was done, or required test steps.
-                        for (JobType job : jobsByCompletion.get(Instant.EPOCH)) {
+                    Map<Instant, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job).orElse(null)));
+                    if (jobsByCompletion.containsKey(null)) { // Step incomplete because some jobs remain, trigger those if the previous step was done, or required test steps.
+                        for (JobType job : jobsByCompletion.get(null)) {
                             Versions versions = versions(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
                                 if (completedAt.isPresent()
-                                    && jobStateContains(application, job, idle)
+                                    && jobStateIsAmong(application, job, idle)
                                     && stepJobs.containsAll(runningProductionJobs(application)))
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 if ( ! alreadyTriggered(application, versions))
@@ -344,10 +343,10 @@ public class DeploymentTrigger {
         return ! application.deploymentJobs().statusOf(jobType)
                                .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at())))
                                .orElse(false)
-               && jobStateContains(application, jobType, running, queued);
+               && jobStateIsAmong(application, jobType, running, queued);
     }
 
-    private boolean jobStateContains(Application application, JobType jobType, JobState... states) {
+    private boolean jobStateIsAmong(Application application, JobType jobType, JobState... states) {
         return Arrays.asList(states).contains(buildService.stateOf(BuildJob.of(application.id(),
                                                                                application.deploymentJobs().projectId().getAsLong(),
                                                                                jobType.jobName())));
@@ -460,7 +459,7 @@ public class DeploymentTrigger {
             for (JobType jobType : step.zones().stream().map(order::toJob).collect(toList())) {
                 Optional<JobRun> completion = successOn(application, jobType, versions)
                         .filter(run -> jobType != stagingTest || sourcesMatchIfPresent(versions, run));
-                if (! completion.isPresent() && jobStateContains(application, jobType, idle))
+                if (! completion.isPresent() && jobStateIsAmong(application, jobType, idle))
                     jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
             }
         }
