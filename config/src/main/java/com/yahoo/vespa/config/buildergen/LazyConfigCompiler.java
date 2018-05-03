@@ -78,8 +78,7 @@ public class LazyConfigCompiler implements ConfigCompiler {
             try {
                 Class<BUILDER> clazz = (Class<BUILDER>) classLoader.<BUILDER>loadClass(builderClassUrl);
                 return clazz.getDeclaredConstructor().newInstance();
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException
-                    | NoSuchMethodException | InvocationTargetException e) {
+            } catch (ReflectiveOperationException e) {
                 throw new RuntimeException("Error creating new instance of '" + builderClassUrl + "'", e);
             }
         }
