@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.net.URI;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.data.access.Inspector;
-import com.yahoo.data.access.Type;
-import com.yahoo.data.access.simple.Value.StringValue;
 
 /**
  * A regular hit from a Vespa backend
