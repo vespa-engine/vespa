@@ -199,7 +199,7 @@ public class DeploymentTrigger {
             return singletonList(component);
         }
         Versions versions = versions(application, application.change(), deploymentFor(application, jobType));
-        String reason = ">:o:< Triggered by force! (-o-) |-o-| (=oo=)";
+        String reason = "Job triggered manually";
         return (jobType.isProduction() && ! isTested(application, versions)
                 ? testJobs(application, versions, reason, clock.instant()).stream()
                 : Stream.of(deploymentJob(application, versions, application.change(), jobType, reason, clock.instant())))
