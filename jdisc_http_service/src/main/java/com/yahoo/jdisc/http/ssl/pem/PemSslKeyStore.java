@@ -54,6 +54,7 @@ public class PemSslKeyStore {
         static final double VERSION = 1;
         static final String DESCRIPTION = "Provides PEM keystore support";
 
+        @SuppressWarnings("deprecation") // TODO: Remove annotation and use new super ctor when we don't need Java 8 support anymore.
         PemKeyStoreProvider() {
             super(NAME, VERSION, DESCRIPTION);
             putService(new Service(this, "KeyStore", "PEM", PemKeyStore. class.getName(), PemKeyStore.aliases, PemKeyStore.attributes));

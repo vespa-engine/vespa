@@ -12,7 +12,7 @@
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>com.yahoo.vespa.jdisc_core</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>integration-test-parent</artifactId>
     <version>6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
