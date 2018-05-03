@@ -26,6 +26,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.Environment.prod;
@@ -133,7 +135,7 @@ public class DeploymentTrigger {
     }
 
     public Map<JobType, ? extends List<? extends BuildJob>> jobsToRun() {
-        return computeReadyJobs().collect(groupingBy(Job::jobType));
+        return computeReadyJobs().stream().collect(groupingBy(Job::jobType));
     }
 
     /**
@@ -142,7 +144,8 @@ public class DeploymentTrigger {
      * Only one job is triggered each run for test jobs, since their environments have limited capacity.
      */
     public long triggerReadyJobs() {
-        return computeReadyJobs().collect(partitioningBy(job -> job.jobType().isTest()))
+        return computeReadyJobs().stream()
+                                 .collect(partitioningBy(job -> job.jobType().isTest()))
                                  .entrySet().stream()
                                  .flatMap(entry -> (entry.getKey()
                                          // True for capacity constrained zones -- sort by priority and make a task for each job type.
@@ -251,14 +254,15 @@ public class DeploymentTrigger {
     // ---------- Ready job computation ----------
 
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
-    private Stream<Job> computeReadyJobs() {
+    private List<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .notPullRequest()
                               .withProjectId()
                               .deploying()
                               .idList().stream()
                               .map(this::computeReadyJobs)
-                              .flatMap(List::stream);
+                              .flatMap(Collection::stream)
+                              .collect(toList());
     }
 
     /**
