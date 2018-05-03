@@ -16,7 +16,7 @@ FastS_NodeManager::configure(std::unique_ptr<PartitionsConfig> cfg)
 {
     LOG(config, "configuring datasetcollection from '%s'",
         _configUri.getConfigId().c_str());
-    SetPartMap(*cfg, 2000);
+    SetPartMap(*cfg, 20000);
     _componentConfig.addConfig(
             vespalib::ComponentConfigProducer::Config("fdispatch.nodemanager",
                                                       _fetcher->getGeneration(),
