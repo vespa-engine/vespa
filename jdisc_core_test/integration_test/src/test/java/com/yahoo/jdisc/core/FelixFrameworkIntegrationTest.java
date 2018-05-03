@@ -196,7 +196,7 @@ public class FelixFrameworkIntegrationTest {
     private static int callClass(Bundle bundle, String className) throws Exception {
         Class<?> certClass = bundle.loadClass(className);
         assertNotNull(certClass);
-        Callable<Integer> cert = (Callable<Integer>)certClass.newInstance();
+        Callable<Integer> cert = (Callable<Integer>)certClass.getDeclaredConstructor().newInstance();
         assertNotNull(cert);
         return cert.call();
     }
@@ -214,7 +214,7 @@ public class FelixFrameworkIntegrationTest {
             assertEquals(Arrays.asList(expectedBundles), actual);
             felix.startBundles(bundles, false);
             if (className != null) {
-                assertNotNull(bundles.get(0).loadClass(className).newInstance());
+                assertNotNull(bundles.get(0).loadClass(className).getDeclaredConstructor().newInstance());
             }
         } finally {
             felix.stop();

@@ -27,9 +27,7 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class ChainBuilderTest {
 
-    private void addAtoG(ChainBuilder chainBuilder)
-            throws IllegalAccessException, InstantiationException {
-
+    private void addAtoG(ChainBuilder chainBuilder) throws ReflectiveOperationException {
         List<Class<? extends ChainedComponent>> componentTypes = new ArrayList<>();
 
         componentTypes.add(A.class);
@@ -43,7 +41,7 @@ public class ChainBuilderTest {
         permute(componentTypes);
 
         for (Class<? extends ChainedComponent> searcherClass : componentTypes) {
-            chainBuilder.addComponent(searcherClass.newInstance());
+            chainBuilder.addComponent(searcherClass.getDeclaredConstructor().newInstance());
         }
     }
 
@@ -58,7 +56,7 @@ public class ChainBuilderTest {
     }
 
     @Test
-    public void testRegular() throws InstantiationException, IllegalAccessException {
+    public void testRegular() throws Exception {
         ChainBuilder chainBuilder = createDependencyHandler();
 
         addAtoG(chainBuilder);
@@ -72,8 +70,7 @@ public class ChainBuilderTest {
     }
 
     @Test
-    public void testCycle()
-            throws InstantiationException, IllegalAccessException {
+    public void testCycle() throws Exception {
 
         ChainBuilder chainBuilder = createDependencyHandler();
 
@@ -139,8 +136,7 @@ public class ChainBuilderTest {
     }
 
     @Test
-    public void testAfterAll1()
-            throws InstantiationException, IllegalAccessException {
+    public void testAfterAll1() throws Exception {
         ChainBuilder chainBuilder = createDependencyHandler();
         ChainedComponent afterAll1 = new AfterAll();
         chainBuilder.addComponent(afterAll1);
@@ -151,8 +147,7 @@ public class ChainBuilderTest {
     }
 
     @Test
-    public void testAfterAll2()
-            throws InstantiationException, IllegalAccessException {
+    public void testAfterAll2() throws Exception {
         ChainBuilder chainBuilder = createDependencyHandler();
         addAtoG(chainBuilder);
         ChainedComponent afterAll1 = new AfterAll();
@@ -241,7 +236,7 @@ public class ChainBuilderTest {
     static class AfterProvidesNothing extends NoopComponent {
     }
 
-    public static class NoopComponent extends ChainedComponent {
+    static class NoopComponent extends ChainedComponent {
     }
 
 }
