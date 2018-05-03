@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -35,23 +36,27 @@ public class DeploymentExpirer extends Maintainer {
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
             for (Deployment deployment : application.deployments().values()) {
-                if (deployment.zone().environment().equals(Environment.prod)) continue;
+                if (deployment.zone().environment().equals(Environment.prod)) {
+                    continue;
+                }
 
-                if (hasExpired(controller().zoneRegistry(), deployment, clock.instant()))
+                if (hasExpired(controller().zoneRegistry(), deployment, clock.instant())) {
                     try {
                         controller().applications().deactivate(application, deployment.zone());
+                    } catch (Exception e) {
+                        log.log(Level.WARNING, "Could not expire " + deployment + " of " + application +
+                                               ": " + Exceptions.toMessageString(e) + ". Retrying in " +
+                                               maintenanceInterval());
                     }
-                    catch (Exception e) {
-                        log.log(Level.WARNING, "Could not expire " + deployment + " of " + application, e);
-                    }
+                }
             }
         }
     }
 
-    public static boolean hasExpired(ZoneRegistry zoneRegistry, Deployment deployment, Instant now) {
+    private static boolean hasExpired(ZoneRegistry zoneRegistry, Deployment deployment, Instant now) {
         return zoneRegistry.getDeploymentTimeToLive(deployment.zone())
-                .map(timeToLive -> deployment.at().plus(timeToLive).isBefore(now))
-                .orElse(false);
+                           .map(timeToLive -> deployment.at().plus(timeToLive).isBefore(now))
+                           .orElse(false);
     }
 
 }
