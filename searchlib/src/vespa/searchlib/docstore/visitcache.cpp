@@ -38,7 +38,7 @@ BlobSet::BlobSet() :
     _buffer(Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE), 0)
 { }
 
-BlobSet::~BlobSet() {}
+BlobSet::~BlobSet() = default;
 
 namespace {
 
@@ -80,7 +80,7 @@ CompressedBlobSet::CompressedBlobSet() :
 {
 }
 
-CompressedBlobSet::~CompressedBlobSet() { }
+CompressedBlobSet::~CompressedBlobSet() = default;
 
 
 CompressedBlobSet::CompressedBlobSet(const CompressionConfig &compression, const BlobSet & uncompressed) :
@@ -92,8 +92,10 @@ CompressedBlobSet::CompressedBlobSet(const CompressionConfig &compression, const
         DataBuffer compressed;
         ConstBufferRef org = uncompressed.getBuffer();
         _compression = vespalib::compression::compress(compression, org, compressed, false);
-        _buffer.resize(compressed.getDataLen());
-        memcpy(_buffer, compressed.getData(), compressed.getDataLen());
+        _buffer = std::make_shared<vespalib::MallocPtr>(compressed.getDataLen());
+        memcpy(*_buffer, compressed.getData(), compressed.getDataLen());
+    } else {
+        _buffer = std::make_shared<vespalib::MallocPtr>();
     }
 }
 
@@ -105,13 +107,13 @@ CompressedBlobSet::getBlobSet() const
     DataBuffer uncompressed(0, 1, Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE));
     if ( ! _positions.empty() ) {
         decompress(_compression, getBufferSize(_positions),
-                   ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
+                   ConstBufferRef(_buffer->c_str(), _buffer->size()), uncompressed, false);
     }
     return BlobSet(_positions, uncompressed.stealBuffer());
 }
 
 size_t CompressedBlobSet::size() const {
-    return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer.size();
+    return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer->size();
 }
 
 namespace {
@@ -226,7 +228,7 @@ VisitCache::Cache::Cache(BackingStore & b, size_t maxBytes) :
     Parent(b, maxBytes)
 { }
 
-VisitCache::Cache::~Cache() { }
+VisitCache::Cache::~Cache() = default;
 
 void
 VisitCache::Cache::removeKey(uint32_t subKey) {
