@@ -120,7 +120,7 @@ public class ValueTestCase {
         assertNull(p2.appendChar);
         assertNull(p.logSum);
         p2.merge(p);
-        assertEquals(new Character('_'), p2.appendChar);
+        assertEquals(Character.valueOf('_'), p2.appendChar);
         assertNull(p2.logMax);
         assertEquals(Boolean.TRUE, p2.logSum);
     }

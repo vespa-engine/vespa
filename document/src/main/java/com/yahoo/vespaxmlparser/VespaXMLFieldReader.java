@@ -289,7 +289,7 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
         try {
             String dataParsed = reader.getElementText();
             try {
-                value.assign(new Byte(dataParsed));
+                value.assign(Byte.valueOf(dataParsed));
             } catch (Exception e) {
                 throw newDeserializeException(field, "Invalid byte \"" + dataParsed + "\".");
             }
@@ -315,7 +315,7 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
         try {
             String dataParsed = reader.getElementText();
             try {
-                value.assign(new Float(dataParsed));
+                value.assign(Float.valueOf(dataParsed));
             } catch (Exception e) {
                 throw newDeserializeException(field, "Invalid float \"" + dataParsed + "\".");
             }
