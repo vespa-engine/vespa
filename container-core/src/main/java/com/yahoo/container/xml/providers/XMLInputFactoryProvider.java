@@ -8,7 +8,9 @@ import javax.xml.stream.XMLInputFactory;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.29
+ * @deprecated Do not use!
  */
+@Deprecated
 public class XMLInputFactoryProvider implements Provider<XMLInputFactory> {
     private static final String INPUT_FACTORY_INTERFACE = XMLInputFactory.class.getName();
     public static final String FACTORY_CLASS = "com.sun.xml.internal.stream.XMLInputFactoryImpl";

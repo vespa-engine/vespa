@@ -8,7 +8,9 @@ import javax.xml.transform.TransformerFactory;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.29
+ * @deprecated Do not use!
  */
+@Deprecated
 public class TransformerFactoryProvider implements Provider<TransformerFactory> {
     public static final String FACTORY_CLASS = "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";
 

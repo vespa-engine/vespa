@@ -9,7 +9,9 @@ import javax.xml.validation.SchemaFactory;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.29
+ * @deprecated Do not use!
  */
+@Deprecated
 public class SchemaFactoryProvider implements Provider<SchemaFactory> {
     public static final String FACTORY_CLASS = "com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory";
 

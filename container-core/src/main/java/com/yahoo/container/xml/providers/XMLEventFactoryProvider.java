@@ -8,7 +8,9 @@ import javax.xml.stream.XMLEventFactory;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.29
+ * @deprecated Do not use!
  */
+@Deprecated
 public class XMLEventFactoryProvider implements Provider<XMLEventFactory> {
     public static final String FACTORY_CLASS = "com.sun.xml.internal.stream.events.XMLEventFactoryImpl";
 
