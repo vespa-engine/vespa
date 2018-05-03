@@ -60,14 +60,14 @@ public class SslConnectionSocketFactoryUpdater implements AutoCloseable {
         this.configServerHostnameVerifier = configServerHostnameVerifier;
         this.sia = siaIdentityProvider;
         if (siaIdentityProvider != null) {
-            siaIdentityProvider.addReloadListener(this::updateSocketFactory);
+            siaIdentityProvider.addIdentityListener(this::updateSocketFactory);
             socketFactory = createSocketFactory(siaIdentityProvider.getIdentitySslContext());
         } else {
             socketFactory = createDefaultSslConnectionSocketFactory();
         }
     }
 
-    private void updateSocketFactory(SSLContext sslContext) {
+    private void updateSocketFactory(SSLContext sslContext, AthenzService identity) {
         synchronized (monitor) {
             socketFactory = createSocketFactory(sslContext);
             configServerApis.forEach(api -> api.setSSLConnectionSocketFactory(socketFactory));
