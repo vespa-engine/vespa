@@ -545,29 +545,31 @@ public class DeploymentTriggerTest {
         assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main).get()).version());
         assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main).get()).version());
 
-        // New application version should run system and staging tests first against 6.2, then against 6.1.
+        // New application version should run system and staging tests against both 6.1 and 6.2, in no particular order.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
+        Version firstTested = app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform();
+        assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+
         tester.deployAndNotify(application, empty(), true, systemTest);
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, stagingTest);
 
-        // Tests are not re-triggered, because eu-west-1 needs their success to trigger
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+        // Tests are not re-triggered, because the jobs they were run for has not yet been triggered with the tested versions.
+        assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
+        assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
 
          // Finish old runs of the production jobs, which fail.
         tester.deployAndNotify(application, applicationPackage, false, productionEuWest1);
         tester.deployAndNotify(application, applicationPackage, false, productionUsEast3);
 
-        // New upgrade is already tested for eu-west-1, and tests may now test the upgrade for us-east-3
-        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
+        // New upgrade is already tested for one of the jobs, which has now been triggered, and tests may run for the other job.
+        assertNotEquals(firstTested, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
+        assertNotEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, systemTest);
-        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, stagingTest);
-        tester.deployAndNotify(application, empty(), false, productionEuWest1);
 
-        // The production job on version 6.2 fails and must retry -- this is OK, even though staging now has a different version.
+        // Both jobs fail again, and must be re-triggered -- this is ok, as they are both already triggered on their current targets.
+        tester.deployAndNotify(application, empty(), false, productionEuWest1);
+        tester.deployAndNotify(application, empty(), false, productionUsEast3);
         tester.deployAndNotify(application, empty(), true, productionUsEast3);
         tester.deployAndNotify(application, empty(), true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
