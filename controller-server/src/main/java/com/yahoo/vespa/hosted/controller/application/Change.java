@@ -2,9 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 
-import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;

@@ -1,4 +1,4 @@
 {
   "error-code": "BAD_REQUEST",
-  "message": "Got notified about completion of production-us-east-3 for tenant1.application1, but that has neither been triggered nor deployed"
+  "message": "Notified of completion of production-us-east-3 for tenant1.application1, but that has neither been triggered nor deployed"
 }
