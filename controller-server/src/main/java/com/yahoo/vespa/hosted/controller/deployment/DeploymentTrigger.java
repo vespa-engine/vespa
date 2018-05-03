@@ -271,11 +271,10 @@ public class DeploymentTrigger {
                                                     .collect(toList());
 
             Change change = application.changeAt(clock.instant());
-            @SuppressWarnings("cast") // Bad compiler!
-            Optional<Instant> completedAt = max((Optional<Instant>) application.deploymentJobs().statusOf(systemTest)
-                                                                               .flatMap(job -> job.lastSuccess().map(JobRun::at)),
-                                                (Optional<Instant>) application.deploymentJobs().statusOf(stagingTest)
-                                                                               .flatMap(job -> job.lastSuccess().map(JobRun::at)));
+            Optional<Instant> completedAt = max(application.deploymentJobs().statusOf(systemTest)
+                                                        .<Instant>flatMap(job -> job.lastSuccess().map(JobRun::at)),
+                                                application.deploymentJobs().statusOf(stagingTest)
+                                                        .<Instant>flatMap(job -> job.lastSuccess().map(JobRun::at)));
             String reason = "New change available";
             List<Job> testJobs = null;
 
