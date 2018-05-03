@@ -7,6 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
+import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -46,20 +47,21 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final NodeRebooter nodeRebooter;
     private final NodeRetirer nodeRetirer;
     private final MetricsReporter metricsReporter;
+    private final InfrastructureProvisioner infrastructureProvisioner;
 
     private final JobControl jobControl;
     private final InfrastructureVersions infrastructureVersions;
 
     @Inject
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer,
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig) {
-        this(nodeRepository, deployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
+        this(nodeRepository, deployer, provisioner, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
                 orchestrator, metric, configserverConfig);
     }
 
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer,
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig) {
@@ -78,6 +80,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, durationFromEnv("provisioned_expiry").orElse(defaults.provisionedExpiry), jobControl);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
+        infrastructureProvisioner = new InfrastructureProvisioner(provisioner, nodeRepository, infrastructureVersions, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval), jobControl);
+
 
         RetirementPolicy policy = new RetirementPolicyList(new RetireIPv4OnlyNodes(zone));
         FlavorSpareChecker flavorSpareChecker = new FlavorSpareChecker(
@@ -99,6 +103,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeRetirer.deconstruct();
         provisionedExpirer.deconstruct();
         metricsReporter.deconstruct();
+        infrastructureProvisioner.deconstruct();
     }
 
     public JobControl jobControl() { return jobControl; }
@@ -142,6 +147,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration nodeRetirerInterval;
         private final Duration metricsInterval;
         private final Duration retiredInterval;
+        private final Duration infrastructureProvisionInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -154,6 +160,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             rebootInterval = Duration.ofDays(30);
             nodeRetirerInterval = Duration.ofMinutes(30);
             metricsInterval = Duration.ofMinutes(1);
+            infrastructureProvisionInterval = Duration.ofMinutes(3);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
             if (environment.isTest())

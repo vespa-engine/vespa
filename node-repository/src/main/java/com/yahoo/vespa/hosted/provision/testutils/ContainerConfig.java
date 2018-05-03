@@ -16,6 +16,7 @@ public class ContainerConfig {
                         "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>" +
                         "  <component id='com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock'/>" +
                         "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDeployer'/>" +
+                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisioner'/>" +
                         "  <component id='com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker'/>" +
                         "  <component id='com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub'/>" +
                         "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>" +
