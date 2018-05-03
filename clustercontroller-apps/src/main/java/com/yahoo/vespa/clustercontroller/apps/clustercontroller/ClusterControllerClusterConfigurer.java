@@ -74,6 +74,7 @@ public class ClusterControllerClusterConfigurer {
         options.minNodeRatioPerGroup = config.min_node_ratio_per_group();
         options.setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)));
         options.enableMultipleBucketSpaces = config.enable_multiple_bucket_spaces();
+        options.clusterHasGlobalDocumentTypes = config.cluster_has_global_document_types();
         options.minMergeCompletionRatio = config.min_merge_completion_ratio();
     }
 

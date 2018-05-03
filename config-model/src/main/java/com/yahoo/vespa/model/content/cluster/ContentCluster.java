@@ -597,6 +597,12 @@ public class ContentCluster extends AbstractConfigProducer implements
             builder.min_storage_up_ratio(0);
         }
         builder.enable_multiple_bucket_spaces(enableMultipleBucketSpaces);
+        // Telling the controller whether we actually _have_ global document types lets
+        // it selectively enable or disable constraints that aren't needed when these
+        // are not are present, even if full protocol and backend support is enabled
+        // for multiple bucket spaces. Basically, if you don't use it, you don't
+        // pay for it.
+        builder.cluster_has_global_document_types(enableMultipleBucketSpaces && !globallyDistributedDocuments.isEmpty());
     }
 
     @Override
