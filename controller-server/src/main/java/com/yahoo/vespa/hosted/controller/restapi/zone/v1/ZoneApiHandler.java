@@ -47,7 +47,8 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
+            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "', "
+                                   + Exceptions.toMessageString(e));
             return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
     }
