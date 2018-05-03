@@ -296,7 +296,7 @@ public class DeploymentTrigger {
                             Versions versions = versions(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
                                 if (completedAt.isPresent()
-                                    && jobStateContains(application, job, idle)
+                                    && jobStateIsAmong(application, job, idle)
                                     && stepJobs.containsAll(runningProductionJobs(application)))
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 if ( ! alreadyTriggered(application, versions))
@@ -343,10 +343,10 @@ public class DeploymentTrigger {
         return ! application.deploymentJobs().statusOf(jobType)
                                .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at())))
                                .orElse(false)
-               && jobStateContains(application, jobType, running, queued);
+               && jobStateIsAmong(application, jobType, running, queued);
     }
 
-    private boolean jobStateContains(Application application, JobType jobType, JobState... states) {
+    private boolean jobStateIsAmong(Application application, JobType jobType, JobState... states) {
         return Arrays.asList(states).contains(buildService.stateOf(BuildJob.of(application.id(),
                                                                                application.deploymentJobs().projectId().getAsLong(),
                                                                                jobType.jobName())));
@@ -459,7 +459,7 @@ public class DeploymentTrigger {
             for (JobType jobType : step.zones().stream().map(order::toJob).collect(toList())) {
                 Optional<JobRun> completion = successOn(application, jobType, versions)
                         .filter(run -> jobType != stagingTest || sourcesMatchIfPresent(versions, run));
-                if (! completion.isPresent() && jobStateContains(application, jobType, idle))
+                if (! completion.isPresent() && jobStateIsAmong(application, jobType, idle))
                     jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
             }
         }
