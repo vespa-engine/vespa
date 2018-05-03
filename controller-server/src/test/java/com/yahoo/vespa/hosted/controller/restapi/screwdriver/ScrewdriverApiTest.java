@@ -47,19 +47,19 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
 
         // Unknown application
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/foo/application/bar",
-                                   new byte[0], Request.Method.POST),
+                                   new byte[0], Request.Method.POST, () -> "user"),
                        400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"foo.bar not found\"}");
 
         // Invalid job
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
-                                   "invalid".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
+                                   "invalid".getBytes(StandardCharsets.UTF_8), Request.Method.POST, () -> "user"),
                        400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown job name 'invalid'\"}");
 
         // component is triggered if no job is specified in request body
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
-                                   new byte[0], Request.Method.POST),
+                                   new byte[0], Request.Method.POST, () -> "user"),
                        200, "{\"message\":\"Triggered component for tenant1.application1\"}");
         tester.controller().applications().deploymentTrigger().notifyOfCompletion(new JobReport(app.id(),
                                                                                                 DeploymentJobs.JobType.component,
@@ -71,13 +71,13 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         // Triggers specific job when given, when job is a test, or tested.
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
-                                   "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
+                                   "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST, () -> "user"),
                        200, "{\"message\":\"Triggered staging-test for tenant1.application1\"}");
 
         // Triggers test jobs (only system-test here since deployment spec is unknown) when given untested production job.
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
-                                   "production-us-east-3".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
+                                   "production-us-east-3".getBytes(StandardCharsets.UTF_8), Request.Method.POST, () -> "user"),
                        200, "{\"message\":\"Triggered system-test for tenant1.application1\"}");
 
     }
