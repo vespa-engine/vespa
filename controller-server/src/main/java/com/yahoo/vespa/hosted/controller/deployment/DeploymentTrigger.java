@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -291,9 +290,9 @@ public class DeploymentTrigger {
             if (change.isPresent())
                 for (Step step : productionSteps) {
                     Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                    Map<Instant, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job).orElse(Instant.EPOCH)));
-                    if (jobsByCompletion.containsKey(Instant.EPOCH)) { // Step incomplete because some jobs remain, trigger those if the previous step was done, or required test steps.
-                        for (JobType job : jobsByCompletion.get(Instant.EPOCH)) {
+                    Map<Instant, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job).orElse(null)));
+                    if (jobsByCompletion.containsKey(null)) { // Step incomplete because some jobs remain, trigger those if the previous step was done, or required test steps.
+                        for (JobType job : jobsByCompletion.get(null)) {
                             Versions versions = versions(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
                                 if (completedAt.isPresent()
