@@ -26,6 +26,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -276,14 +277,14 @@ public class DeploymentTrigger {
                                                 application.deploymentJobs().statusOf(stagingTest)
                                                         .<Instant>flatMap(job -> job.lastSuccess().map(JobRun::at)));
             String reason = "New change available";
-            List<Job> testJobs = null;
+            List<Job> testJobs = Collections.emptyList();
 
             if (change.isPresent())
                 for (Step step : productionSteps) {
                     Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                    Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job)));
-                    if (jobsByCompletion.containsKey(empty())) { // Step not complete, because some jobs remain -- trigger these if the previous step was done, or theirs tests if needed.
-                        for (JobType job : jobsByCompletion.get(empty())) {
+                    Map<Instant, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job).orElse(Instant.EPOCH)));
+                    if (jobsByCompletion.containsKey(Instant.EPOCH)) { // Step not complete, because some jobs remain -- trigger these if the previous step was done, or theirs tests if needed.
+                        for (JobType job : jobsByCompletion.get(Instant.EPOCH)) {
                             Versions versions = versionsFor(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
                                 if (   completedAt.isPresent()
@@ -291,7 +292,7 @@ public class DeploymentTrigger {
                                     && stepJobs.containsAll(runningProductionJobsFor(application)))
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                             }
-                            else if (testJobs == null) {
+                            else if (testJobs.isEmpty()) {
                                 testJobs = testJobsFor(application, versions, "Testing deployment for " + job.jobName(), completedAt.orElse(clock.instant()));
                             }
                         }
@@ -304,12 +305,12 @@ public class DeploymentTrigger {
                             reason += " after a delay of " + delay;
                         }
                         else {
-                            completedAt = jobsByCompletion.keySet().stream().map(Optional::get).max(naturalOrder());
+                            completedAt = jobsByCompletion.keySet().stream().max(naturalOrder());
                             reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(joining(", "));
                         }
                     }
                 }
-            if (testJobs == null)
+            if (testJobs.isEmpty())
                 testJobs = testJobsFor(application, versionsFor(application, application.change(), empty()), "Testing last changes outside prod", clock.instant());
             jobs.addAll(testJobs);
         });
@@ -320,7 +321,7 @@ public class DeploymentTrigger {
 
     private List<JobType> runningProductionJobsFor(Application application) {
         return application.deploymentJobs().jobStatus().keySet().parallelStream()
-                          .filter(job -> job.isProduction())
+                          .filter(JobType::isProduction)
                           .filter(job -> isRunning(application, job))
                           .collect(toList());
     }
