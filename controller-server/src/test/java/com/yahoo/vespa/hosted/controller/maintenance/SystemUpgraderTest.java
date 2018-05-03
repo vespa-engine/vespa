@@ -2,31 +2,34 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.NodeRepositoryMock;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
-import java.net.URI;
 import java.util.Arrays;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
  */
 public class SystemUpgraderTest {
 
+    private static final ZoneId zone1 = ZoneId.from("prod", "eu-west-1");
+    private static final ZoneId zone2 = ZoneId.from("prod", "us-west-1");
+    private static final ZoneId zone3 = ZoneId.from("prod", "us-central-1");
+    private static final ZoneId zone4 = ZoneId.from("prod", "us-east-3");
+
     private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void upgrade_system() {
-        ZoneId zone1 = ZoneId.from("prod", "eu-west-1");
-        ZoneId zone2 = ZoneId.from("prod", "us-west-1");
-        ZoneId zone3 = ZoneId.from("prod", "us-central-1");
-        ZoneId zone4 = ZoneId.from("prod", "us-east-3");
-
         tester.controllerTester().zoneRegistry().setUpgradePolicy(
                 UpgradePolicy.create()
                              .upgrade(zone1)
@@ -35,38 +38,70 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
+        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4));
         tester.upgradeSystem(version1);
         tester.systemUpgrader().maintain();
-        assertTrue("Zones are on current version", onVersion(version1, zone1, zone2, zone3, zone4));
+        assertCurrentVersion(SystemApplication.configServer, version1, zone1, zone2, zone3, zone4);
+        assertCurrentVersion(SystemApplication.zone, version1, zone1, zone2, zone3, zone4);
 
         // Controller upgrades
         Version version2 = Version.fromString("6.6");
         tester.upgradeController(version2);
         assertEquals(version2, tester.controller().versionStatus().controllerVersion().get().versionNumber());
 
-        // System upgrade scheduled. First zone starts upgrading
+        // System upgrade starts
         tester.systemUpgrader().maintain();
-        assertWantedVersion(version2, zone1);
-        assertWantedVersion(version1, zone2, zone3, zone4); // Other zones remains on previous version
+        assertWantedVersion(SystemApplication.configServer, version2, zone1);
+        // Other zones remain on previous version
+        assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3, zone4);
+        // Zone application is not upgraded yet
+        assertWantedVersion(SystemApplication.zone, version1, zone1, zone2, zone3, zone4);
 
-        // Zones 1 completes upgrade
-        completeUpgrade(version2, zone1);
+        // zone1: zone-config-server upgrades
+        completeUpgrade(SystemApplication.configServer, version2, zone1);
 
-        // Zones 2 and 3 upgrade in parallel
+        // zone 1: zone-application upgrades
         tester.systemUpgrader().maintain();
-        assertWantedVersion(version2, zone2, zone3);
-        assertWantedVersion(version1, zone4);
-        completeUpgrade(version2, zone2, zone3);
+        assertWantedVersion(SystemApplication.zone, version2, zone1);
+        completeUpgrade(SystemApplication.zone, version2, zone1);
 
-        // Zone 4 upgrades last
+        // zone 2, 3 and 4: still targets old version
+        assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3, zone4);
+        assertWantedVersion(SystemApplication.zone, version1, zone2, zone3, zone4);
+
+        // zone 2 and 3: zone-config-server upgrades in parallel
         tester.systemUpgrader().maintain();
-        assertWantedVersion(version2, zone4);
-        completeUpgrade(version2, zone4);
+        assertWantedVersion(SystemApplication.configServer, version2, zone2, zone3);
+        assertWantedVersion(SystemApplication.configServer, version1, zone4);
+        assertWantedVersion(SystemApplication.zone, version1, zone2, zone3, zone4);
+        completeUpgrade(SystemApplication.configServer, version2, zone2, zone3);
+
+        // zone 2 and 3: zone-application upgrades in parallel
+        tester.systemUpgrader().maintain();
+        assertWantedVersion(SystemApplication.zone, version2, zone2, zone3);
+        completeUpgrade(SystemApplication.zone, version2, zone2, zone3);
+
+        // zone 4: zone-config-server upgrades
+        tester.systemUpgrader().maintain();
+        assertWantedVersion(SystemApplication.configServer, version2, zone4);
+        assertWantedVersion(SystemApplication.zone, version1, zone4);
+        completeUpgrade(SystemApplication.configServer, version2, zone4);
+
+        // System version remains unchanged until final application upgrades
+        tester.computeVersionStatus();
+        assertEquals(version1, tester.controller().versionStatus().systemVersion().get().versionNumber());
+
+        // zone 4: zone-application upgrades
+        tester.systemUpgrader().maintain();
+        assertWantedVersion(SystemApplication.zone, version2, zone4);
+        completeUpgrade(SystemApplication.zone, version2, zone4);
+        tester.computeVersionStatus();
+        assertEquals(version2, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         // Next run does nothing as system is now upgraded
         tester.systemUpgrader().maintain();
-        assertWantedVersion(version2, zone1, zone2, zone3, zone4);
-        assertTrue(onVersion(version2, zone1, zone2, zone3, zone4));
+        assertWantedVersion(SystemApplication.configServer, version2, zone1, zone2, zone3, zone4);
+        assertWantedVersion(SystemApplication.zone, version2, zone1, zone2, zone3, zone4);
     }
 
     @Test
@@ -77,37 +112,48 @@ public class SystemUpgraderTest {
         Version version = Version.fromString("6.5");
         tester.upgradeSystem(version);
         tester.systemUpgrader().maintain();
-        assertTrue("Zone is on current version", onVersion(version, zone));
+        assertWantedVersion(SystemApplication.configServer, version, zone);
+        assertWantedVersion(SystemApplication.zone, version, zone);
 
         // Controller is downgraded
         tester.upgradeController(Version.fromString("6.4"));
 
         // Wanted version for zone remains unchanged
         tester.systemUpgrader().maintain();
-        assertWantedVersion(version, zone);
+        assertWantedVersion(SystemApplication.configServer, version, zone);
+        assertWantedVersion(SystemApplication.zone, version, zone);
     }
 
-    private void completeUpgrade(Version version, ZoneId... zones) {
+    /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */
+    private void completeUpgrade(SystemApplication application, Version version, ZoneId... zones) {
         for (ZoneId zone : zones) {
-            for (URI configServer : tester.controller().zoneRegistry().getConfigServerUris(zone)) {
-                tester.controllerTester().configServer().versions().put(configServer, version);
+            for (Node node : nodeRepository().list(zone, application.id())) {
+                nodeRepository().add(zone, new Node(node.hostname(), node.type(), node.owner(), node.wantedVersion(),
+                                                    node.wantedVersion()));
             }
-            assertTrue(onVersion(version, zone));
+            assertCurrentVersion(application, version, zone);
         }
     }
 
-    private void assertWantedVersion(Version version, ZoneId... zones) {
+    private void assertWantedVersion(SystemApplication application, Version version, ZoneId... zones) {
+        assertVersion(application.id(), version, Node::wantedVersion, zones);
+    }
+
+    private void assertCurrentVersion(SystemApplication application, Version version, ZoneId... zones) {
+        assertVersion(application.id(), version, Node::currentVersion, zones);
+    }
+
+    private void assertVersion(ApplicationId applicationId, Version version, Function<Node, Version> versionField,
+                               ZoneId... zones) {
         for (ZoneId zone : zones) {
-            for (URI configServer : tester.controller().zoneRegistry().getConfigServerUris(zone)) {
-                assertEquals(version, tester.controller().configServer().version(configServer).wanted());
+            for (Node node : nodeRepository().list(zone, applicationId)) {
+                assertEquals(version, versionField.apply(node));
             }
         }
     }
 
-    private boolean onVersion(Version version, ZoneId... zone) {
-        return Arrays.stream(zone)
-                     .flatMap(z -> tester.controller().zoneRegistry().getConfigServerUris(z).stream())
-                     .allMatch(uri -> tester.controller().configServer().version(uri).current().equals(version));
+    private NodeRepositoryMock nodeRepository() {
+        return tester.controllerTester().configServer().nodeRepository();
     }
 
 }

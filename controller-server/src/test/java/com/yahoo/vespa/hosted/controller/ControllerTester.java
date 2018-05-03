@@ -73,7 +73,7 @@ public final class ControllerTester {
     private Controller controller;
 
     public ControllerTester(ManualClock clock, RotationsConfig rotationsConfig, MockCuratorDb curatorDb) {
-        this(new AthenzDbMock(), clock, new ConfigServerMock(),
+        this(new AthenzDbMock(), clock, new ConfigServerMock(new ZoneRegistryMock()),
              new ZoneRegistryMock(), new GitHubMock(), curatorDb, rotationsConfig,
              new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }

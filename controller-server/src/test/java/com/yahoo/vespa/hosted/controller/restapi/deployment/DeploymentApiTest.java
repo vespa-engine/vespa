@@ -83,7 +83,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
     private VersionStatus censorConfigServers(VersionStatus versionStatus, Controller controller) {
         List<VespaVersion> censored = new ArrayList<>();
         for (VespaVersion version : versionStatus.versions()) {
-            if ( ! version.configServerHostnames().isEmpty())
+            if (!version.systemApplicationHostnames().isEmpty()) {
                 version = new VespaVersion(version.statistics(),
                                            version.releaseCommit(),
                                            version.committedAt(),
@@ -94,6 +94,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                                        .collect(Collectors.toSet()),
                                            VespaVersion.confidenceFrom(version.statistics(), controller)
                 );
+            }
             censored.add(version);
         }
         return new VersionStatus(censored);

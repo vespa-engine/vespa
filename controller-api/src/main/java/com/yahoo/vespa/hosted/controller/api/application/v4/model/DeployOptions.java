@@ -40,4 +40,8 @@ public class DeployOptions {
                 ", deployCurrentVersion=" + deployCurrentVersion +
                 '}';
     }
+
+    public static DeployOptions none() {
+        return new DeployOptions(Optional.empty(), Optional.empty(), false, false);
+    }
 }

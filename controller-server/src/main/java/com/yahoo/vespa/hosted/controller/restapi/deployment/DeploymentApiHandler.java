@@ -90,7 +90,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             versionObject.setBool("systemVersion", version.isSystemVersion());
 
             Cursor configServerArray = versionObject.setArray("configServers");
-            for (HostName hostname : version.configServerHostnames()) {
+            for (HostName hostname : version.systemApplicationHostnames()) {
                 Cursor configServerObject = configServerArray.addObject();
                 configServerObject.setString("hostname", hostname.value());
             }

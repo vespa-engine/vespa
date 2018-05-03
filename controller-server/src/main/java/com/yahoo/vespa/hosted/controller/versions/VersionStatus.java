@@ -9,12 +9,13 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,7 +28,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 
@@ -85,12 +85,12 @@ public class VersionStatus {
 
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
-        ListMap<Version, HostName> configServerVersions = findConfigServerVersions(controller);
+        ListMap<Version, HostName> systemApplicationVersions = findSystemApplicationVersions(controller);
         ListMap<Version, HostName> controllerVersions = findControllerVersions(controller);
 
         Set<Version> infrastructureVersions = new HashSet<>();
         infrastructureVersions.addAll(controllerVersions.keySet());
-        infrastructureVersions.addAll(configServerVersions.keySet());
+        infrastructureVersions.addAll(systemApplicationVersions.keySet());
 
         // The controller version is the lowest controller version of all controllers
         Version controllerVersion = controllerVersions.keySet().stream().sorted().findFirst().get();
@@ -109,7 +109,7 @@ public class VersionStatus {
                 VespaVersion vespaVersion = createVersion(statistics,
                                                           statistics.version().equals(controllerVersion),
                                                           statistics.version().equals(systemVersion),
-                                                          configServerVersions.getList(statistics.version()),
+                                                          systemApplicationVersions.getList(statistics.version()),
                                                           controller);
                 versions.add(vespaVersion);
             } catch (IllegalArgumentException e) {
@@ -122,17 +122,18 @@ public class VersionStatus {
         return new VersionStatus(versions);
     }
 
-    private static ListMap<Version, HostName> findConfigServerVersions(Controller controller) {
-        List<URI> configServers = controller.zoneRegistry().zones()
-                .controllerUpgraded()
-                .ids().stream()
-                .flatMap(zoneId -> controller.zoneRegistry().getConfigServerUris(zoneId).stream())
-                .collect(Collectors.toList());
-
+    private static ListMap<Version, HostName> findSystemApplicationVersions(Controller controller) {
+        List<ZoneId> zones = controller.zoneRegistry().zones()
+                                       .controllerUpgraded()
+                                       .ids();
         ListMap<Version, HostName> versions = new ListMap<>();
-        for (URI configServer : configServers)
-            versions.put(controller.configServer().version(configServer).current(),
-                         HostName.from(configServer.getHost()));
+        for (ZoneId zone : zones) {
+            for (SystemApplication application : SystemApplication.all()) {
+                for (Node node : controller.configServer().nodeRepository().list(zone, application.id())) {
+                    versions.put(node.currentVersion(), node.hostname());
+                }
+            }
+        }
         return versions;
     }
 
