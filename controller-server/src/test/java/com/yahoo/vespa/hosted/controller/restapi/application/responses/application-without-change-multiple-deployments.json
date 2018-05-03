@@ -48,7 +48,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -62,7 +62,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -76,7 +76,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
         "at": "(ignore)"
       }
     },
@@ -94,7 +94,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -108,7 +108,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -122,7 +122,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
         "at": "(ignore)"
       }
     },
