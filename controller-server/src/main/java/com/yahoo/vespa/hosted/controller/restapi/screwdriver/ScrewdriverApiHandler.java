@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.screwdriver;
 
-import com.google.common.base.Joiner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -9,11 +8,9 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
@@ -28,7 +25,6 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -92,8 +88,8 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         String triggered = controller.applications().deploymentTrigger()
-                                     .forceTrigger(id, jobType).stream()
-                                     .map(JobType::jobName).collect(joining(", "));
+                                     .forceTrigger(id, jobType, request.getJDiscRequest().getUserPrincipal().getName())
+                                     .stream().map(JobType::jobName).collect(joining(", "));
 
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();

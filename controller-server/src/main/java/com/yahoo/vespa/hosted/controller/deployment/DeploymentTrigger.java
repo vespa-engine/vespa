@@ -191,15 +191,15 @@ public class DeploymentTrigger {
         }
     }
 
-    /** Force triggering of a job for given application */
-    public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType) {
+    /** Force triggering of a job for given application. */
+    public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType, String user) {
         Application application = applications().require(applicationId);
         if (jobType == component) {
             buildService.trigger(BuildJob.of(applicationId, application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
             return singletonList(component);
         }
         Versions versions = versions(application, application.change(), deploymentFor(application, jobType));
-        String reason = "Job triggered manually";
+        String reason = "Job triggered manually by " + user;
         return (jobType.isProduction() && ! isTested(application, versions)
                 ? testJobs(application, versions, reason, clock.instant()).stream()
                 : Stream.of(deploymentJob(application, versions, application.change(), jobType, reason, clock.instant())))
