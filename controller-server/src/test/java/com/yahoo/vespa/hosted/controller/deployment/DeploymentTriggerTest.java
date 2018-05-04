@@ -560,6 +560,7 @@ public class DeploymentTriggerTest {
          // Finish old runs of the production jobs, which fail.
         tester.deployAndNotify(application, applicationPackage, false, productionEuWest1);
         tester.deployAndNotify(application, applicationPackage, false, productionUsEast3);
+        tester.triggerUntilQuiescence();
 
         // New upgrade is already tested for one of the jobs, which has now been triggered, and tests may run for the other job.
         assertNotEquals(firstTested, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());

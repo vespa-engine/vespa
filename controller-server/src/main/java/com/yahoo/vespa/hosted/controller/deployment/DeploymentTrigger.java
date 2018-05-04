@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -276,10 +275,6 @@ public class DeploymentTrigger {
     private List<Job> computeReadyJobs(ApplicationId id) {
         List<Job> jobs = new ArrayList<>();
         applications().get(id).ifPresent(application -> {
-            List<Step> productionSteps = application.deploymentSpec().steps().stream()
-                                                    .filter(step -> step.deploysTo(prod) || step.zones().isEmpty())
-                                                    .collect(toList());
-
             Change change = application.changeAt(clock.instant());
             Optional<Instant> completedAt = max(application.deploymentJobs().statusOf(systemTest)
                                                         .<Instant>flatMap(job -> job.lastSuccess().map(JobRun::at)),
@@ -289,7 +284,7 @@ public class DeploymentTrigger {
             List<Job> testJobs = null; // null means "uninitialised", while empty means "don't run any jobs".
 
             if (change.isPresent())
-                for (Step step : productionSteps) {
+                for (Step step : productionStepsOf(application)) {
                     Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
                     Map<Instant, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job).orElse(Instant.EPOCH)));
                     if (jobsByCompletion.containsKey(Instant.EPOCH)) { // Step incomplete because some jobs remain, trigger those if the previous step was done, or required test steps.
@@ -323,8 +318,8 @@ public class DeploymentTrigger {
                     }
                 }
             if (testJobs == null)
-                testJobs = testJobs(application, versions(application, application.change(), Optional
-                        .empty()), "Testing last changes outside prod", clock.instant());
+                testJobs = testJobs(application, versions(application, application.change(), Optional.empty()),
+                                    "Testing last changes outside prod", clock.instant());
             jobs.addAll(testJobs);
         });
         return jobs;
@@ -426,12 +421,9 @@ public class DeploymentTrigger {
     }
 
     private Change remainingChange(Application application) {
-        List<JobType> jobs = (application.deploymentSpec().steps().isEmpty()
-                ? singletonList(new DeploymentSpec.DeclaredZone(test))
-                : application.deploymentSpec().steps()).stream()
-                                                       .flatMap(step -> step.zones().stream())
-                                                       .map(order::toJob)
-                                                       .collect(toList());
+        List<JobType> jobs = productionStepsOf(application).isEmpty()
+                ? jobsOf(testStepsOf(application))
+                : jobsOf(productionStepsOf(application));
 
         boolean platformComplete = application.change().platform().map(Change::of)
                                               .map(change -> jobs.stream().allMatch(job -> completedAt(change, application, job).isPresent()))
@@ -453,18 +445,32 @@ public class DeploymentTrigger {
      * Returns the list of test jobs that should run now, and that need to succeed on the given versions for it to be considered tested.
      */
     private List<Job> testJobs(Application application, Versions versions, String reason, Instant availableSince) {
-        List<Step> steps = application.deploymentSpec().steps();
-        if (steps.isEmpty()) steps = singletonList(new DeploymentSpec.DeclaredZone(test));
         List<Job> jobs = new ArrayList<>();
-        for (Step step : steps.stream().filter(step -> step.deploysTo(test) || step.deploysTo(staging)).collect(toList())) {
-            for (JobType jobType : step.zones().stream().map(order::toJob).collect(toList())) {
-                Optional<JobRun> completion = successOn(application, jobType, versions)
-                        .filter(run -> jobType != stagingTest || sourcesMatchIfPresent(versions, run));
-                if (! completion.isPresent() && jobStateContains(application, jobType, idle))
-                    jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
-            }
+        for (JobType jobType : jobsOf(testStepsOf(application))) {
+            Optional<JobRun> completion = successOn(application, jobType, versions)
+                    .filter(run -> sourcesMatchIfPresent(versions, run) || jobType == systemTest);
+            if (! completion.isPresent() && jobStateContains(application, jobType, idle))
+                jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
         }
         return jobs;
+    }
+
+    private List<JobType> jobsOf(Collection<Step> steps) {
+        return steps.stream().flatMap(step -> step.zones().stream()).map(order::toJob).collect(toList());
+    }
+
+    private List<Step> testStepsOf(Application application) {
+        return application.deploymentSpec().steps().isEmpty()
+                ? singletonList(new DeploymentSpec.DeclaredZone(test))
+                : application.deploymentSpec().steps().stream()
+                             .filter(step -> step.deploysTo(test) || step.deploysTo(staging))
+                             .collect(toList());
+    }
+
+    private List<Step> productionStepsOf(Application application) {
+        return application.deploymentSpec().steps().stream()
+                .filter(step -> step.deploysTo(prod) || step.zones().isEmpty())
+                .collect(toList());
     }
 
     private Job deploymentJob(Application application, Versions versions, Change change, JobType jobType, String reason, Instant availableSince) {
