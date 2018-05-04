@@ -441,6 +441,23 @@ public class FastHit extends Hit {
             return hit.fieldNameIterator();
         }
 
+        @Override
+        public int hashCode() {
+            return createSet().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! (o instanceof Set)) return false;
+            return createSet().equals(o);
+        }
+
+        @Override
+        public String toString() {
+            return createSet().toString();
+        }
+
         private Set<String> createSet() {
             if ( ! hit.hasFields() && hit.summaries.isEmpty()) return Collections.emptySet(); // shortcut
 
@@ -450,7 +467,8 @@ public class FastHit extends Hit {
 
             for (SummaryData summaryData : hit.summaries)
                 summaryData.data.traverse((ObjectTraverser)(name, __) -> fields.add(name));
-            fields.removeAll(hit.removedFields);
+            if (hit.removedFields != null)
+                fields.removeAll(hit.removedFields);
 
             this.fieldSet = fields;
 
@@ -536,7 +554,8 @@ public class FastHit extends Hit {
             private void advanceNext() {
                 while (fieldIterator.hasNext()) {
                     next = fieldIterator.next();
-                    if (!hit.hasField(next.getKey()) && !hit.removedFields.contains(next.getKey()))
+                    if ( ! hit.hasField(next.getKey()) &&
+                         ! (hit.removedFields != null && hit.removedFields.contains(next.getKey())))
                         break;
                 }
                 next = null;
@@ -633,6 +652,8 @@ public class FastHit extends Hit {
                 throw new IllegalStateException();
             if ( ! ( currentIterator instanceof SummaryData.SummaryDataIterator))
                 currentIterator.remove(); // remove from the map
+            if (hit.removedFields == null)
+                hit.removedFields = new HashSet<>();
             hit.removedFields.add(nameOf(previousReturned));
             previousReturned = null;
         }

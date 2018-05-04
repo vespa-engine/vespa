@@ -6,12 +6,16 @@ import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.prelude.hitfield.RawData;
 import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.search.result.StructuredData;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
@@ -21,8 +25,10 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class SlimeSummaryTestCase {
 
@@ -128,14 +134,50 @@ public class SlimeSummaryTestCase {
         assertEquals(tensor2, hit.getField("tensor_field2"));
     }
 
-    // TODO: Things we need to check that we test:
-    // - removing, then adding a field
-    // - removing from field and field name iterators
-    // - removing fields, both summary and map, then iterating
-    // - removing all fields in some summary, then iterating
-    // - adding a field from the iterator
-    // - iterating with fields set and multiple summaries, where some summaries have overlapping fields (TODO: Or ensure no overlapping fields?)
+    @Test
+    public void testFieldAccessAPI() {
+        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
+        FastHit hit = new FastHit();
 
+        set.lazyDecode("default", partialSummary1(), hit);
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("integer_field", 4);
+        expected.put("short_field", (short) 2);
+        assertFields(expected, hit);
+
+        set.lazyDecode("default", partialSummary2(), hit);
+        expected.put("float_field", 4.5F);
+        expected.put("double_field", 8.75D);
+        assertFields(expected, hit);
+
+        // TODO: Things we need to check that we test:
+        // - removing, then adding a field
+        // - removing from field and field name iterators
+        // - removing fields, both summary and map, then iterating
+        // - removing all fields in some summary, then iterating
+        // - adding a field from the iterator
+        // - Ensure no overlapping fields between summaries?
+    }
+
+
+    /** Asserts that the expected fields are what is returned from every access method of Hit */
+    private void assertFields(Map<String, Object> expected, Hit hit) {
+        // fieldKeys
+        assertEquals(expected.keySet(), hit.fieldKeys());
+        // getField
+        for (Map.Entry<String, Object> field : expected.entrySet())
+            assertEquals(field.getValue(), hit.getField(field.getKey()));
+        // fields
+        assertEquals(expected, hit.fields());
+        // fieldIterator
+        int iteratorFieldCount = 0;
+        for (Iterator<Map.Entry<String, Object>> i = hit.fieldIterator(); i.hasNext(); ) {
+            iteratorFieldCount++;
+            Map.Entry<String, Object> field = i.next();
+            assertEquals(field.getValue(), expected.get(field.getKey()));
+        }
+        assertEquals(expected.size(), iteratorFieldCount);
+    }
 
     private byte[] emptySummary() {
         Slime slime = new Slime();
@@ -146,6 +188,22 @@ public class SlimeSummaryTestCase {
     private byte [] timeoutSummary() {
         Slime slime = new Slime();
         slime.setString("Timed out....");
+        return encode((slime));
+    }
+
+    private byte[] partialSummary1() {
+        Slime slime = new Slime();
+        Cursor docsum = slime.setObject();
+        docsum.setLong("integer_field", 4);
+        docsum.setLong("short_field", 2);
+        return encode((slime));
+    }
+
+    private byte[] partialSummary2() {
+        Slime slime = new Slime();
+        Cursor docsum = slime.setObject();
+        docsum.setDouble("float_field", 4.5);
+        docsum.setDouble("double_field", 8.75);
         return encode((slime));
     }
 
