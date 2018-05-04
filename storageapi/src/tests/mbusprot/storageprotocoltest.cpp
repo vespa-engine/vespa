@@ -44,8 +44,7 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     vespalib::Version _version5_0{5, 0, 12};
     vespalib::Version _version5_1{5, 1, 0};
     vespalib::Version _version5_2{5, 93, 30};
-    // TODO: Set correct version when bucket space serialization is activated by default
-    vespalib::Version _version6_0{6, 999, 0};
+    vespalib::Version _version6_0{6, 240, 0};
     documentapi::LoadTypeSet _loadTypes;
     mbusprot::StorageProtocol _protocol;
     static std::vector<std::string> _nonVerboseMessageStrings;

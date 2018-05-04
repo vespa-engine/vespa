@@ -35,8 +35,7 @@ StorageProtocol::createPolicy(const mbus::string&, const mbus::string&) const
 }
 
 namespace {
-    // TODO: Set correct version when bucket space serialization is activated by default
-    vespalib::Version version6_0(6, 999, 0);
+    vespalib::Version version6_0(6, 240, 0);
     vespalib::Version version5_2(5, 93, 30);
     vespalib::Version version5_1(5, 1, 0);
     vespalib::Version version5_0(5, 0, 12);
