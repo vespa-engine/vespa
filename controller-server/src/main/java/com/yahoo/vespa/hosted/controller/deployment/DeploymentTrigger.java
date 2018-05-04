@@ -292,7 +292,7 @@ public class DeploymentTrigger {
                         for (JobType job : jobsByCompletion.get(Instant.MAX)) {
                             Versions versions = versions(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
-                                if (completedAt.isPresent()
+                                if (   completedAt.isPresent()
                                     && jobStateIsAmong(application, job, idle)
                                     && stepJobs.containsAll(runningProductionJobs(application)))
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
@@ -337,10 +337,10 @@ public class DeploymentTrigger {
 
     /** Returns whether the given job is currently running; false if completed since last triggered, asking the build service otherwise. */
     private boolean isRunning(Application application, JobType jobType) {
-        return ! application.deploymentJobs().statusOf(jobType)
+        return    ! application.deploymentJobs().statusOf(jobType)
                                .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at())))
                                .orElse(false)
-               && jobStateIsAmong(application, jobType, running, queued);
+               &&   jobStateIsAmong(application, jobType, running, queued);
     }
 
     private boolean jobStateIsAmong(Application application, JobType jobType, JobState... states) {
@@ -446,7 +446,7 @@ public class DeploymentTrigger {
         for (JobType jobType : jobsOf(testStepsOf(application))) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
                     .filter(run -> sourcesMatchIfPresent(versions, run) || jobType == systemTest);
-            if (! completion.isPresent() && jobStateIsAmong(application, jobType, idle))
+            if ( ! completion.isPresent() && jobStateIsAmong(application, jobType, idle))
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
         }
         return jobs;
@@ -545,16 +545,14 @@ public class DeploymentTrigger {
         @Override
         public String toString() {
             return String.format("platform %s%s, application %s%s",
-                                 sourcePlatform.filter(src -> !src.equals(targetPlatform))
-                                               .map(src -> src + " -> ")
-                                               .orElse(""),
+                                 sourcePlatform.filter(source -> ! source.equals(targetPlatform))
+                                               .map(source -> source + " -> ").orElse(""),
                                  targetPlatform,
-                                 sourceApplication.filter(src -> !src.equals(targetApplication))
-                                                  .map(ApplicationVersion::id)
-                                                  .map(src -> src + " -> ")
-                                                  .orElse(""),
+                                 sourceApplication.filter(source -> ! source.equals(targetApplication))
+                                                  .map(source -> source.id() + " -> ").orElse(""),
                                  targetApplication.id());
         }
+
     }
 
 }
