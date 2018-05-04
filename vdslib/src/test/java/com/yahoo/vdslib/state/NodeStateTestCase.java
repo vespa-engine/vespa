@@ -1,11 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.state;
 
+import org.junit.Test;
+
 import java.text.ParseException;
 import java.util.List;
 
-public class NodeStateTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+public class NodeStateTestCase {
+
+    @Test
     public void testOrdinals() {
         NodeType nt = NodeType.STORAGE;
 
@@ -34,6 +41,7 @@ public class NodeStateTestCase extends junit.framework.TestCase {
         assertTrue(new NodeState(nt, State.UP).above(new NodeState(nt, State.RETIRED)));
     }
 
+    @Test
     public void testTrivialitiesToIncreaseCoverage() throws ParseException {
         NodeState ns = new NodeState(NodeType.STORAGE, State.UP);
         assertEquals(1, ns.getReliability());
@@ -47,6 +55,7 @@ public class NodeStateTestCase extends junit.framework.TestCase {
         assertEquals(ns, NodeState.deserialize(NodeType.STORAGE, "s:u d:1 d.0:d"));
     }
 
+    @Test
     public void testDiskState() throws ParseException {
         NodeState ns = NodeState.deserialize(NodeType.STORAGE, "s:m");
         assertEquals(new DiskState(State.UP, "", 1), ns.getDiskState(0));
@@ -82,6 +91,7 @@ public class NodeStateTestCase extends junit.framework.TestCase {
         } catch (Exception e) {}
     }
 
+    @Test
     public void testSerialization() throws ParseException {
         NodeState ns = new NodeState(NodeType.STORAGE, State.MAINTENANCE);
         assertEquals("s:m", ns.serialize(false));
@@ -155,6 +165,7 @@ public class NodeStateTestCase extends junit.framework.TestCase {
         assertEquals(ns.serialize(true), copy2.serialize(true));
     }
 
+    @Test
     public void testSimilarTo() {
         {
             NodeState ns1 = new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0);
@@ -203,6 +214,7 @@ public class NodeStateTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testReadableOutput() {
         // toString() and getDiff() is mostly there just to make good error reports when unit tests fails. Make sure toString() is actually run with no test failures
         // to make sure coverage doesn't complain when no test is failing.
@@ -219,6 +231,7 @@ public class NodeStateTestCase extends junit.framework.TestCase {
         assertEquals(expected, ns1.getTextualDifference(new NodeState(NodeType.STORAGE, State.UP)).substring(0, expected.length()));
     }
 
+    @Test
     public void testValidInClusterState() {
         try{
             new NodeState(NodeType.DISTRIBUTOR, State.UNKNOWN).verifyValidInSystemState(NodeType.DISTRIBUTOR);
@@ -237,4 +250,5 @@ public class NodeStateTestCase extends junit.framework.TestCase {
             assertTrue("Should not be valid", false);
         } catch (Exception e) {}
     }
+
 }

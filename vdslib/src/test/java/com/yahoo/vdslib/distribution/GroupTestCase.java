@@ -1,13 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.distribution;
 
+import org.junit.Test;
+
 import java.text.ParseException;
 import java.util.*;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-public class GroupTestCase extends junit.framework.TestCase {
+public class GroupTestCase {
 
     private void assertDistribution(String spec, int redundancy, String expectedResult) throws ParseException {
         Group.Distribution distribution = new Group.Distribution(spec, redundancy);
@@ -30,6 +35,7 @@ public class GroupTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testStarConversion() throws ParseException {
         assertDistribution("1|*|*", 5, "2,2,1");
         assertDistribution("1|*|*", 6, "3,2,1");
@@ -116,6 +122,7 @@ public class GroupTestCase extends junit.framework.TestCase {
         return root;
     }
 
+    @Test
     public void testNormalusage() throws ParseException {
         Group root = new Group(2, "myroot", new Group.Distribution("*", 2));
         assertFalse(root.isLeafGroup());
@@ -147,11 +154,13 @@ public class GroupTestCase extends junit.framework.TestCase {
         return new Group.Distribution("*", 1);
     }
 
+    @Test
     public void testRootGroupDoesNotIncludeGroupNameWhenNoChildren() {
         Group g = new Group(0, "donkeykong");
         assertThat(g.getUnixStylePath(), is("/"));
     }
 
+    @Test
     public void testChildNamesDoNotIncludeRootGroupName() throws Exception {
         Group g = new Group(0, "donkeykong", dummyDistribution());
         Group child = new Group(1, "mario");
@@ -159,6 +168,7 @@ public class GroupTestCase extends junit.framework.TestCase {
         assertThat(child.getUnixStylePath(), is("/mario"));
     }
 
+    @Test
     public void testNestedGroupsAreSlashSeparated() throws Exception {
         Group g = new Group(0, "donkeykong", dummyDistribution());
         Group mario = new Group(1, "mario", dummyDistribution());
@@ -169,6 +179,7 @@ public class GroupTestCase extends junit.framework.TestCase {
         assertThat(toad.getUnixStylePath(), is("/mario/toad"));
     }
 
+    @Test
     public void testMultipleLeafGroupsAreEnumerated() throws Exception {
         Group g = new Group(0, "donkeykong", dummyDistribution());
         Group mario = new Group(1, "mario", dummyDistribution());

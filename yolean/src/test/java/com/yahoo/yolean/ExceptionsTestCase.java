@@ -1,15 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.yolean;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author bratseth
  */
-public class ExceptionsTestCase extends junit.framework.TestCase {
+public class ExceptionsTestCase {
 
-    public ExceptionsTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testToMessageStrings() {
         assertEquals("Blah",Exceptions.toMessageString(new Exception("Blah")));
         assertEquals("Blah", Exceptions.toMessageString(new Exception(new Exception("Blah"))));

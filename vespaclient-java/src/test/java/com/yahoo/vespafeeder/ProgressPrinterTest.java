@@ -7,14 +7,14 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.EmptyReply;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-/**
- */
-public class ProgressPrinterTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class ProgressPrinterTest {
 
     class DummyTimer implements Timer {
         long ms;
@@ -22,6 +22,7 @@ public class ProgressPrinterTest extends TestCase {
         public long milliTime() { return ms; }
     }
 
+    @Test
     public void testSimple() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         DummyTimer timer = new DummyTimer();

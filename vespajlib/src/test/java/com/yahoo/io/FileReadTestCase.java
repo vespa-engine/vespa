@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-public class FileReadTestCase extends junit.framework.TestCase {
+public class FileReadTestCase {
 
     @Test
     public void testReadByteArray() throws IOException {

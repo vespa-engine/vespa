@@ -5,14 +5,20 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import com.yahoo.io.GrowableBufferOutputStream;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 /**
  * Tests the GrowableBufferOutputStream
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
-public class GrowableBufferOutputStreamTestCase extends junit.framework.TestCase {
+public class GrowableBufferOutputStreamTestCase {
+
     private byte[] testData;
 
     static class DummyWritableByteChannel implements WritableByteChannel {
@@ -22,7 +28,7 @@ public class GrowableBufferOutputStreamTestCase extends junit.framework.TestCase
             this.buffer = buffer;
         }
 
-        public int write(ByteBuffer src) throws IOException {
+        public int write(ByteBuffer src) {
             int written = Math.min(src.remaining(), buffer.remaining());
 
             if (buffer.remaining() < src.remaining()) {
@@ -40,13 +46,10 @@ public class GrowableBufferOutputStreamTestCase extends junit.framework.TestCase
             return true;
         }
 
-        public void close() throws IOException {}
+        public void close() {}
     }
 
-    public GrowableBufferOutputStreamTestCase(String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() {
         testData = new byte[100];
         for (int i = 0; i < 100; ++i) {
@@ -54,6 +57,7 @@ public class GrowableBufferOutputStreamTestCase extends junit.framework.TestCase
         }
     }
 
+    @Test
     public void testSimple() throws IOException {
         GrowableBufferOutputStream g = new GrowableBufferOutputStream(10, 5);
 
@@ -123,4 +127,5 @@ public class GrowableBufferOutputStreamTestCase extends junit.framework.TestCase
         g.clearAll();
         assertEquals(0, g.numWritableBuffers());
     }
+
 }

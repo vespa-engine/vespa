@@ -1,36 +1,39 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.geo;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * Tests for the BoundingBoxParser class.
  *
  * @author arnej27959
  */
-public class BoundingBoxParserTestCase extends junit.framework.TestCase {
+public class BoundingBoxParserTestCase {
+
+    private static final double delta = 0.000000000001;
 
     private BoundingBoxParser parser;
 
-    public BoundingBoxParserTestCase(String name) {
-        super(name);
-    }
-
     private void allZero(BoundingBoxParser data) {
-        assertEquals(0d, data.n);
-        assertEquals(0d, data.s);
-        assertEquals(0d, data.e);
-        assertEquals(0d, data.w);
+        assertEquals(0d, data.n, delta);
+        assertEquals(0d, data.s, delta);
+        assertEquals(0d, data.e, delta);
+        assertEquals(0d, data.w, delta);
     }
 
     private void all1234(BoundingBoxParser data) {
-        assertEquals(1d, data.n);
-        assertEquals(2d, data.s);
-        assertEquals(3d, data.e);
-        assertEquals(4d, data.w);
+        assertEquals(1d, data.n, delta);
+        assertEquals(2d, data.s, delta);
+        assertEquals(3d, data.e, delta);
+        assertEquals(4d, data.w, delta);
     }
 
     /**
      * Tests different inputs that should all produce 0
      */
+    @Test
     public void testZero() {
         parser = new BoundingBoxParser("n=0,s=0,e=0,w=0");
         allZero(parser);
@@ -48,6 +51,7 @@ public class BoundingBoxParserTestCase extends junit.framework.TestCase {
         allZero(parser);
     }
 
+    @Test
     public void testOneTwoThreeFour() {
         parser = new BoundingBoxParser("n=1,s=2,e=3,w=4");
         all1234(parser);
@@ -68,12 +72,14 @@ public class BoundingBoxParserTestCase extends junit.framework.TestCase {
     /**
      * Tests various legal inputs and print the output
      */
+    @Test
     public void testPrint() {
         String here = "n=63.418417 E=10.433033 S=37.7 W=-122.02";
         parser = new BoundingBoxParser(here);
         System.out.println(here+" -> "+parser);
     }
 
+    @Test
     public void testGeoPlanetExample() {
         /* example XML:
            <boundingBox>  
@@ -98,6 +104,7 @@ public class BoundingBoxParserTestCase extends junit.framework.TestCase {
         assertEquals(-74.728798d, parser.e, 0.0000001);
     }
 
+    @Test
     public void testGwsExample() {
         /* example XML:
            <boundingbox>
@@ -115,6 +122,7 @@ public class BoundingBoxParserTestCase extends junit.framework.TestCase {
     /**
      * Tests various inputs that contain syntax errors.
      */
+    @Test
     public void testInputErrors() {
         String message = "";
         try {
@@ -159,4 +167,5 @@ public class BoundingBoxParserTestCase extends junit.framework.TestCase {
         }
         assertEquals("multiple limits for 'w' boundary", message);
     }
+
 }

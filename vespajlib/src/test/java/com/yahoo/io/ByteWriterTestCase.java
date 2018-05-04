@@ -2,6 +2,9 @@
 package com.yahoo.io;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,25 +17,18 @@ import java.util.IdentityHashMap;
 
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
+import org.junit.Test;
 
 /**
  * Test the ByteWriter class. ByteWriter is also implicitly tested in
  * com.yahoo.prelude.templates.test.TemplateTestCase.
  *
- * @author  <a href="mailt:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class ByteWriterTestCase extends junit.framework.TestCase {
-    private CharsetEncoder encoder;
-    private ByteArrayOutputStream stream;
+public class ByteWriterTestCase {
 
-    // TODO split BufferChain tests from ByteWriter tests
-    public ByteWriterTestCase (String name) {
-        super(name);
-        Charset cs = Charset.forName("UTF-8");
-        encoder = cs.newEncoder();
-        stream = new ByteArrayOutputStream();
-
-    }
+    private final CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+    private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
     /**
      * A stream which does nothing, but complains if it is called and asked to
@@ -43,18 +39,17 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         static final String ZERO_LENGTH_WRITE = "Was asked to do zero length write.";
 
         @Override
-        public void write(int b) throws IOException {
-            // NOP
-
-        }
-
-        @Override
-        public void close() throws IOException {
+        public void write(int b) {
             // NOP
         }
 
         @Override
-        public void flush() throws IOException {
+        public void close() {
+            // NOP
+        }
+
+        @Override
+        public void flush() {
             // NOP
         }
 
@@ -74,6 +69,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testMuchData() throws java.io.IOException {
         final int SINGLE_BUFFER = 500;
         final int APPENDS = 500;
@@ -96,6 +92,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue("ByteWriter seems to have introduced data errors.", Arrays.equals(completeData, res));
     }
 
+    @Test
     public void testLongString() throws IOException {
         final int length = BufferChain.BUFFERSIZE * BufferChain.MAXBUFFERS * 3;
         StringBuilder b = new StringBuilder(length);
@@ -112,6 +109,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertEquals(s, res);
     }
 
+    @Test
     public void testNoSpuriousWrite() throws IOException {
         OutputStream grumpy = new CurmudgeonlyStream();
         ByteWriter bw = new ByteWriter(grumpy, encoder);
@@ -145,6 +143,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testDoubleFlush() throws IOException {
         stream.reset();
         byte[] c = new byte[] { 97, 98, 99 };
@@ -157,6 +156,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue(Arrays.equals(new byte[] { 97, 98, 99 }, res));
     }
 
+    @Test
     public void testCharArrays() throws java.io.IOException {
         stream.reset();
         char[] c = new char[] { 'a', 'b', 'c', '\u00F8' };
@@ -167,6 +167,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue(Arrays.equals(new byte[] { 97, 98, 99, (byte) 0xc3, (byte) 0xb8 }, res));
     }
 
+    @Test
     public void testByteBuffers() throws java.io.IOException {
         stream.reset();
         ByteBuffer b = ByteBuffer.allocate(16);
@@ -181,6 +182,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue(Arrays.equals(new byte[] { 97, 98, 99 }, res));
     }
 
+    @Test
     public void testByteArrays() throws java.io.IOException {
         stream.reset();
         byte[] c = new byte[] { 97, 98, 99 };
@@ -191,6 +193,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue(Arrays.equals(new byte[] { 97, 98, 99 }, res));
     }
 
+    @Test
     public void testByteArrayWithOffset() throws java.io.IOException {
         final int length = BufferChain.BUFFERSIZE * 3 / 2;
         final int offset = 1;
@@ -210,6 +213,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertEquals(valid, res[0]);
     }
 
+    @Test
     public void testStrings() throws java.io.IOException {
         stream.reset();
         String c = "abc\u00F8";
@@ -220,6 +224,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue(Arrays.equals(new byte[] { 97, 98, 99, (byte) 0xc3, (byte) 0xb8 }, res));
     }
 
+    @Test
     public void testStringsAndByteArrays() throws java.io.IOException {
         stream.reset();
         String c = "abc\u00F8";
@@ -232,6 +237,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue(Arrays.equals(new byte[] { 97, 98, 99, (byte) 0xc3, (byte) 0xb8, 97, 98, 99 }, res));
     }
 
+    @Test
     public void testByteBuffersAndByteArrays() throws java.io.IOException {
         stream.reset();
         ByteBuffer b = ByteBuffer.allocate(16);
@@ -248,6 +254,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue(Arrays.equals(new byte[] { 97, 98, 99, 100, 101, 102 }, res));
     }
 
+    @Test
     public void testOverFlow() throws java.io.IOException {
         stream.reset();
         byte[] b = new byte[] { 97, 98, 99 };
@@ -271,6 +278,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testUnMappableCharacter() throws java.io.IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ByteWriter writer = new ByteWriter(stream, Charset.forName("ascii").newEncoder());
@@ -280,6 +288,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertTrue(stream.toString("ascii").contains("bahoo"));
     }
 
+    @Test
     public void testNoRecycling() throws IOException {
         final int SINGLE_BUFFER = 500;
         final int APPENDS = 500;
@@ -307,6 +316,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testGetEncoding() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -314,6 +324,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         b.close();
     }
 
+    @Test
     public void testWriteLong() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -322,6 +333,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(Utf8.toBytes("1000000000000"), stream.toByteArray());
     }
 
+    @Test
     public void testWriteInt() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -330,6 +342,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(Utf8.toBytes("z"), stream.toByteArray());
     }
 
+    @Test
     public void testSurrogatePairs() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -339,6 +352,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(Utf8.toBytes("\uD800\uDFD0"), stream.toByteArray());
     }
 
+    @Test
     public void testSurrogatePairsMixedWithSingleCharacters() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -354,7 +368,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(Utf8.toBytes("\u00F8\uD800\uDFD0\u00F8ab"), stream.toByteArray());
     }
 
-
+    @Test
     public void testWriteDouble() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -363,6 +377,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(Utf8.toBytes("12.0"), stream.toByteArray());
     }
 
+    @Test
     public void testWriteFloat() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -371,6 +386,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(Utf8.toBytes("12.0"), stream.toByteArray());
     }
 
+    @Test
     public void testWriteShort() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -379,6 +395,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(Utf8.toBytes("12"), stream.toByteArray());
     }
 
+    @Test
     public void testWriteBoolean() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -387,6 +404,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(Utf8.toBytes("true"), stream.toByteArray());
     }
 
+    @Test
     public void testAppendSingleByte() throws java.io.IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -395,6 +413,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertArrayEquals(new byte[] { (byte) 'a' }, stream.toByteArray());
     }
 
+    @Test
     public void testAppended() throws IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -406,6 +425,7 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
         assertEquals(bytes.length, b.appended());
     }
 
+    @Test
     public void testWriteUtf8Array() throws IOException {
         stream.reset();
         ByteWriter b = new ByteWriter(stream, encoder);
@@ -441,4 +461,5 @@ public class ByteWriterTestCase extends junit.framework.TestCase {
             datastore.flush();
         }
     }
+
 }

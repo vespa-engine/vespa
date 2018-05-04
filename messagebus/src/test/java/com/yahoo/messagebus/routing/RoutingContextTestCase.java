@@ -18,10 +18,15 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author Simon Thoresen
  */
-public class RoutingContextTestCase extends junit.framework.TestCase {
+public class RoutingContextTestCase {
 
     public static final int TIMEOUT_SECS = 120;
 
