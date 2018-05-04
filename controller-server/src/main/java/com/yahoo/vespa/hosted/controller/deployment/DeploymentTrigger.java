@@ -288,7 +288,7 @@ public class DeploymentTrigger {
                 for (Step step : productionStepsOf(application)) {
                     Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
                     Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job)));
-                    if (jobsByCompletion.containsKey(Optional.empty())) { // Step incomplete because some jobs remain, trigger those if the previous step was done, or required test steps.
+                    if (jobsByCompletion.containsKey(Optional.empty())) { // Step is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                         for (JobType job : jobsByCompletion.get(Optional.empty())) {
                             Versions versions = versions(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
@@ -306,7 +306,7 @@ public class DeploymentTrigger {
                         }
                         completedAt = Optional.empty();
                     }
-                    else { // All jobs are complete -- find the time of completion of this step.
+                    else { // All jobs are complete; find the time of completion of this step.
                         if (stepJobs.isEmpty()) { // No jobs means this is delay step.
                             Duration delay = ((DeploymentSpec.Delay) step).duration();
                             completedAt = completedAt.map(at -> at.plus(delay)).filter(at -> ! at.isAfter(clock.instant()));
