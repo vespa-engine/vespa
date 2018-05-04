@@ -21,14 +21,14 @@ import com.yahoo.yolean.chain.Provides;
 /**
  * Minimal combinator for YQL+ syntax and heuristically parsed user queries.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1.28
+ * @author Steinar Knutsen
  */
 @Beta
 @Provides(MinimalQueryInserter.EXTERNAL_YQL)
 @Before(PhaseNames.TRANSFORMED_QUERY)
 @After("com.yahoo.prelude.statistics.StatisticsSearcher")
 public class MinimalQueryInserter extends Searcher {
+
     public static final String EXTERNAL_YQL = "ExternalYql";
 
     public static final CompoundName YQL = new CompoundName("yql");
