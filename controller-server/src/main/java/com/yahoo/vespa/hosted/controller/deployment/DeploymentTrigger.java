@@ -122,7 +122,8 @@ public class DeploymentTrigger {
                     else
                         application = application.withOutstandingChange(Change.of(applicationVersion));
                 }
-            } else {
+            }
+            else {
                 triggering = application.deploymentJobs().statusOf(report.jobType()).flatMap(JobStatus::lastTriggered)
                                         .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
                                                                                      report.applicationId() + ", but that has neither been triggered nor deployed"));
@@ -286,9 +287,9 @@ public class DeploymentTrigger {
             if (change.isPresent())
                 for (Step step : productionStepsOf(application)) {
                     Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                    Map<Instant, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job).orElse(Instant.EPOCH)));
-                    if (jobsByCompletion.containsKey(Instant.EPOCH)) { // Step incomplete because some jobs remain, trigger those if the previous step was done, or required test steps.
-                        for (JobType job : jobsByCompletion.get(Instant.EPOCH)) {
+                    Map<Instant, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job).orElse(Instant.MAX)));
+                    if (jobsByCompletion.containsKey(Instant.MAX)) { // Step incomplete because some jobs remain, trigger those if the previous step was done, or required test steps.
+                        for (JobType job : jobsByCompletion.get(Instant.MAX)) {
                             Versions versions = versions(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
                                 if (completedAt.isPresent()
@@ -366,7 +367,7 @@ public class DeploymentTrigger {
             return lastSuccess.map(JobRun::at);
 
         return deploymentFor(application, jobType)
-                .filter(deployment -> !isUpgrade(change, deployment) && isDowngrade(application.change(), deployment))
+                .filter(deployment -> ! isUpgrade(change, deployment) && isDowngrade(application.change(), deployment))
                 .map(Deployment::at);
     }
 
@@ -403,9 +404,9 @@ public class DeploymentTrigger {
      * of the given job run. */
     private static boolean sourcesMatchIfPresent(Versions versions, JobRun jobRun) {
         return   (   ! versions.sourcePlatform.filter(version -> ! version.equals(versions.targetPlatform)).isPresent()
-                     ||   versions.sourcePlatform.equals(jobRun.sourcePlatform()))
-                 && (   ! versions.sourceApplication.filter(version -> ! version.equals(versions.targetApplication)).isPresent()
-                        ||   versions.sourceApplication.equals(jobRun.sourceApplication()));
+                  ||   versions.sourcePlatform.equals(jobRun.sourcePlatform()))
+              && (   ! versions.sourceApplication.filter(version -> ! version.equals(versions.targetApplication)).isPresent()
+                  ||   versions.sourceApplication.equals(jobRun.sourceApplication()));
     }
 
     private static boolean targetsMatch(Versions versions, JobRun jobRun) {
@@ -425,17 +426,13 @@ public class DeploymentTrigger {
                 ? jobsOf(testStepsOf(application))
                 : jobsOf(productionStepsOf(application));
 
-        boolean platformComplete = application.change().platform().map(Change::of)
-                                              .map(change -> jobs.stream().allMatch(job -> completedAt(change, application, job).isPresent()))
-                                              .orElse(false);
-
-        boolean applicationComplete = application.change().application().map(Change::of)
-                                                 .map(change -> jobs.stream().allMatch(job -> completedAt(change, application, job).isPresent()))
-                                                 .orElse(false);
-
         Change change = application.change();
-        if (platformComplete) change = change.withoutPlatform();
-        if (applicationComplete) change = change.withoutApplication();
+        if (jobs.stream().allMatch(job -> completedAt(application.change().withoutApplication(), application, job).isPresent()))
+            change = change.withoutPlatform();
+
+        if (jobs.stream().allMatch(job -> completedAt(application.change().withoutPlatform(), application, job).isPresent()))
+            change = change.withoutApplication();
+
         return change;
     }
 
