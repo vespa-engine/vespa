@@ -288,9 +288,9 @@ public class DeploymentTrigger {
             if (change.isPresent())
                 for (Step step : productionStepsOf(application)) {
                     Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                    Map<Optional<Instant>, List<JobType>> jobsByCompletion = stepJobs.stream().collect(groupingBy(job -> completedAt(change, application, job)));
-                    if (jobsByCompletion.containsKey(Optional.empty())) { // Step is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
-                        for (JobType job : jobsByCompletion.get(Optional.empty())) {
+                    List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! completedAt(change, application, job).isPresent()).collect(toList());
+                    if ( ! remainingJobs.isEmpty()) { // Step is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
+                        for (JobType job : remainingJobs) {
                             Versions versions = versions(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
                                 if (   completedAt.isPresent()
@@ -314,7 +314,7 @@ public class DeploymentTrigger {
                             reason += " after a delay of " + delay;
                         }
                         else {
-                            completedAt = jobsByCompletion.keySet().stream().map(Optional::get).max(naturalOrder());
+                            completedAt = stepJobs.stream().map(job -> completedAt(change, application, job).get()).max(naturalOrder());
                             reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(joining(", "));
                         }
                     }
