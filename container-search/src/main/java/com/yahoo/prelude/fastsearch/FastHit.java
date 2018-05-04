@@ -689,12 +689,4 @@ public class FastHit extends Hit {
 
     }
 
-    // TODO: Things we need to check that we test:
-    // - removing, then adding a field
-    // - removing from field and field name iterators
-    // - removing fields, both summary and map, then iterating
-    // - removing all fields in some summary, then iterating
-    // - adding a field from the iterator
-    // - iterating with fields set and multiple summaries, where some summaries have overlapping fields (TODO: Or ensure no overlapping fields?)
-
 }
