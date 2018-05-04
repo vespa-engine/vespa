@@ -26,14 +26,38 @@ import static org.junit.Assert.assertNull;
 
 public class SlimeSummaryTestCase {
 
+    private static final String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
+
     @Test
     public void testDecodingEmpty() {
-        String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
-        LegacyEmulationConfig emul = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder().forceFillEmptyFields(true));
-        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf, emul);
-        byte[] docsum = makeEmptyDocsum();
+        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
-        assertNull(set.lazyDecode("default", docsum, hit));
+        assertNull(set.lazyDecode("default", emptySummary(), hit));
+        assertNull(hit.getField("integer_field"));
+        assertNull(hit.getField("short_field"));
+        assertNull(hit.getField("byte_field"));
+        assertNull(hit.getField("float_field"));
+        assertNull(hit.getField("double_field"));
+        assertNull(hit.getField("int64_field"));
+        assertNull(hit.getField("string_field"));
+        assertNull(hit.getField("data_field"));
+        assertNull(hit.getField("data_field"));
+        assertNull(hit.getField("longstring_field"));
+        assertNull(hit.getField("longdata_field"));
+        assertNull(hit.getField("longdata_field"));
+        assertNull(hit.getField("xmlstring_field"));
+        assertNull(hit.getField("xmlstring_field"));
+        assertNull(hit.getField("jsonstring_field"));
+        assertNull(hit.getField("tensor_field1"));
+        assertNull(hit.getField("tensor_field2"));
+    }
+
+    @Test
+    public void testDecodingEmptyWithLegacyEmulation() {
+        LegacyEmulationConfig emulationConfig = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder().forceFillEmptyFields(true));
+        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf, emulationConfig);
+        FastHit hit = new FastHit();
+        assertNull(set.lazyDecode("default", emptySummary(), hit));
         assertEquals(NanNumber.NaN, hit.getField("integer_field"));
         assertEquals(NanNumber.NaN, hit.getField("short_field"));
         assertEquals(NanNumber.NaN, hit.getField("byte_field"));
@@ -56,51 +80,20 @@ public class SlimeSummaryTestCase {
     }
 
     @Test
-    public void testDecodingEmptyWithoutForcedFill() {
-        String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
-        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
-        byte[] docsum = makeEmptyDocsum();
-        FastHit hit = new FastHit();
-        assertNull(set.lazyDecode("default", docsum, hit));
-        assertNull(hit.getField("integer_field"));
-        assertNull(hit.getField("short_field"));
-        assertNull(hit.getField("byte_field"));
-        assertNull(hit.getField("float_field"));
-        assertNull(hit.getField("double_field"));
-        assertNull(hit.getField("int64_field"));
-        assertNull(hit.getField("string_field"));
-        assertNull(hit.getField("data_field"));
-        assertNull(hit.getField("data_field"));
-        assertNull(hit.getField("longstring_field"));
-        assertNull(hit.getField("longdata_field"));
-        assertNull(hit.getField("longdata_field"));
-        assertNull(hit.getField("xmlstring_field"));
-        assertNull(hit.getField("xmlstring_field"));
-        assertNull(hit.getField("jsonstring_field"));
-        assertNull(hit.getField("tensor_field1"));
-        assertNull(hit.getField("tensor_field2"));
-    }
-
-    @Test
     public void testTimeout() {
-        String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
-        byte[] docsum = makeTimeout();
         FastHit hit = new FastHit();
         assertEquals("Hit hit index:null/0/000000000000000000000000 (relevance null) [fasthit, globalid: 0 0 0 0 0 0 0 0 0 0 0 0, partId: 0, distributionkey: 0] failed: Timed out....",
-                     set.lazyDecode("default", docsum, hit));
+                     set.lazyDecode("default", timeoutSummary(), hit));
     }
 
     @Test
     public void testDecoding() {
         Tensor tensor1 = Tensor.from("tensor(x{},y{}):{{x:foo,y:bar}:0.1}");
         Tensor tensor2 = Tensor.from("tensor(x[],y[1]):{{x:0,y:0}:-0.3}");
-
-        String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
-        byte[] docsum = makeDocsum(tensor1, tensor2);
         FastHit hit = new FastHit();
-        assertNull(set.lazyDecode("default", docsum, hit));
+        assertNull(set.lazyDecode("default", fullSummary(tensor1, tensor2), hit));
         assertEquals(4, hit.getField("integer_field"));
         assertEquals((short)2, hit.getField("short_field"));
         assertEquals((byte)1, hit.getField("byte_field"));
@@ -144,32 +137,19 @@ public class SlimeSummaryTestCase {
     // - iterating with fields set and multiple summaries, where some summaries have overlapping fields (TODO: Or ensure no overlapping fields?)
 
 
-    private byte[] makeEmptyDocsum() {
+    private byte[] emptySummary() {
         Slime slime = new Slime();
         slime.setObject();
         return encode((slime));
     }
-    private byte[] encode(Slime slime) {
-        byte[] tmp = BinaryFormat.encode(slime);
-        ByteBuffer buf = ByteBuffer.allocate(tmp.length + 4);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        buf.putInt(DocsumDefinitionSet.SLIME_MAGIC_ID);
-        buf.order(ByteOrder.BIG_ENDIAN);
-        buf.put(tmp);
-        return buf.array();
+
+    private byte [] timeoutSummary() {
+        Slime slime = new Slime();
+        slime.setString("Timed out....");
+        return encode((slime));
     }
 
-    private DocsumDefinitionSet createDocsumDefinitionSet(String configID) {
-        DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
-        return new DocsumDefinitionSet(config.documentdb(0));
-    }
-
-    private DocsumDefinitionSet createDocsumDefinitionSet(String configID, LegacyEmulationConfig legacyEmulationConfig) {
-        DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
-        return new DocsumDefinitionSet(config.documentdb(0), legacyEmulationConfig);
-    }
-
-    private byte[] makeDocsum(Tensor tensor1, Tensor tensor2) {
+    private byte[] fullSummary(Tensor tensor1, Tensor tensor2) {
         Slime slime = new Slime();
         Cursor docsum = slime.setObject();
         docsum.setLong("integer_field", 4);
@@ -193,10 +173,24 @@ public class SlimeSummaryTestCase {
         return encode((slime));
     }
 
-    private byte [] makeTimeout() {
-        Slime slime = new Slime();
-        slime.setString("Timed out....");
-        return encode((slime));
+    private byte[] encode(Slime slime) {
+        byte[] tmp = BinaryFormat.encode(slime);
+        ByteBuffer buf = ByteBuffer.allocate(tmp.length + 4);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        buf.putInt(DocsumDefinitionSet.SLIME_MAGIC_ID);
+        buf.order(ByteOrder.BIG_ENDIAN);
+        buf.put(tmp);
+        return buf.array();
+    }
+
+    private DocsumDefinitionSet createDocsumDefinitionSet(String configID) {
+        DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
+        return new DocsumDefinitionSet(config.documentdb(0));
+    }
+
+    private DocsumDefinitionSet createDocsumDefinitionSet(String configID, LegacyEmulationConfig legacyEmulationConfig) {
+        DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
+        return new DocsumDefinitionSet(config.documentdb(0), legacyEmulationConfig);
     }
 
 }
