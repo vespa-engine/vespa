@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -91,7 +92,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
-        if (path.equals(    "/nodes/v2/")) return ResourcesResponse.fromStrings(request.getUri(), "state", "node", "command", "maintenance");
+        if (path.equals(    "/nodes/v2/")) return ResourcesResponse.fromStrings(request.getUri(), "state", "node", "command", "maintenance", "upgrade");
         if (path.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (path.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
         if (path.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
@@ -99,6 +100,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
         if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(maintenance.jobControl());
+        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(maintenance.infrastructureVersions());
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
@@ -135,10 +137,16 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handlePATCH(HttpRequest request) {
         String path = request.getUri().getPath();
-        if ( ! path.startsWith("/nodes/v2/node/")) throw new NotFoundException("Nothing at '" + path + "'");
-        Node node = nodeFromRequest(request);
-        nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository).apply());
-        return new MessageResponse("Updated " + node.hostname());
+        if (path.startsWith("/nodes/v2/node/")) {
+            Node node = nodeFromRequest(request);
+            nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository).apply());
+            return new MessageResponse("Updated " + node.hostname());
+        }
+        else if (path.startsWith("/nodes/v2/upgrade/")) {
+            return setInfrastructureVersion(request);
+        }
+
+        throw new NotFoundException("Nothing at '" + path + "'");
     }
 
     private HttpResponse handlePOST(HttpRequest request) {
@@ -276,4 +284,18 @@ public class NodesApiHandler extends LoggingRequestHandler {
         return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
     }
 
+    private MessageResponse setInfrastructureVersion(HttpRequest request) {
+        NodeType nodeType = NodeType.valueOf(lastElement(request.getUri().getPath()).toLowerCase());
+        Inspector inspector = toSlime(request.getData()).get();
+
+        Inspector versionField = inspector.field("version");
+        if (!versionField.valid())
+            throw new IllegalArgumentException("'version' is missing");
+        Version version = Version.fromString(versionField.asString());
+        boolean force = inspector.field("force").asBool();
+
+        maintenance.infrastructureVersions().setTargetVersion(nodeType, version, force);
+
+        return new MessageResponse("Set version for " + nodeType + " to " + version.toFullString());
+    }
 }

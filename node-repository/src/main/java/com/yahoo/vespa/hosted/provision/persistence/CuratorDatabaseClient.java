@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -22,6 +24,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +73,7 @@ public class CuratorDatabaseClient {
         for (Node.State state : Node.State.values())
             curatorDatabase.create(toPath(state));
         curatorDatabase.create(inactiveJobsPath());
+        curatorDatabase.create(infrastructureVersionsPath());
     }
 
     /**
@@ -363,5 +367,27 @@ public class CuratorDatabaseClient {
     private Path inactiveJobsPath() {
         return root.append("inactiveJobs");
     }
-    
+
+
+    public Map<NodeType, Version> readInfrastructureVersions() {
+        byte[] data = curatorDatabase.getData(infrastructureVersionsPath()).get();
+        if (data.length == 0) return new HashMap<>(); // infrastructure versions have never been written
+        return InfrastructureVersionsSerializer.fromJson(data);
+    }
+
+    public void writeInfrastructureVersions(Map<NodeType, Version> infrastructureVersions) {
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(infrastructureVersionsPath().getAbsolute(),
+                InfrastructureVersionsSerializer.toJson(infrastructureVersions)));
+        transaction.commit();
+    }
+
+    public Lock lockInfrastructureVersions() {
+        return lock(root.append("locks").append("infrastructureVersionsLock"), defaultLockTimeout);
+    }
+
+    private Path infrastructureVersionsPath() {
+        return root.append("infrastructureVersions");
+    }
 }

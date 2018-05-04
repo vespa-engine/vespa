@@ -11,6 +11,9 @@
     },
     {
       "url": "http://localhost:8080/nodes/v2/maintenance/"
+    },
+    {
+      "url":"http://localhost:8080/nodes/v2/upgrade/"
     }
   ]
 }

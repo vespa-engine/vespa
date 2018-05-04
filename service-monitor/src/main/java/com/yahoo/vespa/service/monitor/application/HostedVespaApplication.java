@@ -19,21 +19,19 @@ public abstract class HostedVespaApplication {
     private final Capacity capacity;
     private final ClusterSpec.Type clusterType;
     private final ClusterSpec.Id clusterId;
-    private final ClusterSpec.Group clusterGroup;
 
     protected HostedVespaApplication(String applicationName, NodeType nodeType,
                                      ClusterSpec.Type clusterType, ClusterSpec.Id clusterId) {
         this(createHostedVespaApplicationId(applicationName), Capacity.fromRequiredNodeType(nodeType),
-                clusterType, clusterId, ClusterSpec.Group.from(0));
+                clusterType, clusterId);
     }
 
     protected HostedVespaApplication(ApplicationId applicationId, Capacity capacity,
-                                     ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, ClusterSpec.Group clusterGroup) {
+                                     ClusterSpec.Type clusterType, ClusterSpec.Id clusterId) {
         this.applicationId = applicationId;
         this.capacity = capacity;
         this.clusterType = clusterType;
         this.clusterId = clusterId;
-        this.clusterGroup = clusterGroup;
     }
 
     public ApplicationId getApplicationId() {
@@ -45,7 +43,7 @@ public abstract class HostedVespaApplication {
     }
 
     public ClusterSpec getClusterSpecWithVersion(Version version) {
-        return ClusterSpec.from(clusterType, clusterId, clusterGroup, version, true);
+        return ClusterSpec.request(clusterType, clusterId, version, true);
     }
 
     public ClusterSpec.Type getClusterType() {
@@ -54,10 +52,6 @@ public abstract class HostedVespaApplication {
 
     public ClusterSpec.Id getClusterId() {
         return clusterId;
-    }
-
-    public ClusterSpec.Group getClusterGroup() {
-        return clusterGroup;
     }
 
     public static ApplicationId createHostedVespaApplicationId(String applicationName) {
