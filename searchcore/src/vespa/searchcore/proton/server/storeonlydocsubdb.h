@@ -23,11 +23,11 @@
 
 namespace proton {
 
-class MetricsWireService;
-class LegacyDocumentDBMetrics;
-class FeedHandler;
+class DocumentDBMetricsCollection;
 class DocumentMetaStoreInitializerResult;
+class FeedHandler;
 class IDocumentSubDBOwner;
+class MetricsWireService;
 class ShrinkLidSpaceFlushTarget;
 namespace initializer { class InitializerTask; }
 
@@ -113,7 +113,7 @@ public:
         vespalib::ThreadStackExecutorBase &_summaryExecutor;
         std::shared_ptr<BucketDBOwner> _bucketDB;
         bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
-        LegacyDocumentDBMetrics &_metrics;
+        DocumentDBMetricsCollection &_metrics;
         std::mutex &_configMutex;
         const HwInfo &_hwInfo;
 
@@ -126,7 +126,7 @@ public:
                 std::shared_ptr<BucketDBOwner> bucketDB,
                 bucketdb::IBucketDBHandlerInitializer &
                 bucketDBHandlerInitializer,
-                LegacyDocumentDBMetrics &metrics,
+                DocumentDBMetricsCollection &metrics,
                 std::mutex &configMutex,
                 const HwInfo &hwInfo);
         ~Context();
@@ -154,7 +154,7 @@ private:
 protected:
     searchcorespi::index::IThreadingService &_writeService;
     vespalib::ThreadStackExecutorBase       &_summaryExecutor;
-    LegacyDocumentDBMetrics                 &_metrics;
+    DocumentDBMetricsCollection             &_metrics;
     vespalib::VarHolder<ISearchHandler::SP> _iSearchView;
     vespalib::VarHolder<IFeedView::SP>      _iFeedView;
     std::mutex                             &_configMutex;

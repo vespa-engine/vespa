@@ -49,8 +49,8 @@ public:
                          const std::string &name) override;
     void cleanAttributes(const AttributeMetricsCollection &subAttributes,
                          LegacyAttributeMetrics *totalAttributes) override;
-    void addRankProfile(LegacyDocumentDBMetrics &owner, const std::string &name, size_t numDocIdPartitions) override;
-    void cleanRankProfiles(LegacyDocumentDBMetrics &owner) override;
+    void addRankProfile(DocumentDBMetricsCollection &owner, const std::string &name, size_t numDocIdPartitions) override;
+    void cleanRankProfiles(DocumentDBMetricsCollection &owner) override;
     void stop();
 
     vespalib::MetricsProducer &metrics_producer() { return _metrics_producer; }

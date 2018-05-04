@@ -6,6 +6,7 @@
 #include "executor_threading_service_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
+#include <vespa/searchcore/proton/matching/matching_stats.h>
 
 namespace proton {
 
@@ -92,6 +93,55 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         ~IndexMetrics();
     };
 
+    struct MatchingMetrics : metrics::MetricSet {
+        metrics::LongCountMetric docsMatched;
+        metrics::LongCountMetric docsRanked;
+        metrics::LongCountMetric docsReRanked;
+        metrics::LongCountMetric queries;
+        metrics::DoubleValueMetric softDoomFactor;
+        metrics::DoubleAverageMetric queryCollateralTime;
+        metrics::DoubleAverageMetric queryLatency;
+
+        struct RankProfileMetrics : metrics::MetricSet {
+            struct DocIdPartition : metrics::MetricSet {
+                metrics::LongCountMetric docsMatched;
+                metrics::LongCountMetric docsRanked;
+                metrics::LongCountMetric docsReRanked;
+                metrics::DoubleAverageMetric activeTime;
+                metrics::DoubleAverageMetric waitTime;
+
+                using UP = std::unique_ptr<DocIdPartition>;
+                DocIdPartition(const vespalib::string &name, metrics::MetricSet *parent);
+                ~DocIdPartition();
+                void update(const matching::MatchingStats::Partition &stats);
+            };
+            using DocIdPartitions = std::vector<DocIdPartition::UP>;
+            using UP = std::unique_ptr<RankProfileMetrics>;
+
+            metrics::LongCountMetric     queries;
+            metrics::LongCountMetric     limitedQueries;
+            metrics::DoubleAverageMetric matchTime;
+            metrics::DoubleAverageMetric groupingTime;
+            metrics::DoubleAverageMetric rerankTime;
+            metrics::DoubleAverageMetric queryCollateralTime;
+            metrics::DoubleAverageMetric queryLatency;
+            DocIdPartitions              partitions;
+
+            RankProfileMetrics(const vespalib::string &name,
+                               size_t numDocIdPartitions,
+                               metrics::MetricSet *parent);
+            ~RankProfileMetrics();
+            void update(const matching::MatchingStats &stats);
+
+        };
+        using  RankProfileMap = std::map<vespalib::string, RankProfileMetrics::UP>;
+        RankProfileMap rank_profiles;
+
+        void update(const matching::MatchingStats &stats);
+        MatchingMetrics(metrics::MetricSet *parent);
+        ~MatchingMetrics();
+    };
+
     JobMetrics job;
     AttributeMetrics attribute;
     IndexMetrics index;
@@ -99,10 +149,11 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     SubDBMetrics notReady;
     SubDBMetrics removed;
     ExecutorThreadingServiceMetrics threadingService;
+    MatchingMetrics matching;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName);
     ~DocumentDBTaggedMetrics();
 };
 
-} // namespace proton
+}
 
