@@ -12,7 +12,11 @@ import java.io.OutputStream;
 import java.util.Comparator;
 import java.util.Map;
 
-/** A response containing infrastructure versions */
+/**
+ * A response containing infrastructure versions
+ *
+ * @author freva
+ */
 public class UpgradeResponse extends HttpResponse {
 
     private final InfrastructureVersions infrastructureVersions;

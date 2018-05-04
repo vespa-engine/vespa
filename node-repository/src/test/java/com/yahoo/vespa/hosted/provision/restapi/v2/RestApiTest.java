@@ -520,7 +520,7 @@ public class RestApiTest {
                         Request.Method.PATCH),
                 400,
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade version without setting 'force'. " +
-                        "Current wanted version: 6.123.456, attempted to set wanted version: 6.123.1\"}");
+                        "Current target version: 6.123.456, attempted to set target version: 6.123.1\"}");
 
         // Downgrade with force is OK
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",

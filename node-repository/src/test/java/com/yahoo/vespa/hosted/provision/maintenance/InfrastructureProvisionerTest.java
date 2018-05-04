@@ -46,7 +46,7 @@ public class InfrastructureProvisionerTest {
         addNode(2, Node.State.dirty, Optional.empty());
         addNode(3, Node.State.active, Optional.of(oldVersion));
 
-        assertEquals(Optional.of(target), infrastructureProvisioner.getVersionToProvision(NodeType.config));
+        assertEquals(Optional.of(target), infrastructureProvisioner.getTargetVersion(NodeType.config));
     }
 
     @Test
@@ -59,7 +59,7 @@ public class InfrastructureProvisionerTest {
         addNode(2, Node.State.ready, Optional.empty());
         addNode(3, Node.State.active, Optional.of(target));
 
-        assertEquals(Optional.of(target), infrastructureProvisioner.getVersionToProvision(NodeType.config));
+        assertEquals(Optional.of(target), infrastructureProvisioner.getTargetVersion(NodeType.config));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class InfrastructureProvisionerTest {
         addNode(4, Node.State.inactive, Optional.of(target));
         addNode(5, Node.State.dirty, Optional.empty());
 
-        assertEquals(Optional.empty(), infrastructureProvisioner.getVersionToProvision(NodeType.config));
+        assertEquals(Optional.empty(), infrastructureProvisioner.getTargetVersion(NodeType.config));
     }
 
     @Test
@@ -82,18 +82,18 @@ public class InfrastructureProvisionerTest {
         when(infrastructureVersions.getTargetVersionFor(eq(NodeType.config))).thenReturn(Optional.of(Version.fromString("6.123.456")));
 
         // No nodes in node repo
-        assertEquals(Optional.empty(), infrastructureProvisioner.getVersionToProvision(NodeType.config));
+        assertEquals(Optional.empty(), infrastructureProvisioner.getTargetVersion(NodeType.config));
 
         // Add nodes in non-provisionable states
         addNode(1, Node.State.dirty, Optional.empty());
         addNode(2, Node.State.failed, Optional.empty());
-        assertEquals(Optional.empty(), infrastructureProvisioner.getVersionToProvision(NodeType.config));
+        assertEquals(Optional.empty(), infrastructureProvisioner.getTargetVersion(NodeType.config));
     }
 
     @Test
     public void returns_empty_if_target_version_not_set() {
         when(infrastructureVersions.getTargetVersionFor(eq(NodeType.config))).thenReturn(Optional.empty());
-        assertEquals(Optional.empty(), infrastructureProvisioner.getVersionToProvision(NodeType.config));
+        assertEquals(Optional.empty(), infrastructureProvisioner.getTargetVersion(NodeType.config));
     }
 
     private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {

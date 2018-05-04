@@ -23,6 +23,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * This maintainer makes sure that infrastructure nodes are allocated with correct wanted
+ * version. Source for the wanted version comes from the target version set using
+ * /nodes/v2/upgrade/ endpoint.
+ *
  * @author freva
  */
 public class InfrastructureProvisioner extends Maintainer {
@@ -47,7 +51,7 @@ public class InfrastructureProvisioner extends Maintainer {
     protected void maintain() {
         for (HostedVespaApplication application: HOSTED_VESPA_APPLICATIONS) {
             try (Mutex lock = nodeRepository().lock(application.getApplicationId())) {
-                Optional<Version> version = getVersionToProvision(application.getCapacity().type());
+                Optional<Version> version = getTargetVersion(application.getCapacity().type());
                 if (! version.isPresent()) continue;
 
                 List<HostSpec> hostSpecs = provisioner.prepare(
@@ -69,31 +73,32 @@ public class InfrastructureProvisioner extends Maintainer {
      * the version returned by {@link InfrastructureVersions#getTargetVersionFor} unless a provisioning is:
      * <ul>
      *   <li>not possible: no nodes of given type in legal state in node-repo</li>
-     *   <li>redudant: all nodes that can be provisioned already have the right wanted Vespa version</li>
+     *   <li>redundant: all nodes that can be provisioned already have the right wanted Vespa version</li>
      * </ul>
      */
-    Optional<Version> getVersionToProvision(NodeType nodeType) {
-        Optional<Version> wantedWantedVersion = infrastructureVersions.getTargetVersionFor(nodeType);
-        if (!wantedWantedVersion.isPresent()) {
+    Optional<Version> getTargetVersion(NodeType nodeType) {
+        Optional<Version> targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
+        if (!targetVersion.isPresent()) {
             logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType + ": No target version set");
             return Optional.empty();
         }
 
-        List<Optional<Version>> currentWantedVersions = nodeRepository().getNodes(nodeType,
+        List<Version> wantedVersions = nodeRepository().getNodes(nodeType,
                 Node.State.ready, Node.State.reserved, Node.State.active, Node.State.inactive).stream()
                 .map(node -> node.allocation()
-                        .map(allocation -> allocation.membership().cluster().vespaVersion()))
+                        .map(allocation -> allocation.membership().cluster().vespaVersion())
+                        .orElse(null))
                 .collect(Collectors.toList());
-        if (currentWantedVersions.isEmpty()) {
+        if (wantedVersions.isEmpty()) {
             logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType + ": No nodes to provision");
             return Optional.empty();
         }
 
-        if (currentWantedVersions.stream().allMatch(wantedWantedVersion::equals)) {
+        if (wantedVersions.stream().allMatch(targetVersion.get()::equals)) {
             logger.log(LogLevel.DEBUG, "Skipping provision of " + nodeType +
-                    ": Already provisioned to wanted version " + wantedWantedVersion);
+                    ": Already provisioned to target version " + targetVersion);
             return Optional.empty();
         }
-        return wantedWantedVersion;
+        return targetVersion;
     }
 }
