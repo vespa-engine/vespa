@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -293,7 +294,7 @@ public class DeploymentTrigger {
                             Versions versions = versions(application, change, deploymentFor(application, job));
                             if (isTested(application, versions)) {
                                 if (   completedAt.isPresent()
-                                    && jobStateIsAmong(application, job, idle)
+                                    && jobStateOf(application, job) == idle
                                     && stepJobs.containsAll(runningProductionJobs(application)))
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 if ( ! alreadyTriggered(application, versions))
@@ -340,13 +341,13 @@ public class DeploymentTrigger {
         return    ! application.deploymentJobs().statusOf(jobType)
                                .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at())))
                                .orElse(false)
-               &&   jobStateIsAmong(application, jobType, running, queued);
+               &&   EnumSet.of(running, queued).contains(jobStateOf(application, jobType));
     }
 
-    private boolean jobStateIsAmong(Application application, JobType jobType, JobState... states) {
-        return Arrays.asList(states).contains(buildService.stateOf(BuildJob.of(application.id(),
-                                                                               application.deploymentJobs().projectId().getAsLong(),
-                                                                               jobType.jobName())));
+    private JobState jobStateOf(Application application, JobType jobType) {
+        return buildService.stateOf(BuildJob.of(application.id(),
+                                                application.deploymentJobs().projectId().getAsLong(),
+                                                jobType.jobName()));
     }
 
     // ---------- Completion logic ----------
@@ -446,7 +447,7 @@ public class DeploymentTrigger {
         for (JobType jobType : jobsOf(testStepsOf(application))) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
                     .filter(run -> sourcesMatchIfPresent(versions, run) || jobType == systemTest);
-            if ( ! completion.isPresent() && jobStateIsAmong(application, jobType, idle))
+            if ( ! completion.isPresent() && jobStateOf(application, jobType) == idle)
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
         }
         return jobs;
