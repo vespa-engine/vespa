@@ -6,14 +6,14 @@ import com.yahoo.concurrent.Timer;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.EmptyReply;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-/**
- */
-public class BenchmarkProgressPrinterTest extends TestCase {
+import static org.junit.Assert.assertTrue;
+
+public class BenchmarkProgressPrinterTest {
 
     class DummyTimer implements Timer {
         long ms;
@@ -21,6 +21,7 @@ public class BenchmarkProgressPrinterTest extends TestCase {
         public long milliTime() { return ms; }
     }
 
+    @Test
     public void testSimple() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         DummyTimer timer = new DummyTimer();

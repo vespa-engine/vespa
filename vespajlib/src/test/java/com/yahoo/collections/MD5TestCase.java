@@ -1,10 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.collections;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class MD5TestCase extends junit.framework.TestCase {
+public class MD5TestCase {
+
+    @Test
     public void testMD5() {
         MD5 md5 = new MD5();
         int a = md5.hash("foobar");
@@ -30,4 +37,5 @@ public class MD5TestCase extends junit.framework.TestCase {
         assertTrue((c & 0x0000FF00) != 0);
         assertTrue((c & 0x000000FF) != 0);
     }
+
 }

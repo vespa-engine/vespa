@@ -1,13 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class EventBarrierTestCase extends TestCase {
+public class EventBarrierTestCase {
 
+    @Test
     public void testEmpty() {
         // waiting for an empty set of events
         Barrier b = new Barrier();
@@ -27,6 +31,7 @@ public class EventBarrierTestCase extends TestCase {
         assertEquals(eb.getNumBarriers(), 0);
     }
 
+    @Test
     public void testSimple() {
         // a single barrier waiting for a single event
         Barrier b = new Barrier();
@@ -49,6 +54,7 @@ public class EventBarrierTestCase extends TestCase {
         assertEquals(eb.getNumBarriers(), 0);
     }
 
+    @Test
     public void testBarrierChain() {
         // more than one barrier waiting for the same set of events
         Barrier b1 = new Barrier();
@@ -80,6 +86,7 @@ public class EventBarrierTestCase extends TestCase {
         assertEquals(eb.getNumBarriers(), 0);
     }
 
+    @Test
     public void testEventAfter() {
         // new events starting after the start of a barrier
         Barrier b = new Barrier();
@@ -111,6 +118,7 @@ public class EventBarrierTestCase extends TestCase {
         assertEquals(eb.getNumBarriers(), 0);
     }
 
+    @Test
     public void testReorder() {
         // events completing in a different order than they started
         Barrier b1 = new Barrier();
@@ -165,4 +173,5 @@ public class EventBarrierTestCase extends TestCase {
             done = true;
         }
     }
+
 }

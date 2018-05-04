@@ -1,10 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.state;
 
+import org.junit.Test;
+
 import java.text.ParseException;
 
-public class DiskStateTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+public class DiskStateTestCase {
+
+    private static final double delta = 0.0000000001;
+
+    @Test
     public void testEquals() {
         DiskState d1 = new DiskState(State.UP, "", 1);
         DiskState d2 = new DiskState(State.UP, "", 2);
@@ -39,13 +48,14 @@ public class DiskStateTestCase extends junit.framework.TestCase {
         assertFalse(d1.equals("class not instance of Node"));
     }
 
+    @Test
     public void testSerialization() throws ParseException {
         DiskState d = new DiskState();
         DiskState other = new DiskState(d.serialize("", true));
         assertEquals(d, other);
         assertEquals(d.toString(), other.toString());
         assertEquals(State.UP, other.getState());
-        assertEquals(1.0, other.getCapacity());
+        assertEquals(1.0, other.getCapacity(), delta);
         assertEquals("", other.getDescription());
         assertEquals("s:u", d.serialize("", false));
         assertEquals("s:u", d.serialize("", true));
@@ -59,7 +69,7 @@ public class DiskStateTestCase extends junit.framework.TestCase {
         assertEquals(d, other);
         assertEquals(d.toString(), other.toString());
         assertEquals(State.UP, other.getState());
-        assertEquals(1.0, other.getCapacity());
+        assertEquals(1.0, other.getCapacity(), delta);
         assertEquals("Slow disk", other.getDescription());
         assertEquals("s:u", d.serialize("", false));
         assertEquals("s:u m:Slow\\x20disk", d.serialize("", true));
@@ -71,7 +81,7 @@ public class DiskStateTestCase extends junit.framework.TestCase {
         assertEquals(d, other);
         assertEquals(d.toString(), other.toString());
         assertEquals(State.DOWN, other.getState());
-        assertEquals(2.0, other.getCapacity());
+        assertEquals(2.0, other.getCapacity(), delta);
         assertEquals("Failed disk", other.getDescription());
         assertEquals("s:d c:2.0", d.serialize("", false));
         assertEquals("s:d c:2.0 m:Failed\\x20disk", d.serialize("", true));
