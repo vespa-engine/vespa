@@ -50,7 +50,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.Job
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -286,7 +285,7 @@ public class DeploymentTrigger {
                                                 application.deploymentJobs().statusOf(stagingTest)
                                                         .<Instant>flatMap(job -> job.lastSuccess().map(JobRun::at)));
             String reason = "New change available";
-            List<Job> testJobs = null; // null means "uninitialised", while empty means "don't run any jobs".
+            List<Job> testJobs = Collections.emptyList();
 
             if (change.isPresent())
                 for (Step step : productionSteps) {
@@ -300,10 +299,8 @@ public class DeploymentTrigger {
                                     && jobStateContains(application, job, idle)
                                     && stepJobs.containsAll(runningProductionJobs(application)))
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
-                                if ( ! alreadyTriggered(application, versions))
-                                    testJobs = emptyList();
                             }
-                            else if (testJobs == null) {
+                            else if (testJobs.isEmpty()) {
                                 testJobs = testJobs(application, versions, String.format("Testing deployment for %s (%s)", job.jobName(), versions.toString()),
                                                     completedAt.orElse(clock.instant()));
                             }
@@ -322,7 +319,7 @@ public class DeploymentTrigger {
                         }
                     }
                 }
-            if (testJobs == null)
+            if (testJobs.isEmpty())
                 testJobs = testJobs(application, versions(application, application.change(), Optional
                         .empty()), "Testing last changes outside prod", clock.instant());
             jobs.addAll(testJobs);
