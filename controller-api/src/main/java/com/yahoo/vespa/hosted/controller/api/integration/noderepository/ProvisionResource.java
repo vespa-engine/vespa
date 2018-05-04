@@ -76,5 +76,11 @@ public interface ProvisionResource {
     @DELETE
     @Path("/maintenance/inactive/{jobname}")
     String enableMaintenanceJob(@PathParam("jobname") String jobname);
+
+    @POST
+    @Path("/upgrade/{nodeType}")
+    String upgrade(@PathParam("nodeType") NodeType nodeType, NodeUpgrade nodeUpgrade,
+                   @HeaderParam("X-HTTP-Method-Override") String patchOverride);
+
 }
 
