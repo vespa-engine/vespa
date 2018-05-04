@@ -123,6 +123,8 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::DoubleAverageMetric matchTime;
             metrics::DoubleAverageMetric groupingTime;
             metrics::DoubleAverageMetric rerankTime;
+            metrics::DoubleAverageMetric queryCollateralTime;
+            metrics::DoubleAverageMetric queryLatency;
             DocIdPartitions              partitions;
 
             RankProfileMetrics(const vespalib::string &name,

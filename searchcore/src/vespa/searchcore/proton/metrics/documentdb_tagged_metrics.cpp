@@ -124,7 +124,9 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       limitedQueries("limited_queries", "", "Number of queries limited in match phase", this),
       matchTime("match_time", "", "Average time (sec) for matching a query", this),
       groupingTime("grouping_time", "", "Average time (sec) spent on grouping", this),
-      rerankTime("rerank_time", "", "Average time (sec) spent on 2nd phase ranking", this)
+      rerankTime("rerank_time", "", "Average time (sec) spent on 2nd phase ranking", this),
+      queryCollateralTime("query_collateral_time", "", "Average time (sec) spent setting up and tearing down queries", this),
+      queryLatency("query_latency", "", "Average latency (sec) when matching a query", this)
 {
     for (size_t i = 0; i < numDocIdPartitions; ++i) {
         vespalib::string partition(vespalib::make_string("docid_part%02ld", i));
@@ -168,6 +170,10 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
                                stats.groupingTimeMin(), stats.groupingTimeMax());
     rerankTime.addValueBatch(stats.rerankTimeAvg(), stats.rerankTimeCount(),
                              stats.rerankTimeMin(), stats.rerankTimeMax());
+    queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount(),
+                                      stats.queryCollateralTimeMin(), stats.queryCollateralTimeMax());
+    queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
+                               stats.queryLatencyMin(), stats.queryLatencyMax());
     if (stats.getNumPartitions() > 0) {
         if (stats.getNumPartitions() <= partitions.size()) {
             for (size_t i = 0; i < stats.getNumPartitions(); ++i) {
