@@ -22,6 +22,8 @@ import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
 class NodeIdentifier {
 
     private static final String TENANT_DOCKER_HOST_IDENTITY = "vespa.vespa.tenant-host";
+    private static final String PROXY_HOST_IDENTITY = "vespa.vespa.proxy";
+    private static final String CONFIGSERVER_HOST_IDENTITY = "vespa.vespa.configserver";
     private static final String TENANT_DOCKER_CONTAINER_IDENTITY = "vespa.vespa.tenant";
     private static final String INSTANCE_ID_DELIMITER = ".instanceid.athenz.";
 
@@ -42,6 +44,8 @@ class NodeIdentifier {
             List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(clientCertificate);
             switch (subjectCommonName) {
                 case TENANT_DOCKER_HOST_IDENTITY:
+                case PROXY_HOST_IDENTITY:
+                case CONFIGSERVER_HOST_IDENTITY:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoOrAwsCertificate(sans), certificateChain);
                 case TENANT_DOCKER_CONTAINER_IDENTITY:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromVespaCertificate(sans), certificateChain);

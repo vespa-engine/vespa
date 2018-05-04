@@ -107,8 +107,10 @@ public class AuthorizerTest {
         assertFalse(authorizedController("vespa.vespa.cd.hosting", "/")); // Wrong system
         assertTrue(new Authorizer(SystemName.cd, nodeRepository, Collections.emptySet()).test(NodePrincipal.withAthenzIdentity("vespa.vespa.cd.hosting", emptyList()), uri("/")));
         assertTrue(authorizedController("vespa.vespa.hosting", "/"));
+        assertTrue(authorizedController("vespa.vespa.configserver", "/"));
         assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/"));
         assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/node1"));
+        assertTrue(authorizedController("vespa.vespa.configserver", "/nodes/v2/node/node1"));
     }
 
     @Test

@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodePrincipal;
@@ -14,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,24 +28,27 @@ import java.util.stream.Collectors;
  * requires information from the node-repository to make a decision
  *
  * @author mpolden
+ * @author bjorncs
  */
 public class Authorizer implements BiPredicate<NodePrincipal, URI> {
 
-    private final SystemName system;
     private final NodeRepository nodeRepository;
     private final Set<String> whitelistedHostnames;
+    private final Set<AthenzIdentity> trustedIdentities;
 
+    // TODO Remove whitelisted hostnames as these nodes should be included through 'trustedIdentities'
     public Authorizer(SystemName system, NodeRepository nodeRepository, Set<String> whitelistedHostnames) {
-        this.system = system;
         this.nodeRepository = nodeRepository;
         this.whitelistedHostnames = whitelistedHostnames;
+        this.trustedIdentities = getTrustedIdentities(system);
     }
 
     /** Returns whether principal is authorized to access given URI */
     @Override
     public boolean test(NodePrincipal principal, URI uri) {
         // Trusted services can access everything
-        if (principal.getHostIdentityName().equals(trustedService())) {
+        if (principal.getAthenzIdentityName().isPresent()
+                && trustedIdentities.contains(principal.getAthenzIdentityName().get())) {
             return true;
         }
         if (principal.getHostname().isPresent()) {
@@ -93,12 +99,16 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
         return !resources.isEmpty() && resources.stream().anyMatch(resource -> predicate.test(resource, principal));
     }
 
-    /** Trusted service name for this system */
-    private String trustedService() {
-        if (system != SystemName.main) {
-            return "vespa.vespa." + system.name() + ".hosting";
-        }
-        return "vespa.vespa.hosting";
+
+    private static Set<AthenzIdentity> getTrustedIdentities(SystemName system) {
+        Set<AthenzIdentity> trustedIdentities = new HashSet<>();
+        trustedIdentities.add(new AthenzService("vespa.vespa", "configserver"));
+        AthenzService controllerIdentity =
+                system == SystemName.main
+                        ? new AthenzService("vespa.vespa", "hosting")
+                        : new AthenzService("vespa.vespa.cd", "hosting");
+        trustedIdentities.add(controllerIdentity);
+        return trustedIdentities;
     }
 
     private Optional<Node> getNode(String hostname) {
