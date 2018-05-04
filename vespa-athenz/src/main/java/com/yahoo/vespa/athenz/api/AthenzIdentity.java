@@ -11,4 +11,5 @@ public interface AthenzIdentity {
     default String getFullName() {
         return getDomain().getName() + "." + getName();
     }
+    default String getDomainName() { return getDomain().getName(); }
 }
