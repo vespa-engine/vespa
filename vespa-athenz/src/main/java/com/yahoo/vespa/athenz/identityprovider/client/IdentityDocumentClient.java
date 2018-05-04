@@ -1,24 +1,23 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.yahoo.vespa.defaults.Defaults;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.http.HttpStatus;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
 
 /**
  * @author mortent
@@ -60,9 +59,9 @@ public class IdentityDocumentClient {
             sslContextBuilder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
             SSLConnectionSocketFactory sslSocketFactory =
                     new SSLConnectionSocketFactory(sslContextBuilder.build(),
-                                                   SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+                                                   NoopHostnameVerifier.INSTANCE);
             return HttpClientBuilder.create().setSSLSocketFactory(sslSocketFactory).setUserAgent("identity-document-client").build();
-        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+        } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
     }
