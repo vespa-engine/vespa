@@ -1,7 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.utils;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Delegates to a map that can be frozen.
@@ -17,8 +21,8 @@ public class FreezableMap<K, V> implements Map<K, V> {
     @SuppressWarnings("unchecked")
     public FreezableMap(Class<LinkedHashMap> mapClass) {
         try {
-            map = mapClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            map = mapClass.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }

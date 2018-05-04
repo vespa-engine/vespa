@@ -17,12 +17,12 @@ import static org.junit.Assert.assertThat;
 public class AbstractConfigProducerTest {
 
     @Test
-    public void require_that_interface_is_found_if_directly_implemented() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public void require_that_interface_is_found_if_directly_implemented() throws ReflectiveOperationException {
         MockLogdProducer producer = new MockLogdProducer("mocky");
         ClassLoader loader = producer.getConfigClassLoader(LogdConfig.Producer.class.getName());
         assertNotNull(loader);
-        Class clazz = loader.loadClass(LogdConfig.Builder.class.getName());
-        LogdConfig.Builder builder = (LogdConfig.Builder) clazz.newInstance();
+        Class<?> clazz = loader.loadClass(LogdConfig.Builder.class.getName());
+        LogdConfig.Builder builder = (LogdConfig.Builder) clazz.getDeclaredConstructor().newInstance();
         producer.getConfig(builder);
         LogdConfig config = new LogdConfig(builder);
         assertThat(config.logserver().host(), is("bar"));
@@ -30,12 +30,12 @@ public class AbstractConfigProducerTest {
     }
 
     @Test
-    public void require_that_interface_is_found_if_inherited() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public void require_that_interface_is_found_if_inherited() throws ReflectiveOperationException {
         MockLogdProducerSubclass producer = new MockLogdProducerSubclass("mocky");
         ClassLoader loader = producer.getConfigClassLoader(LogdConfig.Producer.class.getName());
         assertNotNull(loader);
-        Class clazz = loader.loadClass(LogdConfig.Builder.class.getName());
-        LogdConfig.Builder builder = (LogdConfig.Builder) clazz.newInstance();
+        Class<?> clazz = loader.loadClass(LogdConfig.Builder.class.getName());
+        LogdConfig.Builder builder = (LogdConfig.Builder) clazz.getDeclaredConstructor().newInstance();
         producer.getConfig(builder);
         LogdConfig config = new LogdConfig(builder);
         assertThat(config.logserver().host(), is("foo"));

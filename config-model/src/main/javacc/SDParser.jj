@@ -2251,7 +2251,7 @@ void fieldRankFilter(RankProfile profile) :
 }
 {
     <RANK> name = identifier() <COLON> <FILTER>
-    { profile.addRankSetting(name, RankProfile.RankSetting.Type.PREFERBITVECTOR, new Boolean(true)); }
+    { profile.addRankSetting(name, RankProfile.RankSetting.Type.PREFERBITVECTOR, Boolean.TRUE); }
 }
 
 /**

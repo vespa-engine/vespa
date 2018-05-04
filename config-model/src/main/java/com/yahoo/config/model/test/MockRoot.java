@@ -2,16 +2,15 @@
 package com.yahoo.config.model.test;
 
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
@@ -25,7 +24,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
@@ -93,9 +91,9 @@ public class MockRoot extends AbstractConfigProducerRoot {
     @SuppressWarnings("unchecked")
     public <T extends ConfigInstance> T getConfig(Class<T> configClass, String configId) {
         try {
-            ConfigInstance.Builder builder = getConfig(getBuilder(configClass).newInstance(), configId);
+            ConfigInstance.Builder builder = getConfig(getBuilder(configClass).getDeclaredConstructor().newInstance(), configId);
             return configClass.getConstructor(builder.getClass()).newInstance(builder);
-        } catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
