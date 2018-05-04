@@ -1,19 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.document.Field;
-import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
+import com.yahoo.document.Field;
 import com.yahoo.io.IOUtils;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.SDDocumentType;
+import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.text.StringUtilities;
+
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -98,10 +98,7 @@ public abstract class Derived implements Exportable {
             if (toDirectory!=null) writer=IOUtils.createWriter(toDirectory + "/" + fileName,false);
             try {
                 exportBuilderConfig(writer);
-            } catch (ClassNotFoundException | InstantiationException
-                    | IllegalAccessException | NoSuchMethodException
-                    | SecurityException | IllegalArgumentException
-                    | InvocationTargetException e) {
+            } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -114,13 +111,13 @@ public abstract class Derived implements Exportable {
      * Checks what this is a producer of, instantiate that and export to writer
      */
     // TODO move to ReflectionUtil, and move that to unexported pkg
-    private void exportBuilderConfig(Writer writer) throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException, IOException {
+    private void exportBuilderConfig(Writer writer) throws ReflectiveOperationException, SecurityException, IllegalArgumentException, IOException {
         for (Class<?> intf : getClass().getInterfaces()) {
             if (ConfigInstance.Producer.class.isAssignableFrom(intf)) {
                 Class<?> configClass = intf.getEnclosingClass();
                 String builderClassName = configClass.getCanonicalName()+"$Builder";
                 Class<?> builderClass = Class.forName(builderClassName);
-                ConfigInstance.Builder builder = (Builder) builderClass.newInstance();
+                ConfigInstance.Builder builder = (Builder) builderClass.getDeclaredConstructor().newInstance();
                 Method getConfig = getClass().getMethod("getConfig", builderClass);
                 getConfig.invoke(this, builder);
                 ConfigInstance inst = (ConfigInstance) configClass.getConstructor(builderClass).newInstance(builder);

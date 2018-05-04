@@ -17,8 +17,8 @@ public class FreezableMap<K, V> implements Map<K, V> {
     @SuppressWarnings("unchecked")
     public FreezableMap(Class<LinkedHashMap> mapClass) {
         try {
-            map = mapClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            map = mapClass.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }

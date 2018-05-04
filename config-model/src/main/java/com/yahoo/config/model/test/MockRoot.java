@@ -93,9 +93,9 @@ public class MockRoot extends AbstractConfigProducerRoot {
     @SuppressWarnings("unchecked")
     public <T extends ConfigInstance> T getConfig(Class<T> configClass, String configId) {
         try {
-            ConfigInstance.Builder builder = getConfig(getBuilder(configClass).newInstance(), configId);
+            ConfigInstance.Builder builder = getConfig(getBuilder(configClass).getDeclaredConstructor().newInstance(), configId);
             return configClass.getConstructor(builder.getClass()).newInstance(builder);
-        } catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }

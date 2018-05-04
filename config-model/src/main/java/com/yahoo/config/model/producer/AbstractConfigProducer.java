@@ -328,7 +328,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     /**
      * New Builder instance if m is getConfig(SomeConfig.Builder), or null
      */
-    private ConfigInstance.Builder getBuilderIfIsGetConfig(Method m) throws InstantiationException, IllegalAccessException {
+    private ConfigInstance.Builder getBuilderIfIsGetConfig(Method m) throws ReflectiveOperationException {
         if (!"getConfig".equals(m.getName())) return null;
         Type[] params = m.getParameterTypes();
         if (params.length!=1) return null;
@@ -336,7 +336,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         if (!(param instanceof Class)) return null;
         Class<?> paramClass = (Class<?>) param;
         if  (!(ConfigInstance.Builder.class.isAssignableFrom(paramClass))) return null;
-        return (ConfigInstance.Builder) paramClass.newInstance();
+        return (ConfigInstance.Builder) paramClass.getDeclaredConstructor().newInstance();
     }
 
     public void dump(PrintStream out) {
