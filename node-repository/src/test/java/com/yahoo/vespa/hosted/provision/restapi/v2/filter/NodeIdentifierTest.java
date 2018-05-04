@@ -44,6 +44,8 @@ import static org.junit.Assert.assertTrue;
 public class NodeIdentifierTest {
 
     private static final String HOSTNAME = "myhostname";
+    private static final String PROXY_HOSTNAME = "myproxyhostname";
+    private static final String CONFIGSERVER_HOSTNAME = "myconfigserverhostname";
     private static final String OPENSTACK_ID = "OPENSTACK-ID";
     private static final String AWS_INSTANCE_ID = "i-abcdef123456";
     private static final String INSTANCE_ID = "default";
@@ -103,6 +105,46 @@ public class NodeIdentifierTest {
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(HOSTNAME, identity.getHostname().get());
+        assertEquals(identityName, identity.getHostIdentityName());
+    }
+
+    @Test
+    public void accepts_aws_proxy_host_certificate() {
+        NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
+        nodeRepositoryDummy.addNode(AWS_INSTANCE_ID, PROXY_HOSTNAME, INSTANCE_ID, NodeType.proxyhost);
+        nodeRepositoryDummy.setNodeState(PROXY_HOSTNAME, Node.State.active);
+        String identityName = "vespa.vespa.proxy";
+        Pkcs10Csr csr = Pkcs10CsrBuilder
+                .fromKeypair(new X500Principal("CN=" + identityName), KEYPAIR, SHA256_WITH_RSA)
+                .build();
+        X509Certificate certificate = X509CertificateBuilder
+                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
+                .build();
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
+        assertTrue(identity.getHostname().isPresent());
+        assertEquals(PROXY_HOSTNAME, identity.getHostname().get());
+        assertEquals(identityName, identity.getHostIdentityName());
+    }
+
+    @Test
+    public void accepts_aws_configserver_host_certificate() {
+        NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
+        nodeRepositoryDummy.addNode(AWS_INSTANCE_ID, CONFIGSERVER_HOSTNAME, INSTANCE_ID, NodeType.confighost);
+        nodeRepositoryDummy.setNodeState(CONFIGSERVER_HOSTNAME, Node.State.active);
+        String identityName = "vespa.vespa.configserver";
+        Pkcs10Csr csr = Pkcs10CsrBuilder
+                .fromKeypair(new X500Principal("CN=" + identityName), KEYPAIR, SHA256_WITH_RSA)
+                .build();
+        X509Certificate certificate = X509CertificateBuilder
+                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
+                .build();
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
+        assertTrue(identity.getHostname().isPresent());
+        assertEquals(CONFIGSERVER_HOSTNAME, identity.getHostname().get());
         assertEquals(identityName, identity.getHostIdentityName());
     }
 
