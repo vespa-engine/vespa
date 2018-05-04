@@ -1,6 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
+
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -46,6 +49,11 @@ public class NodePrincipal implements Principal {
 
     public String getHostIdentityName() {
         return identityName;
+    }
+
+    public Optional<AthenzIdentity> getAthenzIdentityName() {
+        if (type == Type.LEGACY) return Optional.empty();
+        return Optional.of(AthenzIdentities.from(identityName));
     }
 
     public Optional<String> getHostname() {
