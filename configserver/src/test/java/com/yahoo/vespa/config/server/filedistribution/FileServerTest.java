@@ -113,6 +113,7 @@ public class FileServerTest {
     }
 
     @Override
+    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
     protected void finalize() throws Throwable {
         super.finalize();
         cleanup();
