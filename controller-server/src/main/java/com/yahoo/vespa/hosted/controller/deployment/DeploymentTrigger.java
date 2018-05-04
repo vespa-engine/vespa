@@ -26,7 +26,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
@@ -288,7 +287,7 @@ public class DeploymentTrigger {
             if (change.isPresent())
                 for (Step step : productionStepsOf(application)) {
                     Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                    List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! completedAt(change, application, job).isPresent()).collect(toList());
+                    List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! isComplete(change, application, job)).collect(toList());
                     if ( ! remainingJobs.isEmpty()) { // Step is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                         for (JobType job : remainingJobs) {
                             Versions versions = versions(application, change, deploymentFor(application, job));
@@ -314,7 +313,7 @@ public class DeploymentTrigger {
                             reason += " after a delay of " + delay;
                         }
                         else {
-                            completedAt = stepJobs.stream().map(job -> completedAt(change, application, job).get()).max(naturalOrder());
+                            completedAt = stepJobs.stream().map(job -> application.deploymentJobs().statusOf(job).get().lastCompleted().get().at()).max(naturalOrder());
                             reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(joining(", "));
                         }
                     }
@@ -353,7 +352,7 @@ public class DeploymentTrigger {
     // ---------- Completion logic ----------
 
     /**
-     * Returns the instant when the given change is complete for the given application for the given job.
+     * Returns whether the given change is complete for the given application for the given job.
      *
      * Any job is complete if the given change is already successful on that job.
      * A production job is also considered complete if its current change is strictly dominated by what
@@ -361,15 +360,12 @@ public class DeploymentTrigger {
      * change for the application downgrades the deployment, which is an acknowledgement that the deployed
      * version is broken somehow, such that the job may be locked in failure until a new version is released.
      */
-    private Optional<Instant> completedAt(Change change, Application application, JobType jobType) {
-        Versions versions = versions(application, change, deploymentFor(application, jobType));
-        Optional<JobRun> lastSuccess = successOn(application, jobType, versions);
-        if (lastSuccess.isPresent() || ! jobType.isProduction())
-            return lastSuccess.map(JobRun::at);
-
-        return deploymentFor(application, jobType)
-                .filter(deployment -> ! isUpgrade(change, deployment) && isDowngrade(application.change(), deployment))
-                .map(Deployment::at);
+    private boolean isComplete(Change change, Application application, JobType jobType) {
+        Optional<Deployment> existingDeployment = deploymentFor(application, jobType);
+        return    successOn(application, jobType, versions(application, change, existingDeployment)).isPresent()
+               ||    jobType.isProduction()
+                  && existingDeployment.map(deployment -> ! isUpgrade(change, deployment) && isDowngrade(application.change(), deployment))
+                                       .orElse(false);
     }
 
     private static boolean isUpgrade(Change change, Deployment deployment) {
@@ -428,10 +424,10 @@ public class DeploymentTrigger {
                 : jobsOf(productionStepsOf(application));
 
         Change change = application.change();
-        if (jobs.stream().allMatch(job -> completedAt(application.change().withoutApplication(), application, job).isPresent()))
+        if (jobs.stream().allMatch(job -> isComplete(application.change().withoutApplication(), application, job)))
             change = change.withoutPlatform();
 
-        if (jobs.stream().allMatch(job -> completedAt(application.change().withoutPlatform(), application, job).isPresent()))
+        if (jobs.stream().allMatch(job -> isComplete(application.change().withoutPlatform(), application, job)))
             change = change.withoutApplication();
 
         return change;
