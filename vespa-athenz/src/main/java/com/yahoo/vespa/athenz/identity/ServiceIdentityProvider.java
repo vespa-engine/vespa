@@ -15,4 +15,10 @@ import javax.net.ssl.SSLContext;
 public interface ServiceIdentityProvider {
     AthenzService identity();
     SSLContext getIdentitySslContext();
+    void addIdentityListener(Listener listener);
+    void removeIdentityListener(Listener listener);
+
+    interface Listener {
+        void onCredentialsUpdate(SSLContext sslContext, AthenzService identity);
+    }
 }
