@@ -234,27 +234,47 @@ MetricsEngine::cleanAttributes(const AttributeMetricsCollection &subAttributes,
     }
 }
 
+namespace {
+
+template <typename MatchingMetricsType>
 void
-MetricsEngine::addRankProfile(LegacyDocumentDBMetrics &owner, const std::string &name, size_t numDocIdPartitions) {
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    auto &entry = owner.matching.rank_profiles[name];
+addRankProfileTo(MatchingMetricsType &matchingMetrics, const vespalib::string &name, size_t numDocIdPartitions)
+{
+    auto &entry = matchingMetrics.rank_profiles[name];
     if (entry.get()) {
         LOG(warning, "Two rank profiles have the same name: %s", name.c_str());
     } else {
-        owner.matching.rank_profiles[name].reset(
-                new LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics(
-                        name, std::min(numDocIdPartitions, owner._maxNumThreads), &owner.matching));
+        matchingMetrics.rank_profiles[name].reset(
+                new typename MatchingMetricsType::RankProfileMetrics(name, numDocIdPartitions, &matchingMetrics));
     }
 }
 
+template <typename MatchingMetricsType>
 void
-MetricsEngine::cleanRankProfiles(LegacyDocumentDBMetrics &owner) {
-    metrics::MetricLockGuard guard(_manager->getMetricLock());
-    LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMap metrics;
-    owner.matching.rank_profiles.swap(metrics);
-    for (auto & metric : metrics) {
-        owner.matching.unregisterMetric(*metric.second);
+cleanRankProfilesIn(MatchingMetricsType &matchingMetrics)
+{
+    typename MatchingMetricsType::RankProfileMap rankMetrics;
+    matchingMetrics.rank_profiles.swap(rankMetrics);
+    for (const auto &metric : rankMetrics) {
+        matchingMetrics.unregisterMetric(*metric.second);
     }
+}
+
+}
+
+void
+MetricsEngine::addRankProfile(DocumentDBMetricsCollection &owner, const std::string &name, size_t numDocIdPartitions) {
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
+    size_t adjustedNumDocIdPartitions = std::min(numDocIdPartitions, owner.getLegacyMetrics()._maxNumThreads);
+    addRankProfileTo(owner.getTaggedMetrics().matching, name, adjustedNumDocIdPartitions);
+    addRankProfileTo(owner.getLegacyMetrics().matching, name, adjustedNumDocIdPartitions);
+}
+
+void
+MetricsEngine::cleanRankProfiles(DocumentDBMetricsCollection &owner) {
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
+    cleanRankProfilesIn(owner.getTaggedMetrics().matching);
+    cleanRankProfilesIn(owner.getLegacyMetrics().matching);
 }
 
 void

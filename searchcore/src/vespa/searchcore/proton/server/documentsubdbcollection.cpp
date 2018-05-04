@@ -76,7 +76,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                                        summaryExecutor,
                                        _bucketDB,
                                        *_bucketDBHandler,
-                                       metrics.getLegacyMetrics(),
+                                       metrics,
                                        configMutex,
                                        hwInfo);
     _subDBs.push_back

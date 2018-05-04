@@ -1,23 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "emptysearchview.h"
 #include "docstorevalidator.h"
-#include "document_subdb_initializer_result.h"
-#include "minimal_document_retriever.h"
-#include "storeonlydocsubdb.h"
 #include "document_subdb_initializer.h"
-#include "reconfig_params.h"
+#include "document_subdb_initializer_result.h"
+#include "emptysearchview.h"
 #include "i_document_subdb_owner.h"
+#include "minimal_document_retriever.h"
+#include "reconfig_params.h"
+#include "storeonlydocsubdb.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
-#include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreinitializer.h>
-#include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
+#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
+#include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
-#include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
+#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/attribute/configconverter.h>
@@ -87,7 +87,7 @@ StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
                                     vespalib::ThreadStackExecutorBase &summaryExecutor,
                                     std::shared_ptr<BucketDBOwner> bucketDB,
                                     bucketdb::IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
-                                    LegacyDocumentDBMetrics &metrics,
+                                    DocumentDBMetricsCollection &metrics,
                                     std::mutex &configMutex,
                                     const HwInfo &hwInfo)
     : _owner(owner),

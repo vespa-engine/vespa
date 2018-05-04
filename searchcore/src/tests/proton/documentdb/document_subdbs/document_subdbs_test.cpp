@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config-bucketspaces.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
@@ -7,8 +8,8 @@
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
+#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
 #include <vespa/searchcore/proton/metrics/legacy_attribute_metrics.h>
-#include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
@@ -24,13 +25,12 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config-bucketspaces.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 #include <iostream>
 
@@ -141,7 +141,7 @@ struct MyStoreOnlyContext
     MySyncProxy _syncProxy;
     MyGetSerialNum _getSerialNum;
     MyFileHeaderContext _fileHeader;
-    LegacyDocumentDBMetrics _metrics;
+    DocumentDBMetricsCollection _metrics;
     std::mutex       _configMutex;
     HwInfo           _hwInfo;
     StoreOnlyContext _ctx;

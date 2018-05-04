@@ -2,8 +2,11 @@
 
 #include "documentdb_tagged_metrics.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace proton {
+
+using matching::MatchingStats;
 
 DocumentDBTaggedMetrics::JobMetrics::JobMetrics(metrics::MetricSet* parent)
     : MetricSet("job", "", "Job load average for various jobs in a document database", parent),
@@ -85,6 +88,99 @@ DocumentDBTaggedMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
 
 DocumentDBTaggedMetrics::IndexMetrics::~IndexMetrics() { }
 
+
+void
+DocumentDBTaggedMetrics::MatchingMetrics::update(const MatchingStats &stats)
+{
+    docsMatched.inc(stats.docsMatched());
+    docsRanked.inc(stats.docsRanked());
+    docsReRanked.inc(stats.docsReRanked());
+    softDoomFactor.set(stats.softDoomFactor());
+    queries.inc(stats.queries());
+    queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount(),
+                                      stats.queryCollateralTimeMin(), stats.queryCollateralTimeMax());
+    queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
+                               stats.queryLatencyMin(), stats.queryLatencyMax());
+}
+
+DocumentDBTaggedMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
+    : MetricSet("matching", "", "Matching metrics", parent),
+      docsMatched("docs_matched", "", "Number of documents matched", this),
+      docsRanked("docs_ranked", "", "Number of documents ranked (first phase)", this),
+      docsReRanked("docs_reranked", "", "Number of documents re-ranked (second phase)", this),
+      queries("queries", "", "Number of queries executed", this),
+      softDoomFactor("soft_doom_factor", "", "Factor used to compute soft-timeout", this),
+      queryCollateralTime("query_collateral_time", "", "Average time (sec) spent setting up and tearing down queries", this),
+      queryLatency("query_latency", "", "Average latency (sec) when matching a query", this)
+{ }
+
+DocumentDBTaggedMetrics::MatchingMetrics::~MatchingMetrics() {}
+
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics(const vespalib::string &name,
+                                                                                 size_t numDocIdPartitions,
+                                                                                 MetricSet *parent)
+    : MetricSet("rank_profile", {{"rankProfile", name}}, "Rank profile metrics", parent),
+      queries("queries", "", "Number of queries executed", this),
+      limitedQueries("limited_queries", "", "Number of queries limited in match phase", this),
+      matchTime("match_time", "", "Average time (sec) for matching a query", this),
+      groupingTime("grouping_time", "", "Average time (sec) spent on grouping", this),
+      rerankTime("rerank_time", "", "Average time (sec) spent on 2nd phase ranking", this)
+{
+    for (size_t i = 0; i < numDocIdPartitions; ++i) {
+        vespalib::string partition(vespalib::make_string("docid_part%02ld", i));
+        partitions.push_back(DocIdPartition::UP(new DocIdPartition(partition, this)));
+    }
+}
+
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::~RankProfileMetrics() {}
+
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::DocIdPartition(const vespalib::string &name, MetricSet *parent) :
+    MetricSet("docid_partition", {{"docidPartition", name}}, "DocId Partition profile metrics", parent),
+    docsMatched("docs_matched", "", "Number of documents matched", this),
+    docsRanked("docs_ranked", "", "Number of documents ranked (first phase)", this),
+    docsReRanked("docs_reranked", "", "Number of documents re-ranked (second phase)", this),
+    activeTime("active_time", "", "Time (sec) spent doing actual work", this),
+    waitTime("wait_time", "", "Time (sec) spent waiting for other external threads and resources", this)
+{ }
+
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::~DocIdPartition() {}
+
+void
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::update(const MatchingStats::Partition &stats)
+{
+    docsMatched.inc(stats.docsMatched());
+    docsRanked.inc(stats.docsRanked());
+    docsReRanked.inc(stats.docsReRanked());
+    activeTime.addValueBatch(stats.active_time_avg(), stats.active_time_count(),
+                             stats.active_time_min(), stats.active_time_max());
+    waitTime.addValueBatch(stats.wait_time_avg(), stats.wait_time_count(),
+                           stats.wait_time_min(), stats.wait_time_max());
+}
+
+void
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const MatchingStats &stats)
+{
+    queries.inc(stats.queries());
+    limitedQueries.inc(stats.limited_queries());
+    matchTime.addValueBatch(stats.matchTimeAvg(), stats.matchTimeCount(),
+                            stats.matchTimeMin(), stats.matchTimeMax());
+    groupingTime.addValueBatch(stats.groupingTimeAvg(), stats.groupingTimeCount(),
+                               stats.groupingTimeMin(), stats.groupingTimeMax());
+    rerankTime.addValueBatch(stats.rerankTimeAvg(), stats.rerankTimeCount(),
+                             stats.rerankTimeMin(), stats.rerankTimeMax());
+    if (stats.getNumPartitions() > 0) {
+        if (stats.getNumPartitions() <= partitions.size()) {
+            for (size_t i = 0; i < stats.getNumPartitions(); ++i) {
+                partitions[i]->update(stats.getPartition(i));
+            }
+        } else {
+            vespalib::string msg(vespalib::make_string("Num partitions used '%ld' is larger than number of partitions '%ld' configured.",
+                                             stats.getNumPartitions(), partitions.size()));
+            throw vespalib::IllegalStateException(msg, VESPA_STRLOC);
+        }
+    }
+}
+
 DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
       job(this),
@@ -93,7 +189,8 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       ready("ready", this),
       notReady("notready", this),
       removed("removed", this),
-      threadingService("threading_service", this)
+      threadingService("threading_service", this),
+      matching(this)
 { }
 
 DocumentDBTaggedMetrics::~DocumentDBTaggedMetrics() { }
