@@ -138,9 +138,11 @@ public class SlimeSummaryTestCase {
     public void testFieldAccessAPI() {
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
+        Map<String, Object> expected = new HashMap<>();
+
+        assertFields(expected, hit);
 
         set.lazyDecode("default", partialSummary1(), hit);
-        Map<String, Object> expected = new HashMap<>();
         expected.put("integer_field", 4);
         expected.put("short_field", (short) 2);
         assertFields(expected, hit);
@@ -150,19 +152,49 @@ public class SlimeSummaryTestCase {
         expected.put("double_field", 8.75D);
         assertFields(expected, hit);
 
-        // TODO: Things we need to check that we test:
-        // - removing, then adding a field
+        hit.removeField("short_field");
+        expected.remove("short_field");
+        assertFields(expected, hit);
+
+        hit.setField("string", "hello");
+        expected.put("string", "hello");
+        assertFields(expected, hit);
+
+        hit.setField("short_field", 3.8F);
+        expected.put("short_field", 3.8F);
+        assertFields(expected, hit);
+
+        hit.removeField("string");
+        expected.remove("string");
+        assertFields(expected, hit);
+
+        hit.removeField("integer_field");
+        hit.removeField("double_field");
+        expected.remove("integer_field");
+        expected.remove("double_field");
+        assertFields(expected, hit);
+
+        hit.clearFields();
+        expected.clear();
+        assertFields(expected, hit);
+
+        // TODO:
         // - removing from field and field name iterators
-        // - removing fields, both summary and map, then iterating
         // - removing all fields in some summary, then iterating
-        // - adding a field from the iterator
         // - Ensure no overlapping fields between summaries?
+        // - Remove some field which is then added from a summary?
     }
 
 
     /** Asserts that the expected fields are what is returned from every access method of Hit */
     private void assertFields(Map<String, Object> expected, Hit hit) {
         // fieldKeys
+        int fieldNameIteratorFieldCount = 0;
+        for (Iterator<String> i = hit.fieldKeys().iterator(); i.hasNext(); ) {
+            fieldNameIteratorFieldCount++;
+            assertTrue(expected.containsKey(i.next()));
+        }
+        assertEquals(expected.size(), fieldNameIteratorFieldCount);
         assertEquals(expected.keySet(), hit.fieldKeys());
         // getField
         for (Map.Entry<String, Object> field : expected.entrySet())
@@ -170,13 +202,13 @@ public class SlimeSummaryTestCase {
         // fields
         assertEquals(expected, hit.fields());
         // fieldIterator
-        int iteratorFieldCount = 0;
+        int fieldIteratorFieldCount = 0;
         for (Iterator<Map.Entry<String, Object>> i = hit.fieldIterator(); i.hasNext(); ) {
-            iteratorFieldCount++;
+            fieldIteratorFieldCount++;
             Map.Entry<String, Object> field = i.next();
             assertEquals(field.getValue(), expected.get(field.getKey()));
         }
-        assertEquals(expected.size(), iteratorFieldCount);
+        assertEquals(expected.size(), fieldIteratorFieldCount);
     }
 
     private byte[] emptySummary() {

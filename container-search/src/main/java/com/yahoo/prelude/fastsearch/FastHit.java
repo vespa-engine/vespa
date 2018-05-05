@@ -202,6 +202,19 @@ public class FastHit extends Hit {
         return value;
     }
 
+    @Override
+    public Object setField(String name, Object value) {
+        if (removedFields != null) {
+            if (removedFields.remove(name)) {
+                if (removedFields.isEmpty())
+                    removedFields = null;
+            }
+        }
+        Object oldValue = super.setField(name, value);
+        if (oldValue != null) return oldValue;
+        return getSummaryValue(name);
+    }
+
     /** Returns the fields of this as a read-only map. This is more costly than fieldIterator() */
     @Override
     public Map<String, Object> fields() {
@@ -228,6 +241,8 @@ public class FastHit extends Hit {
     @Override
     public void clearFields() {
         summaries.clear();
+        if (removedFields != null)
+            removedFields = null;
         super.clearFields();
     }
 
@@ -459,6 +474,7 @@ public class FastHit extends Hit {
         }
 
         private Set<String> createSet() {
+            if (this.fieldSet != null) return this.fieldSet;
             if ( ! hit.hasFields() && hit.summaries.isEmpty()) return Collections.emptySet(); // shortcut
 
             Set<String> fields = new HashSet<>();
@@ -525,14 +541,13 @@ public class FastHit extends Hit {
             private final FastHit hit;
             private final Iterator<Map.Entry<String, Inspector>> fieldIterator;
 
-            /**
-             * The next value or null if none, eagerly read because we need to skip removed and overwritten values
-             */
+            /** The next value or null if none, eagerly read because we need to skip removed and overwritten values */
             private Map.Entry<String, Inspector> next;
 
             SummaryDataIterator(FastHit hit, Iterator<Map.Entry<String, Inspector>> fieldIterator) {
                 this.hit = hit;
                 this.fieldIterator = fieldIterator;
+                advanceNext();
             }
 
             @Override
@@ -556,7 +571,7 @@ public class FastHit extends Hit {
                     next = fieldIterator.next();
                     if ( ! hit.hasField(next.getKey()) &&
                          ! (hit.removedFields != null && hit.removedFields.contains(next.getKey())))
-                        break;
+                        return;
                 }
                 next = null;
             }
@@ -613,9 +628,7 @@ public class FastHit extends Hit {
             }
 
             @Override
-            protected String toValue(Map.Entry<String, Inspector> field) {
-                return field.toString();
-            }
+            protected String toValue(Map.Entry<String, Inspector> field) { return field.getKey(); }
 
         }
     }
