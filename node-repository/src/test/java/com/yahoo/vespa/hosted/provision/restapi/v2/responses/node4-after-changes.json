@@ -5,7 +5,7 @@
   "type": "tenant",
   "hostname": "host4.yahoo.com",
   "parentHostname": "parent.yahoo.com",
-  "openStackId": "node4",
+  "openStackId": "patched-openstackid",
   "flavor": "medium-disk",
   "canonicalFlavor": "medium-disk",
   "minDiskAvailableGb": 56.0,

@@ -138,6 +138,8 @@ public class NodePatcher {
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :
                 return node.with(node.status().withHardwareDivergence(removeQuotedNulls(asOptionalString(value))));
+            case "openStackId" :
+                return node.withOpenStackId(asString(value));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

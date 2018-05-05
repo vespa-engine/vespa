@@ -184,6 +184,11 @@ public final class Node {
                         allocation, history, type);
     }
 
+    /** Returns a c opy of this with the openStackId set */
+    public Node withOpenStackId(String openStackId) {
+        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
+    }
+
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
     public Node downAt(Instant instant) {
         return with(history.with(new History.Event(History.Event.Type.down, Agent.system, instant)));
