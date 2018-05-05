@@ -102,11 +102,6 @@ public class Status {
     /** Returns hardware divergence report as JSON string, if any */
     public Optional<String> hardwareDivergence() { return  hardwareDivergence; }
 
-    /** Returns a copy of this with a modified openstack ID. */
-    public Status withOpenStackId(String openStackId) {
-        return new Status(reboot, vespaVersion, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence);
-    }
-
     /** Returns the initial status of a newly provisioned node */
     public static Status initial() { return new Status(Generation.inital(), Optional.empty(), 0, Optional.empty(), false, false, Optional.empty()); }
 
