@@ -159,7 +159,7 @@ interface TextBuffer {
     }
 
     default Optional<Match> findForward(Position startPosition, Pattern pattern) {
-        for (Position position = startPosition;; position = getStartOfNextLine(position)) {
+        for (Position position = startPosition; ; position = getStartOfNextLine(position)) {
             String line = getLine(position);
             Matcher matcher = pattern.matcher(line);
             if (matcher.find(position.columnIndex())) {

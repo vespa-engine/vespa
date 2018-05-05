@@ -2,7 +2,6 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -59,7 +58,7 @@ public interface Cursor {
     Cursor write(String text);
     Cursor writeLine(String line);
     Cursor writeLines(String... lines);
-    Cursor writeLines(List<String> lines);
+    Cursor writeLines(Iterable<String> lines);
 
     Cursor writeNewline();
     Cursor writeNewlineAfter();

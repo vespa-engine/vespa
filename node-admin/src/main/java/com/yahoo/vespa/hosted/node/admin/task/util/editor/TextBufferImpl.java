@@ -11,17 +11,17 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.editor.TextUtil.splitS
  * @author hakon
  */
 public class TextBufferImpl implements TextBuffer {
+    /** Invariant: {@code size() >= 1}. An empty text buffer {@code => [""]} */
     private final LinkedList<String> lines = new LinkedList<>();
 
     private Version version = new Version();
 
     TextBufferImpl() {
-        // Invariant about always size() >= 0, and an empty text buffer => [""]
         lines.add("");
     }
 
     TextBufferImpl(String text) {
-        lines.add("");
+        this();
         write(getStartOfText(), text);
         // reset version
         version = new Version();
@@ -49,34 +49,26 @@ public class TextBufferImpl implements TextBuffer {
 
     @Override
     public Position write(Position position, String text) {
-        List<String> linesToInsert = splitString(text, true, false);
+        List<String> linesToInsert = new LinkedList<>(splitString(text, true, false));
         if (linesToInsert.isEmpty()) {
             return position;
         }
 
+        // The position splits that line in two, and both prefix and suffix must be preserved
+        linesToInsert.set(0, getLinePrefix(position) + linesToInsert.get(0));
+        String lastLine = linesToInsert.get(linesToInsert.size() - 1);
+        int endColumnIndex = lastLine.length();
+        linesToInsert.set(linesToInsert.size() - 1, lastLine + getLineSuffix(position));
+
+        // Set the first line at lineIndex, insert the rest.
         int lineIndex = position.lineIndex();
-
-        String prefix = getLinePrefix(position);
-        linesToInsert.set(0, prefix + linesToInsert.get(0));
-
-        // Insert the current prefix to the first line
-        int numberOfLinesToInsert = linesToInsert.size() - 1; // 1 will be set, the rest inserted
-        String prefixOfCursorAfterwards = linesToInsert.get(numberOfLinesToInsert);
-
-        // Append the current suffix to the last line
-        String suffix = getLineSuffix(position);
-        String lastLine = prefixOfCursorAfterwards + suffix;
-        linesToInsert.set(numberOfLinesToInsert, lastLine);
-
-        // The first line is overwritten with set()
+        int endLineIndex = lineIndex + linesToInsert.size() - 1;
         lines.set(lineIndex, linesToInsert.remove(0));
-
-        // The following lines must be inserted
         lines.addAll(lineIndex + 1, linesToInsert);
 
         incrementVersion();
 
-        return new Position(lineIndex + linesToInsert.size(), prefixOfCursorAfterwards.length());
+        return new Position(endLineIndex, endColumnIndex);
     }
 
     @Override
@@ -104,12 +96,9 @@ public class TextBufferImpl implements TextBuffer {
     }
 
     private void deleteLines(int startIndex, int endIndex) {
-        int fromIndex = endIndex;
-        for (int toIndex = startIndex; fromIndex <= getMaxLineIndex(); ++toIndex, ++fromIndex) {
-            lines.set(toIndex, lines.get(fromIndex));
+        for (int i = startIndex; i < endIndex; ++i) {
+            lines.remove(startIndex);
         }
-
-        truncate(getMaxLineIndex() - (endIndex - startIndex));
     }
 
     private void truncate(int newMaxLineIndex) {

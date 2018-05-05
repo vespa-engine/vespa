@@ -34,7 +34,7 @@ public class FileEditor {
         return stringEditor.cursor();
     }
 
-    public void rereadFile() {
+    public void reloadFile() {
         fileText = path.readUtf8File();
         stringEditor.cursor().deleteAll().write(fileText);
         fileVersion = stringEditor.bufferVersion();

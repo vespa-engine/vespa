@@ -3,11 +3,13 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+
+import static com.yahoo.vespa.hosted.node.admin.task.util.editor.Comparables.max;
+import static com.yahoo.vespa.hosted.node.admin.task.util.editor.Comparables.min;
 
 /**
  * @author hakon
@@ -65,13 +67,8 @@ public class CursorImpl implements Cursor {
     public String getTextTo(Mark mark) {
         validateMark(mark);
 
-        Position start = mark.position();
-        Position end = position;
-        if (start.isAfter(end)) {
-            Position tmp = start;
-            start = end;
-            end = tmp;
-        }
+        Position start = min(mark.position(), position);
+        Position end = max(mark.position(), position);
 
         return textBuffer.getSubstring(start, end);
     }
@@ -230,7 +227,7 @@ public class CursorImpl implements Cursor {
     }
 
     @Override
-    public Cursor writeLines(List<String> lines) {
+    public Cursor writeLines(Iterable<String> lines) {
         return writeLine(String.join("\n", lines));
     }
 
@@ -299,13 +296,9 @@ public class CursorImpl implements Cursor {
 
     @Override
     public Cursor deleteTo(Mark mark) {
-        Position start = mark.position();
-        Position end = position;
-        if (start.isAfter(end)) {
-            Position tmp = start;
-            start = end;
-            end = tmp;
-        }
+        validateMark(mark);
+        Position start = min(mark.position(), position);
+        Position end = max(mark.position(), position);
 
         textBuffer.delete(start, end);
         return this;
@@ -318,7 +311,6 @@ public class CursorImpl implements Cursor {
             return false;
         }
 
-        // position is unaffected by delete since position == match.get().startOfMatch()
         textBuffer.delete(match.get().startOfMatch(), match.get().endOfMatch());
         write(replacer.apply(match.get()));
         return true;

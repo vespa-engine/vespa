@@ -13,23 +13,6 @@ public class TextUtil {
     private TextUtil() {}
 
     /**
-     * Splits {@code text} by newline.
-     *
-     * @param text
-     * @param prune remove the last line if it is empty. Examples:
-     *              {@code "" -> []},
-     *              {@code "foo\n" -> "foo"},
-     *              {@code "foo\n\n" -> ["foo", ""]}. If false, these would return
-     *              {@code [""]},
-     *              {@code ["foo", ""]}, and
-     *              {@code ["foo", "", ""]}, respectively.
-     * @see #splitString(String, boolean, boolean)
-     */
-    public static List<String> splitString(String text, boolean prune) {
-        return splitString(text, prune, prune);
-    }
-
-    /**
      * Splits {@code text} by newline (LF {@code '\n'}).
      *
      * @param text the text to split into lines

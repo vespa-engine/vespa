@@ -15,8 +15,8 @@ public class Position implements Comparable<Position> {
     private static final Position START_POSITION = new Position(0, 0);
 
     private static final Comparator<Position> COMPARATOR = Comparator
-            .comparingInt((Position position) -> position.lineIndex())
-            .thenComparingInt((Position position) -> position.columnIndex());
+            .comparingInt(Position::lineIndex)
+            .thenComparingInt(Position::columnIndex);
 
     private final int lineIndex;
     private final int columnIndex;
