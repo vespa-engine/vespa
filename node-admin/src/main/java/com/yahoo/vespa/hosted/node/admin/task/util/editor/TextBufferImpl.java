@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.editor.TextUtil.splitS
  */
 public class TextBufferImpl implements TextBuffer {
     /** Invariant: {@code size() >= 1}. An empty text buffer {@code => [""]} */
-    private final LinkedList<String> lines = new LinkedList<>();
+    private final ArrayList<String> lines = new ArrayList<>();
 
     private Version version = new Version();
 
@@ -96,9 +97,12 @@ public class TextBufferImpl implements TextBuffer {
     }
 
     private void deleteLines(int startIndex, int endIndex) {
-        for (int i = startIndex; i < endIndex; ++i) {
-            lines.remove(startIndex);
+        int fromIndex = endIndex;
+        for (int toIndex = startIndex; fromIndex <= getMaxLineIndex(); ++toIndex, ++fromIndex) {
+            lines.set(toIndex, lines.get(fromIndex));
         }
+
+        truncate(getMaxLineIndex() - (endIndex - startIndex));
     }
 
     private void truncate(int newMaxLineIndex) {
