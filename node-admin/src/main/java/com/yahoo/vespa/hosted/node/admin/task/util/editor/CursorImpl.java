@@ -8,8 +8,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.editor.Comparables.max;
-import static com.yahoo.vespa.hosted.node.admin.task.util.editor.Comparables.min;
+import static com.yahoo.collections.Comparables.max;
+import static com.yahoo.collections.Comparables.min;
 
 /**
  * @author hakon
