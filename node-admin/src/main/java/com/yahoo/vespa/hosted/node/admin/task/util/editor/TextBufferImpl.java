@@ -97,8 +97,8 @@ public class TextBufferImpl implements TextBuffer {
     }
 
     private void deleteLines(int startIndex, int endIndex) {
-        int fromIndex = endIndex;
-        for (int toIndex = startIndex; fromIndex <= getMaxLineIndex(); ++toIndex, ++fromIndex) {
+        for (int fromIndex = endIndex, toIndex = startIndex; fromIndex <= getMaxLineIndex();
+             ++toIndex, ++fromIndex) {
             lines.set(toIndex, lines.get(fromIndex));
         }
 
