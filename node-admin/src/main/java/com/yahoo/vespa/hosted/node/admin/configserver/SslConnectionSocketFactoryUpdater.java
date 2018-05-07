@@ -3,18 +3,13 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import java.io.File;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 

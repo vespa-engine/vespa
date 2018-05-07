@@ -7,8 +7,6 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
-import java.io.IOException;
-
 /**
  * Test NodeState transitions in NodeRepository
  *

@@ -1,7 +1,5 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.network;
 
-import com.google.common.net.InetAddresses;
-
 import java.net.Inet4Address;
 import java.net.InetAddress;
 

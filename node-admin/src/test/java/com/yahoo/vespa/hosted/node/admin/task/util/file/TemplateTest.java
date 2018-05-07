@@ -2,12 +2,10 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
-import com.google.common.jimfs.Jimfs;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 

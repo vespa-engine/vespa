@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
