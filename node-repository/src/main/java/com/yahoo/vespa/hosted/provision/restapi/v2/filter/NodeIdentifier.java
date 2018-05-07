@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
 
@@ -76,7 +77,11 @@ class NodeIdentifier {
                 .filter(node -> node.openStackId().equals(openstackId))
                 .map(Node::hostname)
                 .findFirst()
-                .orElseThrow(() -> new NodeIdentifierException(String.format("Cannot find node with openstack-id '%s' in node repository", openstackId)));
+                .orElseThrow(() -> new NodeIdentifierException(
+                        String.format(
+                                "Cannot find node with openstack-id '%s' in node repository (SANs=%s)",
+                                openstackId,
+                                sans.stream().map(SubjectAlternativeName::getValue).collect(Collectors.joining(",", "[", "]")))));
     }
 
     private String getHostFromVespaCertificate(List<SubjectAlternativeName> sans) {
