@@ -3,15 +3,19 @@ package com.yahoo.system;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author bratseth
  */
-public class ProcessExecuterTestCase extends junit.framework.TestCase {
+public class ProcessExecuterTestCase {
 
+    @Test
     public void testIt() throws IOException {
         IOUtils.writeFile("tmp123.txt","hello\nworld",false);
         ProcessExecuter exec=new ProcessExecuter();

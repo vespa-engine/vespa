@@ -2,14 +2,10 @@
 package com.yahoo.tensor;
 
 import com.google.common.collect.Sets;
-import junit.framework.TestCase;
 import org.junit.Test;
-
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Basic tensor tests. Tensor operations are tested in EvaluationTestCase
@@ -22,13 +18,13 @@ public class MappedTensorTestCase {
     public void testEmpty() {
         TensorType type = new TensorType.Builder().mapped("x").build();
         Tensor empty = Tensor.Builder.of(type).build();
-        TestCase.assertTrue(empty instanceof MappedTensor);
-        TestCase.assertTrue(empty.isEmpty());
+        assertTrue(empty instanceof MappedTensor);
+        assertTrue(empty.isEmpty());
         assertEquals("tensor(x{}):{}", empty.toString());
         Tensor emptyFromString = Tensor.from(type, "{}");
         assertEquals("tensor(x{}):{}", Tensor.from("tensor(x{}):{}").toString());
-        TestCase.assertTrue(emptyFromString.isEmpty());
-        TestCase.assertTrue(emptyFromString instanceof MappedTensor);
+        assertTrue(emptyFromString.isEmpty());
+        assertTrue(emptyFromString instanceof MappedTensor);
         assertEquals(empty, emptyFromString);
     }
 

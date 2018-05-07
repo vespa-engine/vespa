@@ -1,19 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.net;
 
+import org.junit.Test;
+
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the URI class
  *
  * @author bratseth
  */
-public class URITestCase extends junit.framework.TestCase {
+public class URITestCase {
 
-    public URITestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testEquality() {
         URI one = new URI("http://www.nils.arne.com");
         URI two = new URI("http://www.nils.arne.com");
@@ -39,6 +43,7 @@ public class URITestCase extends junit.framework.TestCase {
                 new URI("http://www.strange_host.com/b", true).stringValue());
     }
 
+    @Test
     public void testOpaque() {
         URI uri = new URI("mailto:knut");
 
@@ -46,6 +51,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertTrue(uri.isOpaque());
     }
 
+    @Test
     public void testValid() {
         assertTrue(
                 new URI("http://www.one.com/isValid?even=if&theres=args").isValid());
@@ -58,6 +64,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertTrue(!new URI("http://www.strange_host.com/b").isOpaque());
     }
 
+    @Test
     public void testSorting() {
         URI first = new URI("http://aisfirst.kanoo.com");
         URI second = new URI("www.thentheresw.com");
@@ -67,6 +74,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertTrue(second.compareTo(first) > 1);
     }
 
+    @Test
     public void testHost() {
         assertEquals("a.b.c", new URI("http://A.B.C:567").getHost());
         assertEquals("www.kanoo.com",
@@ -77,6 +85,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertEquals("a", new URI("http://A:80").getHost());
     }
 
+    @Test
     public void testUnfragmenting() {
         assertEquals("http://www.sng.no/a/b/dee?kanoos&at=nught#chapter3",
                 new URI("http://www.sng.no/a/b/cee/../dee?kanoos&at=nught#chapter3", true).stringValue());
@@ -84,6 +93,7 @@ public class URITestCase extends junit.framework.TestCase {
                 new URI("http://www.sng.no/a/b/cee/../dee?kanoos&at=nught#chapter3", false).stringValue());
     }
 
+    @Test
     public void testNormalizing() {
         // Abbreviation resolving heuristics
         assertEquals("http://www.a.b/c",
@@ -117,6 +127,7 @@ public class URITestCase extends junit.framework.TestCase {
                 new URI("   WWW.a.B:80//m\u00E5l/.//&amp;/./\u00F8l&amp;&amp;/foo/../upp/./..", true, true).toString());
     }
 
+    @Test
     public void testParemeterAdding() {
         assertEquals("http://a/?knug=zagg",
                 new URI("http://a/").addParameter("knug", "zagg").stringValue());
@@ -128,6 +139,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertEquals(fasit, new URI(test).toString());
     }
 
+    @Test
     public void testDepth() {
         assertEquals(0, new URI("test:hit").getDepth());
         assertEquals(0, new URI("test://hit").getDepth());
@@ -140,6 +152,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertEquals(2, new URI("test://hit.test/hello/test2/").getDepth());
     }
 
+    @Test
     public void testURLEmpty() {
         URI uri = new URI("", true);
         assertTrue(uri.isValid());
@@ -156,6 +169,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLDot() {
         URI uri = new URI(".", true);
         assertTrue(uri.isValid());
@@ -172,6 +186,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLDotDot() {
         URI uri = new URI("..", true);
         assertTrue(uri.isValid());
@@ -188,6 +203,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLUninett() {
         URI uri = new URI("http://180.uninett.no/servlet/online.Bransje", true);
         assertTrue(uri.isValid());
@@ -204,6 +220,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLUnderdusken() {
         URI uri = new URI("http://www.underdusken.no", true);
         assertTrue(uri.isValid());
@@ -220,6 +237,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLUnderduskenUholdbar() {
         URI uri =
                 new URI("http://www.underdusken.no/?page=dusker/html/0008/Uholdbar.html", true);
@@ -237,6 +255,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLUniKarlsruhe() {
         URI uri = new URI("http://www.uni-karlsruhe.de/~ig25/ssh-faq/", true);
         assertTrue(uri.isValid());
@@ -253,6 +272,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLDetteErEn() {
         URI uri = new URI("https://dette.er.en:2020/~janie/index.htm?param1=q&param2=r", true);
         assertTrue(uri.isValid());
@@ -269,6 +289,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLSonyCoUk() {
         URI uri = new URI("http://www.sony.co.uk/", true);
         assertTrue(uri.isValid());
@@ -285,6 +306,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLSonyCoUk2() {
         URI uri = new URI("http://sony.co.uk/", true);
         assertTrue(uri.isValid());
@@ -303,6 +325,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLSomehostSomedomain() {
         URI uri = new URI("http://somehost.somedomain/this!is!it/boom", true);
         assertTrue(uri.isValid());
@@ -319,6 +342,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLTestCom() {
         URI uri = new URI("http://test.com/index.htm?p1=q%20test&p2=r%10d", true);
         assertTrue(uri.isValid());
@@ -335,6 +359,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLArthur() {
         URI uri = new URI("http://arthur/qm/images/qm1.gif", true);
         assertTrue(uri.isValid());
@@ -351,6 +376,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLFooCom() {
         URI uri = new URI("http://foo.com/ui;.gif", true);
         assertTrue(uri.isValid());
@@ -367,6 +393,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLFooCom2() {
         URI uri = new URI("http://foo.com/ui;par1=1/par2=2", true);
         assertTrue(uri.isValid());
@@ -383,6 +410,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testURLFooNo() {
         URI uri = new URI(
                 "http://www.foo.no:8080/path/filename.ext;par1=hello/par2=world?query=test#fragment", true);
@@ -400,6 +428,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertEquals("fragment", uri.getFragment());
     }
 
+    @Test
     public void testURLAmpersand() {
         URI uri = new URI("http://canonsarang.com/zboard/data/gallery04/HU&BANG.jpg", true);
         assertTrue(uri.isValid());
@@ -416,6 +445,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertNull(uri.getFragment());
     }
 
+    @Test
     public void testQMark() {
         URI uri = new URI("http://foobar/?");
         assertTrue(uri.isValid());
@@ -424,6 +454,7 @@ public class URITestCase extends junit.framework.TestCase {
         assertEquals("", uri.getQuery());
     }
 
+    @Test
     public void testTokenization() {
         URI uri = new URI("http://this.i_s:5000/wo_ho;ba-lo?gobo#banana", true);
         List<URI.Token> tokens = uri.tokenize();
@@ -468,45 +499,45 @@ public class URITestCase extends junit.framework.TestCase {
         }
     }
 
-        // Error reported int bug #2466528
-        public void testFileURIEmptyHost() {
-            URI uri = new URI("file:///C:/Inetpub/wwwroot/DW_SHORTCUTS.htm");
-            List<URI.Token> tokens = uri.tokenize();
-            URI.Token token;
-            token = tokens.get(0);
-            assertEquals("file", token.getToken());
-            assertEquals(URI.URLContext.URL_SCHEME, token.getContext());
+    @Test
+    public void testFileURIEmptyHost() {
+        URI uri = new URI("file:///C:/Inetpub/wwwroot/DW_SHORTCUTS.htm");
+        List<URI.Token> tokens = uri.tokenize();
+        URI.Token token;
+        token = tokens.get(0);
+        assertEquals("file", token.getToken());
+        assertEquals(URI.URLContext.URL_SCHEME, token.getContext());
 
-            token = tokens.get(1);
-            assertEquals("localhost", token.getToken());
-            assertEquals(URI.URLContext.URL_HOST, token.getContext());
+        token = tokens.get(1);
+        assertEquals("localhost", token.getToken());
+        assertEquals(URI.URLContext.URL_HOST, token.getContext());
 
-            token = tokens.get(2);
-            assertEquals("C", token.getToken());
-            assertEquals(URI.URLContext.URL_PATH, token.getContext());
+        token = tokens.get(2);
+        assertEquals("C", token.getToken());
+        assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-            token = tokens.get(3);
-            assertEquals("Inetpub", token.getToken());
-            assertEquals(URI.URLContext.URL_PATH, token.getContext());
+        token = tokens.get(3);
+        assertEquals("Inetpub", token.getToken());
+        assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-            token = tokens.get(4);
-            assertEquals("wwwroot", token.getToken());
-            assertEquals(URI.URLContext.URL_PATH, token.getContext());
+        token = tokens.get(4);
+        assertEquals("wwwroot", token.getToken());
+        assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-            token = tokens.get(5);
-            assertEquals("DW_SHORTCUTS", token.getToken());
-            assertEquals(URI.URLContext.URL_PATH, token.getContext());
+        token = tokens.get(5);
+        assertEquals("DW_SHORTCUTS", token.getToken());
+        assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-            token = tokens.get(6);
-            assertEquals("htm", token.getToken());
-            assertEquals(URI.URLContext.URL_PATH, token.getContext());
+        token = tokens.get(6);
+        assertEquals("htm", token.getToken());
+        assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-            try {
-                tokens.get(7);
-                fail();
-            } catch (IndexOutOfBoundsException ioobe) {
-                // Success
-            }
+        try {
+            tokens.get(7);
+            fail();
+        } catch (IndexOutOfBoundsException ioobe) {
+            // Success
         }
+    }
 
 }

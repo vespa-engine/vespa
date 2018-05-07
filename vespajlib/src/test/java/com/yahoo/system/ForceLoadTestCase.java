@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.system;
 
-public class ForceLoadTestCase extends junit.framework.TestCase {
+import org.junit.Test;
 
-    public ForceLoadTestCase(String name) {
-        super(name);
-    }
+import static org.junit.Assert.assertTrue;
 
+public class ForceLoadTestCase {
+
+    @Test
     public void testLoadClasses() {
 
         try {
@@ -18,6 +19,7 @@ public class ForceLoadTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testLoadBogusClass() {
         try {
             ForceLoad.forceLoad(getClass().getPackage().getName(), new String[] { "Foo", "Bar", "Baz" },
@@ -27,4 +29,5 @@ public class ForceLoadTestCase extends junit.framework.TestCase {
         }
         assertTrue(false);
     }
+
 }

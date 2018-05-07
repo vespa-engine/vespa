@@ -1,11 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.protect;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 /**
  * @author bratseth
  */
-public class ValidatorTestCase extends junit.framework.TestCase {
+public class ValidatorTestCase {
 
+    @Test
     public void testEnsureNotNull() {
         try {
             Validator.ensureNotNull("Description",null);
@@ -16,6 +22,7 @@ public class ValidatorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testEnsureNotInitialized() {
         try {
             Validator.ensureNotInitialized("Description","Field-owner","Initialized-field-value");
@@ -26,6 +33,7 @@ public class ValidatorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testEnsureInRange() {
         try {
             Validator.ensureInRange("Description",2,4,5);
@@ -36,6 +44,7 @@ public class ValidatorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testSmallerInts() {
         try {
             Validator.ensureSmaller("Small-description",3,"Large-description",2);
@@ -46,6 +55,7 @@ public class ValidatorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testSmallerComparables() {
         try {
             Validator.ensureSmaller("Small-description","b","Large-description","a");
@@ -56,6 +66,7 @@ public class ValidatorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testEnsure() {
         try {
             Validator.ensure("Description",false);
@@ -66,6 +77,7 @@ public class ValidatorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testEnsureInstanceOf() {
         try {
             Validator.ensureInstanceOf("Description","item",Integer.class);
@@ -76,6 +88,7 @@ public class ValidatorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testVarArgsEnsure() {
         Validator.ensure(true, "ignored");
         try {
