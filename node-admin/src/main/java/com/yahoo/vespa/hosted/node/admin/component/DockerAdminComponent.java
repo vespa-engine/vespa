@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.component;
 
 import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.system.ProcessExecuter;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
@@ -36,33 +37,38 @@ public class DockerAdminComponent implements AdminComponent {
     private final MetricReceiverWrapper metricReceiver;
     private final Optional<ClassLocking> classLocking;
     private final ConfigServerClients configServerClients;
+    private final ServiceIdentityProvider identityProvider;
 
     private Optional<Environment> environment = Optional.empty();
     private Optional<NodeAdminStateUpdaterImpl> nodeAdminStateUpdater = Optional.empty();
 
     public DockerAdminComponent(ConfigServerConfig configServerConfig,
+                                ServiceIdentityProvider identityProvider,
                                 Docker docker,
                                 MetricReceiverWrapper metricReceiver,
                                 ClassLocking classLocking,
                                 ConfigServerClients configServerClients) {
-        this(configServerConfig, docker, metricReceiver, Optional.empty(), Optional.of(classLocking), configServerClients);
+        this(configServerConfig, identityProvider, docker, metricReceiver, Optional.empty(), Optional.of(classLocking), configServerClients);
     }
 
     public DockerAdminComponent(ConfigServerConfig configServerConfig,
+                                ServiceIdentityProvider identityProvider,
                                 Docker docker,
                                 MetricReceiverWrapper metricReceiver,
                                 Environment environment,
                                 ConfigServerClients configServerClients) {
-        this(configServerConfig, docker, metricReceiver, Optional.of(environment), Optional.empty(), configServerClients);
+        this(configServerConfig, identityProvider, docker, metricReceiver, Optional.of(environment), Optional.empty(), configServerClients);
     }
 
     private DockerAdminComponent(ConfigServerConfig configServerConfig,
+                                 ServiceIdentityProvider identityProvider,
                                  Docker docker,
                                  MetricReceiverWrapper metricReceiver,
                                  Optional<Environment> environment,
                                  Optional<ClassLocking> classLocking,
                                  ConfigServerClients configServerClients) {
         this.configServerConfig = configServerConfig;
+        this.identityProvider = identityProvider;
         this.docker = docker;
         this.metricReceiver = metricReceiver;
         this.environment = environment;

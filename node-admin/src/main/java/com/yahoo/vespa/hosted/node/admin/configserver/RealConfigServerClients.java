@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -28,10 +30,6 @@ public class RealConfigServerClients implements ConfigServerClients {
     private final ConcurrentHashMap<HostName, State> states = new ConcurrentHashMap<>();
     private final ConfigServerInfo configServerInfo;
 
-    public RealConfigServerClients(Environment environment) {
-        this(environment.getConfigServerInfo());
-    }
-
     /**
      * Create config server clients against a real (remote) config server.
      *
@@ -39,9 +37,9 @@ public class RealConfigServerClients implements ConfigServerClients {
      * and kept up to date. On failure, this constructor will throw an exception and
      * the caller may retry later.
      */
-    public RealConfigServerClients(ConfigServerInfo info) {
+    public RealConfigServerClients(SiaIdentityProvider identityProvider, ConfigServerInfo info) {
         this.configServerInfo = info;
-        updater = SslConnectionSocketFactoryUpdater.createAndRefreshKeyStoreIfNeeded(info);
+        updater = SslConnectionSocketFactoryUpdater.createAndRefreshKeyStoreIfNeeded(identityProvider, info.getAthenzIdentity().get());
 
         configServerApi = ConfigServerApiImpl.create(info, updater);
 
