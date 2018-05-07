@@ -56,6 +56,7 @@ public class ClusterTest {
             assertEquals(11.0, config.dataset(0).minimal_searchcoverage(), 1E-6);
             assertEquals(0.23, config.dataset(0).higher_coverage_minsearchwait(), 1E-6);
             assertEquals(0.58, config.dataset(0).higher_coverage_maxsearchwait(), 1E-6);
+            assertEquals(2, config.dataset(0).searchablecopies());
         }
     }
 
@@ -82,10 +83,15 @@ public class ClusterTest {
                                 "    <adminserver hostalias='my_host' />",
                                 "  </admin>",
                                 "  <content version='1.0'>",
+                                "    <redundancy>3</redundancy>",
                                 "    <documents>",
                                 "    " + getDocumentXml(globalDocType),
                                 "    </documents>",
-                                "    <engine><proton /></engine>",
+                                "    <engine>",
+                                "      <proton>",
+                                "        <searchable-copies>2</searchable-copies>",
+                                "      </proton>",
+                                "    </engine>",
                                 "    <group>",
                                 "      <node hostalias='my_host' distribution-key='0' />",
                                 "    </group>",
