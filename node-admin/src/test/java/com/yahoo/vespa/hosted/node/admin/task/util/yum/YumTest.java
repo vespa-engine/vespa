@@ -14,8 +14,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 public class YumTest {
-    private TaskContext taskContext = mock(TaskContext.class);
-    private TestTerminal terminal = new TestTerminal();
+    private final TaskContext taskContext = mock(TaskContext.class);
+    private final TestTerminal terminal = new TestTerminal();
 
     @Before
     public void tearDown() {

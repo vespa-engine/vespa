@@ -11,8 +11,8 @@ import java.util.logging.Logger;
  * @author valerijf
  */
 public class PrefixLogger {
-    private String prefix;
-    private Logger logger;
+    private final String prefix;
+    private final Logger logger;
 
     private <T> PrefixLogger(Class<T> clazz, String prefix) {
         this.logger = Logger.getLogger(clazz.getName());
