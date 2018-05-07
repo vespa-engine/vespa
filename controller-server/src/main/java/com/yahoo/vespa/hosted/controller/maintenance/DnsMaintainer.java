@@ -59,7 +59,9 @@ public class DnsMaintainer extends Maintainer {
 
     /** Returns whether we can update the given record */
     private static boolean canUpdate(Record record) {
-        return record.name().asString().endsWith(ApplicationRotation.DNS_SUFFIX);
+        String recordName = record.name().asString();
+        return recordName.endsWith(ApplicationRotation.DNS_SUFFIX) ||
+                recordName.endsWith(ApplicationRotation.OATH_DNS_SUFFIX);
     }
 
 }

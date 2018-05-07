@@ -195,7 +195,9 @@ public class ApplicationController {
                 if (serviceEndpoint == null) {
                     throw new IOException("Unexpected endpoints returned from the Routing Generator");
                 }
-                String canonicalEndpoint = serviceEndpoint.replaceAll(".vespa.yahooapis.com", "");
+                String canonicalEndpoint = serviceEndpoint
+                        .replaceAll(".vespa.yahooapis.com", "")
+                        .replaceAll(".vespa.oath.cloud", "");
                 String hostname = endpoint.getHostname();
 
                 // This check is needed until the old implementations of
@@ -326,6 +328,7 @@ public class ApplicationController {
                 rotationNames.add(applicationRotation.id().asString());
                 cnames.add(applicationRotation.dnsName());
                 cnames.add(applicationRotation.secureDnsName());
+                cnames.add(applicationRotation.oathDnsName());
             });
 
             // Carry out deployment
@@ -372,6 +375,7 @@ public class ApplicationController {
 
                 registerRotationInDns(rotation, application.rotation().get().dnsName());
                 registerRotationInDns(rotation, application.rotation().get().secureDnsName());
+                registerRotationInDns(rotation, application.rotation().get().oathDnsName());
             }
         }
         return application;

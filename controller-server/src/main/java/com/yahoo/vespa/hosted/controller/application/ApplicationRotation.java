@@ -15,11 +15,13 @@ public class ApplicationRotation {
 
     // TODO: TLS: Remove all non-secure stuff when all traffic is on HTTPS.
     public static final String DNS_SUFFIX = "global.vespa.yahooapis.com";
+    public static final String OATH_DNS_SUFFIX = "global.vespa.oath.cloud";
     private static final int port = 4080;
     private static final int securePort = 4443;
 
     private final URI url;
     private final URI secureUrl;
+    private final URI oathUrl;
     private final RotationId id;
 
     public ApplicationRotation(ApplicationId application, RotationId id) {
@@ -32,6 +34,11 @@ public class ApplicationRotation {
                                                   sanitize(application.application().value()),
                                                   sanitize(application.tenant().value()),
                                                   DNS_SUFFIX,
+                                                  securePort));
+        this.oathUrl = URI.create(String.format("https://%s--%s.%s:%d/",
+                                                  sanitize(application.application().value()),
+                                                  sanitize(application.tenant().value()),
+                                                  OATH_DNS_SUFFIX,
                                                   securePort));
         this.id = id;
     }
@@ -51,6 +58,11 @@ public class ApplicationRotation {
         return secureUrl;
     }
 
+    /** Oath HTTPS URL to this rotation */
+    public URI oathUrl() {
+        return oathUrl;
+    }
+
     /** DNS name for this rotation */
     public String dnsName() {
         return url.getHost();
@@ -59,6 +71,11 @@ public class ApplicationRotation {
     /** DNS name for this rotation */
     public String secureDnsName() {
         return secureUrl.getHost();
+    }
+
+    /** Oath DNS name for this rotation */
+    public String oathDnsName() {
+        return oathUrl.getHost();
     }
 
     /** Sanitize by translating '_' to '-' as the former is not allowed in a DNS name */
