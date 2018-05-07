@@ -17,7 +17,7 @@ import java.net.UnknownHostException;
 public class RestartTest {
 
     @Test
-    public void test() throws InterruptedException, UnknownHostException {
+    public void test() throws InterruptedException {
         try (DockerTester dockerTester = new DockerTester()) {
 
             long wantedRestartGeneration = 1;

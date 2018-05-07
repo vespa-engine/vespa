@@ -27,7 +27,7 @@ public class RebootTest {
 
     @Test
     @Ignore
-    public void test() throws InterruptedException, UnknownHostException {
+    public void test() throws InterruptedException {
         try (DockerTester dockerTester = new DockerTester()) {
 
             dockerTester.addNodeRepositoryNode(createNodeRepositoryNode());

@@ -54,7 +54,7 @@ public class NodeAdminImplTest {
             new MetricReceiverWrapper(MetricReceiver.nullImplementation), clock);
 
     @Test
-    public void nodeAgentsAreProperlyLifeCycleManaged() throws Exception {
+    public void nodeAgentsAreProperlyLifeCycleManaged() {
         final String hostName1 = "host1.test.yahoo.com";
         final String hostName2 = "host2.test.yahoo.com";
         final ContainerName containerName1 = ContainerName.fromHostname(hostName1);
@@ -98,7 +98,7 @@ public class NodeAdminImplTest {
     }
 
     @Test
-    public void testSetFrozen() throws Exception {
+    public void testSetFrozen() {
         List<NodeAgent> nodeAgents = new ArrayList<>();
         List<String> existingContainerHostnames = new ArrayList<>();
         for (int i = 0; i < 3; i++) {

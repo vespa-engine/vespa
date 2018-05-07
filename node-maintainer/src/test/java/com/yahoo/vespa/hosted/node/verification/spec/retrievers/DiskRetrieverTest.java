@@ -44,14 +44,14 @@ public class DiskRetrieverTest {
     }
 
     @Test
-    public void updateDiskType__should_store_diskType_in_hardwareInfo() throws IOException {
+    public void updateDiskType__should_store_diskType_in_hardwareInfo() {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "DiskTypeFastDisk");
         diskRetriever.updateDiskType();
         assertEquals(DiskType.FAST, hardwareInfo.getDiskType());
     }
 
     @Test
-    public void updateDiskSize__should_store_diskSize_in_hardwareInfo() throws IOException {
+    public void updateDiskSize__should_store_diskSize_in_hardwareInfo() {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "filesize");
         diskRetriever.updateDiskSize();
         double expectedSize = 1760.0;
@@ -76,7 +76,7 @@ public class DiskRetrieverTest {
     }
 
     @Test
-    public void parseDiskType_with_invalid_outputstream_does_not_contain_searchword_should_throw_exception() throws Exception {
+    public void parseDiskType_with_invalid_outputstream_does_not_contain_searchword_should_throw_exception() {
         List<String> mockOutput = commandExecutor.outputFromString("Name  Rota");
         try {
             diskRetriever.parseDiskType(mockOutput);

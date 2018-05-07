@@ -25,7 +25,7 @@ public class IPAddressVerifierTest {
     private String ipv6LookupFormat;
 
     @Before
-    public void setup() throws Exception {
+    public void setup() {
         ipv4LookupFormat = "8.4.2.10.in-addr.arpa";
         ipv6LookupFormat = "4.3.2.1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.b.a.d.f.ip6.arpa";
     }

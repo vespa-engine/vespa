@@ -19,7 +19,7 @@ public class SystemCtlTest {
     private final TestTerminal terminal = new TestTerminal();
 
     @Test
-    public void enable() throws Exception {
+    public void enable() {
         terminal.expectCommand(
                 "systemctl show docker 2>&1",
                 0,
@@ -33,7 +33,7 @@ public class SystemCtlTest {
     }
 
     @Test
-    public void enableIsNoop() throws Exception {
+    public void enableIsNoop() {
         terminal.expectCommand(
                         "systemctl show docker 2>&1",
                         0,
@@ -48,7 +48,7 @@ public class SystemCtlTest {
 
 
     @Test
-    public void enableCommandFailre() throws Exception {
+    public void enableCommandFailre() {
         terminal.expectCommand("systemctl show docker 2>&1", 1, "error");
         SystemCtl.SystemCtlEnable enableDockerService = new SystemCtl(terminal).enable("docker");
         try {
@@ -61,7 +61,7 @@ public class SystemCtlTest {
 
 
     @Test
-    public void start() throws Exception {
+    public void start() {
         terminal.expectCommand(
                         "systemctl show docker 2>&1",
                         0,
@@ -75,7 +75,7 @@ public class SystemCtlTest {
     }
 
     @Test
-    public void startIsNoop() throws Exception {
+    public void startIsNoop() {
         terminal.expectCommand(
                         "systemctl show docker 2>&1",
                         0,
@@ -90,7 +90,7 @@ public class SystemCtlTest {
 
 
     @Test
-    public void startCommandFailre() throws Exception {
+    public void startCommandFailre() {
         terminal.expectCommand("systemctl show docker 2>&1", 1, "error");
         SystemCtl.SystemCtlStart startDockerService = new SystemCtl(terminal).start("docker");
         try {
@@ -103,7 +103,7 @@ public class SystemCtlTest {
 
 
     @Test
-    public void disable() throws Exception {
+    public void disable() {
         terminal.expectCommand(
                         "systemctl show docker 2>&1",
                         0,
@@ -116,7 +116,7 @@ public class SystemCtlTest {
     }
 
     @Test
-    public void stop() throws Exception {
+    public void stop() {
         terminal.expectCommand(
                         "systemctl show docker 2>&1",
                         0,
@@ -129,7 +129,7 @@ public class SystemCtlTest {
     }
 
     @Test
-    public void restart() throws Exception {
+    public void restart() {
         terminal.expectCommand("systemctl restart docker 2>&1", 0, "");
         assertTrue(new SystemCtl(terminal).restart("docker").converge(taskContext));
     }

@@ -101,7 +101,7 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    public void testGetContainersToRunApi() throws InterruptedException {
+    public void testGetContainersToRunApi() {
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
         final List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);

@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 public class DockerImplTest {
 
     @Test
-    public void testExecuteCompletes() throws Exception {
+    public void testExecuteCompletes() {
         final String containerId = "container-id";
         final String[] command = new String[] {"/bin/ls", "-l"};
         final String execId = "exec-id";

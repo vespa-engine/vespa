@@ -23,21 +23,21 @@ import static org.junit.Assert.assertThat;
  */
 public class DockerImageGarbageCollectionTest {
     @Test
-    public void noImagesMeansNoUnusedImages() throws Exception {
+    public void noImagesMeansNoUnusedImages() {
         new ImageGcTester(0)
                 .withExistingImages()
                 .expectUnusedImages();
     }
 
     @Test
-    public void singleImageWithoutContainersIsUnused() throws Exception {
+    public void singleImageWithoutContainersIsUnused() {
         new ImageGcTester(0)
                 .withExistingImages(new ImageBuilder("image-1"))
                 .expectUnusedImages("image-1");
     }
 
     @Test
-    public void singleImageWithContainerIsUsed() throws Exception {
+    public void singleImageWithContainerIsUsed() {
         new ImageGcTester(0)
                 .withExistingImages(ImageBuilder.forId("image-1"))
                 .andExistingContainers(ContainerBuilder.forId("container-1").withImageId("image-1"))
@@ -45,7 +45,7 @@ public class DockerImageGarbageCollectionTest {
     }
 
     @Test
-    public void multipleUnusedImagesAreIdentified() throws Exception {
+    public void multipleUnusedImagesAreIdentified() {
         new ImageGcTester(0)
                 .withExistingImages(
                         ImageBuilder.forId("image-1"),
@@ -54,7 +54,7 @@ public class DockerImageGarbageCollectionTest {
     }
 
     @Test
-    public void multipleUnusedLeavesAreIdentified() throws Exception {
+    public void multipleUnusedLeavesAreIdentified() {
         new ImageGcTester(0)
                 .withExistingImages(
                         ImageBuilder.forId("parent-image"),
@@ -64,7 +64,7 @@ public class DockerImageGarbageCollectionTest {
     }
 
     @Test
-    public void unusedLeafWithUsedSiblingIsIdentified() throws Exception {
+    public void unusedLeafWithUsedSiblingIsIdentified() {
         new ImageGcTester(0)
                 .withExistingImages(
                         ImageBuilder.forId("parent-image"),
@@ -75,7 +75,7 @@ public class DockerImageGarbageCollectionTest {
     }
 
     @Test
-    public void unusedImagesWithMultipleTags() throws Exception {
+    public void unusedImagesWithMultipleTags() {
         new ImageGcTester(0)
                 .withExistingImages(
                         ImageBuilder.forId("parent-image"),
@@ -85,14 +85,14 @@ public class DockerImageGarbageCollectionTest {
     }
 
     @Test
-    public void taggedImageWithNoContainersIsUnused() throws Exception {
+    public void taggedImageWithNoContainersIsUnused() {
         new ImageGcTester(0)
                 .withExistingImages(ImageBuilder.forId("image-1").withTags("vespa-6"))
                 .expectUnusedImages("vespa-6");
     }
 
     @Test
-    public void unusedImagesWithSimpleImageGc() throws Exception {
+    public void unusedImagesWithSimpleImageGc() {
         new ImageGcTester(20)
                 .withExistingImages(
                         ImageBuilder.forId("parent-image").withLastUsedMinutesAgo(25),
@@ -101,7 +101,7 @@ public class DockerImageGarbageCollectionTest {
     }
 
     @Test
-    public void unusedImagesWithImageGc() throws Exception {
+    public void unusedImagesWithImageGc() {
         new ImageGcTester(20)
                 .withExistingImages(
                         ImageBuilder.forId("parent-1").withLastUsedMinutesAgo(40),

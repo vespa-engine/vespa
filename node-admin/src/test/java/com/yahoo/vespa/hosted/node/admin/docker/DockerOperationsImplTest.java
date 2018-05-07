@@ -43,7 +43,7 @@ public class DockerOperationsImplTest {
             = new DockerOperationsImpl(docker, environment, processExecuter, addressesMock);
 
     @Test
-    public void processResultFromNodeProgramWhenSuccess() throws Exception {
+    public void processResultFromNodeProgramWhenSuccess() {
         final ContainerName containerName = new ContainerName("container-name");
         final ProcessResult actualResult = new ProcessResult(0, "output", "errors");
         final String programPath = "/bin/command";

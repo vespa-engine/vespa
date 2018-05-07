@@ -20,7 +20,7 @@ public class UnixPathTest {
     final FileSystem fileSystem = TestFileSystem.create();
 
     @Test
-    public void createParents() throws Exception {
+    public void createParents() {
         Path parentDirectory = fileSystem.getPath("/a/b/c");
         Path filePath = parentDirectory.resolve("bar");
         UnixPath path = new UnixPath(filePath);
@@ -31,7 +31,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void utf8File() throws Exception {
+    public void utf8File() {
         String original = "foo\nbar\n";
         UnixPath path = new UnixPath(fileSystem.getPath("example.txt"));
         path.writeUtf8File(original);
@@ -40,7 +40,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void permissions() throws Exception {
+    public void permissions() {
         String expectedPermissions = "rwxr-x---";
         UnixPath path = new UnixPath(fileSystem.getPath("file.txt"));
         path.writeUtf8File("foo");
@@ -54,7 +54,7 @@ public class UnixPathTest {
     }
 
     @Test
-    public void owner() throws Exception {
+    public void owner() {
         FileSystem fs = TestFileSystem.create();
         Path path = fs.getPath("file.txt");
         UnixPath unixPath = new UnixPath(path);

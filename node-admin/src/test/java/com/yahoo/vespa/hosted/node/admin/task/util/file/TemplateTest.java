@@ -18,7 +18,7 @@ import static org.mockito.Mockito.mock;
 public class TemplateTest {
 
     @Test
-    public void basic() throws IOException {
+    public void basic() {
         FileSystem fileSystem = TestFileSystem.create();
         Path templatePath = fileSystem.getPath("/example.vm");
         String templateContent = "a $x, $y b";
