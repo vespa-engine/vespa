@@ -35,11 +35,11 @@ public class AuthorizationFilterTest {
 
         tester.assertRequest(new Request(Method.GET, "/").commonName("foo"), 403,
                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"GET / " +
-                             "denied for remote-addr: Invalid credentials\"}");
+                             "denied for remote-addr: Invalid credentials: NodePrincipal{identityName='foo', hostname='foo', type=LEGACY}\"}");
 
         tester.assertRequest(new Request(Method.GET, "/nodes/v2/node/foo").commonName("bar"),
                               403, "{\"error-code\":\"FORBIDDEN\",\"message\":\"GET /nodes/v2/node/foo " +
-                                   "denied for remote-addr: Invalid credentials\"}");
+                                   "denied for remote-addr: Invalid credentials: NodePrincipal{identityName='bar', hostname='bar', type=LEGACY}\"}");
 
         tester.assertSuccess(new Request(Method.GET, "/nodes/v2/node/foo").commonName("foo"));
     }
