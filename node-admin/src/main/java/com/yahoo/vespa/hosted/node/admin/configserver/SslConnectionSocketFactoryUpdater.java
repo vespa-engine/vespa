@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
@@ -41,18 +42,9 @@ public class SslConnectionSocketFactoryUpdater implements AutoCloseable {
      * @throws RuntimeException if e.g. key store options have been specified, but was unable
      *                          create a create a key store with a valid certificate
      */
-    public static SslConnectionSocketFactoryUpdater createAndRefreshKeyStoreIfNeeded(ConfigServerInfo configServerInfo) {
-        SiaIdentityProvider siaIdentityProvider = configServerInfo.getSiaConfig()
-                .map(siaConfig ->
-                             new SiaIdentityProvider(
-                                     (AthenzService) AthenzIdentities.from(siaConfig.hostIdentityName()),
-                                     Paths.get(siaConfig.credentialsPath()),
-                                     new File(siaConfig.trustStoreFile())))
-                .orElse(null);
-        HostnameVerifier configServerHostnameVerifier = configServerInfo.getSiaConfig()
-                .map(siaConfig -> createHostnameVerifier(AthenzIdentities.from(siaConfig.configserverIdentityName())))
-                .orElseGet(SSLConnectionSocketFactory::getDefaultHostnameVerifier);
-        return new SslConnectionSocketFactoryUpdater(siaIdentityProvider, configServerHostnameVerifier);
+    public static SslConnectionSocketFactoryUpdater createAndRefreshKeyStoreIfNeeded(SiaIdentityProvider identityProvider,
+                                                                                     AthenzIdentity configserverIdentity) {
+        return new SslConnectionSocketFactoryUpdater(identityProvider, createHostnameVerifier(configserverIdentity));
     }
 
     SslConnectionSocketFactoryUpdater(SiaIdentityProvider siaIdentityProvider,
