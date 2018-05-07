@@ -170,7 +170,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
                 return false;
             }
             AthenzUser user = (AthenzUser) identity;
-            return ((UserTenant) tenant).is(user.getName());
+            return ((UserTenant) tenant).is(user.getName()) || isHostedOperator(identity);
         }
         throw new InternalServerErrorException("Unknown tenant type: " + tenant.getClass().getSimpleName());
     }
