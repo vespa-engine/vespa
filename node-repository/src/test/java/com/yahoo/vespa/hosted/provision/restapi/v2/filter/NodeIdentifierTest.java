@@ -51,7 +51,6 @@ public class NodeIdentifierTest {
 
     private static final String HOSTNAME = "myhostname";
     private static final String PROXY_HOSTNAME = "myproxyhostname";
-    private static final String CONFIGSERVER_HOSTNAME = "myconfigserverhostname";
 
     private static final String OPENSTACK_ID = "OPENSTACK-ID";
     private static final String AWS_INSTANCE_ID = "i-abcdef123456";
@@ -136,8 +135,6 @@ public class NodeIdentifierTest {
     @Test
     public void accepts_aws_configserver_host_certificate() {
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
-        nodeRepositoryDummy.addNode(AWS_INSTANCE_ID, CONFIGSERVER_HOSTNAME, INSTANCE_ID, NodeType.confighost);
-        nodeRepositoryDummy.setNodeState(CONFIGSERVER_HOSTNAME, Node.State.active);
         Pkcs10Csr csr = Pkcs10CsrBuilder
                 .fromKeypair(new X500Principal("CN=" + CONFIGSERVER_HOST_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
                 .build();
@@ -147,8 +144,6 @@ public class NodeIdentifierTest {
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
-        assertTrue(identity.getHostname().isPresent());
-        assertEquals(CONFIGSERVER_HOSTNAME, identity.getHostname().get());
         assertEquals(CONFIGSERVER_HOST_IDENTITY, identity.getHostIdentityName());
     }
 

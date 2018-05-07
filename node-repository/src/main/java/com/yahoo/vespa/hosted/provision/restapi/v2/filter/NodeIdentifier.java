@@ -45,10 +45,10 @@ class NodeIdentifier {
             switch (subjectCommonName) {
                 case TENANT_DOCKER_HOST_IDENTITY:
                 case PROXY_HOST_IDENTITY:
-                case CONFIGSERVER_HOST_IDENTITY:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoOrAwsCertificate(sans), certificateChain);
                 case TENANT_DOCKER_CONTAINER_IDENTITY:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromVespaCertificate(sans), certificateChain);
+                case CONFIGSERVER_HOST_IDENTITY:
                 default:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, certificateChain);
             }
