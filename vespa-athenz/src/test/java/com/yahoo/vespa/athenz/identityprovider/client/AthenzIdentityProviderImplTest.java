@@ -57,12 +57,12 @@ public class AthenzIdentityProviderImplTest {
 
     @Test
     public void metrics_updated_on_refresh() throws IOException {
-        IdentityDocumentService identityDocumentService = mock(IdentityDocumentService.class);
+        IdentityDocumentClient identityDocumentClient = mock(IdentityDocumentClient.class);
         ZtsClient ztsClient = mock(ZtsClient.class);
         ManualClock clock = new ManualClock(Instant.EPOCH);
         Metric metric = mock(Metric.class);
 
-        when(identityDocumentService.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
+        when(identityDocumentClient.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
         when(ztsClient.sendInstanceRegisterRequest(any(), any())).then(new Answer<InstanceIdentity>() {
             @Override
             public InstanceIdentity answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -76,7 +76,7 @@ public class AthenzIdentityProviderImplTest {
                 .thenReturn(new InstanceIdentity(getCertificate(getExpirationSupplier(clock)), "TOKEN"));
 
         AthenzCredentialsService credentialService =
-                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, ztsClient, createDummyTrustStore());
+                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentClient, ztsClient, createDummyTrustStore());
 
         AthenzIdentityProviderImpl identityProvider =
                 new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, credentialService, mock(ScheduledExecutorService.class), clock);

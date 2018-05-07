@@ -163,7 +163,8 @@ public class DefaultZtsClient implements ZtsClient {
     private static CloseableHttpClient createHttpClient(SSLContext sslContext) {
         return HttpClientBuilder.create()
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
-                .setSslcontext(sslContext)
+                .setUserAgent("vespa-zts-client")
+                .setSSLContext(sslContext)
                 .build();
     }
 

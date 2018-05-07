@@ -34,23 +34,23 @@ class AthenzCredentialsService {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final IdentityConfig identityConfig;
-    private final IdentityDocumentService identityDocumentService;
+    private final IdentityDocumentClient identityDocumentClient;
     private final ZtsClient ztsClient;
     private final File trustStoreJks;
 
     AthenzCredentialsService(IdentityConfig identityConfig,
-                             IdentityDocumentService identityDocumentService,
+                             IdentityDocumentClient identityDocumentClient,
                              ZtsClient ztsClient,
                              File trustStoreJks) {
         this.identityConfig = identityConfig;
-        this.identityDocumentService = identityDocumentService;
+        this.identityDocumentClient = identityDocumentClient;
         this.ztsClient = ztsClient;
         this.trustStoreJks = trustStoreJks;
     }
 
     AthenzCredentials registerInstance() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        String rawDocument = identityDocumentService.getSignedIdentityDocument();
+        String rawDocument = identityDocumentClient.getSignedIdentityDocument();
         SignedIdentityDocument document = parseSignedIdentityDocument(rawDocument);
         Pkcs10Csr csr = createCSR(identityConfig.domain(),
                                   identityConfig.service(),

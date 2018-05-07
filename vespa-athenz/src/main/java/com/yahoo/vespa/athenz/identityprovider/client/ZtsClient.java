@@ -139,7 +139,7 @@ class ZtsClient {
                                                                    HttpRequestRetryHandler retryHandler) {
             return HttpClientBuilder.create()
                     .setRetryHandler(retryHandler)
-                    .setSslcontext(sslContext)
+                    .setSSLContext(sslContext)
                     .build();
     }
 }
