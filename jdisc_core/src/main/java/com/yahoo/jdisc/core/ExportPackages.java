@@ -41,12 +41,19 @@ public class ExportPackages {
            .append("javax.inject;version=1.0.0,")  // Included in guice, but not exported. Needed by container-jersey.
            .append("org.aopalliance.intercept,")
            .append("org.aopalliance.aop,")
+
+           // xml-apis:xml-apis:1.4.01 is not a bundle
+           .append("org.w3c.dom,")
+           .append("org.w3c.dom.bootstrap,")
            .append("org.w3c.dom.css,")
+           .append("org.w3c.dom.events,")
            .append("org.w3c.dom.html,")
+           .append("org.w3c.dom.ls,")
            .append("org.w3c.dom.ranges,")
            .append("org.w3c.dom.stylesheets,")
            .append("org.w3c.dom.traversal,")
            .append("org.w3c.dom.views,")
+
            .append("sun.misc,")
            .append("sun.net.util,")
            .append("sun.security.krb5");
