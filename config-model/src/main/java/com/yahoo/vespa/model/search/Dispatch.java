@@ -129,6 +129,7 @@ public class Dispatch extends AbstractService implements SearchInterface,
         int rowbits = dispatchGroup.getRowBits();
         final PartitionsConfig.Dataset.Builder datasetBuilder = new PartitionsConfig.Dataset.Builder().
                 id(0).
+                searchablecopies(dispatchGroup.getSearchableCopies()).
                 refcost(1).
                 rowbits(rowbits).
                 numparts(dispatchGroup.getNumPartitions()).

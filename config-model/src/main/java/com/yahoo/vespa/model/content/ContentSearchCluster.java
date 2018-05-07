@@ -263,8 +263,11 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     }
 
     public void handleRedundancy(Redundancy redundancy) {
-        if (usesHierarchicDistribution()) {
-            indexedCluster.setMaxNodesDownPerFixedRow((redundancy.effectiveFinalRedundancy() / groupToSpecMap.size()) - 1);
+        if (hasIndexedCluster()) {
+            if (usesHierarchicDistribution()) {
+                indexedCluster.setMaxNodesDownPerFixedRow((redundancy.effectiveFinalRedundancy() / groupToSpecMap.size()) - 1);
+            }
+            indexedCluster.setSearchableCopies(redundancy.readyCopies());
         }
         this.redundancy = redundancy;
     }

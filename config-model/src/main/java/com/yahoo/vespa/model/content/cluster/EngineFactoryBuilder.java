@@ -15,7 +15,6 @@ public class EngineFactoryBuilder {
                 throw new IllegalArgumentException("Persistence engine does not allow for indexed search. Please use <proton> as your engine.");
             }
 
-            ModelElement e;
             if (persistence.getChild("proton") != null) {
                 return new ProtonEngine.Factory(c.getSearch());
             } else if (persistence.getChild("dummy") != null) {
