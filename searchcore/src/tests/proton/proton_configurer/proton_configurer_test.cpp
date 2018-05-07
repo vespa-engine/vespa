@@ -137,6 +137,11 @@ struct ConfigFixture {
         db.configid = _configId + "/" + name;
         _protonBuilder.documentdb.push_back(db);
 
+        BucketspacesConfigBuilder::Documenttype bsdt;
+        bsdt.name = name;
+        bsdt.bucketspace = "default";
+        _bucketspacesBuilder.documenttype.push_back(bsdt);
+
         DBConfigFixture::UP fixture = std::make_unique<DBConfigFixture>();
         return _dbConfig.emplace(std::make_pair(name, std::move(fixture))).first->second.get();
     }

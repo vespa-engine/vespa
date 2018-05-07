@@ -24,17 +24,14 @@ document::BucketSpace
 getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
 {
     const auto &bucketspaces = *bootstrapConfig.getBucketspacesConfigSP();
-    if (bucketspaces.enableMultipleBucketSpaces) {
-        for (const auto &entry : bucketspaces.documenttype) {
-            if (entry.name == name.getName()) {
-                return document::FixedBucketSpaces::from_string(entry.bucketspace);
-            }
+    for (const auto &entry : bucketspaces.documenttype) {
+        if (entry.name == name.getName()) {
+            return document::FixedBucketSpaces::from_string(entry.bucketspace);
         }
-        vespalib::asciistream ost;
-        ost << "Could not map from document type name '" << name.getName() << "' to bucket space name";
-        throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
     }
-    return document::FixedBucketSpaces::default_space();
+    vespalib::asciistream ost;
+    ost << "Could not map from document type name '" << name.getName() << "' to bucket space name";
+    throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
 }
 
 }
