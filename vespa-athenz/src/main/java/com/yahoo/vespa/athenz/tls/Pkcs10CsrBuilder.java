@@ -57,6 +57,11 @@ public class Pkcs10CsrBuilder {
         return this;
     }
 
+    public Pkcs10CsrBuilder addSubjectAlternativeName(SubjectAlternativeName.Type type, String value) {
+        this.subjectAlternativeNames.add(new SubjectAlternativeName(type, value));
+        return this;
+    }
+
     public Pkcs10CsrBuilder setBasicConstraints(boolean isCritical, boolean isCertAuthorityCertificate) {
         this.basicConstraintsExtension = new BasicConstraintsExtension(isCritical, isCertAuthorityCertificate);
         return this;
