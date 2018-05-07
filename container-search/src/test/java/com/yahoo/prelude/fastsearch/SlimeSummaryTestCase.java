@@ -185,7 +185,6 @@ public class SlimeSummaryTestCase {
         assertFields(expected, hit);
 
         // --- Re-populate
-        hit.clearFields();
         partialDocsum1.lazyDecode("partial1", partialSummary1(), hit);
         expected.put("integer_field", 4);
         expected.put("short_field", (short) 2);
@@ -223,7 +222,6 @@ public class SlimeSummaryTestCase {
         assertFields(expected, hit);
 
         // --- Re-populate
-        hit.clearFields();
         partialDocsum1.lazyDecode("partial1", partialSummary1(), hit);
         expected.put("integer_field", 4);
         expected.put("short_field", (short) 2);
@@ -313,6 +311,7 @@ public class SlimeSummaryTestCase {
     private byte[] partialSummary2() {
         Slime slime = new Slime();
         Cursor docsum = slime.setObject();
+        docsum.setLong("integer_field", 4);
         docsum.setDouble("float_field", 4.5);
         docsum.setDouble("double_field", 8.75);
         return encode((slime));

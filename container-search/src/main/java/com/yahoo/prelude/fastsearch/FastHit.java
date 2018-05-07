@@ -160,7 +160,7 @@ public class FastHit extends Hit {
     public void addSummary(DocsumDefinition docsumDef, Inspector value) {
         if (removedFields != null)
             removedFields.removeAll(docsumDef.fieldNames());
-        summaries.add(new SummaryData(this, docsumDef, value));
+        summaries.add(new SummaryData(this, docsumDef, value, summaries.size()));
     }
 
     /**
@@ -502,10 +502,14 @@ public class FastHit extends Hit {
         private final DocsumDefinition type;
         private final Inspector data;
 
-        SummaryData(FastHit hit, DocsumDefinition type, Inspector data) {
+        /** The index of this summary in the list of summaries added to this */
+        private final int index;
+
+        SummaryData(FastHit hit, DocsumDefinition type, Inspector data, int index) {
             this.hit = hit;
             this.type = type;
             this.data = data;
+            this.index = index;
         }
 
         Object getField(String name) {
@@ -530,11 +534,11 @@ public class FastHit extends Hit {
         }
 
         private Iterator<Map.Entry<String, Object>> fieldIterator() {
-            return new SummaryFieldDataIterator(hit, type, data.fields().iterator());
+            return new SummaryFieldDataIterator(hit, type, data.fields().iterator(), index);
         }
 
         private Iterator<String> fieldNameIterator() {
-            return new SummaryFieldNameDataIterator(hit, data.fields().iterator());
+            return new SummaryFieldNameDataIterator(hit, data.fields().iterator(), index);
         }
 
         /** A wrapper of a field iterator which skips removed fields. Read only. */
@@ -542,14 +546,17 @@ public class FastHit extends Hit {
 
             private final FastHit hit;
             private final Iterator<Map.Entry<String, Inspector>> fieldIterator;
+            private final int index;
 
             /** The next value or null if none, eagerly read because we need to skip removed and overwritten values */
-            private Map.Entry<String, Inspector> next;
+            private VALUE next;
 
-            SummaryDataIterator(FastHit hit, Iterator<Map.Entry<String, Inspector>> fieldIterator) {
+            SummaryDataIterator(FastHit hit,
+                                Iterator<Map.Entry<String, Inspector>> fieldIterator,
+                                int index) {
                 this.hit = hit;
                 this.fieldIterator = fieldIterator;
-                advanceNext();
+                this.index = index;
             }
 
             @Override
@@ -561,39 +568,59 @@ public class FastHit extends Hit {
             public VALUE next() {
                 if (next == null) throw new NoSuchElementException();
 
-                VALUE returnValue = toValue(next);
+                VALUE returnValue = next;
                 advanceNext();
                 return returnValue;
             }
 
             protected abstract VALUE toValue(Map.Entry<String, Inspector> field);
 
-            private void advanceNext() {
+            protected void advanceNext() {
                 while (fieldIterator.hasNext()) {
-                    next = fieldIterator.next();
-                    if ( ! hit.hasField(next.getKey()) &&
-                         ! (hit.removedFields != null && hit.removedFields.contains(next.getKey())))
+                    Map.Entry<String, Inspector> nextEntry = fieldIterator.next();
+                    String fieldName = nextEntry.getKey();
+                    next = toValue(nextEntry);
+                    if ( next != null &&
+                         ! hit.hasField(fieldName) &&
+                         ! isRemoved(fieldName) &&
+                         ! isAlreadyReturned(fieldName))
                         return;
                 }
                 next = null;
             }
+
+            private boolean isRemoved(String fieldName) {
+                return hit.removedFields != null && hit.removedFields.contains(fieldName);
+            }
+
+            private boolean isAlreadyReturned(String fieldName) {
+                for (int i = 0; i < index; i++) {
+                    if (hit.summaries.get(i).type.fieldNames().contains(fieldName))
+                        return true;
+                }
+                return false;
+            }
+
         }
 
         private static class SummaryFieldDataIterator extends SummaryDataIterator<Map.Entry<String, Object>> {
 
             private final DocsumDefinition type;
 
-            /** The next value or null if none, eagerly read because we need to skip removed and overwritten values */
-            private Map.Entry<String, Inspector> next;
-
-            SummaryFieldDataIterator(FastHit hit, DocsumDefinition type, Iterator<Map.Entry<String, Inspector>> fieldIterator) {
-                super(hit, fieldIterator);
+            SummaryFieldDataIterator(FastHit hit,
+                                     DocsumDefinition type,
+                                     Iterator<Map.Entry<String, Inspector>> fieldIterator,
+                                     int index) {
+                super(hit, fieldIterator, index);
                 this.type = type;
+                advanceNext();
             }
 
             @Override
             protected Map.Entry<String, Object> toValue(Map.Entry<String, Inspector> field) {
-                return new SummaryFieldEntry(field.getKey(), type.getField(field.getKey()).convert(field.getValue()));
+                DocsumField fieldType = type.getField(field.getKey());
+                if (fieldType == null) return null; // type and content mismatch: May happen during reconfig
+                return new SummaryFieldEntry(field.getKey(), fieldType.convert(field.getValue()));
             }
 
             private static final class SummaryFieldEntry implements Map.Entry<String, Object> {
@@ -622,11 +649,11 @@ public class FastHit extends Hit {
         /** A wrapper of a field iterator which converts to the expected field types. Read only. */
         private static class SummaryFieldNameDataIterator extends SummaryDataIterator<String> {
 
-            /** The next value or null if none, eagerly read because we need to skip removed and overwritten values */
-            private Map.Entry<String, Inspector> next;
-
-            SummaryFieldNameDataIterator(FastHit hit, Iterator<Map.Entry<String, Inspector>> fieldIterator) {
-                super(hit, fieldIterator);
+            SummaryFieldNameDataIterator(FastHit hit,
+                                         Iterator<Map.Entry<String, Inspector>> fieldIterator,
+                                         int index) {
+                super(hit, fieldIterator, index);
+                advanceNext();
             }
 
             @Override
