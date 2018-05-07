@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
 
@@ -45,10 +46,10 @@ class NodeIdentifier {
             switch (subjectCommonName) {
                 case TENANT_DOCKER_HOST_IDENTITY:
                 case PROXY_HOST_IDENTITY:
-                case CONFIGSERVER_HOST_IDENTITY:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoOrAwsCertificate(sans), certificateChain);
                 case TENANT_DOCKER_CONTAINER_IDENTITY:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromVespaCertificate(sans), certificateChain);
+                case CONFIGSERVER_HOST_IDENTITY:
                 default:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, certificateChain);
             }
@@ -76,7 +77,11 @@ class NodeIdentifier {
                 .filter(node -> node.openStackId().equals(openstackId))
                 .map(Node::hostname)
                 .findFirst()
-                .orElseThrow(() -> new NodeIdentifierException(String.format("Cannot find node with openstack-id '%s' in node repository", openstackId)));
+                .orElseThrow(() -> new NodeIdentifierException(
+                        String.format(
+                                "Cannot find node with openstack-id '%s' in node repository (SANs=%s)",
+                                openstackId,
+                                sans.stream().map(SubjectAlternativeName::getValue).collect(Collectors.joining(",", "[", "]")))));
     }
 
     private String getHostFromVespaCertificate(List<SubjectAlternativeName> sans) {
