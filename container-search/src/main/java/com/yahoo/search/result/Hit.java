@@ -401,9 +401,14 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Returns the name of the source creating this hit */
     public String getSource() { return source; }
 
-    /** Returns the fields of this as a read-only map. This is more costly than fieldIterator() */
+    /**
+     * Returns the fields of this as a read-only map. This is more costly than the preferred iterator(), as
+     * it uses Collections.unmodifiableMap()
+     *
+     * @return An readonly map of the fields
+     */
     // TODO Should it be deprecated ?
-    public Map<String, Object> fields() { return getUnmodifiableFieldMap(); }
+    public final Map<String, Object> fields() { return getUnmodifiableFieldMap(); }
 
     /** Allocate room for the given number of fields to avoid resizing. */
     public void reserve(int minSize) {
@@ -419,10 +424,14 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return getFieldMap().put(key, value);
     }
 
-    /** Returns a modifiable iterator over the fields of this */
-    public Iterator<Map.Entry<String, Object>> fieldIterator() { return getFieldMap().entrySet().iterator(); }
+    /**
+     * Returns an iterator over the fields of this
+     * 
+     * @return an iterator for traversing the fields of this hit
+     */
+    public final Iterator<Map.Entry<String,Object>> fieldIterator() { return getFieldMap().entrySet().iterator(); }
 
-    /** Returns a field value or null if not present */
+    /** Returns a field value */
     public Object getField(String value) { return fields != null ? fields.get(value) : null; }
 
     /** Removes all fields of this */
@@ -448,22 +457,10 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return getFieldMap().keySet();
     }
 
-    protected boolean hasField(String name) {
-        return fields != null && fields.containsKey(name);
-    }
-
-    /** Returns whether any fields are set in this */
-    protected boolean hasFields() {
-        return fields != null && ! fields.isEmpty();
-    }
-
     /**
      * Changes the key under which a value is found. This is useful because it allows keys to be changed
      * without accessing the value (which may be lazily created).
-     *
-     * @deprecated do not use
      */
-    @Deprecated // TODO: Remove on Vespa 7
     public void changeFieldKey(String oldKey, String newKey) {
         Map<String,Object> fieldMap = getFieldMap();
         Object value = fieldMap.remove(oldKey);
@@ -471,7 +468,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     private Map<String, Object> getFieldMap() {
-        return getFieldMap(2);
+        return getFieldMap(16);
     }
 
     private Map<String, Object> getFieldMap(int minSize) {
