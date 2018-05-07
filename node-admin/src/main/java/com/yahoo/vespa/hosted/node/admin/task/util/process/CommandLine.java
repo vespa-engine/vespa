@@ -217,7 +217,7 @@ public class CommandLine {
     }
 
     public CommandLine setSigKillGracePeriod(Duration period) {
-        this.sigTermGracePeriod = period;
+        this.sigKillGracePeriod = period;
         return this;
     }
     // Accessor fields necessary for classes in this package. Could be public if necessary.
