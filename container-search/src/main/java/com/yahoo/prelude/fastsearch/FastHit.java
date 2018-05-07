@@ -534,14 +534,17 @@ public class FastHit extends Hit {
         }
 
         private Iterator<Map.Entry<String, Object>> fieldIterator() {
-            return new SummaryFieldDataIterator(hit, type, data.fields().iterator(), index);
+            return new SummaryDataFieldIterator(hit, type, data.fields().iterator(), index);
         }
 
         private Iterator<String> fieldNameIterator() {
-            return new SummaryFieldNameDataIterator(hit, data.fields().iterator(), index);
+            return new SummaryDataFieldNameIterator(hit, data.fields().iterator(), index);
         }
 
-        /** A wrapper of a field iterator which skips removed fields. Read only. */
+        /**
+         * Abstract superclass of iterators over SummaryData content which takes care of skipping unknown,
+         * removed and already returned fields. Read only.
+         */
         private static abstract class SummaryDataIterator<VALUE> implements Iterator<VALUE> {
 
             private final FastHit hit;
@@ -603,11 +606,13 @@ public class FastHit extends Hit {
 
         }
 
-        private static class SummaryFieldDataIterator extends SummaryDataIterator<Map.Entry<String, Object>> {
+
+        /** Iterator over the fields in a SummaryData instance. Read only. */
+        private static class SummaryDataFieldIterator extends SummaryDataIterator<Map.Entry<String, Object>> {
 
             private final DocsumDefinition type;
 
-            SummaryFieldDataIterator(FastHit hit,
+            SummaryDataFieldIterator(FastHit hit,
                                      DocsumDefinition type,
                                      Iterator<Map.Entry<String, Inspector>> fieldIterator,
                                      int index) {
@@ -646,10 +651,10 @@ public class FastHit extends Hit {
 
         }
 
-        /** A wrapper of a field iterator which converts to the expected field types. Read only. */
-        private static class SummaryFieldNameDataIterator extends SummaryDataIterator<String> {
+        /** Iterator over the field names in a SummaryData instance. Read only. */
+        private static class SummaryDataFieldNameIterator extends SummaryDataIterator<String> {
 
-            SummaryFieldNameDataIterator(FastHit hit,
+            SummaryDataFieldNameIterator(FastHit hit,
                                          Iterator<Map.Entry<String, Inspector>> fieldIterator,
                                          int index) {
                 super(hit, fieldIterator, index);
@@ -662,6 +667,13 @@ public class FastHit extends Hit {
         }
     }
 
+    /**
+     * Abstract superclass of iterators over all the field content of a FastHit.
+     * This handles iterating over the iterators of Hit and the SummaryData instances of the FastHit,
+     * to provide a view of all the summary data of the FastHit.
+     * Iteration over fields of each piece of data (of Hit or a SummaryData instance) is delegated to the
+     * iterators of those types.
+     */
     private static abstract class SummaryIterator<VALUE> implements Iterator<VALUE> {
 
         private final FastHit hit;
@@ -715,6 +727,7 @@ public class FastHit extends Hit {
 
     }
 
+    /** Iterator over all the field content of a FastHit */
     private static class FieldIterator extends SummaryIterator<Map.Entry<String, Object>> {
 
         public FieldIterator(FastHit hit, Iterator<Map.Entry<String, Object>> mapFieldsIterator) {
@@ -733,7 +746,7 @@ public class FastHit extends Hit {
 
     }
 
-
+    /** Iterator over all the field names stored in a FastHit */
     private static class FieldNameIterator extends SummaryIterator<String> {
 
         public FieldNameIterator(FastHit hit, Iterator<String> mapFieldNamesIterator) {
