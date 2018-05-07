@@ -11,11 +11,11 @@ LOG_SETUP(".search.datasetcollection");
 FastS_DataSetBase *
 FastS_DataSetCollection::CreateDataSet(FastS_DataSetDesc *desc)
 {
-    FastS_DataSetBase *ret = NULL;
+    FastS_DataSetBase *ret = nullptr;
 
     FNET_Transport *transport = _appCtx->GetFNETTransport();
     FNET_Scheduler *scheduler = _appCtx->GetFNETScheduler();
-    if (transport != NULL && scheduler != NULL) {
+    if (transport != nullptr && scheduler != nullptr) {
         ret = new FastS_FNET_DataSet(transport, scheduler, _appCtx, desc);
     } else {
         LOG(error, "Non-available dataset transport: FNET");
@@ -33,27 +33,27 @@ FastS_DataSetCollection::AddDataSet(FastS_DataSetDesc *desc)
         uint32_t newSize = datasetid + 1;
 
         FastS_DataSetBase **newArray = new FastS_DataSetBase*[newSize];
-        FastS_assert(newArray != NULL);
+        FastS_assert(newArray != nullptr);
 
         uint32_t i;
         for (i = 0; i < _datasets_size; i++)
             newArray[i] = _datasets[i];
 
         for (; i < newSize; i++)
-            newArray[i] = NULL;
+            newArray[i] = nullptr;
 
         delete [] _datasets;
         _datasets = newArray;
         _datasets_size = newSize;
     }
-    FastS_assert(_datasets[datasetid] == NULL);
+    FastS_assert(_datasets[datasetid] == nullptr);
     FastS_DataSetBase *dataset = CreateDataSet(desc);
-    if (dataset == NULL)
+    if (dataset == nullptr)
         return false;
     _datasets[datasetid] = dataset;
 
     for (FastS_EngineDesc *engineDesc = desc->GetEngineList();
-         engineDesc != NULL; engineDesc = engineDesc->GetNext()) {
+         engineDesc != nullptr; engineDesc = engineDesc->GetNext()) {
 
         dataset->AddEngine(engineDesc);
     }
@@ -64,10 +64,10 @@ FastS_DataSetCollection::AddDataSet(FastS_DataSetDesc *desc)
 
 
 FastS_DataSetCollection::FastS_DataSetCollection(FastS_AppContext *appCtx)
-    : _nextOld(NULL),
-      _configDesc(NULL),
+    : _nextOld(nullptr),
+      _configDesc(nullptr),
       _appCtx(appCtx),
-      _datasets(NULL),
+      _datasets(nullptr),
       _datasets_size(0),
       _gencnt(0),
       _frozen(false),
@@ -78,11 +78,11 @@ FastS_DataSetCollection::FastS_DataSetCollection(FastS_AppContext *appCtx)
 
 FastS_DataSetCollection::~FastS_DataSetCollection()
 {
-    if (_datasets != NULL) {
+    if (_datasets != nullptr) {
         for (uint32_t i = 0; i < _datasets_size; i++) {
-            if (_datasets[i] != NULL) {
+            if (_datasets[i] != nullptr) {
                 _datasets[i]->Free();
-                _datasets[i] = NULL;
+                _datasets[i] = nullptr;
             }
         }
     }
@@ -101,8 +101,8 @@ FastS_DataSetCollection::Configure(FastS_DataSetCollDesc *cfgDesc,
     if (_frozen) {
         delete cfgDesc;
     } else {
-        FastS_assert(_configDesc == NULL);
-        if (cfgDesc == NULL) {
+        FastS_assert(_configDesc == nullptr);
+        if (cfgDesc == nullptr) {
             _configDesc = new FastS_DataSetCollDesc();
         } else {
             _configDesc = cfgDesc;
@@ -114,7 +114,7 @@ FastS_DataSetCollection::Configure(FastS_DataSetCollDesc *cfgDesc,
 
         for (uint32_t i = 0; rc && i < _configDesc->GetMaxNumDataSets(); i++) {
             FastS_DataSetDesc *datasetDesc = _configDesc->GetDataSet(i);
-            if (datasetDesc != NULL) {
+            if (datasetDesc != nullptr) {
                 FastS_assert(datasetDesc->GetID() == i);
                 rc = AddDataSet(datasetDesc);
             }
@@ -131,22 +131,22 @@ FastS_DataSetCollection::SuggestDataSet()
 {
     FastS_assert(_frozen);
 
-    FastS_DataSetBase *dataset = NULL;
+    FastS_DataSetBase *dataset = nullptr;
 
     for (uint32_t i = 0; i < _datasets_size; i++) {
         FastS_DataSetBase *tmp = _datasets[i];
-        if (tmp == NULL || tmp->_unitrefcost == 0)
+        if (tmp == nullptr || tmp->_unitrefcost == 0)
             continue;
 
         // NB: cost race condition
 
-        if (dataset == NULL ||
+        if (dataset == nullptr ||
             dataset->_totalrefcost + dataset->_unitrefcost >
             tmp->_totalrefcost + tmp->_unitrefcost)
             dataset = tmp;
     }
 
-    return (dataset == NULL)
+    return (dataset == nullptr)
                      ? FastS_NoID32()
                      : dataset->GetID();
 }
@@ -159,9 +159,9 @@ FastS_DataSetCollection::GetDataSet(uint32_t datasetid)
 
     FastS_DataSetBase *dataset =
         (datasetid < _datasets_size) ?
-        _datasets[datasetid] : NULL;
+        _datasets[datasetid] : nullptr;
 
-    if (dataset != NULL)
+    if (dataset != nullptr)
         dataset->AddCost();
 
     return dataset;
@@ -173,22 +173,22 @@ FastS_DataSetCollection::GetDataSet()
 {
     FastS_assert(_frozen);
 
-    FastS_DataSetBase *dataset = NULL;
+    FastS_DataSetBase *dataset = nullptr;
 
     for (uint32_t i = 0; i < _datasets_size; i++) {
         FastS_DataSetBase *tmp = _datasets[i];
-        if (tmp == NULL || tmp->_unitrefcost == 0)
+        if (tmp == nullptr || tmp->_unitrefcost == 0)
             continue;
 
         // NB: cost race condition
 
-        if (dataset == NULL ||
+        if (dataset == nullptr ||
             dataset->_totalrefcost + dataset->_unitrefcost >
             tmp->_totalrefcost + tmp->_unitrefcost)
             dataset = tmp;
     }
 
-    if (dataset != NULL)
+    if (dataset != nullptr)
         dataset->AddCost();
 
     return dataset;
@@ -205,7 +205,7 @@ FastS_DataSetCollection::AreEnginesReady()
          datasetidx++)
     {
         FastS_DataSetBase *dataset = PeekDataSet(datasetidx);
-        ready = (dataset != NULL && !dataset->AreEnginesReady());
+        ready = (dataset != nullptr && !dataset->AreEnginesReady());
     }
     return ready;
 }
@@ -215,19 +215,19 @@ FastS_ISearch *
 FastS_DataSetCollection::CreateSearch(uint32_t dataSetID,
                                       FastS_TimeKeeper *timeKeeper)
 {
-    FastS_ISearch *ret = NULL;
+    FastS_ISearch *ret = nullptr;
     FastS_DataSetBase *dataset;
 
     if (dataSetID == FastS_NoID32()) {
         dataset = GetDataSet();
-        if (dataset != NULL)
+        if (dataset != nullptr)
             dataSetID = dataset->GetID();
     } else {
         dataset = GetDataSet(dataSetID);
     }
-    if (dataset == NULL) {
+    if (dataset == nullptr) {
         ret = new FastS_FailedSearch(dataSetID, false,
-                                     search::engine::ECODE_ILLEGAL_DATASET, NULL);
+                                     search::engine::ECODE_ILLEGAL_DATASET, nullptr);
     } else {
         {
             auto dsGuard(dataset->getDsGuard());
@@ -236,7 +236,7 @@ FastS_DataSetCollection::CreateSearch(uint32_t dataSetID,
         /* XXX: Semantic change: precounted as active in dataset */
         ret = dataset->CreateSearch(this, timeKeeper, /* async = */ false);
     }
-    FastS_assert(ret != NULL);
+    FastS_assert(ret != nullptr);
     return ret;
 }
 
@@ -247,7 +247,7 @@ FastS_DataSetCollection::CheckQueryQueues(FastS_TimeKeeper *timeKeeper)
     for (uint32_t datasetidx(0); datasetidx < GetMaxNumDataSets(); datasetidx++) {
         FastS_DataSetBase *dataset = PeekDataSet(datasetidx);
 
-        if (dataset != NULL) {
+        if (dataset != nullptr) {
             auto dsGuard(dataset->getDsGuard());
             dataset->CheckQueryQueue_HasLock(timeKeeper);
         }
@@ -261,7 +261,7 @@ FastS_DataSetCollection::AbortQueryQueues()
     for (uint32_t datasetidx(0); datasetidx < GetMaxNumDataSets(); datasetidx++) {
         FastS_DataSetBase *dataset = PeekDataSet(datasetidx);
 
-        if (dataset != NULL) {
+        if (dataset != nullptr) {
             auto dsGuard(dataset->getDsGuard());
             dataset->AbortQueryQueue_HasLock();
         }

@@ -10,6 +10,10 @@ dataset[].id       int
 ## nonzero refcost to minimize the maximum active refcost.
 dataset[].refcost			int default=0
 
+## Number of searchable copies on each node.
+## Searchable copies - nodes down < 1 will trigger an estimate of coverage.
+dataset[].searchablecopies long default=1
+
 ## Defines the number of bits used to encode the partition number
 ## internally on a dispatch node. The value must be in the range [1,8].
 ## The default value is 6, allowing the numparts parameter to be up to 63.
