@@ -317,7 +317,7 @@ public class NodeSerializer {
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }
 
-    private NodeType nodeTypeFromString(String typeString) {
+    static NodeType nodeTypeFromString(String typeString) {
         switch (typeString) {
             case "tenant" : return NodeType.tenant;
             case "host" : return NodeType.host;
@@ -329,7 +329,7 @@ public class NodeSerializer {
         }
     }
 
-    private String toString(NodeType type) {
+    static String toString(NodeType type) {
         switch (type) {
             case tenant: return "tenant";
             case host: return "host";

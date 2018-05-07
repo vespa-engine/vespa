@@ -216,6 +216,9 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"currentDockerImage\": \"ignored-image-name:4443/vespa/ci:6.43.0\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                        Utf8.toBytes("{\"openStackId\": \"patched-openstackid\"}"), Request.Method.PATCH),
+                "{\"message\":\"Updated host4.yahoo.com\"}");
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
     }
@@ -493,6 +496,44 @@ public class RestApiTest {
                         Request.Method.PATCH),
                 "{\"message\":\"Updated host6.yahoo.com\"}");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
+    }
+
+    @Test
+    public void test_upgrade() throws IOException {
+        // Initially, no versions are set
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"), "{\"versions\":{}}");
+
+        // Set version for config and confighost
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
+                        Utf8.toBytes("{\"version\": \"6.123.456\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set version for config to 6.123.456\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": \"6.123.456\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set version for confighost to 6.123.456\"}");
+
+        // Verify versions are set
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\"}}");
+
+        // Downgrade without force fails
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": \"6.123.1\"}"),
+                        Request.Method.PATCH),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade version without setting 'force'. " +
+                        "Current target version: 6.123.456, attempted to set target version: 6.123.1\"}");
+
+        // Downgrade with force is OK
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": \"6.123.1\",\"force\":true}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set version for confighost to 6.123.1\"}");
+
+        // Verify version has been updated
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"}}");
     }
 
     /** Tests the rendering of each node separately to make it easier to find errors */

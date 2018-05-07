@@ -8,14 +8,18 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import junit.framework.TestCase;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class DistributionTestFactory extends CrossPlatformTestFactory {
+
     private static final String testDirectory = "src/tests/distribution/testdata";
     private int redundancy;
     private int nodeCount;
@@ -82,22 +86,22 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
             for (int i=0; i<nodes.size(); ++i) {
                 if (nodes.get(i) == node) return disks.get(i);
             }
-            TestCase.fail("Node " + node + " is not in use: " + toString());
+            fail("Node " + node + " is not in use: " + toString());
             throw new IllegalStateException("Control should not reach here");
         }
 
         public Test assertFailure(Failure f) {
-            TestCase.assertEquals(f, failure);
+            assertEquals(f, failure);
             return this;
         }
         public Test assertNodeCount(int count) {
-            if (count > 0) TestCase.assertEquals(toString(), Failure.NONE, failure);
-            TestCase.assertEquals(toString(), count, nodes.size());
+            if (count > 0) assertEquals(toString(), Failure.NONE, failure);
+            assertEquals(toString(), count, nodes.size());
             return this;
         }
         public Test assertNodeUsed(int node) {
-            TestCase.assertEquals(toString(), Failure.NONE, failure);
-            TestCase.assertTrue(toString(), nodes.contains(node));
+            assertEquals(toString(), Failure.NONE, failure);
+            assertTrue(toString(), nodes.contains(node));
             return this;
         }
     }
@@ -158,7 +162,7 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
     }
 
     void verifySame(Test javaTest, Test other) {
-        TestCase.assertEquals("Reference test " + testsRecorded + " differ.", other, javaTest);
+        assertEquals("Reference test " + testsRecorded + " differ.", other, javaTest);
         ++testsVerified;
     }
 

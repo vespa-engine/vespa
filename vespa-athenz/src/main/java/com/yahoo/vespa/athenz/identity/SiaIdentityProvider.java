@@ -13,16 +13,15 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
+ * A {@link ServiceIdentityProvider} that provides the credentials stored on file system.
+ *
  * @author mortent
  * @author bjorncs
  */
@@ -38,7 +37,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     private final File certificateFile;
     private final File trustStoreFile;
     private final ScheduledExecutorService scheduler;
-    private final Set<Consumer<SSLContext>> listeners = new ConcurrentSkipListSet<>();
+    private final ServiceIdentityProviderListenerHelper listenerHelper;
 
     @Inject
     public SiaIdentityProvider(SiaProviderConfig config) {
@@ -70,6 +69,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         this.trustStoreFile = trustStoreFile;
         this.scheduler = scheduler;
         this.sslContext.set(createIdentitySslContext());
+        this.listenerHelper = new ServiceIdentityProviderListenerHelper(service);
         scheduler.scheduleAtFixedRate(this::reloadSslContext, REFRESH_INTERVAL.toMinutes(), REFRESH_INTERVAL.toMinutes(), TimeUnit.MINUTES);
     }
 
@@ -91,12 +91,14 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         return sslContext.get();
     }
 
-    public void addReloadListener(Consumer<SSLContext> listener) {
-        listeners.add(listener);
+    @Override
+    public void addIdentityListener(Listener listener) {
+        listenerHelper.addIdentityListener(listener);
     }
 
-    public void removeReloadListener(Consumer<SSLContext> listener) {
-        listeners.remove(listener);
+    @Override
+    public void removeIdentityListener(Listener listener) {
+        listenerHelper.removeIdentityListener(listener);
     }
 
     private SSLContext createIdentitySslContext() {
@@ -111,7 +113,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         try {
             SSLContext sslContext = createIdentitySslContext();
             this.sslContext.set(sslContext);
-            listeners.forEach(listener -> listener.accept(sslContext));
+            listenerHelper.onCredentialsUpdate(sslContext);
         } catch (Exception e) {
             log.log(LogLevel.SEVERE, "Failed to update SSLContext: " + e.getMessage(), e);
         }
@@ -130,7 +132,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         try {
             scheduler.shutdownNow();
             scheduler.awaitTermination(90, TimeUnit.SECONDS);
-            listeners.clear();
+            listenerHelper.clearListeners();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

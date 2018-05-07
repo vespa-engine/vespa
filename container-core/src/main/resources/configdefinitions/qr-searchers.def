@@ -19,12 +19,6 @@ com.yahoo.prelude.searcher.BlendingSearcher.docid string default=""
 com.yahoo.prelude.searcher.JuniperSearcher.source string default=""
 com.yahoo.prelude.searcher.JuniperSearcher.defaultdoctype string default=""
 
-## Query cache that can be placed anywhere in the search chain. Query/Result
-## pairs (ie. entries) bigger than maxentrysizebytes will not be cached.
-com.yahoo.prelude.searcher.CachingSearcher.cachesizemegabytes int default=100
-com.yahoo.prelude.searcher.CachingSearcher.timetoliveseconds int default=3600
-com.yahoo.prelude.searcher.CachingSearcher.maxentrysizebytes int default=10000
-
 com.yahoo.prelude.searcher.XMLStringSearcher.source string default=""
 
 ## Default docsum class the QR server should ask the backend to

@@ -4,22 +4,17 @@ package com.yahoo.log.event;
 import java.util.logging.Logger;
 
 import com.yahoo.log.VespaFormatter;
-import com.yahoo.log.event.Collection;
-import com.yahoo.log.event.Count;
-import com.yahoo.log.event.Crash;
-import com.yahoo.log.event.Event;
-import com.yahoo.log.event.MalformedEventException;
-import com.yahoo.log.event.Progress;
-import com.yahoo.log.event.Reloaded;
-import com.yahoo.log.event.Reloading;
-import com.yahoo.log.event.Started;
-import com.yahoo.log.event.Starting;
-import com.yahoo.log.event.Stopped;
-import com.yahoo.log.event.Stopping;
-import com.yahoo.log.event.Unknown;
-import com.yahoo.log.event.Value;
+import org.junit.Before;
+import org.junit.Test;
 
-public class EventTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class EventTestCase {
+
     Count     countEvent;
     Count     floatCountEvent;
     Value     valueEvent;
@@ -36,10 +31,7 @@ public class EventTestCase extends junit.framework.TestCase {
     Collection collectionEvent;
     Unknown   unknownEvent;
 
-    public EventTestCase (String name) {
-        super(name);
-    }
-
+    @Before
     public void setUp() {
         countEvent     = new Count("thecounter", 1234);
         floatCountEvent= new Count("thecounter", 1234.23);
@@ -59,6 +51,7 @@ public class EventTestCase extends junit.framework.TestCase {
     }
 
     // make sure we can make the test instances okay
+    @Test
     public void testExists () {
         assertNotNull(countEvent);
         assertNotNull(floatCountEvent);
@@ -77,6 +70,7 @@ public class EventTestCase extends junit.framework.TestCase {
         assertNotNull(unknownEvent);
     }
 
+    @Test
     public void testEvents () {
         assertEquals("count/1 name=thecounter value=1234",
                      countEvent.toString());
@@ -118,10 +112,11 @@ public class EventTestCase extends junit.framework.TestCase {
     /**
      * do the dirty work for testParser
      */
-    private void parseEvent (Event e) throws MalformedEventException {
+    private void parseEvent(Event e) throws MalformedEventException {
         assertEquals(e.toString(), Event.parse(e.toString()).toString());
     }
 
+    @Test
     public void testParser () throws MalformedEventException {
         parseEvent(countEvent);
         parseEvent(floatCountEvent);
@@ -136,6 +131,7 @@ public class EventTestCase extends junit.framework.TestCase {
         parseEvent(stoppedEvent);
     }
 
+    @Test
     public void testUnknownEvents () throws MalformedEventException {
         String s = "crappyevent/2 first=\"value one\" second=more third=4";
         Event event = Event.parse(s);
@@ -150,6 +146,7 @@ public class EventTestCase extends junit.framework.TestCase {
      * successfully manage to find the right name on the calling
      * stack -- it should find the name of the calling class.
      */
+    @Test
     public void testFindingCallingClassLogger() {
         SingleHandler sh = new SingleHandler();
         assertNull(sh.lastRecord());
@@ -176,6 +173,7 @@ public class EventTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testFunnyEvent () {
         String funnyEvent = "collection/1 collectionId=1111111111 name=\"syncrows\" params=\"column=0 badrow=1 goodrow=0\"";
         try {
@@ -186,14 +184,16 @@ public class EventTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testFullParse () {
         try {
-        Event event = Event.parse("count/1 name=\"data_searched_mb\" value=15115168.3940149993");
-        assertTrue(event instanceof Count);
-        assertEquals("data_searched_mb", event.getValue("name"));
-        assertEquals("15115168", event.getValue("value"));
+            Event event = Event.parse("count/1 name=\"data_searched_mb\" value=15115168.3940149993");
+            assertTrue(event instanceof Count);
+            assertEquals("data_searched_mb", event.getValue("name"));
+            assertEquals("15115168", event.getValue("value"));
         } catch (MalformedEventException e) {
             fail("Malformed Event Exception on parsing");
         }
     }
+
 }

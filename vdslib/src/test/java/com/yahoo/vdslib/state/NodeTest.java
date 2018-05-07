@@ -1,11 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.state;
 
-/**
- *
- */
-public class NodeTest extends junit.framework.TestCase {
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class NodeTest {
+
+    @Test
     public void testEquals() {
         Node n1 = new Node(NodeType.STORAGE, 6);
         Node n2 = new Node(NodeType.STORAGE, 7);
@@ -44,6 +48,7 @@ public class NodeTest extends junit.framework.TestCase {
         assertFalse(n1.equals("class not instance of Node"));
     }
 
+    @Test
     public void testSerialization() {
         Node n = new Node(NodeType.STORAGE, 6);
         Node other = new Node(n.toString());
@@ -75,6 +80,7 @@ public class NodeTest extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testMaySetWantedState() {
         assertTrue(State.UP.maySetWantedStateForThisNodeState(State.DOWN));
         assertTrue(State.UP.maySetWantedStateForThisNodeState(State.MAINTENANCE));

@@ -1,21 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.collections;
 
+import org.junit.Test;
 
-import com.yahoo.collections.BobHash;
-
+import static org.junit.Assert.assertEquals;
 
 /**
  * Basic consistency check of BobHash implementation
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class BobHashTestCase extends junit.framework.TestCase {
+public class BobHashTestCase {
 
-    public BobHashTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testit() {
         // Teststring: minprice
         // Basic ASCII string
@@ -42,4 +39,5 @@ public class BobHashTestCase extends junit.framework.TestCase {
 
         assertEquals(BobHash.hash(lastnamefirstinitial, 0), 0xF36B4BD3);
     }
+
 }

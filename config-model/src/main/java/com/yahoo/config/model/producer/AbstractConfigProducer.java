@@ -3,24 +3,38 @@ package com.yahoo.config.model.producer;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.subscription.ConfigInstanceUtil;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.subscription.ConfigInstanceUtil;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.*;
-import com.yahoo.vespa.model.*;
+import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.ConfigPayloadBuilder;
+import com.yahoo.vespa.config.ConfigTransformer;
+import com.yahoo.vespa.config.GenericConfig;
+import com.yahoo.vespa.model.ConfigProducer;
+import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.Service;
+import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.utils.FreezableMap;
 
-import java.io.*;
-
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -328,7 +342,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     /**
      * New Builder instance if m is getConfig(SomeConfig.Builder), or null
      */
-    private ConfigInstance.Builder getBuilderIfIsGetConfig(Method m) throws InstantiationException, IllegalAccessException {
+    private ConfigInstance.Builder getBuilderIfIsGetConfig(Method m) throws ReflectiveOperationException {
         if (!"getConfig".equals(m.getName())) return null;
         Type[] params = m.getParameterTypes();
         if (params.length!=1) return null;
@@ -336,7 +350,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         if (!(param instanceof Class)) return null;
         Class<?> paramClass = (Class<?>) param;
         if  (!(ConfigInstance.Builder.class.isAssignableFrom(paramClass))) return null;
-        return (ConfigInstance.Builder) paramClass.newInstance();
+        return (ConfigInstance.Builder) paramClass.getDeclaredConstructor().newInstance();
     }
 
     public void dump(PrintStream out) {

@@ -1,16 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
 
+import org.junit.Test;
+
 import java.nio.ByteBuffer;
 
-public class BlobTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+public class BlobTestCase {
+
+    @Test
     public void testEmpty() {
         Blob empty = new Blob();
         assertTrue(empty.get() != null);
         assertEquals(0, empty.get().length);
     }
 
+    @Test
     public void testCopyArray() {
         byte[] d = { 1, 2, 3 };
         Blob b = new Blob(d);
@@ -23,6 +30,7 @@ public class BlobTestCase extends junit.framework.TestCase {
         assertEquals(3, b.get()[2]);
     }
 
+    @Test
     public void testCopyArraySubset() {
         byte[] d = { 1, 2, 3 };
         Blob b = new Blob(d, 1, 1);
@@ -33,6 +41,7 @@ public class BlobTestCase extends junit.framework.TestCase {
         assertEquals(2, b.get()[0]);
     }
 
+    @Test
     public void testCopyBlob() {
         byte[] d = { 1, 2, 3 };
         Blob b = new Blob(d);
@@ -45,6 +54,7 @@ public class BlobTestCase extends junit.framework.TestCase {
         assertEquals(3, x.get()[2]);
     }
 
+    @Test
     public void testReadBuffer() {
         ByteBuffer buf = ByteBuffer.allocate(100);
         buf.put((byte)1);
@@ -60,6 +70,7 @@ public class BlobTestCase extends junit.framework.TestCase {
         assertEquals(3, b.get()[2]);
     }
 
+    @Test
     public void testReadPartialBuffer() {
         ByteBuffer buf = ByteBuffer.allocate(100);
         buf.put((byte)1);
@@ -80,6 +91,7 @@ public class BlobTestCase extends junit.framework.TestCase {
         assertEquals(0, buf.remaining());
     }
 
+    @Test
     public void testWriteBuffer() {
         byte[] d = { 1, 2, 3 };
         Blob b = new Blob(d);
@@ -92,4 +104,5 @@ public class BlobTestCase extends junit.framework.TestCase {
         assertEquals(3, buf.get());
         assertEquals(0, buf.remaining());
     }
+
 }

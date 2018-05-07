@@ -1,154 +1,127 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.geo;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * Tests for the DegreesParser class.
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  */
-public class DegreesParserTestCase extends junit.framework.TestCase {
+public class DegreesParserTestCase {
+
+    private static final double delta = 0.000000000001;
 
     private DegreesParser parser;
-
-    public DegreesParserTestCase(String name) {
-        super(name);
-    }
 
     /**
      * Tests different inputs that should all produce 0 or -0.
      */
+    @Test
     public void testZero() {
         parser = new DegreesParser("N0;E0");
-        assertEquals(0d, parser.latitude);
-        assertEquals(0d, parser.longitude);
+        assertEquals(0d, parser.latitude, delta);
+        assertEquals(0d, parser.longitude, delta);
         parser = new DegreesParser("S0;W0");
-        assertEquals(-0d, parser.latitude);
-        assertEquals(-0d, parser.longitude);
+        assertEquals(-0d, parser.latitude, delta);
+        assertEquals(-0d, parser.longitude, delta);
         parser = new DegreesParser("N0.0;E0.0");
-        assertEquals(0d, parser.latitude);
-        assertEquals(0d, parser.longitude);
+        assertEquals(0d, parser.latitude, delta);
+        assertEquals(0d, parser.longitude, delta);
         parser = new DegreesParser("S0.0;W0.0");
-        assertEquals(-0d, parser.latitude);
-        assertEquals(-0d, parser.longitude);
+        assertEquals(-0d, parser.latitude, delta);
+        assertEquals(-0d, parser.longitude, delta);
         parser = new DegreesParser("N0\u00B00'0;E0\u00B00'0");
-        assertEquals(0d, parser.latitude);
-        assertEquals(0d, parser.longitude);
+        assertEquals(0d, parser.latitude, delta);
+        assertEquals(0d, parser.longitude, delta);
         parser = new DegreesParser("S0\u00B00'0;W0\u00B00'0");
-        assertEquals(-0d, parser.latitude);
-        assertEquals(-0d, parser.longitude);
+        assertEquals(-0d, parser.latitude, delta);
+        assertEquals(-0d, parser.longitude, delta);
         parser = new DegreesParser("S0o0'0;W0o0'0");
-        assertEquals(-0d, parser.latitude);
-        assertEquals(-0d, parser.longitude);
-    }
-
-    /**
-     * Tests various legal inputs and print the output
-     */
-    public void testPrint() {
-        String here = "63N025.105;010E25.982";
-        parser = new DegreesParser(here);
-        System.out.println(here+" -> "+parser.latitude+"/"+parser.longitude+" (lat/long)");
-
-        here = "N63.418417 E10.433033";
-        parser = new DegreesParser(here);
-        System.out.println(here+" -> "+parser.latitude+"/"+parser.longitude+" (lat/long)");
-
-        here = "N63o025.105;E010o25.982";
-        parser = new DegreesParser(here);
-        System.out.println(here+" -> "+parser.latitude+"/"+parser.longitude+" (lat/long)");
-
-        here = "N63.418417;E10.433033";
-        parser = new DegreesParser(here);
-        System.out.println(here+" -> "+parser.latitude+"/"+parser.longitude+" (lat/long)");
-
-        here = "63.418417N;10.433033E";
-        parser = new DegreesParser(here);
-        System.out.println(here+" -> "+parser.latitude+"/"+parser.longitude+" (lat/long)");
-
-        here = "N37.417075;W122.025358";
-        parser = new DegreesParser(here);
-        System.out.println(here+" -> "+parser.latitude+"/"+parser.longitude+" (lat/long)");
-
-        here = "N37\u00B024.983;W122\u00B001.481";
-        parser = new DegreesParser(here);
-        System.out.println(here+" -> "+parser.latitude+"/"+parser.longitude+" (lat/long)");
+        assertEquals(-0d, parser.latitude, delta);
+        assertEquals(-0d, parser.longitude, delta);
     }
 
     /**
      * Tests inputs that are close to 0.
      */
+    @Test
     public void testNearZero() {
         parser = new DegreesParser("N0.0001;E0.0001");
-        assertEquals(0.0001, parser.latitude);
-        assertEquals(0.0001, parser.longitude);
+        assertEquals(0.0001, parser.latitude, delta);
+        assertEquals(0.0001, parser.longitude, delta);
         parser = new DegreesParser("S0.0001;W0.0001");
-        assertEquals(-0.0001, parser.latitude);
-        assertEquals(-0.0001, parser.longitude);
+        assertEquals(-0.0001, parser.latitude, delta);
+        assertEquals(-0.0001, parser.longitude, delta);
 
         parser = new DegreesParser("N0.000001;E0.000001");
-        assertEquals(0.000001, parser.latitude);
-        assertEquals(0.000001, parser.longitude);
+        assertEquals(0.000001, parser.latitude, delta);
+        assertEquals(0.000001, parser.longitude, delta);
         parser = new DegreesParser("S0.000001;W0.000001");
-        assertEquals(-0.000001, parser.latitude);
-        assertEquals(-0.000001, parser.longitude);
+        assertEquals(-0.000001, parser.latitude, delta);
+        assertEquals(-0.000001, parser.longitude, delta);
 
         parser = new DegreesParser("N0\u00B00'1;E0\u00B00'1");
-        assertEquals(1/3600d, parser.latitude);
-        assertEquals(1/3600d, parser.longitude);
+        assertEquals(1/3600d, parser.latitude, delta);
+        assertEquals(1/3600d, parser.longitude, delta);
         parser = new DegreesParser("S0\u00B00'1;W0\u00B00'1");
-        assertEquals(-1/3600d, parser.latitude);
-        assertEquals(-1/3600d, parser.longitude);
+        assertEquals(-1/3600d, parser.latitude, delta);
+        assertEquals(-1/3600d, parser.longitude, delta);
     }
 
     /**
      * Tests inputs that are close to latitude 90/-90 degrees and longitude 180/-180 degrees.
      */
+    @Test
     public void testNearBoundary() {
-
         parser = new DegreesParser("N89.9999;E179.9999");
-        assertEquals(89.9999, parser.latitude);
-        assertEquals(179.9999, parser.longitude);
+        assertEquals(89.9999, parser.latitude, delta);
+        assertEquals(179.9999, parser.longitude, delta);
         parser = new DegreesParser("S89.9999;W179.9999");
-        assertEquals(-89.9999, parser.latitude);
-        assertEquals(-179.9999, parser.longitude);
+        assertEquals(-89.9999, parser.latitude, delta);
+        assertEquals(-179.9999, parser.longitude, delta);
 
         parser = new DegreesParser("N89.999999;E179.999999");
-        assertEquals(89.999999, parser.latitude);
-        assertEquals(179.999999, parser.longitude);
+        assertEquals(89.999999, parser.latitude, delta);
+        assertEquals(179.999999, parser.longitude, delta);
         parser = new DegreesParser("S89.999999;W179.999999");
-        assertEquals(-89.999999, parser.latitude);
-        assertEquals(-179.999999, parser.longitude);
+        assertEquals(-89.999999, parser.latitude, delta);
+        assertEquals(-179.999999, parser.longitude, delta);
 
         parser = new DegreesParser("N89\u00B059'59;E179\u00B059'59");
-        assertEquals(89+59/60d+59/3600d, parser.latitude);
-        assertEquals(179+59/60d+59/3600d, parser.longitude);
+        assertEquals(89+59/60d+59/3600d, parser.latitude, delta);
+        assertEquals(179+59/60d+59/3600d, parser.longitude, delta);
         parser = new DegreesParser("S89\u00B059'59;W179\u00B059'59");
-        assertEquals(-(89+59/60d+59/3600d), parser.latitude);
-        assertEquals(-(179+59/60d+59/3600d), parser.longitude);
+        assertEquals(-(89+59/60d+59/3600d), parser.latitude, delta);
+        assertEquals(-(179+59/60d+59/3600d), parser.longitude, delta);
     }
 
     /**
      * Tests inputs that are on latitude 90/-90 degrees and longitude 180/-180 degrees.
      */
+    @Test
     public void testOnBoundary() {
         parser = new DegreesParser("N90;E180");
-        assertEquals(90d, parser.latitude);
-        assertEquals(180d, parser.longitude);
+        assertEquals(90d, parser.latitude, delta);
+        assertEquals(180d, parser.longitude, delta);
         parser = new DegreesParser("S90;W180");
-        assertEquals(-90d, parser.latitude);
-        assertEquals(-180d, parser.longitude);
+        assertEquals(-90d, parser.latitude, delta);
+        assertEquals(-180d, parser.longitude, delta);
 
         parser = new DegreesParser("N90\u00B00'0;E180\u00B00'0");
-        assertEquals(90d, parser.latitude);
-        assertEquals(180d, parser.longitude);
+        assertEquals(90d, parser.latitude, delta);
+        assertEquals(180d, parser.longitude, delta);
         parser = new DegreesParser("S90\u00B00'0;W180\u00B00'0");
-        assertEquals(-90d, parser.latitude);
-        assertEquals(-180d, parser.longitude);
+        assertEquals(-90d, parser.latitude, delta);
+        assertEquals(-180d, parser.longitude, delta);
     }
 
     /**
      * Tests inputs that are above latitude 90/-90 degrees and longitude 180/-180 degrees.
-      */
+     */
+    @Test
     public void testAboveBoundary() {
         String message = "";
         try {
@@ -204,6 +177,7 @@ public class DegreesParserTestCase extends junit.framework.TestCase {
     /**
      * Tests various inputs that contain syntax errors.
      */
+    @Test
     public void testInputErrors() {
         String message = "";
         try {
@@ -279,4 +253,5 @@ public class DegreesParserTestCase extends junit.framework.TestCase {
         }
         assertEquals("invalid character: O", message);
     }
+
 }

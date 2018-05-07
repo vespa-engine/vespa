@@ -1,21 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.geo;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * Tests for the ZCurve class.
  *
  * @author gjoranv
  */
-public class ZCurveTestCase extends junit.framework.TestCase {
-
-    public ZCurveTestCase(String name) {
-        super(name);
-    }
+public class ZCurveTestCase {
 
     /**
-      * Verify that encoded values return the expected bit pattern
-      */
-     public void testEncoding() {
+     * Verify that encoded values return the expected bit pattern
+     */
+    @Test
+    public void testEncoding() {
         int x = 0;
         int y = 0;
         long z = ZCurve.encode(x, y);
@@ -45,11 +46,12 @@ public class ZCurveTestCase extends junit.framework.TestCase {
         y = Integer.MIN_VALUE / 2;
         z = ZCurve.encode(x, y);
         assertEquals(0xa555555555555555L, z);
-     }
+    }
 
     /**
      * Verify that decoded values are equal to inputs in different cases
      */
+    @Test
     public void testDecoding() {
         int x = 0;
         int y = 0;
@@ -94,11 +96,10 @@ public class ZCurveTestCase extends junit.framework.TestCase {
         assertEquals(y, xy[1]);
     }
 
-
-
     /**
      * Verify that encoded values return the expected bit pattern
      */
+    @Test
     public void testEncoding_slow() {
         int x = 0;
         int y = 0;
@@ -134,6 +135,7 @@ public class ZCurveTestCase extends junit.framework.TestCase {
     /**
      * Verify that decoded values are equal to inputs in different cases
      */
+    @Test
     public void testDecoding_slow() {
         int x = 0;
         int y = 0;
@@ -178,6 +180,7 @@ public class ZCurveTestCase extends junit.framework.TestCase {
         assertEquals(xy[1], y);
     }
 
+    @Test
     public void testBenchmarkEncoding() {
         int limit = 2000000;
 
@@ -187,8 +190,8 @@ public class ZCurveTestCase extends junit.framework.TestCase {
             z1 += ZCurve.encode(i,-i);
         }
         long elapsed = System.currentTimeMillis() - start;
-        System.out.println("Fast method: elapsed time: " + elapsed + " ms");
-        System.out.println("Per encoding: " + elapsed/(1.0*limit) * 1000000 + " ns");
+        //System.out.println("Fast method: elapsed time: " + elapsed + " ms");
+        //System.out.println("Per encoding: " + elapsed/(1.0*limit) * 1000000 + " ns");
 
         long z2 = 0L;
         start = System.currentTimeMillis();
@@ -196,8 +199,8 @@ public class ZCurveTestCase extends junit.framework.TestCase {
             z2 += ZCurve.encode_slow(i,-i);
         }
         elapsed = System.currentTimeMillis() - start;
-        System.out.println("Slow method: elapsed time: " + elapsed + " ms");
-        System.out.println("Per encoding: " + elapsed/(1.0*limit) * 1000000 + " ns");
+        //System.out.println("Slow method: elapsed time: " + elapsed + " ms");
+        //System.out.println("Per encoding: " + elapsed/(1.0*limit) * 1000000 + " ns");
         assertEquals(z1, z2);
     }
 

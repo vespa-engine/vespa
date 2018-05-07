@@ -258,11 +258,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         return constructor.newInstance(builder);
     }
 
-    private static Builder newBuilder(Class<? extends ConfigInstance> configClass)
-            throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-
+    private static Builder newBuilder(Class<? extends ConfigInstance> configClass) throws ReflectiveOperationException {
         Class builderClazz = configClass.getClassLoader().loadClass(configClass.getName() + "$Builder");
-        return (Builder)builderClazz.newInstance();
+        return (Builder)builderClazz.getDeclaredConstructor().newInstance();
     }
 
     /**
@@ -383,8 +381,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         }
         Object i;
         try {
-            i = clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            i = clazz.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
             throw new ConfigurationRuntimeException(e);
         }
         if (!(i instanceof ConfigInstance.Builder)) {

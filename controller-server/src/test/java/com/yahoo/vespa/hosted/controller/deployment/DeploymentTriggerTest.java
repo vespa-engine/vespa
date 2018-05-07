@@ -528,7 +528,6 @@ public class DeploymentTriggerTest {
         Supplier<Application> app = () -> tester.application(application.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("us-central-1")
                 .parallel("eu-west-1", "us-east-3")
                 .build();
         // Application version 42 and platform version 6.1.
@@ -541,33 +540,40 @@ public class DeploymentTriggerTest {
         tester.upgradeSystem(v2);
         tester.deployAndNotify(application, empty(), true, systemTest);
         tester.deployAndNotify(application, empty(), true, stagingTest);
-        tester.deployAndNotify(application, empty(), true, productionUsCentral1);
         tester.deploymentTrigger().cancelChange(application.id(), true);
         tester.deploy(productionEuWest1, application, applicationPackage);
-        tester.deployAndNotify(application, applicationPackage, false, productionEuWest1);
-        tester.deployAndNotify(application, applicationPackage, false, productionUsEast3);
-        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
         assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main).get()).version());
         assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main).get()).version());
 
-        // New application version should run system and staging tests first against 6.2, then against 6.1.
+        // New application version should run system and staging tests against both 6.1 and 6.2, in no particular order.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
+        Version firstTested = app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform();
+        assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+
         tester.deployAndNotify(application, empty(), true, systemTest);
-        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
-        tester.deployAndNotify(application, empty(), true, stagingTest);
-        tester.deployAndNotify(application, empty(), true, productionUsCentral1);
-        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
-        tester.deployAndNotify(application, empty(), true, systemTest);
-        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         tester.deployAndNotify(application, empty(), true, stagingTest);
 
-        // The production job on version 6.2 fails and must retry -- this is OK, even though staging now has a different version.
+        // Tests are not re-triggered, because the jobs they were run for has not yet been triggered with the tested versions.
+        assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
+        assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+
+         // Finish old runs of the production jobs, which fail.
+        tester.deployAndNotify(application, applicationPackage, false, productionEuWest1);
+        tester.deployAndNotify(application, applicationPackage, false, productionUsEast3);
+        tester.triggerUntilQuiescence();
+
+        // New upgrade is already tested for one of the jobs, which has now been triggered, and tests may run for the other job.
+        assertNotEquals(firstTested, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
+        assertNotEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+        tester.deployAndNotify(application, empty(), true, systemTest);
+        tester.deployAndNotify(application, empty(), true, stagingTest);
+
+        // Both jobs fail again, and must be re-triggered -- this is ok, as they are both already triggered on their current targets.
         tester.deployAndNotify(application, empty(), false, productionEuWest1);
+        tester.deployAndNotify(application, empty(), false, productionUsEast3);
         tester.deployAndNotify(application, empty(), true, productionUsEast3);
         tester.deployAndNotify(application, empty(), true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastSuccess().get().application().buildNumber().get().longValue());
         assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().get().longValue());
         assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().get().longValue());
     }

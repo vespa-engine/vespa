@@ -153,7 +153,7 @@ object FederationSearcherTest {
   implicit def toComponentSpecification(name: String): ComponentSpecification = ComponentSpecification.fromString(name)
 
   def newBuilder[T <: ConfigInstance.Builder](implicit c: ClassTag[T]): T = {
-    c.runtimeClass.newInstance().asInstanceOf[T]
+    c.runtimeClass.getDeclaredConstructor().newInstance().asInstanceOf[T]
   }
 
   def searchChainSpecification(id: ComponentId) =
@@ -173,7 +173,7 @@ object FederationSearcherTest {
       sys.error("No Builder class in ConfigInstance.")
     }
 
-    val builder = builderClass.newInstance().asInstanceOf[AnyRef]
+    val builder = builderClass.getDeclaredConstructor().newInstance().asInstanceOf[AnyRef]
     val getConfigMethod = configProducer.getClass.getMethod("getConfig", builderClass)
 
     getConfigMethod.invoke(configProducer, builder)

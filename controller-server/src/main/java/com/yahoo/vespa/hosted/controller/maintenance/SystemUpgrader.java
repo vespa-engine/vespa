@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Comparator;
@@ -78,7 +79,8 @@ public class SystemUpgrader extends Maintainer {
                                .min(Comparator.naturalOrder())
                                .orElse(Version.emptyVersion);
         } catch (Exception e) {
-            log.log(Level.WARNING, String.format("Failed to get version for %s in %s", application, zone), e);
+            log.log(Level.WARNING, String.format("Failed to get version for %s in %s: %s", application, zone,
+                                                 Exceptions.toMessageString(e)));
             return Version.emptyVersion;
         }
     }

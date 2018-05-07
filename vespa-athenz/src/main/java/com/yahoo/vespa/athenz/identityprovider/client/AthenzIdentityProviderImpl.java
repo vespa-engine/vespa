@@ -11,6 +11,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProviderListenerHelper;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.defaults.Defaults;
@@ -49,6 +50,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
     private final AthenzService identity;
+    private final ServiceIdentityProviderListenerHelper listenerHelper;
 
     // TODO IdentityConfig should contain ZTS uri and dns suffix
     @Inject
@@ -74,6 +76,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.scheduler = scheduler;
         this.clock = clock;
         this.identity = new AthenzService(config.domain(), config.service());
+        this.listenerHelper = new ServiceIdentityProviderListenerHelper(this.identity);
         registerInstance();
     }
 
@@ -105,6 +108,16 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     @Override
     public SSLContext getIdentitySslContext() {
         return credentials.getIdentitySslContext();
+    }
+
+    @Override
+    public void addIdentityListener(Listener listener) {
+        listenerHelper.addIdentityListener(listener);
+    }
+
+    @Override
+    public void removeIdentityListener(Listener listener) {
+        listenerHelper.removeIdentityListener(listener);
     }
 
     @Override
@@ -151,6 +164,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try {
             scheduler.shutdownNow();
             scheduler.awaitTermination(AWAIT_TERMINTATION_TIMEOUT.getSeconds(), TimeUnit.SECONDS);
+            listenerHelper.clearListeners();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -170,10 +184,10 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     void refreshCertificate() {
         try {
-            AthenzCredentials newCredentials = isExpired(credentials)
+            credentials = isExpired(credentials)
                     ? athenzCredentialsService.registerInstance()
                     : athenzCredentialsService.updateCredentials(credentials.getIdentityDocument(), credentials.getIdentitySslContext());
-            credentials = newCredentials;
+            listenerHelper.onCredentialsUpdate(credentials.getIdentitySslContext());
         } catch (Throwable t) {
             log.log(LogLevel.WARNING, "Failed to update credentials: " + t.getMessage(), t);
         }

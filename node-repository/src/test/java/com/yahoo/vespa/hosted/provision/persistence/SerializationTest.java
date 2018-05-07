@@ -51,6 +51,7 @@ public class SerializationTest {
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(node.id(), copy.id());
         assertEquals(node.hostname(), copy.hostname());
+        assertEquals(node.openStackId(), copy.openStackId());
         assertEquals(node.state(), copy.state());
         assertFalse(copy.allocation().isPresent());
         assertEquals(0, copy.history().events().size());
@@ -228,6 +229,7 @@ public class SerializationTest {
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
     }
+
 
     @Test
     public void serializes_multiple_ip_addresses() {

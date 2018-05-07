@@ -1135,16 +1135,33 @@ updateAttributeMetrics(DocumentDBMetricsCollection &metrics, const DocumentSubDB
     updateAttributeMetrics(metrics.getTaggedMetrics().notReady.attributes, notReadyMetrics);
 }
 
+namespace {
+
 void
-updateMatchingMetrics(LegacyDocumentDBMetrics::MatchingMetrics &metrics, const IDocumentSubDB &ready)
+updateLegacyRankProfileMetrics(LegacyDocumentDBMetrics::MatchingMetrics &matchingMetrics,
+                               const vespalib::string &rankProfileName,
+                               const MatchingStats &stats)
 {
-    MatchingStats stats;
-    for (const auto &kv : metrics.rank_profiles) {
-        MatchingStats rp_stats = ready.getMatcherStats(kv.first);
-        kv.second->update(rp_stats);
-        stats.add(rp_stats);
+    auto itr = matchingMetrics.rank_profiles.find(rankProfileName);
+    assert(itr != matchingMetrics.rank_profiles.end());
+    itr->second->update(stats);
+}
+
+}
+
+void
+updateMatchingMetrics(DocumentDBMetricsCollection &metrics, const IDocumentSubDB &ready)
+{
+    MatchingStats totalStats;
+    for (const auto &rankProfile : metrics.getTaggedMetrics().matching.rank_profiles) {
+        MatchingStats matchingStats = ready.getMatcherStats(rankProfile.first);
+        rankProfile.second->update(matchingStats);
+        updateLegacyRankProfileMetrics(metrics.getLegacyMetrics().matching, rankProfile.first, matchingStats);
+
+        totalStats.add(matchingStats);
     }
-    metrics.update(stats);
+    metrics.getTaggedMetrics().matching.update(totalStats);
+    metrics.getLegacyMetrics().matching.update(totalStats);
 }
 
 void
@@ -1228,13 +1245,13 @@ DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
     updateLegacyMetrics(metrics.getLegacyMetrics(), threadingServiceStats);
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats());
     updateAttributeMetrics(metrics, _subDBs);
+    updateMatchingMetrics(metrics, *_subDBs.getReadySubDB());
     updateMetrics(metrics.getTaggedMetrics(), threadingServiceStats);
 }
 
 void
 DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats)
 {
-    updateMatchingMetrics(metrics.matching, *_subDBs.getReadySubDB());
     metrics.executor.update(threadingServiceStats.getMasterExecutorStats());
     metrics.summaryExecutor.update(threadingServiceStats.getSummaryExecutorStats());
     metrics.indexExecutor.update(threadingServiceStats.getIndexExecutorStats());
