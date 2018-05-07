@@ -97,7 +97,9 @@ public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
             resultCounter++;
             if (!documentResult.isSuccess()) {
                 failureCounter++;
-                println("Failure: " + documentResult);
+                println("Failure: " + documentResult + (documentResult.getDetails().isEmpty() ? "" : ":"));
+                for (Result.Detail detail : documentResult.getDetails())
+                    println("    " + detail);
             }
         }
     }
