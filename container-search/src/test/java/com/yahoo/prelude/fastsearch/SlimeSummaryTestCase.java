@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.prelude.hitfield.RawData;
@@ -16,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
@@ -33,12 +35,14 @@ import static org.junit.Assert.assertTrue;
 public class SlimeSummaryTestCase {
 
     private static final String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
+    private static final String partial_summary1_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/partial-summary1.cfg";
+    private static final String partial_summary2_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/partial-summary2.cfg";
 
     @Test
     public void testDecodingEmpty() {
-        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
-        assertNull(set.lazyDecode("default", emptySummary(), hit));
+        assertNull(docsum.lazyDecode("default", emptySummary(), hit));
         assertNull(hit.getField("integer_field"));
         assertNull(hit.getField("short_field"));
         assertNull(hit.getField("byte_field"));
@@ -61,9 +65,9 @@ public class SlimeSummaryTestCase {
     @Test
     public void testDecodingEmptyWithLegacyEmulation() {
         LegacyEmulationConfig emulationConfig = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder().forceFillEmptyFields(true));
-        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf, emulationConfig);
+        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf, emulationConfig);
         FastHit hit = new FastHit();
-        assertNull(set.lazyDecode("default", emptySummary(), hit));
+        assertNull(docsum.lazyDecode("default", emptySummary(), hit));
         assertEquals(NanNumber.NaN, hit.getField("integer_field"));
         assertEquals(NanNumber.NaN, hit.getField("short_field"));
         assertEquals(NanNumber.NaN, hit.getField("byte_field"));
@@ -87,19 +91,19 @@ public class SlimeSummaryTestCase {
 
     @Test
     public void testTimeout() {
-        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
         assertEquals("Hit hit index:null/0/000000000000000000000000 (relevance null) [fasthit, globalid: 0 0 0 0 0 0 0 0 0 0 0 0, partId: 0, distributionkey: 0] failed: Timed out....",
-                     set.lazyDecode("default", timeoutSummary(), hit));
+                     docsum.lazyDecode("default", timeoutSummary(), hit));
     }
 
     @Test
     public void testDecoding() {
         Tensor tensor1 = Tensor.from("tensor(x{},y{}):{{x:foo,y:bar}:0.1}");
         Tensor tensor2 = Tensor.from("tensor(x[],y[1]):{{x:0,y:0}:-0.3}");
-        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
-        assertNull(set.lazyDecode("default", fullSummary(tensor1, tensor2), hit));
+        assertNull(docsum.lazyDecode("default", fullSummary(tensor1, tensor2), hit));
         assertEquals(4, hit.getField("integer_field"));
         assertEquals((short)2, hit.getField("short_field"));
         assertEquals((byte)1, hit.getField("byte_field"));
@@ -136,18 +140,20 @@ public class SlimeSummaryTestCase {
 
     @Test
     public void testFieldAccessAPI() {
-        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet partialDocsum1 = createDocsumDefinitionSet(partial_summary1_cf);
+        DocsumDefinitionSet partialDocsum2 = createDocsumDefinitionSet(partial_summary2_cf);
         FastHit hit = new FastHit();
         Map<String, Object> expected = new HashMap<>();
 
         assertFields(expected, hit);
 
-        set.lazyDecode("default", partialSummary1(), hit);
+        partialDocsum1.lazyDecode("partial1", partialSummary1(), hit);
         expected.put("integer_field", 4);
         expected.put("short_field", (short) 2);
         assertFields(expected, hit);
 
-        set.lazyDecode("default", partialSummary2(), hit);
+        partialDocsum2.lazyDecode("partial2", partialSummary2(), hit);
         expected.put("float_field", 4.5F);
         expected.put("double_field", 8.75D);
         assertFields(expected, hit);
@@ -178,11 +184,84 @@ public class SlimeSummaryTestCase {
         expected.clear();
         assertFields(expected, hit);
 
-        // TODO:
-        // - removing from field and field name iterators
-        // - removing all fields in some summary, then iterating
-        // - Ensure no overlapping fields between summaries?
-        // - Remove some field which is then added from a summary?
+        // --- Re-populate
+        hit.clearFields();
+        partialDocsum1.lazyDecode("partial1", partialSummary1(), hit);
+        expected.put("integer_field", 4);
+        expected.put("short_field", (short) 2);
+        partialDocsum2.lazyDecode("partial2", partialSummary2(), hit);
+        expected.put("float_field", 4.5F);
+        expected.put("double_field", 8.75D);
+        hit.setField("string1", "hello");
+        hit.setField("string2", "hello");
+        expected.put("string1", "hello");
+        expected.put("string2", "hello");
+        assertFields(expected, hit);
+
+        Set<String> keys = hit.fieldKeys();
+        assertTrue(keys.remove("integer_field"));
+        expected.remove("integer_field");
+        assertTrue(keys.remove("string2"));
+        expected.remove("string2");
+        assertFields(expected, hit);
+        assertFalse(keys.remove("notpresent"));
+
+        assertTrue(keys.retainAll(ImmutableSet.of("string1", "notpresent", "double_field")));
+        expected.remove("short_field");
+        expected.remove("float_field");
+        assertFields(expected, hit);
+
+        Iterator<String> keyIterator = keys.iterator();
+        assertEquals("string1", keyIterator.next());
+        keyIterator.remove();
+        expected.remove("string1");
+        assertFields(expected, hit);
+
+        assertEquals("double_field", keyIterator.next());
+        keyIterator.remove();
+        expected.remove("double_field");
+        assertFields(expected, hit);
+
+        // --- Re-populate
+        hit.clearFields();
+        partialDocsum1.lazyDecode("partial1", partialSummary1(), hit);
+        expected.put("integer_field", 4);
+        expected.put("short_field", (short) 2);
+        partialDocsum2.lazyDecode("partial2", partialSummary2(), hit);
+        expected.put("float_field", 4.5F);
+        expected.put("double_field", 8.75D);
+        hit.setField("string", "hello");
+        expected.put("string", "hello");
+        assertFields(expected, hit);
+
+        Iterator<Map.Entry<String, Object>> fieldIterator = hit.fieldIterator();
+        assertEquals("string", fieldIterator.next().getKey());
+        fieldIterator.remove();
+        expected.remove("string");
+        assertFields(expected, hit);
+
+        fieldIterator.next();
+        assertEquals("short_field", fieldIterator.next().getKey());
+        fieldIterator.remove();
+        expected.remove("short_field");
+        assertFields(expected, hit);
+
+        fieldIterator.next();
+        assertEquals("double_field", fieldIterator.next().getKey());
+        fieldIterator.remove();
+        expected.remove("double_field");
+        assertFields(expected, hit);
+
+        fieldIterator = hit.fieldIterator();
+        assertEquals("float_field", fieldIterator.next().getKey());
+        fieldIterator.remove();
+        expected.remove("float_field");
+        assertFields(expected, hit);
+
+        assertEquals("integer_field", fieldIterator.next().getKey());
+        fieldIterator.remove();
+        expected.remove("integer_field");
+        assertFields(expected, hit);
     }
 
 

@@ -158,6 +158,8 @@ public class FastHit extends Hit {
 
     /** For internal use */
     public void addSummary(DocsumDefinition docsumDef, Inspector value) {
+        if (removedFields != null)
+            removedFields.removeAll(docsumDef.fieldNames());
         summaries.add(new SummaryData(this, docsumDef, value));
     }
 

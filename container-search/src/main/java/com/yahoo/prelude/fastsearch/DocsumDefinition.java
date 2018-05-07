@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A docsum definition which knows how to decode a certain class of document
@@ -71,6 +72,10 @@ public class DocsumDefinition {
         Integer index = fieldNameToIndex.get(fieldName);
         if (index == null) return null;
         return getField(index);
+    }
+
+    public Set<String> fieldNames() {
+        return fieldNameToIndex.keySet();
     }
 
     @Override
