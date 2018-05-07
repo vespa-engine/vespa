@@ -151,7 +151,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     //--------------  Generic property containers --------------------------------
 
-    /** The synchronous view of the JDisc request causing this query */
+    /**
+     * The synchronous view of the JDisc request causing this query.
+     *
+     * @since 5.1
+     */
     private final HttpRequest httpRequest;
 
     /** The context, or null if there is no context */
@@ -191,7 +195,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     private static QueryProfileType argumentType;
     static {
-        argumentType = new QueryProfileType("native");
+        argumentType=new QueryProfileType("native");
         argumentType.setBuiltin(true);
 
         argumentType.addField(new FieldDescription(OFFSET.toString(), "integer", "offset start"));
@@ -618,7 +622,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      *
      * @deprecated this is ignored
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    @Deprecated
     public void setCompress(boolean ignored) { }
 
     /**
@@ -626,7 +630,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      *
      * @deprecated this always returns false
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    @Deprecated
     public boolean getCompress() { return false; }
 
     /** Returns a string describing this query */
