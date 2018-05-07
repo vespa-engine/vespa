@@ -30,7 +30,7 @@ public class DebugHandlerHelper implements NodeAdminDebugHandler {
     }
 
     public void addHandler(String name, NodeAdminDebugHandler handler) {
-        addThreadSafeSupplier(name, () -> handler.getDebugPage());
+        addThreadSafeSupplier(name, handler::getDebugPage);
     }
 
     public void addConstant(String name, String value) {

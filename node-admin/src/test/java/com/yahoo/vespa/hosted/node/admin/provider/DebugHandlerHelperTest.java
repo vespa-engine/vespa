@@ -5,7 +5,6 @@ package com.yahoo.vespa.hosted.node.admin.provider;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -15,12 +14,7 @@ public class DebugHandlerHelperTest {
         DebugHandlerHelper helper = new DebugHandlerHelper();
         helper.addConstant("constant-key", "constant-value");
 
-        NodeAdminDebugHandler handler = new NodeAdminDebugHandler() {
-            @Override
-            public Map<String, Object> getDebugPage() {
-                return Collections.singletonMap("handler-value-key", "handler-value-value");
-            }
-        };
+        NodeAdminDebugHandler handler = () -> Collections.singletonMap("handler-value-key", "handler-value-value");
         helper.addHandler("handler-key", handler);
 
         helper.addThreadSafeSupplier("supplier-key", () -> "supplier-value");
