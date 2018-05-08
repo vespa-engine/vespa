@@ -886,8 +886,11 @@ FastS_FNET_Search::CheckCoverage()
             cntNone++;
         }
     }
-    if ((cntNone >= _dataset->getSearchableCopies()) && (cntNone != _nodes.size())) {
-        activeDocs += cntNone * activeDocs/(_nodes.size() - cntNone);
+    const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
+    if ((missingParts > 0) && (cntNone != _nodes.size())) {
+        // TODO This is a dirty way of anticipating missing coverage.
+        // It should be done differently
+        activeDocs += missingParts * activeDocs/(_nodes.size() - cntNone);
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
 }
