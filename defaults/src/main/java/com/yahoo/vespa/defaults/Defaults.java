@@ -55,15 +55,6 @@ public class Defaults {
         if (vespaHostEnv.isPresent() && ! vespaHostEnv.get().trim().isEmpty()) {
             return vespaHostEnv.get().trim();
         }
-        try {
-            Process p = Runtime.getRuntime().exec("hostname");
-            BufferedReader r = new BufferedReader(
-                    new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
-            String line = r.readLine();
-            if (line != null && ! line.trim().isEmpty()) {
-                return line;
-            }
-        } catch (java.io.IOException e) {}
         return "localhost";
     }
 
