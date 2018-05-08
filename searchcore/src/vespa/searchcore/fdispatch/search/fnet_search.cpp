@@ -874,16 +874,18 @@ FastS_FNET_Search::CheckCoverage()
     size_t cntNone(0);
 
     for (const FastS_FNET_SearchNode & node : _nodes) {
-        if (node._qresult != nullptr) {
-            covDocs  += node._qresult->_coverageDocs;
-            activeDocs  += node._qresult->_activeDocs;
-            soonActiveDocs += node._qresult->_soonActiveDocs;
-            degradedReason |= node._qresult->_coverageDegradeReason;
-            nodesQueried += node._qresult->getNodesQueried();
-            nodesReplied += node._qresult->getNodesReplied();
-        } else {
-            nodesQueried++;
-            cntNone++;
+        if (node.IsConnected()) {
+            if (node._qresult != nullptr) {
+                covDocs  += node._qresult->_coverageDocs;
+                activeDocs  += node._qresult->_activeDocs;
+                soonActiveDocs += node._qresult->_soonActiveDocs;
+                degradedReason |= node._qresult->_coverageDegradeReason;
+                nodesQueried += node._qresult->getNodesQueried();
+                nodesReplied += node._qresult->getNodesReplied();
+            } else {
+                nodesQueried++;
+                cntNone++;
+            }
         }
     }
     const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
