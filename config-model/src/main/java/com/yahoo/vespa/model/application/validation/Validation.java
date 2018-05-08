@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeVali
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentTypeRemovalValidator;
+import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
@@ -72,6 +73,7 @@ public class Validation {
                                                             Instant now) {
         ChangeValidator[] validators = new ChangeValidator[] {
                 new IndexingModeChangeValidator(),
+                new GlobalDocumentChangeValidator(),
                 new IndexedSearchClusterChangeValidator(),
                 new StreamingSearchClusterChangeValidator(),
                 new ConfigValueChangeValidator(logger),

@@ -18,6 +18,7 @@ public enum ValidationId {
     contentClusterRemoval("content-cluster-removal"), // Removal (or id change) of content clusters
     deploymentRemoval("deployment-removal"), // Removal of production zones from deployment.xml
     skipAutomaticTenantUpgradeTests("skip-automatic-tenant-upgrade-test"), // Skip platform supplied staging tests
+    globalDocumentChange("global-document-change"), // Changing global attribute for document types in content clusters
     configModelVersionMismatch("config-model-version-mismatch"), // Internal use
     skipOldConfigModels("skip-old-config-models"), // Internal use
     forceAutomaticTenantUpgradeTests("force-automatic-tenant-upgrade-test"); // Internal use
