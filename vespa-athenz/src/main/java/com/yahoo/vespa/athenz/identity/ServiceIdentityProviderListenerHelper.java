@@ -5,7 +5,7 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 
 import javax.net.ssl.SSLContext;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * A helper class managing {@link ServiceIdentityProvider.Listener} instances for implementations of {@link ServiceIdentityProvider}.
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class ServiceIdentityProviderListenerHelper {
 
-    private final Set<ServiceIdentityProvider.Listener> listeners = new ConcurrentSkipListSet<>();
+    private final Set<ServiceIdentityProvider.Listener> listeners = new CopyOnWriteArraySet<>();
     private final AthenzService identity;
 
     public ServiceIdentityProviderListenerHelper(AthenzService identity) {
