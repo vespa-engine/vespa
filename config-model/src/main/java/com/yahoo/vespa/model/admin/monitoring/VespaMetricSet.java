@@ -377,6 +377,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.docsstored.average"));
         metrics.add(new Metric("vds.distributor.bytesstored.average"));
 
+        metrics.add(new Metric("vds.bouncer.clock_skew_aborts.count"));
+
         return metrics;
     }
 
