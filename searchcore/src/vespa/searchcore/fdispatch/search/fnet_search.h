@@ -97,7 +97,7 @@ public:
     FS4Packet_QUERYRESULTX::FS4_hit *NT_GetHit() const { return _hit_cur; }
     uint32_t NT_GetNumHitsUsed() const { return (_hit_cur - _hit_beg); }
     uint32_t NT_GetNumHitsLeft() const { return (_hit_end - _hit_cur); }
-    uint64_t NT_GetTotalHits() const { return (_qresult != NULL) ? _qresult->_totNumDocs : 0; }
+    uint64_t NT_GetTotalHits() const { return (_qresult != nullptr) ? _qresult->_totNumDocs : 0; }
     uint32_t NT_GetNumHits() const { return (_hit_end - _hit_beg); }
     void NT_NextHit() { _hit_cur++; }
 
@@ -109,7 +109,7 @@ public:
 
     FastS_FNET_Engine *GetEngine() const { return _engine; }
 
-    bool IsConnected() const { return _channel != NULL; }
+    bool IsConnected() const { return _channel != nullptr; }
     void Connect(FastS_FNET_Engine *engine);
     void Connect_HasDSLock(FastS_FNET_Engine *engine);
     FastS_EngineBase * getPartition(const std::unique_lock<std::mutex> &dsGuard, bool userow, FastS_FNET_DataSet *dataset);
@@ -118,14 +118,14 @@ public:
     vespalib::string toString() const;
 
     const char *getHostName() const {
-        return (_engine == NULL ? "localhost" : _engine->getHostName());
+        return (_engine == nullptr ? "localhost" : _engine->getHostName());
     }
     int getPortNumber() const {
-        return (_engine == NULL ? 0 : _engine->getPortNumber());
+        return (_engine == nullptr ? 0 : _engine->getPortNumber());
     }
 
     void dropCost() {
-        if (_engine != NULL && _flags._needSubCost) {
+        if (_engine != nullptr && _flags._needSubCost) {
             _engine->SubCost();
             _flags._needSubCost = false;
         }
@@ -134,22 +134,22 @@ public:
 
     void Disconnect()
     {
-        if (_channel != NULL) {
+        if (_channel != nullptr) {
             _channel->CloseAndFree();
-            _channel = NULL;
+            _channel = nullptr;
         }
-        if (_engine != NULL) {
+        if (_engine != nullptr) {
             if (_flags._needSubCost) {
                 _engine->SubCost();
                 _flags._needSubCost = false;
             }
-            _engine = NULL;
+            _engine = nullptr;
         }
     }
 
 
     bool PostPacket(FNET_Packet *packet) {
-        return (_channel == NULL) ?  packet->Free(), false : _channel->Send(packet);
+        return (_channel == nullptr) ?  packet->Free(), false : _channel->Send(packet);
     }
 
     virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
