@@ -43,6 +43,7 @@ public:
     bool is_abstract() const;
     int port() const;
     vespalib::string ip_address() const;
+    vespalib::string reverse_lookup() const;
     vespalib::string path() const;
     vespalib::string name() const;
     vespalib::string spec() const;
@@ -73,6 +74,8 @@ public:
     }
     static SocketAddress from_path(const vespalib::string &path);
     static SocketAddress from_name(const vespalib::string &name);
+    static std::vector<SocketAddress> get_interfaces();
+    static vespalib::string normalize(const vespalib::string &host_name);
 };
 
 } // namespace vespalib
