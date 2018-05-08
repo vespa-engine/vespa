@@ -73,7 +73,7 @@ public class SystemUpgrader extends Maintainer {
         try {
             return controller().configServer()
                                .nodeRepository()
-                               .list(zone, application)
+                               .listOperational(zone, application)
                                .stream()
                                .map(versionField)
                                .min(Comparator.naturalOrder())

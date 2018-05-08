@@ -54,8 +54,8 @@ public class NodeRepositoryMock implements NodeRepository {
         nodeRepository.getOrDefault(zone, Collections.emptyMap()).values()
                       .stream()
                       .filter(node -> node.type() == type)
-                      .map(node -> new Node(node.hostname(), node.type(), node.owner(), node.currentVersion(),
-                                            version))
+                      .map(node -> new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                                            node.currentVersion(), version))
                       .forEach(node -> add(zone, node));
     }
 

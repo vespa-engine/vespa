@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
@@ -39,6 +40,9 @@ public class SystemUpgraderTest {
 
         Version version1 = Version.fromString("6.5");
         tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4));
+        // Fail a few nodes. Failed nodes should not affect versions
+        failNodeIn(zone1, SystemApplication.configServer);
+        failNodeIn(zone3, SystemApplication.zone);
         tester.upgradeSystem(version1);
         tester.systemUpgrader().maintain();
         assertCurrentVersion(SystemApplication.configServer, version1, zone1, zone2, zone3, zone4);
@@ -127,12 +131,22 @@ public class SystemUpgraderTest {
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */
     private void completeUpgrade(SystemApplication application, Version version, ZoneId... zones) {
         for (ZoneId zone : zones) {
-            for (Node node : nodeRepository().list(zone, application.id())) {
-                nodeRepository().add(zone, new Node(node.hostname(), node.type(), node.owner(), node.wantedVersion(),
-                                                    node.wantedVersion()));
+            for (Node node : nodeRepository().listOperational(zone, application.id())) {
+                nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                                                    node.wantedVersion(), node.wantedVersion()));
             }
             assertCurrentVersion(application, version, zone);
         }
+    }
+
+    private void failNodeIn(ZoneId zone, SystemApplication application) {
+        List<Node> nodes = nodeRepository().list(zone, application.id());
+        if (nodes.isEmpty()) {
+            throw new IllegalArgumentException("No nodes allocated to " + application.id());
+        }
+        Node node = nodes.get(0);
+        nodeRepository().add(zone, new Node(node.hostname(), Node.State.failed, node.type(), node.owner(),
+                                            node.currentVersion(), node.wantedVersion()));
     }
 
     private void assertWantedVersion(SystemApplication application, Version version, ZoneId... zones) {
@@ -143,10 +157,10 @@ public class SystemUpgraderTest {
         assertVersion(application.id(), version, Node::currentVersion, zones);
     }
 
-    private void assertVersion(ApplicationId applicationId, Version version, Function<Node, Version> versionField,
+    private void assertVersion(ApplicationId application, Version version, Function<Node, Version> versionField,
                                ZoneId... zones) {
         for (ZoneId zone : zones) {
-            for (Node node : nodeRepository().list(zone, applicationId)) {
+            for (Node node : nodeRepository().listOperational(zone, application)) {
                 assertEquals(version, versionField.apply(node));
             }
         }
