@@ -67,7 +67,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
             if (hostIdentity == null)
                 return Optional.of(ErrorResponse.internalServerError(createErrorMessage(request, "Principal is missing. NodeIdentifierFilter has not been applied.")));
             if (!authorizer.test(hostIdentity, request.getUri()))
-                return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials")));
+                return Optional.of(ErrorResponse.forbidden(createErrorMessage(request, "Invalid credentials: " + hostIdentity.toString())));
             request.setUserPrincipal(hostIdentity);
             return Optional.empty();
         } catch (NodeIdentifier.NodeIdentifierException e) {
