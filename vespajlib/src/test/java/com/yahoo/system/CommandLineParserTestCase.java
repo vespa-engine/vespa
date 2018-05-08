@@ -1,10 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.system;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class CommandLineParserTestCase extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+public class CommandLineParserTestCase {
+
+    @Test
     public void testParse1() {
         String[] args = new String[] {"-d", "-f", "hello.txt"};
         CommandLineParser parser = new CommandLineParser(args);
@@ -21,6 +28,7 @@ public class CommandLineParserTestCase extends TestCase {
         assertEquals(parser.getArguments().size(), 0);
     }
 
+    @Test
     public void testParse2() {
         String[] args = new String[] {"-d", "-f", "hello.txt", "-XX", "myName", "-o", "output file", "myLastField"};
         CommandLineParser parser = new CommandLineParser("progname", args);
@@ -56,6 +64,7 @@ public class CommandLineParserTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testIllegal() {
         String[] args = new String[] {"-d", "-f", "hello.txt", "-XX", "myName", "-o", "output file", "myLastField"};
         CommandLineParser parser = new CommandLineParser(args);
@@ -82,6 +91,7 @@ public class CommandLineParserTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testRequired() {
         String[] args1 = new String[] {"-d", "-f", "hello.txt", "-XX", "myName", "-o", "output file", "myLastField"};
         String[] args2 = new String[] {"-XX", "myName", "-o", "output file", "myLastField"};
@@ -122,4 +132,5 @@ public class CommandLineParserTestCase extends TestCase {
         parser.parse();
         assertEquals(parser.getUnarySwitches().get(0), "-d");
     }
+
 }

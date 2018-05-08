@@ -1,20 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
 
+import org.junit.Test;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertArrayEquals;;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;;
 
 /**
  * Tests GrowableByteBuffer.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class GrowableByteBufferTestCase extends junit.framework.TestCase {
+public class GrowableByteBufferTestCase {
+
+    private static final double delta = 0.00000000001;
+
+    @Test
     public void testBuffer() {
         GrowableByteBuffer buf = new GrowableByteBuffer(20, 1.5f);
 
@@ -82,6 +92,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(130, buf.capacity());
     }
 
+    @Test
     public void testGrowth() {
         GrowableByteBuffer buf = new GrowableByteBuffer(256, 2.0f);
 
@@ -140,6 +151,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(45468, buf.limit());
     }
 
+    @Test
     public void testBadGrowthFactors() {
         try {
             new GrowableByteBuffer(100, 1.0f);
@@ -162,6 +174,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testPropertiesNonDirect() {
         GrowableByteBuffer buf = new GrowableByteBuffer(10, 1.5f);
         buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -184,6 +197,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(false, buf.isDirect());
     }
 
+    @Test
     public void testPropertiesDirect() {
         // allocate* are simply encapsulated, so don't add logic to them,
         // therefore minimum size becomes what it says
@@ -207,6 +221,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(true, buf.isDirect());
     }
 
+    @Test
     public void testNumberEncodings() {
         GrowableByteBuffer buf = new GrowableByteBuffer();
         buf.putInt1_2_4Bytes(124);
@@ -334,6 +349,8 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
 
         assertEquals(endWritePos, endReadPos);
     }
+
+    @Test
     public void testNumberLengths() {
         assertEquals(1, GrowableByteBuffer.getSerializedSize1_4Bytes(0));
         assertEquals(1, GrowableByteBuffer.getSerializedSize1_4Bytes(1));
@@ -374,12 +391,14 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(4, GrowableByteBuffer.getSerializedSize1_2_4Bytes(16385));
     }
 
+    @Test
     public void testSize0() {
         GrowableByteBuffer buf = new GrowableByteBuffer(0, 2.0f);
         buf.put((byte) 1);
         buf.put((byte) 1);
     }
 
+    @Test
     public void testExceptionSafety() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         ByteBuffer b = ByteBuffer.allocate(232);
@@ -397,11 +416,13 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testGrowthFactorAccessor() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
-        assertEquals(GrowableByteBuffer.DEFAULT_GROW_FACTOR, g.getGrowFactor());
+        assertEquals(GrowableByteBuffer.DEFAULT_GROW_FACTOR, g.getGrowFactor(), delta);
     }
 
+    @Test
     public void testGrowthWithNonZeroMark() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         final int mark = 16;
@@ -415,12 +436,14 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(mark, g.getByteBuffer().reset().position());
     }
 
+    @Test
     public void testPutInt2_4_8BytesMore() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         g.putInt2_4_8Bytes(0x9000);
         assertEquals(4, g.position());
     }
 
+    @Test
     public void testPutInt2_4_8BytesAs4() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         boolean caught = false;
@@ -441,6 +464,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(4, g.position());
     }
 
+    @Test
     public void testGetInt2_4_8Bytes() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         final long expected3 = 37L;
@@ -455,6 +479,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(expected, g.getInt2_4_8Bytes());
     }
 
+    @Test
     public void testSerializedSize2_4_8BytesIllegalValues() {
         boolean caught = false;
         try {
@@ -472,6 +497,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertTrue(caught);
     }
 
+    @Test
     public void testPutInt1_2_4BytesAs4IllegalValues() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         boolean caught = false;
@@ -490,6 +516,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertTrue(caught);
     }
 
+    @Test
     public void testSerializedSize1_2_4BytesIllegalValues() {
         boolean caught = false;
         try {
@@ -507,6 +534,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertTrue(caught);
     }
 
+    @Test
     public void testPutInt1_4BytesAs4() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         boolean caught = false;
@@ -520,6 +548,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(4, g.position());
     }
 
+    @Test
     public void testSerializedSize1_4BytesIllegalValues() {
         boolean caught = false;
         try {
@@ -530,16 +559,18 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertTrue(caught);
     }
 
+    @Test
     public void testBuilders() {
         GrowableByteBuffer g = GrowableByteBuffer.allocate(1063);
         assertEquals(1063, g.capacity());
         g = GrowableByteBuffer.allocate(1063, 37.0f);
         assertEquals(1063, g.capacity());
-        assertEquals(37.0f, g.getGrowFactor());
+        assertEquals(37.0f, g.getGrowFactor(), delta);
         g = GrowableByteBuffer.allocateDirect(1063);
         assertTrue(g.isDirect());
     }
 
+    @Test
     public void testForwarding() {
         GrowableByteBuffer g = new GrowableByteBuffer(1063);
         int first = g.arrayOffset();
@@ -550,11 +581,11 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals('a', g.getChar(0));
         assertEquals('a', g.asCharBuffer().get(0));
         g.putDouble(0, 10.0d);
-        assertEquals(10.0d, g.getDouble(0));
-        assertEquals(10.0d, g.asDoubleBuffer().get(0));
+        assertEquals(10.0d, g.getDouble(0), delta);
+        assertEquals(10.0d, g.asDoubleBuffer().get(0), delta);
         g.putFloat(0, 10.0f);
-        assertEquals(10.0f, g.getFloat(0));
-        assertEquals(10.0f, g.asFloatBuffer().get(0));
+        assertEquals(10.0f, g.getFloat(0), delta);
+        assertEquals(10.0f, g.asFloatBuffer().get(0), delta);
         g.putInt(0, 10);
         assertEquals(10, g.getInt(0));
         assertEquals(10, g.asIntBuffer().get(0));
@@ -580,6 +611,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals((byte) 10, g.get(0));
     }
 
+    @Test
     public void testComparison() {
         GrowableByteBuffer g0 = new GrowableByteBuffer(32);
         GrowableByteBuffer g1 = new GrowableByteBuffer(32);
@@ -593,6 +625,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(-1, g0.compareTo(g1));
     }
 
+    @Test
     public void testDuplicate() {
         GrowableByteBuffer g0 = new GrowableByteBuffer(32);
         GrowableByteBuffer g1 = g0.duplicate();
@@ -600,6 +633,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(12, g1.get());
     }
 
+    @Test
     public void testGetByteArrayOffsetLen() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         byte[] expected = new byte[] { (byte) 1, (byte) 2, (byte) 3 };
@@ -612,6 +646,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertArrayEquals(expected, got);
     }
 
+    @Test
     public void testPutByteArrayOffsetLen() {
         GrowableByteBuffer g = new GrowableByteBuffer(32);
         byte[] expected = new byte[] { (byte) 1, (byte) 2, (byte) 3 };
@@ -622,6 +657,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertArrayEquals(expected, got);
     }
 
+    @Test
     public void testPutGrowableBuffer() {
         GrowableByteBuffer g0 = new GrowableByteBuffer(32);
         byte[] expected = new byte[] { (byte) 1, (byte) 2, (byte) 3 };
@@ -643,6 +679,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         return g;
     }
 
+    @Test
     public void testPutWithGrow() {
         GrowableByteBuffer g = fullBuffer();
         final int capacity = g.capacity();
@@ -697,6 +734,7 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertTrue(capacity < g.capacity());
     }
 
+    @Test
     public void testSlice() {
         GrowableByteBuffer g0 = new GrowableByteBuffer(32);
         GrowableByteBuffer g1 = g0.slice();
@@ -705,27 +743,30 @@ public class GrowableByteBufferTestCase extends junit.framework.TestCase {
         assertEquals(expected, g1.getInt());
     }
 
+    @Test
     public void testToString() {
         assertEquals("GrowableByteBuffer[pos=32 lim=32 cap=32 grow=2.0]",
-                fullBuffer().toString());
+                     fullBuffer().toString());
     }
 
+    @Test
     public void testWrappers() {
         final byte expected = (byte) 2;
         byte[] data = new byte[] { (byte) 1, expected, (byte) 3 };
         final float grow = 9e5f;
         GrowableByteBuffer g = GrowableByteBuffer.wrap(data, grow);
         assertEquals(expected, g.get(1));
-        assertEquals(grow, g.getGrowFactor());
+        assertEquals(grow, g.getGrowFactor(), delta);
         g = GrowableByteBuffer.wrap(data, 1, 1);
         assertEquals(expected, g.get());
         assertEquals(2, g.limit());
         g = GrowableByteBuffer.wrap(data, 1, 1, grow);
         assertEquals(expected, g.get());
         assertEquals(2, g.limit());
-        assertEquals(grow, g.getGrowFactor());
+        assertEquals(grow, g.getGrowFactor(), delta);
     }
 
+    @Test
     public void testByteBufferMethods() {
         GrowableByteBuffer g = fullBuffer();
         assertFalse(g.hasRemaining());

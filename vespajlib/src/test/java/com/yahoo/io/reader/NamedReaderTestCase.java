@@ -9,15 +9,19 @@ import java.util.Collections;
 
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.protect.ClassValidator;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests all method of NamedReader.
  *
  * @author bratseth
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class NamedReaderTestCase extends junit.framework.TestCase {
+public class NamedReaderTestCase {
 
+    @Test
     public void testIt() {
         StringReader stringReader=new StringReader("hello world");
         NamedReader r=new NamedReader("test1",stringReader);
@@ -28,9 +32,10 @@ public class NamedReaderTestCase extends junit.framework.TestCase {
         NamedReader.closeAll(null); // noop, nor exception
     }
 
+    @Test
     public void testMethodMasking() {
         assertEquals(0,
-                ClassValidator.unmaskedMethodsFromSuperclass(NamedReader.class).size());
+                     ClassValidator.unmaskedMethodsFromSuperclass(NamedReader.class).size());
     }
 
     private static class MarkerReader extends Reader {
@@ -104,6 +109,7 @@ public class NamedReaderTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testAllDelegators() throws IOException {
         MarkerReader m = new MarkerReader();
         NamedReader r = new NamedReader("nalle", m);
@@ -128,4 +134,5 @@ public class NamedReaderTestCase extends junit.framework.TestCase {
         r.close();
         assertEquals(MarkerReader.CLOSE, m.lastMethodHit);
     }
+
 }
