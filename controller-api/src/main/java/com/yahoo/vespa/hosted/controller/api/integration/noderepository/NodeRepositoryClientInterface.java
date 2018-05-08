@@ -13,6 +13,9 @@ import java.util.Collection;
  * @author bjorncs
  */
 // TODO: Get rid of all the checked exceptions
+// TODO: Replace remaining controller-server usages of this with
+// com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository and move this package back to internal
+// repo
 public interface NodeRepositoryClientInterface {
 
     enum WantTo {

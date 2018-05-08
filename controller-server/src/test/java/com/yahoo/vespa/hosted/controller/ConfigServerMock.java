@@ -65,7 +65,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()
                                                                                                  .value()),
-                                                    application.nodeType(),
+                                                    Node.State.active, application.nodeType(),
                                                     Optional.of(application.id()),
                                                     initialVersion,
                                                     initialVersion
@@ -98,7 +98,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void setVersion(Version version, ZoneId zone, List<SystemApplication> applications) {
         for (SystemApplication application : applications) {
             for (Node node : nodeRepository().list(zone, application.id())) {
-                nodeRepository().add(zone, new Node(node.hostname(), node.type(), node.owner(), version, version));
+                nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                                                    version, version));
             }
         }
     }
@@ -155,7 +156,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 application.activate();
                 for (Node node : nodeRepository.list(deployment.zoneId(), deployment.applicationId())) {
                     nodeRepository.add(deployment.zoneId(), new Node(node.hostname(),
-                                                                     node.type(),
+                                                                     node.state(), node.type(),
                                                                      node.owner(),
                                                                      node.currentVersion(),
                                                                      application.version().get()));

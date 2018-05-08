@@ -17,14 +17,16 @@ import java.util.Optional;
 public class Node {
 
     private final HostName hostname;
+    private final State state;
     private final Optional<ApplicationId> owner;
     private final NodeType type;
     private final Version currentVersion;
     private final Version wantedVersion;
 
-    public Node(HostName hostname, NodeType type, Optional<ApplicationId> owner, Version currentVersion,
+    public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner, Version currentVersion,
                 Version wantedVersion) {
         this.hostname = hostname;
+        this.state = state;
         this.type = type;
         this.owner = owner;
         this.currentVersion = currentVersion;
@@ -34,6 +36,8 @@ public class Node {
     public HostName hostname() {
         return hostname;
     }
+
+    public State state() { return state; }
 
     public NodeType type() {
         return type;
@@ -62,6 +66,18 @@ public class Node {
     @Override
     public int hashCode() {
         return Objects.hash(hostname);
+    }
+
+    /** Known node states */
+    public enum State {
+        provisioned,
+        ready,
+        reserved,
+        active,
+        inactive,
+        dirty,
+        failed,
+        parked
     }
 
 }

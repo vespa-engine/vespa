@@ -61,8 +61,8 @@ public class VersionStatusTest {
         Version oldest = new Version(5);
         for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
             for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
-                tester.configServer().nodeRepository().add(zone, new Node(node.hostname(), node.type(), node.owner(),
-                                                                          oldest, node.wantedVersion()));
+                tester.configServer().nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(),
+                                                                          node.owner(), oldest, node.wantedVersion()));
                 break;
             }
         }
