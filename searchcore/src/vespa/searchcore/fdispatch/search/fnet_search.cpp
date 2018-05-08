@@ -28,13 +28,13 @@ using search::engine::PacketConverter;
 
 FastS_FNET_SearchNode::FastS_FNET_SearchNode(FastS_FNET_Search *search, uint32_t partid)
     : _search(search),
-      _engine(NULL),
-      _channel(NULL),
+      _engine(nullptr),
+      _channel(nullptr),
       _subds(0),
       _partid(partid),
       _rowid(0),
       _stamp(0),
-      _qresult(NULL),
+      _qresult(nullptr),
       _queryTime(0.0),
       _flags(),
       _docidCnt(0),
@@ -42,14 +42,14 @@ FastS_FNET_SearchNode::FastS_FNET_SearchNode(FastS_FNET_Search *search, uint32_t
       _docsumRow(0),
       _docsum_offsets_idx(0),
       _docsumTime(0.0),
-      _gdx(NULL),
+      _gdx(nullptr),
       _docsum_offsets(),
       _extraDocsumNodes(),
       _nextExtraDocsumNode(this),
       _prevExtraDocsumNode(this),
-      _hit_beg(NULL),
-      _hit_cur(NULL),
-      _hit_end(NULL),
+      _hit_beg(nullptr),
+      _hit_cur(nullptr),
+      _hit_end(nullptr),
       _sortDataIterator()
 {
 }
@@ -58,10 +58,10 @@ FastS_FNET_SearchNode::FastS_FNET_SearchNode(FastS_FNET_Search *search, uint32_t
 FastS_FNET_SearchNode::~FastS_FNET_SearchNode()
 {
     Disconnect();
-    if (_qresult != NULL) {
+    if (_qresult != nullptr) {
         _qresult->Free();
     }
-    if (_gdx != NULL) {
+    if (_gdx != nullptr) {
         _gdx->Free();
     }
 }
@@ -80,7 +80,7 @@ FastS_FNET_SearchNode::NT_InitMerge(uint32_t *numDocs,
                                     uint32_t *sortDataDocs)
 {
     uint32_t myNumDocs = 0;
-    if (_qresult != NULL) {
+    if (_qresult != nullptr) {
         myNumDocs = _qresult->_numDocs;
         *numDocs += myNumDocs;
         *totalHits += _qresult->_totNumDocs;
@@ -121,7 +121,7 @@ allocGDX(search::docsummary::GetDocsumArgs *args, const search::engine::Properti
     _gdx = gdx;
     _docsum_offsets.resize(_gdx->_docid.size());
     _docsum_offsets_idx = 0;
-    if (args == NULL)
+    if (args == nullptr)
         return;
 
     if (args->getRankProfile().size() != 0 || args->GetQueryFlags() != 0) {
@@ -172,7 +172,7 @@ FastS_FNET_SearchNode::postGDX(uint32_t *pendingDocsums, uint32_t *docsumNodes)
         *pendingDocsums += _pendingDocsums;
         (*docsumNodes)++;
     }
-    _gdx = NULL; // packet hand-over
+    _gdx = nullptr; // packet hand-over
     _docsum_offsets_idx = 0;
 }
 
@@ -214,7 +214,7 @@ allocExtraDocsumNode(bool mld, uint32_t rowid, uint32_t rowbits)
 
     uint32_t idx = (rowid << 1) + (mld ? 1 : 0);
 
-    if (_extraDocsumNodes[idx].get() == NULL) {
+    if (_extraDocsumNodes[idx].get() == nullptr) {
         UP eNode(new FastS_FNET_SearchNode(_search, getPartID()));
         eNode->_docsumRow = rowid;
         eNode->_flags._docsumMld = mld;
@@ -338,7 +338,7 @@ FastS_FNET_Search::ConnectQueryNodes()
     {
         auto dsGuard(_dataset->getDsGuard());
         for (uint32_t i = 0; i < _nodes.size(); i++) {
-            FastS_EngineBase *engine = NULL;
+            FastS_EngineBase *engine = nullptr;
             if (_dataset->useFixedRowDistribution()) {
                 engine = _dataset->getPartition(dsGuard, i, fixedRow);
                 LOG(debug, "FixedRow: getPartition(part=%u, row=%u) -> engine(%s)", i, fixedRow, (engine != nullptr ? engine->GetName() : "null"));
@@ -872,22 +872,29 @@ FastS_FNET_Search::CheckCoverage()
     uint16_t nodesQueried = 0;
     uint16_t nodesReplied = 0;
     size_t cntNone(0);
+    size_t connectedNodes(0);
 
     for (const FastS_FNET_SearchNode & node : _nodes) {
-        if (node._qresult != NULL) {
-            covDocs  += node._qresult->_coverageDocs;
-            activeDocs  += node._qresult->_activeDocs;
-            soonActiveDocs += node._qresult->_soonActiveDocs;
-            degradedReason |= node._qresult->_coverageDegradeReason;
-            nodesQueried += node._qresult->getNodesQueried();
-            nodesReplied += node._qresult->getNodesReplied();
-        } else {
-            nodesQueried++;
-            cntNone++;
+        if (node.IsConnected()) {
+            connectedNodes++;
+            if (node._qresult != nullptr) {
+                covDocs  += node._qresult->_coverageDocs;
+                activeDocs  += node._qresult->_activeDocs;
+                soonActiveDocs += node._qresult->_soonActiveDocs;
+                degradedReason |= node._qresult->_coverageDegradeReason;
+                nodesQueried += node._qresult->getNodesQueried();
+                nodesReplied += node._qresult->getNodesReplied();
+            } else {
+                nodesQueried++;
+                cntNone++;
+            }
         }
     }
-    if ((cntNone > 0) && (cntNone != _nodes.size())) {
-        activeDocs += cntNone * activeDocs/(_nodes.size() - cntNone);
+    const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
+    if ((missingParts > 0) && (cntNone != connectedNodes)) {
+        // TODO This is a dirty way of anticipating missing coverage.
+        // It should be done differently
+        activeDocs += missingParts * activeDocs/(connectedNodes - cntNone);
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
 }
@@ -959,7 +966,7 @@ void
 FastS_FNET_Search::CheckQueryTimeout()
 {
     if (_queryNodes != 0 && _queryNodesTimedOut >= _queryNodes)
-        SetError(search::engine::ECODE_TIMEOUT, NULL);
+        SetError(search::engine::ECODE_TIMEOUT, nullptr);
     if (!_queryTimeout)
         return;
 
@@ -990,7 +997,7 @@ void
 FastS_FNET_Search::CheckDocsumTimeout()
 {
     if (_docsumNodes != 0 && _docsumNodesTimedOut >= _docsumNodes)
-        SetError(search::engine::ECODE_TIMEOUT, NULL);
+        SetError(search::engine::ECODE_TIMEOUT, nullptr);
     if (!_docsumTimeout)
         return;
 
@@ -1127,7 +1134,7 @@ FastS_FNET_Search::Search(uint32_t searchOffset,
         if (done) {
             _FNET_mode = FNET_NONE;
             if (all_down) {
-                SetError(search::engine::ECODE_ALL_PARTITIONS_DOWN, NULL);
+                SetError(search::engine::ECODE_ALL_PARTITIONS_DOWN, nullptr);
             }
         }
     }
@@ -1408,11 +1415,11 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
         // patch in engine dependent features and send docsum requests
 
         for (FastS_FNET_SearchNode & node : _nodes) {
-            if (node._gdx != NULL)
+            if (node._gdx != nullptr)
                 node.postGDX(&_pendingDocsums, &_docsumNodes);
             for (FastS_FNET_SearchNode::ExtraDocsumNodesIter iter(&node); iter.valid(); ++iter) {
                 FastS_FNET_SearchNode *eNode = *iter;
-                if (eNode->_gdx != NULL)
+                if (eNode->_gdx != nullptr)
                     eNode->postGDX(&_pendingDocsums, &_docsumNodes);
             }
         }

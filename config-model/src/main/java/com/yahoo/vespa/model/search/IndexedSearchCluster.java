@@ -96,6 +96,8 @@ public class IndexedSearchCluster extends SearchCluster
     private final UnionConfiguration unionCfg;
     private int maxNodesDownPerFixedRow = 0;
 
+    private int searchableCopies = 1;
+
     private final SimpleConfigProducer dispatchParent;
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
@@ -353,7 +355,13 @@ public class IndexedSearchCluster extends SearchCluster
     public void setMaxNodesDownPerFixedRow(int value) {
         maxNodesDownPerFixedRow = value;
     }
+    public int getSearchableCopies() {
+        return searchableCopies;
+    }
 
+    public void setSearchableCopies(int searchableCopies) {
+        this.searchableCopies = searchableCopies;
+    }
     public void setDispatchSpec(DispatchSpec dispatchSpec) {
         if (dispatchSpec.getNumDispatchGroups() != null) {
             this.dispatchSpec = new DispatchSpec.Builder().setGroups

@@ -17,9 +17,7 @@ class FastS_EngineDesc;
 class FastS_DataSetCollection;
 class FastS_ISearch;
 class FastS_QueryResult;
-class FastS_QueryCache;
 class FastS_PlainDataSet;
-class FastS_DataSetInfo;
 class FastS_FNET_DataSet;
 class FastS_AppContext;
 class FastS_QueryPerf;
@@ -30,10 +28,6 @@ class FNET_Task;
 class FastS_DataSetBase
 {
     friend class FastS_DataSetCollection;
-private:
-    FastS_DataSetBase(const FastS_DataSetBase &);
-    FastS_DataSetBase& operator=(const FastS_DataSetBase &);
-
 public:
 
     //----------------------------------------------------------------
@@ -175,10 +169,13 @@ protected:
     // Total cost as seen by referencing objects
     std::atomic<uint32_t>  _totalrefcost;
     uint32_t     _mldDocStamp;
+private:
+    uint32_t     _searchableCopies;
 
 public:
-    FastS_DataSetBase(FastS_AppContext *appCtx,
-                      FastS_DataSetDesc *desc);
+    FastS_DataSetBase(const FastS_DataSetBase &) = delete;
+    FastS_DataSetBase& operator=(const FastS_DataSetBase &) = delete;
+    FastS_DataSetBase(FastS_AppContext *appCtx, FastS_DataSetDesc *desc);
     virtual ~FastS_DataSetBase();
 
     // locking stuff
@@ -204,6 +201,7 @@ public:
     void UpdateSearchTime(double tnow, double elapsed, bool timedout);
     void UpdateEstimateCount();
     void CountTimeout();
+    uint32_t getSearchableCopies() const { return _searchableCopies; }
 
     void ScheduleCheckTempFail();
     virtual void DeQueueHeadWakeup_HasLock();
@@ -226,8 +224,8 @@ public:
 
     // typesafe down-cast
     //-------------------
-    virtual FastS_PlainDataSet     *GetPlainDataSet()     { return NULL; }
-    virtual FastS_FNET_DataSet     *GetFNETDataSet()      { return NULL; }
+    virtual FastS_PlainDataSet     *GetPlainDataSet()     { return nullptr; }
+    virtual FastS_FNET_DataSet     *GetFNETDataSet()      { return nullptr; }
 };
 
 //---------------------------------------------------------------------------

@@ -72,6 +72,8 @@ public class DispatchGroup {
         return sc.getMinNodesPerColumn();
     }
 
+    public int getSearchableCopies() { return sc.getSearchableCopies(); }
+
     public int getMaxNodesDownPerFixedRow() {
         return sc.getMaxNodesDownPerFixedRow();
     }

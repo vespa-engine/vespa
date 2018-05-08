@@ -74,12 +74,6 @@ public:
             FIXEDROW      = PartitionsConfig::Dataset::FIXEDROW
         };
 
-        struct InvalidModeException {
-            Mode _mode;
-            InvalidModeException(Mode mode) : _mode(mode)
-            {}
-        };
-
         QueryDistributionMode(Mode mode, double minGroupCoverage, double latencyDecayRate) :
             _mode(mode),
             _minGroupCoverage(minGroupCoverage),
@@ -126,6 +120,7 @@ private:
     uint32_t _id;
     QueryDistributionMode _queryDistributionMode;
 
+    uint32_t _searchableCopies;
     uint32_t _unitRefCost;           // Cost to reference us
     uint32_t _partBits;              // # bits used to encode part id
     uint32_t _rowBits;               // # bits used to encode row id
@@ -172,6 +167,7 @@ public:
 
     uint32_t GetID() const { return _id; }
     void SetUnitRefCost(uint32_t value) { _unitRefCost = value; }
+    void setSearchableCopies(uint32_t value) { _searchableCopies = value; }
 
     void SetPartBits(uint32_t value) {
        if (value >= MIN_PARTBITS && value <= MAX_PARTBITS)
@@ -233,6 +229,7 @@ public:
     uint32_t GetEstPartCutoff() const { return _estPartCutoff; }
     bool IsEstimatePartsSet() const { return _estimatePartsSet; }
     bool IsEstPartCutoffSet() const { return _estPartCutoffSet; }
+    uint32_t getSearchableCopies() const { return _searchableCopies; }
     uint32_t GetMinOurActive() const { return _minOurActive; }
     uint32_t GetMaxOurActive() const { return _maxOurActive; }
     uint32_t GetCutoffOurActive() const { return _cutoffOurActive; }

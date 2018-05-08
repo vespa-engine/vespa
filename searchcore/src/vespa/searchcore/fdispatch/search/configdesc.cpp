@@ -17,6 +17,7 @@ double FastS_DataSetDesc::_defaultSlowDocsumLimitBias   = 100.0;
 FastS_DataSetDesc::FastS_DataSetDesc(uint32_t datasetid)
     : _id(datasetid),
       _queryDistributionMode(QueryDistributionMode::AUTOMATIC, 100.0, 10000),
+      _searchableCopies(1),
       _unitRefCost(0),
       _partBits(6),
       _rowBits(0),
@@ -283,6 +284,7 @@ FastS_DataSetCollDesc::ReadConfig(const PartitionsConfig& partmap)
 
         FastS_DataSetDesc *dataset = LookupCreateDataSet(dsconfig.id);
 
+        dataset->setSearchableCopies(dsconfig.searchablecopies);
         dataset->SetUnitRefCost(dsconfig.refcost);
         dataset->SetPartBits(dsconfig.partbits);
         dataset->SetRowBits(dsconfig.rowbits);

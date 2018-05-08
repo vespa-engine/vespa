@@ -35,8 +35,8 @@ FastS_DataSetBase::overload_t::overload_t(FastS_DataSetDesc *desc)
 //--------------------------------------------------------------------------
 
 FastS_DataSetBase::queryQueue_t::queryQueue_t(FastS_DataSetDesc *desc)
-    : _head(NULL),
-      _tail(NULL),
+    : _head(nullptr),
+      _tail(nullptr),
       _queueLen(0),
       _active(0),
       _drainAllowed(0.0),
@@ -55,10 +55,10 @@ FastS_DataSetBase::queryQueue_t::~queryQueue_t()
 void
 FastS_DataSetBase::queryQueue_t::QueueTail(queryQueued_t *newqueued)
 {
-    FastS_assert(newqueued->_next == NULL &&
+    FastS_assert(newqueued->_next == nullptr &&
                  _head != newqueued &&
                  _tail != newqueued);
-    if (_tail != NULL)
+    if (_tail != nullptr)
         _tail->_next = newqueued;
     else
         _head = newqueued;
@@ -72,11 +72,11 @@ FastS_DataSetBase::queryQueue_t::DeQueueHead()
 {
     queryQueued_t *queued = _head;
     FastS_assert(_queueLen > 0);
-    FastS_assert(queued->_next != NULL || _tail == queued);
+    FastS_assert(queued->_next != nullptr || _tail == queued);
     _head = queued->_next;
-    if (queued->_next == NULL)
-        _tail = NULL;
-    queued->_next = NULL;
+    if (queued->_next == nullptr)
+        _tail = nullptr;
+    queued->_next = nullptr;
     _queueLen--;
 }
 
@@ -92,8 +92,8 @@ FastS_DataSetBase::FastS_DataSetBase(FastS_AppContext *appCtx,
       _id(desc->GetID()),
       _unitrefcost(desc->GetUnitRefCost()),
       _totalrefcost(0),
-      _mldDocStamp(0u)
-
+      _mldDocStamp(0u),
+      _searchableCopies(desc->getSearchableCopies())
 {
     _createtime.SetNow();
 }
@@ -122,7 +122,7 @@ FastS_DataSetBase::DeQueueHeadWakeup_HasLock()
     _queryQueue.DeQueueHead();
     queued->UnmarkQueued();
     FNET_Task *dequeuedTask = queued->getDequeuedTask();
-    if (dequeuedTask != NULL) {
+    if (dequeuedTask != nullptr) {
         dequeuedTask->ScheduleNow();
     } else {
         queued->SignalCond();
@@ -202,7 +202,7 @@ FastS_DataSetBase::CheckQueryQueue_HasLock(FastS_TimeKeeper *timeKeeper)
     while (_queryQueue._drainAllowed >= (double) dispatchnodes ||
            active < _queryQueue._overload._minouractive) {
         queued = _queryQueue.GetFirst();
-        if (queued == NULL) {
+        if (queued == nullptr) {
             return;
         }
 
@@ -240,7 +240,7 @@ FastS_DataSetBase::AbortQueryQueue_HasLock()
     _queryQueue._overload._cutoffouractive = 0;
     for (;;) {
         queued = _queryQueue.GetFirst();
-        if (queued == NULL)
+        if (queued == nullptr)
             break;
         // Doesn't lock query, but other thread is waiting on queue
         queued->MarkAbort();

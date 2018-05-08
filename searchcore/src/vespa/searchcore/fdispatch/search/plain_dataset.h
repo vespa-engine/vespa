@@ -87,9 +87,6 @@ private:
 class FastS_PlainDataSet : public FastS_DataSetBase
 {
     friend class FastS_NodeManager;
-private:
-    FastS_PlainDataSet(const FastS_PlainDataSet &);
-    FastS_PlainDataSet& operator=(const FastS_PlainDataSet &);
 
 public:
 
