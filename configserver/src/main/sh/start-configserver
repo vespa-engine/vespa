@@ -82,6 +82,7 @@ fixddir () {
 
 fixddir ${VESPA_HOME}/conf/zookeeper
 fixfile ${VESPA_HOME}/conf/zookeeper/zookeeper.cfg
+fixddir ${VESPA_HOME}/var/zookeeper
 fixfile ${VESPA_HOME}/var/zookeeper/myid
 fixddir ${VESPA_HOME}/var/zookeeper/version-2
 
