@@ -5,14 +5,8 @@
 
 using namespace vespalib;
 
-vespalib::string run_cmd(const vespalib::string &cmd) {
-    std::string out;
-    ASSERT_TRUE(SlaveProc::run(cmd.c_str(), out));
-    return out;
-}
-
 TEST("require that host name can be obtained") {
-    EXPECT_EQUAL(run_cmd("hostname"), HostName::get());
+    EXPECT_NOT_EQUAL("", HostName::get());
 }
 
 TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
