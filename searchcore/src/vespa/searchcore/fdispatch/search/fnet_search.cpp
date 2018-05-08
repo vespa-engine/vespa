@@ -374,7 +374,7 @@ FastS_FNET_Search::ConnectEstimateNodes()
         auto dsGuard(_dataset->getDsGuard());
         while (partcnt < _dataset->GetEstimateParts() && trycnt < _estPartCutoff) {
             FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partid);
-            if (engine != NULL) {
+            if (engine != nullptr) {
                 engines.emplace_back(engine, getNode(partid));
                 partcnt++;
             }
@@ -389,8 +389,8 @@ FastS_FNET_Search::ConnectEstimateNodes()
 
 void FastS_FNET_SearchNode::Connect(FastS_FNET_Engine *engine)
 {
-    FastS_assert(_engine == NULL);
-    FastS_assert(_channel == NULL);
+    FastS_assert(_engine == nullptr);
+    FastS_assert(_channel == nullptr);
 
     _engine = engine;
     _flags._needSubCost = true;
@@ -440,7 +440,7 @@ void FastS_FNET_Search::connectSearchPath(const SearchPath::Element &elem,
                 if (partId < _nodes.size()) {
                     FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partId);
                     LOG(debug, "searchpath='%s', partId=%ld, dispatchLevel=%u", spec.c_str(), partId, dispatchLevel);
-                    if (engine != NULL) {
+                    if (engine != nullptr) {
                         engines.emplace_back(engine, getNode(partId));
                     }
                 }
@@ -450,7 +450,7 @@ void FastS_FNET_Search::connectSearchPath(const SearchPath::Element &elem,
                 if (partId < _nodes.size()) {
                     FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partId, elem.row());
                     LOG(debug, "searchpath='%s', partId=%ld, row=%ld, dispatchLevel=%u", spec.c_str(), partId, elem.row(), dispatchLevel);
-                    if (engine != NULL) {
+                    if (engine != nullptr) {
                         engines.emplace_back(engine, getNode(partId));
                     }
                 }
@@ -473,7 +473,7 @@ FastS_FNET_Search::ConnectDocsumNodes(bool ignoreRow)
     {
         auto dsGuard(_dataset->getDsGuard());
         for (auto & node : _nodes) {
-            if (node._gdx != NULL) {
+            if (node._gdx != nullptr) {
                 FastS_EngineBase *engine = node.getPartition(dsGuard, userow, _dataset);
                 if (engine != nullptr) {
                     engines.emplace_back(engine, &node);
@@ -481,7 +481,7 @@ FastS_FNET_Search::ConnectDocsumNodes(bool ignoreRow)
             }
             for (FastS_FNET_SearchNode::ExtraDocsumNodesIter iter(&node); iter.valid(); ++iter) {
                 FastS_FNET_SearchNode *eNode = *iter;
-                if (eNode->_gdx != NULL) {
+                if (eNode->_gdx != nullptr) {
                     FastS_EngineBase *engine = eNode->getPartition(dsGuard, userow, _dataset);
                     if (engine != nullptr) {
                         engines.emplace_back(engine, eNode);
@@ -605,7 +605,7 @@ FastS_FNET_Search::GotQueryResult(FastS_FNET_SearchNode *node,
 
     if (_FNET_mode == FNET_QUERY &&
         node->_flags._pendingQuery) {
-        FastS_assert(node->_qresult == NULL);
+        FastS_assert(node->_qresult == nullptr);
         node->_qresult = qrx;
         EncodePartIDs(node->getPartID(), node->GetRowID(),
                       (qrx->_features & search::fs4transport::QRF_MLD) != 0,
@@ -850,7 +850,7 @@ FastS_FNET_Search::MergeHits()
     if (!_queryArgs->groupSpec.empty()) {
         _groupMerger.reset(new search::grouping::MergingManager(_dataset->GetPartBits(), _dataset->GetRowBits()));
         for (const FastS_FNET_SearchNode & node : _nodes) {
-            if (node._qresult != NULL) {
+            if (node._qresult != nullptr) {
                 _groupMerger->addResult(node.getPartID(), node.GetRowID(),
                                         ((node._qresult->_features & search::fs4transport::QRF_MLD) != 0),
                                         node._qresult->_groupData, node._qresult->_groupDataLen);
@@ -872,11 +872,11 @@ FastS_FNET_Search::CheckCoverage()
     uint16_t nodesQueried = 0;
     uint16_t nodesReplied = 0;
     size_t cntNone(0);
-    size_t connectedNodes(0);
+    size_t configuredNodes(0);
 
     for (const FastS_FNET_SearchNode & node : _nodes) {
-        if (node.IsConnected()) {
-            connectedNodes++;
+        if (node.GetEngine() != nullptr) {
+            configuredNodes++;
             if (node._qresult != nullptr) {
                 covDocs  += node._qresult->_coverageDocs;
                 activeDocs  += node._qresult->_activeDocs;
@@ -891,10 +891,10 @@ FastS_FNET_Search::CheckCoverage()
         }
     }
     const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
-    if ((missingParts > 0) && (cntNone != connectedNodes)) {
+    if ((missingParts > 0) && (cntNone != configuredNodes)) {
         // TODO This is a dirty way of anticipating missing coverage.
         // It should be done differently
-        activeDocs += missingParts * activeDocs/(connectedNodes - cntNone);
+        activeDocs += missingParts * activeDocs/(configuredNodes - cntNone);
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
 }

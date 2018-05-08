@@ -52,7 +52,7 @@ FastS_FNET_Engine::ConnectTask::PerformTask()
 void
 FastS_FNET_Engine::Connect()
 {
-    if (_conn == NULL ||
+    if (_conn == nullptr ||
         _conn->GetState() >= FNET_Connection::FNET_CLOSING)
     {
         FNET_Connection *newConn =
@@ -65,9 +65,9 @@ FastS_FNET_Engine::Connect()
             oldConn = _conn;
             _conn = newConn;
         }
-        if (oldConn != NULL)
+        if (oldConn != nullptr)
             oldConn->SubRef();
-        if (newConn == NULL && !IsRealBad())
+        if (newConn == nullptr && !IsRealBad())
             ScheduleConnect(2.9);
     }
 }
@@ -76,13 +76,13 @@ FastS_FNET_Engine::Connect()
 void
 FastS_FNET_Engine::Disconnect()
 {
-    if (_conn != NULL) {
+    if (_conn != nullptr) {
         _conn->CloseAdminChannel();
         FNET_Connection *conn;
         {
             auto dsGuard(getDsGuard());
             conn = _conn;
-            _conn = NULL;
+            _conn = nullptr;
         }
         _transport->Close(conn, /* needref = */ false);
     }
@@ -94,10 +94,10 @@ FastS_FNET_Engine::FastS_FNET_Engine(FastS_EngineDesc *desc,
     : FastS_EngineBase(desc, dataset),
       _spec(),
       _transport(dataset->GetTransport()),
-      _conn(NULL),
+      _conn(nullptr),
       _warnTask(dataset->GetAppContext()->GetFNETScheduler(), this),
       _connectTask(dataset->GetAppContext()->GetFNETScheduler(), this),
-      _monitorQuery(NULL)
+      _monitorQuery(nullptr)
 {
     if (strncmp(_config._name, "tcp/", 4) == 0) {
         _spec = _config._name;
@@ -117,9 +117,9 @@ FastS_FNET_Engine::~FastS_FNET_Engine()
         auto dsGuard(getDsGuard());
         _dataset->LinkOutPart_HasLock(this);
     }
-    if (_monitorQuery != NULL) {
+    if (_monitorQuery != nullptr) {
         _monitorQuery->Free();
-        _monitorQuery = NULL;
+        _monitorQuery = nullptr;
     }
 }
 
@@ -145,7 +145,7 @@ FastS_FNET_Engine::ScheduleConnect(double delay)
 FNET_Channel *
 FastS_FNET_Engine::OpenChannel_HasDSLock(FNET_IPacketHandler *handler)
 {
-    return (_conn != NULL) ?  _conn->OpenChannel(handler, FNET_Context()) : NULL;
+    return (_conn != nullptr) ?  _conn->OpenChannel(handler, FNET_Context()) : nullptr;
 }
 
 
@@ -192,7 +192,7 @@ FastS_FNET_Engine::Ping()
 
     // handle badness
     if (IsRealBad()) {
-        if (_conn != NULL) {
+        if (_conn != nullptr) {
             Disconnect();
             HandleLostConnection();
         }
@@ -200,8 +200,8 @@ FastS_FNET_Engine::Ping()
     }
 
     // handle ping
-    if ((_conn != NULL) && (_conn->GetState() < FNET_Connection::FNET_CLOSING)) {
-        if (_monitorQuery == NULL) {
+    if ((_conn != nullptr) && (_conn->GetState() < FNET_Connection::FNET_CLOSING)) {
+        if (_monitorQuery == nullptr) {
             _monitorQuery = new FastS_StaticMonitorQuery();
         }
         if (_monitorQuery->getBusy()) {
