@@ -267,7 +267,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             if (usesHierarchicDistribution()) {
                 indexedCluster.setMaxNodesDownPerFixedRow((redundancy.effectiveFinalRedundancy() / groupToSpecMap.size()) - 1);
             }
-            indexedCluster.setSearchableCopies(redundancy.readyCopies());
+            indexedCluster.setSearchableCopies(redundancy.searchableCopies());
         }
         this.redundancy = redundancy;
     }
