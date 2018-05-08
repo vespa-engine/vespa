@@ -10,6 +10,8 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.component.DockerAdminComponent;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
 import com.yahoo.vespa.hosted.node.admin.configserver.RealConfigServerClients;
 
@@ -22,8 +24,9 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
                              Docker docker,
                              MetricReceiverWrapper metricReceiver,
                              ClassLocking classLocking) {
-        ConfigServerClients clients =
-                new RealConfigServerClients(identityProvider, new ConfigServerInfo(configServerConfig));
+        ConfigServerInfo configServerInfo = new ConfigServerInfo(configServerConfig);
+        ConfigServerApi configServerApi = ConfigServerApiImpl.create(configServerInfo, identityProvider);
+        ConfigServerClients clients = new RealConfigServerClients(configServerApi);
 
         dockerAdmin = new DockerAdminComponent(configServerConfig,
                 identityProvider,

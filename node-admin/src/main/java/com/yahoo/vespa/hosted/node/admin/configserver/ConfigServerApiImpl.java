@@ -4,6 +4,10 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
+import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import org.apache.http.HttpHeaders;
@@ -18,6 +22,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -26,6 +31,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static java.util.Collections.singleton;
 
 /**
  * Retries request on config server a few times before giving up. Assumes that all requests should be sent with
@@ -38,45 +45,17 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private final List<URI> configServerHosts;
+    private final List<URI> configServers;
 
-    // If this instance is associated with asynchronous updating, this field is set
-    // to unregister from the updater at close()
-    private Optional<SslConnectionSocketFactoryUpdater> socketFactoryUpdater = Optional.empty();
+    private Runnable runOnClose = () -> {};
 
     /**
-     * The 'client' will be periodically re-created by clientRefresherScheduler if we provide keyStoreOptions
-     * or trustStoreOptions. This is needed because the key/trust stores are updated outside of node-admin,
-     * but we want to use the most recent store.
+     * The 'client' may be periodically re-created through calls to setSSLConnectionSocketFactory.
      *
      * The 'client' reference must be volatile because it is set and read in different threads, and visibility
      * of changes is only guaranteed for volatile variables.
      */
     private volatile SelfCloseableHttpClient client;
-
-    /**
-     * Creates an api for talking to the config servers.
-     *
-     * <p>Registers with a SslConnectionSocketFactoryUpdater to keep the socket factory
-     * up to date as e.g. any client certificate expires (and unregisters at {@link #close()})
-     */
-    public static ConfigServerApiImpl create(ConfigServerInfo configServerInfo,
-                                             SslConnectionSocketFactoryUpdater updater) {
-        return createFor(updater, configServerInfo.getConfigServerUris());
-    }
-
-    /**
-     * Creates an api for talking to a single config server.
-     *
-     * <p>Registers with a SslConnectionSocketFactoryUpdater to keep the socket factory
-     * up to date as e.g. any client certificate expires (and unregisters at {@link #close()})
-     */
-    public static ConfigServerApiImpl createFor(ConfigServerInfo configServerInfo,
-                                                SslConnectionSocketFactoryUpdater updater,
-                                                HostName configServer) {
-        URI uri = configServerInfo.getConfigServerUri(configServer.value());
-        return createFor(updater, Collections.singletonList(uri));
-    }
 
     /**
      * Creates an api for talking to the config servers with a fixed socket factory.
@@ -87,7 +66,19 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     public static ConfigServerApiImpl createWithSocketFactory(
             List<URI> configServerHosts,
             SSLConnectionSocketFactory socketFactory) {
-        return new ConfigServerApiImpl(configServerHosts, socketFactory);
+        return new ConfigServerApiImpl(configServerHosts, new SelfCloseableHttpClient(socketFactory));
+    }
+
+    public static ConfigServerApiImpl create(ConfigServerInfo configServerInfo,
+                                             SiaIdentityProvider identityProvider) {
+        return new ConfigServerApiImpl(configServerInfo.getConfigServerUris(), identityProvider);
+    }
+
+    public static ConfigServerApiImpl createFor(ConfigServerInfo configServerInfo,
+                                                SiaIdentityProvider identityProvider,
+                                                HostName configServer) {
+        URI uri = configServerInfo.getConfigServerUri(configServer.value());
+        return new ConfigServerApiImpl(Collections.singletonList(uri), identityProvider);
     }
 
     static ConfigServerApiImpl createForTestingWithClient(List<URI> configServerHosts,
@@ -95,25 +86,18 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         return new ConfigServerApiImpl(configServerHosts, client);
     }
 
-    private static ConfigServerApiImpl createFor(SslConnectionSocketFactoryUpdater updater,
-                                                 List<URI> configServers) {
-        ConfigServerApiImpl api = new ConfigServerApiImpl(
-                configServers,
-                // Passing null here (only) works because startSocketFactoryUpdating will
-                // set the client. This avoids an unnecessary allocation of a client.
-                (SelfCloseableHttpClient) null);
-        api.startSocketFactoryUpdating(updater);
-        assert api.client != null;
-        return api;
+    private ConfigServerApiImpl(Collection<URI> configServers, SiaIdentityProvider identityProvider) {
+        this(configServers, createClient(identityProvider));
+
+        // The same object MUST be passed to both addIdentityListener and removeIdentityListener,
+        // as two method references aren't equal.
+        ServiceIdentityProvider.Listener listener = this::setClient;
+        identityProvider.addIdentityListener(listener);
+        this.runOnClose = () -> identityProvider.removeIdentityListener(listener);
     }
 
-    private ConfigServerApiImpl(Collection<URI> configServerUris,
-                                SSLConnectionSocketFactory sslConnectionSocketFactory) {
-        this(configServerUris, new SelfCloseableHttpClient(sslConnectionSocketFactory));
-    }
-
-    private ConfigServerApiImpl(Collection<URI> configServerHosts, SelfCloseableHttpClient client) {
-        this.configServerHosts = randomizeConfigServerUris(configServerHosts);
+    private ConfigServerApiImpl(Collection<URI> configServers, SelfCloseableHttpClient client) {
+        this.configServers = randomizeConfigServerUris(configServers);
         this.client = client;
     }
 
@@ -123,7 +107,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
-        for (URI configServer : configServerHosts) {
+        for (URI configServer : configServers) {
             final CloseableHttpResponse response;
             try {
                 response = client.execute(requestFactory.createRequest(configServer));
@@ -163,7 +147,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         }
 
         throw new RuntimeException("All requests against the config servers ("
-                + configServerHosts + ") failed, last as follows:", lastException);
+                + configServers + ") failed, last as follows:", lastException);
     }
 
     @Override
@@ -210,13 +194,28 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         }, wantedReturnType);
     }
 
+    @Override
+    public void close() {
+        runOnClose.run();
+        client.close();
+    }
+
     private void setContentTypeToApplicationJson(HttpRequestBase request) {
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
     }
 
-    @Override
-    public void setSSLConnectionSocketFactory(SSLConnectionSocketFactory sslSocketFactory) {
-        this.client = new SelfCloseableHttpClient(sslSocketFactory);
+    private void setClient(SSLContext sslContext, AthenzService identity) {
+        this.client = createClient(sslContext, identity);
+    }
+
+    private static SelfCloseableHttpClient createClient(SSLContext sslContext, AthenzService identity) {
+        AthenzIdentityVerifier identityVerifier = new AthenzIdentityVerifier(singleton(identity));
+        SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext, identityVerifier);
+        return new SelfCloseableHttpClient(socketFactory);
+    }
+
+    private static SelfCloseableHttpClient createClient(SiaIdentityProvider identityProvider) {
+        return createClient(identityProvider.getIdentitySslContext(), identityProvider.identity());
     }
 
     // Shuffle config server URIs to balance load
@@ -224,21 +223,5 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         List<URI> shuffledConfigServerHosts = new ArrayList<>(configServerUris);
         Collections.shuffle(shuffledConfigServerHosts);
         return shuffledConfigServerHosts;
-    }
-
-    private void startSocketFactoryUpdating(SslConnectionSocketFactoryUpdater updater) {
-        updater.registerConfigServerApi(this);
-        this.socketFactoryUpdater = Optional.of(updater);
-    }
-
-    private void stopSocketFactoryUpdating() {
-        this.socketFactoryUpdater.ifPresent(updater -> updater.unregisterConfigServerApi(this));
-        this.socketFactoryUpdater = Optional.empty();
-    }
-
-    @Override
-    public void close() {
-        stopSocketFactoryUpdating();
-        client.close();
     }
 }
