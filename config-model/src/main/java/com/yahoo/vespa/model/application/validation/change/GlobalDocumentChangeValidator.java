@@ -8,8 +8,8 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
+import java.util.Collections;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,14 +30,12 @@ public class GlobalDocumentChangeValidator implements ChangeValidator {
                 validateContentCluster(currentEntry.getValue(), nextCluster);
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     private void validateContentCluster(ContentCluster currentCluster, ContentCluster nextCluster) {
-        for (Map.Entry<String, NewDocumentType> currentEntry : currentCluster.getDocumentDefinitions().entrySet()) {
-            String clusterName = currentCluster.getName();
-            String documentTypeName = currentEntry.getKey();
-            NewDocumentType currentDocumentType = currentEntry.getValue();
+        String clusterName = currentCluster.getName();
+        currentCluster.getDocumentDefinitions().forEach((documentTypeName, currentDocumentType) -> {
             NewDocumentType nextDocumentType = nextCluster.getDocumentDefinitions().get(documentTypeName);
             if (nextDocumentType != null) {
                 boolean currentIsGlobal = currentCluster.isGloballyDistributed(currentDocumentType);
@@ -47,7 +45,7 @@ public class GlobalDocumentChangeValidator implements ChangeValidator {
                             documentTypeName, clusterName, currentIsGlobal, nextIsGlobal));
                 }
             }
-        }
+        });
     }
 }
 

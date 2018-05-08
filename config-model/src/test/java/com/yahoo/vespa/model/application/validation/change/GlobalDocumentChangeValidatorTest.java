@@ -35,8 +35,7 @@ public class GlobalDocumentChangeValidatorTest {
         ValidationTester tester = new ValidationTester();
         VespaModel oldModel = tester.deploy(null, getServices(oldGlobal), validationOverrides).getFirst();
         try {
-            List<ConfigChangeAction> changeActions =
-                    tester.deploy(oldModel, getServices(newGlobal), validationOverrides).getSecond();
+            tester.deploy(oldModel, getServices(newGlobal), validationOverrides).getSecond();
             assertTrue(allowed);
         } catch (IllegalStateException e) {
             assertFalse(allowed);
