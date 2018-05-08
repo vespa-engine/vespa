@@ -62,7 +62,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void findInterfaceSpeed_valid_input() throws IOException {
+    public void findInterfaceSpeed_valid_input() {
         commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
         commandExecutor.addCommand("cat " + NET_CHECK_INTERFACE_SPEED);
         parseResults = net.findInterface();

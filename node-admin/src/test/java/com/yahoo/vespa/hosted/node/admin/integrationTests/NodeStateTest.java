@@ -7,8 +7,6 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
-import java.io.IOException;
-
 /**
  * Test NodeState transitions in NodeRepository
  *
@@ -43,7 +41,7 @@ public class NodeStateTest {
 
 
     @Test
-    public void activeToDirty() throws InterruptedException, IOException {
+    public void activeToDirty() throws InterruptedException {
         try (DockerTester dockerTester = new DockerTester()) {
             setup(dockerTester);
             // Change node state to dirty
@@ -68,7 +66,7 @@ public class NodeStateTest {
     }
 
     @Test
-    public void activeToInactiveToActive() throws InterruptedException, IOException {
+    public void activeToInactiveToActive() throws InterruptedException {
 
         try (DockerTester dockerTester = new DockerTester()) {
             setup(dockerTester);

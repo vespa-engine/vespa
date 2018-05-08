@@ -33,7 +33,7 @@ public class CPURetrieverTest {
     }
 
     @Test
-    public void updateInfo_should_write_numOfCpuCores_to_hardware_info() throws Exception {
+    public void updateInfo_should_write_numOfCpuCores_to_hardware_info() {
         commandExecutor.addCommand("cat " + FILENAME);
         cpu.updateInfo();
         double expectedAmountOfCores = 4;

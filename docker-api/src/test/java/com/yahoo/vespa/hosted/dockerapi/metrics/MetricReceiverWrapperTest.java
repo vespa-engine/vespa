@@ -7,10 +7,9 @@ import org.junit.Test;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class MetricReceiverWrapperTest {
     private static final Dimensions hostDimension = new Dimensions.Builder().add("host", "abc.yahoo.com").build();
@@ -34,7 +33,7 @@ public class MetricReceiverWrapperTest {
         counter.add(8);
 
         Map<String, Number> latestMetrics = metricReceiver.getMetricsForDimension(applicationDocker, hostDimension);
-        assertTrue("Expected only 1 metric value to be set", latestMetrics.size() == 1);
+        assertEquals("Expected only 1 metric value to be set", 1, latestMetrics.size());
         assertEquals(latestMetrics.get("a_counter.value"), 13L); // 5 + 8
     }
 
@@ -47,7 +46,7 @@ public class MetricReceiverWrapperTest {
         gauge.sample(-342.23);
 
         Map<String, Number> latestMetrics = metricReceiver.getMetricsForDimension(applicationDocker, hostDimension);
-        assertTrue("Expected only 1 metric value to be set", latestMetrics.size() == 1);
+        assertEquals("Expected only 1 metric value to be set", 1, latestMetrics.size());
         assertEquals(latestMetrics.get("test.gauge"), -342.23);
     }
 

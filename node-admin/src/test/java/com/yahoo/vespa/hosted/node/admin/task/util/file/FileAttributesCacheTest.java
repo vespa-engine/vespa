@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 
 public class FileAttributesCacheTest {
     @Test
-    public void exists() throws Exception {
+    public void exists() {
         UnixPath unixPath = mock(UnixPath.class);
         FileAttributesCache cache = new FileAttributesCache(unixPath);
 

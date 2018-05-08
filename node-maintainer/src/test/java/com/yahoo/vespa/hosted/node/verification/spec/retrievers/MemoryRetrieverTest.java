@@ -32,7 +32,7 @@ public class MemoryRetrieverTest {
     }
 
     @Test
-    public void updateInfo_should_set_memory_available_in_hardwareInfo() throws IOException {
+    public void updateInfo_should_set_memory_available_in_hardwareInfo() {
         commandExecutor.addCommand("cat " + FILENAME);
         memory.updateInfo();
         double expectedMemory = 4.042128;

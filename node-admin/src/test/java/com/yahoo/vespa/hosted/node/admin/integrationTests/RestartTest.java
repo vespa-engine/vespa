@@ -7,8 +7,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
-import java.net.UnknownHostException;
-
 /**
  * Tests that different wanted and current restart generation leads to execution of restart command
  *
@@ -17,7 +15,7 @@ import java.net.UnknownHostException;
 public class RestartTest {
 
     @Test
-    public void test() throws InterruptedException, UnknownHostException {
+    public void test() throws InterruptedException {
         try (DockerTester dockerTester = new DockerTester()) {
 
             long wantedRestartGeneration = 1;

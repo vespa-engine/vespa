@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
@@ -27,7 +26,7 @@ public class RebootTest {
 
     @Test
     @Ignore
-    public void test() throws InterruptedException, UnknownHostException {
+    public void test() throws InterruptedException {
         try (DockerTester dockerTester = new DockerTester()) {
 
             dockerTester.addNodeRepositoryNode(createNodeRepositoryNode());

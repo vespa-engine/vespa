@@ -20,7 +20,7 @@ public class ProcessStarterImpl implements ProcessStarter {
             logger.log(LogLevel.DEBUG, "Spawning process: " + processBuilder.command());
         }
 
-        Process process = uncheck(() -> processBuilder.start());
+        Process process = uncheck(processBuilder::start);
         return new ProcessApi2Impl(process);
     }
 }

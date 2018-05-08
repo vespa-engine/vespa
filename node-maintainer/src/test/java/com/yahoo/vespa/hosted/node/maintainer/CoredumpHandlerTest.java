@@ -141,7 +141,7 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    public void coredumpMetadataCollectAndWriteTest() throws IOException, InterruptedException {
+    public void coredumpMetadataCollectAndWriteTest() throws IOException {
         createCoredump("core.dump", Instant.now());
         Path processingPath = coredumpHandler.enqueueCoredumps();
         Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
@@ -157,7 +157,7 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    public void coredumpMetadataReadIfExistsTest() throws IOException, InterruptedException {
+    public void coredumpMetadataReadIfExistsTest() throws IOException {
         final String documentId = "UIDD-ABCD-EFGH";
         Path metadataPath = createProcessedCoredump(documentId);
 
@@ -167,7 +167,7 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    public void reportSuccessCoredumpTest() throws IOException, URISyntaxException, InterruptedException {
+    public void reportSuccessCoredumpTest() throws IOException, URISyntaxException {
         final String documentId = "UIDD-ABCD-EFGH";
         Path coredumpPath = createProcessedCoredump(documentId);
 

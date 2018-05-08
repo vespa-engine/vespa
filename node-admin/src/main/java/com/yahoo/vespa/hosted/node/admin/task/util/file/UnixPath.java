@@ -109,7 +109,7 @@ public class UnixPath {
     }
 
     public Optional<FileAttributes> getAttributesIfExists() {
-        return IOExceptionUtil.ifExists(() -> getAttributes());
+        return IOExceptionUtil.ifExists(this::getAttributes);
     }
 
     public void createDirectory(String permissions) {

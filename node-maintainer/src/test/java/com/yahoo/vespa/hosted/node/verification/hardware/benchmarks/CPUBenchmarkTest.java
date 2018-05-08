@@ -68,7 +68,7 @@ public class CPUBenchmarkTest {
     }
 
     @Test
-    public void test_if_setCpuCyclesPerSec_reads_output_correctly() throws IOException {
+    public void test_if_setCpuCyclesPerSec_reads_output_correctly() {
         List<ParseResult> parseResults = new ArrayList<>();
         parseResults.add(new ParseResult("cycles", "2.066.201.729"));
         parseResults.add(new ParseResult("seconds", "0,957617512"));

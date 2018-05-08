@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,11 +17,11 @@ import java.util.stream.Stream;
  * @author freva
  */
 public class DockerImageGarbageCollector {
-    private final Duration MIN_AGE_IMAGE_GC;
-    private Map<String, Instant> lastTimeUsedByImageId = new HashMap<>();
+    private final Duration minAgeImageGc;
+    private final Map<String, Instant> lastTimeUsedByImageId = new ConcurrentHashMap<>();
 
     public DockerImageGarbageCollector(Duration minAgeImageToDelete) {
-        MIN_AGE_IMAGE_GC = minAgeImageToDelete;
+        minAgeImageGc = minAgeImageToDelete;
     }
 
     public void updateLastUsedTimeFor(String imageId) {
@@ -55,7 +56,7 @@ public class DockerImageGarbageCollector {
                     else return o1.compareTo(o2);
                 })
                 .flatMap(imageId -> {
-                    // Deleting an image by image ID with multiple tags will fail -> map IDs to all the tags refering to the ID
+                    // Deleting an image by image ID with multiple tags will fail -> map IDs to all the tags referring to the ID
                     String[] repoTags = unusedImagesByRecent.get(imageId).getRepoTags();
                     return (repoTags == null) ? Stream.of(imageId) : Stream.of(repoTags);
                 })
@@ -89,7 +90,7 @@ public class DockerImageGarbageCollector {
         });
 
         lastTimeUsedByImageId.entrySet().stream()
-                .filter(entry -> Duration.between(entry.getValue(), now).minus(MIN_AGE_IMAGE_GC).isNegative())
+                .filter(entry -> Duration.between(entry.getValue(), now).minus(minAgeImageGc).isNegative())
                 .map(Map.Entry::getKey)
                 .forEach(image -> {
                     String imageToSpare = image;

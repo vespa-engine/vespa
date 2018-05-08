@@ -125,7 +125,7 @@ public class FileHelperTest {
     }
 
     @Test
-    public void testGetContentsOfNonExistingDirectory() throws IOException {
+    public void testGetContentsOfNonExistingDirectory() {
         Path fakePath = Paths.get("/some/made/up/dir/");
         assertEquals(Collections.emptyList(), FileHelper.listContentsOfDirectory(fakePath));
     }

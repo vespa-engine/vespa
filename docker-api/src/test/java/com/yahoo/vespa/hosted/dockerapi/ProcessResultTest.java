@@ -8,7 +8,7 @@ import static org.junit.Assert.assertThat;
 
 public class ProcessResultTest {
     @Test
-    public void testBasicProperties() throws Exception {
+    public void testBasicProperties() {
         ProcessResult processResult = new ProcessResult(0, "foo", "bar");
         assertThat(processResult.getExitStatus(), is(0));
         assertThat(processResult.getOutput(), is("foo"));
@@ -16,7 +16,7 @@ public class ProcessResultTest {
     }
 
     @Test
-    public void testSuccessFails() throws Exception {
+    public void testSuccessFails() {
         ProcessResult processResult = new ProcessResult(1, "foo", "bar");
         assertThat(processResult.isSuccess(), is(false));
     }

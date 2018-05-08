@@ -18,7 +18,7 @@ public class FileContentCacheTest {
     private final FileContentCache cache = new FileContentCache(unixPath);
 
     @Test
-    public void get() throws Exception {
+    public void get() {
         when(unixPath.readUtf8File()).thenReturn("content");
         assertEquals("content", cache.get(Instant.ofEpochMilli(0)));
         verify(unixPath, times(1)).readUtf8File();
@@ -45,7 +45,7 @@ public class FileContentCacheTest {
     }
 
     @Test
-    public void updateWith() throws Exception {
+    public void updateWith() {
         cache.updateWith("content", Instant.ofEpochMilli(2));
         assertEquals("content", cache.get(Instant.ofEpochMilli(2)));
         verifyNoMoreInteractions(unixPath);

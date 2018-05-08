@@ -17,7 +17,7 @@ import static org.mockito.Mockito.mock;
 
 public class AddYumRepoTest {
     @Test
-    public void converge() throws Exception {
+    public void converge() {
         String repositoryId = "repoid";
         String name = "name";
         String baseurl = "http://foo.com/bar";

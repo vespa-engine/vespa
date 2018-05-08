@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class IPAddressesMock implements IPAddresses {
 
-    Map<String, List<InetAddress>> otherAddresses = new HashMap<>();
+    private final Map<String, List<InetAddress>> otherAddresses = new HashMap<>();
 
     public IPAddressesMock addAddress(String hostname, String ip) {
         List<InetAddress> addresses = otherAddresses.getOrDefault(hostname, new ArrayList<>());

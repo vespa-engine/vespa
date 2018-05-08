@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
  * @author hakonhall
  */
 public class CommandLine {
-    private static Logger logger = Logger.getLogger(CommandLine.class.getName());
-    private static Pattern UNESCAPED_ARGUMENT_PATTERN = Pattern.compile("^[a-zA-Z0-9=!@%/+:.,_-]+$");
+    private static final Logger logger = Logger.getLogger(CommandLine.class.getName());
+    private static final Pattern UNESCAPED_ARGUMENT_PATTERN = Pattern.compile("^[a-zA-Z0-9=!@%/+:.,_-]+$");
 
     /** The default timeout. See setTimeout() for details. */
     public static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(10);
@@ -217,7 +217,7 @@ public class CommandLine {
     }
 
     public CommandLine setSigKillGracePeriod(Duration period) {
-        this.sigTermGracePeriod = period;
+        this.sigKillGracePeriod = period;
         return this;
     }
     // Accessor fields necessary for classes in this package. Could be public if necessary.
