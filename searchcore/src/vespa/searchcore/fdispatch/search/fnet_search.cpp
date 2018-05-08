@@ -872,9 +872,11 @@ FastS_FNET_Search::CheckCoverage()
     uint16_t nodesQueried = 0;
     uint16_t nodesReplied = 0;
     size_t cntNone(0);
+    size_t connectedNodes(0);
 
     for (const FastS_FNET_SearchNode & node : _nodes) {
         if (node.IsConnected()) {
+            connectedNodes++;
             if (node._qresult != nullptr) {
                 covDocs  += node._qresult->_coverageDocs;
                 activeDocs  += node._qresult->_activeDocs;
@@ -889,10 +891,10 @@ FastS_FNET_Search::CheckCoverage()
         }
     }
     const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
-    if ((missingParts > 0) && (cntNone != _nodes.size())) {
+    if ((missingParts > 0) && (cntNone != connectedNodes)) {
         // TODO This is a dirty way of anticipating missing coverage.
         // It should be done differently
-        activeDocs += missingParts * activeDocs/(_nodes.size() - cntNone);
+        activeDocs += missingParts * activeDocs/(connectedNodes - cntNone);
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
 }
