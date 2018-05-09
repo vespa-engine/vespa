@@ -67,7 +67,7 @@ public class RealNodeRepositoryTest {
             try {
                 final int port = findRandomOpenPort();
                 container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
-                ConfigServerApi configServerApi = ConfigServerApiImpl.createWithSocketFactory(
+                ConfigServerApi configServerApi = ConfigServerApiImpl.createForTestingWithSocketFactory(
                         Collections.singletonList(URI.create("http://127.0.0.1:" + port)),
                         SSLConnectionSocketFactory.getSocketFactory());
                 waitForJdiscContainerToServe(configServerApi);
