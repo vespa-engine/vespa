@@ -72,14 +72,6 @@ FastS_FNET_SearchNode::FastS_FNET_SearchNode(FastS_FNET_SearchNode &&)
     assert(false);
 }
 
-FastS_FNET_SearchNode &
-FastS_FNET_SearchNode::operator = (FastS_FNET_SearchNode &&)
-{
-    // These objects are referenced everywhere and must never be either copied nor moved,
-    // but as std::vector requires this to exist so we do this little trick.
-    assert(false);
-}
-
 bool
 FastS_FNET_SearchNode::NT_InitMerge(uint32_t *numDocs,
                                     uint64_t *totalHits,
@@ -247,13 +239,13 @@ FastS_FNET_Search::Timeout::PerformTask()
 //---------------------------------------------------------------------
 
 void
-FastS_FNET_Search::AllocNodes()
+FastS_FNET_Search::reallocNodes(size_t numParts)
 {
-    FastS_assert(_nodes.empty());
+    _nodes.clear();
 
-    _nodes.reserve(_dataset->GetPartitions());
+    _nodes.reserve(numParts);
 
-    for (uint32_t i = 0; i < _nodes.capacity(); i++) {
+    for (uint32_t i = 0; i < numParts; i++) {
         _nodes.emplace_back(this, i);
     }
 }
@@ -340,8 +332,8 @@ FastS_FNET_Search::ConnectQueryNodes()
         fixedRow = (_queryArgs->sessionId.empty()) ? getNextFixedRow() : getHashedRow();
         _fixedRow = fixedRow;
         size_t numParts = _dataset->getNumPartitions(fixedRow);
-        while(_nodes.size() > numParts) {
-            _nodes.erase(_nodes.begin() + (numParts - 1));
+        if (_nodes.size() > numParts) {
+            reallocNodes(numParts);
         }
     }
     EngineNodeMap engines;
@@ -580,7 +572,7 @@ FastS_FNET_Search::FastS_FNET_Search(FastS_DataSetCollection *dsc,
 {
     _util.GetQuery().SetDataSet(dataset->GetID());
     _util.SetStartTime(GetTimeKeeper()->GetTime());
-    AllocNodes();
+    reallocNodes(_dataset->GetPartitions());
 }
 
 

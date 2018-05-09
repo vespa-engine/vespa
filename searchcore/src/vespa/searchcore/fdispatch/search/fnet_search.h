@@ -84,7 +84,6 @@ public:
     // These objects are referenced everywhere and must never be either copied nor moved,
     // but std::vector requires this to exist. If called it will assert.
     FastS_FNET_SearchNode(FastS_FNET_SearchNode && rhs);
-    FastS_FNET_SearchNode & operator = (FastS_FNET_SearchNode && rhs);
     FastS_FNET_SearchNode(const FastS_FNET_SearchNode &) = delete;
     FastS_FNET_SearchNode& operator=(const FastS_FNET_SearchNode &) = delete;
 
@@ -251,7 +250,7 @@ private:
 
     typedef std::vector<std::pair<FastS_EngineBase *, FastS_FNET_SearchNode *>> EngineNodeMap;
     void connectNodes(const EngineNodeMap & engines);
-    void AllocNodes();
+    void reallocNodes(size_t numParts);
     void ConnectQueryNodes();
     void ConnectEstimateNodes();
     void connectSearchPath(const vespalib::string &spec);
