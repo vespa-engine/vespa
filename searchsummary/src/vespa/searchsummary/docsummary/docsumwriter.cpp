@@ -188,7 +188,6 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
     }
 }
 
-
 DynamicDocsumWriter::DynamicDocsumWriter( ResultConfig *config, KeywordExtractor *extractor)
     : _resultConfig(config),
       _keywordExtractor(extractor),
