@@ -185,12 +185,30 @@
                 <artifactId>javax.ws.rs-api</artifactId>
                 <version>${javax.ws.rs-api.version}</version>
             </dependency>
+
+            <!-- TODO: upgrade jaxb-api artifacts to >=2.3.0. Note that from 2.3, these are OSGi bundles.
+            See https://stackoverflow.com/questions/50237516/proper-fix-for-java-10-complaining-about-illegal-reflection-access-by-jaxb-impl  -->
             <dependency>
-                <!-- TODO: Remove (also from child modules) when container-core:JAXBContextFactory is removed. -->
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>2.2.7</version>
+                <version>${jaxb.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-core</artifactId>
+                <version>${jaxb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${jaxb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>javax.activation-api</artifactId>
+                <version>1.2.0</version>
+            </dependency>
+
             <dependency>
                 <groupId>net.jcip</groupId>
                 <artifactId>jcip-annotations</artifactId>
@@ -445,6 +463,7 @@
         <findbugs.version>1.3.9</findbugs.version>
         <guava.version>18.0</guava.version>
         <guice.version>3.0</guice.version>
+        <jaxb.version>2.2.7</jaxb.version>
         <jetty.version>9.4.9.v20180320</jetty.version>
         <scala.version>2.11.12</scala.version>  <!-- When updating this, the scala.major-version in parent must also be updated! -->
         <slf4j.version>1.7.5</slf4j.version>
