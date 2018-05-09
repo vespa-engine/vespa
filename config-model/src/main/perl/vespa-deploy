@@ -54,9 +54,21 @@ sub findhome {
     die "FATAL: Missing VESPA_HOME environment variable\n";
 }
 
+sub findhost {
+    $ENV{'PATH'} = $ENV{'VESPA_HOME'} . '/bin:' . $ENV{'PATH'};
+    my $tmp = $ENV{'VESPA_HOSTNAME'};
+    if (!defined $tmp) {
+        $tmp = `vespa-detect-hostname` or die "Could not detect hostname\n";
+    }
+    system("vespa-validate-hostname $tmp");
+    ( $? == 0 ) or die "Could not validate hostname\n";
+}
+
 BEGIN {
     my $tmp = findhome();
     $ENV{'VESPA_HOME'} = $tmp;
+    $tmp = findhost();
+    $ENV{'VESPA_HOSTNAME'} = $tmp;
 }
 my $VESPA_HOME = $ENV{'VESPA_HOME'};
 
