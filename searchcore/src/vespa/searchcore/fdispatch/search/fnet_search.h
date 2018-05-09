@@ -84,7 +84,6 @@ public:
     // These objects are referenced everywhere and must never be either copied nor moved,
     // but std::vector requires this to exist. If called it will assert.
     FastS_FNET_SearchNode(FastS_FNET_SearchNode && rhs);
-    FastS_FNET_SearchNode & operator = (FastS_FNET_SearchNode && rhs);
     FastS_FNET_SearchNode(const FastS_FNET_SearchNode &) = delete;
     FastS_FNET_SearchNode& operator=(const FastS_FNET_SearchNode &) = delete;
 
@@ -223,11 +222,9 @@ private:
     FNETMode                 _FNET_mode;
 
     uint32_t                 _pendingQueries;   // # nodes with query left
-    uint32_t                 _goodQueries;  // # queries good
     uint32_t                 _pendingDocsums;   // # docsums left
     uint32_t                 _pendingDocsumNodes; // # nodes with docsums left
     uint32_t                 _requestedDocsums; // # docsums requested
-    uint32_t                 _goodDocsums;  // # docsums good
     uint32_t                 _queryNodes;     // #nodes with query
     uint32_t                 _queryNodesTimedOut;  // #nodes with query timeout
     uint32_t                 _docsumNodes;    // #nodes with docsums
@@ -251,13 +248,12 @@ private:
 
     typedef std::vector<std::pair<FastS_EngineBase *, FastS_FNET_SearchNode *>> EngineNodeMap;
     void connectNodes(const EngineNodeMap & engines);
-    void AllocNodes();
+    void reallocNodes(size_t numParts);
     void ConnectQueryNodes();
     void ConnectEstimateNodes();
     void connectSearchPath(const vespalib::string &spec);
     void connectSearchPath(const fdispatch::SearchPath::Element &elem,
-                           const vespalib::string &spec,
-                           uint32_t dispatchLevel);
+                           const vespalib::string &spec, uint32_t dispatchLevel);
     void ConnectDocsumNodes(bool ignoreRow);
     uint32_t getNextFixedRow();
     uint32_t getFixedRowCandidate();
@@ -274,9 +270,7 @@ private:
 
     FastS_FNET_SearchNode * getNode(size_t i) { return &_nodes[i]; }
 public:
-    FastS_FNET_Search(FastS_DataSetCollection *dsc,
-                      FastS_FNET_DataSet *dataset,
-                      FastS_TimeKeeper *timeKeeper);
+    FastS_FNET_Search(FastS_DataSetCollection *dsc, FastS_FNET_DataSet *dataset, FastS_TimeKeeper *timeKeeper);
     virtual ~FastS_FNET_Search();
 
     void GotQueryResult(FastS_FNET_SearchNode *node, FS4Packet_QUERYRESULTX *qrx);
@@ -336,13 +330,11 @@ public:
 
     void adjustQueryTimeout();
     void adjustDocsumTimeout();
-    uint32_t getGoodQueries() const { return _goodQueries; }
     uint32_t getRequestedQueries() const { return _queryNodes; }
     uint32_t getPendingQueries() const { return _pendingQueries; }
     uint32_t getDoneQueries() const {
         return getRequestedQueries() - getPendingQueries();
     }
-    uint32_t getGoodDocsums() const { return _goodDocsums; }
     uint32_t getRequestedDocsums() const { return _requestedDocsums; }
     uint32_t getPendingDocsums() const { return _pendingDocsums; }
     uint32_t getDoneDocsums() const {
@@ -362,13 +354,11 @@ private:
     FastS_FNET_Search _search;
 
 public:
-    FastS_Sync_FNET_Search(FastS_DataSetCollection *dsc,
-                           FastS_FNET_DataSet *dataset,
-                           FastS_TimeKeeper *timeKeeper) :
+    FastS_Sync_FNET_Search(FastS_DataSetCollection *dsc, FastS_FNET_DataSet *dataset, FastS_TimeKeeper *timeKeeper) :
         FastS_SyncSearchAdapter(&_search),
         _search(dsc, dataset, timeKeeper)
     {
-        _search.SetAsyncArgs(this, FastS_SearchContext());
+        _search.SetAsyncArgs(this);
     }
     ~FastS_Sync_FNET_Search() override;
     void Free() override { delete this; }

@@ -72,14 +72,6 @@ FastS_FNET_SearchNode::FastS_FNET_SearchNode(FastS_FNET_SearchNode &&)
     assert(false);
 }
 
-FastS_FNET_SearchNode &
-FastS_FNET_SearchNode::operator = (FastS_FNET_SearchNode &&)
-{
-    // These objects are referenced everywhere and must never be either copied nor moved,
-    // but as std::vector requires this to exist so we do this little trick.
-    assert(false);
-}
-
 bool
 FastS_FNET_SearchNode::NT_InitMerge(uint32_t *numDocs,
                                     uint64_t *totalHits,
@@ -247,13 +239,13 @@ FastS_FNET_Search::Timeout::PerformTask()
 //---------------------------------------------------------------------
 
 void
-FastS_FNET_Search::AllocNodes()
+FastS_FNET_Search::reallocNodes(size_t numParts)
 {
-    FastS_assert(_nodes.empty());
+    _nodes.clear();
 
-    _nodes.reserve(_dataset->GetPartitions());
+    _nodes.reserve(numParts);
 
-    for (uint32_t i = 0; i < _nodes.capacity(); i++) {
+    for (uint32_t i = 0; i < numParts; i++) {
         _nodes.emplace_back(this, i);
     }
 }
@@ -340,8 +332,8 @@ FastS_FNET_Search::ConnectQueryNodes()
         fixedRow = (_queryArgs->sessionId.empty()) ? getNextFixedRow() : getHashedRow();
         _fixedRow = fixedRow;
         size_t numParts = _dataset->getNumPartitions(fixedRow);
-        while(_nodes.size() > numParts) {
-            _nodes.erase(_nodes.begin() + (numParts - 1));
+        if (_nodes.size() > numParts) {
+            reallocNodes(numParts);
         }
     }
     EngineNodeMap engines;
@@ -556,11 +548,9 @@ FastS_FNET_Search::FastS_FNET_Search(FastS_DataSetCollection *dsc,
       _estPartCutoff(dataset->GetEstimatePartCutoff()),
       _FNET_mode(FNET_NONE),
       _pendingQueries(0),
-      _goodQueries(0),
       _pendingDocsums(0),
       _pendingDocsumNodes(0),
       _requestedDocsums(0),
-      _goodDocsums(0),
       _queryNodes(0),
       _queryNodesTimedOut(0),
       _docsumNodes(0),
@@ -580,7 +570,7 @@ FastS_FNET_Search::FastS_FNET_Search(FastS_DataSetCollection *dsc,
 {
     _util.GetQuery().SetDataSet(dataset->GetID());
     _util.SetStartTime(GetTimeKeeper()->GetTime());
-    AllocNodes();
+    reallocNodes(_dataset->GetPartitions());
 }
 
 
@@ -624,7 +614,6 @@ FastS_FNET_Search::GotQueryResult(FastS_FNET_SearchNode *node,
         LOG(spam, "Got result from row(%d), part(%d) = hits(%d), numDocs(%" PRIu64 ")", node->GetRowID(), node->getPartID(), qrx->_numDocs, qrx->_totNumDocs);
         node->_flags._pendingQuery = false;
         _pendingQueries--;
-        _goodQueries++;
         double tnow = GetTimeKeeper()->GetTime();
         node->_queryTime = tnow - _startTime;
         node->GetEngine()->UpdateSearchTime(tnow, node->_queryTime, false);
@@ -653,8 +642,6 @@ FastS_FNET_Search::GotDocsum(FastS_FNET_SearchNode *node,
         docsum->swapBuf(_resbuf[offset]._buf);
         node->_pendingDocsums--;
         _pendingDocsums--;
-        if ( ! _resbuf[offset]._buf.empty())
-            _goodDocsums++; // Only nonempty docsum is considered good
         if (node->_pendingDocsums == 0) {
             node->_docsumTime = (GetTimeKeeper()->GetTime() - _startTime - node->_queryTime);
             _pendingDocsumNodes--;
@@ -831,11 +818,11 @@ FastS_FNET_Search::EndFNETWork(std::unique_lock<std::mutex> searchGuard)
     if (_FNET_mode == FNET_QUERY && _pendingQueries == 0) {
         _FNET_mode = FNET_NONE;
         searchGuard.unlock();
-        _searchOwner->DoneQuery(this, _searchContext);
+        _searchOwner->DoneQuery(this);
     } else if (_FNET_mode == FNET_DOCSUMS && _pendingDocsums == 0) {
         _FNET_mode = FNET_NONE;
         searchGuard.unlock();
-        _searchOwner->DoneDocsums(this, _searchContext);
+        _searchOwner->DoneDocsums(this);
     }
 }
 
