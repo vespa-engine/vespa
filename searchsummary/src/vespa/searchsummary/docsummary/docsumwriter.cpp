@@ -167,8 +167,10 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
             const Memory field_name(outCfg->_bindname.data(), outCfg->_bindname.size());
             ObjectInserter inserter(docsum, field_name);
             if (writer != nullptr) {
+                //TODO: Vespa 7 Need to add test for writer->isDefaultValue
                 writer->insertField(docid, &gres, state, outCfg->_type, inserter);
             } else {
+                //TODO: Vespa 7 Need to add similar test as writer->isDefaultValue
                 if (rci.inputClass == rci.outputClass) {
                     convertEntry(state, outCfg, gres.GetEntry(i), inserter, slime);
                 } else {

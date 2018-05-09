@@ -86,7 +86,7 @@ private:
 
 public:
     DynamicDocsumWriter(ResultConfig *config, KeywordExtractor *extractor);
-    virtual ~DynamicDocsumWriter();
+    ~DynamicDocsumWriter() override;
 
     ResultConfig *GetResultConfig() { return _resultConfig; }
 
