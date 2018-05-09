@@ -30,7 +30,6 @@ FastS_FNET_SearchNode::FastS_FNET_SearchNode(FastS_FNET_Search *search, uint32_t
     : _search(search),
       _engine(nullptr),
       _channel(nullptr),
-      _subds(0),
       _partid(partid),
       _rowid(0),
       _stamp(0),
