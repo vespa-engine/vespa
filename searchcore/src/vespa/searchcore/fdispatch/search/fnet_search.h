@@ -222,11 +222,9 @@ private:
     FNETMode                 _FNET_mode;
 
     uint32_t                 _pendingQueries;   // # nodes with query left
-    uint32_t                 _goodQueries;  // # queries good
     uint32_t                 _pendingDocsums;   // # docsums left
     uint32_t                 _pendingDocsumNodes; // # nodes with docsums left
     uint32_t                 _requestedDocsums; // # docsums requested
-    uint32_t                 _goodDocsums;  // # docsums good
     uint32_t                 _queryNodes;     // #nodes with query
     uint32_t                 _queryNodesTimedOut;  // #nodes with query timeout
     uint32_t                 _docsumNodes;    // #nodes with docsums

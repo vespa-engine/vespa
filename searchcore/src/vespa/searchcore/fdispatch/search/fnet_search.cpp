@@ -548,11 +548,9 @@ FastS_FNET_Search::FastS_FNET_Search(FastS_DataSetCollection *dsc,
       _estPartCutoff(dataset->GetEstimatePartCutoff()),
       _FNET_mode(FNET_NONE),
       _pendingQueries(0),
-      _goodQueries(0),
       _pendingDocsums(0),
       _pendingDocsumNodes(0),
       _requestedDocsums(0),
-      _goodDocsums(0),
       _queryNodes(0),
       _queryNodesTimedOut(0),
       _docsumNodes(0),
@@ -616,7 +614,6 @@ FastS_FNET_Search::GotQueryResult(FastS_FNET_SearchNode *node,
         LOG(spam, "Got result from row(%d), part(%d) = hits(%d), numDocs(%" PRIu64 ")", node->GetRowID(), node->getPartID(), qrx->_numDocs, qrx->_totNumDocs);
         node->_flags._pendingQuery = false;
         _pendingQueries--;
-        _goodQueries++;
         double tnow = GetTimeKeeper()->GetTime();
         node->_queryTime = tnow - _startTime;
         node->GetEngine()->UpdateSearchTime(tnow, node->_queryTime, false);
@@ -645,8 +642,6 @@ FastS_FNET_Search::GotDocsum(FastS_FNET_SearchNode *node,
         docsum->swapBuf(_resbuf[offset]._buf);
         node->_pendingDocsums--;
         _pendingDocsums--;
-        if ( ! _resbuf[offset]._buf.empty())
-            _goodDocsums++; // Only nonempty docsum is considered good
         if (node->_pendingDocsums == 0) {
             node->_docsumTime = (GetTimeKeeper()->GetTime() - _startTime - node->_queryTime);
             _pendingDocsumNodes--;
