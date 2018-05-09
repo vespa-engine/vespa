@@ -72,6 +72,14 @@ FastS_FNET_SearchNode::FastS_FNET_SearchNode(FastS_FNET_SearchNode &&)
     assert(false);
 }
 
+FastS_FNET_SearchNode &
+FastS_FNET_SearchNode::operator = (FastS_FNET_SearchNode &&)
+{
+    // These objects are referenced everywhere and must never be either copied nor moved,
+    // but as std::vector requires this to exist so we do this little trick.
+    assert(false);
+}
+
 bool
 FastS_FNET_SearchNode::NT_InitMerge(uint32_t *numDocs,
                                     uint64_t *totalHits,
