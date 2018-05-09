@@ -34,11 +34,10 @@ public:
      */
     Tokenizer(const char * buf, size_t len);
 
-    // Inherit doc
-    virtual void reset(const char * buf, size_t len) override;
-    virtual size_t getBufferSize() const override { return _end - _begin; }
-    virtual bool hasMoreTokens() override;
-    virtual Token getNextToken() override;
+    void reset(const char * buf, size_t len) override;
+    size_t getBufferSize() const override { return _end - _begin; }
+    bool hasMoreTokens() override;
+    Token getNextToken() override;
 };
 
 }

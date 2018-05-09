@@ -11,8 +11,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
@@ -119,6 +118,4 @@ DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cf
     }
 }
 
-
-}
 }

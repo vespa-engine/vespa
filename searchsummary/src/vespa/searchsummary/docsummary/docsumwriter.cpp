@@ -44,7 +44,7 @@ DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
 
     if (id != ResultConfig::NoClassID()) {
         const ResultClass *oC = _resultConfig->LookupResultClass(id);
-        if (oC == NULL) {
+        if (oC == nullptr) {
             LOG(warning, "Illegal docsum class requested: %d, using empty docsum for documents", id);
             result.mustSkip = true;
         } else {
@@ -65,11 +65,11 @@ void
 DynamicDocsumWriter::resolveInputClass(ResolveClassInfo &rci, uint32_t id) const
 {
     rci.inputClass = _resultConfig->LookupResultClass(id);
-    if (rci.inputClass == NULL) {
+    if (rci.inputClass == nullptr) {
         rci.mustSkip = true;
         return;
     }
-    if (rci.outputClass == NULL) {
+    if (rci.outputClass == nullptr) {
         LOG_ASSERT(rci.outputClassId == ResultConfig::NoClassID());
         rci.outputClassId = id;
         rci.outputClass = rci.inputClass;
@@ -147,7 +147,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
                 const Memory field_name(resCfg->_bindname.data(),
                                         resCfg->_bindname.size());
                 ObjectInserter inserter(docsum, field_name);
-                writer->insertField(docid, NULL, state, resCfg->_type, inserter);
+                writer->insertField(docid, nullptr, state, resCfg->_type, inserter);
             }
         }
     } else {
@@ -166,7 +166,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
             IDocsumFieldWriter *writer = _overrideTable[outCfg->_enumValue];
             const Memory field_name(outCfg->_bindname.data(), outCfg->_bindname.size());
             ObjectInserter inserter(docsum, field_name);
-            if (writer != NULL) {
+            if (writer != nullptr) {
                 writer->insertField(docid, &gres, state, outCfg->_type, inserter);
             } else {
                 if (rci.inputClass == rci.outputClass) {
@@ -174,10 +174,10 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
                 } else {
                     int inIdx = rci.inputClass->GetIndexFromEnumValue(outCfg->_enumValue);
                     const ResConfigEntry *inCfg = rci.inputClass->GetEntry(inIdx);
-                    if (inCfg != NULL && inCfg->_type == outCfg->_type) {
+                    if (inCfg != nullptr && inCfg->_type == outCfg->_type) {
                         // copy field
                         const ResEntry *entry = gres.GetEntry(inIdx);
-                        LOG_ASSERT(entry != NULL);
+                        LOG_ASSERT(entry != nullptr);
                         convertEntry(state, outCfg, entry, inserter, slime);
                     }
                 }
@@ -193,10 +193,10 @@ DynamicDocsumWriter::DynamicDocsumWriter( ResultConfig *config, KeywordExtractor
       _defaultOutputClass(ResultConfig::NoClassID()),
       _numClasses(config->GetNumResultClasses()),
       _numEnumValues(config->GetFieldNameEnum().GetNumEntries()),
-      _classInfoTable(NULL),
-      _overrideTable(NULL)
+      _classInfoTable(nullptr),
+      _overrideTable(nullptr)
 {
-    LOG_ASSERT(config != NULL);
+    LOG_ASSERT(config != nullptr);
     _classInfoTable = new ResultClass::DynamicInfo[_numClasses];
     _overrideTable  = new IDocsumFieldWriter*[_numEnumValues];
 
@@ -209,7 +209,7 @@ DynamicDocsumWriter::DynamicDocsumWriter( ResultConfig *config, KeywordExtractor
     LOG_ASSERT(i == _numClasses);
 
     for (i = 0; i < _numEnumValues; i++)
-        _overrideTable[i] = NULL;
+        _overrideTable[i] = nullptr;
 }
 
 
@@ -231,10 +231,10 @@ DynamicDocsumWriter::SetDefaultOutputClass(uint32_t classID)
 {
     const ResultClass *resClass = _resultConfig->LookupResultClass(classID);
 
-    if (resClass == NULL ||
+    if (resClass == nullptr ||
         _defaultOutputClass != ResultConfig::NoClassID())
     {
-        if (resClass == NULL) {
+        if (resClass == nullptr) {
             LOG(warning, "cannot set default output docsum class to %d; class not defined", classID);
         } else if (_defaultOutputClass != ResultConfig::NoClassID()) {
             LOG(warning, "cannot set default output docsum class to %d; value already set", classID);
@@ -252,12 +252,12 @@ DynamicDocsumWriter::Override(const char *fieldName, IDocsumFieldWriter *writer)
     uint32_t fieldEnumValue = _resultConfig->GetFieldNameEnum().Lookup(fieldName);
 
     if (fieldEnumValue >= _numEnumValues ||
-        _overrideTable[fieldEnumValue] != NULL)
+        _overrideTable[fieldEnumValue] != nullptr)
     {
 
         if (fieldEnumValue >= _numEnumValues) {
             LOG(warning, "cannot override docsum field '%s'; undefined field name", fieldName);
-        } else if (_overrideTable[fieldEnumValue] != NULL) {
+        } else if (_overrideTable[fieldEnumValue] != nullptr) {
             LOG(warning, "cannot override docsum field '%s'; already overridden", fieldName);
         }
         delete writer;

@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchsummary/docsummary/attributedfw.h>
+#include "attributedfw.h"
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class AbsDistanceDFW : public AttrDFW
 {
@@ -36,6 +35,4 @@ public:
 PositionsDFW::UP createPositionsDFW(const char *attribute_name, IAttributeManager *index_man);
 AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name, IAttributeManager *index_man);
 
-}  // namespace docsummary
-}  // namespace search
-
+}

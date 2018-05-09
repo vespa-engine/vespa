@@ -2,6 +2,7 @@
 
 #include "positionsdfw.h"
 #include "docsumstate.h"
+#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cmath>
@@ -72,11 +73,11 @@ AbsDistanceDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *st
 
     const vespalib::string &locationStr = state->_args.getLocation();
     if (locationStr.size() > 0) {
-        if (state->_parsedLocation.get() == NULL) {
+        if (!state->_parsedLocation) {
             state->_callback.ParseLocation(state);
         }
-        assert(state->_parsedLocation.get() != NULL);
-        if (state->_parsedLocation->getParseError() == NULL) {
+        assert(state->_parsedLocation);
+        if (state->_parsedLocation->getParseError() == nullptr) {
             forceEmpty = false;
         }
     }
@@ -178,7 +179,7 @@ PositionsDFW::UP createPositionsDFW(const char *attribute_name,
                                     IAttributeManager *attribute_manager)
 {
     PositionsDFW::UP ret;
-    if (attribute_manager != NULL) {
+    if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(debug, "createPositionsDFW: missing attribute name '%p'", attribute_name);
             return ret;
@@ -202,7 +203,7 @@ AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name,
                                         IAttributeManager *attribute_manager)
 {
     AbsDistanceDFW::UP ret;
-    if (attribute_manager != NULL) {
+    if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(debug, "createAbsDistanceDFW: missing attribute name '%p'", attribute_name);
             return ret;

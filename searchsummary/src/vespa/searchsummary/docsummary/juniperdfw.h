@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchsummary/docsummary/urlresult.h>
-#include <vespa/searchsummary/docsummary/resultconfig.h>
-#include <vespa/vespalib/data/slime/inserter.h>
+#include "urlresult.h"
+#include "resultconfig.h"
 #include "docsumfieldwriter.h"
+#include <vespa/searchlib/util/rawbuf.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/juniper/rpinterface.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class JuniperDFW : public IDocsumFieldWriter
 {
@@ -29,7 +28,7 @@ protected:
     uint32_t                         _langFieldEnumValue;
     juniper::Juniper                *_juniper;
 private:
-    virtual bool IsGenerated() const override { return false; }
+    bool IsGenerated() const override { return false; }
     JuniperDFW(const JuniperDFW &);
     JuniperDFW & operator=(const JuniperDFW &);
 };
@@ -38,11 +37,8 @@ private:
 class JuniperTeaserDFW : public JuniperDFW
 {
 public:
-    virtual bool Init(
-            const char *fieldName,
-            const char *langFieldName,
-            const ResultConfig & config,
-            const char *inputField) override;
+    bool Init(const char *fieldName, const char *langFieldName,
+              const ResultConfig & config, const char *inputField) override;
 protected:
     JuniperTeaserDFW(juniper::Juniper * juniper) : JuniperDFW(juniper) { }
 };
@@ -57,13 +53,9 @@ public:
                                        GeneralResult *gres,
                                        GetDocsumsState *state);
 
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target) override;
+    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+                     ResType type, vespalib::slime::Inserter &target) override;
 };
 
-}  // namespace docsummary
-}  // namespace search
+}
 

@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include "docsumfieldwriter.h"
 
-namespace search {
-namespace docsummary {
+namespace search::attribute { class IAttributeVector; }
+
+namespace search::docsummary {
 
 class AttrDFW : public IDocsumFieldWriter
 {
@@ -14,12 +14,11 @@ private:
     vespalib::string _attrName;
 protected:
     const attribute::IAttributeVector & vec(const GetDocsumsState & s) const;
-    virtual const vespalib::string & getAttributeName() const override { return _attrName; }
+    const vespalib::string & getAttributeName() const override { return _attrName; }
 public:
     AttrDFW(const vespalib::string & attrName);
-    virtual bool IsGenerated() const override { return true; }
+    bool IsGenerated() const override { return true; }
 };
 
-}
 }
 
