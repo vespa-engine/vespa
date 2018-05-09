@@ -1,11 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "process_memory_stats.h"
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <fstream>
 #include <sstream>
 
-namespace vespalib
-{
+#include <vespa/log/log.h>
+
+LOG_SETUP(".vespalib.util.process_memory_stats");
+
+namespace vespalib {
 
 namespace {
 
@@ -84,31 +88,8 @@ std::string getLineHeader(const std::string &line)
 
 }
 
-
-ProcessMemoryStats::ProcessMemoryStats()
-    : _mapped_virt(0),
-      _mapped_rss(0),
-      _anonymous_virt(0),
-      _anonymous_rss(0),
-      _mappings_count(0)
-{
-}
-
-ProcessMemoryStats::ProcessMemoryStats(uint64_t mapped_virt,
-                                       uint64_t mapped_rss,
-                                       uint64_t anonymous_virt,
-                                       uint64_t anonymous_rss,
-                                       uint64_t mappings_cnt)
-    : _mapped_virt(mapped_virt),
-      _mapped_rss(mapped_rss),
-      _anonymous_virt(anonymous_virt),
-      _anonymous_rss(anonymous_rss),
-      _mappings_count(mappings_cnt)
-{
-}
-
 ProcessMemoryStats
-ProcessMemoryStats::create()
+ProcessMemoryStats::createStatsFromSmaps()
 {
     ProcessMemoryStats ret;
     std::ifstream smaps("/proc/self/smaps");
@@ -143,4 +124,76 @@ ProcessMemoryStats::create()
     return ret;
 }
 
-} // namespace vespalib
+
+ProcessMemoryStats::ProcessMemoryStats()
+    : _mapped_virt(0),
+      _mapped_rss(0),
+      _anonymous_virt(0),
+      _anonymous_rss(0),
+      _mappings_count(0)
+{
+}
+
+ProcessMemoryStats::ProcessMemoryStats(uint64_t mapped_virt,
+                                       uint64_t mapped_rss,
+                                       uint64_t anonymous_virt,
+                                       uint64_t anonymous_rss,
+                                       uint64_t mappings_cnt)
+    : _mapped_virt(mapped_virt),
+      _mapped_rss(mapped_rss),
+      _anonymous_virt(anonymous_virt),
+      _anonymous_rss(anonymous_rss),
+      _mappings_count(mappings_cnt)
+{
+}
+
+namespace {
+
+bool
+similar(uint64_t lhs, uint64_t rhs, uint64_t epsilon)
+{
+    return (lhs < rhs) ? ((rhs - lhs) <= epsilon) : ((lhs - rhs) <= epsilon);
+}
+
+}
+
+bool
+ProcessMemoryStats::similarTo(const ProcessMemoryStats &rhs, uint64_t sizeEpsilon) const
+{
+    return similar(_mapped_virt, rhs._mapped_virt, sizeEpsilon) &&
+            similar(_mapped_rss, rhs._mapped_rss, sizeEpsilon) &&
+            similar(_anonymous_virt, rhs._anonymous_virt, sizeEpsilon) &&
+            similar(_anonymous_rss, rhs._anonymous_rss, sizeEpsilon) &&
+            (_mappings_count == rhs._mappings_count);
+}
+
+vespalib::string
+ProcessMemoryStats::toString() const
+{
+    vespalib::asciistream stream;
+    stream << "_mapped_virt=" << _mapped_virt << ", "
+           << "_mapped_rss=" << _mapped_rss << ", "
+           << "_anonymous_virt=" << _anonymous_virt << ", "
+           << "_anonymous_rss=" << _anonymous_rss << ", "
+           << "_mappings_count=" << _mappings_count;
+    return stream.str();
+}
+
+ProcessMemoryStats
+ProcessMemoryStats::create(uint64_t sizeEpsilon)
+{
+    ProcessMemoryStats prevStats = createStatsFromSmaps();
+    const size_t NUM_TRIES = 10;
+    for (size_t i = 0; i < NUM_TRIES; ++i) {
+        ProcessMemoryStats currStats = createStatsFromSmaps();
+        if (prevStats.similarTo(currStats, sizeEpsilon)) {
+            return prevStats;
+        }
+        LOG(info, "create(): Memory stats have changed, trying to read smaps file again: i=%zu, prevStats={%s}, currStats={%s}",
+            i, prevStats.toString().c_str(), currStats.toString().c_str());
+        prevStats = currStats;
+    }
+    return prevStats;
+}
+
+}
