@@ -157,6 +157,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);
+            reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             rebootInterval = Duration.ofDays(30);
             nodeRetirerInterval = Duration.ofMinutes(30);
             metricsInterval = Duration.ofMinutes(1);
@@ -170,12 +171,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
 
             if (environment.equals(Environment.prod)) {
-                reservationExpiry = Duration.ofMinutes(20); // same as deployment timeout
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(29);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
             } else {
-                reservationExpiry = Duration.ofMinutes(10); // Need to be long enough for deployment to be finished for all config model versions
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
                 retiredInterval = Duration.ofMinutes(5);
                 dirtyExpiry = Duration.ofMinutes(30);
