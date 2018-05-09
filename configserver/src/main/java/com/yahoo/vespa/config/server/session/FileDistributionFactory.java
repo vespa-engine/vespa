@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
@@ -23,6 +22,7 @@ public class FileDistributionFactory {
     }
 
     @Override
+    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
     protected void finalize() throws Throwable {
         super.finalize();
         supervisor.transport().shutdown().join();

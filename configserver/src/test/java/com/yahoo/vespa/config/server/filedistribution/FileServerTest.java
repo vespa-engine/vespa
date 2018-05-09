@@ -112,7 +112,9 @@ public class FileServerTest {
         created.clear();
     }
 
+    // TODO: Why not use @After instead of finalizer?
     @Override
+    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
     protected void finalize() throws Throwable {
         super.finalize();
         cleanup();

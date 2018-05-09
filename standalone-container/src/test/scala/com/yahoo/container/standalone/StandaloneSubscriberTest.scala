@@ -21,7 +21,7 @@ class StandaloneSubscriberTest {
 
   def key(name: String) = new ConfigKey(name, "container", "container").asInstanceOf[ConfigKey[ConfigInstance]]
 
-  def box(i: Int) = new java.lang.Integer(i)
+  def box(i: Int) = java.lang.Integer.valueOf(i)
 
   @Test
   @Ignore

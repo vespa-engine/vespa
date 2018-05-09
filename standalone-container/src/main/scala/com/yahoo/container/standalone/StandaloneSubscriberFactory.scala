@@ -59,7 +59,7 @@ class StandaloneSubscriberFactory(root: VespaModel) extends SubscriberFactory {
 object StandaloneSubscriberFactory {
 
   private def newBuilderInstance(key: ConfigKeyT) =
-    builderClass(key).newInstance()
+    builderClass(key).getDeclaredConstructor().newInstance()
 
   private def builderClass(key: ConfigKeyT) = {
     val nestedClasses = key.getConfigClass.getClasses
