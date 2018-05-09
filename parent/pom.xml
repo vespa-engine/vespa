@@ -419,11 +419,6 @@
                 <version>3.4.0</version>
             </dependency>
             <dependency>
-                <groupId>com.googlecode.jmockit</groupId>
-                <artifactId>jmockit</artifactId>
-                <version>1.2</version>
-            </dependency>
-            <dependency>
                 <groupId>com.goldmansachs</groupId>
                 <artifactId>gs-collections</artifactId>
                 <version>6.1.0</version>
