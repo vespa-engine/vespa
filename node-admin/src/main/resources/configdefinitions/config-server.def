@@ -4,6 +4,7 @@ namespace=vespa.hosted.node.admin.config
 hosts[]                      string
 port                         int                         default=8080 range=[1,65535]
 scheme                       string                      default="http"
+loadBalancerHost             string                      default=""
 
 # TODO Remove once self-signed certs are gone
 # Optional options used to authenticate config server

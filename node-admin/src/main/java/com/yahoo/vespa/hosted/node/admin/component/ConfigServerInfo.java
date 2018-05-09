@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toMap;
  */
 public class ConfigServerInfo {
     private final List<String> configServerHostNames;
+    private final URI loadBalancerEndpoint;
     private final Map<String, URI> configServerURIs;
     private final Optional<KeyStoreOptions> keyStoreOptions;
     private final Optional<KeyStoreOptions> trustStoreOptions;
@@ -37,6 +38,7 @@ public class ConfigServerInfo {
                 config.scheme(),
                 config.hosts(),
                 config.port());
+        this.loadBalancerEndpoint = createLoadBalancerEndpoint(config.loadBalancerHost(), config.scheme(), config.port());
         this.keyStoreOptions = createKeyStoreOptions(
                 config.keyStoreConfig().path(),
                 config.keyStoreConfig().password().toCharArray(),
@@ -49,6 +51,10 @@ public class ConfigServerInfo {
                 config.athenzDomain(),
                 config.serviceName());
         this.siaConfig = verifySiaConfig(config.sia());
+    }
+
+    private static URI createLoadBalancerEndpoint(String loadBalancerHost, String scheme, int port) {
+        return URI.create(scheme + "://" + loadBalancerHost + ":" + port);
     }
 
     public List<String> getConfigServerHostNames() {
@@ -66,6 +72,10 @@ public class ConfigServerInfo {
         }
 
         return uri;
+    }
+
+    public URI getLoadBalancerEndpoint() {
+        return loadBalancerEndpoint;
     }
 
     public Optional<KeyStoreOptions> getKeyStoreOptions() {
