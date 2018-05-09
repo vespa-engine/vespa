@@ -96,7 +96,11 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     // By default, need "old" behaviour of maxconcurrent
     config->set("maxconcurrentvisitors_fixed", "4");
     config->set("maxconcurrentvisitors_variable", "0");
-    config = &dc.addConfig("stor-visitordispatcher");
+    dc.addConfig("stor-visitordispatcher");
+    config = &dc.addConfig("bucketspaces");
+    config->set("documenttype[1]");
+    config->set("documenttype[0].name", "testdoctype1");
+    config->set("documenttype[0].bucketspace", "default");
     addFileConfig(dc, "documenttypes", "config-doctypes.cfg");
     addStorageDistributionConfig(dc);
     return dc;
