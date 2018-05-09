@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -178,7 +179,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
         // POST (deploy) an application to a zone - manual user deployment
-        HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
+        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
@@ -201,7 +202,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // ... systemtest
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
-                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default", DELETE)
@@ -215,7 +216,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // ... staging
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default/", POST)
-                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default", DELETE)
@@ -228,7 +229,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // ... prod zone
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/", POST)
-                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         controllerTester.jobCompletion(DeploymentJobs.JobType.productionCorpUsEast1)
@@ -418,7 +419,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
 
         // POST (deploy) an application to a prod zone - allowed when project ID is not specified
-        HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
+        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
@@ -446,7 +447,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("create-user-response.json"));
 
         // POST (deploy) an application to a dev zone
-        HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
+        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/cd-us-central-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(userId),
@@ -483,7 +484,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .build();
         ApplicationId id = ApplicationId.from("tenant1", "application1", "default");
         long projectId = 1;
-        HttpEntity deployData = createApplicationDeployData(Optional.empty(), Optional.of(projectId));
+        HttpEntity deployData = createApplicationDeployData(Optional.empty(), false);
         startAndTestChange(controllerTester, id, projectId, applicationPackage, deployData, 100);
 
         // us-east-3
@@ -617,7 +618,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to prepare application", ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE, null));
         
         // POST (deploy) an application with an invalid application package
-        HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
+        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
@@ -742,7 +743,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               200);
 
         // Deploy to an authorized zone by a user tenant is disallowed
-        HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
+        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
@@ -803,7 +804,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
-                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(screwdriverId),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"Athenz domain in deployment.xml: [invalid.domain] must match tenant domain: [domain1]\"}",
                               403);
@@ -835,7 +836,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .uploadArtifact(applicationPackage)
                         .submit();
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
-                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(screwdriverId),
                               new File("deploy-result.json"));
 
@@ -954,39 +955,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
         }
     }
 
-    private HttpEntity createApplicationDeployData(ApplicationPackage applicationPackage, Optional<Long> screwdriverJobId) {
-        return createApplicationDeployData(Optional.of(applicationPackage), screwdriverJobId);
+    private HttpEntity createApplicationDeployData(ApplicationPackage applicationPackage, boolean deployDirectly) {
+        return createApplicationDeployData(Optional.of(applicationPackage), deployDirectly);
     }
 
-    private HttpEntity createApplicationDeployData(Optional<ApplicationPackage> applicationPackage, Optional<Long> screwdriverJobId) {
+    private HttpEntity createApplicationDeployData(Optional<ApplicationPackage> applicationPackage, boolean deployDirectly) {
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-        builder.addTextBody("deployOptions", deployOptions(screwdriverJobId), ContentType.APPLICATION_JSON);
+        builder.addTextBody("deployOptions", deployOptions(deployDirectly), ContentType.APPLICATION_JSON);
         applicationPackage.ifPresent(ap -> builder.addBinaryBody("applicationZip", ap.zippedContent()));
         return builder.build();
     }
     
-    private String deployOptions(Optional<Long> screwdriverJobId) {
-        if (screwdriverJobId.isPresent()) // deployment from screwdriver
+    private String deployOptions(boolean deployDirectly) {
             return "{\"vespaVersion\":null," +
                     "\"ignoreValidationErrors\":false," +
-                    "\"screwdriverBuildJob\":{\"screwdriverId\":\"" + screwdriverJobId.get() + "\"," +
-                                             "\"gitRevision\":{\"repository\":\"repository1\"," +
-                                                              "\"branch\":\"master\"," +
-                                                              "\"commit\":\"commit1\"" +
-                                                              "}" +
-                                             "}" +
+                    "\"deployDirectly\":" + deployDirectly +
                     "}";
-        else // This is ugly and evil, but tentatively replicates the existing behavor from the client on user deployments
-            return "{\"vespaVersion\":null," +
-                   "\"ignoreValidationErrors\":false," +
-                   "\"screwdriverBuildJob\":{\"screwdriverId\":null," +
-                                            "\"gitRevision\":{\"repository\":null," +
-                                                             "\"branch\":null," +
-                                                             "\"commit\":null" +
-                                                             "}" +
-                                            "}" +
-                   "}";
-            
     }
 
     private static class RequestBuilder implements Supplier<Request> {

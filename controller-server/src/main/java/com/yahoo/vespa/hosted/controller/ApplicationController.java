@@ -270,8 +270,7 @@ public class ApplicationController {
                     .map(app -> new LockedApplication(app, lock))
                     .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
 
-            boolean canDeployDirectly =   ! options.screwdriverBuildJob.map(job1 -> job1.screwdriverId).isPresent()
-                                        ||  zone.environment().isManuallyDeployed();
+            boolean canDeployDirectly = options.deployDirectly || zone.environment().isManuallyDeployed();
             boolean preferOldestVersion = options.deployCurrentVersion;
 
             // Determine versions to use.
@@ -430,7 +429,7 @@ public class ApplicationController {
     }
 
     private DeployOptions withVersion(Version version, DeployOptions options) {
-        return new DeployOptions(options.screwdriverBuildJob,
+        return new DeployOptions(options.deployDirectly,
                                  Optional.of(version),
                                  options.ignoreValidationErrors,
                                  options.deployCurrentVersion);
