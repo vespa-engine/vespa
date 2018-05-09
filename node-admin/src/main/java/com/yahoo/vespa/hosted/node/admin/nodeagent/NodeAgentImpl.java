@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeReposit
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -77,6 +78,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final Environment environment;
     private final Clock clock;
     private final Duration timeBetweenEachConverge;
+    private final AthenzCredentialsMaintainer athenzCredentialsMaintainer;
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final LinkedList<String> debugMessages = new LinkedList<>();
@@ -121,7 +123,8 @@ public class NodeAgentImpl implements NodeAgent {
             final Runnable aclMaintainer,
             final Environment environment,
             final Clock clock,
-            final Duration timeBetweenEachConverge) {
+            final Duration timeBetweenEachConverge,
+            final AthenzCredentialsMaintainer athenzCredentialsMaintainer) {
         this.containerName = ContainerName.fromHostname(hostName);
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
         this.hostname = hostName;
@@ -134,6 +137,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.clock = clock;
         this.timeBetweenEachConverge = timeBetweenEachConverge;
         this.lastConverge = clock.instant();
+        this.athenzCredentialsMaintainer = athenzCredentialsMaintainer;
 
         this.loopThread = new Thread(() -> {
             try {
@@ -494,6 +498,8 @@ public class NodeAgentImpl implements NodeAgent {
 
                 runLocalResumeScriptIfNeeded(node);
 
+                athenzCredentialsMaintainer.converge(node);
+
                 doBeforeConverge(node);
 
                 // Because it's more important to stop a bad release from rolling out in prod,
@@ -521,6 +527,7 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(node, container);
                 logger.info("State is " + node.getState() + ", will delete application storage and mark node as ready");
                 storageMaintainer.cleanupNodeStorage(containerName, node);
+                athenzCredentialsMaintainer.clearCredentials();
                 updateNodeRepoWithCurrentAttributes(node);
                 nodeRepository.setNodeState(hostname, Node.State.ready);
                 expectNodeNotInNodeRepo = true;
