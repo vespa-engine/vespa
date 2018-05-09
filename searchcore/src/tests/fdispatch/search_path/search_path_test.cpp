@@ -116,7 +116,7 @@ TEST("requireThatMultipleElementsWithoutRowsCanBeSpecified")
 
 TEST("require that sizeof FastS_FNET_SearchNode is reasonable")
 {
-    EXPECT_EQUAL(232u, sizeof(FastS_FNET_SearchNode));
+    EXPECT_EQUAL(240u, sizeof(FastS_FNET_SearchNode));
     EXPECT_EQUAL(40u, sizeof(search::common::SortDataIterator));
 }
 
