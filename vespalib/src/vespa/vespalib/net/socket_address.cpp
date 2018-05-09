@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <netdb.h>
 #include <cassert>
 
@@ -13,6 +14,18 @@ namespace vespalib {
 namespace {
 
 const in6_addr ipv6_wildcard = IN6ADDR_ANY_INIT;
+
+socklen_t get_ip_addr_size(const sockaddr *addr) {
+    if (addr != nullptr) {
+        if (addr->sa_family == AF_INET) {
+            return sizeof(sockaddr_in);
+        }
+        if (addr->sa_family == AF_INET6) {
+            return sizeof(sockaddr_in6);
+        }
+    }
+    return 0;
+}
 
 } // namespace vespalib::<unnamed>
 
@@ -52,6 +65,14 @@ SocketAddress::ip_address() const
         result = inet_ntop(AF_INET6, &addr_in6()->sin6_addr, buf, sizeof(buf));
     }
     return result;
+}
+
+vespalib::string
+SocketAddress::reverse_lookup() const
+{
+    std::vector<char> result(4096, '\0');
+    getnameinfo(addr(), _size, &result[0], 4000, nullptr, 0, NI_NAMEREQD);
+    return &result[0];
 }
 
 vespalib::string
@@ -246,6 +267,43 @@ SocketAddress::from_name(const vespalib::string &name)
         addr_un.sun_family = AF_UNIX;
         memcpy(&addr_un.sun_path[1], name.data(), name.size());
         result._size = sizeof(sockaddr_un);
+    }
+    return result;
+}
+
+std::vector<SocketAddress>
+SocketAddress::get_interfaces()
+{
+    std::vector<SocketAddress> result;
+    ifaddrs *list = nullptr;
+    if (getifaddrs(&list) == 0) {
+        for (const ifaddrs *entry = list; entry != nullptr; entry = entry->ifa_next) {
+            socklen_t size = get_ip_addr_size(entry->ifa_addr);
+            if (size > 0) {
+                result.push_back(SocketAddress(entry->ifa_addr, size));
+            }
+        }
+        freeifaddrs(list);
+    }
+    return result;
+}
+
+vespalib::string
+SocketAddress::normalize(const vespalib::string &host_name)
+{
+    vespalib::string result = host_name;
+    addrinfo hints;
+    memset(&hints, 0, sizeof(addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = 0;
+    hints.ai_flags = (AI_CANONNAME);
+    addrinfo *list = nullptr;
+    if (getaddrinfo(host_name.c_str(), nullptr, &hints, &list) == 0) {
+        if ((list != nullptr) && (list->ai_canonname != nullptr)) {
+            result = list->ai_canonname;
+        }
+        freeaddrinfo(list);
     }
     return result;
 }
