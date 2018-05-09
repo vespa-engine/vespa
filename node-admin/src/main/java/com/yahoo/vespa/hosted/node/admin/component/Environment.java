@@ -14,6 +14,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -45,6 +46,7 @@ public class Environment {
     private static final String ZTS_URI = "ZTS_URL";
     private static final String NODE_ATHENZ_IDENTITY = "NODE_ATHENZ_IDENTITY";
     private static final String ENABLE_NODE_AGENT_CERT = "ENABLE_NODE_AGENT_CERT";
+    private static final String TRUST_STORE_PATH = "TRUST_STORE_PATH";
 
     private final ConfigServerInfo configServerInfo;
     private final String environment;
@@ -62,6 +64,7 @@ public class Environment {
     private final URI ztsUri;
     private final AthenzService nodeAthenzIdentity;
     private final boolean nodeAgentCertEnabled;
+    private final Path trustStorePath;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -69,6 +72,7 @@ public class Environment {
 
     public Environment(ConfigServerConfig configServerConfig) {
         this(configServerConfig,
+             Paths.get(getEnvironmentVariable(TRUST_STORE_PATH)),
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
              getEnvironmentVariable(SYSTEM),
@@ -87,6 +91,7 @@ public class Environment {
     }
 
     private Environment(ConfigServerConfig configServerConfig,
+                        Path trustStorePath,
                         String environment,
                         String region,
                         String system,
@@ -124,6 +129,7 @@ public class Environment {
         this.ztsUri = ztsUri;
         this.nodeAthenzIdentity = nodeAthenzIdentity;
         this.nodeAgentCertEnabled = nodeAgentCertEnabled;
+        this.trustStorePath = trustStorePath;
     }
 
     public List<String> getConfigServerHostNames() { return configServerInfo.getConfigServerHostNames(); }
@@ -239,16 +245,12 @@ public class Environment {
         return containerEnvironmentResolver;
     }
 
-    public ConfigServerInfo getConfigServerInfo() {
-        return configServerInfo;
-    }
-
     public Path getTrustStorePath() {
-        return configServerInfo.getTrustStoreOptions().map(o -> o.path).orElseThrow(IllegalStateException::new);
+        return trustStorePath;
     }
 
     public AthenzService getConfigserverAthenzIdentity() {
-        return (AthenzService) configServerInfo.getAthenzIdentity().orElseThrow(IllegalStateException::new);
+        return configServerInfo.getConfigServerIdentity();
     }
 
     public AthenzService getNodeAthenzIdentity() {
@@ -288,6 +290,7 @@ public class Environment {
         private URI ztsUri;
         private AthenzService nodeAthenzIdentity;
         private boolean nodeAgentCertEnabled;
+        private Path trustStorePath;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
             this.configServerConfig = configServerConfig;
@@ -369,8 +372,14 @@ public class Environment {
             return this;
         }
 
+        public Builder trustStorePath(Path trustStorePath) {
+            this.trustStorePath = trustStorePath;
+            return this;
+        }
+
         public Environment build() {
             return new Environment(configServerConfig,
+                                   trustStorePath,
                                    environment,
                                    region,
                                    system,

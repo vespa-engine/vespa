@@ -61,7 +61,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     public static ConfigServerApiImpl create(ConfigServerInfo info, SiaIdentityProvider provider) {
         return new ConfigServerApiImpl(
                 info.getConfigServerUris(),
-                new AthenzIdentityVerifier(singleton(info.getAthenzIdentity().get())),
+                new AthenzIdentityVerifier(singleton(info.getConfigServerIdentity())),
                 provider);
     }
 
@@ -70,7 +70,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                                                 HostName configServerHostname) {
         return new ConfigServerApiImpl(
                 Collections.singleton(info.getConfigServerUri(configServerHostname.value())),
-                new AthenzIdentityVerifier(singleton(info.getAthenzIdentity().get())),
+                new AthenzIdentityVerifier(singleton(info.getConfigServerIdentity())),
                 provider);
     }
 
