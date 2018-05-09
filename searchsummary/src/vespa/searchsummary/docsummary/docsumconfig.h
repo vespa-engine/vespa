@@ -4,8 +4,7 @@
 
 #include <vespa/config-summarymap.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class IDocsumEnvironment;
 class DynamicDocsumWriter;
@@ -35,6 +34,5 @@ private:
     DynamicDocsumWriter * _writer;
 };
 
-}
 }
 

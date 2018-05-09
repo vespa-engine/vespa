@@ -29,7 +29,7 @@ public:
         ResolveClassInfo()
             : mustSkip(false), allGenerated(false),
               outputClassId(ResultConfig::NoClassID()),
-              outputClass(NULL), outputClassInfo(NULL), inputClass(NULL)
+              outputClass(nullptr), outputClassInfo(nullptr), inputClass(nullptr)
         { }
     };
 
@@ -86,7 +86,7 @@ private:
 
 public:
     DynamicDocsumWriter(ResultConfig *config, KeywordExtractor *extractor);
-    virtual ~DynamicDocsumWriter();
+    ~DynamicDocsumWriter() override;
 
     ResultConfig *GetResultConfig() { return _resultConfig; }
 

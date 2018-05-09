@@ -26,7 +26,7 @@ private:
 
 public:
     SummaryFeaturesDFW();
-    ~SummaryFeaturesDFW();
+    ~SummaryFeaturesDFW() override;
     void init(IDocsumEnvironment * env);
     bool IsGenerated() const override { return true; }
     void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,

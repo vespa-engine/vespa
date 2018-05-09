@@ -13,13 +13,12 @@ namespace juniper {
     class Result;
 }
 
-namespace search {
-namespace common { class Location; }
-namespace attribute {
+namespace search::common { class Location; }
+namespace search::attribute {
     class IAttributeContext;
     class IAttributeVector;
 }
-namespace docsummary {
+namespace search::docsummary {
 
 class GetDocsumsState;
 class IDocsumEnvironment;
@@ -89,6 +88,5 @@ public:
     ~GetDocsumsState();
 };
 
-}
 }
 

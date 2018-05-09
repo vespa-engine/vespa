@@ -6,7 +6,9 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -20,8 +22,7 @@ using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 ResType inferType(const IAttributeVector & vec) {
     ResType retval;
@@ -155,13 +156,13 @@ SingleAttrDFW::insertField(uint32_t docid,
     case RES_FEATUREDATA:
     case RES_LONG_STRING:
     case RES_STRING: {
-        s = v.getString(docid, NULL, 0); // no need to pass in a buffer, this attribute has a string storage.
+        s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
         target.insertString(vespalib::Memory(s));
         break;
     }
     case RES_LONG_DATA:
     case RES_DATA: {
-        s = v.getString(docid, NULL, 0); // no need to pass in a buffer, this attribute has a string storage.
+        s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
         target.insertData(vespalib::Memory(s));
         break;
     }
@@ -265,9 +266,9 @@ AttributeDFWFactory::create(IAttributeManager & vecMan, const char *vecName)
 {
     IAttributeContext::UP ctx = vecMan.createContext();
     const IAttributeVector * vec = ctx->getAttribute(vecName);
-    if (vec == NULL) {
+    if (vec == nullptr) {
         LOG(warning, "No valid attribute vector found: %s", vecName);
-        return NULL;
+        return nullptr;
     }
     if (vec->hasMultiValue()) {
         return new MultiAttrDFW(vec->getName());
@@ -276,5 +277,4 @@ AttributeDFWFactory::create(IAttributeManager & vecMan, const char *vecName)
     }
 }
 
-}
 }

@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchsummary/docsummary/attributedfw.h>
+#include "attributedfw.h"
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 /**
  * This is the docsum field writer used to extract the position (as a string) from a zcurve attribute
@@ -20,6 +19,5 @@ public:
     static UP create(const char *attribute_name, IAttributeManager *attribute_manager);
 };
 
-}
 }
 

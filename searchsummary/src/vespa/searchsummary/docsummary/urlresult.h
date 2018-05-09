@@ -31,9 +31,9 @@ class badurlresult : public urlresult
 public:
     badurlresult();
     badurlresult(uint32_t partition, uint32_t docid, HitRank metric);
-    virtual ~badurlresult();
+    ~badurlresult() override;
 
-    virtual int unpack(const char *buf, const size_t buflen) override;
+    int unpack(const char *buf, const size_t buflen) override;
 };
 
 
@@ -49,8 +49,7 @@ private:
     char                   *_buf;     // allocated in same chunk as _entries
     char                   *_bufEnd;  // first byte after _buf
 
-    bool InBuf(void *pt)
-    {
+    bool InBuf(void *pt) {
         return ((char *)pt >= _buf &&
                 (char *)pt < _bufEnd);
     }
@@ -69,8 +68,8 @@ public:
     ResEntry *GetEntry(uint32_t idx);
     ResEntry *GetEntry(const char *name);
     ResEntry *GetEntryFromEnumValue(uint32_t val);
-    virtual bool IsGeneral() const override { return true; }
-    virtual int unpack(const char *buf, const size_t buflen) override;
+    bool IsGeneral() const override { return true; }
+    int unpack(const char *buf, const size_t buflen) override;
 
     bool inplaceUnpack(const DocsumStoreValue &value) {
         if (value.valid()) {
@@ -82,3 +81,4 @@ public:
 };
 
 }
+

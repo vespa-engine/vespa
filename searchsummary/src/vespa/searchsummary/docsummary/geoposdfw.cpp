@@ -2,6 +2,7 @@
 
 #include "geoposdfw.h"
 #include <vespa/searchlib/common/documentlocations.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/data/slime/cursor.h>
@@ -88,7 +89,7 @@ GeoPositionDFW::create(const char *attribute_name,
                        IAttributeManager *attribute_manager)
 {
     GeoPositionDFW::UP ret;
-    if (attribute_manager != NULL) {
+    if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(warning, "create: missing attribute name '%p'", attribute_name);
             return ret;
@@ -107,6 +108,5 @@ GeoPositionDFW::create(const char *attribute_name,
     ret.reset(new GeoPositionDFW(attribute_name));
     return ret;
 }
-
 
 }

@@ -4,8 +4,7 @@
 
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 /**
  * This class converts a summary field for docsum fetching.
@@ -17,5 +16,5 @@ public:
     convertSummaryField(bool markup, const document::FieldValue &value);
 };
 
-}  // namespace search::docsummary
-}  // namespace search
+}
+

@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 /**
  * Interface for a tokenizer.
@@ -66,4 +65,4 @@ public:
 };
 
 }
-}
+
