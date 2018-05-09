@@ -37,10 +37,9 @@ FastS_SearchAdapter::GetSearchInfo()
 
 
 FastS_ISearch::RetCode
-FastS_SearchAdapter::SetAsyncArgs(FastS_ISearchOwner *owner,
-                                  FastS_SearchContext context)
+FastS_SearchAdapter::SetAsyncArgs(FastS_ISearchOwner *owner)
 {
-    return _search->SetAsyncArgs(owner, context);
+    return _search->SetAsyncArgs(owner);
 }
 
 
@@ -138,32 +137,12 @@ FastS_SyncSearchAdapter::FastS_SyncSearchAdapter(FastS_ISearch *search)
       _queryDone(false),
       _waitDocsums(false),
       _docsumsDone(false)
-{
-}
+{}
 
-
-FastS_SyncSearchAdapter::~FastS_SyncSearchAdapter()
-{
-}
-
-
-
-FastS_ISearch *
-FastS_SyncSearchAdapter::Adapt(FastS_ISearch *search)
-{
-    if (!search->IsAsync())
-        return search;
-
-    FastS_SyncSearchAdapter *ret = new FastS_SyncSearchAdapter(search);
-    search->SetAsyncArgs(ret, FastS_SearchContext());
-    return ret;
-}
-
-
+FastS_SyncSearchAdapter::~FastS_SyncSearchAdapter() = default;
 
 void
-FastS_SyncSearchAdapter::DoneQuery(FastS_ISearch *,
-                                   FastS_SearchContext)
+FastS_SyncSearchAdapter::DoneQuery(FastS_ISearch *)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _queryDone = true;
@@ -174,8 +153,7 @@ FastS_SyncSearchAdapter::DoneQuery(FastS_ISearch *,
 
 
 void
-FastS_SyncSearchAdapter::DoneDocsums(FastS_ISearch *,
-                                     FastS_SearchContext)
+FastS_SyncSearchAdapter::DoneDocsums(FastS_ISearch *)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _docsumsDone = true;
@@ -215,16 +193,14 @@ FastS_SyncSearchAdapter::IsAsync()
 
 
 FastS_ISearch::RetCode
-FastS_SyncSearchAdapter::SetAsyncArgs(FastS_ISearchOwner *,
-                                      FastS_SearchContext)
+FastS_SyncSearchAdapter::SetAsyncArgs(FastS_ISearchOwner *)
 {
     return RET_ERROR;
 }
 
 
 FastS_ISearch::RetCode
-FastS_SyncSearchAdapter::Search(uint32_t searchOffset,
-                                uint32_t maxhits, uint32_t minhits)
+FastS_SyncSearchAdapter::Search(uint32_t searchOffset, uint32_t maxhits, uint32_t minhits)
 {
     RetCode res = _search->Search(searchOffset, maxhits, minhits);
     if (res == RET_INPROGRESS) {

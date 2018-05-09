@@ -361,7 +361,7 @@ public:
         FastS_SyncSearchAdapter(&_search),
         _search(dsc, dataset, timeKeeper)
     {
-        _search.SetAsyncArgs(this, FastS_SearchContext());
+        _search.SetAsyncArgs(this);
     }
     ~FastS_Sync_FNET_Search() override;
     void Free() override { delete this; }

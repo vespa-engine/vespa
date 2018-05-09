@@ -831,11 +831,11 @@ FastS_FNET_Search::EndFNETWork(std::unique_lock<std::mutex> searchGuard)
     if (_FNET_mode == FNET_QUERY && _pendingQueries == 0) {
         _FNET_mode = FNET_NONE;
         searchGuard.unlock();
-        _searchOwner->DoneQuery(this, _searchContext);
+        _searchOwner->DoneQuery(this);
     } else if (_FNET_mode == FNET_DOCSUMS && _pendingDocsums == 0) {
         _FNET_mode = FNET_NONE;
         searchGuard.unlock();
-        _searchOwner->DoneDocsums(this, _searchContext);
+        _searchOwner->DoneDocsums(this);
     }
 }
 
