@@ -152,7 +152,7 @@ namespace {
 bool
 similar(uint64_t lhs, uint64_t rhs, uint64_t epsilon)
 {
-    return (lhs < rhs) ? ((rhs - lhs) < epsilon) : ((lhs - rhs) < epsilon);
+    return (lhs < rhs) ? ((rhs - lhs) <= epsilon) : ((lhs - rhs) <= epsilon);
 }
 
 }
