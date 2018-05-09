@@ -331,6 +331,10 @@ FastS_FNET_Search::ConnectQueryNodes()
     if (_dataset->useFixedRowDistribution()) {
         fixedRow = (_queryArgs->sessionId.empty()) ? getNextFixedRow() : getHashedRow();
         _fixedRow = fixedRow;
+        size_t numParts = _dataset->getNumPartitions(fixedRow);
+        while(_nodes.size() > numParts) {
+            _nodes.erase(_nodes.begin() + (numParts - 1));
+        }
     }
     EngineNodeMap engines;
     engines.reserve(_nodes.size());
@@ -871,29 +875,25 @@ FastS_FNET_Search::CheckCoverage()
     uint16_t nodesQueried = 0;
     uint16_t nodesReplied = 0;
     size_t cntNone(0);
-    size_t configuredNodes(0);
 
     for (const FastS_FNET_SearchNode & node : _nodes) {
-        if (node.GetEngine() != nullptr) {
-            configuredNodes++;
-            if (node._qresult != nullptr) {
-                covDocs  += node._qresult->_coverageDocs;
-                activeDocs  += node._qresult->_activeDocs;
-                soonActiveDocs += node._qresult->_soonActiveDocs;
-                degradedReason |= node._qresult->_coverageDegradeReason;
-                nodesQueried += node._qresult->getNodesQueried();
-                nodesReplied += node._qresult->getNodesReplied();
-            } else {
-                nodesQueried++;
-                cntNone++;
-            }
+        if (node._qresult != nullptr) {
+            covDocs  += node._qresult->_coverageDocs;
+            activeDocs  += node._qresult->_activeDocs;
+            soonActiveDocs += node._qresult->_soonActiveDocs;
+            degradedReason |= node._qresult->_coverageDegradeReason;
+            nodesQueried += node._qresult->getNodesQueried();
+            nodesReplied += node._qresult->getNodesReplied();
+        } else {
+            nodesQueried++;
+            cntNone++;
         }
     }
     const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
-    if ((missingParts > 0) && (cntNone != configuredNodes)) {
+    if ((missingParts > 0) && (cntNone != _nodes.size())) {
         // TODO This is a dirty way of anticipating missing coverage.
         // It should be done differently
-        activeDocs += missingParts * activeDocs/(configuredNodes - cntNone);
+        activeDocs += missingParts * activeDocs/(_nodes.size() - cntNone);
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
 }
