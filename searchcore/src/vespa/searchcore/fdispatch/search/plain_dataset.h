@@ -138,7 +138,7 @@ protected:
     bool IsValidPartIndex_HasLock(uint32_t partindex);
 public:
     FastS_PlainDataSet(FastS_AppContext *appCtx, FastS_DataSetDesc *desc);
-    ~FastS_PlainDataSet() override;
+    virtual ~FastS_PlainDataSet();
 
     bool useFixedRowDistribution() const {
         return _queryDistributionMode == FastS_DataSetDesc::QueryDistributionMode::FIXEDROW;
@@ -179,15 +179,18 @@ public:
     FastS_EngineBase * getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard, uint32_t partid, bool mld);
     FastS_EngineBase * getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard, uint32_t partid, bool mld, uint32_t rowid);
 
+    std::vector<FastS_EngineBase *> getPartEngines(uint32_t partition);
+
     void LinkInPart_HasLock(FastS_EngineBase *engine);
     void LinkOutPart_HasLock(FastS_EngineBase *engine);
 
-    ChildInfo getChildInfo() const override;
+    virtual ChildInfo getChildInfo() const override;
 
     uint32_t getMPP() const { return _partMap._mpp; }
     double getMonitorInterval() const { return _monitorInterval; }
     double getHigherCoverageMaxSearchWait() const { return _higherCoverageMaxSearchWait; }
     double getHigherCoverageMinSearchWait() const { return _higherCoverageMinSearchWait; }
+    double getHigherCoverageBaseSearchWait() const { return _higherCoverageBaseSearchWait; }
     double getMinimalSearchCoverage() const { return _minimalSearchCoverage; }
     double getHigherCoverageMaxDocSumWait() const { return _higherCoverageMaxDocSumWait; }
     double getHigherCoverageMinDocSumWait() const { return _higherCoverageMinDocSumWait; }
@@ -196,13 +199,13 @@ public:
 
     // API
     //----
-    uint32_t CalculateQueueLens_HasLock(uint32_t &dispatchnodes) override;
-    bool AreEnginesReady() override;
+    virtual uint32_t CalculateQueueLens_HasLock(uint32_t &dispatchnodes) override;
+    virtual bool AreEnginesReady() override;
     virtual void Ping();
 
     // Downcast
     //---------
-    FastS_PlainDataSet * GetPlainDataSet() override { return this; }
+    virtual FastS_PlainDataSet * GetPlainDataSet() override { return this; }
 
     template <class FUN>
     FUN ForEachEngine(FUN fun) {
@@ -213,4 +216,6 @@ public:
     }
 
     static bool EngineDocStampOK(time_t haveDocStamp) { return (haveDocStamp != 0); }
+
+    void UseDeterministicQueryDistribution(bool);
 };

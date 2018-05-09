@@ -32,6 +32,7 @@ private:
     FastS_FNET_Search       *_search;   // we are part of this search
     FastS_FNET_Engine       *_engine;   // we use this search engine
     FNET_Channel            *_channel;  // connection with search engine
+    uint32_t                 _subds;    // engine sub dataset
     uint32_t                 _partid;   // engine partition id
     uint32_t                 _rowid;    // engine row id
     uint32_t                 _stamp;    // engine timestamp
@@ -61,6 +62,7 @@ public:
     uint32_t    _docidCnt;
     uint32_t    _pendingDocsums; // how many docsums pending ?
     uint32_t    _docsumRow;
+    uint32_t    _docsumStamp;
     uint32_t    _docsum_offsets_idx;
     double      _docsumTime;
 
@@ -84,11 +86,10 @@ public:
     // These objects are referenced everywhere and must never be either copied nor moved,
     // but std::vector requires this to exist. If called it will assert.
     FastS_FNET_SearchNode(FastS_FNET_SearchNode && rhs);
-    FastS_FNET_SearchNode & operator = (FastS_FNET_SearchNode && rhs);
     FastS_FNET_SearchNode(const FastS_FNET_SearchNode &) = delete;
     FastS_FNET_SearchNode& operator=(const FastS_FNET_SearchNode &) = delete;
 
-    ~FastS_FNET_SearchNode() override;
+    virtual ~FastS_FNET_SearchNode();
 
     // Methods needed by mergehits
     bool NT_InitMerge(uint32_t *numDocs, uint64_t *totalHits, search::HitRank *maxRank, uint32_t *sortDataDocs);
@@ -102,6 +103,7 @@ public:
 
     uint32_t getPartID() const     { return _partid; }
     uint32_t GetRowID() const     { return _rowid; }
+    uint32_t GetTimeStamp() const { return _stamp; }
 
     FastS_FNET_SearchNode * allocExtraDocsumNode(bool mld, uint32_t rowid, uint32_t rowbits);
 
@@ -114,6 +116,13 @@ public:
     void allocGDX(search::docsummary::GetDocsumArgs *args, const search::engine::PropertiesMap &properties);
     void postGDX(uint32_t *pendingDocsums, uint32_t *pendingDocsumNodes);
     vespalib::string toString() const;
+
+    const char *getHostName() const {
+        return (_engine == nullptr ? "localhost" : _engine->getHostName());
+    }
+    int getPortNumber() const {
+        return (_engine == nullptr ? 0 : _engine->getPortNumber());
+    }
 
     void dropCost() {
         if (_engine != nullptr && _flags._needSubCost) {
@@ -143,7 +152,7 @@ public:
         return (_channel == nullptr) ?  packet->Free(), false : _channel->Send(packet);
     }
 
-    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
+    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 };
 
 
@@ -213,7 +222,7 @@ private:
     std::unique_ptr<search::grouping::MergingManager> _groupMerger;
     FastS_DataSetCollection *_dsc;  // owner keeps this alive
     FastS_FNET_DataSet      *_dataset;
-    bool                     _datasetActiveCostRef;
+    bool             _datasetActiveCostRef;
     std::vector<FastS_FNET_SearchNode> _nodes;
     bool                     _nodesConnected;
 
@@ -297,12 +306,12 @@ public:
 
     // *** API methods -- BEGIN ***
 
-    FastS_SearchInfo *GetSearchInfo() override { return _util.GetSearchInfo(); }
+    virtual FastS_SearchInfo *GetSearchInfo() override { return _util.GetSearchInfo(); }
 
-    RetCode Search(uint32_t searchOffset, uint32_t maxhits, uint32_t minhits = 0) override;
-    RetCode ProcessQueryDone() override;
-    RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt) override;
-    RetCode ProcessDocsumsDone() override;
+    virtual RetCode Search(uint32_t searchOffset, uint32_t maxhits, uint32_t minhits = 0) override;
+    virtual RetCode ProcessQueryDone() override;
+    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt) override;
+    virtual RetCode ProcessDocsumsDone() override;
 
     // *** API methods -- END ***
 
@@ -342,11 +351,17 @@ public:
     uint32_t getDoneQueries() const {
         return getRequestedQueries() - getPendingQueries();
     }
+    uint32_t getBadQueries() const {
+        return getDoneQueries() - getGoodQueries();
+    }
     uint32_t getGoodDocsums() const { return _goodDocsums; }
     uint32_t getRequestedDocsums() const { return _requestedDocsums; }
     uint32_t getPendingDocsums() const { return _pendingDocsums; }
     uint32_t getDoneDocsums() const {
         return getRequestedDocsums() - getPendingDocsums();
+    }
+    uint32_t getBadDocsums() const {
+        return getDoneDocsums() - getGoodDocsums();
     }
 
     FNET_Packet::UP
@@ -370,8 +385,8 @@ public:
     {
         _search.SetAsyncArgs(this, FastS_SearchContext());
     }
-    ~FastS_Sync_FNET_Search() override;
-    void Free() override { delete this; }
+    virtual ~FastS_Sync_FNET_Search();
+    virtual void Free() override { delete this; }
 };
 
 //-----------------------------------------------------------------
