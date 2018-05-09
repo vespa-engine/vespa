@@ -256,8 +256,7 @@ private:
     void ConnectEstimateNodes();
     void connectSearchPath(const vespalib::string &spec);
     void connectSearchPath(const fdispatch::SearchPath::Element &elem,
-                           const vespalib::string &spec,
-                           uint32_t dispatchLevel);
+                           const vespalib::string &spec, uint32_t dispatchLevel);
     void ConnectDocsumNodes(bool ignoreRow);
     uint32_t getNextFixedRow();
     uint32_t getFixedRowCandidate();
@@ -274,9 +273,7 @@ private:
 
     FastS_FNET_SearchNode * getNode(size_t i) { return &_nodes[i]; }
 public:
-    FastS_FNET_Search(FastS_DataSetCollection *dsc,
-                      FastS_FNET_DataSet *dataset,
-                      FastS_TimeKeeper *timeKeeper);
+    FastS_FNET_Search(FastS_DataSetCollection *dsc, FastS_FNET_DataSet *dataset, FastS_TimeKeeper *timeKeeper);
     virtual ~FastS_FNET_Search();
 
     void GotQueryResult(FastS_FNET_SearchNode *node, FS4Packet_QUERYRESULTX *qrx);
@@ -336,13 +333,11 @@ public:
 
     void adjustQueryTimeout();
     void adjustDocsumTimeout();
-    uint32_t getGoodQueries() const { return _goodQueries; }
     uint32_t getRequestedQueries() const { return _queryNodes; }
     uint32_t getPendingQueries() const { return _pendingQueries; }
     uint32_t getDoneQueries() const {
         return getRequestedQueries() - getPendingQueries();
     }
-    uint32_t getGoodDocsums() const { return _goodDocsums; }
     uint32_t getRequestedDocsums() const { return _requestedDocsums; }
     uint32_t getPendingDocsums() const { return _pendingDocsums; }
     uint32_t getDoneDocsums() const {
@@ -362,9 +357,7 @@ private:
     FastS_FNET_Search _search;
 
 public:
-    FastS_Sync_FNET_Search(FastS_DataSetCollection *dsc,
-                           FastS_FNET_DataSet *dataset,
-                           FastS_TimeKeeper *timeKeeper) :
+    FastS_Sync_FNET_Search(FastS_DataSetCollection *dsc, FastS_FNET_DataSet *dataset, FastS_TimeKeeper *timeKeeper) :
         FastS_SyncSearchAdapter(&_search),
         _search(dsc, dataset, timeKeeper)
     {
