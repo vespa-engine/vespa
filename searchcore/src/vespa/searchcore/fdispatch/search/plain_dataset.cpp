@@ -18,7 +18,7 @@ static inline int imax(int a, int b) { return (a > b) ? a : b; }
 //--------------------------------------------------------------------------
 
 FastS_PartitionMap::Partition::Partition()
-    : _engines(NULL),
+    : _engines(nullptr),
       _maxnodesNow(0),
       _maxnodesSinceReload(0),
       _nodes(0),
@@ -31,7 +31,7 @@ FastS_PartitionMap::Partition::Partition()
 
 FastS_PartitionMap::Partition::~Partition()
 {
-    FastS_assert(_engines == NULL);
+    FastS_assert(_engines == nullptr);
     FastS_assert(_nodes == 0);
     FastS_assert(_parts == 0);
 }
@@ -39,7 +39,7 @@ FastS_PartitionMap::Partition::~Partition()
 //--------------------------------------------------------------------------
 
 FastS_PartitionMap::FastS_PartitionMap(FastS_DataSetDesc *desc)
-    : _partitions(NULL),
+    : _partitions(nullptr),
       _partBits(desc->GetPartBits()),
       _rowBits(desc->GetRowBits()),
       _num_partitions(desc->GetNumParts()),
@@ -64,13 +64,13 @@ FastS_PartitionMap::FastS_PartitionMap(FastS_DataSetDesc *desc)
 
     if (_num_partitions > 0) {
         _partitions = new Partition[_num_partitions];
-        FastS_assert(_partitions != NULL);
+        FastS_assert(_partitions != nullptr);
     }
-    for (FastS_EngineDesc *curr = desc->GetEngineList(); curr != NULL; curr = curr->GetNext()) {
+    for (FastS_EngineDesc *curr = desc->GetEngineList(); curr != nullptr; curr = curr->GetNext()) {
         _maxRows = std::max(_maxRows, curr->GetConfRowID());
     }
     _numPartitions = std::vector<uint32_t>(getNumRows(), 0);
-    for (FastS_EngineDesc *curr = desc->GetEngineList(); curr != NULL; curr = curr->GetNext()) {
+    for (FastS_EngineDesc *curr = desc->GetEngineList(); curr != nullptr; curr = curr->GetNext()) {
         size_t rowId(curr->GetConfRowID());
         _numPartitions[rowId] = std::max(_numPartitions[rowId], curr->GetConfPartID()+1);
     }
@@ -89,7 +89,7 @@ FastS_PartitionMap::RecalcPartCnt(uint32_t partid)
     uint32_t  maxparts = 0;
     uint32_t  parts = 0;
     for (FastS_EngineBase *  engine = _partitions[partid]._engines;
-         engine != NULL; engine = engine->_nextpart) {
+         engine != nullptr; engine = engine->_nextpart) {
         maxparts = imax(engine->_reported._maxParts, maxparts);
         parts = imax(engine->_reported._actParts, parts);
     }
@@ -112,11 +112,11 @@ FastS_PartitionMap::LinkIn(FastS_EngineBase *engine)
     uint32_t partid = engine->_partid - _first_partition;
 
     FastS_assert(partid < GetSize());
-    FastS_assert(engine->_nextpart == NULL);
-    FastS_assert(engine->_prevpart == NULL);
+    FastS_assert(engine->_nextpart == nullptr);
+    FastS_assert(engine->_prevpart == nullptr);
     FastS_PartitionMap::Partition & part = _partitions[partid];
     engine->_nextpart = part._engines;
-    if (engine->_nextpart != NULL)
+    if (engine->_nextpart != nullptr)
         engine->_nextpart->_prevpart = engine;
     part._engines = engine;
     part._maxnodesNow += engine->_reported._maxNodes;
@@ -144,9 +144,9 @@ FastS_PartitionMap::LinkOut(FastS_EngineBase *engine)
     uint32_t partid = engine->_partid - _first_partition;
 
     FastS_assert(partid < GetSize());
-    if (engine->_nextpart != NULL)
+    if (engine->_nextpart != nullptr)
         engine->_nextpart->_prevpart = engine->_prevpart;
-    if (engine->_prevpart != NULL)
+    if (engine->_prevpart != nullptr)
         engine->_prevpart->_nextpart = engine->_nextpart;
     if (_partitions[partid]._engines == engine)
         _partitions[partid]._engines = engine->_nextpart;
@@ -159,8 +159,8 @@ FastS_PartitionMap::LinkOut(FastS_EngineBase *engine)
         _partitions[partid]._parts <= engine->_reported._actParts)
         RecalcPartCnt(partid);
 
-    engine->_nextpart = NULL;
-    engine->_prevpart = NULL;
+    engine->_nextpart = nullptr;
+    engine->_prevpart = nullptr;
 }
 
 //--------------------------------------------------------------------------
@@ -188,7 +188,7 @@ FastS_PlainDataSet::ExtractEngine()
         _enginesArray.pop_back();
         return ret;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -221,7 +221,7 @@ FastS_PlainDataSet::FastS_PlainDataSet(FastS_AppContext *appCtx,
     const char *hostname = vespalib::HostName::get().c_str();
     unsigned const char *p = reinterpret_cast<unsigned const char *>(hostname);
 
-    if (p != NULL) {
+    if (p != nullptr) {
         while (*p != '\0') {
             seed = (seed << 7) + *p + (seed >> 25);
             p++;
@@ -233,10 +233,7 @@ FastS_PlainDataSet::FastS_PlainDataSet(FastS_AppContext *appCtx,
 }
 
 
-FastS_PlainDataSet::~FastS_PlainDataSet()
-{
-}
-
+FastS_PlainDataSet::~FastS_PlainDataSet() = default;
 
 void
 FastS_PlainDataSet::UpdateMaxHitsPerNodeLog(bool incomplete, bool fuzzy)
@@ -317,11 +314,11 @@ FastS_EngineBase *
 FastS_PlainDataSet::getPartition(const std::unique_lock<std::mutex> &dsGuard, uint32_t partindex, uint32_t rowid)
 {
     (void) dsGuard;
-    FastS_EngineBase*  ret = NULL;
+    FastS_EngineBase*  ret = nullptr;
 
     if (IsValidPartIndex_HasLock(partindex)) {
         for (FastS_EngineBase* iter = _partMap._partitions[partindex]._engines;
-             iter != NULL && ret == NULL;
+             iter != nullptr && ret == nullptr;
              iter = iter->_nextpart) {
 
             // NB: cost race condition
@@ -334,7 +331,7 @@ FastS_PlainDataSet::getPartition(const std::unique_lock<std::mutex> &dsGuard, ui
         }
     }
 
-    if (ret != NULL) {
+    if (ret != nullptr) {
         ret->AddCost();
     }
     return ret;
@@ -347,7 +344,7 @@ FastS_PlainDataSet::countNodesUpInRow_HasLock(uint32_t rowid)
     const size_t numParts = _partMap.GetSize();
     for (size_t partindex = 0; partindex < numParts; ++partindex) {
         for (FastS_EngineBase* iter = _partMap._partitions[partindex]._engines;
-             iter != NULL;
+             iter != nullptr;
              iter = iter->_nextpart)
         {
             if (!iter->IsRealBad() &&
@@ -366,13 +363,13 @@ FastS_EngineBase *
 FastS_PlainDataSet::getPartition(const std::unique_lock<std::mutex> &dsGuard, uint32_t partindex)
 {
     (void) dsGuard;
-    FastS_EngineBase*  ret = NULL;
+    FastS_EngineBase*  ret = nullptr;
     unsigned int oldCount = 1;
     unsigned int engineCount = 0;
 
     if (IsValidPartIndex_HasLock(partindex)) {
         for (FastS_EngineBase* iter = _partMap._partitions[partindex]._engines;
-             iter != NULL;
+             iter != nullptr;
              iter = iter->_nextpart) {
 
             // NB: cost race condition
@@ -382,16 +379,16 @@ FastS_PlainDataSet::getPartition(const std::unique_lock<std::mutex> &dsGuard, ui
                 EngineDocStampOK(iter->_reported._docstamp))
             {
                 engineCount++;
-                if (ret == NULL || UseNewEngine(ret, iter, &oldCount))
+                if (ret == nullptr || UseNewEngine(ret, iter, &oldCount))
                     ret = iter;
             }
         }
     }
 
     if (engineCount < getMPP()) {
-        ret = NULL;
+        ret = nullptr;
     }
-    if (ret != NULL) {
+    if (ret != nullptr) {
         ret->AddCost();
     }
     return ret;
@@ -401,18 +398,18 @@ FastS_EngineBase *
 FastS_PlainDataSet::getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard, uint32_t partindex, bool mld)
 {
     (void) dsGuard;
-    FastS_EngineBase*  ret = NULL;
+    FastS_EngineBase*  ret = nullptr;
     unsigned int oldCount = 1;
     if (partindex < _partMap._num_partitions) {
         FastS_EngineBase* iter;
-        for (iter = _partMap._partitions[partindex]._engines; iter != NULL; iter = iter->_nextpart) {
+        for (iter = _partMap._partitions[partindex]._engines; iter != nullptr; iter = iter->_nextpart) {
             // NB: cost race condition
 
             if (!iter->IsRealBad() &&
                 iter->_reported._mld == mld &&
                 (iter->_config._unitrefcost > 0) &&
                 EngineDocStampOK(iter->_reported._docstamp) &&
-                (ret == NULL || UseNewEngine(ret, iter, &oldCount)))
+                (ret == nullptr || UseNewEngine(ret, iter, &oldCount)))
             {
                 ret = iter;
             }
@@ -420,7 +417,7 @@ FastS_PlainDataSet::getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard,
     } else {
         LOG(error, "Couldn't fetch partition data: Partition ID too big, partindex=%x _partMap._num_partitions=%x", partindex, _partMap._num_partitions);
     }
-    if (ret != NULL) {
+    if (ret != nullptr) {
         ret->AddCost();
     }
     return ret;
@@ -430,18 +427,18 @@ FastS_EngineBase *
 FastS_PlainDataSet::getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard, uint32_t partindex, bool mld, uint32_t rowid)
 {
     (void) dsGuard;
-    FastS_EngineBase*  ret = NULL;
+    FastS_EngineBase*  ret = nullptr;
     unsigned int oldCount = 1;
 
     if (partindex < _partMap._num_partitions) {
         FastS_EngineBase* iter;
-        for (iter = _partMap._partitions[partindex]._engines; iter != NULL; iter = iter->_nextpart) {
+        for (iter = _partMap._partitions[partindex]._engines; iter != nullptr; iter = iter->_nextpart) {
             // NB: cost race condition
             if (!iter->IsRealBad() &&
                 (iter->_reported._mld == mld) &&
                 (iter->_config._confRowID == rowid) &&
                 EngineDocStampOK(iter->_reported._docstamp) &&
-                (ret == NULL || UseNewEngine(ret, iter, &oldCount)))
+                (ret == nullptr || UseNewEngine(ret, iter, &oldCount)))
             {
                 ret = iter;
             }
@@ -449,28 +446,11 @@ FastS_PlainDataSet::getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard,
     } else {
         LOG(error, "Couldn't fetch partition data: Partition ID too big, partindex=%x _partMap._num_partitions=%x", partindex, _partMap._num_partitions);
     }
-    if (ret != NULL) {
+    if (ret != nullptr) {
         ret->AddCost();
     }
     return ret;
 }
-
-
-std::vector<FastS_EngineBase *>
-FastS_PlainDataSet::getPartEngines(uint32_t partition)
-{
-    typedef FastS_EngineBase EB;
-    typedef std::vector<EB *> EBV;
-    EBV partEngines;
-    {
-        auto dsGuard(getDsGuard());
-        for (FastS_EngineBase *iter = _partMap._partitions[partition]._engines; iter != NULL; iter = iter->_nextpart) {
-            partEngines.push_back(iter);
-        }
-    }
-    return partEngines;
-}
-
 
 void
 FastS_PlainDataSet::LinkInPart_HasLock(FastS_EngineBase *engine)
@@ -506,12 +486,12 @@ FastS_PlainDataSet::CalculateQueueLens_HasLock(uint32_t &dispatchnodes)
     dispatchnodes = 1;
     for (partindex = 0; partindex < _partMap._num_partitions ; partindex++) {
         eng = _partMap._partitions[partindex]._engines;
-        if (eng != NULL) {
+        if (eng != nullptr) {
             pqueueLen = eng->GetQueueLen();
             pdispatchnodes = eng->GetDispatchers();
             dupnodes = 1;
             eng = eng->_nextpart;
-            while (eng != NULL) {
+            while (eng != nullptr) {
                 equeueLen = eng->GetQueueLen();
                 if (equeueLen < pqueueLen)
                     pqueueLen = equeueLen;

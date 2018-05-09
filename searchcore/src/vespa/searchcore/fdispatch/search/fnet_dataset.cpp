@@ -31,18 +31,12 @@ FastS_FNET_DataSet::FastS_FNET_DataSet(FNET_Transport *transport,
 }
 
 
-FastS_FNET_DataSet::~FastS_FNET_DataSet()
-{
-}
-
+FastS_FNET_DataSet::~FastS_FNET_DataSet() = default;
 
 bool
 FastS_FNET_DataSet::AddEngine(FastS_EngineDesc *desc)
 {
-    FastS_FNET_Engine *engine;
-
-    engine = new FastS_FNET_Engine(desc, this);
-    FastS_assert(engine != NULL);
+    FastS_FNET_Engine *engine = new FastS_FNET_Engine(desc, this);
 
     InsertEngine(engine);
 
@@ -57,7 +51,7 @@ namespace {
 struct ConnectFNETEngine {
     void operator()(FastS_EngineBase* engine) {
         FastS_FNET_Engine* fnet_engine = engine->GetFNETEngine();
-        FastS_assert(fnet_engine != NULL);
+        FastS_assert(fnet_engine != nullptr);
         fnet_engine->ScheduleConnect(0.0);
         fnet_engine->StartWarnTimer();
     }
@@ -96,9 +90,9 @@ FastS_FNET_DataSet::Free()
     _pingTask.Kill();
 
     for (FastS_EngineBase *engine = ExtractEngine();
-         engine != NULL; engine = ExtractEngine())
+         engine != nullptr; engine = ExtractEngine())
     {
-        FastS_assert(engine->GetFNETEngine() != NULL);
+        FastS_assert(engine->GetFNETEngine() != nullptr);
         delete engine;
     }
 
