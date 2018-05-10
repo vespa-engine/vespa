@@ -15,6 +15,7 @@ import com.yahoo.data.access.Inspector;
  * @author Bjørn Borud
  */
 public class ShortField extends DocsumField {
+
     static final short EMPTY_VALUE = Short.MIN_VALUE;
 
     public ShortField(String name) {
@@ -29,24 +30,9 @@ public class ShortField extends DocsumField {
         }
     }        
 
-    public Object decode(ByteBuffer b) {
-        return convert(b.getShort());
-    }
-
-    public Object decode(ByteBuffer b, FastHit hit) {
-        Object field = decode(b);
-        hit.setField(name, field);
-        return field;
-    }
-
-    public int getLength(ByteBuffer b) {
-        int offset = b.position();
-        final int bytelength = Short.SIZE >> 3;
-        b.position(offset + bytelength);
-        return bytelength;
-    }
-
+    @Override
     public Object convert(Inspector value) {
         return convert((short)value.asLong(EMPTY_VALUE));
     }
+
 }

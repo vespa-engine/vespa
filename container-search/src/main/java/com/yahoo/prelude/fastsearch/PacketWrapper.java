@@ -22,12 +22,13 @@ import com.yahoo.document.DocumentId;
  * A wrapper for cache entries to make it possible to check whether the
  * hits are truly correct.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author  <a href="mailto:mathiasm@yahoo-inc.com">Mathias Lidal</a>
+ * @author Steinar Knutsen
+ * @author Mathias Lidal
  */
 // TODO: Remove packet cache as it timed out a long time ago.
 // 1 - It does not work with grouping, 2 the packet protocol is eroding away.
 public class PacketWrapper implements Cloneable {
+
     private static Logger log = Logger.getLogger(PacketWrapper.class.getName());
 
     final int keySize;
@@ -288,6 +289,7 @@ public class PacketWrapper implements Cloneable {
      * Straightforward shallow copy.
      */
     @SuppressWarnings("unchecked")
+    @Override
     public Object clone() {
         try {
             PacketWrapper other = (PacketWrapper) super.clone();
@@ -301,4 +303,5 @@ public class PacketWrapper implements Cloneable {
                     e);
         }
     }
+
 }

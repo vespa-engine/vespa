@@ -13,8 +13,8 @@ import com.yahoo.log.LogLevel;
  * An LRU cache using number of hits cached inside the results as
  * size limiting factor. Directly modelled after com.yahoo.collections.Cache.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author  bratseth
+ * @author Steinar Knutsen
+ * @author bratseth
  */
 // TODO: Remove packet cache as it timed out a long time ago.
 // 1 - It does not work with grouping, 2 the packet protocol is eroding away.

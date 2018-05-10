@@ -22,6 +22,7 @@ public class FeatureDataField extends LongstringField {
         return "field " + getName() + " type FeatureDataField";
     }
 
+    @Override
     public Object convert(Inspector value) {
         if (! value.valid()) {
             if (getEmulConfig().stringBackedFeatureData()) {
@@ -42,4 +43,5 @@ public class FeatureDataField extends LongstringField {
             return obj;
         }
     }
+
 }

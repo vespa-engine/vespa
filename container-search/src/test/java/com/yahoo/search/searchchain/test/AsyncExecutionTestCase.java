@@ -146,6 +146,7 @@ public class AsyncExecutionTestCase {
 
     }
 
+    @Test
     public void testAsyncExecutionTimeout() {
         Chain<Searcher> chain = new Chain<>(new Searcher() {
             @Override

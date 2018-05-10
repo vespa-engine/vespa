@@ -181,7 +181,7 @@ public class AsyncExecution {
                 for (FutureResult task : workingTasks)
                     task.get();
             }).get(timeoutMs, TimeUnit.MILLISECONDS);
-        }catch (TimeoutException | InterruptedException | ExecutionException e) {
+        } catch (TimeoutException | InterruptedException | ExecutionException e) {
             // Handle timeouts below
         }
 

@@ -12,14 +12,6 @@ import com.yahoo.data.access.simple.*;
 
 public class JsonFieldTestCase {
 
-    @Before
-    public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
-    }
-
     @Test
     public final void requireThatWeightedSetsItemsAreConvertedToStrings() {
         Value.ArrayValue topArr = new Value.ArrayValue();

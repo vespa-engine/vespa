@@ -14,26 +14,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Externally provided test for async execution of search chains.
+ * Tests async execution of search chains.
  *
  * @author Peter Thomas
+ * @author bratseth
  */
 public class VespaAsyncSearcherTest {
 
     private static class FirstSearcher extends Searcher {
 
         @Override
-        public Result search(Query query, Execution exctn) {
+        public Result search(Query query, Execution execution) {
             int count = 10;
             List<FutureResult> futures = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                Query subQuery = new Query();
-                FutureResult future = new AsyncExecution(exctn)
-                        .search(subQuery);
+                Query subQuery = query.clone();
+                FutureResult future = new AsyncExecution(execution).search(subQuery);
                 futures.add(future);
             }
             AsyncExecution.waitForAll(futures, 10 * 60 * 1000);
-            return new Result(query);
+            Result combinedResult = new Result(query);
+            for (FutureResult resultFuture : futures) {
+                Result result = resultFuture.get();
+                combinedResult.mergeWith(result);
+                combinedResult.hits().add(result.hits());
+            }
+            return combinedResult;
         }
 
     }
@@ -52,7 +58,6 @@ public class VespaAsyncSearcherTest {
         Chain<Searcher> chain = new Chain<>(new FirstSearcher(), new SecondSearcher());
         Execution execution = new Execution(chain, Execution.Context.createContextStub(null));
         Query query = new Query();
-        // fails with exception on old versions
         execution.search(query);
     }
 

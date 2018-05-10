@@ -16,45 +16,15 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class TensorField extends DocsumField implements VariableLengthField {
+public class TensorField extends DocsumField {
 
     public TensorField(String name) {
         super(name);
     }
 
     @Override
-    public Tensor decode(ByteBuffer buffer) {
-        int length = buffer.getInt();
-        if (length == 0) return null;
-        ByteBuffer contentBuffer = ByteBuffer.wrap(buffer.array(), buffer.arrayOffset() + buffer.position(), length);
-        Tensor tensor = TypedBinaryFormat.decode(Optional.empty(), new GrowableByteBuffer(contentBuffer));
-        buffer.position(buffer.position() + length);
-        return tensor;
-    }
-
-    @Override
-    public Tensor decode(ByteBuffer b, FastHit hit) {
-        Tensor tensor = decode(b);
-        hit.setField(name, tensor);
-        return tensor;
-    }
-
-    @Override
     public String toString() {
         return "field " + getName() + " type tensor";
-    }
-
-    @Override
-    public int getLength(ByteBuffer b) {
-        int offset = b.position();
-        int length = b.getInt();
-        b.position(offset + length);
-        return length;
-    }
-
-    @Override
-    public int sizeOfLength() {
-        return 4;
     }
 
     @Override
