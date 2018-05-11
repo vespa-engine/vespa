@@ -111,12 +111,15 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     private static InstanceIdentity getInstanceIdentity(HttpResponse response) throws IOException {
-        if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
-            InstanceIdentityCredentials entity =
-                    objectMapper.readValue(response.getEntity().getContent(), InstanceIdentityCredentials.class);
-            return entity.getServiceToken() != null
+        InstanceIdentityCredentials entity = readEntity(response, InstanceIdentityCredentials.class);
+        return entity.getServiceToken() != null
                     ? new InstanceIdentity(entity.getX509Certificate(), new NToken(entity.getServiceToken()))
                     : new InstanceIdentity(entity.getX509Certificate());
+    }
+
+    private static <T> T readEntity(HttpResponse response, Class<T> entityType) throws IOException {
+        if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
+            return objectMapper.readValue(response.getEntity().getContent(), entityType);
         } else {
             String message = EntityUtils.toString(response.getEntity());
             throw new ZtsClientException(
