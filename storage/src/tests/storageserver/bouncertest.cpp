@@ -306,12 +306,12 @@ BouncerTest::outOfBoundsConfigValuesThrowException()
     try {
         configureRejectionThreshold(256);
         CPPUNIT_FAIL("Upper bound violation not caught");
-    } catch (config::InvalidConfigException) {}
+    } catch (config::InvalidConfigException &) {}
 
     try {
         configureRejectionThreshold(-2);
         CPPUNIT_FAIL("Lower bound violation not caught");
-    } catch (config::InvalidConfigException) {}
+    } catch (config::InvalidConfigException &) {}
 }
 
 
