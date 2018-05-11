@@ -135,6 +135,7 @@ public class DefaultZtsClient implements ZtsClient {
 
     private <T> T withClient(Function<CloseableHttpClient, T> consumer) {
         Lock lock = this.lock.readLock();
+        lock.lock();
         try {
             return consumer.apply(this.client);
         } finally {
@@ -144,6 +145,7 @@ public class DefaultZtsClient implements ZtsClient {
 
     private void setClient(CloseableHttpClient newClient) {
         Lock lock = this.lock.writeLock();
+        lock.lock();
         CloseableHttpClient oldClient;
         try {
             oldClient = this.client;
