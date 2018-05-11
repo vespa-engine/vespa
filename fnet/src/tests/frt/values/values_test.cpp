@@ -68,7 +68,7 @@ void fillValues(FRT_Values &values) {
     }
     {
         values.AddData("foo", 3);
-        strncpy(values.AddData(3), "bar", 3);
+        memcpy(values.AddData(3), "bar", 3);
         FRT_DataValue *data_arr = values.AddDataArray(3);
         values.SetData(data_arr, "foo", 3);
         values.SetData(data_arr + 1, "bar", 3);
