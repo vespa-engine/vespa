@@ -236,7 +236,8 @@ size_t benchSort(const std::vector<Slot *> & vOrg)
 
 static char _type;
 
-int runBenchMark(const std::vector<Slot *> * indirectSlotVector)
+void*
+runBenchMark(const std::vector<Slot *> * indirectSlotVector)
 {
     int uniq(0);
     switch (_type) {
@@ -251,7 +252,7 @@ int runBenchMark(const std::vector<Slot *> * indirectSlotVector)
         case 'J': uniq = benchHashVespaLibIntelligentAndFast(*indirectSlotVector); break;
         default: break;
     }
-    return uniq;
+    return reinterpret_cast<void *>(uniq);
 }
 
 int main(int argc, char *argv[])
