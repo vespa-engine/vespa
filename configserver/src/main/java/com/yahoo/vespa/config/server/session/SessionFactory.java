@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 
 import java.io.File;
@@ -19,11 +20,11 @@ public interface SessionFactory {
      *
      *
      * @param applicationDirectory a File pointing to an application.
-     * @param applicationName name of the application for this new session.
+     * @param applicationId application id for this new session.
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    LocalSession createSession(File applicationDirectory, String applicationName, TimeoutBudget timeoutBudget);
+    LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget);
 
     /**
      * Creates a new deployment session from an already existing session.

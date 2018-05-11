@@ -68,8 +68,7 @@ public class ApplicationApiHandler extends SessionHandler {
         SessionCreateHandler.validateDataAndHeader(request);
 
         PrepareResult result =
-                applicationRepository.deploy(tenant,
-                                             CompressedApplicationInputStream.createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader)),
+                applicationRepository.deploy(CompressedApplicationInputStream.createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader)),
                                              prepareParams,
                                              shouldIgnoreLockFailure(request),
                                              shouldIgnoreSessionStaleFailure(request),

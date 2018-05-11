@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.*;
@@ -64,7 +63,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.sessionPreparer = globalComponentRegistry.getSessionPreparer();
         this.curator = globalComponentRegistry.getCurator();
         this.configCurator = globalComponentRegistry.getConfigCurator();
-        this.sessionCounter = new SessionCounter(globalComponentRegistry.getConfigCurator(), tenant);;
+        this.sessionCounter = new SessionCounter(globalComponentRegistry.getConfigCurator(), tenant);
         this.sessionsPath = TenantRepository.getSessionsPath(tenant);
         this.applicationRepo = applicationRepo;
         this.tenantFileSystemDirs = tenantFileSystemDirs;
@@ -76,8 +75,8 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     }
 
     @Override
-    public LocalSession createSession(File applicationFile, String applicationName, TimeoutBudget timeoutBudget) {
-        return create(applicationFile, applicationName, nonExistingActiveSession, timeoutBudget);
+    public LocalSession createSession(File applicationFile, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+        return create(applicationFile, applicationId, nonExistingActiveSession, timeoutBudget);
     }
 
     private void ensureZKPathDoesNotExist(Path sessionPath) {
@@ -122,18 +121,17 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                   DeployLogger logger,
                                                   TimeoutBudget timeoutBudget) {
         File existingApp = getSessionAppDir(existingSession.getSessionId());
-        ApplicationMetaData metaData = FilesApplicationPackage.readMetaData(existingApp);
         ApplicationId existingApplicationId = existingSession.getApplicationId();
 
         long liveApp = getLiveApp(existingApplicationId);
         logger.log(LogLevel.DEBUG, "Create from existing application id " + existingApplicationId + ", live app for it is " + liveApp);
-        LocalSession session = create(existingApp, metaData.getApplicationName(), liveApp, timeoutBudget);
+        LocalSession session = create(existingApp, existingApplicationId, liveApp, timeoutBudget);
         session.setApplicationId(existingApplicationId);
         session.setVespaVersion(existingSession.getVespaVersion());
         return session;
     }
 
-    private LocalSession create(File applicationFile, String applicationName, long currentlyActiveSession, TimeoutBudget timeoutBudget) {
+    private LocalSession create(File applicationFile, ApplicationId applicationId, long currentlyActiveSession, TimeoutBudget timeoutBudget) {
         long sessionId = sessionCounter.nextSessionId();
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
         log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Next session id is " + sessionId + " , sessionIdPath=" + sessionIdPath.getAbsolute());
@@ -147,7 +145,8 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                                                        nodeFlavors);
             File userApplicationDir = tenantFileSystemDirs.getUserApplicationDir(sessionId);
             IOUtils.copyDirectory(applicationFile, userApplicationDir);
-            ApplicationPackage applicationPackage = createApplication(applicationFile, userApplicationDir, applicationName, sessionId, currentlyActiveSession);
+            ApplicationPackage applicationPackage = createApplication(applicationFile, userApplicationDir,
+                                                                      applicationId.application().value(), sessionId, currentlyActiveSession);
             applicationPackage.writeMetaData();
             return createSessionFromApplication(applicationPackage, sessionId, sessionZooKeeperClient, timeoutBudget, clock);
         } catch (Exception e) {

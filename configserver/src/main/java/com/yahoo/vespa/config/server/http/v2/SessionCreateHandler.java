@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -13,7 +15,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.BadRequestException;
@@ -52,17 +53,18 @@ public class SessionCreateHandler extends SessionHandler {
         Slime deployLog = createDeployLog();
         final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
         Utils.checkThatTenantExists(tenantRepository, tenantName);
-        Tenant tenant = tenantRepository.getTenant(tenantName);
         TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, zookeeperBarrierTimeout);
         DeployLogger logger = createLogger(request, deployLog, tenantName);
         long sessionId;
         if (request.hasProperty("from")) {
             ApplicationId applicationId = getFromApplicationId(request);
-            sessionId = applicationRepository.createSessionFromExisting(tenant, logger, timeoutBudget, applicationId);
+            sessionId = applicationRepository.createSessionFromExisting(applicationId, logger, timeoutBudget);
         } else {
             validateDataAndHeader(request);
             String name = getNameProperty(request, logger);
-            sessionId = applicationRepository.createSession(tenant, timeoutBudget, request.getData(), request.getHeader(ApplicationApiHandler.contentTypeHeader), name);
+            // TODO: we are always using instance name 'default' here, fix
+            ApplicationId applicationId = ApplicationId.from(tenantName, ApplicationName.from(name), InstanceName.defaultName());
+            sessionId = applicationRepository.createSession(applicationId, timeoutBudget, request.getData(), request.getHeader(ApplicationApiHandler.contentTypeHeader));
         }
         return createResponse(request, tenantName, deployLog, sessionId);
     }
@@ -86,12 +88,12 @@ public class SessionCreateHandler extends SessionHandler {
             .instanceName(match.group(6)).build();
     }
 
-    static DeployHandlerLogger createLogger(HttpRequest request, Slime deployLog, TenantName tenant) {
+    private static DeployHandlerLogger createLogger(HttpRequest request, Slime deployLog, TenantName tenant) {
         return SessionHandler.createLogger(deployLog, request,
                                            new ApplicationId.Builder().tenant(tenant).applicationName("-").build());
     }
 
-    static String getNameProperty(HttpRequest request, DeployLogger logger) {
+    private static String getNameProperty(HttpRequest request, DeployLogger logger) {
         String name = request.getProperty("name");
         // TODO: Do we need validation of this parameter?
         if (name == null) {

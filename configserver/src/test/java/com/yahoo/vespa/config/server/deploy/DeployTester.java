@@ -150,7 +150,7 @@ public class DeployTester {
         if (vespaVersion != null)
             paramsBuilder.vespaVersion(vespaVersion);
 
-        long sessionId = applicationRepository.createSession(tenant, timeoutBudget, testApp, appName);
+        long sessionId = applicationRepository.createSession(id, timeoutBudget, testApp);
         applicationRepository.prepare(tenant, sessionId, paramsBuilder.build(), now);
         applicationRepository.activate(tenant, sessionId, timeoutBudget, false, false);
         this.id = id;
