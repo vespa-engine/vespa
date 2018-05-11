@@ -34,6 +34,7 @@ BuildRequires: Judy-devel
 BuildRequires: cmake3
 BuildRequires: llvm3.9-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
+BuildRequires: vespa-gtest >= 1.8.0-1
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
