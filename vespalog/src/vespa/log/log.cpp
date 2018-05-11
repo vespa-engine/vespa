@@ -128,7 +128,7 @@ Logger::Logger(const char *name, const char *rcsId)
     memset(_appendix, 0, sizeof(_appendix));
     const char *app(strchr(name, '.') ? strchr(name, '.') : "");
     assert(strlen(app) < sizeof(_appendix));
-    strncpy(_appendix, app, sizeof(_appendix)-1);
+    strcpy(_appendix, app);
     if (!_target) {
         // Set up stderr first as a target so we can log even if target
         // cannot be found
