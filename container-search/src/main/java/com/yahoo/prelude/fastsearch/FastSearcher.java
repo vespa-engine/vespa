@@ -222,6 +222,7 @@ public class FastSearcher extends VespaBackEndSearcher {
      */
     private Backend chooseBackend(Query query) {
         if ( ! query.properties().getBoolean(dispatchDirect, true)) return dispatchBackend;
+        if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) return dispatchBackend;
 
         Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().directDispatchTarget();
         if ( ! directDispatchRecipient.isPresent()) return dispatchBackend;
