@@ -121,7 +121,6 @@ public:
 
     uint32_t countBuffers() {
         using RefVector = typename MvMapping::RefCopyVector;
-        using RefType = typename MvMapping::RefType;
         RefVector refs = _mvMapping.getRefCopy(_mvMapping.size());
         vespalib::hash_set<uint32_t> buffers;
         for (const auto &ref : refs) {
