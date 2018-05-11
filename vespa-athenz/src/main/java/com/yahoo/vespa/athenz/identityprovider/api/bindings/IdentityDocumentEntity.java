@@ -10,14 +10,12 @@ import java.util.Set;
 
 /**
  * @author bjorncs
- * @deprecated Use {@link IdentityDocumentEntity} instead.
  */
-@Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IdentityDocument {
+public class IdentityDocumentEntity {
 
     @JsonProperty("provider-unique-id")
-    public final ProviderUniqueId providerUniqueId;
+    public final VespaUniqueInstanceIdEntity providerUniqueId;
     @JsonProperty("configserver-hostname")
     public final String configServerHostname;
     @JsonProperty("instance-hostname")
@@ -27,12 +25,12 @@ public class IdentityDocument {
     @JsonProperty("ip-addresses")
     public final Set<String> ipAddresses;
 
-    public IdentityDocument(
-                            @JsonProperty("provider-unique-id") ProviderUniqueId providerUniqueId,
-                            @JsonProperty("configserver-hostname") String configServerHostname,
-                            @JsonProperty("instance-hostname") String instanceHostname,
-                            @JsonProperty("created-at") Instant createdAt,
-                            @JsonProperty("ip-addresses") Set<String> ipAddresses) {
+    public IdentityDocumentEntity(
+            @JsonProperty("provider-unique-id") VespaUniqueInstanceIdEntity providerUniqueId,
+            @JsonProperty("configserver-hostname") String configServerHostname,
+            @JsonProperty("instance-hostname") String instanceHostname,
+            @JsonProperty("created-at") Instant createdAt,
+            @JsonProperty("ip-addresses") Set<String> ipAddresses) {
         this.providerUniqueId = providerUniqueId;
         this.configServerHostname = configServerHostname;
         this.instanceHostname = instanceHostname;
@@ -43,13 +41,13 @@ public class IdentityDocument {
 
     @Override
     public String toString() {
-        return "IdentityDocument{" +
-               "providerUniqueId=" + providerUniqueId +
-               ", configServerHostname='" + configServerHostname + '\'' +
-               ", instanceHostname='" + instanceHostname + '\'' +
-               ", createdAt=" + createdAt +
-               ", ipAddresses=" + ipAddresses +
-               '}';
+        return "IdentityDocumentEntity{" +
+                "providerUniqueId=" + providerUniqueId +
+                ", configServerHostname='" + configServerHostname + '\'' +
+                ", instanceHostname='" + instanceHostname + '\'' +
+                ", createdAt=" + createdAt +
+                ", ipAddresses=" + ipAddresses +
+                '}';
     }
 
 
@@ -57,12 +55,12 @@ public class IdentityDocument {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        IdentityDocument that = (IdentityDocument) o;
+        IdentityDocumentEntity that = (IdentityDocumentEntity) o;
         return Objects.equals(providerUniqueId, that.providerUniqueId) &&
-               Objects.equals(configServerHostname, that.configServerHostname) &&
-               Objects.equals(instanceHostname, that.instanceHostname) &&
-               Objects.equals(createdAt, that.createdAt) &&
-               Objects.equals(ipAddresses, that.ipAddresses);
+                Objects.equals(configServerHostname, that.configServerHostname) &&
+                Objects.equals(instanceHostname, that.instanceHostname) &&
+                Objects.equals(createdAt, that.createdAt) &&
+                Objects.equals(ipAddresses, that.ipAddresses);
     }
 
     @Override

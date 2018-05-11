@@ -8,7 +8,9 @@ import java.util.Objects;
 
 /**
  * @author bjorncs
+ * @deprecated Use {@link VespaUniqueInstanceIdEntity} instead.
  */
+@Deprecated
 public class ProviderUniqueId {
 
     @JsonProperty("tenant")
