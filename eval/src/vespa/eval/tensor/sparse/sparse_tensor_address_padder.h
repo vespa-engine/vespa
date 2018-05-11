@@ -3,11 +3,10 @@
 #pragma once
 
 #include "sparse_tensor_address_builder.h"
-#include "sparse_tensor_address_decoder.h"
+#include <vespa/eval/eval/value_type.h>
 #include <cassert>
 
 namespace vespalib::tensor {
-
 
 /**
  * This class transforms serialized sparse tensor addresses by padding
@@ -20,46 +19,12 @@ class SparseTensorAddressPadder : public SparseTensorAddressBuilder
     std::vector<PadOp> _padOps;
 
 public:
-    SparseTensorAddressPadder(const eval::ValueType &resultType,
-                              const eval::ValueType &inputType)
-        : SparseTensorAddressBuilder(),
-          _padOps()
-    {
-        auto resultDimsItr = resultType.dimensions().cbegin();
-        auto resultDimsItrEnd = resultType.dimensions().cend();
-        for (auto &dim : inputType.dimensions()) {
-            while (resultDimsItr != resultDimsItrEnd &&
-                   resultDimsItr->name < dim.name) {
-                _padOps.push_back(PadOp::PAD);
-                ++resultDimsItr;
-            }
-            assert(resultDimsItr != resultDimsItrEnd &&
-                   resultDimsItr->name == dim.name);
-            _padOps.push_back(PadOp::COPY);
-            ++resultDimsItr;
-        }
-        while (resultDimsItr != resultDimsItrEnd) {
-            _padOps.push_back(PadOp::PAD);
-            ++resultDimsItr;
-        }
-    }
+    SparseTensorAddressPadder(const eval::ValueType &resultType, const eval::ValueType &inputType);
+    SparseTensorAddressPadder(SparseTensorAddressPadder &&) = default;
+    SparseTensorAddressPadder & operator =(SparseTensorAddressPadder &&) = default;
+    ~SparseTensorAddressPadder();
 
-    void
-    padAddress(SparseTensorAddressRef ref)
-    {
-        clear();
-        SparseTensorAddressDecoder addr(ref);
-        for (auto op : _padOps) {
-            switch (op) {
-            case PadOp::PAD:
-                addUndefined();
-                break;
-            default:
-                add(addr.decodeLabel());
-            }
-        }
-        assert(!addr.valid());
-    }
+    void padAddress(SparseTensorAddressRef ref);
 };
 
 }
