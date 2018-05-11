@@ -231,8 +231,8 @@ const char *vespaHomeConf(char pathName[])
     if (env != NULL) {
         home = env;
     }
-    strncpy(pathName, home, PATH_MAX);
-    strncat(pathName, "/etc/vespamalloc.conf", PATH_MAX);
+    strncpy(pathName, home, PATH_MAX-1);
+    strncat(pathName, "/etc/vespamalloc.conf", PATH_MAX-1 -strlen(pathName));
     pathName[PATH_MAX - 1] = '\0';
     return pathName;
 }
