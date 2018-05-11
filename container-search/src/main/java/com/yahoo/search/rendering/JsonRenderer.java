@@ -15,7 +15,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.lang.MutableBoolean;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.processing.rendering.AsynchronousSectionedRenderer;
@@ -50,6 +49,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -515,28 +515,31 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         fieldsEnd(hasFieldsField);
     }
 
-    private void renderStandardFields(Hit hit, MutableBoolean hasFieldsField) throws IOException {
-        for (String fieldName : hit.fieldKeys()) {
-            if ( ! shouldRender(fieldName, hit)) continue;
-
-            fieldsStart(hasFieldsField);
-            renderField(fieldName, hit.getField(fieldName));
-        }
+    private void renderStandardFields(Hit hit, MutableBoolean hasFieldsField) {
+        hit.forEachField((name, value) -> {
+            try {
+                if (shouldRender(name, value)) {
+                    fieldsStart(hasFieldsField);
+                    renderField(name, value);
+                }
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
-    private boolean shouldRender(String fieldName, Hit hit) {
+    private boolean shouldRender(String name, Object value) {
         if (debugRendering) return true;
 
-        if (fieldName.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
+        if (name.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
 
-        Object field = hit.getField(fieldName);
-
-        if (field instanceof CharSequence && ((CharSequence) field).length() == 0) return false;
+        if (value instanceof CharSequence && ((CharSequence) value).length() == 0) return false;
 
         // StringFieldValue cannot hold a null, so checking length directly is OK:
-        if (field instanceof StringFieldValue && ((StringFieldValue) field).getString().isEmpty()) return false;
+        if (value instanceof StringFieldValue && ((StringFieldValue) value).getString().isEmpty()) return false;
 
-        if (field instanceof NanNumber) return false;
+        if (value instanceof NanNumber) return false;
 
         return true;
     }
