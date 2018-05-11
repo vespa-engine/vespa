@@ -37,11 +37,7 @@ public class Organizer {
         sectionGroup.setQuery(result.hits().getQuery());
         if (errors!=null && errors instanceof DefaultErrorHit)
             sectionGroup.add((DefaultErrorHit)errors);
-        for (Iterator<Map.Entry<String, Object>> it = result.hits().fieldIterator(); it.hasNext(); ) {
-            Map.Entry<String, Object> field = it.next();
-            sectionGroup.setField(field.getKey(), field.getValue());
-        }
-
+        result.hits().forEachField((name, value) -> sectionGroup.setField(name, value));
         result.setHits(sectionGroup);
     }
 
