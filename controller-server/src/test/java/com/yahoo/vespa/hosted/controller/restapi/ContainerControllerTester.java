@@ -12,8 +12,6 @@ import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
@@ -88,10 +86,8 @@ public class ContainerControllerTester {
     }
 
     public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone, long projectId) {
-        ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(projectId));
-        GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
         controller().applications().deploy(application.id(), zone, Optional.of(applicationPackage),
-                                           new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false));
+                                           new DeployOptions(false, Optional.empty(), false, false));
         return application;
     }
 
