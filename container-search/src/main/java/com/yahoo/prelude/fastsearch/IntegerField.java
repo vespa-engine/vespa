@@ -31,29 +31,11 @@ public class IntegerField extends DocsumField {
     }
 
     @Override
-    public Object decode(ByteBuffer b) {
-        return convert(b.getInt());
-    }
-
-    @Override
-    public Object decode(ByteBuffer b, FastHit hit) {
-        Object field = decode(b);
-        hit.setField(name, field);
-        return field;
-    }
-
-    @Override
     public String toString() {
         return "field " + getName() + " type int";
     }
 
-    public int getLength(ByteBuffer b) {
-        int offset = b.position();
-        final int bytelength = Integer.SIZE >> 3;
-        b.position(offset + bytelength);
-        return bytelength;
-    }
-
+    @Override
     public Object convert(Inspector value) {
         return convert((int)value.asLong(EMPTY_VALUE));
     }

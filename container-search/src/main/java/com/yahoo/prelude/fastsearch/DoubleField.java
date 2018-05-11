@@ -8,9 +8,10 @@ import com.yahoo.search.result.NanNumber;
 import com.yahoo.data.access.Inspector;
 
 /**
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias M\u00f8lster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public class DoubleField extends DocsumField {
+
     static final double EMPTY_VALUE = Double.NaN;
 
     public DoubleField(String name) {
@@ -25,24 +26,9 @@ public class DoubleField extends DocsumField {
         }
     }
 
-    public Object decode(ByteBuffer b) {
-        return convert(b.getDouble());
-    }
-
-    public Object decode(ByteBuffer b, FastHit hit) {
-        Object field = decode(b);
-        hit.setField(name, field);
-        return field;
-    }
-
-    public int getLength(ByteBuffer b) {
-        int offset = b.position();
-        final int byteLength = Double.SIZE >> 3;
-        b.position(offset + byteLength);
-        return byteLength;
-    }
-
+    @Override
     public Object convert(Inspector value) {
         return convert(value.asDouble(EMPTY_VALUE));
     }
+
 }

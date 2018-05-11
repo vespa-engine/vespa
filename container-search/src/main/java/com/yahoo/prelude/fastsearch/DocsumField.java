@@ -90,27 +90,6 @@ public abstract class DocsumField {
         return name;
     }
 
-    public boolean isCompressed(ByteBuffer b) {
-        return false;
-    }
-
-    /**
-     * Decode the field at the current buffer position into the fast hit.
-     */
-    public abstract Object decode(ByteBuffer b, FastHit hit);
-
-    /**
-     * Decode the field at the current buffer position and simply return the
-     * value.
-     */
-    public abstract Object decode(ByteBuffer b);
-
-    /**
-     * Get the number of bytes this field occupies in the given buffer
-     * AND SET(!) the position to the first byte after this field.
-     */
-    public abstract int getLength(ByteBuffer b);
-
     /**
      * Convert a generic value into an object of the appropriate type
      * for this field.

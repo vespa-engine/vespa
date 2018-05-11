@@ -5,14 +5,14 @@ import com.yahoo.document.GlobalId;
 
 
 /**
- * Key for each entry in the packetcache.
+ * Key for each entry in the packet cache.
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias M\u00f8lster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public class DocsumPacketKey {
+
     private GlobalId globalId;
     private int partid;
-    private int docstamp;
     private String summaryClass;
 
     private static boolean strEquals(String a, String b) {
@@ -43,6 +43,7 @@ public class DocsumPacketKey {
         return partid;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o instanceof DocsumPacketKey) {
             DocsumPacketKey other = (DocsumPacketKey) o;
@@ -57,6 +58,7 @@ public class DocsumPacketKey {
         return false;
     }
 
+    @Override
     public int hashCode() {
         return globalId.hashCode() + 10 * partid + strHashCode(summaryClass);
     }

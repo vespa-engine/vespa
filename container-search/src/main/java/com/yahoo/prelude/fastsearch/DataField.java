@@ -19,7 +19,7 @@ import com.yahoo.data.access.Inspector;
 /**
  * @author Bjørn Borud
  */
-public class DataField extends DocsumField implements VariableLengthField {
+public class DataField extends DocsumField {
 
     public DataField(String name) {
         super(name);
@@ -30,37 +30,8 @@ public class DataField extends DocsumField implements VariableLengthField {
     }
 
     @Override
-    public Object decode(ByteBuffer b) {
-        int len = ((int) b.getShort()) & 0xffff;
-
-        byte[] tmp = new byte[len];
-        b.get(tmp);
-        return convert(tmp);
-    }
-
-    @Override
-    public Object decode(ByteBuffer b, FastHit hit) {
-        Object field = decode(b);
-        hit.setField(name, field);
-        return field;
-    }
-
-    @Override
     public String toString() {
         return "field " + getName() + " type data";
-    }
-
-    @Override
-    public int getLength(ByteBuffer b) {
-        int offset = b.position();
-        int len = ((int) b.getShort()) & 0xffff;
-        b.position(offset + len + (Short.SIZE >> 3));
-        return len + (Short.SIZE >> 3);
-    }
-
-    @Override
-    public int sizeOfLength() {
-        return Short.SIZE >> 3;
     }
 
     @Override

@@ -28,24 +28,6 @@ public class FloatField extends DocsumField {
     }
 
     @Override
-    public Object decode(ByteBuffer b) {
-        return convert(b.getFloat());
-    }
-
-    @Override
-    public Object decode(ByteBuffer b, FastHit hit) {
-        Object field = decode(b);
-        hit.setField(name, field);
-        return field;
-    }
-
-    public int getLength(ByteBuffer b) {
-        int offset = b.position();
-        final int bytelength = Float.SIZE >> 3;
-        b.position(offset + bytelength);
-        return bytelength;
-    }
-
     public Object convert(Inspector value) {
         return convert((float)value.asDouble(EMPTY_VALUE));
     }

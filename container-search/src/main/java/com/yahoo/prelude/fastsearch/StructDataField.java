@@ -21,6 +21,7 @@ public class StructDataField extends JSONField {
         return "field " + getName() + " type StructDataField";
     }
 
+    @Override
     public Object convert(Inspector value) {
         if (getEmulConfig().stringBackedStructuredData() || value.type() == Type.STRING) {
             return super.convert(value);

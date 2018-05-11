@@ -13,9 +13,10 @@ import com.yahoo.data.access.Inspector;
 
 
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bj\u00f8rn Borud</a>
+ * @author Bjørn Borud
  */
 public class Int64Field extends DocsumField {
+
     static final long EMPTY_VALUE = Long.MIN_VALUE;
 
     public Int64Field(String name) {
@@ -30,28 +31,14 @@ public class Int64Field extends DocsumField {
         }
     }
 
-    public Object decode(ByteBuffer b) {
-        return convert(b.getLong());
-    }
-
-    public Object decode(ByteBuffer b, FastHit hit) {
-        Object field = decode(b);
-        hit.setField(name, field);
-        return field;
-    }
-
+    @Override
     public String toString() {
         return "field " + getName() + " type int64";
     }
 
-    public int getLength(ByteBuffer b) {
-        int offset = b.position();
-        final int bytelength = Long.SIZE >> 3;
-        b.position(offset + bytelength);
-        return bytelength;
-    }
-
+    @Override
     public Object convert(Inspector value) {
         return convert(value.asLong(EMPTY_VALUE));
     }
+
 }

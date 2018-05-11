@@ -221,8 +221,8 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     }
 
     private void renderSyntheticRelevanceField(XMLWriter writer, Hit hit) {
-        final String relevancyFieldName = "relevancy";
-        final Relevance relevance = hit.getRelevance();
+        String relevancyFieldName = "relevancy";
+        Relevance relevance = hit.getRelevance();
 
         // skip depending on hit type
         if (relevance != null) {

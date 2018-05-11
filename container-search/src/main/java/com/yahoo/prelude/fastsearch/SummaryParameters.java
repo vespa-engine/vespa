@@ -5,7 +5,7 @@ package com.yahoo.prelude.fastsearch;
 /**
  * Wrapper for document summary parameters and configuration.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SummaryParameters {
 
