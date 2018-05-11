@@ -542,7 +542,6 @@ void
 Distributor_Test::testPriorityConfigIsPropagatedToDistributorConfiguration()
 {
     using namespace vespa::config::content::core;
-    using ConfigBuilder = StorDistributormanagerConfigBuilder;
 
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -760,7 +759,6 @@ void
 Distributor_Test::bucketActivationConfigIsPropagatedToDistributorConfiguration()
 {
     using namespace vespa::config::content::core;
-    using ConfigBuilder = StorDistributormanagerConfigBuilder;
 
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -774,7 +772,6 @@ Distributor_Test::bucketActivationConfigIsPropagatedToDistributorConfiguration()
 void
 Distributor_Test::configureMaxClusterClockSkew(int seconds) {
     using namespace vespa::config::content::core;
-    using ConfigBuilder = StorDistributormanagerConfigBuilder;
 
     ConfigBuilder builder;
     builder.maxClusterClockSkewSec = seconds;
@@ -787,8 +784,7 @@ Distributor_Test::max_clock_skew_config_is_propagated_to_distributor_config() {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     configureMaxClusterClockSkew(5);
-    CPPUNIT_ASSERT(getConfig().getMaxClusterClockSkew()
-                   == std::chrono::seconds(5));
+    CPPUNIT_ASSERT(getConfig().getMaxClusterClockSkew() == std::chrono::seconds(5));
 }
 
 namespace {
@@ -873,7 +869,6 @@ Distributor_Test::configured_safe_time_point_rejection_works_end_to_end() {
 
 void Distributor_Test::configure_mutation_sequencing(bool enabled) {
     using namespace vespa::config::content::core;
-    using ConfigBuilder = StorDistributormanagerConfigBuilder;
 
     ConfigBuilder builder;
     builder.sequenceMutatingOperations = enabled;
@@ -899,7 +894,6 @@ void Distributor_Test::sequencing_config_is_propagated_to_distributor_config() {
 void
 Distributor_Test::configure_merge_busy_inhibit_duration(int seconds) {
     using namespace vespa::config::content::core;
-    using ConfigBuilder = StorDistributormanagerConfigBuilder;
 
     ConfigBuilder builder;
     builder.inhibitMergeSendingOnBusyNodeDurationSec = seconds;
