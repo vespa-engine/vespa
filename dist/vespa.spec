@@ -34,6 +34,7 @@ BuildRequires: Judy-devel
 BuildRequires: cmake3
 BuildRequires: llvm3.9-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
+BuildRequires: vespa-gtest >= 1.8.0-1
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
@@ -98,8 +99,8 @@ Requires: gdb
 Requires: net-tools
 %if 0%{?centos}
 Requires: llvm3.9
-%define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-cppunit/lib
-%define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-cppunit/include
+%define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-gtest/lib;/opt/vespa-cppunit/lib
+%define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-gtest/include;/opt/vespa-cppunit/include
 %endif
 %if 0%{?fedora}
 %if 0%{?fc26}
