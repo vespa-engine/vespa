@@ -14,6 +14,7 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.JsonWriter;
+import com.yahoo.lang.MutableBoolean;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution.Trace;
@@ -472,14 +473,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return ! (hit instanceof DefaultErrorHit);
     }
 
-    private boolean fieldsStart(boolean hasFieldsField) throws IOException {
-        if (hasFieldsField) return true;
+    private void fieldsStart(MutableBoolean hasFieldsField) throws IOException {
+        if (hasFieldsField.get()) return;
         generator.writeObjectFieldStart(FIELDS);
-        return true;
+        hasFieldsField.set(true);
     }
 
-    private void fieldsEnd(boolean hasFieldsField) throws IOException {
-        if (!hasFieldsField) return;
+    private void fieldsEnd(MutableBoolean hasFieldsField) throws IOException {
+        if ( ! hasFieldsField.get()) return;
         generator.writeEndObject();
     }
 
@@ -508,24 +509,19 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private void renderAllFields(Hit hit) throws IOException {
-        boolean hasFieldsField = false;
-
-        hasFieldsField |= renderTotalHitCount(hit, hasFieldsField);
-        hasFieldsField |= renderStandardFields(hit, hasFieldsField);
+        MutableBoolean hasFieldsField = new MutableBoolean(false);
+        renderTotalHitCount(hit, hasFieldsField);
+        renderStandardFields(hit, hasFieldsField);
         fieldsEnd(hasFieldsField);
     }
 
-    private boolean renderStandardFields(Hit hit, boolean initialHasFieldsField) throws IOException {
-        boolean hasFieldsField = initialHasFieldsField;
+    private void renderStandardFields(Hit hit, MutableBoolean hasFieldsField) throws IOException {
         for (String fieldName : hit.fieldKeys()) {
-            if (!shouldRender(fieldName, hit)) continue;
+            if ( ! shouldRender(fieldName, hit)) continue;
 
-            // We can't look at the size of fieldKeys() and know whether we need
-            // the fields object, as all fields may be hidden.
-            hasFieldsField |= fieldsStart(hasFieldsField);
-            renderField(fieldName, hit);
+            fieldsStart(hasFieldsField);
+            renderField(fieldName, hit.getField(fieldName));
         }
-        return hasFieldsField;
     }
 
     private boolean shouldRender(String fieldName, Hit hit) {
@@ -607,17 +603,16 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id).getTo()) : id.getTo()).toString();
     }
 
-    private boolean renderTotalHitCount(Hit hit, boolean hasFieldsField) throws IOException {
-        if ( ! (getRecursionLevel() == 1 && hit instanceof HitGroup)) return false;
+    private void renderTotalHitCount(Hit hit, MutableBoolean hasFieldsField) throws IOException {
+        if ( ! (getRecursionLevel() == 1 && hit instanceof HitGroup)) return;
 
         fieldsStart(hasFieldsField);
         generator.writeNumberField(TOTAL_COUNT, getResult().getTotalHitCount());
-        return true;
     }
 
-    private void renderField(String fieldName, Hit hit) throws IOException {
-        generator.writeFieldName(fieldName);
-        renderFieldContents(hit.getField(fieldName));
+    private void renderField(String name, Object value) throws IOException {
+        generator.writeFieldName(name);
+        renderFieldContents(value);
     }
 
     private void renderFieldContents(Object field) throws IOException {
