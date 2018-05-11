@@ -48,14 +48,14 @@ public class DefaultZtsClient implements ZtsClient {
     private volatile CloseableHttpClient client;
 
     public DefaultZtsClient(URI ztsUrl, SSLContext sslContext) {
-        this.ztsUrl = ztsUrl;
+        this.ztsUrl = addTrailingSlash(ztsUrl);
         this.client = createHttpClient(sslContext);
         this.identityProvider = null;
         this.identityListener = null;
     }
 
     public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider) {
-        this.ztsUrl = ztsUrl;
+        this.ztsUrl = addTrailingSlash(ztsUrl);
         this.client = createHttpClient(identityProvider.getIdentitySslContext());
         this.identityProvider = identityProvider;
         this.identityListener = new ServiceIdentityProviderListener();
@@ -123,6 +123,13 @@ public class DefaultZtsClient implements ZtsClient {
                     String.format("Unable to get identity. http code/message: %d/%s",
                                   response.getStatusLine().getStatusCode(), message));
         }
+    }
+
+    private static URI addTrailingSlash(URI ztsUrl) {
+        if (ztsUrl.getPath().endsWith("/"))
+            return ztsUrl;
+        else
+            return URI.create(ztsUrl.toString() + '/');
     }
 
     private static StringEntity toJsonStringEntity(Object entity) {
