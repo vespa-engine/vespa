@@ -160,7 +160,7 @@ public class NGramSearcher extends Searcher {
             if (hit.isMeta()) continue;
             Object sddocname = hit.getField(Hit.SDDOCNAME_FIELD);
             if (sddocname == null) return;
-            for (String fieldName : hit.fieldKeys()) {
+            for (String fieldName : hit.fieldKeys()) { // TODO: Iterate over indexes instead
                 Index index = session.getIndex(fieldName, sddocname.toString());
                 if (index.isNGram() && (index.getHighlightSummary() || index.getDynamicSummary())) {
                     hit.setField(fieldName, recombineNGramsField(hit.getField(fieldName), index.getGramSize()));

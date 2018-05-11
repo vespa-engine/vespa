@@ -74,7 +74,7 @@ public class DocumentSourceSearcher extends Searcher {
             removePropertiesNotStartingByA(attributeHit);
             attributeHit.setFillable();
             attributeHit.setRelevance(fullHit.getRelevance());
-            for (Object propertyKeyObject : (Set) fullHit.fields().keySet()) {
+            for (Object propertyKeyObject : fullHit.fields().keySet()) {
                 String propertyKey=propertyKeyObject.toString();
                 if (propertyKey.startsWith("attribute"))
                     attributeHit.setField(propertyKey, fullHit.getField(propertyKey));
