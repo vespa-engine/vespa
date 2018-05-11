@@ -519,6 +519,7 @@ public class FastHit extends Hit {
         }
 
         Object getField(String name) {
+            // TODO: When emulConfig is removed, change the below to use type.convert(name, data.field(name))
             DocsumField fieldType = type.getField(name);
             if (fieldType == null) return null;
             Inspector fieldValue = data.field(name);
@@ -528,8 +529,10 @@ public class FastHit extends Hit {
 
         void forEachField(BiConsumer<String, Object> consumer) {
             data.traverse((ObjectTraverser)(name, value) -> {
-                if ( ! shadowed(name) && ! removed(name))
-                    consumer.accept(name, value);
+                Object convertedValue = type.convert(name, value);
+                if ( convertedValue != null && !shadowed(name) && !removed(name)) {
+                    consumer.accept(name, convertedValue);
+                }
             });
         }
 
@@ -619,9 +622,9 @@ public class FastHit extends Hit {
 
             @Override
             protected Map.Entry<String, Object> toValue(Map.Entry<String, Inspector> field) {
-                DocsumField fieldType = type.getField(field.getKey());
-                if (fieldType == null) return null; // type and content mismatch: May happen during reconfig
-                return new SummaryFieldEntry(field.getKey(), fieldType.convert(field.getValue()));
+                Object convertedValue = type.convert(field.getKey(), field.getValue());
+                if (convertedValue == null) return null;
+                return new SummaryFieldEntry(field.getKey(), convertedValue);
             }
 
             private static final class SummaryFieldEntry implements Map.Entry<String, Object> {

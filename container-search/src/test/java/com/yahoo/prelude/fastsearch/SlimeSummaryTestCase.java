@@ -266,6 +266,14 @@ public class SlimeSummaryTestCase {
 
     /** Asserts that the expected fields are what is returned from every access method of Hit */
     private void assertFields(Map<String, Object> expected, Hit hit) {
+        // field traverser
+        Map<String, Object> traversed = new HashMap<>();
+        hit.forEachField((name, value) -> {
+            if (traversed.containsKey(name))
+                fail("Multiple callbacks for " + name);
+            traversed.put(name, value);
+        });
+        assertEquals(expected, traversed);
         // fieldKeys
         int fieldNameIteratorFieldCount = 0;
         for (Iterator<String> i = hit.fieldKeys().iterator(); i.hasNext(); ) {
@@ -273,10 +281,8 @@ public class SlimeSummaryTestCase {
             assertTrue(expected.containsKey(i.next()));
         }
         assertEquals(expected.size(), fieldNameIteratorFieldCount);
+        // fieldKeys
         assertEquals(expected.keySet(), hit.fieldKeys());
-        // getField
-        for (Map.Entry<String, Object> field : expected.entrySet())
-            assertEquals(field.getValue(), hit.getField(field.getKey()));
         // fields
         assertEquals(expected, hit.fields());
         // fieldIterator
@@ -287,14 +293,9 @@ public class SlimeSummaryTestCase {
             assertEquals(field.getValue(), expected.get(field.getKey()));
         }
         assertEquals(expected.size(), fieldIteratorFieldCount);
-        // field traverser
-        Map<String, Object> traversed = new HashMap<>();
-        hit.forEachField((name, value) -> {
-            if (traversed.containsKey(name))
-                fail("Multiple callbacks for " + name);
-            traversed.put(name, value);
-        });
-        assertEquals(expected, traversed);
+        // getField
+        for (Map.Entry<String, Object> field : expected.entrySet())
+            assertEquals(field.getValue(), hit.getField(field.getKey()));
     }
 
     private byte[] emptySummary() {

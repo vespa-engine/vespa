@@ -3,6 +3,7 @@ package com.yahoo.prelude.fastsearch;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.data.access.Inspector;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.container.search.LegacyEmulationConfig;
 
@@ -72,6 +73,18 @@ public class DocsumDefinition {
         Integer index = fieldNameToIndex.get(fieldName);
         if (index == null) return null;
         return getField(index);
+    }
+
+    /**
+     * Returns the given slime value as the type specified in this, or null if the type is not known.
+     * Even in a correctly configured system we may encounter field names for which we do not know the type,
+     * in the time period when a configuration is changing and one node has received the new configuration and
+     * another has not.
+     */
+    public Object convert(String fieldName, Inspector value) {
+        DocsumField fieldType = getField(fieldName);
+        if (fieldType == null) return null;
+        return fieldType.convert(value);
     }
 
     public Set<String> fieldNames() {
