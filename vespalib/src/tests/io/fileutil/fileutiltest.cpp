@@ -401,7 +401,7 @@ TEST("require that vespalib::copy works")
 
     MallocAutoPtr buffer = getAlignedBuffer(5000);
     memset(buffer.get(), 0, 5000);
-    strncpy(static_cast<char*>(buffer.get()), "Hello World!\n", 13);
+    strncpy(static_cast<char*>(buffer.get()), "Hello World!\n", 14);
     f.write(buffer.get(), 4096, 0);
     f.close();
     std::cerr << "Simple copy\n";
