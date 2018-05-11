@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "select_utils.h"
 #include "selectpruner.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/constant.h>
-#include <vespa/document/select/branch.h>
 #include <vespa/document/select/doctype.h>
 #include <vespa/document/select/invalidconstant.h>
 #include <vespa/document/select/valuenodes.h>
@@ -396,15 +397,7 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     }
     const document::DocumentType *docType = _repo.getDocumentType(_docType);
     bool complex = false; // Cannot handle attribute if complex expression
-    vespalib::string name(expr.getFieldName());
-    for (uint32_t i = 0; i < name.size(); ++i) {
-        if (name[i] == '.' || name[i] == '{' || name[i] == '[') {
-            // TODO: Check for struct, array, map or weigthed set
-            name = expr.getFieldName().substr(0, i);
-            complex = true;
-            break;
-        }
-    }
+    vespalib::string name = SelectUtils::extractFieldName(expr, complex);
     try {
         std::unique_ptr<Field> fp(new Field(docType->getField(name)));
         if (fp.get() == NULL) {

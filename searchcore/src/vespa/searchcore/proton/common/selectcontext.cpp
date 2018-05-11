@@ -22,7 +22,7 @@ namespace select {
 SelectContext::SelectContext(const CachedSelect &cachedSelect)
     : Context(),
       _docId(0u),
-      _guards(std::make_unique<select::Guards>(cachedSelect._attributes.size())),
+      _guards(std::make_unique<select::Guards>(cachedSelect.attributes().size())),
       _cachedSelect(cachedSelect)
 { }
 
@@ -31,8 +31,8 @@ SelectContext::~SelectContext() { }
 void
 SelectContext::getAttributeGuards()
 {
-    _guards->resize(_cachedSelect._attributes.size());
-    auto j(_cachedSelect._attributes.begin());
+    _guards->resize(_cachedSelect.attributes().size());
+    auto j(_cachedSelect.attributes().begin());
     for (std::vector<AttributeGuard>::iterator i(_guards->begin()), ie(_guards->end()); i != ie; ++i, ++j) {
         *i = AttributeGuard(*j);
     }

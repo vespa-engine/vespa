@@ -1,29 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/document/base/documentid.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/select/cloningvisitor.h>
+#include <vespa/document/select/parser.h>
 #include <vespa/searchcore/proton/common/cachedselect.h>
 #include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/enumcomparator.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/postinglistattribute.h>
-#include <vespa/searchlib/attribute/enumcomparator.h>
-#include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/attribute/singleenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
+#include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
-#include <vespa/document/select/parser.h>
-#include <vespa/document/select/cloningvisitor.h>
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/datatype/documenttype.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("cachedselect_test");
@@ -158,7 +158,7 @@ checkSelect(const CachedSelect::SP &cs,
             const Context &ctx,
             const Result &exp)
 {
-    return checkSelect(cs->_select, ctx, exp);
+    return checkSelect(cs->select(), ctx, exp);
 }
 
 
@@ -170,7 +170,7 @@ checkSelect(const CachedSelect::SP &cs,
     SelectContext ctx(*cs);
     ctx._docId = docId;
     ctx.getAttributeGuards();
-    return checkSelect(cs->_attrSelect, ctx, exp);
+    return checkSelect(cs->attrSelect(), ctx, exp);
 }
 
 
@@ -344,7 +344,7 @@ TestFixture::testParse(const string &selection,
              &_amgr,
              _hasFields);
     
-    ASSERT_TRUE(res->_select.get() != NULL);
+    ASSERT_TRUE(res->select().get() != NULL);
     return res;
 }
 
@@ -377,27 +377,27 @@ TEST_F("Test that const is flagged", TestFixture)
     CachedSelect::SP cs;
 
     cs = f.testParse("false", "test");
-    EXPECT_TRUE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
+    EXPECT_TRUE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
     cs = f.testParse("true", "test");
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_TRUE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_TRUE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
     cs = f.testParse("test_2.ac > 4999", "test");
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_TRUE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_TRUE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
     cs = f.testParse("test.aa > 4999", "test");
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(1u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(1u, cs->_svAttrFieldNodes);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(1u, cs->attrFieldNodes());
+    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
 }
 
 
@@ -413,78 +413,78 @@ TEST_F("Test that basic select works", TestFixture)
     CachedSelect::SP cs;
 
     cs = f.testParse("test.ia == \"hello\"", "test");
-    EXPECT_FALSE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(0u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_FALSE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(0u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::False));
     
     cs = f.testParse("test.ia.foo == \"hello\"", "test");
-    EXPECT_FALSE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_TRUE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
-    EXPECT_EQUAL(0u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_FALSE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_TRUE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQUAL(0u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia[2] == \"hello\"", "test");
-    EXPECT_FALSE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_TRUE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
-    EXPECT_EQUAL(0u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_FALSE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_TRUE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQUAL(0u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia{foo} == \"hello\"", "test");
-    EXPECT_FALSE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_TRUE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
-    EXPECT_EQUAL(0u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_FALSE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_TRUE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQUAL(0u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia < \"hello\"", "test");
-    EXPECT_FALSE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(0u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_FALSE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(0u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa == 3", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(1u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(1u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(1u, cs->attrFieldNodes());
+    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::False));
@@ -495,13 +495,13 @@ TEST_F("Test that basic select works", TestFixture)
     TEST_DO(checkSelect(cs, 4u, Result::False));
 
     cs = f.testParse("test.aa == 3", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(1u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(1u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(1u, cs->attrFieldNodes());
+    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::False));
@@ -512,70 +512,70 @@ TEST_F("Test that basic select works", TestFixture)
     TEST_DO(checkSelect(cs, 4u, Result::False));
 
     cs = f.testParse("test.aa.foo == 3", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() == NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_TRUE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
-    EXPECT_EQUAL(0u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() == NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_TRUE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQUAL(0u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa[2] == 3", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() == NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_TRUE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
-    EXPECT_EQUAL(0u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() == NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_TRUE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQUAL(0u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa{4} > 3", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() == NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_TRUE(cs->_allInvalid);
-    EXPECT_EQUAL(0u, cs->_fieldNodes);
-    EXPECT_EQUAL(0u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() == NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_TRUE(cs->allInvalid());
+    EXPECT_EQUAL(0u, cs->fieldNodes());
+    EXPECT_EQUAL(0u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aaa[2] == 3", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() == NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(1u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() == NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(1u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
 
     cs = f.testParse("test.aaw{4} > 3", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() == NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(1u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(0u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() == NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(1u, cs->attrFieldNodes());
+    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
 
     cs = f.testParse("test.aa < 45", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(1u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(1u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(1u, cs->attrFieldNodes());
+    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
@@ -602,16 +602,16 @@ TEST_F("Test performance when using attributes", TestFixture)
     
     CachedSelect::SP cs;
     cs = f.testParse("test.aa < 45", "test");
-    EXPECT_TRUE(cs->_attrSelect.get() != NULL);
-    EXPECT_FALSE(cs->_allFalse);
-    EXPECT_FALSE(cs->_allTrue);
-    EXPECT_FALSE(cs->_allInvalid);
-    EXPECT_EQUAL(1u, cs->_fieldNodes);
-    EXPECT_EQUAL(1u, cs->_attrFieldNodes);
-    EXPECT_EQUAL(1u, cs->_svAttrFieldNodes);
+    EXPECT_TRUE(cs->attrSelect().get() != NULL);
+    EXPECT_FALSE(cs->allFalse());
+    EXPECT_FALSE(cs->allTrue());
+    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_EQUAL(1u, cs->fieldNodes());
+    EXPECT_EQUAL(1u, cs->attrFieldNodes());
+    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
     SelectContext ctx(*cs);
     ctx.getAttributeGuards();
-    const NodeUP &sel(cs->_attrSelect);
+    const NodeUP &sel(cs->attrSelect());
     uint32_t i;
     const uint32_t loopcnt = 30000;
     LOG(info, "Starting minibm loop, %u ierations of 4 docs each", loopcnt);
