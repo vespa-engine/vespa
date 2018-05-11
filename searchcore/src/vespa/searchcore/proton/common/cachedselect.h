@@ -17,6 +17,8 @@ namespace search {
 
 namespace proton {
 
+class SelectContext;
+
 /**
  * Cached selection expression, to avoid pruning expression for each
  * new bucket.
@@ -25,6 +27,19 @@ class CachedSelect
 {
 public:
     typedef std::shared_ptr<CachedSelect> SP;
+
+    class Session {
+    private:
+        std::unique_ptr<document::select::Node> _select;
+        bool _isAttrSelect;
+
+    public:
+        Session(std::unique_ptr<document::select::Node> select, bool isAttrSelect);
+        bool contains(const SelectContext &context) const;
+        bool contains(const document::Document &doc) const;
+        const document::select::Node &selectNode() const { return *_select; }
+    };
+
     // Single value attributes referenced from selection expression
     std::vector<std::shared_ptr<search::AttributeVector>> _attributes;
 
@@ -60,7 +75,10 @@ public:
         const document::DocumentTypeRepo &repo,
         const search::IAttributeManager *amgr,
         bool hasFields);
+
+    std::unique_ptr<Session> createSession() const;
+
 };
 
-} // namespace proton
+}
 

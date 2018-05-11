@@ -142,10 +142,9 @@ public:
                 LOG(debug, "Nothing will ever match cs._allFalse = '%d' cs._allInvalid = '%d'", cs._allFalse, cs._allInvalid);
                 _willAlwaysFail = true;
             } else {
-                _select = (cs._attrSelect ? cs._attrSelect->clone()
-                                          : cs._select->clone());
+                _selectSession = cs.createSession();
                 using document::select::GidFilter;
-                _gidFilter = GidFilter::for_selection_root_node(*_select);
+                _gidFilter = GidFilter::for_selection_root_node(_selectSession->selectNode());
                 _sc.reset(new SelectContext(*_cs));
                 _sc->getAttributeGuards();
             }
@@ -175,15 +174,13 @@ public:
         if (!_gidFilter.gid_might_match_selection(meta.gid)) {
             return false;
         }
-        return (! _cs->_attrSelect) ||
-                (_cs->_attrSelect && (_select->contains(*_sc) == document::select::Result::True));
+        return _selectSession->contains(*_sc);
     }
     bool match(const search::DocumentMetaData & meta, const Document * doc) const {
         if (_dscTrue || _metaOnly) {
             return true;
         }
-        return (doc && (doc->getId().getGlobalId() == meta.gid) &&
-               (_cs->_attrSelect || (_select->contains(*doc) == document::select::Result::True)));
+        return (doc && (doc->getId().getGlobalId() == meta.gid) && _selectSession->contains(*doc));
     }
 private:
     bool                           _dscTrue;
@@ -191,7 +188,7 @@ private:
     bool                           _willAlwaysFail;
     uint32_t                       _docidLimit;
     CachedSelect::SP               _cs;
-    document::select::Node::UP     _select;
+    std::unique_ptr<CachedSelect::Session> _selectSession;
     document::select::GidFilter    _gidFilter;
     std::unique_ptr<SelectContext> _sc;
 };

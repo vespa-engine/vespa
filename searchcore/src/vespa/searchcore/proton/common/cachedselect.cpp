@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "cachedselect.h"
 #include "attributefieldvaluenode.h"
+#include "cachedselect.h"
+#include "selectcontext.h"
 #include "selectpruner.h"
-#include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/document/select/parser.h>
-
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/log/log.h>
+
 LOG_SETUP(".proton.common.cachedselect");
 
 namespace proton {
@@ -112,6 +113,25 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
 
 }
 
+CachedSelect::Session::Session(std::unique_ptr<document::select::Node> select, bool isAttrSelect)
+    : _select(std::move(select)),
+      _isAttrSelect(isAttrSelect)
+{
+}
+
+bool
+CachedSelect::Session::contains(const SelectContext &context) const
+{
+    return (!_isAttrSelect) ||
+            (_isAttrSelect && (_select->contains(context) == document::select::Result::True));
+}
+
+bool
+CachedSelect::Session::contains(const document::Document &doc) const
+{
+    return (_isAttrSelect || (_select->contains(doc) == document::select::Result::True));
+}
+
 CachedSelect::CachedSelect()
     : _attributes(),
       _select(),
@@ -183,6 +203,12 @@ CachedSelect::set(const vespalib::string &selection,
     }
 }
 
+std::unique_ptr<CachedSelect::Session>
+CachedSelect::createSession() const
+{
+    return (_attrSelect ? std::make_unique<Session>(_attrSelect->clone(), true) :
+            std::make_unique<Session>(_select->clone(), false));
+}
 
-} // namespace proton
+}
 
