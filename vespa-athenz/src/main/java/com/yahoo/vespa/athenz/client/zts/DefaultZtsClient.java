@@ -29,7 +29,6 @@ import java.net.URI;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 
 /**
  * Default implementation of {@link ZtsClient}
@@ -78,8 +77,6 @@ public class DefaultZtsClient implements ZtsClient {
         return withClient(client -> {
             try (CloseableHttpResponse response = client.execute(request)) {
                 return getInstanceIdentity(response);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
             }
         });
     }
@@ -104,8 +101,6 @@ public class DefaultZtsClient implements ZtsClient {
         return withClient(client -> {
             try (CloseableHttpResponse response = client.execute(request)) {
                 return getInstanceIdentity(response);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
             }
         });
     }
@@ -143,11 +138,13 @@ public class DefaultZtsClient implements ZtsClient {
         }
     }
 
-    private <T> T withClient(Function<CloseableHttpClient, T> consumer) {
+    private <T> T withClient(RequestHandler<T> handler) {
         Lock lock = this.lock.readLock();
         lock.lock();
         try {
-            return consumer.apply(this.client);
+            return handler.doRequest(this.client);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         } finally {
             lock.unlock();
         }
@@ -193,5 +190,10 @@ public class DefaultZtsClient implements ZtsClient {
         public void onCredentialsUpdate(SSLContext sslContext, AthenzService identity) {
             setClient(createHttpClient(sslContext));
         }
+    }
+
+    @FunctionalInterface
+    private interface RequestHandler<T> {
+        T doRequest(CloseableHttpClient client) throws IOException;
     }
 }
