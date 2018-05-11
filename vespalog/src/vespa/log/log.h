@@ -55,7 +55,6 @@ do {                                                          \
     if (!logInitialised) {                                                      \
         logInitialised = true;                                                  \
         logger = static_cast<Logger *>(malloc(sizeof *logger));                 \
-	memset(logger, 0, sizeof *logger);                                      \
         new (logger) Logger(logName, rcsId);                                    \
     }
 #define LOG_INDIRECT(level, ...)                                                \
