@@ -51,7 +51,6 @@ private:
     uint32_t _fieldNodes;
     uint32_t _attrFieldNodes;
     uint32_t _svAttrFieldNodes;
-    document::select::ResultSet _resultSet;
     bool _allFalse;
     bool _allTrue;
     bool _allInvalid;

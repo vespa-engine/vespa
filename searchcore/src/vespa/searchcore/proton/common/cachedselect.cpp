@@ -132,7 +132,6 @@ CachedSelect::CachedSelect()
       _fieldNodes(0u),
       _attrFieldNodes(0u),
       _svAttrFieldNodes(0u),
-      _resultSet(),
       _allFalse(false),
       _allTrue(false),
       _allInvalid(false),
@@ -178,7 +177,6 @@ CachedSelect::set(const vespalib::string &selection,
                         hasFields,
                         true);
     pruner.process(*parsed);
-    _resultSet = pruner.getResultSet();
     _allFalse = pruner.isFalse();
     _allTrue = pruner.isTrue();
     _allInvalid = pruner.isInvalid();
