@@ -3,10 +3,6 @@
 /backtracetest.log
 /filetest
 /filetest.log
-/gmtime
-/gmtime.log
-/prefetchtest
-/prefetchtest.log
 /processtest
 /processtest.log
 /sockettest
