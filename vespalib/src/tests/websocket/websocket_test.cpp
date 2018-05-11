@@ -84,7 +84,7 @@ TEST("require that basic reserve/commit/obtain/evict buffer cycle works") {
 
 TEST("require that buffer moves contained data when more space is needed") {    
     Buffer buffer;
-    strncpy(buffer.reserve(3), "xyz", 3);
+    memcpy(buffer.reserve(3), "xyz", 3);
     buffer.commit(3);
     EXPECT_EQUAL('x', *buffer.obtain());
     buffer.evict(1);

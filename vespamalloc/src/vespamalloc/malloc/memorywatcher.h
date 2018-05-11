@@ -227,12 +227,17 @@ namespace {
 const char *vespaHomeConf(char pathName[])
 {
     const char *home = "/opt/vespa";
+    const char *conf = "/etc/vespamalloc.conf";
     const char *env = getenv("VESPA_HOME");
     if (env != NULL) {
         home = env;
     }
-    strncpy(pathName, home, PATH_MAX);
-    strncat(pathName, "/etc/vespamalloc.conf", PATH_MAX);
+    if ((strlen(home) + strlen(conf)) >= PATH_MAX) {
+        fprintf(stderr, "size of home(%ld) + conf(%ld) is larger than %d\n", strlen(home), strlen(conf),  PATH_MAX);
+        abort();
+    }
+    strcpy(pathName, home);
+    strcat(pathName, conf);
     pathName[PATH_MAX - 1] = '\0';
     return pathName;
 }
