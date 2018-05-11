@@ -2,13 +2,14 @@
 
 #include "attributefieldvaluenode.h"
 #include "cachedselect.h"
+#include "select_utils.h"
 #include "selectcontext.h"
 #include "selectpruner.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.common.cachedselect");
 
 namespace proton {
@@ -67,16 +68,9 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
     ++_fieldNodes;
     // Expression has survived select pruner, thus we know that field is
     // valid for document type.
-    vespalib::string name(expr.getFieldName()); 
     bool complex = false;
-    for (uint32_t i = 0; i < name.size(); ++i) {
-        if (name[i] == '.' || name[i] == '{' || name[i] == '[') {
-            // TODO: Check for struct, array, map or weigthed set
-            name = expr.getFieldName().substr(0, i);
-            complex = true;
-            break;
-        }
-    }
+    vespalib::string name = SelectUtils::extractFieldName(expr, complex);
+
     AttributeGuard::UP ag(_amgr.getAttribute(name));
     if (ag->valid()) {
         if (complex) {
