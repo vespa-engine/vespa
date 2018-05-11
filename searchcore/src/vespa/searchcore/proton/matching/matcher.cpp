@@ -316,7 +316,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             double old = _stats.softDoomFactor();
             _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, duration);
             LOG(info, "Triggered softtimeout factor adjustment. limit=%1.3f and duration=%1.3f, rankprofile=%s"
-                      ", factor adjusted from %1.3f to 1.3f",
+                      ", factor adjusted from %1.3f to %1.3f",
                 softLimit.sec(), duration.sec(), request.ranking.c_str(), old, _stats.softDoomFactor());
         }
     }
