@@ -106,7 +106,7 @@ void MmapMemory::setupHugePages()
                         size_t mountLen(c - mount);
                         const char *fstype = getToken(c, e);
                         if (strstr(fstype, "hugetlbfs") == fstype) {
-                            char mountCopy[1024];
+                            char mountCopy[512];
                             assert(mountLen < sizeof(mountCopy));
                             strncpy(mountCopy, mount, mountLen);
                             mountCopy[mountLen] = '\0';

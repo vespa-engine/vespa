@@ -48,7 +48,7 @@ private:
     int      _hugePagesFd;
     size_t   _hugePagesOffset;
     size_t   _hugePageSize;
-    char     _hugePagesFileName[256];
+    char     _hugePagesFileName[1024];
 };
 
 }
