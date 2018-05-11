@@ -90,10 +90,6 @@ public:
 
 class FastS_QueryResult
 {
-private:
-    FastS_QueryResult(const FastS_QueryResult &);
-    FastS_QueryResult& operator=(const FastS_QueryResult &);
-
 public:
     FastS_hitresult  *_hitbuf;
     uint32_t          _hitCount;

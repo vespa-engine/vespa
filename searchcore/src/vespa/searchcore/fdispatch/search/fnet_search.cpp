@@ -1201,7 +1201,7 @@ FastS_FNET_Search::ProcessQueryDone()
     if (_errorCode == search::engine::ECODE_NO_ERROR) {
         MergeHits();
     }
-    memcpy(&_queryResult, _util.GetQueryResult(), sizeof(FastS_QueryResult));
+    _queryResult = *_util.GetQueryResult();
     double tnow = GetTimeKeeper()->GetTime();
     _queryResult._queryResultTime = tnow - _startTime;
     if (_errorCode == search::engine::ECODE_NO_ERROR) {
