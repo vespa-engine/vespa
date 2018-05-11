@@ -155,7 +155,7 @@ public:
     using GenerationHolder = vespalib::GenerationHolder;
     typedef GenerationHandler::generation_t generation_t;
 
-    virtual ~AttributeVector();
+    ~AttributeVector() override;
 protected:
     /**
      * Will update statistics by calling onUpdateStat if necessary.

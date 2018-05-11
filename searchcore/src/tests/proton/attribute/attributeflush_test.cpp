@@ -74,8 +74,8 @@ public:
     FlushHandler()
         : _executor(1, 65536),
           gate()
-    {
-    }
+    { }
+    ~FlushHandler();
 
     void
     doFlushing(Executor::Task::UP task)
@@ -108,6 +108,7 @@ public:
     run();
 };
 
+FlushHandler::~FlushHandler() = default;
 
 void
 UpdaterTask::startFlushing(uint64_t syncToken, FlushHandler & handler)

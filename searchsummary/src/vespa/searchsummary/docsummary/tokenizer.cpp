@@ -57,7 +57,7 @@ Tokenizer::getNextToken()
     bool insideAnnotation = false;
     for (; _pos < _end; ) {
         ucs4_t ch;
-        if ((unsigned const char)*next < 0x80) {
+        if (static_cast<unsigned char>(*next) < 0x80) {
             ch = *next++;
             if (ch == 0x1F) { // unit separator
                 Token t(textBegin, textEnd, stemBegin, stemEnd, _type);

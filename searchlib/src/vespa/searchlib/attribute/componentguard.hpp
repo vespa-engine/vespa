@@ -6,10 +6,7 @@
 namespace search {
 
 template <typename T>
-ComponentGuard<T>::ComponentGuard() :
-    _component(),
-    _generationGuard()
-{ }
+ComponentGuard<T>::ComponentGuard()  = default;
 
 template <typename T>
 ComponentGuard<T>::ComponentGuard(const Component & component) :
@@ -18,10 +15,13 @@ ComponentGuard<T>::ComponentGuard(const Component & component) :
 { }
 
 template <typename T>
-ComponentGuard<T>::ComponentGuard(const ComponentGuard & rhs) :
-        _component(rhs._component),
-        _generationGuard(rhs._generationGuard)
-{ }
+ComponentGuard<T>::ComponentGuard(const ComponentGuard &) = default;
+
+template <typename T>
+ComponentGuard<T>::ComponentGuard(ComponentGuard &&) = default;
+
+template <typename T>
+ComponentGuard<T> & ComponentGuard<T>::operator = (ComponentGuard &&) = default;
 
 template <typename T>
 ComponentGuard<T> &
@@ -32,6 +32,6 @@ ComponentGuard<T>::operator = (const ComponentGuard & rhs) {
 }
 
 template <typename T>
-ComponentGuard<T>::~ComponentGuard() { }
+ComponentGuard<T>::~ComponentGuard() = default;
 
 }

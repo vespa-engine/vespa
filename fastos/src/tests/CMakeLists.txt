@@ -5,13 +5,6 @@ vespa_add_executable(fastos_processtest_app TEST
     DEPENDS
     fastos
 )
-vespa_add_executable(fastos_prefetchtest_app TEST
-    SOURCES
-    prefetchtest.cpp
-    DEPENDS
-    fastos
-)
-vespa_add_test(NAME fastos_prefetchtest_app NO_VALGRIND COMMAND fastos_prefetchtest_app)
 vespa_add_executable(fastos_filetest_app TEST
     SOURCES
     filetest.cpp
