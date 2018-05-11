@@ -257,7 +257,7 @@ TestFixture::testPrune(const string &selection,
     pruner.getNode()->print(pos, true, "");
     EXPECT_EQUAL(exp, pos.str());
     LOG(info,
-        "Pruned ParseTree: '%s', fieldNodes=%u,%u, %s, rs=%s",
+        "Pruned ParseTree: '%s', fieldNodes=%u, attrFieldNodes=%u, cs=%s, rs=%s",
         pos.str().c_str(),
         pruner.getFieldNodes(),
         pruner.getAttrFieldNodes(),
