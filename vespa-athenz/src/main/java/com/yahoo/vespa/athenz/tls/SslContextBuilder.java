@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -56,10 +57,14 @@ public class SslContextBuilder {
     }
 
     public SslContextBuilder withKeyStore(File privateKeyPemFile, File certificatePemFile) {
+        return withKeyStore(privateKeyPemFile.toPath(), certificatePemFile.toPath());
+    }
+
+    public SslContextBuilder withKeyStore(Path privateKeyPemFile, Path certificatePemFile) {
         this.keyStoreSupplier =
                 () ->  {
-                    PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyPemFile.toPath())));
-                    X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificatePemFile.toPath())));
+                    PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyPemFile)));
+                    X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificatePemFile)));
                     return KeyStoreBuilder.withType(KeyStoreType.JKS)
                             .withKeyEntry("default", privateKey, certificate)
                             .build();
