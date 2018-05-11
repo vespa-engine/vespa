@@ -4,8 +4,6 @@ package com.yahoo.vespa.athenz.client.zts;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 
-import javax.net.ssl.SSLContext;
-
 /**
  * Interface for a ZTS client.
  *
@@ -36,4 +34,6 @@ public interface ZtsClient extends AutoCloseable {
                                      String instanceId,
                                      boolean requestServiceToken,
                                      Pkcs10Csr csr);
+
+    void close();
 }
