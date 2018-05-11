@@ -191,9 +191,9 @@ public class SessionHandlerTest {
         public String applicationName;
 
         @Override
-        public LocalSession createSession(File applicationDirectory, String applicationName, TimeoutBudget timeoutBudget) {
+        public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
             createCalled = true;
-            this.applicationName = applicationName;
+            this.applicationName = applicationId.application().value();
             if (doThrow) {
                 throw new RuntimeException("foo");
             }

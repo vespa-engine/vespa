@@ -146,15 +146,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
-        Tenant tenant = tenantRepository.getTenant(prepareParams.getApplicationId().tenant());
-        return deploy(tenant, in, prepareParams, false, false, clock.instant());
+        return deploy(in, prepareParams, false, false, clock.instant());
     }
 
-    public PrepareResult deploy(Tenant tenant, CompressedApplicationInputStream in, PrepareParams prepareParams,
+    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
         File tempDir = Files.createTempDir();
-        long sessionId = createSession(tenant, prepareParams.getTimeoutBudget(), decompressApplication(in, tempDir), prepareParams.getApplicationName());
+        ApplicationId applicationId = prepareParams.getApplicationId();
+        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), decompressApplication(in, tempDir));
         cleanupApplicationDirectory(tempDir, logger);
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         return prepareAndActivate(tenant, sessionId, prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
     }
 
@@ -327,8 +328,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             throw new IllegalStateException("Session not prepared: " + sessionId);
     }
 
-    public long createSessionFromExisting(Tenant tenant, DeployLogger logger,
-                                          TimeoutBudget timeoutBudget, ApplicationId applicationId) {
+    public long createSessionFromExisting(ApplicationId applicationId, DeployLogger logger, TimeoutBudget timeoutBudget) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         SessionFactory sessionFactory = tenant.getSessionFactory();
         LocalSession fromSession = getExistingSession(tenant, applicationId);
@@ -337,17 +338,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public long createSession(Tenant tenant, TimeoutBudget timeoutBudget, InputStream in, String contentType, String applicationName) {
+    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in, String contentType) {
         File tempDir = Files.createTempDir();
-        long sessionId = createSession(tenant, timeoutBudget, decompressApplication(in, contentType, tempDir), applicationName);
+        long sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
         cleanupApplicationDirectory(tempDir, logger);
         return sessionId;
     }
 
-    public long createSession(Tenant tenant, TimeoutBudget timeoutBudget, File applicationDirectory, String applicationName) {
+    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         SessionFactory sessionFactory = tenant.getSessionFactory();
-        LocalSession session = sessionFactory.createSession(applicationDirectory, applicationName, timeoutBudget);
+        LocalSession session = sessionFactory.createSession(applicationDirectory, applicationId, timeoutBudget);
         localSessionRepo.addSession(session);
         return session.getSessionId();
     }

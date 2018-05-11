@@ -4,6 +4,10 @@ package com.yahoo.vespa.config.server.session;
 import com.google.common.io.Files;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.*;
@@ -34,7 +38,7 @@ public class SessionFactoryTest extends TestWithTenant {
     private SessionFactory factory;
 
     @Before
-    public void setup_test() throws Exception {
+    public void setup_test() {
         factory = tenant.getSessionFactory();
     }
 
@@ -67,8 +71,8 @@ public class SessionFactoryTest extends TestWithTenant {
     }
 
     @Test(expected = RuntimeException.class)
-    public void require_that_invalid_app_dir_is_handled() throws IOException {
-        factory.createSession(new File("doesnotpointtoavaliddir"), "music", TimeoutBudgetTest.day());
+    public void require_that_invalid_app_dir_is_handled() {
+        createSession(new File("doesnotpointtoavaliddir"), "music");
     }
 
     private LocalSession getLocalSession() throws IOException {
@@ -78,6 +82,11 @@ public class SessionFactoryTest extends TestWithTenant {
     private LocalSession getLocalSession(String appName) throws IOException {
         CompressedApplicationInputStream app = CompressedApplicationInputStream.createFromCompressedStream(
                 new FileInputStream(CompressedApplicationInputStreamTest.createTarFile()), ApplicationApiHandler.APPLICATION_X_GZIP);
-        return factory.createSession(app.decompress(Files.createTempDir()), appName, TimeoutBudgetTest.day());
+        return createSession(app.decompress(Files.createTempDir()), appName);
+    }
+
+    private LocalSession createSession(File applicationDirectory, String appName) {
+        ApplicationId applicationId = ApplicationId.from(TenantName.defaultName(), ApplicationName.from(appName), InstanceName.defaultName());
+        return factory.createSession(applicationDirectory, applicationId, TimeoutBudgetTest.day());
     }
 }

@@ -2,6 +2,9 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
@@ -80,20 +83,23 @@ public class ApplicationRepositoryTest {
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
         FilesApplicationPackage appDir = FilesApplicationPackage.fromFile(application);
-        long sessionId = applicationRepository.createSession(tenant, timeoutBudget, appDir.getAppDir(), "testapp");
+        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, appDir.getAppDir());
         return applicationRepository.prepareAndActivate(tenant, sessionId, prepareParams(), false, false, Instant.now());
     }
 
     private PrepareResult createAndPrepareAndActivateApp() throws IOException {
         File file = CompressedApplicationInputStreamTest.createTarFile();
-        return applicationRepository.deploy(tenant,
-                                            CompressedApplicationInputStream.createFromCompressedStream(
+        return applicationRepository.deploy(CompressedApplicationInputStream.createFromCompressedStream(
                                                     new FileInputStream(file), ApplicationApiHandler.APPLICATION_X_GZIP),
                                             prepareParams(), false, false, Instant.now());
     }
 
     private PrepareParams prepareParams() {
-        return new PrepareParams.Builder().build();
+        return new PrepareParams.Builder().applicationId(applicationId()).build();
+    }
+
+    private ApplicationId applicationId() {
+        return ApplicationId.from(tenantName, ApplicationName.from("testapp"), InstanceName.defaultName());
     }
 
 }
