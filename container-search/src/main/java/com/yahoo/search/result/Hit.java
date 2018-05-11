@@ -21,7 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -402,29 +401,9 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Returns the name of the source creating this hit */
     public String getSource() { return source; }
 
-    /**
-     * Receive a callback on the given object for each field in this hit.
-     * This is the most resource efficient way of traversing all the fields of a hit.
-     */
-    public void forEachField(BiConsumer<String, Object> consumer) {
-        if (fields == null) return;
-        fields.forEach(consumer);
-    }
-
     /** Returns the fields of this as a read-only map. This is more costly than fieldIterator() */
+    // TODO Should it be deprecated ?
     public Map<String, Object> fields() { return getUnmodifiableFieldMap(); }
-
-    /** Returns a modifiable iterator over the fields of this */
-    public Iterator<Map.Entry<String, Object>> fieldIterator() { return getFieldMap().entrySet().iterator(); }
-
-    /**
-     * Returns the keys of the fields of this hit as a modifiable view.
-     * This follows the rules of key sets returned from maps: Key removals are reflected
-     * in the map, add and addAll is not supported.
-     */
-    public Set<String> fieldKeys() {
-        return getFieldMap().keySet();
-    }
 
     /** Allocate room for the given number of fields to avoid resizing. */
     public void reserve(int minSize) {
@@ -439,6 +418,9 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     public Object setField(String key, Object value) {
         return getFieldMap().put(key, value);
     }
+
+    /** Returns a modifiable iterator over the fields of this */
+    public Iterator<Map.Entry<String, Object>> fieldIterator() { return getFieldMap().entrySet().iterator(); }
 
     /** Returns a field value or null if not present */
     public Object getField(String value) { return fields != null ? fields.get(value) : null; }
@@ -455,6 +437,15 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     public Object removeField(String field) {
         return getFieldMap().remove(field);
+    }
+
+    /**
+     * Returns the keys of the fields of this hit as a modifiable view.
+     * This follows the rules of key sets returned from maps: Key removals are reflected
+     * in the map, add and addAll is not supported.
+     */
+    public Set<String> fieldKeys() {
+        return getFieldMap().keySet();
     }
 
     protected boolean hasField(String name) {

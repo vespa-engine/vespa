@@ -31,7 +31,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class SlimeSummaryTestCase {
 
@@ -287,14 +286,6 @@ public class SlimeSummaryTestCase {
             assertEquals(field.getValue(), expected.get(field.getKey()));
         }
         assertEquals(expected.size(), fieldIteratorFieldCount);
-        // field traverser
-        Map<String, Object> traversed = new HashMap<>();
-        hit.forEachField((name, value) -> {
-            if (traversed.containsKey(name))
-                fail("Multiple callbacks for " + name);
-            traversed.put(name, value);
-        });
-        assertEquals(expected, traversed);
     }
 
     private byte[] emptySummary() {

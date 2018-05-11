@@ -20,7 +20,7 @@ import com.yahoo.search.searchchain.Execution;
  *
  * May be extended to do quoting template sensitive.
  *
- * @author Steinar Knutsen
+ * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class QuotingSearcher extends Searcher {
 

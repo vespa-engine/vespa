@@ -20,10 +20,9 @@ import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 /**
  * Smoketest that we remove fields in a sane manner.
  *
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class FieldFilterTestCase {
-
     private static final String FIELD_C = "c";
     private static final String FIELD_B = "b";
     private static final String FIELD_A = "a";
@@ -42,7 +41,8 @@ public class FieldFilterTestCase {
         DocumentSourceSearcher mockBackend = new DocumentSourceSearcher();
         mockBackend.addResult(query, result);
 
-        searchChain = new Chain<Searcher>(new FieldFilter(), mockBackend);
+        searchChain = new Chain<Searcher>(new FieldFilter(),
+                mockBackend);
         context = Execution.Context.createContextStub(null);
         execution = new Execution(searchChain, context);
 
