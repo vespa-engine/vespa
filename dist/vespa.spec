@@ -38,10 +38,6 @@ BuildRequires: vespa-boost-devel >= 1.59.0-6
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
-%if 0%{?fc25}
-BuildRequires: llvm-devel >= 3.9.1
-BuildRequires: boost-devel >= 1.60
-%endif
 %if 0%{?fc26}
 BuildRequires: llvm-devel >= 4.0
 BuildRequires: boost-devel >= 1.63
@@ -52,9 +48,12 @@ BuildRequires: boost-devel >= 1.64
 %endif
 %if 0%{?fc28}
 BuildRequires: llvm4.0-devel >= 4.0
-BuildRequires: boost-devel >= 1.64
+BuildRequires: boost-devel >= 1.66
 %endif
-BuildRequires: zookeeper-devel >= 3.4.9
+%if 0%{?fc29}
+BuildRequires: llvm4.0-devel >= 4.0
+BuildRequires: boost-devel >= 1.66
+%endif
 %endif
 BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
@@ -103,9 +102,6 @@ Requires: llvm3.9
 %define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-cppunit/include
 %endif
 %if 0%{?fedora}
-%if 0%{?fc25}
-Requires: llvm-libs >= 3.9.1
-%endif
 %if 0%{?fc26}
 Requires: llvm-libs >= 4.0
 %define _vespa_llvm_version 4.0
@@ -122,7 +118,12 @@ Requires: llvm4.0-libs >= 4.0
 %define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
 %define _vespa_llvm_include_directory /usr/include/llvm4.0
 %endif
-Requires: zookeeper >= 3.4.9
+%if 0%{?fc29}
+Requires: llvm4.0-libs >= 4.0
+%define _vespa_llvm_version 4.0
+%define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
+%define _vespa_llvm_include_directory /usr/include/llvm4.0
+%endif
 %define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}
 %define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}
 %endif
