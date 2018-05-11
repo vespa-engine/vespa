@@ -17,10 +17,10 @@ URL:            http://vespa.ai
 
 Requires: bash
 Requires: java-1.8.0-openjdk-headless
-Requires: vespa-base
-Requires: vespa-standalone-container
-Requires: vespa-node-maintainer
-Requires: vespa-log-utils
+Requires: vespa-base = %{version}
+Requires: vespa-standalone-container = %{version}
+Requires: vespa-node-maintainer = %{version}
+Requires: vespa-log-utils = %{version}
 
 Conflicts: vespa
 
