@@ -313,9 +313,11 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         std::lock_guard<std::mutex> guard(_statsLock);
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
-            LOG(info, "Triggered softtimeout limit=%1.3f and duration=%1.3f, rankprofile=%s",
-                softLimit.sec(), duration.sec(), request.ranking.c_str());
+            double old = _stats.softDoomFactor();
             _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, duration);
+            LOG(info, "Triggered softtimeout factor adjustment. limit=%1.3f and duration=%1.3f, rankprofile=%s"
+                      ", factor adjusted from %1.3f to 1.3f",
+                softLimit.sec(), duration.sec(), request.ranking.c_str(), old, _stats.softDoomFactor());
         }
     }
     return reply;
