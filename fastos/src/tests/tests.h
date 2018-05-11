@@ -45,6 +45,7 @@ public:
       char string[MAX_STR_LEN];
       snprintf(string, sizeof(string) - 1, "%s: %s\n",
          result ? okString : failString, str);
+      string[sizeof(string) - 1] = '\0';
       PrintProgress(string);
       if (! result) { _allOkFlag = false; }
       return result;
@@ -54,6 +55,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, d1);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -61,6 +63,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, d1, d2);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -68,6 +71,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, s1);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -75,6 +79,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, s1);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -82,6 +87,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, s1);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -89,6 +95,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, s1, s2);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -96,6 +103,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, s1, d1);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -103,6 +111,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, d1, s1);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -110,6 +119,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, val);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
@@ -117,6 +127,7 @@ public:
    {
       char string[MAX_STR_LEN-100];
       snprintf(string, sizeof(string) - 1, str, val);
+      string[sizeof(string) - 1] = '\0';
       return Progress(result, string);
    }
 
