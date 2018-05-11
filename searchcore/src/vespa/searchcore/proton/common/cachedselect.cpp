@@ -27,7 +27,7 @@ public:
 
     AttrMap _amap;
     const search::IAttributeManager &_amgr;
-    CachedSelect &_cached;
+    CachedSelect::AttributeVectors &_attributes;
     uint32_t _svAttrs;
     uint32_t _mvAttrs;
     uint32_t _complexAttrs;
@@ -38,7 +38,7 @@ public:
         return std::numeric_limits<uint32_t>::max();
     }
     
-    AttrVisitor(const search::IAttributeManager &amgr, CachedSelect &cachedSelect);
+    AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::AttributeVectors &attributes);
     ~AttrVisitor();
 
     /*
@@ -49,11 +49,11 @@ public:
 };
 
 
-AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr, CachedSelect &cachedSelect)
+AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::AttributeVectors &attributes)
     : CloningVisitor(),
       _amap(),
       _amgr(amgr),
-      _cached(cachedSelect),
+      _attributes(attributes),
       _svAttrs(0u),
       _mvAttrs(0u),
       _complexAttrs(0u)
@@ -92,9 +92,9 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
             uint32_t idx(invalidIdx());
             if (it == _amap.end()) {
                 // Allocate new location for guard
-                idx = _cached._attributes.size();
+                idx = _attributes.size();
                 _amap[name] = idx;
-                _cached._attributes.push_back(av);
+                _attributes.push_back(av);
             } else {
                 // Already allocated location for guard
                 idx = it->second;
@@ -193,7 +193,7 @@ CachedSelect::set(const vespalib::string &selection,
     _attrFieldNodes = pruner.getAttrFieldNodes();
     if (amgr == NULL || _attrFieldNodes == 0u)
         return;
-    AttrVisitor av(*amgr, *this);
+    AttrVisitor av(*amgr, _attributes);
     _select->visit(av);
     assert(_fieldNodes == av.getFieldNodes());
     assert(_attrFieldNodes == av._mvAttrs + av._svAttrs + av._complexAttrs);

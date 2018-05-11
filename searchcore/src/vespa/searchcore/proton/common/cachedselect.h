@@ -40,8 +40,11 @@ public:
         const document::select::Node &selectNode() const { return *_select; }
     };
 
+    using AttributeVectors = std::vector<std::shared_ptr<search::AttributeVector>>;
+
+private:
     // Single value attributes referenced from selection expression
-    std::vector<std::shared_ptr<search::AttributeVector>> _attributes;
+    AttributeVectors _attributes;
 
     // Pruned selection expression, specific for a document type
     std::unique_ptr<document::select::Node> _select;
@@ -60,21 +63,32 @@ public:
      * SelectContext class and populate _docId instead).
      */
     std::unique_ptr<document::select::Node> _attrSelect;
-    
+
+public:
     CachedSelect();
     ~CachedSelect();
 
-    void
-    set(const vespalib::string &selection,
-        const document::DocumentTypeRepo &repo);
+    const AttributeVectors &attributes() const { return _attributes; }
+    uint32_t fieldNodes() const { return _fieldNodes; }
+    uint32_t attrFieldNodes() const { return _attrFieldNodes; }
+    uint32_t svAttrFieldNodes() const { return _svAttrFieldNodes; }
+    bool allFalse() const { return _allFalse; }
+    bool allTrue() const { return _allTrue; }
+    bool allInvalid() const { return _allInvalid; }
+
+    // Should only be used for unit testing
+    const std::unique_ptr<document::select::Node> &select() const { return _select; }
+    const std::unique_ptr<document::select::Node> &attrSelect() const { return _attrSelect; }
+
+    void set(const vespalib::string &selection,
+             const document::DocumentTypeRepo &repo);
                   
-    void
-    set(const vespalib::string &selection,
-        const vespalib::string &docTypeName,
-        const document::Document &emptyDoc,
-        const document::DocumentTypeRepo &repo,
-        const search::IAttributeManager *amgr,
-        bool hasFields);
+    void set(const vespalib::string &selection,
+             const vespalib::string &docTypeName,
+             const document::Document &emptyDoc,
+             const document::DocumentTypeRepo &repo,
+             const search::IAttributeManager *amgr,
+             bool hasFields);
 
     std::unique_ptr<Session> createSession() const;
 

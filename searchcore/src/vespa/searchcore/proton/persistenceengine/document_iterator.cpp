@@ -136,10 +136,10 @@ public:
             LOG(spam, "ParseSelect: %s", selection.c_str());
             _cs = source.parseSelect(selection);
             CachedSelect &cs(*_cs);
-            _dscTrue = cs._allTrue;
-            if (cs._allFalse || cs._allInvalid) {
+            _dscTrue = cs.allTrue();
+            if (cs.allFalse() || cs.allInvalid()) {
                 assert(!_dscTrue);
-                LOG(debug, "Nothing will ever match cs._allFalse = '%d' cs._allInvalid = '%d'", cs._allFalse, cs._allInvalid);
+                LOG(debug, "Nothing will ever match cs.allFalse = '%d', cs.allInvalid = '%d'", cs.allFalse(), cs.allInvalid());
                 _willAlwaysFail = true;
             } else {
                 _selectSession = cs.createSession();
