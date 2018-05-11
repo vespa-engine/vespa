@@ -192,8 +192,6 @@ SchemaUtil::getIndexIds(const Schema &schema,
                         schema::DataType dataType,
                         std::vector<uint32_t> &indexes)
 {
-    typedef SchemaUtil::IndexIterator IndexIterator;
-
     indexes.clear();
     for (IndexIterator i(schema); i.isValid(); ++i) {
         SchemaUtil::IndexSettings settings = i.getIndexSettings();
