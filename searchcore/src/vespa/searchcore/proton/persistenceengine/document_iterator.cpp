@@ -124,9 +124,9 @@ DocumentIterator::iterate(size_t maxBytes)
 
 namespace {
 
-class Match {
+class Matcher {
 public:
-    Match(const IDocumentRetriever & source, bool metaOnly, const vespalib::string & selection) :
+    Matcher(const IDocumentRetriever &source, bool metaOnly, const vespalib::string &selection) :
         _dscTrue(true),
         _metaOnly(metaOnly),
         _willAlwaysFail(false),
@@ -134,28 +134,28 @@ public:
     {
         if (!(_metaOnly || selection.empty())) {
             LOG(spam, "ParseSelect: %s", selection.c_str());
-            _cs = source.parseSelect(selection);
-            CachedSelect &cs(*_cs);
-            _dscTrue = cs.allTrue();
-            if (cs.allFalse() || cs.allInvalid()) {
+            _cachedSelect = source.parseSelect(selection);
+            _dscTrue = _cachedSelect->allTrue();
+            if (_cachedSelect->allFalse() || _cachedSelect->allInvalid()) {
                 assert(!_dscTrue);
-                LOG(debug, "Nothing will ever match cs.allFalse = '%d', cs.allInvalid = '%d'", cs.allFalse(), cs.allInvalid());
+                LOG(debug, "Nothing will ever match cs.allFalse = '%d', cs.allInvalid = '%d'",
+                    _cachedSelect->allFalse(), _cachedSelect->allInvalid());
                 _willAlwaysFail = true;
             } else {
-                _selectSession = cs.createSession();
+                _selectSession = _cachedSelect->createSession();
                 using document::select::GidFilter;
                 _gidFilter = GidFilter::for_selection_root_node(_selectSession->selectNode());
-                _sc.reset(new SelectContext(*_cs));
-                _sc->getAttributeGuards();
+                _selectCxt.reset(new SelectContext(*_cachedSelect));
+                _selectCxt->getAttributeGuards();
             }
         } else {
             _dscTrue = true;
         }
     }
     
-    ~Match() {
-        if (_sc) {
-            _sc->dropAttributeGuards();
+    ~Matcher() {
+        if (_selectCxt) {
+            _selectCxt->dropAttributeGuards();
         }
     }
 
@@ -168,13 +168,13 @@ public:
         if (_dscTrue || _metaOnly) {
             return true;
         }
-        if (_sc) {
-            _sc->_docId = meta.lid;
+        if (_selectCxt) {
+            _selectCxt->_docId = meta.lid;
         }
         if (!_gidFilter.gid_might_match_selection(meta.gid)) {
             return false;
         }
-        return _selectSession->contains(*_sc);
+        return _selectSession->contains(*_selectCxt);
     }
     bool match(const search::DocumentMetaData & meta, const Document * doc) const {
         if (_dscTrue || _metaOnly) {
@@ -187,10 +187,10 @@ private:
     bool                           _metaOnly;
     bool                           _willAlwaysFail;
     uint32_t                       _docidLimit;
-    CachedSelect::SP               _cs;
+    CachedSelect::SP               _cachedSelect;
     std::unique_ptr<CachedSelect::Session> _selectSession;
     document::select::GidFilter    _gidFilter;
-    std::unique_ptr<SelectContext> _sc;
+    std::unique_ptr<SelectContext> _selectCxt;
 };
 
 typedef vespalib::hash_map<uint32_t, uint32_t> LidIndexMap;
@@ -198,8 +198,8 @@ typedef vespalib::hash_map<uint32_t, uint32_t> LidIndexMap;
 class MatchVisitor : public search::IDocumentVisitor
 {
 public:
-    MatchVisitor(const Match & matcher, const search::DocumentMetaData::Vector & metaData,
-                 const LidIndexMap & lidIndexMap, const document::FieldSet * fields, IterateResult::List & list,
+    MatchVisitor(const Matcher &matcher, const search::DocumentMetaData::Vector &metaData,
+                 const LidIndexMap &lidIndexMap, const document::FieldSet *fields, IterateResult::List &list,
                  ssize_t defaultSerializedSize) :
         _matcher(matcher),
         _metaData(metaData),
@@ -226,7 +226,7 @@ public:
     }
 
 private:
-    const Match                            & _matcher;
+    const Matcher                          & _matcher;
     const search::DocumentMetaData::Vector & _metaData;
     const LidIndexMap                      & _lidIndexMap;
     const document::FieldSet               * _fields;
@@ -248,7 +248,7 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
     }
     LOG(debug, "metadata count before filtering: %zu", metaData.size());
 
-    Match matcher(source, _metaOnly, _selection.getDocumentSelection().getDocumentSelection());
+    Matcher matcher(source, _metaOnly, _selection.getDocumentSelection().getDocumentSelection());
     if (matcher.willAlwaysFail()) {
         return;
     }
@@ -281,4 +281,4 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
 
 }
 
-} // namespace proton
+}
