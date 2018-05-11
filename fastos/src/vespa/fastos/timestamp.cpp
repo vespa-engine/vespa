@@ -23,7 +23,7 @@ TimeStamp::asString(double timeInSeconds)
     gmtime_r(&timeStamp, &timeStruct);
     char timeString[128];
     strftime(timeString, sizeof(timeString), "%F %T", &timeStruct);
-    char retval[128];
+    char retval[160];
     uint32_t milliSeconds = std::min((uint32_t)(fractpart * 1000.0), 999u);
     snprintf(retval, sizeof(retval), "%s.%03u UTC", timeString, milliSeconds);
     return std::string(retval);

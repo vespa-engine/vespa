@@ -59,8 +59,8 @@ public:
         char file3[1024];
         char file4[1024];
         char file5[1024];
-        char subdir1[1024];
-        char subdir2[1024];
+        char subdir1[512];
+        char subdir2[512];
         sprintf(file1, "%s%sfile1", dirName, FastOS_File::GetPathSeparator());
         sprintf(file2, "%s%sfile2", dirName, FastOS_File::GetPathSeparator());
         sprintf(file3, "%s%sfile2", dirName, FastOS_File::GetPathSeparator());
