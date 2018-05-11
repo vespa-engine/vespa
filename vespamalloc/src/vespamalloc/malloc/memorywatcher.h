@@ -232,7 +232,7 @@ const char *vespaHomeConf(char pathName[])
     if (env != NULL) {
         home = env;
     }
-    if ((strlen(home) + strlen(conf)) < PATH_MAX) {
+    if ((strlen(home) + strlen(conf)) >= PATH_MAX) {
         fprintf(stderr, "size of home(%ld) + conf(%ld) is larger than %d\n", strlen(home), strlen(conf),  PATH_MAX);
         abort();
     }
