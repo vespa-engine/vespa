@@ -148,9 +148,9 @@ CachedSelect::set(const vespalib::string &selection,
         document::select::Parser parser(repo, document::BucketIdFactory());
         _select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &) {
-        _select.reset(NULL);
+        _select.reset(nullptr);
     }
-    _allFalse = _select.get() == NULL;
+    _allFalse = !_select;
     _allTrue = false;
     _allInvalid = false;
 }
@@ -168,8 +168,9 @@ CachedSelect::set(const vespalib::string &selection,
 
     set(selection, repo);
     NodeUP parsed(std::move(_select));
-    if (parsed.get() == NULL)
+    if (!parsed) {
         return;
+    }
     SelectPruner pruner(docTypeName,
                         amgr,
                         emptyDoc,
@@ -183,8 +184,9 @@ CachedSelect::set(const vespalib::string &selection,
     _select = std::move(pruner.getNode());
     _fieldNodes = pruner.getFieldNodes();
     _attrFieldNodes = pruner.getAttrFieldNodes();
-    if (amgr == NULL || _attrFieldNodes == 0u)
+    if (amgr == nullptr || _attrFieldNodes == 0u) {
         return;
+    }
     AttrVisitor av(*amgr, _attributes);
     _select->visit(av);
     assert(_fieldNodes == av.getFieldNodes());

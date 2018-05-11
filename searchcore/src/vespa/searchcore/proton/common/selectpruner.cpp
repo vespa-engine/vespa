@@ -119,10 +119,12 @@ SelectPruner::visitAndBranch(const And &expr)
     }
     ResultSet lhsSet(lhs._resultSet);
     ResultSet rhsSet(rhs._resultSet);
-    if (lhs._inverted)
+    if (lhs._inverted) {
         lhsSet = lhsSet.calcNot();
-    if (rhs._inverted)
+    }
+    if (rhs._inverted) {
         rhsSet = rhsSet.calcNot();
+    }
     _resultSet = lhsSet.calcAnd(rhsSet);
     _priority = AndPriority;
     if (lhs._inverted && rhs._inverted) {
@@ -172,10 +174,12 @@ SelectPruner::visitAndBranch(const And &expr)
     if (rhs._inverted != _inverted) {
         rhs.invertNode();
     }
-    if (lhs._priority < _priority)
+    if (lhs._priority < _priority) {
         lhs._node->setParentheses();
-    if (rhs._priority < _priority)
+    }
+    if (rhs._priority < _priority) {
         rhs._node->setParentheses();
+    }
     if (_inverted) {
         _node.reset(new Or(std::move(lhs._node), std::move(rhs._node), "or"));
     } else {
@@ -274,10 +278,12 @@ SelectPruner::visitOrBranch(const Or &expr)
     }
     ResultSet lhsSet(lhs._resultSet);
     ResultSet rhsSet(rhs._resultSet);
-    if (lhs._inverted)
+    if (lhs._inverted) {
         lhsSet = lhsSet.calcNot();
-    if (rhs._inverted)
+    }
+    if (rhs._inverted) {
         rhsSet = rhsSet.calcNot();
+    }
     _resultSet = lhsSet.calcOr(rhsSet);
     _priority = OrPriority;
     if (lhs._inverted && rhs._inverted) {
@@ -327,10 +333,12 @@ SelectPruner::visitOrBranch(const Or &expr)
     if (rhs._inverted != _inverted) {
         rhs.invertNode();
     }
-    if (lhs._priority < _priority)
+    if (lhs._priority < _priority) {
         lhs._node->setParentheses();
-    if (rhs._priority < _priority)
+    }
+    if (rhs._priority < _priority) {
         rhs._node->setParentheses();
+    }
     if (_inverted) {
         _node.reset(new And(std::move(lhs._node), std::move(rhs._node), "and"));
     } else {
@@ -400,7 +408,7 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     vespalib::string name = SelectUtils::extractFieldName(expr, complex);
     try {
         std::unique_ptr<Field> fp(new Field(docType->getField(name)));
-        if (fp.get() == NULL) {
+        if (!fp) {
             setInvalidVal();
             return;
         }
@@ -474,8 +482,9 @@ SelectPruner::invertNode()
 const Operator &
 SelectPruner::getOperator(const Operator &op)
 {
-    if (!_wantInverted)
+    if (!_wantInverted) {
         return op;
+    }
     if (op == FunctionOperator::GT) {
         _inverted = true;
         return FunctionOperator::LEQ;
@@ -541,16 +550,18 @@ SelectPruner::setTernaryConst(bool val)
 void
 SelectPruner::resolveTernaryConst(bool wantInverted)
 {
-    if (!_constVal)
+    if (!_constVal) {
         return;
+    }
     const Result &res1(_node->contains(_emptyDoc).combineResults());
     const Result &res = _inverted == wantInverted ? res1 : !res1;
     if (res == Result::Invalid) {
         setInvalidConst();
     } else {
         setTernaryConst(res == Result::True);
-        if (_inverted != wantInverted)
+        if (_inverted != wantInverted) {
             _resultSet = _resultSet.calcNot();
+        }
         _inverted = wantInverted;
     }
 }
@@ -559,14 +570,15 @@ SelectPruner::resolveTernaryConst(bool wantInverted)
 bool
 SelectPruner::isFalse() const
 {
-    if (!_constVal)
+    if (!_constVal) {
         return false;
+    }
     Constant *c(dynamic_cast<Constant *>(_node.get()));
-    if (c != NULL) {
+    if (c != nullptr) {
         return _inverted == c->getConstantValue();
     }
     InvalidConstant *ic(dynamic_cast<InvalidConstant *>(_node.get()));
-    if (ic != NULL) {
+    if (ic != nullptr) {
         return false;
     }
     const Result &res(_node->contains(_emptyDoc).combineResults());
@@ -577,14 +589,15 @@ SelectPruner::isFalse() const
 bool
 SelectPruner::isTrue() const
 {
-    if (!_constVal)
+    if (!_constVal) {
         return false;
+    }
     Constant *c(dynamic_cast<Constant *>(_node.get()));
-    if (c != NULL) {
+    if (c != nullptr) {
         return _inverted != c->getConstantValue();
     }
     InvalidConstant *ic(dynamic_cast<InvalidConstant *>(_node.get()));
-    if (ic != NULL) {
+    if (ic != nullptr) {
         return false;
     }
     const Result &res(_node->contains(_emptyDoc).combineResults());
@@ -595,14 +608,15 @@ SelectPruner::isTrue() const
 bool
 SelectPruner::isInvalid() const
 {
-    if (!_constVal)
+    if (!_constVal) {
         return false;
+    }
     Constant *c(dynamic_cast<Constant *>(_node.get()));
-    if (c != NULL) {
+    if (c != nullptr) {
         return false;
     }
     InvalidConstant *ic(dynamic_cast<InvalidConstant *>(_node.get()));
-    if (ic != NULL) {
+    if (ic != nullptr) {
         return true;
     }
     const Result &res(_node->contains(_emptyDoc).combineResults());
@@ -613,20 +627,22 @@ SelectPruner::isInvalid() const
 bool
 SelectPruner::isInvalidVal() const
 {
-    if (!_constVal)
+    if (!_constVal) {
         return false;
+    }
     InvalidValueNode *iv(dynamic_cast<InvalidValueNode *>(_valueNode.get()));
-    return iv != NULL;
+    return iv != nullptr;
 }
 
 
 bool
 SelectPruner::isNullVal() const
 {
-    if (!_constVal)
+    if (!_constVal) {
         return false;
+    }
     NullValueNode *nv(dynamic_cast<NullValueNode *>(_valueNode.get()));
-    return nv != NULL;
+    return nv != nullptr;
 }
 
 
