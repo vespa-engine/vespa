@@ -1069,6 +1069,7 @@ public class JsonRendererTestCase {
         r.getElapsedTime().add(t);
         renderer.setTimeSource(() -> 8L);
         String summary = render(r);
+        System.out.println(summary);
         assertEqualJson(expected, summary);
     }
 

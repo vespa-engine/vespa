@@ -107,12 +107,6 @@ public class JuniperSearcher extends Searcher {
             if (searchDefinitionField == null) continue;
             String searchDefinitionName = searchDefinitionField.toString();
 
-            // TODO: Switch to iterate over indexes in the outer loop:
-            //for (Index index : indexFacts.getIndexes(searchDefinitionName())) {
-            //    if (index.getDynamicSummary() || index.getHighlightSummary()) {
-            //        insertTags(hit.buildHitField(index.getName(), true, true), bolding, index.getDynamicSummary());
-            //    }
-            //}
             for (String fieldName : hit.fields().keySet()) {
                 Index index = indexFacts.getIndex(fieldName, searchDefinitionName);
                 if (index.getDynamicSummary() || index.getHighlightSummary())

@@ -52,7 +52,12 @@ public class FieldFilter extends Searcher {
         for (Iterator<Hit> i = result.hits().unorderedDeepIterator(); i.hasNext();) {
             Hit h = i.next();
             if (h.isMeta()) continue;
-            h.fieldKeys().retainAll(requestedFields);
+            for (Iterator<Entry<String, Object>> fields = h.fieldIterator(); fields.hasNext();) {
+                Entry<String, Object> field = fields.next();
+                if ( ! requestedFields.contains(field.getKey()))
+                    fields.remove();
+            }
+
         }
     }
 

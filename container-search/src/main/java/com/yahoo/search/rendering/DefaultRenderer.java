@@ -185,19 +185,28 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
 
     private void renderHitFields(XMLWriter writer, Hit hit) {
         renderSyntheticRelevanceField(writer, hit);
-        hit.forEachField((name, value) -> renderField(writer, name, value));
+        for (Iterator<Map.Entry<String, Object>> it = hit.fieldIterator(); it.hasNext(); ) {
+            renderField(writer, hit, it);
+        }
     }
 
-    private void renderField(XMLWriter writer, String name, Object value) {
-        if (name.startsWith("$")) return;
+    private void renderField(XMLWriter writer, Hit hit, Iterator<Map.Entry<String, Object>> it) {
+        renderGenericField(writer, hit, it.next());
+    }
 
-        writeOpenFieldElement(writer, name);
-        renderFieldContent(writer, value);
+    private void renderGenericField(XMLWriter writer, Hit hit, Map.Entry<String, Object> entry) {
+        String fieldName = entry.getKey();
+
+        // skip depending on hit type
+        if (fieldName.startsWith("$")) return; // Don't render fields that start with $ // TODO: Move to should render
+
+        writeOpenFieldElement(writer, fieldName);
+        renderFieldContent(writer, hit, fieldName);
         writeCloseFieldElement(writer);
     }
 
-    private void renderFieldContent(XMLWriter writer, Object value) {
-        writer.escapedContent(asXML(value), false);
+    private void renderFieldContent(XMLWriter writer, Hit hit, String fieldName) {
+        writer.escapedContent(asXML(hit.getField(fieldName)), false);
     }
 
     private String asXML(Object value) {

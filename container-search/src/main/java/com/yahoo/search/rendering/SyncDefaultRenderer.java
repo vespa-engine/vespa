@@ -271,19 +271,25 @@ public final class SyncDefaultRenderer extends Renderer {
 
     private void renderHitFields(XMLWriter writer, Hit hit) {
         renderSyntheticRelevanceField(writer, hit);
-        hit.forEachField((name, value) -> renderField(writer, name, value));
+        for (Iterator<Map.Entry<String, Object>> it = hit.fieldIterator(); it.hasNext(); ) {
+            renderField(writer, hit, it);
+        }
     }
 
-    private void renderField(XMLWriter writer, String name, Object value) {
-        if (name.startsWith("$")) return;
+    private void renderField(XMLWriter writer, Hit hit, Iterator<Map.Entry<String, Object>> it) {
+        Map.Entry<String, Object> entry = it.next();
+        String fieldName = entry.getKey();
 
-        writeOpenFieldElement(writer, name);
-        renderFieldContent(writer, value);
+        if ( ! shouldRenderField(hit, fieldName)) return;
+        if (fieldName.startsWith("$")) return; // Don't render fields that start with $ // TODO: Move to should render
+
+        writeOpenFieldElement(writer, fieldName);
+        renderFieldContent(writer, hit, fieldName);
         writeCloseFieldElement(writer);
     }
 
-    private void renderFieldContent(XMLWriter writer, Object value) {
-        writer.escapedContent(asXML(value), false);
+    private void renderFieldContent(XMLWriter writer, Hit hit, String fieldName) {
+        writer.escapedContent(asXML(hit.getField(fieldName)), false);
     }
 
     private String asXML(Object value) {
@@ -298,10 +304,10 @@ public final class SyncDefaultRenderer extends Renderer {
     }
 
     private void renderSyntheticRelevanceField(XMLWriter writer, Hit hit) {
-        String relevancyFieldName = "relevancy";
-        Relevance relevance = hit.getRelevance();
+        final String relevancyFieldName = "relevancy";
+        final Relevance relevance = hit.getRelevance();
 
-        if (relevance != null) {
+        if (shouldRenderField(hit, relevancyFieldName) && relevance != null) {
             renderSimpleField(writer, relevancyFieldName, relevance);
         }
     }
@@ -324,6 +330,11 @@ public final class SyncDefaultRenderer extends Renderer {
         }
         writer.openTag(FIELD).attribute(NAME, utf8);
         writer.closeStartTag();
+    }
+
+    private boolean shouldRenderField(Hit hit, String relevancyFieldName) {
+        // skip depending on hit type
+        return true;
     }
 
     private void renderHitAttributes(XMLWriter writer, Hit hit) {

@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * This is a helper class for rendering grouping results.
  *
- * @author Simon Thoresen
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public abstract class HitRenderer {
 
@@ -50,7 +50,9 @@ public abstract class HitRenderer {
             if (hit instanceof RootGroup) {
                 renderContinuation(Continuation.THIS_PAGE, ((RootGroup)hit).continuation(), writer);
             }
-            hit.forEachField((name, value) -> writer.openTag(TAG_OUTPUT).attribute(ATR_LABEL, name).content(value, false).closeTag());
+            for (String label : hit.fieldKeys()) {
+                writer.openTag(TAG_OUTPUT).attribute(ATR_LABEL, label).content(hit.getField(label), false).closeTag();
+            }
         } else if (hit instanceof HitList) {
             writer.openTag(TAG_HIT_LIST).attribute(ATR_LABEL, ((HitList)hit).getLabel());
             renderContinuations(((HitList)hit).continuations(), writer);

@@ -30,7 +30,4 @@ public class MutableInteger {
         return value;
     }
 
-    @Override
-    public String toString() { return Integer.toString(value); }
-
 }
