@@ -10,7 +10,7 @@ TEST("require that PortListenException retains relevant information") {
     try {
         error.throwSelf();
         ASSERT_TRUE(false);
-    } catch(PortListenException e) {
+    } catch(PortListenException & e) {
         fprintf(stderr, "what: %s\n", e.what());
         EXPECT_EQUAL(80, e.get_port());
         EXPECT_EQUAL("HTTP", e.get_protocol());
@@ -24,7 +24,7 @@ TEST("require that PortListenException with cause retains relevant information")
     try {
         error.throwSelf();
         ASSERT_TRUE(false);
-    } catch(PortListenException e) {
+    } catch(PortListenException & e) {
         fprintf(stderr, "what: %s\n", e.what());
         EXPECT_EQUAL(1337, e.get_port());
         EXPECT_EQUAL("RPC", e.get_protocol());
