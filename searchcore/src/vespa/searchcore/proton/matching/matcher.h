@@ -18,23 +18,19 @@
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <mutex>
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
     class GroupingContext;
     class GroupingSession;
-}  // namespace search::grouping;
-namespace index { class Schema; }
-namespace attribute { class IAttributeContext; }
-namespace engine {
+}
+namespace search::index { class Schema; }
+namespace search::attribute { class IAttributeContext; }
+namespace search::engine {
     class Request;
     class SearchRequest;
     class DocsumRequest;
     class SearchReply;
 }
-
-class IDocumentMetaStore;
-
-} // namespace search
+namespace search { class IDocumentMetaStore; }
 
 namespace proton::matching {
 
@@ -59,16 +55,13 @@ private:
     uint32_t                      _distributionKey;
 
     search::FeatureSet::SP
-    getFeatureSet(const search::engine::DocsumRequest & req,
-                  ISearchContext & searchCtx,
+    getFeatureSet(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
                   search::attribute::IAttributeContext & attrCtx,
-                  SessionManager &sessionMgr,
-                  bool summaryFeatures);
+                  SessionManager &sessionMgr, bool summaryFeatures);
     std::unique_ptr<search::engine::SearchReply>
-    handleGroupingSession(
-            SessionManager &sessionMgr,
-            search::grouping::GroupingContext & groupingContext,
-            std::unique_ptr<search::grouping::GroupingSession> gs);
+    handleGroupingSession(SessionManager &sessionMgr,
+                          search::grouping::GroupingContext & groupingContext,
+                          std::unique_ptr<search::grouping::GroupingSession> gs);
 
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits,
                                       const search::fef::Properties & rankProperties) const;
@@ -91,12 +84,9 @@ public:
      * @param props ranking configuration
      * @param clock used for timeout handling
      **/
-    Matcher(const search::index::Schema &schema,
-            const search::fef::Properties &props,
-            const vespalib::Clock &clock,
-            QueryLimiter &queryLimiter,
-            const IConstantValueRepo &constantValueRepo,
-            uint32_t distributionKey);
+    Matcher(const search::index::Schema &schema, const search::fef::Properties &props,
+            const vespalib::Clock &clock, QueryLimiter &queryLimiter,
+            const IConstantValueRepo &constantValueRepo, uint32_t distributionKey);
 
     const search::fef::IIndexEnvironment &get_index_env() const { return _indexEnv; }
 
@@ -112,8 +102,7 @@ public:
      * function is exposed for testing purposes.
      **/
     std::unique_ptr<MatchToolsFactory>
-    create_match_tools_factory(const search::engine::Request &request,
-                               ISearchContext &searchContext,
+    create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
                                search::attribute::IAttributeContext &attrContext,
                                const search::IDocumentMetaStore &metaStore,
                                const search::fef::Properties &feature_overrides) const;
@@ -130,12 +119,9 @@ public:
      * @param metaStore the document meta store used to map from lid to gid
      **/
     std::unique_ptr<search::engine::SearchReply>
-    match(const search::engine::SearchRequest &request,
-          vespalib::ThreadBundle &threadBundle,
-          ISearchContext &searchContext,
-          search::attribute::IAttributeContext &attrContext,
-          SessionManager &sessionManager,
-          const search::IDocumentMetaStore &metaStore,
+    match(const search::engine::SearchRequest &request, vespalib::ThreadBundle &threadBundle,
+          ISearchContext &searchContext, search::attribute::IAttributeContext &attrContext,
+          SessionManager &sessionManager, const search::IDocumentMetaStore &metaStore,
           SearchSession::OwnershipBundle &&owned_objects);
 
     /**
@@ -149,10 +135,8 @@ public:
      * @return calculated summary features.
      **/
     search::FeatureSet::SP
-    getSummaryFeatures(const search::engine::DocsumRequest & req,
-                       ISearchContext & searchCtx,
-                       search::attribute::IAttributeContext & attrCtx,
-                       SessionManager &sessionManager);
+    getSummaryFeatures(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
+                       search::attribute::IAttributeContext & attrCtx, SessionManager &sessionManager);
 
     /**
      * Perform matching for the documents in the given docsum request
@@ -165,10 +149,8 @@ public:
      * @return calculated rank features.
      **/
     search::FeatureSet::SP
-    getRankFeatures(const search::engine::DocsumRequest & req,
-                    ISearchContext & searchCtx,
-                    search::attribute::IAttributeContext & attrCtx,
-                    SessionManager &sessionManager);
+    getRankFeatures(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
+                    search::attribute::IAttributeContext & attrCtx, SessionManager &sessionManager);
 
     /**
      * @return true if this rankprofile has summary-features enabled

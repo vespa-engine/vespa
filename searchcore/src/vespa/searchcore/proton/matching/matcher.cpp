@@ -52,8 +52,9 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     void foreach(const search::IGidToLidMapperVisitor &) const override { }
 };
 
-FeatureSet::SP findFeatureSet(const DocsumRequest &req,
-                              MatchToolsFactory &mtf, bool summaryFeatures) {
+FeatureSet::SP
+findFeatureSet(const DocsumRequest &req, MatchToolsFactory &mtf, bool summaryFeatures)
+{
     std::vector<uint32_t> docs;
     for (size_t i = 0; i < req.hits.size(); ++i) {
         if (req.hits[i].docid != search::endDocId) {
@@ -300,8 +301,9 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             coverage.degradeTimeout();
             LOG(debug, "soft doomed, degraded from timeout covered = %lu", coverage.getCovered());
         }
-        LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
-            numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount);
+        LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld , rankprofile=%s",
+            numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount,
+            request.ranking.c_str());
     }
     total_matching_time.stop();
     my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
@@ -311,8 +313,11 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         std::lock_guard<std::mutex> guard(_statsLock);
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
-            LOG(info, "Triggered softtimeout limit=%1.3f and duration=%1.3f", softLimit.sec(), duration.sec());
+            double old = _stats.softDoomFactor();
             _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, duration);
+            LOG(info, "Triggered softtimeout factor adjustment. limit=%1.3f and duration=%1.3f, rankprofile=%s"
+                      ", factor adjusted from %1.3f to %1.3f",
+                softLimit.sec(), duration.sec(), request.ranking.c_str(), old, _stats.softDoomFactor());
         }
     }
     return reply;
