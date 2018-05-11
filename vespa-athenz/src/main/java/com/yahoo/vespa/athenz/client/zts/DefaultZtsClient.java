@@ -48,14 +48,14 @@ public class DefaultZtsClient implements ZtsClient {
     private volatile CloseableHttpClient client;
 
     public DefaultZtsClient(URI ztsUrl, SSLContext sslContext) {
-        this.ztsUrl = ztsUrl;
+        this.ztsUrl = addTrailingSlash(ztsUrl);
         this.client = createHttpClient(sslContext);
         this.identityProvider = null;
         this.identityListener = null;
     }
 
     public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider) {
-        this.ztsUrl = ztsUrl;
+        this.ztsUrl = addTrailingSlash(ztsUrl);
         this.client = createHttpClient(identityProvider.getIdentitySslContext());
         this.identityProvider = identityProvider;
         this.identityListener = new ServiceIdentityProviderListener();
@@ -111,18 +111,28 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     private static InstanceIdentity getInstanceIdentity(HttpResponse response) throws IOException {
-        if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
-            InstanceIdentityCredentials entity =
-                    objectMapper.readValue(response.getEntity().getContent(), InstanceIdentityCredentials.class);
-            return entity.getServiceToken() != null
+        InstanceIdentityCredentials entity = readEntity(response, InstanceIdentityCredentials.class);
+        return entity.getServiceToken() != null
                     ? new InstanceIdentity(entity.getX509Certificate(), new NToken(entity.getServiceToken()))
                     : new InstanceIdentity(entity.getX509Certificate());
+    }
+
+    private static <T> T readEntity(HttpResponse response, Class<T> entityType) throws IOException {
+        if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
+            return objectMapper.readValue(response.getEntity().getContent(), entityType);
         } else {
             String message = EntityUtils.toString(response.getEntity());
             throw new ZtsClientException(
                     String.format("Unable to get identity. http code/message: %d/%s",
                                   response.getStatusLine().getStatusCode(), message));
         }
+    }
+
+    private static URI addTrailingSlash(URI ztsUrl) {
+        if (ztsUrl.getPath().endsWith("/"))
+            return ztsUrl;
+        else
+            return URI.create(ztsUrl.toString() + '/');
     }
 
     private static StringEntity toJsonStringEntity(Object entity) {
@@ -135,6 +145,7 @@ public class DefaultZtsClient implements ZtsClient {
 
     private <T> T withClient(Function<CloseableHttpClient, T> consumer) {
         Lock lock = this.lock.readLock();
+        lock.lock();
         try {
             return consumer.apply(this.client);
         } finally {
@@ -144,6 +155,7 @@ public class DefaultZtsClient implements ZtsClient {
 
     private void setClient(CloseableHttpClient newClient) {
         Lock lock = this.lock.writeLock();
+        lock.lock();
         CloseableHttpClient oldClient;
         try {
             oldClient = this.client;
