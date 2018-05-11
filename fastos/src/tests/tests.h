@@ -43,9 +43,8 @@ public:
    bool Progress (bool result, const char *str)
    {
       char string[MAX_STR_LEN];
-      snprintf(string, sizeof(string) - 1, "%s: %s\n",
+      snprintf(string, sizeof(string), "%s: %s\n",
          result ? okString : failString, str);
-      string[sizeof(string) - 1] = '\0';
       PrintProgress(string);
       if (! result) { _allOkFlag = false; }
       return result;
@@ -54,80 +53,70 @@ public:
    bool Progress (bool result, const char *str, int d1)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, d1);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, d1);
       return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, int d1, int d2)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, d1, d2);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, d1, d2);
       return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const char *s1)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, s1);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, s1);
       return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const FastOS_ThreadInterface *s1)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, s1);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, s1);
       return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const FastOS_Socket *s1)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, s1);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, s1);
       return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const char *s1, const char *s2)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, s1, s2);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, s1, s2);
       return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const char *s1, int d1)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, s1, d1);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, s1, d1);
       return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, int d1, const char *s1)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, d1, s1);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, d1, s1);
       return Progress(result, string);
    }
 
    bool ProgressI64 (bool result, const char *str, int64_t val)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, val);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, val);
       return Progress(result, string);
    }
 
    bool ProgressFloat (bool result, const char *str, float val)
    {
       char string[MAX_STR_LEN-100];
-      snprintf(string, sizeof(string) - 1, str, val);
-      string[sizeof(string) - 1] = '\0';
+      snprintf(string, sizeof(string), str, val);
       return Progress(result, string);
    }
 
