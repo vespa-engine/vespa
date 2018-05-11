@@ -19,8 +19,8 @@ private:
     Guard      _generationGuard;
 public:
     ComponentGuard();
-    ComponentGuard(ComponentGuard &&) = default;
-    ComponentGuard & operator = (ComponentGuard &&) = default;
+    ComponentGuard(ComponentGuard &&);
+    ComponentGuard & operator = (ComponentGuard &&);
     ComponentGuard(const ComponentGuard &);
     ComponentGuard & operator = (const ComponentGuard &);
     virtual ~ComponentGuard();
