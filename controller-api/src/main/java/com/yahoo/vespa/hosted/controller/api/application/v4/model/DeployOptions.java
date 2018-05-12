@@ -14,17 +14,18 @@ import java.util.Optional;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DeployOptions {
 
-    public final boolean deployDirectly;
+    // TODO: Add build number here, so we can replace job timeout (12 hours) with triggering timeout (a few minutes?)
+    public final Optional<ScrewdriverBuildJob> screwdriverBuildJob;
     public final Optional<String> vespaVersion;
     public final boolean ignoreValidationErrors;
     public final boolean deployCurrentVersion;
 
     @JsonCreator
-    public DeployOptions(@JsonProperty("deployDirectly") boolean deployDirectly,
+    public DeployOptions(@JsonProperty("screwdriverBuildJob") Optional<ScrewdriverBuildJob> screwdriverBuildJob,
                          @JsonProperty("vespaVersion") Optional<Version> vespaVersion,
                          @JsonProperty("ignoreValidationErrors") boolean ignoreValidationErrors,
                          @JsonProperty("deployCurrentVersion") boolean deployCurrentVersion) {
-        this.deployDirectly = deployDirectly;
+        this.screwdriverBuildJob = screwdriverBuildJob;
         this.vespaVersion = vespaVersion.map(Version::toString);
         this.ignoreValidationErrors = ignoreValidationErrors;
         this.deployCurrentVersion = deployCurrentVersion;
@@ -33,7 +34,7 @@ public class DeployOptions {
     @Override
     public String toString() {
         return "DeployData{" +
-                "deployDirectly=" + deployDirectly +
+                "screwdriverBuildJob=" + screwdriverBuildJob.map(ScrewdriverBuildJob::toString).orElse("None") +
                 ", vespaVersion=" + vespaVersion.orElse("None") +
                 ", ignoreValidationErrors=" + ignoreValidationErrors +
                 ", deployCurrentVersion=" + deployCurrentVersion +
@@ -41,6 +42,6 @@ public class DeployOptions {
     }
 
     public static DeployOptions none() {
-        return new DeployOptions(false, Optional.empty(), false, false);
+        return new DeployOptions(Optional.empty(), Optional.empty(), false, false);
     }
 }

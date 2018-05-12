@@ -11,6 +11,11 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
@@ -235,10 +240,12 @@ public final class ControllerTester {
     }
 
     public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
+        ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().getAsLong()));
+        GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
         controller().applications().deploy(application.id(),
                                            zone,
                                            applicationPackage,
-                                           new DeployOptions(false, Optional.empty(), false, deployCurrentVersion));
+                                           new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion));
     }
 
     /** Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else */

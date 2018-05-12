@@ -14,6 +14,7 @@ import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
@@ -793,7 +794,7 @@ public class ControllerTest {
         // Direct deploy is allowed when project ID is missing
         ZoneId zone = ZoneId.from("prod", "cd-us-central-1");
         // Same options as used in our integration tests
-        DeployOptions options = new DeployOptions(true, Optional.empty(), false,
+        DeployOptions options = new DeployOptions(Optional.empty(), Optional.empty(), false,
                                                   false);
         tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), options);
 
@@ -869,7 +870,8 @@ public class ControllerTest {
         ControllerTester tester = new ControllerTester();
         String application = "this_application_name_is_far_too_long_and_has_underscores";
         ZoneId zone = ZoneId.from("test", "us-east-1");
-        DeployOptions options = new DeployOptions(false,
+        DeployOptions options = new DeployOptions(Optional.of(new ScrewdriverBuildJob(new ScrewdriverId("123"),
+                                                                                      null)),
                                                   Optional.empty(),
                                                   false,
                                                   false);
