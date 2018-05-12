@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,9 +66,8 @@ public class RealNodeRepositoryTest {
             try {
                 final int port = findRandomOpenPort();
                 container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
-                ConfigServerApi configServerApi = ConfigServerApiImpl.createForTestingWithSocketFactory(
-                        Collections.singletonList(URI.create("http://127.0.0.1:" + port)),
-                        SSLConnectionSocketFactory.getSocketFactory());
+                ConfigServerApi configServerApi = ConfigServerApiImpl.createForTesting(
+                        Collections.singletonList(URI.create("http://127.0.0.1:" + port)));
                 waitForJdiscContainerToServe(configServerApi);
                 return;
             } catch (RuntimeException e) {
