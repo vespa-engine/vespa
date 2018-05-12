@@ -35,13 +35,19 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.TenantResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
@@ -621,7 +627,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
         Optional<AthenzTenant> existingTenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
-        if ( ! existingTenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+        if ( ! existingTenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");;
 
         Inspector requestData = toSlime(request.getData()).get();
         AthenzTenant updatedTenant = existingTenant.get()
@@ -732,7 +738,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         verifyApplicationIdentityConfiguration(tenantName, applicationPackage);
 
         // TODO: get rid of the json object
-        DeployOptions deployOptionsJsonClass = new DeployOptions(deployOptions.field("deployDirectly").asBool(),
+        DeployOptions deployOptionsJsonClass = new DeployOptions(screwdriverBuildJobFromSlime(deployOptions.field("screwdriverBuildJob")),
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
@@ -1088,6 +1094,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void stringsToSlime(List<String> strings, Cursor array) {
         for (String string : strings)
             array.addString(string);
+    }
+
+    // TODO: get rid of the json object
+    private Optional<ScrewdriverBuildJob> screwdriverBuildJobFromSlime(Inspector object) {
+        if ( ! object.valid() ) return Optional.empty();
+        Optional<ScrewdriverId> screwdriverId = optional("screwdriverId", object).map(ScrewdriverId::new);
+        return Optional.of(new ScrewdriverBuildJob(screwdriverId.orElse(null),
+                                                   gitRevisionFromSlime(object.field("gitRevision"))));
+    }
+
+    // TODO: get rid of the json object
+    private GitRevision gitRevisionFromSlime(Inspector object) {
+        return new GitRevision(optional("repository", object).map(GitRepository::new).orElse(null),
+                               optional("branch", object).map(GitBranch::new).orElse(null),
+                               optional("commit", object).map(GitCommit::new).orElse(null));
     }
 
     private String readToString(InputStream stream) {

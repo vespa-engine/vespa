@@ -20,12 +20,12 @@ public class DeployOptionsTest {
 
     @Test
     public void it_serializes_version() throws IOException {
-        DeployOptions options = new DeployOptions(false, Optional.of(new Version("6.98.227")), false, false);
+        DeployOptions options = new DeployOptions(Optional.empty(), Optional.of(new Version("6.98.227")), false, false);
         final ObjectMapper objectMapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .registerModule(new Jdk8Module());
 
         String string = objectMapper.writeValueAsString(options);
-        assertEquals("{\"deployDirectly\":false,\"vespaVersion\":\"6.98.227\",\"ignoreValidationErrors\":false,\"deployCurrentVersion\":false}", string);
+        assertEquals("{\"screwdriverBuildJob\":null,\"vespaVersion\":\"6.98.227\",\"ignoreValidationErrors\":false,\"deployCurrentVersion\":false}", string);
     }
 }
