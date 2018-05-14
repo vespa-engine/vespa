@@ -63,7 +63,6 @@ findhost () {
 }
 
 findroot
-findhost
 
 # END environment bootstrap section
 
