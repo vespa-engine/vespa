@@ -54,14 +54,6 @@ findroot () {
     exit 1
 }
 
-findhost () {
-    if [ "${VESPA_HOSTNAME}" = "" ]; then
-        VESPA_HOSTNAME=$(vespa-detect-hostname) || exit 1
-    fi
-    vespa-validate-hostname "${VESPA_HOSTNAME}" || exit 1
-    export VESPA_HOSTNAME
-}
-
 findroot
 
 # END environment bootstrap section
