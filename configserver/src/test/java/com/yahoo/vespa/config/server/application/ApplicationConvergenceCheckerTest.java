@@ -41,25 +41,29 @@ public class ApplicationConvergenceCheckerTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
-    public void setup() throws IOException, SAXException, InterruptedException {
+    public void setup() {
         Model mockModel = MockModel.createContainer("localhost", 1337);
         application = new Application(mockModel, new ServerCache(), 3, Version.fromIntValues(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
     }
 
     @Test
-    public void converge() throws IOException, SAXException {
+    public void converge() throws IOException {
         ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker(
                 (client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
         HttpResponse serviceListResponse = checker.serviceListToCheckForConfigConvergence(application,
                                                                                           URI.create("http://foo:234/serviceconverge"));
         assertThat(serviceListResponse.getStatus(), is(200));
-        assertEquals("{\"services\":[" +
-                             "{\"host\":\"localhost\"," +
+        assertEquals(//"\"wantedGeneration\":3," +
+                     //        "\"debug\":{\"wantedGeneration\":3}," +
+                             "{\"services\":[" +
+                             "{" +
+                             "\"host\":\"localhost\"," +
                              "\"port\":1337," +
                              "\"type\":\"container\"," +
                              "\"url\":\"http://foo:234/serviceconverge/localhost:1337\"}]," +
-                             "\"debug\":{\"wantedGeneration\":3}," +
-                             "\"url\":\"http://foo:234/serviceconverge\"}",
+                             "\"url\":\"http://foo:234/serviceconverge\"," +
+                             "\"wantedGeneration\":3," +
+                             "\"debug\":{\"wantedGeneration\":3}}",
                      SessionHandlerTest.getRenderedString(serviceListResponse));
 
         ServiceResponse serviceResponse = checker.serviceConvergenceCheck(application,
@@ -67,23 +71,30 @@ public class ApplicationConvergenceCheckerTest {
                                                                           URI.create("http://foo:234/serviceconverge/localhost:1337"));
         assertThat(serviceResponse.getStatus(), is(200));
         assertEquals("{" +
+                             "\"url\":\"http://foo:234/serviceconverge/localhost:1337\"," +
+                             "\"host\":\"localhost:1337\"," +
+                             "\"wantedGeneration\":3," +
                              "\"debug\":{" +
                              "\"host\":\"localhost:1337\"," +
                              "\"wantedGeneration\":3," +
                              "\"currentGeneration\":3}," +
-                             "\"url\":\"http://foo:234/serviceconverge/localhost:1337\"," +
-                             "\"converged\":true}",
-                     SessionHandlerTest.getRenderedString(serviceResponse));
+                             "\"converged\":true," +
+                             "\"currentGeneration\":3}",
+                             SessionHandlerTest.getRenderedString(serviceResponse));
 
         ServiceResponse hostMissingResponse = checker.serviceConvergenceCheck(application,
                                                                               "notPresent:1337",
                                                                               URI.create("http://foo:234/serviceconverge/notPresent:1337"));
         assertThat(hostMissingResponse.getStatus(), is(410));
-        assertEquals("{\"debug\":{" +
+        assertEquals("{" +
+                             "\"url\":\"http://foo:234/serviceconverge/notPresent:1337\"," +
+                             "\"host\":\"notPresent:1337\"," +
+                             "\"wantedGeneration\":3," +
+                             "\"debug\":{" +
                              "\"host\":\"notPresent:1337\"," +
                              "\"wantedGeneration\":3," +
                              "\"problem\":\"Host:port (service) no longer part of application, refetch list of services.\"}," +
-                             "\"url\":\"http://foo:234/serviceconverge/notPresent:1337\"}",
+                             "\"problem\":\"Host:port (service) no longer part of application, refetch list of services.\"}",
                      SessionHandlerTest.getRenderedString(hostMissingResponse));
     }
 

@@ -144,8 +144,10 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
                 service.setString("type", s.getServiceType());
                 service.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
             }
-            debug = object.setObject("debug");
             object.setString("url", uri.toString());
+            object.setLong("wantedGeneration", wantedGeneration);
+            // TODO: Remove debug when clients are not using it anymore
+            debug = object.setObject("debug");
             debug.setLong("wantedGeneration", wantedGeneration);
         }
     }
@@ -155,8 +157,11 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
 
         private ServiceResponse(int status, URI uri, String hostname, Long wantedGeneration) {
             super(status);
-            debug = object.setObject("debug");
             object.setString("url", uri.toString());
+            object.setString("host", hostname);
+            object.setLong("wantedGeneration", wantedGeneration);
+            // TODO: Remove debug when clients are not using it anymore
+            debug = object.setObject("debug");
             debug.setString("host", hostname);
             debug.setLong("wantedGeneration", wantedGeneration);
         }
@@ -164,12 +169,16 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         static ServiceResponse createOkResponse(URI uri, String hostname, Long wantedGeneration, Long currentGeneration, boolean converged) {
             ServiceResponse serviceResponse = new ServiceResponse(200, uri, hostname, wantedGeneration);
             serviceResponse.object.setBool("converged", converged);
+            serviceResponse.object.setLong("currentGeneration", currentGeneration);
+            // TODO: Remove debug when clients are not using it anymore
             serviceResponse.debug.setLong("currentGeneration", currentGeneration);
             return serviceResponse;
         }
 
         static ServiceResponse createHostNotFoundInAppResponse(URI uri, String hostname, Long wantedGeneration) {
             ServiceResponse serviceResponse = new ServiceResponse(410, uri, hostname, wantedGeneration);
+            serviceResponse.object.setString("problem", "Host:port (service) no longer part of application, refetch list of services.");
+            // TODO: Remove debug when clients are not using it anymore
             serviceResponse.debug.setString("problem", "Host:port (service) no longer part of application, refetch list of services.");
             return serviceResponse;
         }
