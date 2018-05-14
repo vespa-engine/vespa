@@ -41,7 +41,7 @@
                         <configuration>
                             <finalName>${project.artifactId}</finalName>
                             <excludePackageNames>com.yahoo.jdisc.core</excludePackageNames>
-                            <additionalparam>-Xdoclint:${doclint} -Xdoclint:-missing</additionalparam>
+                            <doclint>${doclint},-missing</doclint>
                         </configuration>
                     </execution>
                 </executions>

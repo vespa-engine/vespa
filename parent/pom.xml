@@ -138,7 +138,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <configuration>
-                        <additionalparam>-Xdoclint:${doclint} -Xdoclint:-missing</additionalparam>
+                        <doclint>${doclint},-missing</doclint>
                     </configuration>
                     <version>3.0.0</version>
                 </plugin>
@@ -297,7 +297,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <additionalparam>-Xdoclint:${doclint} -Xdoclint:-missing</additionalparam>
+                            <doclint>${doclint},-missing</doclint>
                             <failOnError>${javadoc.failOnError}</failOnError>
                             <quiet>true</quiet>
                             <show>private</show>

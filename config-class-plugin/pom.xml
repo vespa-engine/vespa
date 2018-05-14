@@ -68,7 +68,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <additionalparam>-Xdoclint:${doclint} -Xdoclint:-missing</additionalparam>
+          <doclint>${doclint},-missing</doclint>
           <tags>
             <tag>
               <name>goal</name>
