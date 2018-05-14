@@ -3,13 +3,21 @@ package com.yahoo.vespa.athenz.client.zts;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceIdentityCredentials;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceRefreshInformation;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceRegisterInformation;
+import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateRequestEntity;
+import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateResponseEntity;
+import com.yahoo.vespa.athenz.client.zts.bindings.RoleTokenResponseEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
+import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -23,13 +31,20 @@ import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.http.HttpStatus;
 
 import javax.net.ssl.SSLContext;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
+
+import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
+import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.RFC822_NAME;
 
 /**
  * Default implementation of {@link ZtsClient}
@@ -39,17 +54,19 @@ import java.util.function.Function;
  */
 public class DefaultZtsClient implements ZtsClient {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final URI ztsUrl;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final AthenzIdentity identity;
     private final ServiceIdentityProvider identityProvider;
     private final ServiceIdentityProviderListener identityListener;
     private volatile CloseableHttpClient client;
 
-    public DefaultZtsClient(URI ztsUrl, SSLContext sslContext) {
+    public DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, SSLContext sslContext) {
         this.ztsUrl = addTrailingSlash(ztsUrl);
         this.client = createHttpClient(sslContext);
+        this.identity = identity;
         this.identityProvider = null;
         this.identityListener = null;
     }
@@ -57,6 +74,7 @@ public class DefaultZtsClient implements ZtsClient {
     public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider) {
         this.ztsUrl = addTrailingSlash(ztsUrl);
         this.client = createHttpClient(identityProvider.getIdentitySslContext());
+        this.identity = identityProvider.identity();
         this.identityProvider = identityProvider;
         this.identityListener = new ServiceIdentityProviderListener();
         identityProvider.addIdentityListener(this.identityListener);
@@ -78,8 +96,6 @@ public class DefaultZtsClient implements ZtsClient {
         return withClient(client -> {
             try (CloseableHttpResponse response = client.execute(request)) {
                 return getInstanceIdentity(response);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
             }
         });
     }
@@ -104,10 +120,62 @@ public class DefaultZtsClient implements ZtsClient {
         return withClient(client -> {
             try (CloseableHttpResponse response = client.execute(request)) {
                 return getInstanceIdentity(response);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
             }
         });
+    }
+
+    @Override
+    public ZToken getRoleToken(AthenzDomain domain) {
+        return getRoleToken(domain, null);
+    }
+
+    @Override
+    public ZToken getRoleToken(AthenzDomain domain, String roleName) {
+        URI uri = ztsUrl.resolve(String.format("domain/%s/token", domain.getName()));
+        RequestBuilder requestBuilder = RequestBuilder.get(uri)
+                .addHeader("Content-Type", "application/json");
+        if (roleName != null) {
+            requestBuilder.addParameter("role", roleName);
+        }
+        HttpUriRequest request = requestBuilder.build();
+        return withClient(client -> {
+            try (CloseableHttpResponse response = client.execute(request)) {
+                RoleTokenResponseEntity roleTokenResponseEntity = readEntity(response, RoleTokenResponseEntity.class);
+                return roleTokenResponseEntity.token;
+            }
+        });
+    }
+
+    @Override
+    public X509Certificate getRoleCertificate(AthenzDomain domain,
+                                              String roleName,
+                                              Duration expiry,
+                                              KeyPair keyPair,
+                                              String cloud) {
+        X500Principal principal = new X500Principal(String.format("cn=%s:role.%s", domain.getName(), roleName));
+        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
+                .addSubjectAlternativeName(DNS_NAME, String.format("%s.%s.%s", identity.getName(), identity.getDomainName().replace('.', '-'), cloud))
+                .addSubjectAlternativeName(RFC822_NAME, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), cloud))
+                .build();
+        RoleCertificateRequestEntity requestEntity = new RoleCertificateRequestEntity(csr, expiry);
+        URI uri = ztsUrl.resolve(String.format("domain/%s/role/%s/token", domain.getName(), roleName));
+        HttpUriRequest request = RequestBuilder.post(uri)
+                .setEntity(toJsonStringEntity(requestEntity))
+                .build();
+        return withClient(client -> {
+            try (CloseableHttpResponse response = client.execute(request)) {
+                RoleCertificateResponseEntity responseEntity = readEntity(response, RoleCertificateResponseEntity.class);
+                return responseEntity.certificate;
+            }
+        });
+    }
+
+    @Override
+    public X509Certificate getRoleCertificate(AthenzDomain domain,
+                                              String roleName,
+                                              KeyPair keyPair,
+                                              String cloud) {
+        return getRoleCertificate(domain, roleName, null, keyPair, cloud);
     }
 
     private static InstanceIdentity getInstanceIdentity(HttpResponse response) throws IOException {
@@ -143,11 +211,13 @@ public class DefaultZtsClient implements ZtsClient {
         }
     }
 
-    private <T> T withClient(Function<CloseableHttpClient, T> consumer) {
+    private <T> T withClient(RequestHandler<T> handler) {
         Lock lock = this.lock.readLock();
         lock.lock();
         try {
-            return consumer.apply(this.client);
+            return handler.doRequest(this.client);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         } finally {
             lock.unlock();
         }
@@ -193,5 +263,10 @@ public class DefaultZtsClient implements ZtsClient {
         public void onCredentialsUpdate(SSLContext sslContext, AthenzService identity) {
             setClient(createHttpClient(sslContext));
         }
+    }
+
+    @FunctionalInterface
+    private interface RequestHandler<T> {
+        T doRequest(CloseableHttpClient client) throws IOException;
     }
 }

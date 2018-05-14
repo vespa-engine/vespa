@@ -16,11 +16,9 @@ import java.util.Objects;
 
 /**
  * @author bjorncs
- * @deprecated Use {@link SignedIdentityDocumentEntity} instead.
  */
-@Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SignedIdentityDocument {
+public class SignedIdentityDocumentEntity {
 
     public static final int DEFAULT_KEY_VERSION = 0;
     public static final int DEFAULT_DOCUMENT_VERSION = 1;
@@ -28,7 +26,7 @@ public class SignedIdentityDocument {
     private static final ObjectMapper mapper = createObjectMapper();
 
     @JsonProperty("identity-document")public final String rawIdentityDocument;
-    @JsonIgnore public final IdentityDocument identityDocument;
+    @JsonIgnore public final IdentityDocumentEntity identityDocument;
     @JsonProperty("signature") public final String signature;
     @JsonProperty("signing-key-version") public final int signingKeyVersion;
     @JsonProperty("provider-unique-id") public final String providerUniqueId; // String representation
@@ -38,14 +36,14 @@ public class SignedIdentityDocument {
     @JsonProperty("document-version") public final int documentVersion;
 
     @JsonCreator
-    public SignedIdentityDocument(@JsonProperty("identity-document") String rawIdentityDocument,
-                                  @JsonProperty("signature") String signature,
-                                  @JsonProperty("signing-key-version") int signingKeyVersion,
-                                  @JsonProperty("provider-unique-id") String providerUniqueId,
-                                  @JsonProperty("dns-suffix") String dnsSuffix,
-                                  @JsonProperty("provider-service") String providerService,
-                                  @JsonProperty("zts-endpoint") URI ztsEndpoint,
-                                  @JsonProperty("document-version") int documentVersion) {
+    public SignedIdentityDocumentEntity(@JsonProperty("identity-document") String rawIdentityDocument,
+                                        @JsonProperty("signature") String signature,
+                                        @JsonProperty("signing-key-version") int signingKeyVersion,
+                                        @JsonProperty("provider-unique-id") String providerUniqueId,
+                                        @JsonProperty("dns-suffix") String dnsSuffix,
+                                        @JsonProperty("provider-service") String providerService,
+                                        @JsonProperty("zts-endpoint") URI ztsEndpoint,
+                                        @JsonProperty("document-version") int documentVersion) {
         this.rawIdentityDocument = rawIdentityDocument;
         this.identityDocument = parseIdentityDocument(rawIdentityDocument);
         this.signature = signature;
@@ -57,9 +55,9 @@ public class SignedIdentityDocument {
         this.documentVersion = documentVersion;
     }
 
-    private static IdentityDocument parseIdentityDocument(String rawIdentityDocument) {
+    private static IdentityDocumentEntity parseIdentityDocument(String rawIdentityDocument) {
         try {
-            return mapper.readValue(Base64.getDecoder().decode(rawIdentityDocument), IdentityDocument.class);
+            return mapper.readValue(Base64.getDecoder().decode(rawIdentityDocument), IdentityDocumentEntity.class);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -73,7 +71,7 @@ public class SignedIdentityDocument {
 
     @Override
     public String toString() {
-        return "SignedIdentityDocument{" +
+        return "SignedIdentityDocumentEntity{" +
                 "rawIdentityDocument='" + rawIdentityDocument + '\'' +
                 ", identityDocument=" + identityDocument +
                 ", signature='" + signature + '\'' +
@@ -86,7 +84,7 @@ public class SignedIdentityDocument {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SignedIdentityDocument that = (SignedIdentityDocument) o;
+        SignedIdentityDocumentEntity that = (SignedIdentityDocumentEntity) o;
         return signingKeyVersion == that.signingKeyVersion &&
                 documentVersion == that.documentVersion &&
                 Objects.equals(rawIdentityDocument, that.rawIdentityDocument) &&
