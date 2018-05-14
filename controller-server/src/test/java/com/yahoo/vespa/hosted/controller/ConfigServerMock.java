@@ -54,13 +54,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
-        bootstrap(zoneRegistry.zones().all().ids());
+        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all());
     }
 
-    public void bootstrap(List<ZoneId> zones) {
+    public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
+        bootstrap(zones, Arrays.asList(applications));
+    }
+
+    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications) {
         nodeRepository().clear();
         for (ZoneId zone : zones) {
-            for (SystemApplication application : SystemApplication.all()) {
+            for (SystemApplication application : applications) {
                 List<Node> nodes = IntStream.rangeClosed(1, 3)
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()

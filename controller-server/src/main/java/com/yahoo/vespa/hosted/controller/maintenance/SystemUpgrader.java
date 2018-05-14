@@ -37,51 +37,53 @@ public class SystemUpgrader extends Maintainer {
         if (!target.isPresent()) {
             return;
         }
+        deploy(SystemApplication.all(), target.get());
+    }
+
+    /** Deploy a list of system applications on given version */
+    private void deploy(List<SystemApplication> applications, Version target) {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
-            // The order here is important. Config servers should always upgrade first
-            if (!deploy(zones, SystemApplication.configServer, target.get())) {
-                break;
-            }
-            if (!deploy(zones, SystemApplication.zone, target.get())) {
-                break;
+            for (SystemApplication application : applications) {
+                if (!deploy(zones, application, target) && application.upgradeInOrder()) {
+                    return;
+                }
             }
         }
     }
 
     /** Deploy application on given version. Returns true when all allocated nodes are on requested version */
-    private boolean deploy(List<ZoneId> zones, SystemApplication application, Version version) {
+    private boolean deploy(List<ZoneId> zones, SystemApplication application, Version target) {
         boolean completed = true;
         for (ZoneId zone : zones) {
-            if (!wantedVersion(zone, application.id()).equals(version)) {
-                log.info(String.format("Deploying %s version %s in %s", application.id(), version, zone));
-                controller().applications().deploy(application, zone, version);
+            if (!wantedVersion(zone, application.id(), target).equals(target)) {
+                log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
+                controller().applications().deploy(application, zone, target);
             }
-            completed = completed && currentVersion(zone, application.id()).equals(version);
+            completed = completed && currentVersion(zone, application.id(), target).equals(target);
         }
         return completed;
     }
 
-    private Version wantedVersion(ZoneId zone, ApplicationId application) {
-        return minVersion(zone, application, Node::wantedVersion);
+    private Version wantedVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
+        return minVersion(zone, application, Node::wantedVersion).orElse(defaultVersion);
     }
 
-    private Version currentVersion(ZoneId zone, ApplicationId application) {
-        return minVersion(zone, application, Node::currentVersion);
+    private Version currentVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
+        return minVersion(zone, application, Node::currentVersion).orElse(defaultVersion);
     }
 
-    private Version minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
+    private Optional<Version> minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
         try {
             return controller().configServer()
                                .nodeRepository()
                                .listOperational(zone, application)
                                .stream()
                                .map(versionField)
-                               .min(Comparator.naturalOrder())
-                               .orElse(Version.emptyVersion);
+                               .min(Comparator.naturalOrder());
         } catch (Exception e) {
             log.log(Level.WARNING, String.format("Failed to get version for %s in %s: %s", application, zone,
                                                  Exceptions.toMessageString(e)));
-            return Version.emptyVersion;
+            return Optional.empty();
         }
     }
 

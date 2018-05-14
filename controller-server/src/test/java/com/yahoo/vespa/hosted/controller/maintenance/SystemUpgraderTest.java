@@ -39,7 +39,9 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4));
+        // Bootstrap a system without host applications
+        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4), SystemApplication.configServer,
+                                        SystemApplication.zone);
         // Fail a few nodes. Failed nodes should not affect versions
         failNodeIn(zone1, SystemApplication.configServer);
         failNodeIn(zone3, SystemApplication.zone);
@@ -109,6 +111,54 @@ public class SystemUpgraderTest {
     }
 
     @Test
+    public void upgrade_system_containing_host_applications() {
+        tester.controllerTester().zoneRegistry().setUpgradePolicy(
+                UpgradePolicy.create()
+                             .upgrade(zone1)
+                             .upgradeInParallel(zone2, zone3)
+                             .upgrade(zone4)
+        );
+
+        Version version1 = Version.fromString("6.5");
+        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4), SystemApplication.all());
+        tester.upgradeSystem(version1);
+        tester.systemUpgrader().maintain();
+        assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);
+
+        // Controller upgrades
+        Version version2 = Version.fromString("6.6");
+        tester.upgradeController(version2);
+        assertEquals(version2, tester.controller().versionStatus().controllerVersion().get().versionNumber());
+
+        // System upgrades in zone 1:
+        tester.systemUpgrader().maintain();
+        List<SystemApplication> allExceptZone = Arrays.asList(SystemApplication.configServerHost,
+                                                              SystemApplication.proxyHost,
+                                                              SystemApplication.configServer);
+        completeUpgrade(allExceptZone, version2, zone1);
+        tester.systemUpgrader().maintain();
+        completeUpgrade(SystemApplication.zone, version2, zone1);
+        assertWantedVersion(SystemApplication.all(), version1, zone2, zone3, zone4);
+
+        // zone 2 and 3:
+        tester.systemUpgrader().maintain();
+        completeUpgrade(allExceptZone, version2, zone2, zone3);
+        tester.systemUpgrader().maintain();
+        completeUpgrade(SystemApplication.zone, version2, zone2, zone3);
+        assertWantedVersion(SystemApplication.all(), version1, zone4);
+
+        // zone 4:
+        tester.systemUpgrader().maintain();
+        completeUpgrade(allExceptZone, version2, zone4);
+        tester.systemUpgrader().maintain();
+        completeUpgrade(SystemApplication.zone, version2, zone4);
+
+        // All done
+        tester.systemUpgrader().maintain();
+        assertWantedVersion(SystemApplication.all(), version2, zone1, zone2, zone3, zone4);
+    }
+
+    @Test
     public void never_downgrades_system() {
         ZoneId zone = ZoneId.from("prod", "eu-west-1");
         tester.controllerTester().zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(zone));
@@ -130,6 +180,7 @@ public class SystemUpgraderTest {
 
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */
     private void completeUpgrade(SystemApplication application, Version version, ZoneId... zones) {
+        assertWantedVersion(application, version, zones);
         for (ZoneId zone : zones) {
             for (Node node : nodeRepository().listOperational(zone, application.id())) {
                 nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
@@ -137,6 +188,10 @@ public class SystemUpgraderTest {
             }
             assertCurrentVersion(application, version, zone);
         }
+    }
+
+    private void completeUpgrade(List<SystemApplication> applications, Version version, ZoneId... zones) {
+        applications.forEach(application -> completeUpgrade(application, version, zones));
     }
 
     private void failNodeIn(ZoneId zone, SystemApplication application) {
@@ -157,11 +212,19 @@ public class SystemUpgraderTest {
         assertVersion(application.id(), version, Node::currentVersion, zones);
     }
 
+    private void assertWantedVersion(List<SystemApplication> applications, Version version, ZoneId... zones) {
+        applications.forEach(application -> assertVersion(application.id(), version, Node::wantedVersion, zones));
+    }
+
+    private void assertCurrentVersion(List<SystemApplication> applications, Version version, ZoneId... zones) {
+        applications.forEach(application -> assertVersion(application.id(), version, Node::currentVersion, zones));
+    }
+
     private void assertVersion(ApplicationId application, Version version, Function<Node, Version> versionField,
                                ZoneId... zones) {
         for (ZoneId zone : zones) {
             for (Node node : nodeRepository().listOperational(zone, application)) {
-                assertEquals(version, versionField.apply(node));
+                assertEquals(application + " version", version, versionField.apply(node));
             }
         }
     }
