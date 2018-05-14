@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
+import org.junit.After;
 import org.junit.Test;
 
 import java.io.File;
@@ -21,8 +22,8 @@ import static org.junit.Assert.assertFalse;
 
 public class FileServerTest {
 
-    FileServer fs = new FileServer(new File("."));
-    List<File> created = new LinkedList<>();
+    private FileServer fs = new FileServer(new File("."));
+    private List<File> created = new LinkedList<>();
 
     private void createCleanDir(String name) throws  IOException{
         File dir = new File(name);
@@ -70,7 +71,7 @@ public class FileServerTest {
     }
 
     @Test
-    public void requireThatDifferentNumberOfConfigServersWork() throws IOException {
+    public void requireThatDifferentNumberOfConfigServersWork() {
         // Empty connection pool in tests etc.
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         FileServer fileServer = new FileServer(new ConfigserverConfig(builder));
@@ -107,17 +108,10 @@ public class FileServerTest {
         }
     }
 
-    private void cleanup() {
-        created.forEach((file) -> IOUtils.recursiveDeleteDir(file));
+    @After
+    public void cleanup() {
+        created.forEach(IOUtils::recursiveDeleteDir);
         created.clear();
-    }
-
-    // TODO: Why not use @After instead of finalizer?
-    @Override
-    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
-    protected void finalize() throws Throwable {
-        super.finalize();
-        cleanup();
     }
 
 }
