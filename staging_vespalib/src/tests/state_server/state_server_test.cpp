@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/net/simple_health_producer.h>
 #include <vespa/vespalib/net/simple_metrics_producer.h>
@@ -121,7 +122,7 @@ struct EchoHost : JsonGetHandler {
 TEST_FF("require that host is passed correctly", EchoHost(), HttpServer(0)) {
     auto token = f2.repo().bind(my_path, f1);
     f2.start();
-    EXPECT_EQUAL(make_string("%s:%d", run_cmd("hostname").c_str(), f2.port()), f2.host());
+    EXPECT_EQUAL(make_string("%s:%d", HostName::get().c_str(), f2.port()), f2.host());
     vespalib::string default_result = make_string("[\"%s\"]", f2.host().c_str());
     vespalib::string localhost_result = make_string("[\"%s:%d\"]", "localhost", f2.port());
     vespalib::string silly_result = "[\"sillyserver\"]";
