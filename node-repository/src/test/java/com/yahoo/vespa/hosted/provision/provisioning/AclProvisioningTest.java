@@ -8,10 +8,8 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
-import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,22 +32,18 @@ import static org.junit.Assert.assertFalse;
  */
 public class AclProvisioningTest {
 
-    private MockCurator curator;
     private ProvisioningTester tester;
-    private MockNameResolver nameResolver;
 
     private final List<String> dockerBridgeNetwork = Collections.singletonList("172.17.0.0/16");
 
     @Before
     public void before() {
-        this.curator = new MockCurator();
-        this.nameResolver = new MockNameResolver().mockAnyLookup();
-        this.tester = new ProvisioningTester(Zone.defaultZone(), createConfig(), curator, nameResolver);
+        this.tester = new ProvisioningTester(Zone.defaultZone(), createConfig());
     }
 
     @Test
     public void trusted_nodes_for_allocated_node() {
-        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
@@ -71,7 +65,7 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_unallocated_node() {
-        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
@@ -91,7 +85,7 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_config_server() {
-        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
@@ -102,7 +96,7 @@ public class AclProvisioningTest {
         List<Node> tenantNodes = tester.nodeRepository().getNodes(NodeType.tenant);
 
         // Get trusted nodes for the first config server
-        Node node = tester.nodeRepository().getConfigNode("cfg1")
+        Node node = tester.nodeRepository().getNode("cfg1")
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
@@ -112,7 +106,7 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_proxy() {
-        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
@@ -133,7 +127,7 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_docker_host() {
-        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(2, "default", NodeType.host);
@@ -152,8 +146,8 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_docker_hosts_nodes_in_zone_application() {
+        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
         ApplicationId applicationId = tester.makeApplicationId(); // use same id for both allocate calls below
-        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
 
         // Populate repo
         tester.makeReadyNodes(2, "default", NodeType.host);
@@ -172,7 +166,7 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_child_nodes_of_docker_host() {
-        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
@@ -197,19 +191,16 @@ public class AclProvisioningTest {
 
     @Test
     public void resolves_hostnames_from_connection_spec() {
-        setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
-        nameResolver.addRecord("cfg1", "127.0.0.1")
-                .addRecord("cfg2", "127.0.0.2")
-                .addRecord("cfg3", "127.0.0.3");
+        tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         List<Node> readyNodes = tester.makeReadyNodes(1, "default", NodeType.proxy);
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(readyNodes.get(0), false);
 
         assertEquals(3, nodeAcls.get(0).trustedNodes().size());
         Iterator<Node> trustedNodes = nodeAcls.get(0).trustedNodes().iterator();
-        assertEquals(singleton("127.0.0.1"), trustedNodes.next().ipAddresses());
-        assertEquals(singleton("127.0.0.2"), trustedNodes.next().ipAddresses());
-        assertEquals(singleton("127.0.0.3"), trustedNodes.next().ipAddresses());
+        assertEquals(singleton("127.0.1.1"), trustedNodes.next().ipAddresses());
+        assertEquals(singleton("127.0.1.2"), trustedNodes.next().ipAddresses());
+        assertEquals(singleton("127.0.1.3"), trustedNodes.next().ipAddresses());
     }
 
     private List<Node> allocateNodes(int nodeCount) {
@@ -226,11 +217,6 @@ public class AclProvisioningTest {
         List<HostSpec> prepared = tester.prepare(applicationId, cluster, capacity, 1);
         tester.activate(applicationId, new HashSet<>(prepared));
         return tester.getNodes(applicationId, Node.State.active).asList();
-    }
-
-    private List<Node> setConfigServers(String connectionSpec) {
-        curator.setZooKeeperEnsembleConnectionSpec(connectionSpec);
-        return tester.nodeRepository().getConfigNodes();
     }
 
     private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {

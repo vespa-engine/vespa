@@ -180,7 +180,7 @@ public class NodeRepository extends AbstractComponent {
         // - nodes in same application
         // - config servers
         node.allocation().ifPresent(allocation -> trustedNodes.addAll(candidates.owner(allocation.owner()).asList()));
-        trustedNodes.addAll(getConfigNodes());
+        trustedNodes.addAll(candidates.configServers().asList());
 
         switch (node.type()) {
             case tenant:
@@ -243,13 +243,6 @@ public class NodeRepository extends AbstractComponent {
         } else {
             return Collections.singletonList(getNodeAcl(node, candidates));
         }
-    }
-
-    /** Get config node by hostname */
-    public Optional<Node> getConfigNode(String hostname) {
-        return getConfigNodes().stream()
-                .filter(n -> hostname.equals(n.hostname()))
-                .findFirst();
     }
 
     /** Get default flavor override for an application, if present. */
@@ -647,17 +640,6 @@ public class NodeRepository extends AbstractComponent {
             }
         }
         return resultingNodes;
-    }
-
-    // Public for testing
-    public List<Node> getConfigNodes() {
-        // TODO: Revisit this when config servers are added to the repository
-        return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
-                .map(hostPort -> hostPort.split(":")[0])
-                .map(host -> createNode(host, host, Optional.empty(),
-                        flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
-                        NodeType.config))
-                .collect(Collectors.toList());
     }
 
     /** Returns the time keeper of this system */

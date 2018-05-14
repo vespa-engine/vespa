@@ -1,7 +1,9 @@
 {
   "nodes": [
     @include(node7.json),
+    @include(cfg1.json),
     @include(node3.json),
+    @include(cfg2.json),
     @include(node10.json),
     @include(node1.json),
     @include(docker-node4.json),

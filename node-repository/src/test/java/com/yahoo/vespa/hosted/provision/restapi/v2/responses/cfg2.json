@@ -1,0 +1,36 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/cfg2.yahoo.com",
+  "id": "cfg2.yahoo.com",
+  "state": "ready",
+  "type": "config",
+  "hostname": "cfg2.yahoo.com",
+  "openStackId": "cfg2",
+  "flavor": "default",
+  "canonicalFlavor": "default",
+  "minDiskAvailableGb": 400.0,
+  "minMainMemoryAvailableGb": 16.0,
+  "description": "Flavor-name-is-default",
+  "minCpuCores": 2.0,
+  "fastDisk": true,
+  "environment": "BARE_METAL",
+  "rebootGeneration": 1,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure": false,
+  "wantToRetire": false,
+  "wantToDeprovision": false,
+  "history": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "readied",
+      "at": 123,
+      "agent": "system"
+    }
+  ],
+  "ipAddresses": ["127.0.1.2"],
+  "additionalIpAddresses": []
+}

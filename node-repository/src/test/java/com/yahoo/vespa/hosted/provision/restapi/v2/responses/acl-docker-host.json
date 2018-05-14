@@ -1,21 +1,15 @@
 {
   "trustedNodes": [
     {
-      "hostname": "cfg1",
+      "hostname": "cfg1.yahoo.com",
       "type": "config",
-      "ipAddress": "(ignore)",
+      "ipAddress": "127.0.1.1",
       "trustedBy": "dockerhost1.yahoo.com"
     },
     {
-      "hostname": "cfg2",
+      "hostname": "cfg2.yahoo.com",
       "type": "config",
-      "ipAddress": "(ignore)",
-      "trustedBy": "dockerhost1.yahoo.com"
-    },
-    {
-      "hostname": "cfg3",
-      "type": "config",
-      "ipAddress": "(ignore)",
+      "ipAddress": "127.0.1.2",
       "trustedBy": "dockerhost1.yahoo.com"
     },
     {

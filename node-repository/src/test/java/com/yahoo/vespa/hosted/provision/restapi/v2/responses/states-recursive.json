@@ -9,7 +9,9 @@
     "ready": {
       "url": "http://localhost:8080/nodes/v2/state/ready",
       "nodes": [
-        @include(node3.json)
+        @include(node3.json),
+        @include(cfg1.json),
+        @include(cfg2.json)
       ]
     },
     "reserved": {

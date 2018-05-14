@@ -58,9 +58,9 @@ public class MockNodeRepository extends NodeRepository {
 
     private void populate() {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, flavors, Zone.defaultZone());
-
         List<Node> nodes = new ArrayList<>();
 
+        // Regular nodes
         final List<String> ipAddressesForAllHost = Arrays.asList("127.0.0.1", "::1");
         Collections.sort(ipAddressesForAllHost);
         final HashSet<String> ipAddresses = new HashSet<>(ipAddressesForAllHost);
@@ -100,6 +100,10 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(createNode("dockerhost3", "dockerhost3.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
         nodes.add(createNode("dockerhost4", "dockerhost4.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
         nodes.add(createNode("dockerhost5", "dockerhost5.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+
+        // Config servers
+        nodes.add(createNode("cfg1", "cfg1.yahoo.com", Collections.singleton("127.0.1.1"), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.config));
+        nodes.add(createNode("cfg2", "cfg2.yahoo.com", Collections.singleton("127.0.1.2"), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.config));
 
         nodes = addNodes(nodes);
         nodes.remove(6);

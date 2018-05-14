@@ -86,7 +86,7 @@ public class RestApiTest {
                         new byte[0], Request.Method.POST));
         assertReboot(2, new Request("http://localhost:8080/nodes/v2/command/reboot?application=tenant2.application2.instance2",
                         new byte[0], Request.Method.POST));
-        assertReboot(15, new Request("http://localhost:8080/nodes/v2/command/reboot",
+        assertReboot(17, new Request("http://localhost:8080/nodes/v2/command/reboot",
                         new byte[0], Request.Method.POST));
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"rebootGeneration\":4");
@@ -336,7 +336,7 @@ public class RestApiTest {
 
     @Test
     public void acl_request_by_config_server() throws Exception {
-        assertFile(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), "acl-config-server.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/acl/cfg1.yahoo.com"), "acl-config-server.json");
     }
 
     @Test

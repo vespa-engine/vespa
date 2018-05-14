@@ -40,8 +40,7 @@ public class NodeAclResponse extends HttpResponse {
 
     private void toSlime(String hostname, Cursor object) {
         Node node = nodeRepository.getNode(hostname)
-                .orElseGet(() -> nodeRepository.getConfigNode(hostname)
-                        .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'")));
+                .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
 
         List<NodeAcl> acls = nodeRepository.getNodeAcls(node, aclsForChildren);
 

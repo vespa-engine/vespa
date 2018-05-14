@@ -4,7 +4,13 @@
       "url": "http://localhost:8080/nodes/v2/node/host7.yahoo.com"
     },
     {
+      "url": "http://localhost:8080/nodes/v2/node/cfg1.yahoo.com"
+    },
+    {
       "url": "http://localhost:8080/nodes/v2/node/host3.yahoo.com"
+    },
+    {
+      "url": "http://localhost:8080/nodes/v2/node/cfg2.yahoo.com"
     },
     {
       "url": "http://localhost:8080/nodes/v2/node/host10.yahoo.com"
