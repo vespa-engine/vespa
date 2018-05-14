@@ -28,7 +28,12 @@ FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries)
         uint32_t rOfs = _out_pos;
         uint32_t rLen = (_in_pos - _out_pos);
 //TODO Rewrite to pure C++
+#pragma GCC diagnostic push
+#if __GNUC__ >= 8
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
         memcpy(newbuf + rOfs, _buf + rOfs, rLen * sizeof(_QElem));
+#pragma GCC diagnostic pop
     } else {                      // WRAPPED
         // BUFFER: |....................|
         // USED:   |######........######|
@@ -36,8 +41,13 @@ FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries)
 
         uint32_t r1Len = _in_pos;
         uint32_t r2Len = (oldsize - _out_pos);
+#pragma GCC diagnostic push
+#if __GNUC__ >= 8
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
         memcpy(newbuf, _buf, r1Len * sizeof(_QElem));
         memcpy(newbuf + _bufsize - r2Len, _buf + oldsize - r2Len, r2Len * sizeof(_QElem));
+#pragma GCC diagnostic pop
         _out_pos += _bufsize - oldsize;
     }
     free(_buf);
