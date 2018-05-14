@@ -57,9 +57,11 @@ sub findhost {
     my $tmp = $ENV{'VESPA_HOSTNAME'};
     if (!defined $tmp) {
         $tmp = `vespa-detect-hostname` or die "Could not detect hostname\n";
+        chomp $tmp;
     }
     system("vespa-validate-hostname $tmp");
     ( $? == 0 ) or die "Could not validate hostname\n";
+    return $tmp;
 }
 
 BEGIN {
