@@ -228,24 +228,6 @@ public class VdsStreamingSearcherTestCase {
     }
 
     @Test
-    public void testTrivialitiesToIncreaseCoverage() {
-        VdsStreamingSearcher searcher = new VdsStreamingSearcher();
-
-        assertNull(searcher.getSearchClusterConfigId());
-        String searchClusterConfigId = "searchClusterConfigId";
-        searcher.setSearchClusterConfigId(searchClusterConfigId);
-        assertEquals(searchClusterConfigId, searcher.getSearchClusterConfigId());
-
-        assertNull(searcher.getStorageClusterRouteSpec());
-        String storageClusterRouteSpec = "storageClusterRouteSpec";
-        searcher.setStorageClusterRouteSpec(storageClusterRouteSpec);
-        assertEquals(storageClusterRouteSpec, searcher.getStorageClusterRouteSpec());
-
-        Pong pong = searcher.ping(new Ping(), new Execution(new Execution.Context(null, null, null, null, null)));
-        assertEquals(0, pong.getErrorSize());
-    }
-
-    @Test
     public void testVerifyDocId() {
         Query generalQuery = new Query("/?streaming.selection=true&query=test");
         Query user1Query = new Query("/?streaming.userid=1&query=test");
