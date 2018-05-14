@@ -198,6 +198,7 @@ public class AthenzCredentialsMaintainer {
             throw new UncheckedIOException(e);
         } catch (Exception e) {
             // TODO Change close() in ZtsClient to not throw checked exception
+            throw new RuntimeException(e);
         }
     }
 
@@ -223,6 +224,7 @@ public class AthenzCredentialsMaintainer {
             throw new UncheckedIOException(e);
         } catch (Exception e) {
             // TODO Change close() in ZtsClient to not throw checked exception
+            throw new RuntimeException(e);
         }
     }
 
