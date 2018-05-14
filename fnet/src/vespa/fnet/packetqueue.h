@@ -28,11 +28,6 @@ protected:
     {
         FNET_Packet  *_packet;
         FNET_Context  _context;
-    protected:
-        _QElem() : _packet(nullptr), _context() {}
-    private:
-        _QElem(const _QElem &);
-        _QElem &operator=(const _QElem &);
     };
 #endif // DOXYGEN
 
