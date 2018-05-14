@@ -76,13 +76,6 @@ public class SessionHandler extends HttpHandler {
         return new DeployHandlerLogger(deployLog.get().setArray("log"), verbose, app);
     }
 
-    // TODO: Refactor to use the one in ApplicationRepository and remove
-    protected Slime createDeployLog() {
-        Slime deployLog = new Slime();
-        deployLog.setObject();
-        return deployLog;
-    }
-
     protected static boolean shouldIgnoreLockFailure(HttpRequest request) {
         return request.getBooleanProperty("force");
     }

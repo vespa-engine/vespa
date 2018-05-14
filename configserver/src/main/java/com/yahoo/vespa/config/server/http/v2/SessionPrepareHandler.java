@@ -52,7 +52,7 @@ public class SessionPrepareHandler extends SessionHandler {
         long sessionId = getSessionIdV2(request);
         applicationRepository.validateThatRemoteSessionIsNotActive(tenant, sessionId);
         applicationRepository.validateThatRemoteSessionIsPrepared(tenant, sessionId);
-        return new SessionPrepareResponse(createDeployLog(), tenant.getName(), request, sessionId);
+        return new SessionPrepareResponse(applicationRepository.createDeployLog(), tenant.getName(), request, sessionId);
     }
 
     @Override

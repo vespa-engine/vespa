@@ -484,7 +484,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private Slime createDeployLog() {
+    public Slime createDeployLog() {
         Slime deployLog = new Slime();
         deployLog.setObject();
         return deployLog;
