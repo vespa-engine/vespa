@@ -1,64 +1,16 @@
 #!/usr/bin/env perl
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-# BEGIN perl environment bootstrap section
-# Do not edit between here and END as this section should stay identical in all scripts
-
-use File::Basename;
-use File::Path;
-
-sub findpath {
-    my $myfullname = ${0};
-    my($myname, $mypath) = fileparse($myfullname);
-
-    return $mypath if ( $mypath && -d $mypath );
-    $mypath=`pwd`;
-
-    my $pwdfullname = $mypath . "/" . $myname;
-    return $mypath if ( -f $pwdfullname );
-    return 0;
-}
-
-# Returns the argument path if it seems to point to VESPA_HOME, 0 otherwise
-sub is_vespa_home {
-    my($VESPA_HOME) = shift;
-    my $COMMON_ENV="libexec/vespa/common-env.sh";
-    if ( $VESPA_HOME && -d $VESPA_HOME ) {
-        my $common_env = $VESPA_HOME . "/" . $COMMON_ENV;
-        return $VESPA_HOME if -f $common_env;
-    }
-    return 0;
-}
-
-# Returns the home of Vespa, or dies if it cannot
 sub findhome {
     # Try the VESPA_HOME env variable
-    return $ENV{'VESPA_HOME'} if is_vespa_home($ENV{'VESPA_HOME'});
-    if ( $ENV{'VESPA_HOME'} ) { # was set, but not correctly
-        die "FATAL: bad VESPA_HOME value '" . $ENV{'VESPA_HOME'} . "'\n";
+    return $ENV{'VESPA_HOME'} if defined $ENV{'VESPA_HOME'};
+    if ( $0 =~ m{(.*)/bin[^/]*/[^/]*logfmt[^/]*$} ) {
+        return $1;
     }
-
-    # Try the ROOT env variable
-    $ROOT = $ENV{'ROOT'};
-    return $ROOT if is_vespa_home($ROOT);
-
-    # Try the script location or current dir
-    my $mypath = findpath();
-    if ($mypath) {
-        while ( $mypath =~ s|/[^/]*$|| ) {
-            return $mypath if is_vespa_home($mypath);
-        }
-    }
-    die "FATAL: Missing VESPA_HOME environment variable\n";
+    return "/opt/vespa";
 }
 
-BEGIN {
-    my $tmp = findhome();
-    $ENV{'VESPA_HOME'} = $tmp;
-}
-my $VESPA_HOME = $ENV{'VESPA_HOME'};
-
-# END perl environment bootstrap section
+my $VESPA_HOME = findhome();
 
 use 5.006_001;
 use strict;
