@@ -137,6 +137,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.loadBalancerAddress().isPresent()) {
             builder.loadBalancerAddress(options.loadBalancerAddress().get());
         }
+        options.athenzDnsSuffix().ifPresent(builder::athenzDnsSuffix);
+        options.ztsUrl().ifPresent(builder::ztsUrl);
     }
 
     private String[] getConfigModelPluginDirs() {

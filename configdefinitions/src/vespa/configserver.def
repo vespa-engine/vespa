@@ -45,6 +45,8 @@ payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
 
 # Athenz config
 loadBalancerAddress string default=""
+athenzDnsSuffix string default=""
+ztsUrl string default=""
 
 # Node admin
 nodeAdminInContainer bool default=true
