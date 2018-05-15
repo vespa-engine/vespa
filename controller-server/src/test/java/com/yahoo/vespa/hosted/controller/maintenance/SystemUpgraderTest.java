@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
@@ -70,6 +71,8 @@ public class SystemUpgraderTest {
         tester.systemUpgrader().maintain();
         assertWantedVersion(SystemApplication.zone, version2, zone1);
         completeUpgrade(SystemApplication.zone, version2, zone1);
+        assertTrue("Deployed zone application",
+                   tester.configServer().application(SystemApplication.zone.id()).isPresent());
 
         // zone 2, 3 and 4: still targets old version
         assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3, zone4);

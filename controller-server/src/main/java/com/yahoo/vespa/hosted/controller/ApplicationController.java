@@ -341,16 +341,16 @@ public class ApplicationController {
 
     /** Deploy a system application to given zone */
     public void deploy(SystemApplication application, ZoneId zone, Version version) {
-        if (!application.hasApplicationPackage()) {
+        if (application.hasApplicationPackage()) {
+            ApplicationPackage applicationPackage = new ApplicationPackage(
+                    artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
+            );
+            DeployOptions options = withVersion(version, DeployOptions.none());
+            deploy(application.id(), applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
+        } else {
             // Deploy by calling node repository directly
             configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
-            return;
         }
-        ApplicationPackage applicationPackage = new ApplicationPackage(
-                artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
-        );
-        DeployOptions options = withVersion(version, DeployOptions.none());
-        deploy(application.id(), applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
