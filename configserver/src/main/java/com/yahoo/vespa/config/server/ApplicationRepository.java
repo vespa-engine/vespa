@@ -152,8 +152,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
         File tempDir = Files.createTempDir();
+        return deploy(decompressApplication(in, tempDir), prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
+    }
+
+    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
+        return deploy(applicationPackage, prepareParams, false, false, Instant.now());
+    }
+
+    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams,
+                                boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
+        File tempDir = Files.createTempDir();
         ApplicationId applicationId = prepareParams.getApplicationId();
-        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), decompressApplication(in, tempDir));
+        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         cleanupApplicationDirectory(tempDir, logger);
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         return prepareAndActivate(tenant, sessionId, prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
