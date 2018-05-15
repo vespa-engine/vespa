@@ -86,6 +86,13 @@ public class CuratorDb {
 
     // -------------- Locks ---------------------------------------------------
 
+    /** Create a reentrant lock */
+    private Lock lock(Path path, Duration timeout) {
+        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
+        lock.acquire(timeout);
+        return lock;
+    }
+
     public Lock lock(TenantName name, Duration timeout) {
         return lock(lockPath(name), timeout);
     }
@@ -98,11 +105,8 @@ public class CuratorDb {
         return lock(lockRoot.append("rotations"), defaultLockTimeout);
     }
 
-    /** Create a reentrant lock */
-    private Lock lock(Path path, Duration timeout) {
-        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
-        lock.acquire(timeout);
-        return lock;
+    public Lock lockConfidenceOverrides() {
+        return lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
     }
 
     public Lock lockInactiveJobs() {

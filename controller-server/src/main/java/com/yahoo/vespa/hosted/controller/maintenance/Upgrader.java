@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -131,9 +132,11 @@ public class Upgrader extends Maintainer {
 
     /** Override confidence for given version. This will cause the computed confidence to be ignored */
     public void overrideConfidence(Version version, Confidence confidence) {
-        Map<Version, Confidence> overrides = new LinkedHashMap<>(curator.readConfidenceOverrides());
-        overrides.put(version, confidence);
-        curator.writeConfidenceOverrides(overrides);
+        try (Lock lock = curator.lockConfidenceOverrides()) {
+            Map<Version, Confidence> overrides = new LinkedHashMap<>(curator.readConfidenceOverrides());
+            overrides.put(version, confidence);
+            curator.writeConfidenceOverrides(overrides);
+        }
     }
 
     /** Returns all confidence overrides */

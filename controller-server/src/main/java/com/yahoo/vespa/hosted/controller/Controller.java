@@ -9,6 +9,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -193,9 +194,11 @@ public class Controller extends AbstractComponent {
 
     /** Remove confidence override for versions matching given filter */
     public void removeConfidenceOverride(Predicate<Version> filter) {
-        Map<Version, VespaVersion.Confidence> overrides = new LinkedHashMap<>(curator().readConfidenceOverrides());
-        overrides.keySet().removeIf(filter);
-        curator.writeConfidenceOverrides(overrides);
+        try (Lock lock = curator.lockConfidenceOverrides()) {
+            Map<Version, VespaVersion.Confidence> overrides = new LinkedHashMap<>(curator.readConfidenceOverrides());
+            overrides.keySet().removeIf(filter);
+            curator.writeConfidenceOverrides(overrides);
+        }
     }
     
     /** Returns the current system version: The controller should drive towards running all applications on this version */
