@@ -100,7 +100,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
         } catch (WebApplicationException e) {
             int statusCode = e.getResponse().getStatus();
             String errorMessage = e.getMessage();
-            log.log(LogLevel.WARNING, String.format("Access denied(%d): %s", statusCode, errorMessage), e);
+            log.log(LogLevel.WARNING, String.format("Access denied (%d): %s", statusCode, errorMessage));
             return Optional.of(new ErrorResponse(statusCode, errorMessage));
         }
     }
