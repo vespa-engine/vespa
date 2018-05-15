@@ -6,6 +6,7 @@ import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * @author bjorncs
@@ -128,7 +129,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     }
 
     static ConfigServer[] toConfigServers(String configserversString) {
-        return Arrays.stream(configserversString.split(",|\\s+"))
+        return multiValueParameterStream(configserversString)
                 .map(CloudConfigInstallVariables::toConfigServer)
                 .toArray(ConfigServer[]::new);
     }
@@ -147,7 +148,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     }
 
     static String[] toConfigModelsPluginDir(String configModelsPluginDirString) {
-        return configModelsPluginDirString.split(",|\\s+");
+        return multiValueParameterStream(configModelsPluginDirString).toArray(String[]::new);
     }
 
     private static Optional<String> getInstallVariable(String name) {
@@ -166,5 +167,9 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
         return Optional.ofNullable(
                 Optional.ofNullable(System.getenv(name.replace(".", "__")))
                         .orElseGet(() -> System.getProperty(name)));
+    }
+
+    private static Stream<String> multiValueParameterStream(String param) {
+        return Arrays.stream(param.split("[, ]")).filter(value -> !value.isEmpty());
     }
 }
