@@ -118,6 +118,9 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             using DocIdPartitions = std::vector<DocIdPartition::UP>;
             using UP = std::unique_ptr<RankProfileMetrics>;
 
+            metrics::LongCountMetric     docsMatched;
+            metrics::LongCountMetric     docsRanked;
+            metrics::LongCountMetric     docsReRanked;
             metrics::LongCountMetric     queries;
             metrics::LongCountMetric     limitedQueries;
             metrics::DoubleAverageMetric matchTime;
