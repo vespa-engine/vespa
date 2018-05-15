@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Version;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +21,8 @@ public class DeployProperties {
     private final ApplicationId applicationId;
     private final List<ConfigServerSpec> serverSpecs = new ArrayList<>();
     private final HostName loadBalancerName;
+    private final URI ztsUrl;
+    private final String athenzDnsSuffix;
     private final boolean hostedVespa;
     private final Version vespaVersion;
 
@@ -28,8 +31,12 @@ public class DeployProperties {
                              List<ConfigServerSpec> configServerSpecs,
                              HostName loadBalancerName,
                              boolean hostedVespa,
+                             URI ztsUrl,
+                             String athenzDnsSuffix,
                              Version vespaVersion) {
         this.loadBalancerName = loadBalancerName;
+        this.ztsUrl = ztsUrl;
+        this.athenzDnsSuffix = athenzDnsSuffix;
         this.vespaVersion = vespaVersion;
         this.multitenant = multitenant || hostedVespa || Boolean.getBoolean("multitenant");
         this.applicationId = applicationId;
@@ -54,6 +61,14 @@ public class DeployProperties {
         return loadBalancerName;
     }
 
+    public URI ztsUrl() {
+        return ztsUrl;
+    }
+
+    public String athenzDnsSuffix() {
+        return athenzDnsSuffix;
+    }
+
     public boolean hostedVespa() {
         return hostedVespa;
     }
@@ -69,6 +84,8 @@ public class DeployProperties {
         private boolean multitenant = false;
         private List<ConfigServerSpec> configServerSpecs = new ArrayList<>();
         private HostName loadBalancerName;
+        private URI ztsUrl;
+        private String athenzDnsSuffix;
         private boolean hostedVespa = false;
         private Version vespaVersion = Version.fromIntValues(1, 0, 0);
 
@@ -92,6 +109,16 @@ public class DeployProperties {
             return this;
         }
 
+        public Builder athenzDnsSuffix(String athenzDnsSuffix) {
+            this.athenzDnsSuffix = athenzDnsSuffix;
+            return this;
+        }
+
+        public Builder ztsUrl(URI ztsUrl) {
+            this.ztsUrl = ztsUrl;
+            return this;
+        }
+
         public Builder vespaVersion(Version version) {
             this.vespaVersion = version;
             return this;
@@ -103,7 +130,7 @@ public class DeployProperties {
         }
 
         public DeployProperties build() {
-            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa, vespaVersion);
+            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa, ztsUrl, athenzDnsSuffix, vespaVersion);
         }
     }
 

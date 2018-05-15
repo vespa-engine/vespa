@@ -44,7 +44,7 @@ public class AthenzIdentityProviderImplTest {
 
     private static final IdentityConfig IDENTITY_CONFIG =
             new IdentityConfig(new IdentityConfig.Builder()
-                                       .service("tenantService").domain("tenantDomain").loadBalancerAddress("cfg"));
+                                       .service("tenantService").domain("tenantDomain").loadBalancerAddress("cfg").ztsUrl("https:localhost:4443/zts/v1").athenzDnsSuffix("vespa.cloud"));
 
     @Test(expected = AthenzIdentityProviderException.class)
     public void component_creation_fails_when_credentials_not_found() {

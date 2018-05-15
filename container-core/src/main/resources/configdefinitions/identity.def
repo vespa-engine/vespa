@@ -4,3 +4,5 @@ namespace=container.core.identity
 domain string
 service string
 loadBalancerAddress string
+athenzDnsSuffix string
+ztsUrl string

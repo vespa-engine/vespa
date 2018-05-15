@@ -23,6 +23,7 @@ import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -205,6 +206,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                configserverConfig.multitenant(),
                                                ConfigServerSpec.fromConfig(configserverConfig),
                                                HostName.from(configserverConfig.loadBalancerAddress()),
+                                               configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null,
+                                               configserverConfig.athenzDnsSuffix(),
                                                configserverConfig.hostedVespa(),
                                                zone,
                                                rotations);

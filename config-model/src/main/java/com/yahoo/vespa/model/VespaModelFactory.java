@@ -148,6 +148,8 @@ public class VespaModelFactory implements ModelFactory {
                 .applicationId(properties.applicationId())
                 .configServerSpecs(properties.configServerSpecs())
                 .loadBalancerName(properties.loadBalancerName())
+                .ztsUrl(properties.ztsUrl())
+                .athenzDnsSuffix(properties.athenzDnsSuffix())
                 .multitenant(properties.multitenant())
                 .hostedVespa(properties.hostedVespa())
                 .vespaVersion(getVersion())

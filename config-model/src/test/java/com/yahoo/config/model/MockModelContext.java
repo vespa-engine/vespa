@@ -19,6 +19,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -101,6 +102,16 @@ public class MockModelContext implements ModelContext {
 
             @Override
             public HostName loadBalancerName() {
+                return null;
+            }
+
+            @Override
+            public URI ztsUrl() {
+                return null;
+            }
+
+            @Override
+            public String athenzDnsSuffix() {
                 return null;
             }
 

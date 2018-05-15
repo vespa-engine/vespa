@@ -16,6 +16,7 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
 import java.io.File;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -117,6 +118,8 @@ public class ModelContextImpl implements ModelContext {
         private final boolean multitenant;
         private final List<ConfigServerSpec> configServerSpecs;
         private final HostName loadBalancerName;
+        private final URI ztsUrl;
+        private final String athenzDnsSuffix;
         private final boolean hostedVespa;
         private final Zone zone;
         private final Set<Rotation> rotations;
@@ -125,6 +128,8 @@ public class ModelContextImpl implements ModelContext {
                           boolean multitenant,
                           List<ConfigServerSpec> configServerSpecs,
                           HostName loadBalancerName,
+                          URI ztsUrl,
+                          String athenzDnsSuffix,
                           boolean hostedVespa,
                           Zone zone,
                           Set<Rotation> rotations) {
@@ -132,6 +137,8 @@ public class ModelContextImpl implements ModelContext {
             this.multitenant = multitenant;
             this.configServerSpecs = configServerSpecs;
             this.loadBalancerName = loadBalancerName;
+            this.ztsUrl = ztsUrl;
+            this.athenzDnsSuffix = athenzDnsSuffix;
             this.hostedVespa = hostedVespa;
             this.zone = zone;
             this.rotations = rotations;
@@ -148,6 +155,16 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public HostName loadBalancerName() { return loadBalancerName; }
+
+        @Override
+        public URI ztsUrl() {
+            return ztsUrl;
+        }
+
+        @Override
+        public String athenzDnsSuffix() {
+            return athenzDnsSuffix;
+        }
 
         @Override
         public boolean hostedVespa() { return hostedVespa; }
