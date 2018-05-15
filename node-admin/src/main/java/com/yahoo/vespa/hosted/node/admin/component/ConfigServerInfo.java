@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.component;
 import com.google.common.base.Strings;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
 
@@ -25,11 +26,9 @@ import static java.util.stream.Collectors.toMap;
  */
 public class ConfigServerInfo {
     private final List<String> configServerHostNames;
+    private final URI loadBalancerEndpoint;
     private final Map<String, URI> configServerURIs;
-    private final Optional<KeyStoreOptions> keyStoreOptions;
-    private final Optional<KeyStoreOptions> trustStoreOptions;
-    private final Optional<AthenzIdentity> athenzIdentity;
-    private final Optional<ConfigServerConfig.Sia> siaConfig;
+    private final AthenzService configServerIdentity;
 
     public ConfigServerInfo(ConfigServerConfig config) {
         this.configServerHostNames = config.hosts();
@@ -37,18 +36,12 @@ public class ConfigServerInfo {
                 config.scheme(),
                 config.hosts(),
                 config.port());
-        this.keyStoreOptions = createKeyStoreOptions(
-                config.keyStoreConfig().path(),
-                config.keyStoreConfig().password().toCharArray(),
-                config.keyStoreConfig().type().name());
-        this.trustStoreOptions = createKeyStoreOptions(
-                config.trustStoreConfig().path(),
-                config.trustStoreConfig().password().toCharArray(),
-                config.trustStoreConfig().type().name());
-        this.athenzIdentity = createAthenzIdentity(
-                config.athenzDomain(),
-                config.serviceName());
-        this.siaConfig = verifySiaConfig(config.sia());
+        this.loadBalancerEndpoint = createLoadBalancerEndpoint(config.loadBalancerHost(), config.scheme(), config.port());
+        this.configServerIdentity = (AthenzService) AthenzIdentities.from(config.configserverAthenzIdentity());
+    }
+
+    private static URI createLoadBalancerEndpoint(String loadBalancerHost, String scheme, int port) {
+        return URI.create(scheme + "://" + loadBalancerHost + ":" + port);
     }
 
     public List<String> getConfigServerHostNames() {
@@ -68,20 +61,12 @@ public class ConfigServerInfo {
         return uri;
     }
 
-    public Optional<KeyStoreOptions> getKeyStoreOptions() {
-        return keyStoreOptions;
+    public URI getLoadBalancerEndpoint() {
+        return loadBalancerEndpoint;
     }
 
-    public Optional<KeyStoreOptions> getTrustStoreOptions() {
-        return trustStoreOptions;
-    }
-
-    public Optional<AthenzIdentity> getAthenzIdentity() {
-        return athenzIdentity;
-    }
-
-    public Optional<ConfigServerConfig.Sia> getSiaConfig() {
-        return siaConfig;
+    public AthenzService getConfigServerIdentity() {
+        return configServerIdentity;
     }
 
     private static Map<String, URI> createConfigServerUris(
@@ -93,26 +78,4 @@ public class ConfigServerInfo {
                 hostname -> URI.create(scheme + "://" + hostname + ":" + port)));
     }
 
-    private static Optional<ConfigServerConfig.Sia> verifySiaConfig(ConfigServerConfig.Sia sia) {
-        List<String> configParams = Arrays.asList(
-                sia.credentialsPath(), sia.configserverIdentityName(), sia.hostIdentityName(), sia.trustStoreFile());
-        if (configParams.stream().allMatch(String::isEmpty)) {
-            return Optional.empty();
-        } else if (configParams.stream().noneMatch(String::isEmpty)) {
-            return Optional.of(sia);
-        } else {
-            throw new IllegalArgumentException("Inconsistent sia config: " + sia);
-        }
-    }
-
-    private static Optional<KeyStoreOptions> createKeyStoreOptions(String pathToKeyStore, char[] password, String type) {
-        return Optional.ofNullable(pathToKeyStore)
-                .filter(path -> !Strings.isNullOrEmpty(path))
-                .map(path -> new KeyStoreOptions(Paths.get(path), password, type));
-    }
-
-    private static Optional<AthenzIdentity> createAthenzIdentity(String athenzDomain, String serviceName) {
-        if (Strings.isNullOrEmpty(athenzDomain) || Strings.isNullOrEmpty(serviceName)) return Optional.empty();
-        return Optional.of(new AthenzService(athenzDomain, serviceName));
-    }
 }

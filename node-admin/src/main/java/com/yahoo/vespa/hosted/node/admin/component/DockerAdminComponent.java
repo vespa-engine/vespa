@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
@@ -125,7 +126,8 @@ public class DockerAdminComponent implements AdminComponent {
                 aclMaintainer,
                 environment.get(),
                 clock,
-                NODE_AGENT_SCAN_INTERVAL);
+                NODE_AGENT_SCAN_INTERVAL,
+                new AthenzCredentialsMaintainer(hostName, environment.get(), identityProvider));
 
         NodeAdmin nodeAdmin = new NodeAdminImpl(
                 dockerOperations,
