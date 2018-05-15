@@ -61,10 +61,7 @@ public class RealNodeRepository implements NodeRepository {
         try {
             NodeRepositoryNode nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
                     NodeRepositoryNode.class);
-            if (nodeResponse == null) {
-                return Optional.empty();
-            }
-            return Optional.of(createNodeSpec(nodeResponse));
+            return Optional.ofNullable(nodeResponse).map(RealNodeRepository::createNodeSpec);
         } catch (HttpException.NotFoundException | HttpException.ForbiddenException e) {
             // Return empty on 403 in addition to 404 as it likely means we're trying to access a node that
             // has been deleted. When a node is deleted, the parent-child relationship no longer exists and
@@ -94,7 +91,6 @@ public class RealNodeRepository implements NodeRepository {
                     .collect(Collectors.groupingBy(
                             GetAclResponse.Node::getTrustedBy,
                             Collectors.mapping(node -> InetAddresses.forString(node.ipAddress), Collectors.toList())));
-
 
             // For each hostname create an ACL
             return Stream.of(trustedNodes.keySet(), trustedPorts.keySet())
@@ -131,10 +127,9 @@ public class RealNodeRepository implements NodeRepository {
                 NodeMessageResponse.class);
         NODE_ADMIN_LOGGER.info(response.message);
 
-        if (response.errorCode == null || response.errorCode.isEmpty()) {
-            return;
+        if (!Strings.isNullOrEmpty(response.errorCode)) {
+            throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
         }
-        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
     }
 
 
@@ -153,16 +148,10 @@ public class RealNodeRepository implements NodeRepository {
 
         String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
 
-        NodeSpec.Owner owner = null;
-        if (node.owner != null) {
-            owner = new NodeSpec.Owner(node.owner.tenant, node.owner.application, node.owner.instance);
-        }
-
-        NodeSpec.Membership membership = null;
-        if (node.membership != null) {
-            membership = new NodeSpec.Membership(node.membership.clusterType, node.membership.clusterId,
-                    node.membership.group, node.membership.index, node.membership.retired);
-        }
+        Optional<NodeSpec.Owner> owner = Optional.ofNullable(node.owner)
+                .map(o -> new NodeSpec.Owner(o.tenant, o.application, o.instance));
+        Optional<NodeSpec.Membership> membership = Optional.ofNullable(node.membership)
+                .map(m -> new NodeSpec.Membership(m.clusterType, m.clusterId, m.group, m.index, m.retired));
 
         return new NodeSpec(
                 hostName,
@@ -175,8 +164,8 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedVespaVersion),
                 Optional.ofNullable(node.vespaVersion),
                 Optional.ofNullable(node.allowedToBeDown),
-                Optional.ofNullable(owner),
-                Optional.ofNullable(membership),
+                owner,
+                membership,
                 Optional.ofNullable(node.restartGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
                 node.rebootGeneration,

@@ -4,10 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
-import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import org.apache.http.HttpHeaders;
@@ -19,12 +16,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -45,23 +40,15 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerApiImpl.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
-
     private final List<URI> configServers;
+    private final AthenzServiceIdentityHttpClient client;
 
     private Runnable runOnClose = () -> {};
-
-    /**
-     * The 'client' may be periodically re-created through calls to setSSLConnectionSocketFactory.
-     *
-     * The 'client' reference must be volatile because it is set and read in different threads, and visibility
-     * of changes is only guaranteed for volatile variables.
-     */
-    private volatile SelfCloseableHttpClient client;
 
     public static ConfigServerApiImpl create(ConfigServerInfo info, SiaIdentityProvider provider) {
         return new ConfigServerApiImpl(
                 info.getConfigServerUris(),
-                new AthenzIdentityVerifier(singleton(info.getAthenzIdentity().get())),
+                new AthenzServiceIdentityHttpClient(provider, singleton(info.getAthenzIdentity().get())),
                 provider);
     }
 
@@ -70,36 +57,31 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                                                 HostName configServerHostname) {
         return new ConfigServerApiImpl(
                 Collections.singleton(info.getConfigServerUri(configServerHostname.value())),
-                new AthenzIdentityVerifier(singleton(info.getAthenzIdentity().get())),
+                new AthenzServiceIdentityHttpClient(provider, singleton(info.getAthenzIdentity().get())),
                 provider);
     }
 
     private ConfigServerApiImpl(Collection<URI> configServers,
-                                HostnameVerifier verifier,
+                                AthenzServiceIdentityHttpClient client,
                                 SiaIdentityProvider identityProvider) {
-        this(configServers, createClient(identityProvider.getIdentitySslContext(), verifier));
+        this(configServers, client);
 
         // Register callback for updates to the SSLContext
-        ServiceIdentityProvider.Listener listener = (SSLContext sslContext, AthenzService identity) -> {
-            this.client = createClient(sslContext, verifier);
-        };
-        identityProvider.addIdentityListener(listener);
-        this.runOnClose = () -> identityProvider.removeIdentityListener(listener);
+        identityProvider.addIdentityListener(this.client);
+        this.runOnClose = () -> identityProvider.removeIdentityListener(this.client);
     }
 
-    private ConfigServerApiImpl(Collection<URI> configServers, SelfCloseableHttpClient client) {
+    private ConfigServerApiImpl(Collection<URI> configServers, AthenzServiceIdentityHttpClient client) {
         this.configServers = randomizeConfigServerUris(configServers);
         this.client = client;
     }
 
-    public static ConfigServerApiImpl createForTestingWithSocketFactory(
-            List<URI> configServerHosts,
-            SSLConnectionSocketFactory socketFactory) {
-        return new ConfigServerApiImpl(configServerHosts, new SelfCloseableHttpClient(socketFactory));
+    public static ConfigServerApiImpl createForTesting(List<URI> configServerHosts) {
+        return createForTestingWithClient(configServerHosts, new AthenzServiceIdentityHttpClient(Collections.emptySet()));
     }
 
     static ConfigServerApiImpl createForTestingWithClient(List<URI> configServerHosts,
-                                                          SelfCloseableHttpClient client) {
+                                                          AthenzServiceIdentityHttpClient client) {
         return new ConfigServerApiImpl(configServerHosts, client);
     }
 
@@ -198,18 +180,16 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     @Override
     public void close() {
-        runOnClose.run();
-        client.close();
+        try {
+            runOnClose.run();
+            client.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private void setContentTypeToApplicationJson(HttpRequestBase request) {
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-    }
-
-    private static SelfCloseableHttpClient createClient(
-            SSLContext sslContext, HostnameVerifier configServerVerifier) {
-        return new SelfCloseableHttpClient(
-                new SSLConnectionSocketFactory(sslContext, configServerVerifier));
     }
 
     // Shuffle config server URIs to balance load

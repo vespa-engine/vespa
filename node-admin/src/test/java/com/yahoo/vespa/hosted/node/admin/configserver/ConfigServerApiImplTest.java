@@ -54,7 +54,7 @@ public class ConfigServerApiImplTest {
 
     @Before
     public void initExecutor() throws IOException {
-        SelfCloseableHttpClient httpMock = mock(SelfCloseableHttpClient.class);
+        AthenzServiceIdentityHttpClient httpMock = mock(AthenzServiceIdentityHttpClient.class);
         when(httpMock.execute(any())).thenAnswer(invocationOnMock -> {
             HttpGet get = (HttpGet) invocationOnMock.getArguments()[0];
             mockLog.append(get.getMethod()).append(" ").append(get.getURI()).append("  ");
