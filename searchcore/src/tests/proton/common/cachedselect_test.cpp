@@ -474,95 +474,42 @@ TEST_F("Test that basic select works", TestFixture)
     CachedSelect::SP cs;
 
     cs = f.testParse("test.ia == \"hello\"", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(0u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::False));
     
     cs = f.testParse("test.ia.foo == \"hello\"", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_TRUE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
-    EXPECT_EQUAL(0u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia[2] == \"hello\"", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_TRUE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
-    EXPECT_EQUAL(0u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia{foo} == \"hello\"", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_TRUE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
-    EXPECT_EQUAL(0u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia < \"hello\"", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(0u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa == 3", "test");
-    EXPECT_TRUE(cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(1u, cs->attrFieldNodes());
-    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::False));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::False));
-    TEST_DO(checkSelect(cs, 1u, Result::False));
-    TEST_DO(checkSelect(cs, 2u, Result::True));
-    TEST_DO(checkSelect(cs, 3u, Result::False));
-    TEST_DO(checkSelect(cs, 4u, Result::False));
-
-    cs = f.testParse("test.aa == 3", "test");
-    EXPECT_TRUE(cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(1u, cs->attrFieldNodes());
-    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::False));
@@ -573,70 +520,34 @@ TEST_F("Test that basic select works", TestFixture)
     TEST_DO(checkSelect(cs, 4u, Result::False));
 
     cs = f.testParse("test.aa.foo == 3", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_TRUE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
-    EXPECT_EQUAL(0u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa[2] == 3", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_TRUE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
-    EXPECT_EQUAL(0u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa{4} > 3", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_TRUE(cs->allInvalid());
-    EXPECT_EQUAL(0u, cs->fieldNodes());
-    EXPECT_EQUAL(0u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().allInvalid(), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
     TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aaa[2] == 3", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(1u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs));
 
     cs = f.testParse("test.aaw{4} > 3", "test");
-    EXPECT_TRUE(!cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(1u, cs->attrFieldNodes());
-    EXPECT_EQUAL(0u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs));
 
     cs = f.testParse("test.aa < 45", "test");
-    EXPECT_TRUE(cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(1u, cs->attrFieldNodes());
-    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
     TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
     TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
     TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
@@ -648,7 +559,7 @@ TEST_F("Test that basic select works", TestFixture)
 
     MyIntAv *v = f._amgr.getAsMyIntAttribute("aa");
     EXPECT_TRUE(v != nullptr);
-    EXPECT_EQUAL(12u, v->getGets());
+    EXPECT_EQUAL(8u, v->getGets());
 }
 
 struct PreDocSelectFixture : public TestFixture {
@@ -698,13 +609,8 @@ TEST_F("Test performance when using attributes", TestFixture)
     
     CachedSelect::SP cs;
     cs = f.testParse("test.aa < 45", "test");
-    EXPECT_TRUE(cs->preDocOnlySelect());
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
-    EXPECT_EQUAL(1u, cs->fieldNodes());
-    EXPECT_EQUAL(1u, cs->attrFieldNodes());
-    EXPECT_EQUAL(1u, cs->svAttrFieldNodes());
+    TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
+
     SelectContext ctx(*cs);
     ctx.getAttributeGuards();
     const NodeUP &sel(cs->preDocOnlySelect());
@@ -739,6 +645,6 @@ TEST_F("Test performance when using attributes", TestFixture)
 }
 
 
-}  // namespace
+}
 
 TEST_MAIN() { TEST_RUN_ALL(); }
