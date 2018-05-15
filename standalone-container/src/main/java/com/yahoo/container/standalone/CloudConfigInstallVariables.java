@@ -25,15 +25,11 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public ConfigServer[] allConfigServers() {
-        String newVar = System.getenv("VESPA_CONFIGSERVERS");
-        if (newVar != null && !newVar.isEmpty()) {
-            return toConfigServers(newVar);
-        }
-        String oldVar = getRawInstallVariable("services.addr_configserver").orElse(null);
-        if (oldVar != null && !oldVar.isEmpty()) {
-            return toConfigServers(oldVar);
-        }
-        return new ConfigServer[0];
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVERS"))
+                .map(Optional::of) // TODO Rewrite Optional.or() with Java 9
+                .orElseGet(() -> getRawInstallVariable("services.addr_configserver"))
+                .map(CloudConfigInstallVariables::toConfigServers)
+                .orElseGet(() -> new ConfigServer[0]);
     }
 
     @Override
