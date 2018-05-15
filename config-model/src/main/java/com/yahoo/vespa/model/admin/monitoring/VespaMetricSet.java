@@ -218,7 +218,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.job.lid_space_compact.average"));
         metrics.add(new Metric("content.proton.documentdb.job.removed_documents_prune.average"));
 
-	// Threading service
+        // Threading service
         metrics.add(new Metric("content.proton.documentdb.threading_service.master.maxpending.last"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.index.maxpending.last"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.summary.maxpending.last"));
@@ -291,6 +291,16 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.index.memory_usage.used_bytes.average"));
         metrics.add(new Metric("content.proton.documentdb.index.memory_usage.dead_bytes.average"));
         metrics.add(new Metric("content.proton.documentdb.index.memory_usage.onhold_bytes.average"));
+
+        // matching
+        metrics.add(new Metric("content.proton.documentdb.matching.queries.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.query_latency.average"));
+        metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.average"));
+        metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.average"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.queries.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.average"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.average"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.docs_matched.average"));
 
         return metrics;
     }
