@@ -180,7 +180,7 @@ public class NodeRepository extends AbstractComponent {
         // - nodes in same application
         // - config servers
         node.allocation().ifPresent(allocation -> trustedNodes.addAll(candidates.owner(allocation.owner()).asList()));
-        trustedNodes.addAll(candidates.configServers().asList());
+        trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
 
         switch (node.type()) {
             case tenant:

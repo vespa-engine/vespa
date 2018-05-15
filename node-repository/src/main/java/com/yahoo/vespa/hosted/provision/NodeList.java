@@ -87,12 +87,6 @@ public class NodeList {
                     .collect(collectingAndThen(Collectors.toList(), NodeList::new));
     }
 
-    public NodeList configServers() {
-        return nodes.stream()
-                .filter(node -> node.type() == NodeType.config)
-                .collect(collectingAndThen(Collectors.toList(), NodeList::new));
-    }
-
     public int size() { return nodes.size(); }
 
     /** Returns the immutable list of nodes in this */
