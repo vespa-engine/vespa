@@ -97,7 +97,7 @@ public class DeploymentTrigger {
      * trigger next.
      */
     public void notifyOfCompletion(JobReport report) {
-        log.log(LogLevel.INFO, String.format("Notified of %s for %s of %s (%d).",
+        log.log(LogLevel.INFO, String.format("Notified of %s for %s of %s (%d)",
                                              report.jobError().map(e -> e.toString() + " error")
                                                    .orElse("success"),
                                              report.jobType(),
