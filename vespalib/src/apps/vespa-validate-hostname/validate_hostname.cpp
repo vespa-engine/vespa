@@ -19,7 +19,7 @@ std::set<vespalib::string> make_ip_set() {
 vespalib::string normalize(const vespalib::string &hostname) {
     vespalib::string canon_name = SocketAddress::normalize(hostname);
     if (canon_name != hostname) {
-        fprintf(stderr, "warning: host name (%s) is not canonical (canonical host name: %s)\n",
+        fprintf(stderr, "warning: hostname validation: '%s' is not same as canonical hostname '%s'\n",
                 hostname.c_str(), canon_name.c_str());
     }
     return canon_name;
@@ -31,7 +31,7 @@ void check_reverse(const vespalib::string &hostname, const SocketAddress &addr) 
     for (size_t i = 0; !reverse.empty() && (i < 10); ++i) {
         if (seen.count(reverse) == 0) {
             seen.insert(reverse);
-            fprintf(stderr, "warning: conflicting reverse lookup: %s->%s->%s\n",
+            fprintf(stderr, "warning: hostname validation: found conflicting reverse lookup: '%s' -> %s -> '%s'\n",
                     hostname.c_str(), addr.ip_address().c_str(), reverse.c_str());
         }
         reverse = addr.reverse_lookup();
@@ -53,14 +53,14 @@ int main(int argc, char **argv) {
     auto addr_list = SocketAddress::resolve(80, hostname.c_str());
     if (addr_list.empty()) {
         valid = false;
-        fprintf(stderr, "ERROR: host name (%s) could not be resolved\n",
+        fprintf(stderr, "FATAL: hostname validation failed: '%s' could not be resolved\n",
                 hostname.c_str());
     }
     for (const SocketAddress &addr: addr_list) {
         vespalib::string ip_addr = addr.ip_address();
         if (my_ip_set.count(ip_addr) == 0) {
             valid = false;
-            fprintf(stderr, "ERROR: host name (%s) resolves to ip address not owned by this host (%s)\n",
+            fprintf(stderr, "FATAL: hostname validation failed: '%s' resolves to ip address not owned by this host (%s)\n",
                     hostname.c_str(), ip_addr.c_str());
         } else {
             check_reverse(hostname, addr);

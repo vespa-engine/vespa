@@ -45,6 +45,7 @@ int main(int, char **) {
             return 0;
         }
     }
-    fprintf(stderr, "ERROR: failed to detect hostname\n");
+    fprintf(stderr, "FATAL: hostname detection failed\n");
+    // XXX we should explain why it failed
     return 1;
 }
