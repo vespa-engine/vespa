@@ -18,6 +18,7 @@ namespace search {
 namespace proton {
 
 class SelectContext;
+class SelectPruner;
 
 /**
  * Cached selection expression, to avoid pruning expression for each
@@ -30,14 +31,17 @@ public:
 
     class Session {
     private:
-        std::unique_ptr<document::select::Node> _select;
-        bool _isAttrSelect;
+        std::unique_ptr<document::select::Node> _docSelect;
+        std::unique_ptr<document::select::Node> _preDocOnlySelect;
+        std::unique_ptr<document::select::Node> _preDocSelect;
 
     public:
-        Session(std::unique_ptr<document::select::Node> select, bool isAttrSelect);
+        Session(std::unique_ptr<document::select::Node> docSelect,
+                std::unique_ptr<document::select::Node> preDocOnlySelect,
+                std::unique_ptr<document::select::Node> preDocSelect);
         bool contains(const SelectContext &context) const;
         bool contains(const document::Document &doc) const;
-        const document::select::Node &selectNode() const { return *_select; }
+        const document::select::Node &selectNode() const;
     };
 
     using AttributeVectors = std::vector<std::shared_ptr<search::AttributeVector>>;
@@ -47,22 +51,32 @@ private:
     AttributeVectors _attributes;
 
     // Pruned selection expression, specific for a document type
-    std::unique_ptr<document::select::Node> _select;
+    std::unique_ptr<document::select::Node> _docSelect;
     uint32_t _fieldNodes;
     uint32_t _attrFieldNodes;
     uint32_t _svAttrFieldNodes;
-    document::select::ResultSet _resultSet;
     bool _allFalse;
     bool _allTrue;
     bool _allInvalid;
 
-    /*
+    /**
      * If expression doesn't reference multi value attributes or
      * non-attribute fields then this selection expression can be used
-     * without retrieving document from document meta store (must use
+     * without retrieving document from document store (must use
      * SelectContext class and populate _docId instead).
      */
-    std::unique_ptr<document::select::Node> _attrSelect;
+    std::unique_ptr<document::select::Node> _preDocOnlySelect;
+
+    /**
+     * If expression references at least one single value attribute field
+     * then this selection expression can be used to disqualify a
+     * document without retrieving it from document store if it evaluates to false.
+     */
+    std::unique_ptr<document::select::Node> _preDocSelect;
+
+    void setDocumentSelect(SelectPruner &docsPruner);
+    void setPreDocumentSelect(const search::IAttributeManager &amgr,
+                              SelectPruner &noDocsPruner);
 
 public:
     CachedSelect();
@@ -77,8 +91,9 @@ public:
     bool allInvalid() const { return _allInvalid; }
 
     // Should only be used for unit testing
-    const std::unique_ptr<document::select::Node> &select() const { return _select; }
-    const std::unique_ptr<document::select::Node> &attrSelect() const { return _attrSelect; }
+    const std::unique_ptr<document::select::Node> &docSelect() const { return _docSelect; }
+    const std::unique_ptr<document::select::Node> &preDocOnlySelect() const { return _preDocOnlySelect; }
+    const std::unique_ptr<document::select::Node> &preDocSelect() const { return _preDocSelect; }
 
     void set(const vespalib::string &selection,
              const document::DocumentTypeRepo &repo);

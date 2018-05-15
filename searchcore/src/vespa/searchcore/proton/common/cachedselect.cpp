@@ -19,6 +19,8 @@ using search::AttributeGuard;
 using document::select::FieldValueNode;
 using search::attribute::CollectionType;
 
+using NodeUP = std::unique_ptr<document::select::Node>;
+
 namespace {
 
 class AttrVisitor : public document::select::CloningVisitor
@@ -107,36 +109,81 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
 
 }
 
-CachedSelect::Session::Session(std::unique_ptr<document::select::Node> select, bool isAttrSelect)
-    : _select(std::move(select)),
-      _isAttrSelect(isAttrSelect)
+CachedSelect::Session::Session(std::unique_ptr<document::select::Node> docSelect,
+                               std::unique_ptr<document::select::Node> preDocOnlySelect,
+                               std::unique_ptr<document::select::Node> preDocSelect)
+    : _docSelect(std::move(docSelect)),
+      _preDocOnlySelect(std::move(preDocOnlySelect)),
+      _preDocSelect(std::move(preDocSelect))
 {
 }
 
 bool
 CachedSelect::Session::contains(const SelectContext &context) const
 {
-    return (!_isAttrSelect) ||
-            (_isAttrSelect && (_select->contains(context) == document::select::Result::True));
+    if (_preDocSelect && (_preDocSelect->contains(context) == document::select::Result::False)) {
+        return false;
+    }
+    return (!_preDocOnlySelect) ||
+            (_preDocOnlySelect && (_preDocOnlySelect->contains(context) == document::select::Result::True));
 }
 
 bool
 CachedSelect::Session::contains(const document::Document &doc) const
 {
-    return (_isAttrSelect || (_select->contains(doc) == document::select::Result::True));
+    return (_preDocOnlySelect) ||
+            (_docSelect && (_docSelect->contains(doc) == document::select::Result::True));
+}
+
+const document::select::Node &
+CachedSelect::Session::selectNode() const
+{
+    return (_docSelect ? *_docSelect : *_preDocOnlySelect);
+}
+
+void
+CachedSelect::setDocumentSelect(SelectPruner &docsPruner)
+{
+    _allFalse = docsPruner.isFalse();
+    _allTrue = docsPruner.isTrue();
+    _allInvalid = docsPruner.isInvalid();
+    _docSelect = std::move(docsPruner.getNode());
+    _fieldNodes = docsPruner.getFieldNodes();
+    _attrFieldNodes = docsPruner.getAttrFieldNodes();
+}
+
+void
+CachedSelect::setPreDocumentSelect(const search::IAttributeManager &attrMgr,
+                                   SelectPruner &noDocsPruner)
+{
+    _attributes.clear();
+    AttrVisitor allAttrVisitor(attrMgr, _attributes);
+    _docSelect->visit(allAttrVisitor);
+    assert(_fieldNodes == allAttrVisitor.getFieldNodes());
+    assert(_attrFieldNodes == (allAttrVisitor._mvAttrs + allAttrVisitor._svAttrs + allAttrVisitor._complexAttrs));
+    _svAttrFieldNodes = allAttrVisitor._svAttrs;
+
+    if (_fieldNodes == _svAttrFieldNodes) {
+        _preDocOnlySelect = std::move(allAttrVisitor.getNode());
+    } else if (_svAttrFieldNodes > 0) {
+        _attributes.clear();
+        AttrVisitor someAttrVisitor(attrMgr, _attributes);
+        noDocsPruner.getNode()->visit(someAttrVisitor);
+        _preDocSelect = std::move(someAttrVisitor.getNode());
+    }
 }
 
 CachedSelect::CachedSelect()
     : _attributes(),
-      _select(),
+      _docSelect(),
       _fieldNodes(0u),
       _attrFieldNodes(0u),
       _svAttrFieldNodes(0u),
-      _resultSet(),
       _allFalse(false),
       _allTrue(false),
       _allInvalid(false),
-      _attrSelect()
+      _preDocOnlySelect(),
+      _preDocSelect()
 { }
 
 CachedSelect::~CachedSelect() { }
@@ -147,11 +194,11 @@ CachedSelect::set(const vespalib::string &selection,
 {
     try {
         document::select::Parser parser(repo, document::BucketIdFactory());
-        _select = parser.parse(selection);
+        _docSelect = parser.parse(selection);
     } catch (document::select::ParsingFailedException &) {
-        _select.reset(NULL);
+        _docSelect.reset(nullptr);
     }
-    _allFalse = _select.get() == NULL;
+    _allFalse = !_docSelect;
     _allTrue = false;
     _allInvalid = false;
 }
@@ -165,43 +212,39 @@ CachedSelect::set(const vespalib::string &selection,
                   const search::IAttributeManager *amgr,
                   bool hasFields)
 {                  
-    typedef std::unique_ptr<document::select::Node> NodeUP;
-
     set(selection, repo);
-    NodeUP parsed(std::move(_select));
-    if (parsed.get() == NULL)
+    NodeUP parsed(std::move(_docSelect));
+    if (!parsed) {
         return;
-    SelectPruner pruner(docTypeName,
-                        amgr,
-                        emptyDoc,
-                        repo,
-                        hasFields,
-                        true);
-    pruner.process(*parsed);
-    _resultSet = pruner.getResultSet();
-    _allFalse = pruner.isFalse();
-    _allTrue = pruner.isTrue();
-    _allInvalid = pruner.isInvalid();
-    _select = std::move(pruner.getNode());
-    _fieldNodes = pruner.getFieldNodes();
-    _attrFieldNodes = pruner.getAttrFieldNodes();
-    if (amgr == NULL || _attrFieldNodes == 0u)
-        return;
-    AttrVisitor av(*amgr, _attributes);
-    _select->visit(av);
-    assert(_fieldNodes == av.getFieldNodes());
-    assert(_attrFieldNodes == av._mvAttrs + av._svAttrs + av._complexAttrs);
-    _svAttrFieldNodes = av._svAttrs;
-    if (_fieldNodes == _svAttrFieldNodes) {
-        _attrSelect = std::move(av.getNode());
     }
+    SelectPruner docsPruner(docTypeName,
+                            amgr,
+                            emptyDoc,
+                            repo,
+                            hasFields,
+                            true);
+    docsPruner.process(*parsed);
+    setDocumentSelect(docsPruner);
+    if (amgr == nullptr || _attrFieldNodes == 0u) {
+        return;
+    }
+
+    SelectPruner noDocsPruner(docTypeName,
+                              amgr,
+                              emptyDoc,
+                              repo,
+                              hasFields,
+                              false);
+    noDocsPruner.process(*parsed);
+    setPreDocumentSelect(*amgr, noDocsPruner);
 }
 
 std::unique_ptr<CachedSelect::Session>
 CachedSelect::createSession() const
 {
-    return (_attrSelect ? std::make_unique<Session>(_attrSelect->clone(), true) :
-            std::make_unique<Session>(_select->clone(), false));
+    return std::make_unique<Session>((_docSelect ? _docSelect->clone() : NodeUP()),
+                                     (_preDocOnlySelect ? _preDocOnlySelect->clone() : NodeUP()),
+                                     (_preDocSelect ? _preDocSelect->clone() : NodeUP()));
 }
 
 }
