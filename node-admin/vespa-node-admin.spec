@@ -18,6 +18,7 @@ URL:            http://vespa.ai
 Requires: bash
 Requires: java-1.8.0-openjdk-headless
 Requires: vespa-base = %{version}
+Requires: vespa-lib = %{version}
 Requires: vespa-standalone-container = %{version}
 Requires: vespa-node-maintainer = %{version}
 Requires: vespa-log-utils = %{version}
