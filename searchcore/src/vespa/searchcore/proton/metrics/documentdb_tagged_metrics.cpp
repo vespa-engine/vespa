@@ -120,6 +120,9 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
                                                                                  size_t numDocIdPartitions,
                                                                                  MetricSet *parent)
     : MetricSet("rank_profile", {{"rankProfile", name}}, "Rank profile metrics", parent),
+      docsMatched("docs_matched", "", "Number of documents matched", this),
+      docsRanked("docs_ranked", "", "Number of documents ranked (first phase)", this),
+      docsReRanked("docs_reranked", "", "Number of documents re-ranked (second phase)", this),
       queries("queries", "", "Number of queries executed", this),
       limitedQueries("limited_queries", "", "Number of queries limited in match phase", this),
       matchTime("match_time", "", "Average time (sec) for matching a query", this),
@@ -162,6 +165,9 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::up
 void
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const MatchingStats &stats)
 {
+    docsMatched.inc(stats.docsMatched());
+    docsRanked.inc(stats.docsRanked());
+    docsReRanked.inc(stats.docsReRanked());
     queries.inc(stats.queries());
     limitedQueries.inc(stats.limited_queries());
     matchTime.addValueBatch(stats.matchTimeAvg(), stats.matchTimeCount(),
