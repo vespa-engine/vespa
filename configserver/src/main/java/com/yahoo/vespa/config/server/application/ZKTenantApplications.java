@@ -39,8 +39,9 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private final Curator curator;
     private final Path applicationsPath;
-    private final ExecutorService pathChildrenExecutor =
-            Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(ZKTenantApplications.class.getName()));
+    // One thread pool for all instances of this class
+    private static final ExecutorService pathChildrenExecutor =
+            Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory(ZKTenantApplications.class.getName()));
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
     private final TenantName tenant;
