@@ -129,7 +129,8 @@ public class TenantRepositoryTest extends TestWithCurator {
     
     @Test
     public void testTenantsChanged() {
-        tenantRepository = new TenantRepository(globalComponentRegistry);
+        tenantRepository.close(); // Close the repo created in setup()
+        TenantRepository tenantRepository = new TenantRepository(globalComponentRegistry);
         tenantRepository.addTenant(tenant2);
         tenantRepository.createTenants();
         Set<TenantName> allTenants = tenantRepository.getAllTenantNames();
