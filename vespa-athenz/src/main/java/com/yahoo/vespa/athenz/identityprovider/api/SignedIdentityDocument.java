@@ -11,6 +11,9 @@ import java.net.URI;
  * @author bjorncs
  */
 public class SignedIdentityDocument {
+    public static final int DEFAULT_KEY_VERSION = 0;
+    public static final int DEFAULT_DOCUMENT_VERSION = 1;
+
     private final IdentityDocument identityDocument;
     private final String signature;
     private final int signingKeyVersion;
