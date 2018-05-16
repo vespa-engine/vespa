@@ -56,9 +56,12 @@ findroot () {
 
 findhost () {
     if [ "${VESPA_HOSTNAME}" = "" ]; then
-        VESPA_HOSTNAME=$(vespa-detect-hostname) || exit 1
+        VESPA_HOSTNAME=$(vespa-detect-hostname || hostname -f || hostname || echo "localhost") || exit 1
     fi
-    vespa-validate-hostname "${VESPA_HOSTNAME}" || exit 1
+    validate="${VESPA_HOME}/bin/vespa-validate-hostname"
+    if [ -f "$validate" ]; then
+        "$validate" "${VESPA_HOSTNAME}" || exit 1
+    fi
     export VESPA_HOSTNAME
 }
 
