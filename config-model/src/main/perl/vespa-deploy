@@ -55,14 +55,17 @@ sub findhome {
 }
 
 sub findhost {
-    $ENV{'PATH'} = $ENV{'VESPA_HOME'} . '/bin:' . $ENV{'PATH'};
     my $tmp = $ENV{'VESPA_HOSTNAME'};
+    my $bin = $ENV{'VESPA_HOME'} . "/bin";
     if (!defined $tmp) {
-        $tmp = `vespa-detect-hostname` or die "Could not detect hostname\n";
+        $tmp = `${bin}/vespa-detect-hostname || hostname -f || hostname || echo "localhost"`;
         chomp $tmp;
     }
-    system("vespa-validate-hostname $tmp");
-    ( $? == 0 ) or die "Could not validate hostname\n";
+    my $validate = "${bin}/vespa-validate-hostname";
+    if (-f "${validate}") {
+       system("${validate} $tmp");
+       ( $? == 0 ) or die "Could not validate hostname\n";
+    }
     return $tmp;
 }
 
