@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.path.Path;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -20,8 +19,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import java.io.File;
 import java.time.Clock;
 import java.util.Collections;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Builder for helping out with tenant creation. Each of a tenants dependencies may be overridden for testing.
@@ -159,15 +156,8 @@ public class TenantBuilder {
                     reloadHandler,
                     tenant,
                     applicationRepo,
-                    componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenant)),
-                    // TODO: Check if we can avoid using one executor service per tenant. Either one for all
-                    // or have a few executors and hash on tenant name to find out which one to use here
-                    createSingleThreadedExecutorService(RemoteSessionRepo.class.getName()));
+                    componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenant)));
         }
-    }
-
-    private ExecutorService createSingleThreadedExecutorService(String executorName) {
-        return Executors.newSingleThreadExecutor(ThreadFactoryFactory.getThreadFactory(executorName + "-" + tenant.value()));
     }
 
     private void createServerDbDirs() {

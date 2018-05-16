@@ -3,12 +3,14 @@ package com.yahoo.vespa.config.server.session;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -38,6 +40,10 @@ import org.apache.curator.framework.recipes.cache.*;
 public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements NodeCacheListener, PathChildrenCacheListener {
 
     private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
+    // One thread pool for all instances of this class
+    private static final ExecutorService pathChildrenExecutor =
+            Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(RemoteSessionRepo.class.getName()));
+
     private final Curator curator;
     private final Path sessionsPath;
     private final RemoteSessionFactory remoteSessionFactory;
@@ -53,15 +59,13 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
      * @param reloadHandler        a {@link com.yahoo.vespa.config.server.ReloadHandler}
      * @param tenant               a {@link TenantName} instance.
      * @param applicationRepo      a {@link TenantApplications} instance.
-     * @param executorService      an {@link ExecutorService} to run callbacks from ZooKeeper.
      */
     public RemoteSessionRepo(Curator curator,
                              RemoteSessionFactory remoteSessionFactory,
                              ReloadHandler reloadHandler,
                              TenantName tenant,
                              TenantApplications applicationRepo,
-                             MetricUpdater metricUpdater,
-                             ExecutorService executorService) {
+                             MetricUpdater metricUpdater) {
         this.curator = curator;
         this.sessionsPath = TenantRepository.getSessionsPath(tenant);
         this.applicationRepo = applicationRepo;
@@ -69,7 +73,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.reloadHandler = reloadHandler;
         this.metrics = metricUpdater;
         initializeSessions();
-        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, executorService);
+        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.addListener(this);
         this.directoryCache.start();
     }

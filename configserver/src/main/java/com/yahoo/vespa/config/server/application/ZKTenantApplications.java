@@ -41,7 +41,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     private final Path applicationsPath;
     // One thread pool for all instances of this class
     private static final ExecutorService pathChildrenExecutor =
-            Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory(ZKTenantApplications.class.getName()));
+            Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(ZKTenantApplications.class.getName()));
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
     private final TenantName tenant;
@@ -120,11 +120,10 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     @Override
     public void close() {
         directoryCache.close();
-        pathChildrenExecutor.shutdown();
     }
 
     @Override
-    public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
+    public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) {
         switch (event.getType()) {
             case CHILD_ADDED:
                 applicationAdded(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
