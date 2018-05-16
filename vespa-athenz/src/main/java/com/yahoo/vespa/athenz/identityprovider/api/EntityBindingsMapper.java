@@ -11,6 +11,8 @@ import com.yahoo.vespa.athenz.identityprovider.api.bindings.VespaUniqueInstanceI
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
+import java.util.Base64;
+
 /**
  * Utility class for mapping objects model types and their Jackson binding versions.
  *
@@ -74,7 +76,7 @@ public class EntityBindingsMapper {
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
         try {
             IdentityDocumentEntity identityDocumentEntity = toIdentityDocumentEntity(model.identityDocument());
-            String rawDocument = mapper.writeValueAsString(identityDocumentEntity);
+            String rawDocument = Base64.getEncoder().encodeToString(mapper.writeValueAsString(identityDocumentEntity).getBytes());
             return new SignedIdentityDocumentEntity(
                     rawDocument,
                     model.signature(),
