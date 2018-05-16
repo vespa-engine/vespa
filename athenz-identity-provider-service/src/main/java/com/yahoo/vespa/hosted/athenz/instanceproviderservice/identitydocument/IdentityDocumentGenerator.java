@@ -4,9 +4,11 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.ProviderUniqueId;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
@@ -49,7 +51,7 @@ public class IdentityDocumentGenerator {
         Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
         try {
             IdentityDocument identityDocument = generateIdDocument(node);
-            String identityDocumentString = Utils.getMapper().writeValueAsString(identityDocument);
+            String identityDocumentString = Utils.getMapper().writeValueAsString(EntityBindingsMapper.toIdentityDocumentEntity(identityDocument));
 
             String encodedIdentityDocument =
                     Base64.getEncoder().encodeToString(identityDocumentString.getBytes());
@@ -61,12 +63,12 @@ public class IdentityDocumentGenerator {
             String signature = Base64.getEncoder().encodeToString(sigGenerator.sign());
 
             return new SignedIdentityDocument(
-                    encodedIdentityDocument,
+                    identityDocument,
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
-                    identityDocument.providerUniqueId.toVespaUniqueInstanceId().asDottedString(),
+                    identityDocument.providerUniqueId(),
                     toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
-                    zoneConfig.domain() + "." + zoneConfig.serviceName(),
+                    new AthenzService(zoneConfig.domain(), zoneConfig.serviceName()),
                     URI.create(zoneConfig.ztsUrl()),
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION);
         } catch (Exception e) {
@@ -76,14 +78,14 @@ public class IdentityDocumentGenerator {
 
     private IdentityDocument generateIdDocument(Node node) {
         Allocation allocation = node.allocation().orElseThrow(() -> new RuntimeException("No allocation for node " + node.hostname()));
-        ProviderUniqueId providerUniqueId = new ProviderUniqueId(
-                allocation.owner().tenant().value(),
-                allocation.owner().application().value(),
-                zone.environment().value(),
-                zone.region().value(),
-                allocation.owner().instance().value(),
+        VespaUniqueInstanceId providerUniqueId = new VespaUniqueInstanceId(
+                allocation.membership().index(),
                 allocation.membership().cluster().id().value(),
-                allocation.membership().index());
+                allocation.owner().instance().value(),
+                allocation.owner().application().value(),
+                allocation.owner().tenant().value(),
+                zone.region().value(),
+                zone.environment().value());
 
         // TODO: Hack to allow access from docker containers to non-ipv6 services.
         // Remove when yca-bridge is no longer needed

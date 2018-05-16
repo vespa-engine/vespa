@@ -7,9 +7,11 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.ProviderUniqueId;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -41,10 +43,10 @@ public class InstanceValidator {
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
-        SignedIdentityDocument signedIdentityDocument = instanceConfirmation.signedIdentityDocument;
-        ProviderUniqueId providerUniqueId = signedIdentityDocument.identityDocument.providerUniqueId;
+        SignedIdentityDocument signedIdentityDocument = EntityBindingsMapper.toSignedIdentityDocument(instanceConfirmation.signedIdentityDocument);
+        VespaUniqueInstanceId providerUniqueId = signedIdentityDocument.providerUniqueId();
         ApplicationId applicationId = ApplicationId.from(
-                providerUniqueId.tenant, providerUniqueId.application, providerUniqueId.instance);
+                providerUniqueId.tenant(), providerUniqueId.application(), providerUniqueId.instance());
 
         if (! isSameIdentityAsInServicesXml(applicationId, instanceConfirmation.domain, instanceConfirmation.service)) {
             return false;
@@ -60,7 +62,7 @@ public class InstanceValidator {
     }
 
     boolean isInstanceSignatureValid(InstanceConfirmation instanceConfirmation) {
-        SignedIdentityDocument signedIdentityDocument = instanceConfirmation.signedIdentityDocument;
+        SignedIdentityDocumentEntity signedIdentityDocument = instanceConfirmation.signedIdentityDocument;
 
         PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion);
         return isSignatureValid(publicKey, signedIdentityDocument.rawIdentityDocument, signedIdentityDocument.signature);

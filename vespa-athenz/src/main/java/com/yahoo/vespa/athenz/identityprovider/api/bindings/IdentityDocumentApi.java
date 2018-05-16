@@ -17,16 +17,16 @@ public interface IdentityDocumentApi {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Deprecated
-    SignedIdentityDocument getIdentityDocument(@QueryParam("hostname") String hostname);
+    SignedIdentityDocumentEntity getIdentityDocument(@QueryParam("hostname") String hostname);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/node/{host}")
-    SignedIdentityDocument getNodeIdentityDocument(@PathParam("host") String host);
+    SignedIdentityDocumentEntity getNodeIdentityDocument(@PathParam("host") String host);
 
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/tenant/{host}")
-    SignedIdentityDocument getTenantIdentityDocument(@PathParam("host") String host);
+    SignedIdentityDocumentEntity getTenantIdentityDocument(@PathParam("host") String host);
 }

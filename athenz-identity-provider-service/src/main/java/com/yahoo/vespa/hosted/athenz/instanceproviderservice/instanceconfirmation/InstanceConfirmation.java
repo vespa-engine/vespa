@@ -13,8 +13,8 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -33,7 +33,7 @@ public class InstanceConfirmation {
     @JsonProperty("service") public final String service;
 
     @JsonProperty("attestationData") @JsonSerialize(using = SignedIdentitySerializer.class)
-    public final SignedIdentityDocument signedIdentityDocument;
+    public final SignedIdentityDocumentEntity signedIdentityDocument;
     @JsonUnwrapped public final Map<String, Object> attributes = new HashMap<>(); // optional attributes that Athenz may provide
 
     @JsonCreator
@@ -41,7 +41,7 @@ public class InstanceConfirmation {
                                 @JsonProperty("domain") String domain,
                                 @JsonProperty("service") String service,
                                 @JsonProperty("attestationData") @JsonDeserialize(using = SignedIdentityDeserializer.class)
-                                            SignedIdentityDocument signedIdentityDocument) {
+                                            SignedIdentityDocumentEntity signedIdentityDocument) {
         this.provider = provider;
         this.domain = domain;
         this.service = service;
@@ -81,19 +81,19 @@ public class InstanceConfirmation {
         return Objects.hash(provider, domain, service, signedIdentityDocument, attributes);
     }
 
-    public static class SignedIdentityDeserializer extends JsonDeserializer<SignedIdentityDocument> {
+    public static class SignedIdentityDeserializer extends JsonDeserializer<SignedIdentityDocumentEntity> {
         @Override
-        public SignedIdentityDocument deserialize(
+        public SignedIdentityDocumentEntity deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
             String value = jsonParser.getValueAsString();
-            return Utils.getMapper().readValue(value, SignedIdentityDocument.class);
+            return Utils.getMapper().readValue(value, SignedIdentityDocumentEntity.class);
         }
     }
 
-    public static class SignedIdentitySerializer extends JsonSerializer<SignedIdentityDocument> {
+    public static class SignedIdentitySerializer extends JsonSerializer<SignedIdentityDocumentEntity> {
         @Override
         public void serialize(
-                SignedIdentityDocument document, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                SignedIdentityDocumentEntity document, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeString(Utils.getMapper().writeValueAsString(document));
         }
     }
