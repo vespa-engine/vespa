@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 
 import java.io.File;
@@ -10,6 +12,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +30,9 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final Duration delay = Duration.ofMinutes(5);
 
-    private final ScheduledExecutorService purgeOldSessionsExecutor = new ScheduledThreadPoolExecutor(1);
+    // One executor for all instances of this class
+    private static final ScheduledExecutorService purgeOldSessionsExecutor =
+            new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getDaemonThreadFactory("purge-old-sessions"));
     private final long sessionLifetime; // in seconds
     private final Clock clock;
 
