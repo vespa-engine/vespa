@@ -4,9 +4,14 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.VespaUniqueInstanceIdEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
+
+import java.util.Base64;
 
 /**
  * Utility class for mapping objects model types and their Jackson binding versions.
@@ -32,6 +37,27 @@ public class EntityBindingsMapper {
                 entity.clusterIndex, entity.clusterId, entity.instance, entity.application, entity.tenant, entity.region, entity.environment);
     }
 
+    private static IdentityDocument toIdentityDocument(IdentityDocumentEntity entity) {
+        return new IdentityDocument(
+                toVespaUniqueInstanceId(entity.providerUniqueId),
+                entity.configServerHostname,
+                entity.instanceHostname,
+                entity.createdAt,
+                entity.ipAddresses);
+    }
+
+    public static SignedIdentityDocument toSignedIdentityDocument(SignedIdentityDocumentEntity entity) {
+        return new SignedIdentityDocument(
+                toIdentityDocument(entity.identityDocument),
+                entity.signature,
+                entity.signingKeyVersion,
+                VespaUniqueInstanceId.fromDottedString(entity.providerUniqueId),
+                entity.dnsSuffix,
+                (AthenzService) AthenzIdentities.from(entity.providerService),
+                entity.ztsEndpoint,
+                entity.documentVersion);
+    }
+
     public static VespaUniqueInstanceIdEntity toVespaUniqueInstanceIdEntity(VespaUniqueInstanceId model) {
         return new VespaUniqueInstanceIdEntity(
                 model.tenant(), model.application(), model.environment(), model.region(),
@@ -50,7 +76,7 @@ public class EntityBindingsMapper {
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
         try {
             IdentityDocumentEntity identityDocumentEntity = toIdentityDocumentEntity(model.identityDocument());
-            String rawDocument = mapper.writeValueAsString(identityDocumentEntity);
+            String rawDocument = Base64.getEncoder().encodeToString(mapper.writeValueAsString(identityDocumentEntity).getBytes());
             return new SignedIdentityDocumentEntity(
                     rawDocument,
                     model.signature(),

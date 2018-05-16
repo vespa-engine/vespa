@@ -5,8 +5,9 @@ import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentApi;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodePrincipal;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,7 +49,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
     @Deprecated
     @Override
     // TODO Make this method private when the rest api is not longer in use
-    public SignedIdentityDocument getIdentityDocument(@QueryParam("hostname") String hostname) {
+    public SignedIdentityDocumentEntity getIdentityDocument(@QueryParam("hostname") String hostname) {
         if (hostname == null) {
             throw new BadRequestException("The 'hostname' query parameter is missing");
         }
@@ -66,7 +67,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
             throw new ForbiddenException();
         }
         try {
-            return identityDocumentGenerator.generateSignedIdentityDocument(hostname);
+            return EntityBindingsMapper.toSignedIdentityDocumentEntity(identityDocumentGenerator.generateSignedIdentityDocument(hostname));
         } catch (Exception e) {
             String message = String.format("Unable to generate identity doument for '%s': %s", hostname, e.getMessage());
             log.log(LogLevel.ERROR, message, e);
@@ -78,7 +79,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/node/{host}")
     @Override
-    public SignedIdentityDocument getNodeIdentityDocument(@PathParam("host") String host) {
+    public SignedIdentityDocumentEntity getNodeIdentityDocument(@PathParam("host") String host) {
         return getIdentityDocument(host);
     }
 
@@ -86,7 +87,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/tenant/{host}")
     @Override
-    public SignedIdentityDocument getTenantIdentityDocument(@PathParam("host") String host) {
+    public SignedIdentityDocumentEntity getTenantIdentityDocument(@PathParam("host") String host) {
         return getIdentityDocument(host);
     }
 
