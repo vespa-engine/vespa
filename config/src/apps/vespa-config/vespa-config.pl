@@ -266,24 +266,6 @@ sub printConfigHttpSources {
     print $out . "\n";
 }
 
-sub isThisAConfigServer {
-    my $addr;
-    foreach $addr (getConfigServers()) {
-        my $host = "";
-        my $port = 0;
-        if ($addr =~ /(.*):(\d+)$/) {
-            $host = $1;
-        }
-        if ($myHostname eq $host or $host eq "localhost") {
-          print "yes\n";
-          exit 0;
-        }
-    }
-
-    print "no\n";
-    exit 1;
-}
-
 # Perl trim function to remove whitespace from the start and end of the string
 sub trim($) {
     my $string = shift;
@@ -299,7 +281,7 @@ sub getLastLine {
 
 sub usage {
     print "usage: ";
-    print "vespa-config [-configsources | -confighttpsources | -zkstring | -configserverport | -zkclientport | -isthisaconfigserver]\n";
+    print "vespa-config [-configsources | -confighttpsources | -zkstring | -configserverport | -zkclientport]\n";
 }
 
 if ( @ARGV == 0 ) {
@@ -332,10 +314,6 @@ if ( $ARGV[0] eq "-configserverport" ) {
 if ( $ARGV[0] eq "-zkclientport" ) {
     my $zk_client_port = getZKPort();
     print "$zk_client_port\n";
-    exit 0;
-}
-if ( $ARGV[0] eq "-isthisaconfigserver" ) {
-    isThisAConfigServer();
     exit 0;
 }
 

@@ -98,10 +98,19 @@ fixddir ${VESPA_HOME}/var/zookeeper
 fixfile ${VESPA_HOME}/var/zookeeper/myid
 fixddir ${VESPA_HOME}/var/zookeeper/version-2
 
-${VESPA_HOME}/libexec/vespa/vespa-config.pl -isthisaconfigserver 1>/dev/null
-if [ "$?" != "0" ] ; then
-    echo "Not able to start config server, host `hostname` is not part of 'VESPA_CONFIGSERVERS'"
-    exit 1;
+not_a_configserver () {
+    for hn in $(vespa-print-default configservers); do
+        if [ "$hn" = localhost ] || [ "$hn" = "${VESPA_HOSTNAME}" ]; then
+            return 1
+        fi
+    done
+    return 0
+}
+
+if not_a_configserver ; then
+    echo "Will not start config server, host ${VESPA_HOSTNAME}" \
+         "is not part of VESPA_CONFIGSERVERS: " $(vespa-print-default configservers)
+    exit 1
 fi
 
 fixlimits
