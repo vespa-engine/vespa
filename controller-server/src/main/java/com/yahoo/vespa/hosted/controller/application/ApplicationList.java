@@ -82,9 +82,9 @@ public class ApplicationList {
         return listOf(list.stream().filter(application -> application.change().isPresent()));
     }
 
-    /** Returns the subset of applications which are currently not deploying a change */
-    public ApplicationList notDeploying() {
-        return listOf(list.stream().filter(application -> ! application.change().isPresent()));
+    /** Returns the subset of applications which are currently really not deploying a change */
+    public ApplicationList notDeployingAt(Instant now) {
+        return listOf(list.stream().filter(application -> ! application.changeAt(now).isPresent()));
     }
 
     /** Returns the subset of applications which currently does not have any failing jobs */
