@@ -438,19 +438,24 @@ public class RestApiTest {
 
     @Test
     public void test_hardware_patching_of_docker_host() throws Exception {
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(false));
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), Optional.of(false));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), false);
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), false);
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
-                        Utf8.toBytes("{" +
-                                "\"hardwareFailureDescription\": \"memory_mcelog\"" +
-                                "}"
-                        ),
+                        Utf8.toBytes("{\"hardwareFailureDescription\": \"memory_mcelog\"}"),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
 
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(true));
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), Optional.of(true));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), true);
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), true);
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
+                        Utf8.toBytes("{\"hardwareFailureDescription\": \"null\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
+
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), false);
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), false);
     }
 
     @Test
@@ -581,20 +586,19 @@ public class RestApiTest {
                 "],";
     }
 
-    private Optional<Boolean> getHardwareFailure(String json) {
+    private boolean getHardwareFailure(String json) {
         Slime slime = SlimeUtils.jsonToSlime(json.getBytes());
         Cursor hardwareFailure = slime.get().field("hardwareFailure");
-        if (!hardwareFailure.valid()) {
-            return Optional.empty();
-        }
+        if (!hardwareFailure.valid())
+            throw new IllegalStateException("hardwareFailure is invalid");
 
-        return Optional.of(hardwareFailure.asBool());
+        return hardwareFailure.asBool();
     }
 
-    private void assertHardwareFailure(Request request, Optional<Boolean> expectedHardwareFailure) throws CharacterCodingException {
+    private void assertHardwareFailure(Request request, boolean expectedHardwareFailure) throws CharacterCodingException {
         Response response = container.handleRequest(request);
         String json = response.getBodyAsString();
-        Optional<Boolean> actualHardwareFailure = getHardwareFailure(json);
+        boolean actualHardwareFailure = getHardwareFailure(json);
         assertEquals(expectedHardwareFailure, actualHardwareFailure);
         assertEquals(200, response.getStatus());
     }

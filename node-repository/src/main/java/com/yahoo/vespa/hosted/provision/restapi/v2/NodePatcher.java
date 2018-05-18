@@ -65,7 +65,7 @@ public class NodePatcher {
     public List<Node> apply() {
         inspector.traverse((String name, Inspector value) -> {
             try {
-                node = applyField(name, value);
+                node = applyField(node, name, value);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Could not set field '" + name + "'", e);
             }
@@ -87,17 +87,10 @@ public class NodePatcher {
     private List<Node> applyFieldRecursive(List<Node> childNodes, String name, Inspector value) {
         switch (name) {
             case HARDWARE_FAILURE_DESCRIPTION:
-                return childNodes.stream()
-                        .map(child -> child.with(child.status().withHardwareFailureDescription(asOptionalString(value))))
-                        .collect(Collectors.toList());
             case WANT_TO_RETIRE:
-                return childNodes.stream()
-                        .map(child -> child.with(child.status().withWantToRetire(asBoolean(value))))
-                        .collect(Collectors.toList());
-
             case WANT_TO_DEPROVISION:
                 return childNodes.stream()
-                        .map(child -> child.with(child.status().withWantToDeprovision(asBoolean(value))))
+                        .map(child -> applyField(child, name, value))
                         .collect(Collectors.toList());
 
             default :
@@ -105,7 +98,7 @@ public class NodePatcher {
         }
     }
 
-    private Node applyField(String name, Inspector value) {
+    private Node applyField(Node node, String name, Inspector value) {
         switch (name) {
             case "currentRebootGeneration" :
                 return node.withCurrentRebootGeneration(asLong(value), nodeRepository.clock().instant());
