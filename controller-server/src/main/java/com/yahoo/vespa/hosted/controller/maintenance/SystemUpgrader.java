@@ -43,11 +43,12 @@ public class SystemUpgrader extends Maintainer {
     /** Deploy a list of system applications on given version */
     private void deploy(List<SystemApplication> applications, Version target) {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
-            for (SystemApplication application : applications) {
-                if (!deploy(zones, application, target) && application.upgradeInOrder()) {
-                    return;
-                }
-            }
+            int done = 0;
+            for (SystemApplication application : applications)
+                if (application.prerequisites().stream().allMatch(prerequisite -> deploy(zones, prerequisite, target))
+                        && deploy(zones, application, target))
+                    done++;
+            if (done < applications.size()) return;
         }
     }
 
