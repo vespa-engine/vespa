@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,6 +66,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * The API for managing applications.
@@ -363,6 +365,32 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         localSessionRepo.addSession(session);
         return session.getSessionId();
     }
+
+
+    // ---------------- Tenant operations ----------------------------------------------------------------
+
+    public Set<TenantName> removeUnusedTenants() {
+        Set<TenantName> tenantsToBeDeleted = tenantRepository.getAllTenantNames().stream()
+                .filter(tenantName -> activeApplications(tenantName).isEmpty())
+                .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
+                .collect(Collectors.toSet());
+        tenantsToBeDeleted.forEach(tenantRepository::deleteTenant);
+        return tenantsToBeDeleted;
+    }
+
+    public void deleteTenant(TenantName tenantName) {
+        List<ApplicationId> activeApplications = activeApplications(tenantName);
+        if (activeApplications.isEmpty())
+            tenantRepository.deleteTenant(tenantName);
+        else
+            throw new IllegalArgumentException("Cannot delete tenant '" + tenantName + "', it has active applications: " + activeApplications);
+    }
+
+    private List<ApplicationId> activeApplications(TenantName tenantName) {
+        return tenantRepository.getTenant(tenantName).getApplicationRepo().listApplications();
+    }
+
+    // ---------------- Misc operations ----------------------------------------------------------------
 
     public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
         TenantName tenantName = applicationId.tenant();

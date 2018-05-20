@@ -1,18 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import java.util.List;
 import com.google.inject.Inject;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.yolean.Exceptions;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -27,11 +24,13 @@ public class TenantHandler extends HttpHandler {
 
     private static final String TENANT_NAME_REGEXP = "[\\w-]+";
     private final TenantRepository tenantRepository;
+    private final ApplicationRepository applicationRepository;
 
     @Inject
-    public TenantHandler(HttpHandler.Context ctx, TenantRepository tenantRepository) {
+    public TenantHandler(Context ctx, TenantRepository tenantRepository, ApplicationRepository applicationRepository) {
         super(ctx);
         this.tenantRepository = tenantRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     @Override
@@ -62,22 +61,7 @@ public class TenantHandler extends HttpHandler {
     protected HttpResponse handleDELETE(HttpRequest request) {
         final TenantName tenantName = getTenantNameFromRequest(request);
         Utils.checkThatTenantExists(tenantRepository, tenantName);
-        // TODO: Move logic to ApplicationRepository
-        Tenant tenant = tenantRepository.getTenant(tenantName);
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        final List<ApplicationId> activeApplications = applicationRepo.listApplications();
-        if (activeApplications.isEmpty()) {
-            try {
-                tenantRepository.deleteTenant(tenantName);
-            } catch (IllegalArgumentException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new InternalServerException(Exceptions.toMessageString(e));
-            }
-        } else {
-            throw new BadRequestException("Cannot delete tenant '" + tenantName + "', as it has active applications: " +
-                    activeApplications);
-        }
+        applicationRepository.deleteTenant(tenantName);
         return new TenantDeleteResponse(tenantName);
     }
 

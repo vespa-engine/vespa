@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.http.v2;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Clock;
 
@@ -11,7 +12,14 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.http.SessionResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,14 +28,23 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 
-public class TenantHandlerTest extends TenantTest {
+public class TenantHandlerTest {
 
+    private TenantRepository tenantRepository;
     private TenantHandler handler;
     private final TenantName a = TenantName.from("a");
 
     @Before
     public void setup() {
-        handler = new TenantHandler(TenantHandler.testOnlyContext(), tenantRepository);
+        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().curator(new MockCurator()).build());
+        ApplicationRepository applicationRepository =
+                new ApplicationRepository(tenantRepository, new SessionHandlerTest.MockProvisioner(), Clock.systemUTC());
+        handler = new TenantHandler(TenantHandler.testOnlyContext(), tenantRepository, applicationRepository);
+    }
+
+    @After
+    public void closeTenantRepo() {
+        tenantRepository.close();
     }
 
     @Test
@@ -96,8 +113,8 @@ public class TenantHandlerTest extends TenantTest {
         try {
             handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.DELETE));
             fail();
-        } catch (BadRequestException e) {
-            assertThat(e.getMessage(), is("Cannot delete tenant 'a', as it has active applications: [a.foo]"));
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), is("Cannot delete tenant 'a', it has active applications: [a.foo]"));
         }
     }
 
@@ -113,6 +130,12 @@ public class TenantHandlerTest extends TenantTest {
 
     private TenantCreateResponse putSync(HttpRequest testRequest) {
         return (TenantCreateResponse) handler.handlePUT(testRequest);
+    }
+
+    private void assertResponseEquals(SessionResponse response, String payload) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.render(baos);
+        assertEquals(baos.toString("UTF-8"), payload);
     }
 
 }
