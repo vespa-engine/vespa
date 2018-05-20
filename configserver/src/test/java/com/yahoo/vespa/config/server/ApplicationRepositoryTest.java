@@ -27,6 +27,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -76,9 +77,17 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void createAndPrepareAndActivate() throws IOException {
-        PrepareResult result = createAndPrepareAndActivateApp();
+        PrepareResult result = deployApp();
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+    }
+
+    @Test
+    public void deleteUnusedTenants() throws IOException {
+        deployApp();
+        assertTrue(applicationRepository.removeUnusedTenants().isEmpty());
+        applicationRepository.remove(applicationId());
+        assertEquals(tenantName, applicationRepository.removeUnusedTenants().iterator().next());
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
@@ -87,7 +96,7 @@ public class ApplicationRepositoryTest {
         return applicationRepository.prepareAndActivate(tenant, sessionId, prepareParams(), false, false, Instant.now());
     }
 
-    private PrepareResult createAndPrepareAndActivateApp() throws IOException {
+    private PrepareResult deployApp() throws IOException {
         File file = CompressedApplicationInputStreamTest.createTarFile();
         return applicationRepository.deploy(CompressedApplicationInputStream.createFromCompressedStream(
                                                     new FileInputStream(file), ApplicationApiHandler.APPLICATION_X_GZIP),
