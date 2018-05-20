@@ -37,32 +37,35 @@ public class SystemUpgrader extends Maintainer {
         if (!target.isPresent()) {
             return;
         }
-        deploy(SystemApplication.all(), target.get());
+        converge(SystemApplication.all(), target.get());
     }
 
-    /** Deploy a list of system applications on given version */
-    private void deploy(List<SystemApplication> applications, Version target) {
+    /** Deploy a list of system applications until they converge on the given version */
+    private void converge(List<SystemApplication> applications, Version target) {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
-            int done = 0;
-            for (SystemApplication application : applications)
-                if (application.prerequisites().stream().allMatch(prerequisite -> deploy(zones, prerequisite, target))
-                        && deploy(zones, application, target))
-                    done++;
-            if (done < applications.size()) return;
+            boolean converged = true;
+            for (SystemApplication application : applications) {
+                if (application.prerequisites().stream().allMatch(prerequisite -> converged(zones, prerequisite, target))) {
+                    deploy(zones, application, target);
+                }
+                converged &= converged(zones, application, target);
+            }
+            if (!converged) break;
         }
     }
 
     /** Deploy application on given version. Returns true when all allocated nodes are on requested version */
-    private boolean deploy(List<ZoneId> zones, SystemApplication application, Version target) {
-        boolean completed = true;
+    private void deploy(List<ZoneId> zones, SystemApplication application, Version target) {
         for (ZoneId zone : zones) {
             if (!wantedVersion(zone, application.id(), target).equals(target)) {
                 log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
                 controller().applications().deploy(application, zone, target);
             }
-            completed = completed && currentVersion(zone, application.id(), target).equals(target);
         }
-        return completed;
+    }
+
+    private boolean converged(List<ZoneId> zones, SystemApplication application, Version target) {
+        return zones.stream().allMatch(zone -> currentVersion(zone, application.id(), target).equals(target));
     }
 
     private Version wantedVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
