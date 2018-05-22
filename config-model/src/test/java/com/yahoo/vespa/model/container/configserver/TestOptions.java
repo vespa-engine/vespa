@@ -111,6 +111,16 @@ public class TestOptions implements CloudConfigOptions {
     @Override
     public Optional<String> loadBalancerAddress() { return Optional.empty(); }
 
+    @Override
+    public Optional<String> athenzDnsSuffix() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<String> ztsUrl() {
+        return Optional.empty();
+    }
+
     public TestOptions numParallelTenantLoaders(int numLoaders) {
         this.numParallelTenantLoaders = Optional.of(numLoaders);
         return this;

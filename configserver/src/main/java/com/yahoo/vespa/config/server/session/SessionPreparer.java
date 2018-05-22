@@ -36,6 +36,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -152,6 +153,8 @@ public class SessionPreparer {
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
                                                               HostName.from(configserverConfig.loadBalancerAddress()),
+                                                              configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null,
+                                                              configserverConfig.athenzDnsSuffix(),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
                                                               rotationsSet);

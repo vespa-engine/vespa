@@ -42,4 +42,6 @@ public interface CloudConfigOptions {
     Optional<Boolean> useVespaVersionInRequest();
     Optional<Integer> numParallelTenantLoaders();
     Optional<String> loadBalancerAddress();
+    Optional<String> athenzDnsSuffix();
+    Optional<String> ztsUrl();
 }

@@ -124,6 +124,16 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
         return getInstallVariable("load_balancer_address");
     }
 
+    @Override
+    public Optional<String> athenzDnsSuffix() {
+        return getInstallVariable("athenz_dns_suffix");
+    }
+
+    @Override
+    public Optional<String> ztsUrl() {
+        return getInstallVariable("zts_url");
+    }
+
     static ConfigServer[] toConfigServers(String configserversString) {
         return multiValueParameterStream(configserversString)
                 .map(CloudConfigInstallVariables::toConfigServer)

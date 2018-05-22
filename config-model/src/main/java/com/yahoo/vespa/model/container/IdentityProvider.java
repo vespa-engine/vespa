@@ -9,6 +9,8 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
+import java.net.URI;
+
 /**
  * @author mortent
  */
@@ -19,12 +21,16 @@ public class IdentityProvider extends SimpleComponent implements IdentityConfig.
     private final AthenzDomain domain;
     private final AthenzService service;
     private final HostName loadBalancerName;
+    private final URI ztsUrl;
+    private final String athenzDnsSuffix;
 
-    public IdentityProvider(AthenzDomain domain, AthenzService service, HostName loadBalancerName) {
+    public IdentityProvider(AthenzDomain domain, AthenzService service, HostName loadBalancerName, URI ztsUrl, String athenzDnsSuffix) {
         super(new ComponentModel(BundleInstantiationSpecification.getFromStrings(CLASS, CLASS, BUNDLE)));
         this.domain = domain;
         this.service = service;
         this.loadBalancerName = loadBalancerName;
+        this.ztsUrl = ztsUrl;
+        this.athenzDnsSuffix = athenzDnsSuffix;
     }
 
     @Override
@@ -34,5 +40,7 @@ public class IdentityProvider extends SimpleComponent implements IdentityConfig.
         // Current interpretation of loadbalancer address is: hostname.
         // Config should be renamed or send the uri
         builder.loadBalancerAddress(loadBalancerName.value());
+        builder.ztsUrl(ztsUrl != null ? ztsUrl.toString() : "");
+        builder.athenzDnsSuffix(athenzDnsSuffix != null ? athenzDnsSuffix : "");
     }
 }

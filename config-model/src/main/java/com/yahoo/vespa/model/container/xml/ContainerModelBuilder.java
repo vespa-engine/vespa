@@ -64,6 +64,7 @@ import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -195,9 +196,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     addIdentityProvider(cluster,
                                         context.getDeployState().getProperties().configServerSpecs(),
                                         context.getDeployState().getProperties().loadBalancerName(),
+                                        context.getDeployState().getProperties().ztsUrl(),
+                                        context.getDeployState().getProperties().athenzDnsSuffix(),
                                         context.getDeployState().zone(),
                                         deploymentSpec);
-
                     addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), deploymentSpec);
                 });
     }
@@ -747,11 +749,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addIdentityProvider(ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName, Zone zone, DeploymentSpec spec) {
+    private void addIdentityProvider(ContainerCluster cluster,
+                                     List<ConfigServerSpec> configServerSpecs,
+                                     HostName loadBalancerName,
+                                     URI ztsUrl,
+                                     String athenzDnsSuffix,
+                                     Zone zone,
+                                     DeploymentSpec spec) {
         spec.athenzDomain().ifPresent(domain -> {
             AthenzService service = spec.athenzService(zone.environment(), zone.region())
                     .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
-            IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs));
+            IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs), ztsUrl, athenzDnsSuffix);
             cluster.addComponent(identityProvider);
 
             cluster.getContainers().forEach(container -> {
