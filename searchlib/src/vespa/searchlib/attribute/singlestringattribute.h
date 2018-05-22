@@ -89,14 +89,15 @@ public:
             StringSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
-        bool onCmp(DocId doc, int32_t & weight) const override {
+        int32_t onCmp(DocId doc, int32_t elemId, int32_t & weight) const override {
             weight = 1;
-            return onCmp(doc);
+            return onCmp(doc, elemId);
         }
 
-        bool onCmp(DocId doc) const override {
+        int32_t onCmp(DocId doc, int32_t elemId) const override {
+            if ( elemId != 0) return -1;
             const SingleValueStringAttributeT<B> & attr(static_cast<const SingleValueStringAttributeT<B> &>(attribute()));
-            return isMatch(attr._enumStore.getValue(attr._enumIndices[doc]));
+            return isMatch(attr._enumStore.getValue(attr._enumIndices[doc])) ? 0 : -1;
         }
 
     };

@@ -67,12 +67,12 @@ public:
         uint32_t _valueShiftMask;
         uint32_t _wordShift;
 
-        bool onCmp(DocId docId, int32_t & weight) const override {
-            return cmp(docId, weight);
+        int32_t onCmp(DocId docId, int32_t elementId, int32_t & weight) const override {
+            return cmp(docId, elementId, weight);
         }
 
-        bool onCmp(DocId docId) const override {
-            return cmp(docId);
+        int32_t onCmp(DocId docId, int32_t elementId) const override {
+            return cmp(docId, elementId);
         }
 
         bool valid() const override;
@@ -80,19 +80,21 @@ public:
     public:
         SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
 
-        bool cmp(DocId docId, int32_t & weight) const {
+        int32_t cmp(DocId docId, int32_t elemId, int32_t & weight) const {
+            if ( elemId != 0) return -1;
             const Word &word = _wordData[docId >> _wordShift];
             uint32_t valueShift = (docId & _valueShiftMask) << _valueShiftShift;
             T v = (word >> valueShift) & _valueMask;
             weight = 1;
-            return match(v);
+            return match(v) ? 0 : -1;
         }
 
-        bool cmp(DocId docId) const {
+        int32_t cmp(DocId docId, int32_t elemId) const {
+            if ( elemId != 0) return -1;
             const Word &word = _wordData[docId >> _wordShift];
             uint32_t valueShift = (docId & _valueShiftMask) << _valueShiftShift;
             T v = (word >> valueShift) & _valueMask;
-            return match(v);
+            return match(v) ? 0 : -1;
         }
 
         Int64Range getAsIntegerTerm() const override;
@@ -101,14 +103,10 @@ public:
         createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
     };
 
-    SingleValueSmallNumericAttribute(const vespalib::string & baseFileName,
-                                     const Config &c,
-                                     Word valueMask,
-                                     uint32_t valueShiftShift,
-                                     uint32_t valueShiftMask,
-                                     uint32_t wordShift);
+    SingleValueSmallNumericAttribute(const vespalib::string & baseFileName, const Config &c, Word valueMask,
+                                     uint32_t valueShiftShift, uint32_t valueShiftMask, uint32_t wordShift);
 
-    ~SingleValueSmallNumericAttribute();
+    ~SingleValueSmallNumericAttribute() override;
 
     uint32_t getValueCount(DocId doc) const override {
         if (doc >= B::getNumDocs()) {
@@ -125,7 +123,8 @@ public:
     bool onLoad() override;
     void onSave(IAttributeSaveTarget &saveTarget) override;
 
-    SearchContext::UP getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
+    SearchContext::UP
+    getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     T getFast(DocId doc) const {
         const Word &word = _wordData[doc >> _wordShift];

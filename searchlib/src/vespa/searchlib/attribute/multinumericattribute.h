@@ -71,12 +71,12 @@ public:
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
 
-        bool onCmp(DocId docId, int32_t & weight) const override {
-            return cmp(docId, weight);
+        int32_t onCmp(DocId docId, int32_t elemId, int32_t & weight) const override {
+            return find(docId, elemId, weight);
         }
 
-        bool onCmp(DocId docId) const override {
-            return cmp(docId);
+        int32_t onCmp(DocId docId, int32_t elemId) const override {
+            return find(docId, elemId);
         }
 
         bool valid() const override;
@@ -86,25 +86,25 @@ public:
 
         Int64Range getAsIntegerTerm() const override;
 
-        bool cmp(DocId doc, int32_t & weight) const {
+        int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
-            for (const MultiValueType &mv : values) {
-                if (this->match(mv.value())) {
-                    weight = mv.weight();
-                    return true;
+            for (uint32_t i(elemId); i < values.size(); i++) {
+                if (this->match(values[i].value())) {
+                    weight = values[i].weight();
+                    return i;
                 }
             }
-            return false;
+            return -1;
         }
 
-        bool cmp(DocId doc) const {
+        int32_t find(DocId doc, int32_t elemId) const {
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
-            for (const MultiValueType &mv : values) {
-                if (this->match(mv.value())) {
-                    return true;
+            for (uint32_t i(elemId); i < values.size(); i++) {
+                if (this->match(values[i].value())) {
+                    return i;
                 }
             }
-            return false;
+            return -1;
         }
 
         std::unique_ptr<queryeval::SearchIterator>
@@ -119,12 +119,12 @@ public:
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
 
-        bool onCmp(DocId docId, int32_t & weight) const override {
-            return cmp(docId, weight);
+        int32_t onCmp(DocId docId, int32_t elemId, int32_t & weight) const override {
+            return find(docId, elemId, weight);
         }
 
-        bool onCmp(DocId docId) const override {
-            return cmp(docId);
+        int32_t onCmp(DocId docId, int32_t elemId) const override {
+            return find(docId, elemId);
         }
 
     protected:
@@ -132,27 +132,31 @@ public:
 
     public:
         ArraySearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
-        bool cmp(DocId doc, int32_t & weight) const {
+        int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
             uint32_t hitCount = 0;
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
-            for (const MultiValueType &mv : values) {
-                if (this->match(mv.value())) {
+            int32_t firstMatch = -1;
+            for (uint32_t i(elemId); i < values.size(); i++) {
+                if (this->match(values[i].value())) {
+                    if (firstMatch == -1) {
+                        firstMatch = i;
+                    }
                     hitCount++;
                 }
             }
             weight = hitCount;
 
-            return hitCount != 0;
+            return firstMatch;
         }
 
-        bool cmp(DocId doc) const {
+        int32_t find(DocId doc, int32_t elemId) const {
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
-            for (const MultiValueType &mv : values) {
-                if (this->match(mv.value())) {
-                    return true;
+            for (uint32_t i(elemId); i < values.size(); i++) {
+                if (this->match(values[i].value())) {
+                    return i;
                 }
             }
-            return false;
+            return -1;
         }
 
         Int64Range getAsIntegerTerm() const override;

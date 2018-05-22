@@ -62,47 +62,47 @@ private:
 }
 
 template <typename B, typename M>
-bool
-MultiValueStringAttributeT<B, M>::StringSetImplSearchContext::onCmp(DocId doc, int32_t & weight) const
+int32_t
+MultiValueStringAttributeT<B, M>::StringSetImplSearchContext::onCmp(DocId doc, int32_t elemId, int32_t & weight) const
 {
     StringAttribute::StringSearchContext::CollectWeight collector;
-    return this->collectWeight(doc, weight, collector);
+    return this->collectWeight(doc, elemId, weight, collector);
 }
 
 template <typename B, typename M>
-bool
-MultiValueStringAttributeT<B, M>::StringArrayImplSearchContext::onCmp(DocId doc, int32_t & weight) const
+int32_t
+MultiValueStringAttributeT<B, M>::StringArrayImplSearchContext::onCmp(DocId doc, int32_t elemId, int32_t & weight) const
 {
     StringAttribute::StringSearchContext::CollectHitCount collector;
-    return this->collectWeight(doc, weight, collector);
+    return this->collectWeight(doc, elemId, weight, collector);
 }
 
 template <typename B, typename M>
 template <typename Collector>
-bool
-MultiValueStringAttributeT<B, M>::StringImplSearchContext::collectWeight(DocId doc, int32_t & weight, Collector & collector) const
+int32_t
+MultiValueStringAttributeT<B, M>::StringImplSearchContext::collectWeight(DocId doc, int32_t elemId, int32_t & weight, Collector & collector) const
 {
     WeightedIndexArrayRef indices(myAttribute()._mvMapping.get(doc));
 
     EnumAccessor<typename B::EnumStore> accessor(myAttribute()._enumStore);
-    collectMatches(indices, accessor, collector);
+    int32_t foundElem = collectMatches(indices, elemId, accessor, collector);
     weight = collector.getWeight();
-    return collector.hasMatch();
+    return foundElem;
 }
 
 template <typename B, typename M>
-bool
-MultiValueStringAttributeT<B, M>::StringImplSearchContext::onCmp(DocId doc) const
+int32_t
+MultiValueStringAttributeT<B, M>::StringImplSearchContext::onCmp(DocId doc, int32_t elemId) const
 {
     const MultiValueStringAttributeT<B, M> & attr(static_cast< const MultiValueStringAttributeT<B, M> & > (attribute()));
     WeightedIndexArrayRef indices(attr._mvMapping.get(doc));
-    for (const WeightedIndex &wi : indices) {
-        if (isMatch(attr._enumStore.getValue(wi.value()))) {
-            return true;
+    for (uint32_t i(elemId); i < indices.size(); i++) {
+        if (isMatch(attr._enumStore.getValue(indices[i].value()))) {
+            return i;
         }
     }
 
-    return false;
+    return -1;
 }
 
 template <typename B, typename M>

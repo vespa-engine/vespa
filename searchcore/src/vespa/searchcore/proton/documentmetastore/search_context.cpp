@@ -12,15 +12,14 @@ using search::QueryTermSimple;
 using search::fef::TermFieldMatchData;
 using search::queryeval::SearchIterator;
 
-namespace proton {
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 namespace {
 
 class GidAllSearchIterator : public AttributeIteratorBase
 {
 private:
-    virtual void
+    void
     doSeek(uint32_t docId) override
     {
         if (_store.validLidFast(docId)) {
@@ -28,7 +27,7 @@ private:
         }
     }
 
-    virtual void
+    void
     doUnpack(uint32_t docId) override
     {
         _matchData->reset(docId);
@@ -37,8 +36,7 @@ private:
 protected:
     const DocumentMetaStore & _store;
 public:
-    GidAllSearchIterator(TermFieldMatchData *matchData,
-                         const DocumentMetaStore &store)
+    GidAllSearchIterator(TermFieldMatchData *matchData, const DocumentMetaStore &store)
         : AttributeIteratorBase(matchData),
           _store(store)
     {
@@ -79,7 +77,7 @@ class GidSearchIterator : public GidAllSearchIterator
 private:
     const GlobalId & _gid;
 
-    virtual void
+    void
     doSeek(uint32_t docId) override
     {
         AttributeVector::DocId lid = 0;
@@ -90,9 +88,7 @@ private:
         }
     }
 public:
-    GidSearchIterator(TermFieldMatchData *matchData,
-                      const DocumentMetaStore &store,
-                      const GlobalId &gid)
+    GidSearchIterator(TermFieldMatchData *matchData, const DocumentMetaStore &store, const GlobalId &gid)
         : GidAllSearchIterator(matchData, store),
           _gid(gid)
     {
@@ -101,23 +97,16 @@ public:
 
 }
 
-bool
-SearchContext::onCmp(DocId docId, int32_t &weight) const
+int32_t
+SearchContext::onCmp(DocId, int32_t, int32_t &) const
 {
-    (void) docId;
-    (void) weight;
-    throw vespalib::IllegalStateException(
-            "The function is not implemented for documentmetastore::SearchContext");
-    return false;
+    throw vespalib::IllegalStateException("The function is not implemented for documentmetastore::SearchContext");
 }
 
-bool
-SearchContext::onCmp(DocId docId) const
+int32_t
+SearchContext::onCmp(DocId, int32_t ) const
 {
-    (void) docId;
-    throw vespalib::IllegalStateException(
-            "The function is not implemented for documentmetastore::SearchContext");
-    return false;
+    throw vespalib::IllegalStateException("The function is not implemented for documentmetastore::SearchContext");
 }
 
 unsigned int
@@ -127,15 +116,13 @@ SearchContext::approximateHits() const
 }
 
 SearchIterator::UP
-SearchContext::createIterator(TermFieldMatchData *matchData,
-                              bool strict)
+SearchContext::createIterator(TermFieldMatchData *matchData, bool strict)
 {
     return _isWord
-        ? SearchIterator::UP(new GidSearchIterator(matchData, getStore(), _gid))
+        ? std::make_unique<GidSearchIterator>(matchData, getStore(), _gid)
         : strict
-            ?  SearchIterator::UP(new GidStrictAllSearchIterator(matchData,
-                                      getStore()))
-            :  SearchIterator::UP(new GidAllSearchIterator(matchData, getStore()));
+            ?  std::make_unique<GidStrictAllSearchIterator>(matchData, getStore())
+            :  std::make_unique<GidAllSearchIterator>(matchData, getStore());
 }
 
 const DocumentMetaStore &
@@ -144,12 +131,10 @@ SearchContext::getStore() const
     return static_cast<const DocumentMetaStore &>(attribute());
 }
 
-SearchContext::SearchContext(QueryTermSimple::UP qTerm,
-                             const DocumentMetaStore &toBeSearched)
+SearchContext::SearchContext(QueryTermSimple::UP qTerm, const DocumentMetaStore &toBeSearched)
     : search::AttributeVector::SearchContext(toBeSearched),
       _isWord(qTerm->isWord())
 {
 }
 
-}
 }

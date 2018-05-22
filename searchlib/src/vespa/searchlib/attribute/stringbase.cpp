@@ -273,31 +273,31 @@ public:
 
 }
 
-bool
-StringAttribute::StringSearchContext::onCmp(DocId docId, int32_t & weight) const
+int32_t
+StringAttribute::StringSearchContext::onCmp(DocId docId, int32_t elemId, int32_t & weight) const
 {
     WeightedConstChar * buffer = getBuffer();
     uint32_t valueCount = attribute().get(docId, buffer, _bufferLen);
 
     CollectWeight collector;
     DirectAccessor accessor;
-    collectMatches(vespalib::ConstArrayRef<WeightedConstChar>(buffer, std::min(valueCount, _bufferLen)), accessor, collector);
+    int32_t foundElem = collectMatches(vespalib::ConstArrayRef<WeightedConstChar>(buffer, std::min(valueCount, _bufferLen)), elemId, accessor, collector);
     weight = collector.getWeight();
-    return collector.hasMatch();
+    return foundElem;
 }
 
-bool
-StringAttribute::StringSearchContext::onCmp(DocId docId) const
+int32_t
+StringAttribute::StringSearchContext::onCmp(DocId docId, int32_t elemId) const
 {
     WeightedConstChar * buffer = getBuffer();
     uint32_t valueCount = attribute().get(docId, buffer, _bufferLen);
-    for (uint32_t i = 0, m = std::min(valueCount, _bufferLen); (i < m); i++) {
+    for (uint32_t i = elemId, m = std::min(valueCount, _bufferLen); (i < m); i++) {
         if (isMatch(buffer[i].getValue())) {
-            return true;
+            return i;
         }
     }
 
-    return false;
+    return -1;
 }
 
 bool StringAttribute::applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust)

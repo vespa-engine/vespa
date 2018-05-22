@@ -82,7 +82,7 @@ protected:
 
 public:
     AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData);
-    bool seekFast(uint32_t docId) const { return _searchContext.cmp(docId); }
+    bool seekFast(uint32_t docId) const { return _searchContext.matches(docId); }
 };
 
 template <typename SC>
@@ -100,7 +100,7 @@ protected:
 
 public:
     FilterAttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData);
-    bool seekFast(uint32_t docId) const { return _searchContext.cmp(docId); }
+    bool seekFast(uint32_t docId) const { return _searchContext.matches(docId); }
 };
 
 

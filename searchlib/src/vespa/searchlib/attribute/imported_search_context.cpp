@@ -44,8 +44,7 @@ ImportedSearchContext::ImportedSearchContext(
 
 }
 
-ImportedSearchContext::~ImportedSearchContext() {
-}
+ImportedSearchContext::~ImportedSearchContext() = default;
 
 unsigned int ImportedSearchContext::approximateHits() const {
     return _reference_attribute.getNumDocs();
