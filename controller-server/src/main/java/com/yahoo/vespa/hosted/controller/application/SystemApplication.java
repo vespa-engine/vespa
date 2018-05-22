@@ -25,7 +25,7 @@ public enum SystemApplication {
     private final NodeType nodeType;
     private final List<SystemApplication> prerequisites;
 
-    SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication ... prerequisites) {
+    SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication... prerequisites) {
         this.id = id;
         this.nodeType = nodeType;
         this.prerequisites = Arrays.asList(prerequisites);

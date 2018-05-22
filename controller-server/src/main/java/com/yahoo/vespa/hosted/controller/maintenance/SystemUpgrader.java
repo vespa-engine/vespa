@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -37,11 +38,12 @@ public class SystemUpgrader extends Maintainer {
         if (!target.isPresent()) {
             return;
         }
-        converge(SystemApplication.all(), target.get());
+        // TODO: Change to SystemApplication.all() once host applications support upgrade
+        deploy(Arrays.asList(SystemApplication.configServer, SystemApplication.zone), target.get());
     }
 
     /** Deploy a list of system applications until they converge on the given version */
-    private void converge(List<SystemApplication> applications, Version target) {
+    private void deploy(List<SystemApplication> applications, Version target) {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
             boolean converged = true;
             for (SystemApplication application : applications) {

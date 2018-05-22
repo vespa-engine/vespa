@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -114,6 +115,7 @@ public class SystemUpgraderTest {
     }
 
     @Test
+    @Ignore // TODO: Unignore once host applications support upgrade
     public void upgrade_system_containing_host_applications() {
         tester.controllerTester().zoneRegistry().setUpgradePolicy(
                 UpgradePolicy.create()
