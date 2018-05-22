@@ -153,9 +153,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
-        File tempDir = Files.createTempDir();
-        File applicationPackage = decompressApplication(in, tempDir);
-        return deploy(applicationPackage, prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
+        return deploy(decompressApplication(in), prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
@@ -350,8 +348,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in, String contentType) {
-        File tempDir = Files.createTempDir();
-        return createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
+        return createSession(applicationId, timeoutBudget, decompressApplication(in, contentType));
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
@@ -442,17 +439,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return currentActiveApplicationSet;
     }
 
-    private File decompressApplication(InputStream in, String contentType, File tempDir) {
+    private File decompressApplication(InputStream in, String contentType) {
         try (CompressedApplicationInputStream application =
                      CompressedApplicationInputStream.createFromCompressedStream(in, contentType)) {
-            return decompressApplication(application, tempDir);
+            return decompressApplication(application);
         } catch (IOException e) {
-            cleanupTempDirectory(tempDir, logger);
             throw new IllegalArgumentException("Unable to decompress data in body", e);
         }
     }
 
-    private File decompressApplication(CompressedApplicationInputStream in, File tempDir) {
+    private File decompressApplication(CompressedApplicationInputStream in) {
+        File tempDir = Files.createTempDir();
         try {
             return in.decompress(tempDir);
         } catch (IOException e) {
