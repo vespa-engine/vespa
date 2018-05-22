@@ -98,10 +98,9 @@ public class FastHit extends Hit {
         if (uri != null) return uri;
 
         // TODO: Remove on Vespa 7, this should be one of the last vestiges of URL field magic
-        if (fields().containsKey("uri")) {
-            // trigger decoding
-            Object o = getField("uri");
-            setId(o.toString());
+        Object uriField = getField("uri");
+        if (uriField != null) {
+            setId(uriField.toString());
             return super.getId();
         }
 
