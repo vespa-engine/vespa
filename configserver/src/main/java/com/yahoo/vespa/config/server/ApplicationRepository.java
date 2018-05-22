@@ -199,10 +199,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, timeoutBudget);
         tenant.getLocalSessionRepo().addSession(newSession);
 
-        // Keep manually deployed applications on the latest version, don't change version otherwise
-        Version version = environment.isManuallyDeployed() ? Vtag.currentVersion : newSession.getVespaVersion();
+        // Keep manually deployed tenant applications on the latest version, don't change version otherwise
+        // TODO: Remove this and always use version from session once controller starts upgrading manual deployments
+        Version version = decideVersion(application, environment, newSession.getVespaVersion());
                 
-        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner,tenant, timeout, clock,
+        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
                                                  false /* don't validate as this is already deployed */, version));
     }
 
@@ -516,6 +517,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                        "Change(s) between active and new application that may require re-feed:\n" +
                                refeedActions.format());
         }
+    }
+
+    /** Returns version to use when deploying application in given environment */
+    static Version decideVersion(ApplicationId application, Environment environment, Version targetVersion) {
+        if (environment.isManuallyDeployed() &&
+            !"hosted-vespa".equals(application.tenant().value())) { // Never change version of system applications
+            return Vtag.currentVersion;
+        }
+        return targetVersion;
     }
 
     public Slime createDeployLog() {

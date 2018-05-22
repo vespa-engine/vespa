@@ -1,9 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
@@ -88,6 +91,23 @@ public class ApplicationRepositoryTest {
         assertTrue(applicationRepository.removeUnusedTenants().isEmpty());
         applicationRepository.remove(applicationId());
         assertEquals(tenantName, applicationRepository.removeUnusedTenants().iterator().next());
+    }
+
+    @Test
+    public void decideVersion() {
+        ApplicationId regularApp = ApplicationId.from("tenant1", "application1", "default");
+        ApplicationId systemApp = ApplicationId.from("hosted-vespa", "routing", "default");
+        Version targetVersion = Version.fromString("5.0");
+
+        // Always use target for system application
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.prod, targetVersion));
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.dev, targetVersion));
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.perf, targetVersion));
+
+        // Target for regular application depends on environment
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(regularApp, Environment.prod, targetVersion));
+        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, targetVersion));
+        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, targetVersion));
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
