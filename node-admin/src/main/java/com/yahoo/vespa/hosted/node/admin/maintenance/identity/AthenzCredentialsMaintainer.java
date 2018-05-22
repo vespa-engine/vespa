@@ -40,6 +40,7 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
@@ -252,7 +253,7 @@ public class AthenzCredentialsMaintainer {
                         idDoc.instanceHostname(),
                         idDoc.createdAt(),
                         idDoc.ipAddresses());
-        String rawIdentityDocument = objectMapper.writeValueAsString(identityDocumentPayload);
+        String rawIdentityDocument = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(identityDocumentPayload).getBytes());
         com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument payload =
                 new com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument(
                         rawIdentityDocument,
