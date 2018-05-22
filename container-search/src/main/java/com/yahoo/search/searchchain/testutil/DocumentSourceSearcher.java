@@ -28,7 +28,7 @@ import com.yahoo.search.searchchain.Execution;
  * Any field in the configured hits which has a name starting by attribute
  * will be returned when attribute prefetch filling is requested.</p>
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class DocumentSourceSearcher extends Searcher {
 
@@ -85,7 +85,6 @@ public class DocumentSourceSearcher extends Searcher {
     private void addDefaultResults() {
         Query q = new Query("?query=default");
         Result r = new Result(q);
-        // These four used to assign collapseId 1,2,3,4 - re-add that if needed
         r.hits().add(new Hit("http://default-1.html", 0));
         r.hits().add(new Hit("http://default-2.html", 0));
         r.hits().add(new Hit("http://default-3.html", 0));
@@ -97,8 +96,7 @@ public class DocumentSourceSearcher extends Searcher {
     @Override
     public Result search(Query query, Execution execution)  {
         queryCount++;
-        Result r;
-        r = unFilledResults.get(getQueryKeyClone(query));
+        Result r = unFilledResults.get(getQueryKeyClone(query));
         if (r == null) {
             r = defaultFilledResult.clone();
         } else {
@@ -111,12 +109,13 @@ public class DocumentSourceSearcher extends Searcher {
     }
 
     /**
-     * Returns a query clone which has offset and hits set to null. This is used by access to
+     * Returns a query clone which has sourcr, offset and hits set to null. This is used by access to
      * the maps using the query as key to achieve lookup independent of offset/hits value
      */
     private Query getQueryKeyClone(Query query) {
-        Query key=query.clone();
+        Query key = query.clone();
         key.setWindow(0,0);
+        key.getModel().setSources("");
         return key;
     }
 
