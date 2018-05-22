@@ -39,8 +39,6 @@ import static org.junit.Assert.assertTrue;
  * @author Bob Travis
  * @author bratseth
  */
-// The SuppressWarnings is to shut up the compiler about using
-// deprecated FastHit constructor in the tests.
 @SuppressWarnings({ "rawtypes" })
 public class BlendingSearcherTestCase {
 
