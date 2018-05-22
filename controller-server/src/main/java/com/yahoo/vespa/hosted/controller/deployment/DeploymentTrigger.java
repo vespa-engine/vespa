@@ -216,7 +216,7 @@ public class DeploymentTrigger {
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if (application.change().isPresent() && ! application.deploymentJobs().hasFailures())
+            if (application.changeAt(controller.clock().instant()).isPresent() && ! application.deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
                                                    application.change() + " is already in progress");
             application = application.withChange(change);

@@ -94,14 +94,14 @@ public class Upgrader extends Maintainer {
         applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
-        applications = applications.notDeploying(); // wait with applications deploying an application change or already upgrading
+        applications = applications.notDeployingAt(controller().clock().instant()); // wait with applications deploying an application change or already upgrading
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
         for (Application application : applications.asList()) {
             try {
-                controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
+                controller().applications().deploymentTrigger().triggerChange(application.id(), application.change().with(version));
             } catch (IllegalArgumentException e) {
                 log.log(Level.INFO, "Could not trigger change: " + Exceptions.toMessageString(e));
             }

@@ -22,7 +22,7 @@ public class OutstandingChangeDeployer extends Maintainer {
     protected void maintain() {
         ApplicationList applications = ApplicationList.from(controller().applications().asList()).notPullRequest();
         for (Application application : applications.asList()) {
-            if (!application.change().isPresent() && application.outstandingChange().isPresent()) {
+            if ( ! application.change().isPresent() && application.outstandingChange().isPresent()) {
                 controller().applications().deploymentTrigger().triggerChange(application.id(),
                                                                               application.outstandingChange());
             }
