@@ -39,7 +39,11 @@ public class SystemUpgrader extends Maintainer {
             return;
         }
         // TODO: Change to SystemApplication.all() once host applications support upgrade
-        deploy(Arrays.asList(SystemApplication.configServer, SystemApplication.zone), target.get());
+        try {
+            deploy(Arrays.asList(SystemApplication.configServer, SystemApplication.zone), target.get());
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to upgrade system. Retrying in " + maintenanceInterval(), e);
+        }
     }
 
     /** Deploy a list of system applications until they converge on the given version */
