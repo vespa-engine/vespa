@@ -153,8 +153,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
-        File tempDir = Files.createTempDir();
-        return deploy(decompressApplication(in, tempDir), prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
+        return deploy(decompressApplication(in), prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
@@ -163,10 +162,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams,
                                 boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
-        File tempDir = Files.createTempDir();
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
-        cleanupApplicationDirectory(tempDir, logger);
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         return prepareAndActivate(tenant, sessionId, prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
     }
@@ -351,10 +348,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in, String contentType) {
-        File tempDir = Files.createTempDir();
-        long sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
-        cleanupApplicationDirectory(tempDir, logger);
-        return sessionId;
+        return createSession(applicationId, timeoutBudget, decompressApplication(in, contentType));
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
@@ -445,19 +439,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return currentActiveApplicationSet;
     }
 
-    private File decompressApplication(InputStream in, String contentType, File tempDir) {
+    private File decompressApplication(InputStream in, String contentType) {
         try (CompressedApplicationInputStream application =
                      CompressedApplicationInputStream.createFromCompressedStream(in, contentType)) {
-            return decompressApplication(application, tempDir);
+            return decompressApplication(application);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to decompress data in body", e);
         }
     }
 
-    private File decompressApplication(CompressedApplicationInputStream in, File tempDir) {
+    private File decompressApplication(CompressedApplicationInputStream in) {
+        File tempDir = Files.createTempDir();
         try {
             return in.decompress(tempDir);
         } catch (IOException e) {
+            cleanupTempDirectory(tempDir, logger);
             throw new IllegalArgumentException("Unable to decompress stream", e);
         }
     }
@@ -467,7 +463,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return applicationRepo.listApplications();
     }
 
-    private static void cleanupApplicationDirectory(File tempDir, DeployLogger logger) {
+    private static void cleanupTempDirectory(File tempDir, DeployLogger logger) {
         logger.log(LogLevel.DEBUG, "Deleting tmp dir '" + tempDir + "'");
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
             logger.log(LogLevel.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
