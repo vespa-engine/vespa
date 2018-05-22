@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -30,10 +31,12 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +44,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -275,6 +277,39 @@ public class ProvisioningTester {
         nodes = nodeRepository.addNodes(nodes);
         return nodes;
     }
+
+    List<Node> makeConfigServers(int n, String flavor, Version configServersVersion) {
+        List<Node> nodes = new ArrayList<>(n);
+        MockNameResolver nameResolver = (MockNameResolver)nodeRepository().nameResolver();
+
+        for (int i = 1; i <= n; i++) {
+            String hostname = "cfg" + i;
+            String ipv4 = "127.0.1." + i;
+
+            nameResolver.addRecord(hostname, ipv4);
+            Node node = nodeRepository.createNode(hostname,
+                    hostname,
+                    Collections.singleton(ipv4),
+                    Optional.empty(),
+                    nodeFlavors.getFlavorOrThrow(flavor),
+                    NodeType.config);
+            nodes.add(node);
+        }
+
+        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+
+        ConfigServerApplication application = ConfigServerApplication.CONFIG_SERVER_APPLICATION;
+        List<HostSpec> hosts = prepare(
+                application.getApplicationId(),
+                application.getClusterSpecWithVersion(configServersVersion),
+                application.getCapacity(),
+                1);
+        activate(application.getApplicationId(), new HashSet<>(hosts));
+        return nodeRepository.getNodes(application.getApplicationId(), Node.State.active);
+    }
+
 
     List<Node> makeReadyNodes(int n, String flavor, NodeType type, int additionalIps) {
         List<Node> nodes = makeProvisionedNodes(n, flavor, type, additionalIps);
