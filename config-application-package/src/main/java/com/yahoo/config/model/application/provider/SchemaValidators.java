@@ -56,20 +56,23 @@ public class SchemaValidators {
      */
     public SchemaValidators(Version vespaVersion, DeployLogger logger) {
         this.deployLogger = logger;
-        File schemaDir;
+        File schemaDir = null;
         try {
             schemaDir = saveSchemasFromJar(new File(SchemaValidators.schemaDirBase), vespaVersion);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            servicesXmlValidator = createValidator(schemaDir, servicesXmlSchemaName);
+            hostsXmlValidator = createValidator(schemaDir, hostsXmlSchemaName);
+            deploymentXmlValidator = createValidator(schemaDir, deploymentXmlSchemaName);
+            validationOverridesXmlValidator = createValidator(schemaDir, validationOverridesXmlSchemaName);
+            containerIncludeXmlValidator = createValidator(schemaDir, containerIncludeXmlSchemaName);
+            routingStandaloneXmlValidator = createValidator(schemaDir, routingStandaloneXmlSchemaName);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            if (schemaDir != null)
+                IOUtils.recursiveDeleteDir(schemaDir);
         }
-
-        servicesXmlValidator = createValidator(schemaDir, servicesXmlSchemaName);
-        hostsXmlValidator = createValidator(schemaDir, hostsXmlSchemaName);
-        deploymentXmlValidator = createValidator(schemaDir, deploymentXmlSchemaName);
-        validationOverridesXmlValidator = createValidator(schemaDir, validationOverridesXmlSchemaName);
-        containerIncludeXmlValidator = createValidator(schemaDir, containerIncludeXmlSchemaName);
-        routingStandaloneXmlValidator = createValidator(schemaDir, routingStandaloneXmlSchemaName);
-        IOUtils.recursiveDeleteDir(schemaDir);
     }
 
     /**
@@ -81,19 +84,19 @@ public class SchemaValidators {
         this(vespaVersion, new BaseDeployLogger());
     }
 
-    public SchemaValidator servicesXmlValidator() throws IOException {
+    public SchemaValidator servicesXmlValidator() {
         return servicesXmlValidator;
     }
 
-    public SchemaValidator hostsXmlValidator() throws IOException {
+    public SchemaValidator hostsXmlValidator() {
         return hostsXmlValidator;
     }
 
-    public SchemaValidator deploymentXmlValidator() throws IOException {
+    public SchemaValidator deploymentXmlValidator() {
         return deploymentXmlValidator;
     }
 
-    SchemaValidator validationOverridesXmlValidator() throws IOException {
+    SchemaValidator validationOverridesXmlValidator() {
         return validationOverridesXmlValidator;
     }
 
