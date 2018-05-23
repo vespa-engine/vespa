@@ -11,14 +11,15 @@ namespace search::attribute {
 void
 ElementIterator::doSeek(uint32_t docid) {
     _search->doSeek(docid);
+    setDocId(_search->getDocId());
 }
 
 void
 ElementIterator::doUnpack(uint32_t docid) {
-    int32_t weight(0);
-    int32_t id(0);
     _tfmda.reset(docid);
-    for (id = _searchContext.find(docid, 0, weight); id >= 0; id = _searchContext.find(docid, 0, weight)) {
+    _search->doUnpack(docid);
+    int32_t weight(0);
+    for (int32_t id = _searchContext.find(docid, 0, weight); id >= 0; id = _searchContext.find(docid, 0, weight)) {
         _tfmda.appendPosition(TermFieldMatchDataPosition(id, 0, weight, 1));
     }
 }

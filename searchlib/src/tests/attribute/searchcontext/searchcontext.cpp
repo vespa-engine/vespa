@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
+#include <vespa/searchlib/attribute/elementiterator.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -620,21 +621,30 @@ void SearchContextTest::testSearch(const ConfigMap & cfgs) {
 template<typename T, typename A>
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name, const Config & cfg);
+    Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name,
+             const Config & cfg, bool withElementId);
     ~Verifier();
-    SearchIterator::UP create(bool strict) const override {
-        return _sc->createIterator(&_dummy, strict);
+    SearchIterator::UP
+    create(bool strict) const override {
+        auto search = _sc->createIterator(&_dummy, strict);
+        if (_withElementId) {
+            search = std::make_unique<attribute::ElementIterator>(std::move(search), *_sc, _dummy);
+        }
+        return search;
     }
 private:
     mutable TermFieldMatchData _dummy;
-    AttributePtr _attribute;
+    const bool       _withElementId;
+    AttributePtr     _attribute;
     SearchContextPtr _sc;
 };
 
 template<typename T, typename A>
-Verifier<T, A>::Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name, const Config & cfg)
-    :_attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
-     _sc()
+Verifier<T, A>::Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name,
+                         const Config & cfg, bool withElementId)
+    : _withElementId(withElementId),
+      _attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
+      _sc()
 {
     SearchContextTest::addDocs(*_attribute, getDocIdLimit());
     for (uint32_t doc : getExpectedDocIds()) {
@@ -648,15 +658,18 @@ Verifier<T, A>::Verifier(T key, const vespalib::string & keyAsString, const vesp
 }
 
 template<typename T, typename A>
-Verifier<T, A>::~Verifier() {}
+Verifier<T, A>::~Verifier() = default;
 
 template<typename T, typename A>
 void SearchContextTest::testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs) {
 
-    for (const auto & cfg : cfgs) {
-        Verifier<T, A> verifier(key, keyAsString, cfg.first, cfg.second);
-        verifier.verify();
+    for (bool withElementId : {false, true} ) {
+        for (const auto & cfg : cfgs) {
+            Verifier<T, A> verifier(key, keyAsString, cfg.first, cfg.second, withElementId);
+            verifier.verify();
+        }
     }
+
 }
 
 void SearchContextTest::testSearchIteratorConformance() {
@@ -1894,7 +1907,7 @@ SearchContextTest::SearchContextTest() :
     initStringConfig();
 }
 
-SearchContextTest::~SearchContextTest() {}
+SearchContextTest::~SearchContextTest() = default;
 
 int
 SearchContextTest::Main()
