@@ -126,12 +126,14 @@ public:
     {
     }
 
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
+    SearchIterator::UP
+    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
         return _search_context->createIterator(tfmda[0], strict);
     }
 
-    void fetchPostings(bool strict) override {
+    void
+    fetchPostings(bool strict) override {
         _search_context->fetchPostings(strict);
     }
 

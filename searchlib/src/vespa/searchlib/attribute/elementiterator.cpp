@@ -2,6 +2,9 @@
 
 #include "elementiterator.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+
+using search::fef::TermFieldMatchDataPosition;
 
 namespace search::attribute {
 
@@ -12,7 +15,12 @@ ElementIterator::doSeek(uint32_t docid) {
 
 void
 ElementIterator::doUnpack(uint32_t docid) {
-    (void) docid;
+    int32_t weight(0);
+    int32_t id(0);
+    _tfmda.reset(docid);
+    for (id = _searchContext.find(docid, 0, weight); id >= 0; id = _searchContext.find(docid, 0, weight)) {
+        _tfmda.appendPosition(TermFieldMatchDataPosition(id, 0, weight, 1));
+    }
 }
 
 vespalib::Trinary
@@ -26,9 +34,10 @@ ElementIterator::initRange(uint32_t beginid, uint32_t endid) {
     SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
 }
 
-ElementIterator::ElementIterator(SearchIterator::UP search, ISearchContext & sc)
+ElementIterator::ElementIterator(SearchIterator::UP search, ISearchContext & sc, fef::TermFieldMatchData & tfmda)
     : _search(std::move(search)),
-      _searchContext(sc)
+      _searchContext(sc),
+      _tfmda(tfmda)
 {
 }
 

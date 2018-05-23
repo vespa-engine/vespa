@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
+namespace search::fef { class TermFieldMatchData; }
 namespace search::attribute {
 
 class ISearchContext;
@@ -11,15 +12,16 @@ class ISearchContext;
 class ElementIterator : public queryeval::SearchIterator
 {
 private:
-    SearchIterator::UP _search;
-    ISearchContext   & _searchContext;
+    SearchIterator::UP        _search;
+    ISearchContext          & _searchContext;
+    fef::TermFieldMatchData & _tfmda;
 
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
     Trinary is_strict() const override;
     void initRange(uint32_t beginid, uint32_t endid) override;
 public:
-    ElementIterator(SearchIterator::UP search, ISearchContext & sc);
+    ElementIterator(SearchIterator::UP search, ISearchContext & sc, fef::TermFieldMatchData & tfmda);
     ~ElementIterator();
 };
 
