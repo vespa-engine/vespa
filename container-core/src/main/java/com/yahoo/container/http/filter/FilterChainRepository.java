@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -38,7 +37,6 @@ import static java.util.stream.Collectors.toSet;
  * @author bjorncs
  */
 public class FilterChainRepository extends AbstractComponent {
-    private static final Logger log = Logger.getLogger(FilterChainRepository.class.getName());
 
     private final ComponentRegistry<Object> filterAndChains;
 
@@ -79,23 +77,12 @@ public class FilterChainRepository extends AbstractComponent {
         ChainRegistry<FilterWrapper> chainRegistry = new ChainRegistry<>();
         ChainsModel chainsModel = ChainsModelBuilder.buildFromConfig(chainsConfig);
         ChainsConfigurer.prepareChainRegistry(chainRegistry, chainsModel, allFiltersWrapped(filters));
-        removeEmptyChains(chainRegistry);
         chainRegistry.freeze();
         return chainRegistry;
     }
 
-    private static void removeEmptyChains(ChainRegistry<FilterWrapper> chainRegistry) {
-        chainRegistry.allComponents().stream()
-                .filter(chain -> chain.components().isEmpty())
-                .map(Chain::getId)
-                .peek(id -> log.warning("Removing empty filter chain: " + id))
-                .forEach(chainRegistry::unregister);
-    }
-
     @SuppressWarnings("unchecked")
     private static Object toJDiscChain(Chain<FilterWrapper> chain) {
-        if (chain.components().isEmpty())
-            throw new IllegalArgumentException("Empty filter chain: " + chain.getId());
         checkFilterTypesCompatible(chain);
         List<?> jdiscFilters = chain.components().stream()
                         .map(filterWrapper -> filterWrapper.filter)
@@ -111,6 +98,7 @@ public class FilterChainRepository extends AbstractComponent {
     }
 
     private static List<?> wrapSecurityFilters(List<?> filters) {
+        if (filters.isEmpty()) return emptyList();
         List<Object> aggregatedSecurityFilters = new ArrayList<>();
         List<Object> wrappedFilters = new ArrayList<>();
         for (Object filter : filters) {
