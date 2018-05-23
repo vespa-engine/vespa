@@ -79,6 +79,7 @@ public class JsonReader {
         return operation;
     }
 
+    /** Returns the next document operation, or null if we have reached the end */
     public DocumentOperation next() {
         switch (state) {
             case AT_START:

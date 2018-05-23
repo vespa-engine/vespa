@@ -1094,6 +1094,54 @@ public class JsonReaderTestCase {
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
     }
 
+    @Test
+    public void testMissingOperation() {
+        try {
+            String jsonData = inputJson(
+                    "[",
+                    "      {",
+                    "          'fields': {",
+                    "              'actualarray': {",
+                    "                  'add': [",
+                    "                      'person',",
+                    "                      'another person'",
+                    "                   ]",
+                    "              }",
+                    "          }",
+                    "      }",
+                    "]");
+
+            new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMissingFieldsMap() { todo ...
+        try {
+            String jsonData = inputJson(
+                    "[",
+                    "      {",
+                    "          'fields': {",
+                    "              'actualarray': {",
+                    "                  'add': [",
+                    "                      'person',",
+                    "                      'another person'",
+                    "                   ]",
+                    "              }",
+                    "          }",
+                    "      }",
+                    "]");
+
+            new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("", e.getMessage());
+        }
+    }
+
     static ByteArrayInputStream jsonToInputStream(String json) {
         return new ByteArrayInputStream(Utf8.toBytes(json));
     }
