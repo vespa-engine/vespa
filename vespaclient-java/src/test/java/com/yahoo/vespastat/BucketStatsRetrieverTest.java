@@ -20,6 +20,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -127,12 +128,8 @@ public class BucketStatsRetrieverTest {
         BucketStatsRetriever retriever = new BucketStatsRetriever(mockedFactory, route, t -> {});
         retriever.retrieveBucketList(new BucketId(0), bucketSpace);
 
-        verify(mockedSession).syncSend(argThat(new ArgumentMatcher<Message>() {
-            @Override
-            public boolean matches(Object o) {
-                return ((Message) o).getRoute().equals(Route.parse(route));
-            }
-        }));
+        // Route is set at session-level, not per message sent.
+        verify(mockedSession).setRoute(eq(route));
     }
 
     private BucketStatsRetriever createRetriever() {
