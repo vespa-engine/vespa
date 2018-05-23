@@ -12,17 +12,23 @@ import java.util.List;
  *
  * @author mpolden
  */
-public enum  SystemApplication {
+public enum SystemApplication {
 
+    // Note that the enum declaration order decides the upgrade order
+    configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
+    proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
     configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
-    zone(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy);
+    zone(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy,
+         configServerHost, proxyHost, configServer);
 
     private final ApplicationId id;
     private final NodeType nodeType;
+    private final List<SystemApplication> prerequisites;
 
-    SystemApplication(ApplicationId id, NodeType nodeType) {
+    SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication... prerequisites) {
         this.id = id;
         this.nodeType = nodeType;
+        this.prerequisites = Arrays.asList(prerequisites);
     }
 
     public ApplicationId id() {
@@ -34,7 +40,10 @@ public enum  SystemApplication {
         return nodeType;
     }
 
-    /** Returns whether this system application has its own application package */
+    /** Returns the system applications that should upgrade before this */
+    public List<SystemApplication> prerequisites() { return prerequisites; }
+
+    /** Returns whether this system application has an application package */
     public boolean hasApplicationPackage() {
         return nodeType == NodeType.proxy;
     }

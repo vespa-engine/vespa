@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -37,51 +38,62 @@ public class SystemUpgrader extends Maintainer {
         if (!target.isPresent()) {
             return;
         }
+        // TODO: Change to SystemApplication.all() once host applications support upgrade
+        try {
+            deploy(Arrays.asList(SystemApplication.configServer, SystemApplication.zone), target.get());
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to upgrade system. Retrying in " + maintenanceInterval(), e);
+        }
+    }
+
+    /** Deploy a list of system applications until they converge on the given version */
+    private void deploy(List<SystemApplication> applications, Version target) {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
-            // The order here is important. Config servers should always upgrade first
-            if (!deploy(zones, SystemApplication.configServer, target.get())) {
-                break;
+            boolean converged = true;
+            for (SystemApplication application : applications) {
+                if (application.prerequisites().stream().allMatch(prerequisite -> converged(zones, prerequisite, target))) {
+                    deploy(zones, application, target);
+                }
+                converged &= converged(zones, application, target);
             }
-            if (!deploy(zones, SystemApplication.zone, target.get())) {
-                break;
-            }
+            if (!converged) break;
         }
     }
 
     /** Deploy application on given version. Returns true when all allocated nodes are on requested version */
-    private boolean deploy(List<ZoneId> zones, SystemApplication application, Version version) {
-        boolean completed = true;
+    private void deploy(List<ZoneId> zones, SystemApplication application, Version target) {
         for (ZoneId zone : zones) {
-            if (!wantedVersion(zone, application.id()).equals(version)) {
-                log.info(String.format("Deploying %s version %s in %s", application.id(), version, zone));
-                controller().applications().deploy(application, zone, version);
+            if (!wantedVersion(zone, application.id(), target).equals(target)) {
+                log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
+                controller().applications().deploy(application, zone, target);
             }
-            completed = completed && currentVersion(zone, application.id()).equals(version);
         }
-        return completed;
     }
 
-    private Version wantedVersion(ZoneId zone, ApplicationId application) {
-        return minVersion(zone, application, Node::wantedVersion);
+    private boolean converged(List<ZoneId> zones, SystemApplication application, Version target) {
+        return zones.stream().allMatch(zone -> currentVersion(zone, application.id(), target).equals(target));
     }
 
-    private Version currentVersion(ZoneId zone, ApplicationId application) {
-        return minVersion(zone, application, Node::currentVersion);
+    private Version wantedVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
+        return minVersion(zone, application, Node::wantedVersion).orElse(defaultVersion);
     }
 
-    private Version minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
+    private Version currentVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
+        return minVersion(zone, application, Node::currentVersion).orElse(defaultVersion);
+    }
+
+    private Optional<Version> minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
         try {
             return controller().configServer()
                                .nodeRepository()
                                .listOperational(zone, application)
                                .stream()
                                .map(versionField)
-                               .min(Comparator.naturalOrder())
-                               .orElse(Version.emptyVersion);
+                               .min(Comparator.naturalOrder());
         } catch (Exception e) {
             log.log(Level.WARNING, String.format("Failed to get version for %s in %s: %s", application, zone,
                                                  Exceptions.toMessageString(e)));
-            return Version.emptyVersion;
+            return Optional.empty();
         }
     }
 
