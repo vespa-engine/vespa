@@ -72,8 +72,8 @@ public:
         return _target_search_context->find(getTargetLid(docId), elemId);
     }
 
-    int32_t onCmp(uint32_t docId, int32_t elemId, int32_t &weight) const override { return find(docId, elemId, weight); }
-    int32_t onCmp(uint32_t docId, int32_t elemId) const override { return find(docId, elemId); }
+    int32_t onFind(uint32_t docId, int32_t elemId, int32_t &weight) const override { return find(docId, elemId, weight); }
+    int32_t onFind(uint32_t docId, int32_t elemId) const override { return find(docId, elemId); }
 
     const ReferenceAttribute& attribute() const noexcept { return _reference_attribute; }
 

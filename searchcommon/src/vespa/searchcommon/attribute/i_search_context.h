@@ -18,8 +18,8 @@ public:
     using DocId = uint32_t;
 
 private:
-    virtual int32_t onCmp(DocId docId, int32_t elementId, int32_t &weight) const = 0;
-    virtual int32_t onCmp(DocId docId, int32_t elementId) const = 0;
+    virtual int32_t onFind(DocId docId, int32_t elementId, int32_t &weight) const = 0;
+    virtual int32_t onFind(DocId docId, int32_t elementId) const = 0;
 
 public:
     virtual ~ISearchContext() {}
@@ -51,8 +51,8 @@ public:
     virtual const QueryTermBase &queryTerm() const = 0;
     virtual const vespalib::string &attributeName() const = 0;
 
-    int32_t find(DocId docId, int32_t elementId, int32_t &weight) const { return onCmp(docId, elementId, weight); }
-    int32_t find(DocId docId, int32_t elementId) const { return onCmp(docId, elementId); }
+    int32_t find(DocId docId, int32_t elementId, int32_t &weight) const { return onFind(docId, elementId, weight); }
+    int32_t find(DocId docId, int32_t elementId) const { return onFind(docId, elementId); }
     bool matches(DocId docId, int32_t &weight) const {
         weight = 0;
         int32_t oneWeight(0);

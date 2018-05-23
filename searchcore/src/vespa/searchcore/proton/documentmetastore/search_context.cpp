@@ -98,13 +98,13 @@ public:
 }
 
 int32_t
-SearchContext::onCmp(DocId, int32_t, int32_t &) const
+SearchContext::onFind(DocId, int32_t, int32_t &) const
 {
     throw vespalib::IllegalStateException("The function is not implemented for documentmetastore::SearchContext");
 }
 
 int32_t
-SearchContext::onCmp(DocId, int32_t ) const
+SearchContext::onFind(DocId, int32_t ) const
 {
     throw vespalib::IllegalStateException("The function is not implemented for documentmetastore::SearchContext");
 }

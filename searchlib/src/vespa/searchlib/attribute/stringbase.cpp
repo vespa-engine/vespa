@@ -274,7 +274,7 @@ public:
 }
 
 int32_t
-StringAttribute::StringSearchContext::onCmp(DocId docId, int32_t elemId, int32_t & weight) const
+StringAttribute::StringSearchContext::onFind(DocId docId, int32_t elemId, int32_t &weight) const
 {
     WeightedConstChar * buffer = getBuffer();
     uint32_t valueCount = attribute().get(docId, buffer, _bufferLen);
@@ -287,7 +287,7 @@ StringAttribute::StringSearchContext::onCmp(DocId docId, int32_t elemId, int32_t
 }
 
 int32_t
-StringAttribute::StringSearchContext::onCmp(DocId docId, int32_t elemId) const
+StringAttribute::StringSearchContext::onFind(DocId docId, int32_t elemId) const
 {
     WeightedConstChar * buffer = getBuffer();
     uint32_t valueCount = attribute().get(docId, buffer, _bufferLen);

@@ -119,7 +119,7 @@ public:
         const MultiValueStringAttributeT<B, M> & myAttribute() const {
             return static_cast< const MultiValueStringAttributeT<B, M> & > (attribute());
         }
-        int32_t onCmp(DocId docId, int32_t elemId) const override;
+        int32_t onFind(DocId docId, int32_t elemId) const override;
 
         template <typename Collector>
         int32_t collectWeight(DocId doc, int32_t elemId, int32_t & weight, Collector & collector) const;
@@ -134,7 +134,7 @@ public:
             StringImplSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
-        int32_t onCmp(DocId docId, int32_t elemId, int32_t & weight) const override;
+        int32_t onFind(DocId docId, int32_t elemId, int32_t &weight) const override;
     };
 
     /*
@@ -146,7 +146,7 @@ public:
             StringImplSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
-        int32_t onCmp(DocId docId, int32_t elemId, int32_t & weight) const override;
+        int32_t onFind(DocId docId, int32_t elemId, int32_t &weight) const override;
     };
 
     template <typename BT>

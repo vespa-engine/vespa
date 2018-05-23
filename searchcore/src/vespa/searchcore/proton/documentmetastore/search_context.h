@@ -20,8 +20,8 @@ private:
     document::GlobalId _gid;
 
     unsigned int approximateHits() const override;
-    int32_t onCmp(DocId docId, int32_t elemId, int32_t &weight) const override;
-    int32_t onCmp(DocId docId, int32_t elemId) const override;
+    int32_t onFind(DocId docId, int32_t elemId, int32_t &weight) const override;
+    int32_t onFind(DocId docId, int32_t elemId) const override;
 
     search::queryeval::SearchIterator::UP
     createIterator(search::fef::TermFieldMatchData *matchData, bool strict) override;

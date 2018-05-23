@@ -52,11 +52,11 @@ protected:
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
 
-        int32_t onCmp(DocId docId, int32_t elemId, int32_t & weight) const override {
+        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
             return find(docId, elemId, weight);
         }
 
-        int32_t onCmp(DocId docId, int32_t elemId) const override {
+        int32_t onFind(DocId docId, int32_t elemId) const override {
             return find(docId, elemId);
         }
 
@@ -105,11 +105,11 @@ protected:
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
 
-        int32_t onCmp(DocId docId, int32_t elemId, int32_t & weight) const override {
+        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
             return find(docId, elemId, weight);
         }
 
-        int32_t onCmp(DocId docId, int32_t elemId) const override {
+        int32_t onFind(DocId docId, int32_t elemId) const override {
             return find(docId, elemId);
         }
 

@@ -158,8 +158,8 @@ private:
         }
 
 
-        int32_t onCmp(DocId docId, int32_t elementId, int32_t & weight) const override;
-        int32_t onCmp(DocId docId, int32_t elementId) const override;
+        int32_t onFind(DocId docId, int32_t elementId, int32_t &weight) const override;
+        int32_t onFind(DocId docId, int32_t elementId) const override;
 
         bool isPrefix() const { return _isPrefix; }
         bool  isRegex() const { return _isRegex; }

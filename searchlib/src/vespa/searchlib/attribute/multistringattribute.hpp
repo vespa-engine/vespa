@@ -63,7 +63,7 @@ private:
 
 template <typename B, typename M>
 int32_t
-MultiValueStringAttributeT<B, M>::StringSetImplSearchContext::onCmp(DocId doc, int32_t elemId, int32_t & weight) const
+MultiValueStringAttributeT<B, M>::StringSetImplSearchContext::onFind(DocId doc, int32_t elemId, int32_t &weight) const
 {
     StringAttribute::StringSearchContext::CollectWeight collector;
     return this->collectWeight(doc, elemId, weight, collector);
@@ -71,7 +71,7 @@ MultiValueStringAttributeT<B, M>::StringSetImplSearchContext::onCmp(DocId doc, i
 
 template <typename B, typename M>
 int32_t
-MultiValueStringAttributeT<B, M>::StringArrayImplSearchContext::onCmp(DocId doc, int32_t elemId, int32_t & weight) const
+MultiValueStringAttributeT<B, M>::StringArrayImplSearchContext::onFind(DocId doc, int32_t elemId, int32_t &weight) const
 {
     StringAttribute::StringSearchContext::CollectHitCount collector;
     return this->collectWeight(doc, elemId, weight, collector);
@@ -92,7 +92,7 @@ MultiValueStringAttributeT<B, M>::StringImplSearchContext::collectWeight(DocId d
 
 template <typename B, typename M>
 int32_t
-MultiValueStringAttributeT<B, M>::StringImplSearchContext::onCmp(DocId doc, int32_t elemId) const
+MultiValueStringAttributeT<B, M>::StringImplSearchContext::onFind(DocId doc, int32_t elemId) const
 {
     const MultiValueStringAttributeT<B, M> & attr(static_cast< const MultiValueStringAttributeT<B, M> & > (attribute()));
     WeightedIndexArrayRef indices(attr._mvMapping.get(doc));
