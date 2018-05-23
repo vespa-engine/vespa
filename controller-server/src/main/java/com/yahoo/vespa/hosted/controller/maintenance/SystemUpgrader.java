@@ -51,16 +51,18 @@ public class SystemUpgrader extends Maintainer {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
             boolean converged = true;
             for (SystemApplication application : applications) {
-                if (application.prerequisites().stream().allMatch(prerequisite -> converged(zones, prerequisite, target))) {
+                if (application.dependencies().stream().allMatch(dep -> convergedOn(target, dep, zones))) {
                     deploy(zones, application, target);
                 }
-                converged &= converged(zones, application, target);
+                converged &= convergedOn(target, application, zones);
             }
-            if (!converged) break;
+            if (!converged) {
+                break;
+            }
         }
     }
 
-    /** Deploy application on given version. Returns true when all allocated nodes are on requested version */
+    /** Deploy application on given version idempotently */
     private void deploy(List<ZoneId> zones, SystemApplication application, Version target) {
         for (ZoneId zone : zones) {
             if (!wantedVersion(zone, application.id(), target).equals(target)) {
@@ -70,7 +72,7 @@ public class SystemUpgrader extends Maintainer {
         }
     }
 
-    private boolean converged(List<ZoneId> zones, SystemApplication application, Version target) {
+    private boolean convergedOn(Version target, SystemApplication application, List<ZoneId> zones) {
         return zones.stream().allMatch(zone -> currentVersion(zone, application.id(), target).equals(target));
     }
 

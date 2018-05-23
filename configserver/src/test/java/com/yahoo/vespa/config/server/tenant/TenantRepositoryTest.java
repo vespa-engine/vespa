@@ -128,32 +128,6 @@ public class TenantRepositoryTest extends TestWithCurator {
     }
     
     @Test
-    public void testTenantsChanged() {
-        tenantRepository.close(); // Close the repo created in setup()
-        TenantRepository tenantRepository = new TenantRepository(globalComponentRegistry);
-        tenantRepository.addTenant(tenant2);
-        tenantRepository.createTenants();
-        Set<TenantName> allTenants = tenantRepository.getAllTenantNames();
-        assertTrue(allTenants.contains(tenant2));
-        tenantRepository.deleteTenant(tenant1);
-        tenantRepository.deleteTenant(tenant2);
-        tenantRepository.createTenants();
-        allTenants = tenantRepository.getAllTenantNames();
-        assertFalse(allTenants.contains(tenant1));
-        assertFalse(allTenants.contains(tenant2));
-        TenantName foo = TenantName.from("foo");
-        TenantName bar = TenantName.from("bar");
-        tenantRepository.addTenant(tenant2);
-        tenantRepository.addTenant(foo);
-        tenantRepository.addTenant(bar);
-        tenantRepository.createTenants();
-        allTenants = tenantRepository.getAllTenantNames();
-        assertTrue(allTenants.contains(tenant2));
-        assertTrue(allTenants.contains(foo));
-        assertTrue(allTenants.contains(bar));
-    }
-    
-    @Test
     public void testTenantWatching() throws Exception {
         TenantName newTenant = TenantName.from("newTenant");
         List<TenantName> expectedTenants = Arrays.asList(TenantName.defaultName(), newTenant);

@@ -11,20 +11,27 @@ import java.time.Duration;
 
 public class ConfigServerMaintenance extends AbstractComponent {
 
+    private static final Duration intervalInCd = Duration.ofMinutes(5);
+
     private final TenantsMaintainer tenantsMaintainer;
+    private final ZooKeeperDataMaintainer zooKeeperDataMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
                                    ApplicationRepository applicationRepository,
                                    Curator curator) {
-        Duration interval = configserverConfig.system().equals(SystemName.cd.name()) ? Duration.ofMinutes(5) :
-                Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes());
-        tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, interval);
+        boolean isCd = configserverConfig.system().equals(SystemName.cd.name());
+        Duration defaultInterval = isCd ? intervalInCd : Duration.ofMinutes(configserverConfig.maintainerIntervalMinutes());
+        Duration tenantsMaintainerInterval = isCd ? intervalInCd : Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes());
+
+        tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, tenantsMaintainerInterval);
+        zooKeeperDataMaintainer = new ZooKeeperDataMaintainer(applicationRepository, curator, defaultInterval);
     }
 
     @Override
     public void deconstruct() {
         tenantsMaintainer.deconstruct();
+        zooKeeperDataMaintainer.deconstruct();
     }
 
 }

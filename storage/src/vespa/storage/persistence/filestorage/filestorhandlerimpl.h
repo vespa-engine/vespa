@@ -190,8 +190,14 @@ public:
         std::string dumpQueue() const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
+        static uint64_t dispersed_bucket_bits(const document::Bucket& bucket) noexcept {
+            // Disperse bucket bits by multiplying with the 64-bit FNV-1 prime.
+            // This avoids an inherent affinity between the LSB of a bucket's bits
+            // and the stripe an operation ends up on.
+            return bucket.getBucketId().getRawId() * 1099511628211ULL;
+        }
         Stripe & stripe(const document::Bucket & bucket) {
-            return _stripes[bucket.getBucketId().getRawId()%_stripes.size()];
+            return _stripes[dispersed_bucket_bits(bucket) % _stripes.size()];
         }
         std::vector<Stripe> & getStripes() { return _stripes; }
     private:
