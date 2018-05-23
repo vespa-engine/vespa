@@ -33,7 +33,6 @@ public class BucketStatsRetriever {
 
     private final MessageBusSyncSession session;
     private final MessageBusDocumentAccess documentAccess;
-    private final String route;
 
     public BucketStatsRetriever(
             DocumentAccessFactory documentAccessFactory,
@@ -42,7 +41,7 @@ public class BucketStatsRetriever {
         registerShutdownHook(registrar);
         this.documentAccess = documentAccessFactory.createDocumentAccess();
         this.session = documentAccess.createSyncSession(new SyncParameters.Builder().build());
-        this.route = route;
+        this.session.setRoute(route);
     }
 
     private void registerShutdownHook(ShutdownHookRegistrar registrar) {
@@ -102,17 +101,8 @@ public class BucketStatsRetriever {
 
 
     private <T extends Reply> T sendMessage(DocumentMessage msg, Class<T> expectedReply) throws BucketStatsException {
-        setRoute(msg, route);
         Reply reply = session.syncSend(msg);
         return validateReply(reply, expectedReply);
-    }
-
-    private static void setRoute(DocumentMessage msg, String route) throws BucketStatsException {
-        try {
-            msg.setRoute(Route.parse(route));
-        } catch (Exception e) {
-            throw new BucketStatsException(String.format("Invalid route: '%s'.", route));
-        }
     }
 
     private static <T extends Reply> T validateReply(Reply reply, Class<T> type) throws BucketStatsException {
