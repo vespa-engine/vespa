@@ -79,18 +79,15 @@ namespace {
 /**
  * Blueprint for creating regular, stack-based attribute iterators.
  **/
-class AttributeFieldBlueprint :
-        public SimpleLeafBlueprint
+class AttributeFieldBlueprint : public SimpleLeafBlueprint
 {
 private:
     ISearchContext::UP _search_context;
 
-    AttributeFieldBlueprint(const FieldSpec &field,
-                            const IAttributeVector &attribute,
-                            const string &query_stack,
-                            const attribute::SearchContextParams &params)
+    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
+                            const string &query_stack, const attribute::SearchContextParams &params)
         : SimpleLeafBlueprint(field),
-          _search_context(attribute.createSearchContext(QueryTermDecoder::decodeTerm(query_stack), params).release())
+          _search_context(attribute.createSearchContext(QueryTermDecoder::decodeTerm(query_stack), params))
     {
         uint32_t estHits = _search_context->approximateHits();
         HitEstimate estimate(estHits, estHits == 0);
@@ -98,33 +95,21 @@ private:
     }
 
 public:
-    AttributeFieldBlueprint(const FieldSpec &field,
-                            const IAttributeVector &attribute,
-                            const string &query_stack)
-        : AttributeFieldBlueprint(field,
-                                  attribute,
-                                  query_stack,
-                                  attribute::SearchContextParams()
-                                  .useBitVector(field.isFilter()))
-    {
-    }
+    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const string &query_stack)
+        : AttributeFieldBlueprint(field, attribute, query_stack,
+                                  attribute::SearchContextParams().useBitVector(field.isFilter()))
+    {}
 
-    AttributeFieldBlueprint(const FieldSpec &field,
-                            const IAttributeVector &attribute,
-                            const IAttributeVector &diversity,
-                            const string &query_stack,
-                            size_t diversityCutoffGroups,
-                            bool diversityCutoffStrict)
-        : AttributeFieldBlueprint(field,
-                                  attribute,
-                                  query_stack,
+    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
+                            const IAttributeVector &diversity, const string &query_stack,
+                            size_t diversityCutoffGroups, bool diversityCutoffStrict)
+        : AttributeFieldBlueprint(field, attribute, query_stack,
                                   attribute::SearchContextParams()
                                       .diversityAttribute(&diversity)
                                       .useBitVector(field.isFilter())
                                       .diversityCutoffGroups(diversityCutoffGroups)
                                       .diversityCutoffStrict(diversityCutoffStrict))
-    {
-    }
+    {}
 
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
@@ -156,8 +141,7 @@ struct LocationPreFilterIterator : public OrLikeSearch<is_strict, NoUnpack>
     void doUnpack(uint32_t) override {}
 };
 
-class LocationPreFilterBlueprint :
-        public ComplexLeafBlueprint
+class LocationPreFilterBlueprint : public ComplexLeafBlueprint
 {
 private:
     const IAttributeVector &_attribute;
@@ -218,8 +202,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class LocationPostFilterBlueprint :
-        public ComplexLeafBlueprint
+class LocationPostFilterBlueprint : public ComplexLeafBlueprint
 {
 private:
     const IAttributeVector  &_attribute;
@@ -395,8 +378,7 @@ private:
     IDocumentWeightAttribute::LookupResult  _dict_entry;
 
 public:
-    DirectAttributeBlueprint(const FieldSpec &field,
-                             const vespalib::string & name,
+    DirectAttributeBlueprint(const FieldSpec &field, const vespalib::string & name,
                              const IDocumentWeightAttribute &attr, const vespalib::string &term)
         : SimpleLeafBlueprint(field),
           _attrName(name),
