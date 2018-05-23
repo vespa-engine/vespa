@@ -9,7 +9,10 @@ import com.yahoo.text.XML;
  * A set of variable bindings for template rendering
  *
  * @author bratseth
+ * @deprecated use a Renderer instead
  */
+@SuppressWarnings("deprecation")
+@Deprecated // TODO: Remove on Vespa 7
 public abstract class Context {
 
     private boolean xmlEscape = true;

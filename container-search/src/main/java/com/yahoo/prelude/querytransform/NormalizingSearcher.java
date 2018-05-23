@@ -11,6 +11,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexFacts.Session;
 import com.yahoo.prelude.query.*;
 import com.yahoo.prelude.query.WordAlternativesItem.Alternative;
+import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
@@ -46,7 +47,7 @@ public class NormalizingSearcher extends Searcher {
     }
 
     @Override
-    public com.yahoo.search.Result search(com.yahoo.search.Query query, Execution execution) {
+    public Result search(Query query, Execution execution) {
         normalize(query, execution.context().getIndexFacts().newSession(query));
         return execution.search(query);
     }

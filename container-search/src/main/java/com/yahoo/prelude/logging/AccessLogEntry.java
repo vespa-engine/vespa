@@ -4,8 +4,10 @@ package com.yahoo.prelude.logging;
 /**
  * Hollow compatibility class for com.yahoo.container.logging.AccessLogEntry.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
+ * @deprecated do not use
  */
+@Deprecated // TODO: Remove on Vespa 7
 public class AccessLogEntry extends com.yahoo.container.logging.AccessLogEntry {
 
     public AccessLogEntry() {
