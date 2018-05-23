@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 
@@ -16,9 +17,9 @@ public class ConfigServerMaintenance extends AbstractComponent {
     public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
                                    ApplicationRepository applicationRepository,
                                    Curator curator) {
-        tenantsMaintainer = new TenantsMaintainer(applicationRepository,
-                                                  curator,
-                                                  Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes()));
+        Duration interval = configserverConfig.system().equals(SystemName.cd.name()) ? Duration.ofMinutes(5) :
+                Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes());
+        tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, interval);
     }
 
     @Override
