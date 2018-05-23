@@ -14,10 +14,7 @@ import java.io.Writer;
  * This is a variant of the tiled template set - see that class for details.
  *
  * @author bratseth
- * @deprecated use a Renderer instead
  */
-@SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
 public class PageTemplateSet extends TiledTemplateSet {
 
     public PageTemplateSet() {

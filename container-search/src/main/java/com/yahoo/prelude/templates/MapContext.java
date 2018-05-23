@@ -6,12 +6,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * A context having a map as secondary storage
- * @deprecated use a Renderer instead
- */
-@SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+/** A context having a map as secondary storage */
 public class MapContext extends Context {
 
     private Map<String, Object> map = new LinkedHashMap<>();

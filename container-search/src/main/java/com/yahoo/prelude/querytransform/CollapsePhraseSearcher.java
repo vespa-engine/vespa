@@ -15,11 +15,9 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * Make single item phrases in query into single word items.
  *
- * @author Steinar Knutsen
+ * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class CollapsePhraseSearcher extends Searcher {
-
-    @Override
     public Result search(Query query, Execution execution) {
         QueryTree tree = query.getModel().getQueryTree();
         Item root = tree.getRoot();
@@ -36,6 +34,7 @@ public class CollapsePhraseSearcher extends Searcher {
         }
         return execution.search(query);
     }
+
 
     private Item simplifyPhrases(Item root) {
         if (root == null) {
@@ -65,5 +64,4 @@ public class CollapsePhraseSearcher extends Searcher {
         else
             return root;
     }
-
 }

@@ -183,9 +183,9 @@ class ClientFeederV3 {
             if (! operationId.isPresent()) {
                 return Optional.empty();
             }
-            final DocumentOperationMessageV3 message;
+            final DocumentOperationMessageV3 msg;
             try {
-                message = getNextMessage(operationId.get(), requestInputStream, settings);
+                msg = getNextMessage(operationId.get(), requestInputStream, settings);
             } catch (Exception e) {
                 if (log.isLoggable(LogLevel.DEBUG)) {
                     log.log(LogLevel.DEBUG, Exceptions.toMessageString(e), e);
@@ -195,9 +195,8 @@ class ClientFeederV3 {
 
                 continue;
             }
-            if (message != null)
-                setRoute(message, settings);
-            return Optional.ofNullable(message);
+            setRoute(msg, settings);
+            return Optional.of(msg);
         }
     }
 
@@ -274,7 +273,6 @@ class ClientFeederV3 {
     }
 
     // protected for mocking
-    /** Returns the next message in the stream, or null if none */
     protected DocumentOperationMessageV3 getNextMessage(
             String operationId, InputStream requestInputStream, FeederSettings settings) throws Exception {
         VespaXMLFeedReader.Operation operation = streamReaderV3.getNextOperation(requestInputStream, settings);
@@ -287,14 +285,14 @@ class ClientFeederV3 {
                     null);
         }
 
-        DocumentOperationMessageV3 message = DocumentOperationMessageV3.create(operation, operationId, metric);
-        if (message == null) {
+        DocumentOperationMessageV3 msg = DocumentOperationMessageV3.create(operation, operationId, metric);
+        if (msg == null) {
             // typical end of feed
             return null;
         }
         metric.add(MetricNames.NUM_OPERATIONS, 1, null /*metricContext*/);
-        log(LogLevel.DEBUG, "Successfully deserialized document id: ", message.getOperationId());
-        return message;
+        log(LogLevel.DEBUG, "Successfully deserialized document id: ", msg.getOperationId());
+        return msg;
     }
 
     private void setMessageParameters(DocumentOperationMessageV3 msg, FeederSettings settings) {
