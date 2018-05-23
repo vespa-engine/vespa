@@ -210,7 +210,7 @@ class GenerateOsgiManifestMojo extends AbstractMojo {
   private def analyzeProjectClasses() : PackageTally = {
     val outputDirectory = new File(project.getBuild.getOutputDirectory)
 
-    val analyzedClasses = allDescendantFiles(outputDirectory).filter(_.getName.endsWith(".class")).
+    val analyzedClasses = allDescendantFiles(outputDirectory).filter(file => isClassToAnalyze(file.getName)).
       map(Analyze.analyzeClass)
 
     PackageTally.fromAnalyzedClassFiles(analyzedClasses)
@@ -230,7 +230,7 @@ class GenerateOsgiManifestMojo extends AbstractMojo {
       for {
         entry <- toStream(jarFile.entries())
         if !entry.isDirectory
-        if entry.getName.endsWith(".class")
+        if isClassToAnalyze(entry.getName)
         metaData = analyzeClass(jarFile, entry)
       } yield metaData
 
@@ -277,6 +277,9 @@ object GenerateOsgiManifestMojo {
       case ExportPackageParser.Success(packages, _) => packages
     }
   }
+
+  def isClassToAnalyze(name: String): Boolean =
+    name.endsWith(".class") && ! name.endsWith("module-info.class")
 
   def emptyToNone(str: String) =
     Option(str) map {_.trim} filterNot  {_.isEmpty}
