@@ -10,7 +10,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Coverage;
@@ -208,8 +207,7 @@ public class StatisticsSearcher extends Searcher {
      * 2) Add response time to total response time (time from entry to return)
      * 3) .....
      */
-    @Override
-    public Result search(Query query, Execution execution) {
+    public Result search(com.yahoo.search.Query query, Execution execution) {
         if (query.properties().getBoolean(IGNORE_QUERY,false)) {
             return execution.search(query);
         }

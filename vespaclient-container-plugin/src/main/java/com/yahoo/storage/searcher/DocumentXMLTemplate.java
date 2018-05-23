@@ -6,6 +6,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.HitGroup;
+import com.yahoo.prelude.templates.Context;
 import com.yahoo.search.result.Hit;
 import com.yahoo.text.XML;
 
@@ -54,7 +55,7 @@ public class DocumentXMLTemplate extends com.yahoo.prelude.templates.UserTemplat
     }
 
     @Override
-    public void error(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
+    public void error(Context context, Writer writer) throws IOException {
         writer.write("<errors>\n");
         // If the error contains no error hits, use a single error with the main
         // code and description. Otherwise, use the error hits explicitly
@@ -71,7 +72,7 @@ public class DocumentXMLTemplate extends com.yahoo.prelude.templates.UserTemplat
     }
 
     @Override
-    public void header(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
+    public void header(Context context, Writer writer) throws IOException {
         writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         writer.write("<result>\n");
         HitGroup rootGroup = ((Result) context.get("result")).hits();
@@ -81,12 +82,12 @@ public class DocumentXMLTemplate extends com.yahoo.prelude.templates.UserTemplat
     }
 
     @Override
-    public void footer(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
+    public void footer(Context context, Writer writer) throws IOException {
         writer.write("</result>\n");
     }
 
     @Override
-    public void hit(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
+    public void hit(Context context, Writer writer) throws IOException {
         Hit hit = (Hit)context.get("hit");
         if (hit instanceof DocumentHit) {
             DocumentHit docHit = (DocumentHit) hit;
@@ -109,11 +110,11 @@ public class DocumentXMLTemplate extends com.yahoo.prelude.templates.UserTemplat
     }
 
     @Override
-    public void hitFooter(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
+    public void hitFooter(Context context, Writer writer) throws IOException {
     }
 
     @Override
-    public void noHits(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
+    public void noHits(Context context, Writer writer) throws IOException {
     }
 
 }

@@ -10,10 +10,8 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * Ensures hits is 1000 or less and offset is 1000 or less.
  *
- * @author Steinar Knutsen
- * @deprecated do not use
+ * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
-@Deprecated // TODO: Remove on Vespa 7
 public class QueryValidatingSearcher extends Searcher {
 
     public Result search(Query query, Execution execution) {

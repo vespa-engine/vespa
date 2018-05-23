@@ -40,8 +40,8 @@ public class NGramSearcher extends Searcher {
     private final CharacterClasses characterClasses;
 
     public NGramSearcher(Linguistics linguistics) {
-        gramSplitter = linguistics.getGramSplitter();
-        characterClasses = linguistics.getCharacterClasses();
+        gramSplitter= linguistics.getGramSplitter();
+        characterClasses= linguistics.getCharacterClasses();
     }
 
     @Override
@@ -54,7 +54,7 @@ public class NGramSearcher extends Searcher {
         if (rewritten)
             query.trace("Rewritten to n-gram matching",true,2);
 
-        Result result = execution.search(query);
+        Result result=execution.search(query);
         recombineNGrams(result.hits().deepIterator(), session);
         return result;
     }
@@ -160,11 +160,10 @@ public class NGramSearcher extends Searcher {
             if (hit.isMeta()) continue;
             Object sddocname = hit.getField(Hit.SDDOCNAME_FIELD);
             if (sddocname == null) return;
-            for (Index index : session.getIndexes(sddocname.toString())) {
+            for (String fieldName : hit.fieldKeys()) { // TODO: Iterate over indexes instead
+                Index index = session.getIndex(fieldName, sddocname.toString());
                 if (index.isNGram() && (index.getHighlightSummary() || index.getDynamicSummary())) {
-                    Object fieldValue = hit.getField(index.getName());
-                    if (fieldValue != null)
-                        hit.setField(index.getName(), recombineNGramsField(fieldValue, index.getGramSize()));
+                    hit.setField(fieldName, recombineNGramsField(hit.getField(fieldName), index.getGramSize()));
                 }
             }
         }

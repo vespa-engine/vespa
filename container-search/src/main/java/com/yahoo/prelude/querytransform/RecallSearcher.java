@@ -38,7 +38,7 @@ public class RecallSearcher extends Searcher {
     private static final CompoundName recallName=new CompoundName("recall");
 
     @Override
-    public Result search(Query query, Execution execution) {
+    public com.yahoo.search.Result search(Query query, Execution execution) {
         String recall = query.properties().getString(recallName);
         if (recall == null) return execution.search(query);
 
