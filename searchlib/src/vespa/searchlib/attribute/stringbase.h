@@ -148,16 +148,13 @@ private:
 
         template<typename WeightedT, typename Accessor, typename Collector>
         int32_t collectMatches(vespalib::ConstArrayRef<WeightedT> w, int32_t elemId, const Accessor & ac, Collector & collector) const {
-            int firstMatch = -1;
             for (uint32_t i(elemId); i < w.size(); i++) {
                 if (isMatch(ac.get(w[i].value()))) {
                     collector.addWeight(w[i].weight());
-                    if (firstMatch == -1) {
-                        firstMatch = i;
-                    }
+                    return i;
                 }
             }
-            return firstMatch;
+            return -1;
         }
 
 

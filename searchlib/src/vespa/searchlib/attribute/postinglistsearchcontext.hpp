@@ -113,7 +113,8 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fetchPostings(bool strict)
 {
-    assert(!_fetchPostingsDone);
+    if (_fetchPostingsDone) return;
+
     _fetchPostingsDone = true;
     if (_uniqueValues < 2u) {
         return;

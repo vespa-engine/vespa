@@ -194,12 +194,8 @@ private:
 
 
     // test search iterator functionality
-    void testStrictSearchIterator(SearchContext & threeHits,
-                                  SearchContext & noHits,
-                                  const IteratorTester & typeTester);
-    void testNonStrictSearchIterator(SearchContext & threeHits,
-                                     SearchContext & noHits,
-                                     const IteratorTester & typeTester);
+    void testStrictSearchIterator(SearchContext & threeHits, SearchContext & noHits, const IteratorTester & typeTester);
+    void testNonStrictSearchIterator(SearchContext & threeHits, SearchContext & noHits, const IteratorTester & typeTester);
     void fillForSearchIteratorTest(IntegerAttribute * ia);
     void fillForSemiNibbleSearchIteratorTest(IntegerAttribute * ia);
     void testSearchIterator();
@@ -207,17 +203,19 @@ private:
 
     // test search iterator unpacking
     void fillForSearchIteratorUnpackingTest(IntegerAttribute * ia, bool extra);
-    void testSearchIteratorUnpacking(const AttributePtr & ptr,
-                                     SearchContext & sc,
-                                     bool extra,
-                                     bool strict);
+    void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc, bool extra, bool strict) {
+        for (bool withElementId : {false, true}) {
+            testSearchIteratorUnpacking(ptr, sc, extra, strict, withElementId);
+        }
+    }
+    void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc,
+                                     bool extra, bool strict, bool withElementId);
     void testSearchIteratorUnpacking();
 
 
     // test range search
     template <typename VectorType>
-    void performRangeSearch(const VectorType & vec, const vespalib::string & term,
-                            const DocSet & expected);
+    void performRangeSearch(const VectorType & vec, const vespalib::string & term, const DocSet & expected);
     template <typename VectorType, typename ValueType>
     void testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, std::vector<ValueType> values);
     void testRangeSearch();
@@ -225,8 +223,7 @@ private:
 
 
     // test case insensitive search
-    void performCaseInsensitiveSearch(const StringAttribute & vec, const vespalib::string & term,
-                                      const DocSet & expected);
+    void performCaseInsensitiveSearch(const StringAttribute & vec, const vespalib::string & term, const DocSet & expected);
     void testCaseInsensitiveSearch(const AttributePtr & ptr);
     void testCaseInsensitiveSearch();
     void testRegexSearch(const AttributePtr & ptr);
@@ -253,25 +250,19 @@ private:
     void requireThatSearchIsWorkingAfterLoadAndClearDoc();
 
     template <typename VectorType, typename ValueType>
-    void requireThatSearchIsWorkingAfterUpdates(const vespalib::string & name,
-                                                const Config & cfg,
-                                                ValueType value1,
-                                                ValueType value2);
+    void requireThatSearchIsWorkingAfterUpdates(const vespalib::string & name, const Config & cfg,
+                                                ValueType value1, ValueType value2);
     void requireThatSearchIsWorkingAfterUpdates();
 
     void requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded();
 
     template <typename VectorType, typename ValueType>
-    void requireThatInvalidSearchTermGivesZeroHits(const vespalib::string & name,
-                                                   const Config & cfg,
-                                                   ValueType value);
+    void requireThatInvalidSearchTermGivesZeroHits(const vespalib::string & name, const Config & cfg, ValueType value);
     void requireThatInvalidSearchTermGivesZeroHits();
 
     void requireThatFlagAttributeHandlesTheByteRange();
 
-    void requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name,
-                                                       const Config &cfg,
-                                                       int64_t maxValue);
+    void requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name, const Config &cfg, int64_t maxValue);
     void requireThatOutOfBoundsSearchTermGivesZeroHits();
 
     // init maps with config objects
@@ -948,13 +939,10 @@ SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute * ia,
 }
 
 void
-SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr,
-                                               SearchContext & sc,
-                                               bool extra,
-                                               bool strict)
+SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, SearchContext & sc,
+                                               bool extra, bool strict, bool withElementId)
 {
-    LOG(info,
-        "testSearchIteratorUnpacking: vector '%s'", attr->getName().c_str());
+    LOG(info, "testSearchIteratorUnpacking: vector '%s'", attr->getName().c_str());
 
     TermFieldMatchData md;
     md.reset(100);
@@ -965,6 +953,9 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr,
 
     sc.fetchPostings(strict);
     SearchBasePtr sb = sc.createIterator(&md, strict);
+    if (withElementId) {
+        sb = std::make_unique<attribute::ElementIterator>(std::move(sb), sc, md);
+    }
     sb->initFullRange();
 
     std::vector<int32_t> weights(3);
@@ -993,12 +984,30 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr,
     sb->unpack(2);
     EXPECT_EQUAL(sb->getDocId(), 2u);
     EXPECT_EQUAL(md.getDocId(), 2u);
-    EXPECT_EQUAL(md.getWeight(), weights[1]);
+    if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
+        EXPECT_EQUAL(2, md.end()- md.begin());
+        EXPECT_EQUAL(md.begin()[0].getElementId(), 0u);
+        EXPECT_EQUAL(md.begin()[0].getElementWeight(), 1);
+        EXPECT_EQUAL(md.begin()[1].getElementId(), 1u);
+        EXPECT_EQUAL(md.begin()[1].getElementWeight(), 1);
+    } else {
+        EXPECT_EQUAL(md.getWeight(), weights[1]);
+    }
 
     sb->unpack(3);
     EXPECT_EQUAL(sb->getDocId(), 3u);
     EXPECT_EQUAL(md.getDocId(), 3u);
-    EXPECT_EQUAL(md.getWeight(), weights[2]);
+    if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
+        EXPECT_EQUAL(3, md.end()- md.begin());
+        EXPECT_EQUAL(md.begin()[0].getElementId(), 0u);
+        EXPECT_EQUAL(md.begin()[0].getElementWeight(), 1);
+        EXPECT_EQUAL(md.begin()[1].getElementId(), 1u);
+        EXPECT_EQUAL(md.begin()[1].getElementWeight(), 1);
+        EXPECT_EQUAL(md.begin()[2].getElementId(), 2u);
+        EXPECT_EQUAL(md.begin()[2].getElementWeight(), 1);
+    } else {
+        EXPECT_EQUAL(md.getWeight(), weights[2]);
+    }
     if (extra) {
         sb->unpack(4);
         EXPECT_EQUAL(sb->getDocId(), 4u);

@@ -17,9 +17,8 @@ ElementIterator::doSeek(uint32_t docid) {
 void
 ElementIterator::doUnpack(uint32_t docid) {
     _tfmda.reset(docid);
-    _search->doUnpack(docid);
     int32_t weight(0);
-    for (int32_t id = _searchContext.find(docid, 0, weight); id >= 0; id = _searchContext.find(docid, 0, weight)) {
+    for (int32_t id = _searchContext.find(docid, 0, weight); id >= 0; id = _searchContext.find(docid, id+1, weight)) {
         _tfmda.appendPosition(TermFieldMatchDataPosition(id, 0, weight, 1));
     }
 }

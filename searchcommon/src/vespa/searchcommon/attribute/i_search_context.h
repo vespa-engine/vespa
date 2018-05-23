@@ -53,7 +53,15 @@ public:
 
     int32_t find(DocId docId, int32_t elementId, int32_t &weight) const { return onCmp(docId, elementId, weight); }
     int32_t find(DocId docId, int32_t elementId) const { return onCmp(docId, elementId); }
-    bool matches(DocId docId, int32_t &weight) const { return find(docId, 0, weight) >= 0; }
+    bool matches(DocId docId, int32_t &weight) const {
+        weight = 0;
+        int32_t oneWeight(0);
+        int32_t firstId = find(docId, 0, oneWeight);
+        for (int32_t id(firstId); id >= 0; id = find(docId, id + 1, oneWeight)) {
+            weight += oneWeight;
+        }
+        return firstId >= 0;
+    }
     bool matches(DocId doc) const { return find(doc, 0) >= 0; }
 
 };
