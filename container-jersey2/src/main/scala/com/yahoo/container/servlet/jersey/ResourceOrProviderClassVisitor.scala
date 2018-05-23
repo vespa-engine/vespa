@@ -10,7 +10,7 @@ import org.objectweb.asm.{ClassVisitor, Opcodes, Type, AnnotationVisitor, ClassR
 /**
  * @author tonytv
  */
-class ResourceOrProviderClassVisitor private () extends ClassVisitor(Opcodes.ASM5) {
+class ResourceOrProviderClassVisitor private () extends ClassVisitor(Opcodes.ASM6) {
   private var className: String = null
   private var isPublic: Boolean = false
   private var isAbstract = false

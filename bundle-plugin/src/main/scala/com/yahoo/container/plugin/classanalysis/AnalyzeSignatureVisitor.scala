@@ -10,7 +10,7 @@ import org.objectweb.asm.signature.{SignatureReader, SignatureVisitor}
  */
 
 private class AnalyzeSignatureVisitor(val analyzeClassVisitor: AnalyzeClassVisitor)
-  extends SignatureVisitor(Opcodes.ASM5)
+  extends SignatureVisitor(Opcodes.ASM6)
   with SubVisitorTrait {
 
 

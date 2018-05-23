@@ -17,7 +17,7 @@ private trait AnnotationVisitorTrait {
   }
 
   def visitAnnotationDefault(): AnnotationVisitor =
-    new AnnotationVisitor(Opcodes.ASM5) {
+    new AnnotationVisitor(Opcodes.ASM6) {
       override def visit(name: String, value: AnyRef) {}
 
       override def visitEnum(name: String, desc: String, value: String) {
