@@ -23,18 +23,19 @@ import java.util.logging.Logger;
 public class SessionStateWatcher implements NodeCacheListener {
 
     private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
+    // One thread pool for all instances of this class
+    private static final Executor executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(SessionStateWatcher.class.getName()));
+
     private final Curator.FileCache fileCache;
     private final ReloadHandler reloadHandler;
     private final RemoteSession session;
     private final MetricUpdater metrics;
-    private final Executor executor;
+
 
     public SessionStateWatcher(Curator.FileCache fileCache,
                                ReloadHandler reloadHandler,
                                RemoteSession session,
                                MetricUpdater metrics) {
-        executor = Executors.newSingleThreadExecutor(
-                ThreadFactoryFactory.getThreadFactory(SessionStateWatcher.class.getName() + "-" + session));
         this.fileCache = fileCache;
         this.reloadHandler = reloadHandler;
         this.session = session;
