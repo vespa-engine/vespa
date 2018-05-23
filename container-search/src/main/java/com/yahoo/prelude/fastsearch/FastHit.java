@@ -107,7 +107,10 @@ public class FastHit extends Hit {
 
         // Fallback to index:[source]/[partid]/[id]
         if (indexUri != null) return indexUri;
-        indexUri = new URI("index:" + getSource() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
+        StringBuilder sb = new StringBuilder(64);
+        sb.append("index:").append(getSource()).append('/').append(getPartId()).append('/');
+        asHexString(sb, getGlobalId());
+        indexUri = new URI(sb.toString());
         return indexUri;
     }
 
@@ -348,7 +351,10 @@ public class FastHit extends Hit {
     /** @deprecated do not use */
     @Deprecated // TODO: Make private on Vespa 7
     public static String asHexString(GlobalId gid) {
-        StringBuilder sb = new StringBuilder();
+        return asHexString(new StringBuilder(), gid).toString();
+    }
+
+    private static StringBuilder asHexString(StringBuilder sb, GlobalId gid) {
         byte[] rawGid = gid.getRawId();
         for (byte b : rawGid) {
             String hex = Integer.toHexString(0xFF & b);
@@ -357,7 +363,7 @@ public class FastHit extends Hit {
             }
             sb.append(hex);
         }
-        return sb.toString();
+        return sb;
     }
 
     /** A set view of all the field names in this hit. Add/addAll is not supported but remove is. */
