@@ -48,8 +48,9 @@ public class RankSetupValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
+        File cfgDir = null;
         try {
-            File cfgDir = Files.createTempDirectory("deploy_ranksetup").toFile();
+            cfgDir = Files.createTempDirectory("deploy_ranksetup").toFile();
 
             for (AbstractSearchCluster cluster : model.getSearchClusters()) {
                 // Skipping rank expression checking for streaming clusters, not implemented yet
@@ -66,9 +67,12 @@ public class RankSetupValidator extends Validator {
                     }
                 }
             }
-            deleteTempDir(cfgDir);
+
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (cfgDir != null)
+                deleteTempDir(cfgDir);
         }
     }
 
@@ -93,9 +97,7 @@ public class RankSetupValidator extends Validator {
     }
 
     private void deleteTempDir(File dir) {
-        if (!IOUtils.recursiveDeleteDir(dir)) {
-            throw new RuntimeException("Failed deleting " + dir);
-        }
+        IOUtils.recursiveDeleteDir(dir);
     }
 
     private void writeConfigs(String dir, AbstractConfigProducer producer) throws IOException {
