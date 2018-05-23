@@ -372,21 +372,4 @@ public class ApplicationTest {
                 "</jdisc>";
     }
 
-    @Test
-    public void application_with_access_control_can_be_constructed() throws Exception {
-        try (Application application = Application.fromServicesXml(servicesXmlWithAccessControl(), Networking.disable)) {
-            Application unused = application;
-        }
-    }
-
-    private static String servicesXmlWithAccessControl() {
-        return "<jdisc version='1.0'>" +
-                "  <http> <server port='" + 0 +"' id='foo'/> " +
-                "    <filtering>" +
-                "      <access-control domain='foo' />" +
-                "    </filtering>" +
-                "  </http>" +
-                "</jdisc>";
-    }
-
 }
