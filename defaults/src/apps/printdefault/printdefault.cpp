@@ -8,8 +8,9 @@ int main(int argc, char **argv) {
     if (argc != 2) {
         fprintf(stderr, "usage: %s <variable>\n", argv[0]);
         fprintf(stderr, "  variable names are: home, user, hostname, portbase, configservers,\n");
-        fprintf(stderr, "                      configserver_rpc_port, configservers_rpc\n");
-        fprintf(stderr, "                      configservers_http, configsources, configproxy_rpc\n");
+        fprintf(stderr, "                      configserver_rpc_port, configservers_rpc,\n");
+        fprintf(stderr, "                      configservers_http, configsources, configproxy_rpc,\n");
+        fprintf(stderr, "                      version\n");
         return 1;
     }
     if (strcmp(argv[1], "home") == 0) {
@@ -47,6 +48,8 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "configproxy_rpc") == 0) {
         std::string v = vespa::Defaults::vespaConfigProxyRpcAddr();
         printf("%s\n", v.c_str());
+    } else if (strcmp(argv[1], "version") == 0) {
+        printf("%s\n", V_TAG_COMPONENT);
     } else {
         fprintf(stderr, "Unknown variable '%s'\n", argv[1]);
         return 1;
