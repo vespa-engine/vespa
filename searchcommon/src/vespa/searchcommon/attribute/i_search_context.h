@@ -5,18 +5,12 @@
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
 
-namespace fef {
-    class TermFieldMatchData;
-}
-namespace queryeval {
-    class SearchIterator;
-}
+namespace search::fef { class TermFieldMatchData; }
+namespace search::queryeval { class SearchIterator; }
+namespace search { class QueryTermBase; }
 
-class QueryTermBase;
-
-namespace attribute {
+namespace search::attribute {
 
 class ISearchContext {
 public:
@@ -64,5 +58,4 @@ public:
 
 };
 
-}
 }
