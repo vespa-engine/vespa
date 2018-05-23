@@ -428,7 +428,7 @@ public class IndexFacts {
             return IndexFacts.this.getIndexFromDocumentTypes(indexName, Collections.singletonList(documentType));
         }
 
-        /** Returnbs all the indexes of a given search definition */
+        /** Returns all the indexes of a given search definition */
         public Collection<Index> getIndexes(String documentType) {
             return IndexFacts.this.getIndexes(documentType);
         }
