@@ -111,6 +111,7 @@ public class NodePatcher {
                         .map(DockerImage::tagAsVersion)
                         .orElse(Version.emptyVersion);
                 return node.with(node.status().withVespaVersion(versionFromImage));
+            case "vespaVersion" :
             case "currentVespaVersion" :
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));
             case "failCount" :
