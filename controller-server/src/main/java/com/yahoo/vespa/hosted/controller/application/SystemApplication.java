@@ -23,12 +23,12 @@ public enum SystemApplication {
 
     private final ApplicationId id;
     private final NodeType nodeType;
-    private final List<SystemApplication> prerequisites;
+    private final List<SystemApplication> dependencies;
 
-    SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication... prerequisites) {
+    SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication... dependencies) {
         this.id = id;
         this.nodeType = nodeType;
-        this.prerequisites = Arrays.asList(prerequisites);
+        this.dependencies = Arrays.asList(dependencies);
     }
 
     public ApplicationId id() {
@@ -41,7 +41,7 @@ public enum SystemApplication {
     }
 
     /** Returns the system applications that should upgrade before this */
-    public List<SystemApplication> prerequisites() { return prerequisites; }
+    public List<SystemApplication> dependencies() { return dependencies; }
 
     /** Returns whether this system application has an application package */
     public boolean hasApplicationPackage() {
