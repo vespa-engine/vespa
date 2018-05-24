@@ -360,10 +360,11 @@ public class JettyHttpServer extends AbstractServerProvider {
         return statisticsHandler;
     }
 
+    @SuppressWarnings("deprecation")
     private GzipHandler newGzipHandler(ServerConfig serverConfig) {
         GzipHandler gzipHandler = new GzipHandlerWithVaryHeaderFixed();
         gzipHandler.setCompressionLevel(serverConfig.responseCompressionLevel());
-        gzipHandler.setCheckGzExists(false);
+        gzipHandler.setCheckGzExists(false);  // TODO: will be removed without replacement in Jetty 10
         gzipHandler.setIncludedMethods("GET", "POST");
         return gzipHandler;
     }
