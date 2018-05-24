@@ -8,7 +8,7 @@ import java.time.Duration;
 
 public class TenantsMaintainer extends Maintainer {
 
-    public TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
+    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
         super(applicationRepository, curator, interval);
     }
 
