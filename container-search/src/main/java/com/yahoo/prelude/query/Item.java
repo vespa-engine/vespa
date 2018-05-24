@@ -52,7 +52,7 @@ public abstract class Item implements Cloneable {
         WEIGHTEDSET(15),
         WEAK_AND(16),
         EXACT(17),
-        LEGACY_RISE_QUERY_NOT_USED_ANYMORE_BUT_DO_NOT_REUSE_FOR_A_WHILE(18),
+        SAME_ELEMENT(18),
         PURE_WEIGHTED_STRING(19),
         PURE_WEIGHTED_INTEGER(20),
         DOTPRODUCT(21),
