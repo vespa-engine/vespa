@@ -207,6 +207,7 @@ public class RealNodeRepository implements NodeRepository {
         node.currentDockerImage = nodeAttributes.getDockerImage().map(DockerImage::asString).orElse(null);
         node.currentRestartGeneration = nodeAttributes.getRestartGeneration().orElse(null);
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
+        node.vespaVersion = nodeAttributes.getVespaVersion().orElse(null);
         node.hardwareDivergence = nodeAttributes.getHardwareDivergence().orElse(null);
         return node;
     }
