@@ -43,9 +43,9 @@ public class TenantsMaintainerTest {
         assertNotNull(tenantRepository.getTenant(shouldBeDeleted));
         assertNotNull(tenantRepository.getTenant(shouldNotBeDeleted));
 
-        new TenantsMaintainer(applicationRepository, curator, Duration.ofMillis(10));
+        new TenantsMaintainer(applicationRepository, curator, Duration.ofDays(1)).run();
 
-        try { Thread.sleep(1000); } catch (InterruptedException e) { /* ignore */ }
+        // One tenant should now have been deleted
         assertNull(tenantRepository.getTenant(shouldBeDeleted));
         assertNotNull(tenantRepository.getTenant(shouldNotBeDeleted));
     }
