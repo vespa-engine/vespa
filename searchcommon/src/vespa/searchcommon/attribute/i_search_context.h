@@ -5,18 +5,12 @@
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
 
-namespace fef {
-    class TermFieldMatchData;
-}
-namespace queryeval {
-    class SearchIterator;
-}
+namespace search::fef { class TermFieldMatchData; }
+namespace search::queryeval { class SearchIterator; }
+namespace search { class QueryTermBase; }
 
-class QueryTermBase;
-
-namespace attribute {
+namespace search::attribute {
 
 class ISearchContext {
 public:
@@ -24,8 +18,8 @@ public:
     using DocId = uint32_t;
 
 private:
-    virtual bool onCmp(DocId docId, int32_t &weight) const = 0;
-    virtual bool onCmp(DocId docId) const = 0;
+    virtual int32_t onFind(DocId docId, int32_t elementId, int32_t &weight) const = 0;
+    virtual int32_t onFind(DocId docId, int32_t elementId) const = 0;
 
 public:
     virtual ~ISearchContext() {}
@@ -57,10 +51,19 @@ public:
     virtual const QueryTermBase &queryTerm() const = 0;
     virtual const vespalib::string &attributeName() const = 0;
 
-    bool cmp(DocId docId, int32_t &weight) const { return onCmp(docId, weight); }
-    bool cmp(DocId docId) const { return onCmp(docId); }
+    int32_t find(DocId docId, int32_t elementId, int32_t &weight) const { return onFind(docId, elementId, weight); }
+    int32_t find(DocId docId, int32_t elementId) const { return onFind(docId, elementId); }
+    bool matches(DocId docId, int32_t &weight) const {
+        weight = 0;
+        int32_t oneWeight(0);
+        int32_t firstId = find(docId, 0, oneWeight);
+        for (int32_t id(firstId); id >= 0; id = find(docId, id + 1, oneWeight)) {
+            weight += oneWeight;
+        }
+        return firstId >= 0;
+    }
+    bool matches(DocId doc) const { return find(doc, 0) >= 0; }
 
 };
 
-}
 }

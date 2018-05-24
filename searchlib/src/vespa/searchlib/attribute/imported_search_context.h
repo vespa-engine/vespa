@@ -50,7 +50,7 @@ public:
                           const SearchContextParams& params,
                           const ImportedAttributeVector& imported_attribute,
                           const attribute::IAttributeVector &target_attribute);
-    ~ImportedSearchContext();
+    ~ImportedSearchContext() override;
 
 
     std::unique_ptr<queryeval::SearchIterator>
@@ -64,16 +64,16 @@ public:
 
     using DocId = IAttributeVector::DocId;
 
-    bool cmp(DocId docId, int32_t& weight) const {
-        return _target_search_context->cmp(getTargetLid(docId), weight);
+    int32_t find(DocId docId, int32_t elemId, int32_t& weight) const {
+        return _target_search_context->find(getTargetLid(docId), elemId, weight);
     }
 
-    bool cmp(DocId docId) const {
-        return _target_search_context->cmp(getTargetLid(docId));
+    int32_t find(DocId docId, int32_t elemId) const {
+        return _target_search_context->find(getTargetLid(docId), elemId);
     }
 
-    bool onCmp(uint32_t docId, int32_t &weight) const override { return cmp(docId, weight); }
-    bool onCmp(uint32_t docId) const override { return cmp(docId); }
+    int32_t onFind(uint32_t docId, int32_t elemId, int32_t &weight) const override { return find(docId, elemId, weight); }
+    int32_t onFind(uint32_t docId, int32_t elemId) const override { return find(docId, elemId); }
 
     const ReferenceAttribute& attribute() const noexcept { return _reference_attribute; }
 

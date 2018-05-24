@@ -6,8 +6,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include "documentmetastore.h"
 
-namespace proton {
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 /**
  * Search context used to search the document meta store for all valid documents.
@@ -15,14 +14,14 @@ namespace documentmetastore {
 class SearchContext : public search::AttributeVector::SearchContext
 {
 private:
-    typedef search::AttributeVector::DocId DocId;
+    using DocId = search::AttributeVector::DocId;
 
     bool _isWord;
     document::GlobalId _gid;
 
     unsigned int approximateHits() const override;
-    bool onCmp(DocId docId, int32_t &weight) const override;
-    bool onCmp(DocId docId) const override;
+    int32_t onFind(DocId docId, int32_t elemId, int32_t &weight) const override;
+    int32_t onFind(DocId docId, int32_t elemId) const override;
 
     search::queryeval::SearchIterator::UP
     createIterator(search::fef::TermFieldMatchData *matchData, bool strict) override;
@@ -30,10 +29,7 @@ private:
     const DocumentMetaStore &getStore() const;
 
 public:
-    SearchContext(std::unique_ptr<search::QueryTermSimple> qTerm,
-                  const DocumentMetaStore &toBeSearched);
+    SearchContext(std::unique_ptr<search::QueryTermSimple> qTerm, const DocumentMetaStore &toBeSearched);
 };
 
-} // namespace documentmetastore
-} // namespace proton
-
+}

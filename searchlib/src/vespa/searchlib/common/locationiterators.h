@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/iterators.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/common/location.h>
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 FastS_AllocLocationIterator(unsigned int numDocs,
                             bool strict,
                             const search::common::Location & location);

@@ -20,7 +20,7 @@ private:
 public:
     FastS_2DZLocationIterator(unsigned int numDocs, bool strict, const Location & location);
 
-    ~FastS_2DZLocationIterator();
+    ~FastS_2DZLocationIterator() override;
 };
 
 
@@ -39,7 +39,7 @@ FastS_2DZLocationIterator(unsigned int numDocs,
 };
 
 
-FastS_2DZLocationIterator::~FastS_2DZLocationIterator() {}
+FastS_2DZLocationIterator::~FastS_2DZLocationIterator() = default;
 
 
 void
@@ -103,10 +103,8 @@ FastS_2DZLocationIterator::doUnpack(uint32_t docId)
 }
 
 
-search::queryeval::SearchIterator *
-FastS_AllocLocationIterator(unsigned int numDocs,
-                            bool strict,
-                            const Location & location)
+std::unique_ptr<search::queryeval::SearchIterator>
+FastS_AllocLocationIterator(unsigned int numDocs, bool strict, const Location & location)
 {
-    return new FastS_2DZLocationIterator(numDocs, strict, location);
+    return std::make_unique<FastS_2DZLocationIterator>(numDocs, strict, location);
 }

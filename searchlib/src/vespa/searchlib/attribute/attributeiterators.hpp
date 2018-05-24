@@ -16,14 +16,14 @@ namespace search {
 template <typename SC>
 void
 AttributeIteratorBase::and_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
-    result.foreach_truebit([&](uint32_t key) { if ( ! sc.cmp(key)) { result.clearBit(key); }}, begin_id);
+    result.foreach_truebit([&](uint32_t key) { if ( ! sc.matches(key)) { result.clearBit(key); }}, begin_id);
     result.invalidateCachedCount();
 }
 
 template <typename SC>
 void
 AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
-    result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
+    result.foreach_falsebit([&](uint32_t key) { if ( sc.matches(key)) { result.setBit(key); }}, begin_id);
     result.invalidateCachedCount();
 }
 
@@ -33,7 +33,7 @@ std::unique_ptr<BitVector>
 AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
     BitVector::UP result = BitVector::create(begin_id, getEndId());
     for (uint32_t docId(std::max(begin_id, getDocId())); docId < getEndId(); docId++) {
-        if (sc.cmp(docId)) {
+        if (sc.matches(docId)) {
             result->setBit(docId);
         }
     }
@@ -338,7 +338,7 @@ AttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
     if (isAtEnd(docId)) {
         setAtEnd();
-    } else if (_searchContext.cmp(docId, _weight)) {
+    } else if (_searchContext.matches(docId, _weight)) {
         setDocId(docId);
     }
 }
@@ -349,7 +349,7 @@ FilterAttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
     if (isAtEnd(docId)) {
         setAtEnd();
-    } else if (_searchContext.cmp(docId)) {
+    } else if (_searchContext.matches(docId)) {
         setDocId(docId);
     }
 }
@@ -359,7 +359,7 @@ void
 AttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
     for (uint32_t nextId = docId; !isAtEnd(nextId); ++nextId) {
-        if (_searchContext.cmp(nextId, _weight)) {
+        if (_searchContext.matches(nextId, _weight)) {
             setDocId(nextId);
             return;
         }
@@ -372,7 +372,7 @@ void
 FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
     for (uint32_t nextId = docId; !isAtEnd(nextId); ++nextId) {
-        if (_searchContext.cmp(nextId)) {
+        if (_searchContext.matches(nextId)) {
             setDocId(nextId);
             return;
         }

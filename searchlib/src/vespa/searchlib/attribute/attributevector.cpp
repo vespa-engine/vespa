@@ -585,7 +585,7 @@ AttributeVector::createSearchContext(QueryTermSimpleUP term,
     return getSearch(std::move(term), params);
 }
 
-AttributeVector::SearchContext::~SearchContext() { }
+AttributeVector::SearchContext::~SearchContext() = default;
 
 unsigned int
 AttributeVector::SearchContext::approximateHits() const
