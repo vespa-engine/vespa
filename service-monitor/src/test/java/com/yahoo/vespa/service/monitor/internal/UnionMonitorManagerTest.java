@@ -6,6 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.service.monitor.internal.health.HealthMonitorManager;
+import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 import org.junit.Test;
 
 import static com.yahoo.vespa.applicationmodel.ClusterId.NODE_ADMIN;

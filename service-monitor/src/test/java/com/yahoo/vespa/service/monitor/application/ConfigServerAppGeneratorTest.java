@@ -3,6 +3,7 @@ package com.yahoo.vespa.service.monitor.application;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 import org.junit.Test;
 
 import java.util.List;
@@ -11,8 +12,11 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-public class ConfigServerApplicationTest {
+public class ConfigServerAppGeneratorTest {
     private static final String configServer1 = "cfg1.yahoo.com";
     private static final String configServer2 = "cfg2.yahoo.com";
     private static final String configServer3 = "cfg3.yahoo.com";
@@ -21,11 +25,13 @@ public class ConfigServerApplicationTest {
             configServer2,
             configServer3).collect(Collectors.toList());
 
+    private final ServiceStatusProvider statusProvider = mock(ServiceStatusProvider.class);
+
     @Test
     public void toApplicationInstance() throws Exception {
-        ConfigServerApplication application = ConfigServerApplication.CONFIG_SERVER_APPLICATION;
-        ApplicationInstance applicationInstance =
-                application.toApplicationInstance(configServerList);
+        when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.NOT_CHECKED);
+        ApplicationInstance applicationInstance = new ConfigServerAppGenerator(configServerList)
+                .makeApplicationInstance(statusProvider);
 
         assertEquals(
                 ConfigServerApplication.APPLICATION_INSTANCE_ID,

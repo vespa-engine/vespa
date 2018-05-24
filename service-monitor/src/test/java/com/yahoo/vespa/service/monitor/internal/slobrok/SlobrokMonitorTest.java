@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.service.monitor.internal;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.service.monitor.internal.slobrok;
 
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
+import com.yahoo.vespa.service.monitor.internal.ExampleModel;
 import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
