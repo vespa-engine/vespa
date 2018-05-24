@@ -22,6 +22,7 @@ using search::query::Node;
 using search::query::ONear;
 using search::query::Or;
 using search::query::Phrase;
+using search::query::SameElement;
 using search::query::PredicateQuery;
 using search::query::PrefixTerm;
 using search::query::QueryVisitor;
@@ -84,6 +85,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(ONear &) override {illegalVisit(); }
     void visit(Or &) override {illegalVisit(); }
     void visit(Phrase &) override {illegalVisit(); }
+    void visit(SameElement &) override {illegalVisit(); }
     void visit(Rank &) override {illegalVisit(); }
     void visit(WeakAnd &) override {illegalVisit(); }
     void visit(WeightedSetTerm &) override {illegalVisit(); }

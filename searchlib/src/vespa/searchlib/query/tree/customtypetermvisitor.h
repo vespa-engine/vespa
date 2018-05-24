@@ -5,8 +5,7 @@
 #include "customtypevisitor.h"
 #include "intermediate.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
 template <class NodeTypes>
 class CustomTypeTermVisitor : public CustomTypeVisitor<NodeTypes>
@@ -32,5 +31,4 @@ private:
     // should be handled that way.
 };
 
-}  // namespace query
-}  // namespace search
+}

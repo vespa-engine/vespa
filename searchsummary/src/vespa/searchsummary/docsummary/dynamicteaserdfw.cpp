@@ -246,6 +246,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             }
             break;
         case search::ParseItem::ITEM_PHRASE:
+        case search::ParseItem::ITEM_SAME_ELEMENT:
             if (!v->VisitPHRASE(&item, iterator.getArity()))
                 rc = SkipItem(&iterator);
             break;

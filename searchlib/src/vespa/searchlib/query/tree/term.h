@@ -6,8 +6,7 @@
 #include <vespa/searchlib/query/weight.h>
 #include <cassert>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 /**
  * This is a leaf in the Query tree. Sort of. Phrases are both terms
@@ -16,11 +15,11 @@ namespace query {
 class Term
 {
     vespalib::string _view;
-    int32_t _id;
-    Weight _weight;
-    int32_t _term_index;
-    bool _ranked;
-    bool _position_data;
+    int32_t          _id;
+    Weight           _weight;
+    int32_t          _term_index;
+    bool             _ranked;
+    bool             _position_data;
 
 public:
     virtual ~Term() = 0;
@@ -60,7 +59,7 @@ class TermBase : public Node, public Term {
 public:
     typedef T Type;
 
-    virtual ~TermBase() = 0;
+    ~TermBase() override = 0;
     const T &getTerm() const { return _term; }
 
 protected:
@@ -71,8 +70,6 @@ protected:
 };
 
 template <typename T>
-TermBase<T>::~TermBase() {}
+TermBase<T>::~TermBase() = default;
 
-}  // namespace query
-}  // namespace search
-
+}

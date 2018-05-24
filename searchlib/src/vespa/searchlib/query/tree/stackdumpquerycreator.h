@@ -9,8 +9,7 @@
 #include <vespa/searchlib/parsequery/simplequerystack.h>
 #include <vespa/vespalib/objects/hexdump.h>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 /**
  * Creates a query tree from a stack dump.
@@ -90,6 +89,12 @@ private:
             Weight weight = queryStack.GetWeight();
             t = &builder.addPhrase(arity, view, id, weight);
             pureTermView = view;
+        } else if (type == ParseItem::ITEM_SAME_ELEMENT) {
+            vespalib::stringref view = queryStack.getIndexName();
+            int32_t id = queryStack.getUniqueId();
+            Weight weight = queryStack.GetWeight();
+            t = &builder.addPhrase(arity, view, id, weight);
+            pureTermView = view;
         } else if (type == ParseItem::ITEM_WEIGHTED_SET) {
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
@@ -152,6 +157,4 @@ private:
     }
 };
 
-}  // namespace query
-}  // namespace search
-
+}

@@ -12,7 +12,7 @@
 
 namespace search::queryeval {
 
-class CreateBlueprintVisitorHelper : public search::query::QueryVisitor
+class CreateBlueprintVisitorHelper : public query::QueryVisitor
 {
 private:
     const IRequestContext & _requestContext;
@@ -37,42 +37,46 @@ public:
 
     const FieldSpec &getField() const { return _field; }
 
-    void visitPhrase(search::query::Phrase &n);
+    void visitPhrase(query::Phrase &n);
+    void visitSameElement(query::SameElement &n);
 
     template <typename WS, typename NODE>
     void createWeightedSet(WS *bp, NODE &n);
-    void visitWeightedSetTerm(search::query::WeightedSetTerm &n);
-    void visitDotProduct(search::query::DotProduct &n);
-    void visitWandTerm(search::query::WandTerm &n);
+    void visitWeightedSetTerm(query::WeightedSetTerm &n);
+    void visitDotProduct(query::DotProduct &n);
+    void visitWandTerm(query::WandTerm &n);
 
-    void handleNumberTermAsText(search::query::NumberTerm &n);
+    void handleNumberTermAsText(query::NumberTerm &n);
 
     void illegalVisit() {}
 
-    void visit(search::query::And &) override { illegalVisit(); }
-    void visit(search::query::AndNot &) override { illegalVisit(); }
-    void visit(search::query::Equiv &) override { illegalVisit(); }
-    void visit(search::query::Near &) override { illegalVisit(); }
-    void visit(search::query::ONear &) override { illegalVisit(); }
-    void visit(search::query::Or &) override { illegalVisit(); }
-    void visit(search::query::Rank &) override { illegalVisit(); }
-    void visit(search::query::WeakAnd &) override { illegalVisit(); }
+    void visit(query::And &) override { illegalVisit(); }
+    void visit(query::AndNot &) override { illegalVisit(); }
+    void visit(query::Equiv &) override { illegalVisit(); }
+    void visit(query::Near &) override { illegalVisit(); }
+    void visit(query::ONear &) override { illegalVisit(); }
+    void visit(query::Or &) override { illegalVisit(); }
+    void visit(query::Rank &) override { illegalVisit(); }
+    void visit(query::WeakAnd &) override { illegalVisit(); }
 
-    void visit(search::query::Phrase &n) override {
+    void visit(query::Phrase &n) override {
         visitPhrase(n);
     }
-    void visit(search::query::WeightedSetTerm &n) override { visitWeightedSetTerm(n); }
-    void visit(search::query::DotProduct &n) override { visitDotProduct(n); }
-    void visit(search::query::WandTerm &n) override { visitWandTerm(n); }
+    void visit(query::SameElement &n) override {
+        visitSameElement(n);
+    }
+    void visit(query::WeightedSetTerm &n) override { visitWeightedSetTerm(n); }
+    void visit(query::DotProduct &n) override { visitDotProduct(n); }
+    void visit(query::WandTerm &n) override { visitWandTerm(n); }
 
-    void visit(search::query::NumberTerm &n) override = 0;
-    void visit(search::query::LocationTerm &n) override = 0;
-    void visit(search::query::PrefixTerm &n) override = 0;
-    void visit(search::query::RangeTerm &n) override = 0;
-    void visit(search::query::StringTerm &n) override = 0;
-    void visit(search::query::SubstringTerm &n) override = 0;
-    void visit(search::query::SuffixTerm &n) override = 0;
-    void visit(search::query::RegExpTerm &n) override = 0;
+    void visit(query::NumberTerm &n) override = 0;
+    void visit(query::LocationTerm &n) override = 0;
+    void visit(query::PrefixTerm &n) override = 0;
+    void visit(query::RangeTerm &n) override = 0;
+    void visit(query::StringTerm &n) override = 0;
+    void visit(query::SubstringTerm &n) override = 0;
+    void visit(query::SuffixTerm &n) override = 0;
+    void visit(query::RegExpTerm &n) override = 0;
 };
 
 }

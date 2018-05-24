@@ -2,10 +2,9 @@
 
 #include "term.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
-Term::~Term() { }
+Term::~Term() = default;
 
 Term::Term(const vespalib::stringref &view, int32_t id, Weight weight) :
     _view(view),
@@ -16,5 +15,4 @@ Term::Term(const vespalib::stringref &view, int32_t id, Weight weight) :
     _position_data(true)
 { }
 
-}  // namespace query
-}  // namespace search
+}

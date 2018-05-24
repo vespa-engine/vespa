@@ -222,19 +222,20 @@ public:
         EXPECT_EQUAL((double)estimatedHitCount / doc_count, n.field(0).getDocFreq());
     }
 
-    virtual void visit(ProtonNumberTerm &n) override { checkNode(n, 1, false); }
-    virtual void visit(ProtonLocationTerm &n) override { checkNode(n, 0, true); }
-    virtual void visit(ProtonPrefixTerm &n) override { checkNode(n, 1, false); }
-    virtual void visit(ProtonRangeTerm &n) override { checkNode(n, 2, false); }
-    virtual void visit(ProtonStringTerm &n) override { checkNode(n, 2, false); }
-    virtual void visit(ProtonSubstringTerm &n) override { checkNode(n, 0, true); }
-    virtual void visit(ProtonSuffixTerm &n) override { checkNode(n, 2, false); }
-    virtual void visit(ProtonPhrase &n) override { checkNode(n, 0, true); }
-    virtual void visit(ProtonWeightedSetTerm &) override {}
-    virtual void visit(ProtonDotProduct &) override {}
-    virtual void visit(ProtonWandTerm &) override {}
-    virtual void visit(ProtonPredicateQuery &) override {}
-    virtual void visit(ProtonRegExpTerm &) override {}
+    void visit(ProtonNumberTerm &n) override { checkNode(n, 1, false); }
+    void visit(ProtonLocationTerm &n) override { checkNode(n, 0, true); }
+    void visit(ProtonPrefixTerm &n) override { checkNode(n, 1, false); }
+    void visit(ProtonRangeTerm &n) override { checkNode(n, 2, false); }
+    void visit(ProtonStringTerm &n) override { checkNode(n, 2, false); }
+    void visit(ProtonSubstringTerm &n) override { checkNode(n, 0, true); }
+    void visit(ProtonSuffixTerm &n) override { checkNode(n, 2, false); }
+    void visit(ProtonPhrase &n) override { checkNode(n, 0, true); }
+    void visit(ProtonSameElement &n) override { checkNode(n, 0, true); }
+    void visit(ProtonWeightedSetTerm &) override {}
+    void visit(ProtonDotProduct &) override {}
+    void visit(ProtonWandTerm &) override {}
+    void visit(ProtonPredicateQuery &) override {}
+    void visit(ProtonRegExpTerm &) override {}
 };
 
 void Test::requireThatTermsAreLookedUp() {
@@ -354,12 +355,12 @@ class SetUpTermDataTestCheckerVisitor
     int Main() { return 0; }
 
 public:
-    virtual void visit(ProtonNumberTerm &) override {}
-    virtual void visit(ProtonLocationTerm &) override {}
-    virtual void visit(ProtonPrefixTerm &) override {}
-    virtual void visit(ProtonRangeTerm &) override {}
+    void visit(ProtonNumberTerm &) override {}
+    void visit(ProtonLocationTerm &) override {}
+    void visit(ProtonPrefixTerm &) override {}
+    void visit(ProtonRangeTerm &) override {}
 
-    virtual void visit(ProtonStringTerm &n) override {
+    void visit(ProtonStringTerm &n) override {
         const ITermData &term_data = n;
         EXPECT_EQUAL(string_weight.percent(),
                    term_data.getWeight().percent());
@@ -375,17 +376,18 @@ public:
         }
     }
 
-    virtual void visit(ProtonSubstringTerm &) override {}
-    virtual void visit(ProtonSuffixTerm &) override {}
-    virtual void visit(ProtonPhrase &n) override {
+    void visit(ProtonSubstringTerm &) override {}
+    void visit(ProtonSuffixTerm &) override {}
+    void visit(ProtonSameElement &) override {}
+    void visit(ProtonPhrase &n) override {
         const ITermData &term_data = n;
         EXPECT_EQUAL(2u, term_data.getPhraseLength());
     }
-    virtual void visit(ProtonWeightedSetTerm &) override {}
-    virtual void visit(ProtonDotProduct &) override {}
-    virtual void visit(ProtonWandTerm &) override {}
-    virtual void visit(ProtonPredicateQuery &) override {}
-    virtual void visit(ProtonRegExpTerm &) override {}
+    void visit(ProtonWeightedSetTerm &) override {}
+    void visit(ProtonDotProduct &) override {}
+    void visit(ProtonWandTerm &) override {}
+    void visit(ProtonPredicateQuery &) override {}
+    void visit(ProtonRegExpTerm &) override {}
 };
 
 void Test::requireThatTermDataIsFilledIn() {

@@ -250,6 +250,7 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_DOT_PRODUCT:
     case ParseItem::ITEM_WAND:
     case ParseItem::ITEM_PHRASE:
+    case ParseItem::ITEM_SAME_ELEMENT:
         p += vespalib::compress::Integer::decompressPositive(tmp, p);
         _currArity = tmp;
         if (p > _bufEnd) return false;

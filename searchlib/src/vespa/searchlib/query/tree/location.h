@@ -4,11 +4,8 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib {
-    class asciistream;
-}
-namespace search {
-namespace query {
+namespace vespalib { class asciistream; }
+namespace search::query {
 class Point;
 class Rectangle;
 
@@ -32,6 +29,4 @@ public:
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc);
 
-}  // namespace query
-}  // namespace search
-
+}

@@ -4,8 +4,7 @@
 #include <vector>
 #include <vespa/searchlib/query/tree/node.h>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 class Intermediate : public Node
 {
@@ -24,6 +23,4 @@ class Intermediate : public Node
     Intermediate &append(Node::UP child);
 };
 
-}  // namespace query
-}  // namespace search
-
+}

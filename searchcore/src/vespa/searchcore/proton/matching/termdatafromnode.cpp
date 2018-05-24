@@ -4,8 +4,7 @@
 #include "querynodes.h"
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 struct TermDataFromTermVisitor
@@ -19,29 +18,30 @@ struct TermDataFromTermVisitor
         data = &n;
     }
 
-    virtual void visit(ProtonAnd &) override {}
-    virtual void visit(ProtonAndNot &) override {}
-    virtual void visit(ProtonNear &) override {}
-    virtual void visit(ProtonONear &) override {}
-    virtual void visit(ProtonOr &) override {}
-    virtual void visit(ProtonRank &) override {}
-    virtual void visit(ProtonWeakAnd &) override {}
+    void visit(ProtonAnd &) override {}
+    void visit(ProtonAndNot &) override {}
+    void visit(ProtonNear &) override {}
+    void visit(ProtonONear &) override {}
+    void visit(ProtonOr &) override {}
+    void visit(ProtonRank &) override {}
+    void visit(ProtonWeakAnd &) override {}
 
-    virtual void visit(ProtonWeightedSetTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonDotProduct &n) override { visitTerm(n); }
-    virtual void visit(ProtonWandTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonPhrase &n) override { visitTerm(n); }
-    virtual void visit(ProtonEquiv &n) override { visitTerm(n); }
+    void visit(ProtonWeightedSetTerm &n) override { visitTerm(n); }
+    void visit(ProtonDotProduct &n) override { visitTerm(n); }
+    void visit(ProtonWandTerm &n) override { visitTerm(n); }
+    void visit(ProtonPhrase &n) override { visitTerm(n); }
+    void visit(ProtonSameElement &n) override { visitTerm(n); }
+    void visit(ProtonEquiv &n) override { visitTerm(n); }
 
-    virtual void visit(ProtonNumberTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonLocationTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonPrefixTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonRangeTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonStringTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonSubstringTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonSuffixTerm &n) override { visitTerm(n); }
-    virtual void visit(ProtonPredicateQuery &) override { }
-    virtual void visit(ProtonRegExpTerm &n) override { visitTerm(n); }
+    void visit(ProtonNumberTerm &n) override { visitTerm(n); }
+    void visit(ProtonLocationTerm &n) override { visitTerm(n); }
+    void visit(ProtonPrefixTerm &n) override { visitTerm(n); }
+    void visit(ProtonRangeTerm &n) override { visitTerm(n); }
+    void visit(ProtonStringTerm &n) override { visitTerm(n); }
+    void visit(ProtonSubstringTerm &n) override { visitTerm(n); }
+    void visit(ProtonSuffixTerm &n) override { visitTerm(n); }
+    void visit(ProtonPredicateQuery &) override { }
+    void visit(ProtonRegExpTerm &n) override { visitTerm(n); }
 };
 }  // namespace
 
@@ -53,5 +53,4 @@ termDataFromNode(const search::query::Node &node)
     return visitor.data;
 }
 
-}  // namespace matching
-}  // namespace proton
+}

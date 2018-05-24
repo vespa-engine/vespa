@@ -10,8 +10,7 @@
 #include "intermediatenodes.h"
 #include "termnodes.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
 struct SimpleAnd : And {};
 struct SimpleAndNot : AndNot {};
@@ -30,6 +29,11 @@ struct SimpleEquiv : Equiv {
 struct SimplePhrase : Phrase {
     SimplePhrase(const vespalib::stringref &view, int32_t id, Weight weight)
         : Phrase(view, id, weight) {}
+};
+
+struct SimpleSameElement : SameElement {
+    SimpleSameElement(const vespalib::stringref &view, int32_t id, Weight weight)
+            : SameElement(view, id, weight) {}
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {
     SimpleWeightedSetTerm(const vespalib::stringref &view, int32_t id, Weight weight)
@@ -112,6 +116,7 @@ struct SimpleQueryNodeTypes {
     typedef SimpleONear ONear;
     typedef SimpleOr Or;
     typedef SimplePhrase Phrase;
+    typedef SimpleSameElement SameElement;
     typedef SimplePrefixTerm PrefixTerm;
     typedef SimpleRangeTerm RangeTerm;
     typedef SimpleRank Rank;
@@ -126,6 +131,4 @@ struct SimpleQueryNodeTypes {
     typedef SimpleRegExpTerm RegExpTerm;
 };
 
-}  // namespace query
-}  // namespace search
-
+}

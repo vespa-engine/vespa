@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace search {
-namespace query {
+namespace search::query {
 
 class And;
 class AndNot;
@@ -26,6 +25,7 @@ class DotProduct;
 class WandTerm;
 class PredicateQuery;
 class RegExpTerm;
+class SameElement;
 
 struct QueryVisitor {
     virtual ~QueryVisitor() {}
@@ -39,6 +39,7 @@ struct QueryVisitor {
     virtual void visit(ONear &) = 0;
     virtual void visit(Or &) = 0;
     virtual void visit(Phrase &) = 0;
+    virtual void visit(SameElement &node) = 0;
     virtual void visit(PrefixTerm &) = 0;
     virtual void visit(RangeTerm &) = 0;
     virtual void visit(Rank &) = 0;
@@ -53,6 +54,5 @@ struct QueryVisitor {
     virtual void visit(RegExpTerm &) = 0;
 };
 
-}  // namespace query
-}  // namespace search
+}
 

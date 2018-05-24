@@ -2,27 +2,25 @@
 
 #include "termnodes.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
-NumberTerm::~NumberTerm() {}
+NumberTerm::~NumberTerm() = default;
 
-PrefixTerm::~PrefixTerm() {}
+PrefixTerm::~PrefixTerm() = default;
 
-RangeTerm::~RangeTerm() {}
+RangeTerm::~RangeTerm() = default;
 
 StringTerm::StringTerm(const Type &term, const vespalib::stringref &view, int32_t id, Weight weight)
     : QueryNodeMixinType(term, view, id, weight)
 {}
-StringTerm::~StringTerm() {}
+StringTerm::~StringTerm() = default;
 
-SubstringTerm::~SubstringTerm() {}
+SubstringTerm::~SubstringTerm() = default;
 
-SuffixTerm::~SuffixTerm() {}
+SuffixTerm::~SuffixTerm() = default;
 
-LocationTerm::~LocationTerm() {}
+LocationTerm::~LocationTerm() = default;
 
-RegExpTerm::~RegExpTerm() {}
+RegExpTerm::~RegExpTerm() = default;
 
-}  // namespace query
-}  // namespace search
+}

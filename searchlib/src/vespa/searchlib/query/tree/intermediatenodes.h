@@ -7,8 +7,7 @@
 #include "term.h"
 #include <vespa/searchlib/query/weight.h>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 class And : public QueryNodeMixin<And, Intermediate> {
 public:
@@ -105,6 +104,13 @@ public:
     virtual ~Phrase() = 0;
 };
 
+class SameElement : public QueryNodeMixin<SameElement, Intermediate>, public Term {
+public:
+    SameElement(const vespalib::string &view, int32_t id, Weight weight)
+            : Term(view, id, weight) {}
+    virtual ~SameElement() = 0;
+};
+
 class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, Intermediate>, public Term {
 public:
     WeightedSetTerm(const vespalib::string &view, int32_t id, Weight weight)
@@ -137,6 +143,4 @@ public:
     double getThresholdBoostFactor() const { return _thresholdBoostFactor; }
 };
 
-}  // namespace query
-}  // namespace search
-
+}

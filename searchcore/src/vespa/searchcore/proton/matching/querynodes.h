@@ -121,6 +121,8 @@ struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv>
 typedef ProtonTerm<search::query::LocationTerm>    ProtonLocationTerm;
 typedef ProtonTerm<search::query::NumberTerm>      ProtonNumberTerm;
 typedef ProtonTerm<search::query::Phrase>          ProtonPhrase;
+typedef ProtonTerm<search::query::SameElement>     ProtonSameElement;
+
 typedef ProtonTerm<search::query::PrefixTerm>      ProtonPrefixTerm;
 typedef ProtonTerm<search::query::RangeTerm>       ProtonRangeTerm;
 typedef ProtonTerm<search::query::StringTerm>      ProtonStringTerm;
@@ -142,6 +144,7 @@ struct ProtonNodeTypes {
     typedef ProtonONear           ONear;
     typedef ProtonOr              Or;
     typedef ProtonPhrase          Phrase;
+    typedef ProtonSameElement     SameElement;
     typedef ProtonPrefixTerm      PrefixTerm;
     typedef ProtonRangeTerm       RangeTerm;
     typedef ProtonRank            Rank;

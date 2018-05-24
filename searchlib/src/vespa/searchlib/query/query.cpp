@@ -102,10 +102,11 @@ QueryConnector::create(ParseItem::ItemType type)
         case search::ParseItem::ITEM_WAND:         return new OrQueryNode();
         case search::ParseItem::ITEM_NOT:          return new AndNotQueryNode();
         case search::ParseItem::ITEM_PHRASE:       return new PhraseQueryNode();
+        case search::ParseItem::ITEM_SAME_ELEMENT: return new PhraseQueryNode(); // TODO: This needs a same element operation to work for streaming search too.
         case search::ParseItem::ITEM_NEAR:         return new NearQueryNode();
         case search::ParseItem::ITEM_ONEAR:        return new ONearQueryNode();
         default:
-            return NULL;
+            return nullptr;
     }
 }
 

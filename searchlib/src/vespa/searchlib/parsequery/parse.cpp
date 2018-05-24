@@ -24,9 +24,8 @@ namespace search {
 ParseItem::ParseItem(ItemType type, int arity)
     : PARSEITEM_DEFAULT_CONSTRUCTOR_LIST
 {
-    assert(type==ITEM_OR || type==ITEM_WEAK_AND || type==ITEM_EQUIV ||
-           type==ITEM_AND || type==ITEM_NOT || type==ITEM_RANK ||
-           type==ITEM_PHRASE || type==ITEM_ANY || type==ITEM_NEAR || type==ITEM_ONEAR);
+    assert(type==ITEM_OR || type==ITEM_WEAK_AND || type==ITEM_EQUIV || type==ITEM_AND || type==ITEM_NOT
+           || type==ITEM_RANK || type==ITEM_ANY || type==ITEM_NEAR || type==ITEM_ONEAR);
     SetType(type);
     _arity = arity;
 }
@@ -34,7 +33,8 @@ ParseItem::ParseItem(ItemType type, int arity)
 ParseItem::ParseItem(ItemType type, int arity, const char *idx)
     : PARSEITEM_DEFAULT_CONSTRUCTOR_LIST
 {
-    assert(type == ITEM_PHRASE || type==ITEM_WEIGHTED_SET || type==ITEM_DOT_PRODUCT || type==ITEM_WAND);
+    assert(type==ITEM_PHRASE || type==ITEM_SAME_ELEMENT || type==ITEM_WEIGHTED_SET
+           || type==ITEM_DOT_PRODUCT || type==ITEM_WAND);
     SetType(type);
     _arity = arity;
     SetIndex(idx);
@@ -124,6 +124,7 @@ ParseItem::AppendBuffer(RawBuf *buf) const
     case ITEM_DOT_PRODUCT:
     case ITEM_WAND:
     case ITEM_PHRASE:
+    case ITEM_SAME_ELEMENT:
         buf->appendCompressedPositiveNumber(_arity);
         buf->appendCompressedPositiveNumber(indexLen);
         if (indexLen != 0) {
@@ -197,6 +198,7 @@ ParseItem::GetBufferLen() const
     case ITEM_WEIGHTED_SET:
     case ITEM_DOT_PRODUCT:
     case ITEM_PHRASE:
+    case ITEM_SAME_ELEMENT:
         len += sizeof(uint32_t) * 2 + indexLen;
         break;
     case ITEM_WAND:

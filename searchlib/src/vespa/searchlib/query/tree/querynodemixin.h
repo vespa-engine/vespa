@@ -4,8 +4,7 @@
 
 #include "queryvisitor.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
 template <typename T, typename Base>
 struct QueryNodeMixin : Base {
@@ -21,8 +20,6 @@ protected:
 };
 
 template <typename T, typename Base>
-QueryNodeMixin<T, Base>::~QueryNodeMixin() {}
+QueryNodeMixin<T, Base>::~QueryNodeMixin() = default;
 
-}  // namespace query
-}  // namespace search
-
+}

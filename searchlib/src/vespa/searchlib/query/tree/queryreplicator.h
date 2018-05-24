@@ -7,8 +7,7 @@
 #include "queryvisitor.h"
 #include "termnodes.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
 /**
  * Creates a new query tree based on an existing one. The traits class
@@ -70,22 +69,25 @@ private:
     }
 
     void visit(Phrase &node) override {
-        replicate(node, _builder.addPhrase(node.getChildren().size(),
-                                           node.getView(),
+        replicate(node, _builder.addPhrase(node.getChildren().size(), node.getView(),
                                            node.getId(), node.getWeight()));
         visitNodes(node.getChildren());
     }
 
+    void visit(SameElement &node) override {
+        replicate(node, _builder.addSameElement(node.getChildren().size(), node.getView(),
+                                                node.getId(), node.getWeight()));
+        visitNodes(node.getChildren());
+    }
+
     void visit(WeightedSetTerm &node) override {
-        replicate(node, _builder.addWeightedSetTerm(node.getChildren().size(),
-                                                    node.getView(),
+        replicate(node, _builder.addWeightedSetTerm(node.getChildren().size(), node.getView(),
                                                     node.getId(), node.getWeight()));
         visitNodes(node.getChildren());
     }
 
     void visit(DotProduct &node) override {
-        replicate(node, _builder.addDotProduct(node.getChildren().size(),
-                                               node.getView(),
+        replicate(node, _builder.addDotProduct(node.getChildren().size(), node.getView(),
                                                node.getId(), node.getWeight()));
         visitNodes(node.getChildren());
     }
@@ -165,5 +167,4 @@ private:
     }
 };
 
-}  // namespace query
-}  // namespace search
+}

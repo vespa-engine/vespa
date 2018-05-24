@@ -333,9 +333,9 @@ struct MyNear : Near { MyNear(size_t dist) : Near(dist) {} };
 struct MyONear : ONear { MyONear(size_t dist) : ONear(dist) {} };
 struct MyWeakAnd : WeakAnd { MyWeakAnd(uint32_t minHits, const vespalib::string & v) : WeakAnd(minHits, v) {} };
 struct MyOr : Or {};
-struct MyPhrase : Phrase {
-    MyPhrase(const string &f, int32_t i, Weight w) : Phrase(f, i, w) {}
-};
+struct MyPhrase : Phrase { MyPhrase(const string &f, int32_t i, Weight w) : Phrase(f, i, w) {}};
+struct MySameElement : SameElement { MySameElement(const string &f, int32_t i, Weight w) : SameElement(f, i, w) {}};
+
 struct MyWeightedSetTerm : WeightedSetTerm {
     MyWeightedSetTerm(const string &f, int32_t i, Weight w) : WeightedSetTerm(f, i, w) {}
 };
@@ -404,6 +404,7 @@ struct MyQueryNodeTypes {
     typedef MyONear ONear;
     typedef MyOr Or;
     typedef MyPhrase Phrase;
+    typedef MySameElement SameElement;
     typedef MyPrefixTerm PrefixTerm;
     typedef MyRangeTerm RangeTerm;
     typedef MyRank Rank;

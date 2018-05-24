@@ -8,8 +8,7 @@
 #include "range.h"
 #include "term.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
 typedef TermBase<vespalib::string> StringBase;
 
@@ -117,6 +116,4 @@ public:
 };
 
 
-}  // namespace query
-}  // namespace search
-
+}

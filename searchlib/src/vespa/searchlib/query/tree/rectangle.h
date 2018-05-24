@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace search {
-namespace query {
+namespace search::query {
 
 struct Rectangle {
     int64_t left;
@@ -21,6 +20,5 @@ inline bool operator==(const Rectangle &r1, const Rectangle &r2) {
         && r1.top == r2.top && r1.bottom == r2.bottom;
 }
 
-}  // namespace query
-}  // namespace search
+}
 

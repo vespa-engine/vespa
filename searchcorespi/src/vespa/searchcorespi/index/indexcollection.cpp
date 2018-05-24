@@ -179,28 +179,29 @@ private:
         _result = mixer.mix();
     }
 
-    virtual void visit(And &)     override { }
-    virtual void visit(AndNot &)  override { }
-    virtual void visit(Or &)      override { }
-    virtual void visit(WeakAnd &) override { }
-    virtual void visit(Equiv &)   override { }
-    virtual void visit(Rank &)    override { }
-    virtual void visit(Near &)    override { }
-    virtual void visit(ONear &)   override { }
+    void visit(And &)     override { }
+    void visit(AndNot &)  override { }
+    void visit(Or &)      override { }
+    void visit(WeakAnd &) override { }
+    void visit(Equiv &)   override { }
+    void visit(Rank &)    override { }
+    void visit(Near &)    override { }
+    void visit(ONear &)   override { }
 
-    virtual void visit(WeightedSetTerm &n) override { visitTerm(n); }
-    virtual void visit(DotProduct &n)      override { visitTerm(n); }
-    virtual void visit(WandTerm &n)        override { visitTerm(n); }
-    virtual void visit(Phrase &n)          override { visitTerm(n); }
-    virtual void visit(NumberTerm &n)      override { visitTerm(n); }
-    virtual void visit(LocationTerm &n)    override { visitTerm(n); }
-    virtual void visit(PrefixTerm &n)      override { visitTerm(n); }
-    virtual void visit(RangeTerm &n)       override { visitTerm(n); }
-    virtual void visit(StringTerm &n)      override { visitTerm(n); }
-    virtual void visit(SubstringTerm &n)   override { visitTerm(n); }
-    virtual void visit(SuffixTerm &n)      override { visitTerm(n); }
-    virtual void visit(PredicateQuery &n)  override { visitTerm(n); }
-    virtual void visit(RegExpTerm &n)      override { visitTerm(n); }
+    void visit(WeightedSetTerm &n) override { visitTerm(n); }
+    void visit(DotProduct &n)      override { visitTerm(n); }
+    void visit(WandTerm &n)        override { visitTerm(n); }
+    void visit(Phrase &n)          override { visitTerm(n); }
+    void visit(SameElement &n)     override { visitTerm(n); }
+    void visit(NumberTerm &n)      override { visitTerm(n); }
+    void visit(LocationTerm &n)    override { visitTerm(n); }
+    void visit(PrefixTerm &n)      override { visitTerm(n); }
+    void visit(RangeTerm &n)       override { visitTerm(n); }
+    void visit(StringTerm &n)      override { visitTerm(n); }
+    void visit(SubstringTerm &n)   override { visitTerm(n); }
+    void visit(SuffixTerm &n)      override { visitTerm(n); }
+    void visit(PredicateQuery &n)  override { visitTerm(n); }
+    void visit(RegExpTerm &n)      override { visitTerm(n); }
 
 public:
     CreateBlueprintVisitor(const IIndexCollection &indexes,

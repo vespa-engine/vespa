@@ -52,7 +52,7 @@ public:
         ITEM_WEIGHTED_SET          =   15,
         ITEM_WEAK_AND              =   16,
         ITEM_EXACTSTRINGTERM       =   17,
-        UNUSED_LEGACY_ITEM_RISE_QUERY =   18,
+        ITEM_SAME_ELEMENT          =   18,
         ITEM_PURE_WEIGHTED_STRING  =   19,
         ITEM_PURE_WEIGHTED_LONG    =   20,
         ITEM_DOT_PRODUCT           =   21,
