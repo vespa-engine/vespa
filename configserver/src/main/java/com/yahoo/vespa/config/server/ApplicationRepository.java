@@ -154,8 +154,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
         File tempDir = Files.createTempDir();
-        PrepareResult prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
-        cleanupTempDirectory(tempDir);
+        PrepareResult prepareResult;
+        try {
+            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
+        } finally {
+            cleanupTempDirectory(tempDir);
+        }
         return prepareResult;
     }
 
@@ -353,8 +357,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in, String contentType) {
         File tempDir = Files.createTempDir();
-        long sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
-        cleanupTempDirectory(tempDir);
+        long sessionId;
+        try {
+            sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
+        } finally {
+            cleanupTempDirectory(tempDir);
+        }
         return sessionId;
     }
 
@@ -451,7 +459,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                      CompressedApplicationInputStream.createFromCompressedStream(in, contentType)) {
             return decompressApplication(application, tempDir);
         } catch (IOException e) {
-            cleanupTempDirectory(tempDir);
             throw new IllegalArgumentException("Unable to decompress data in body", e);
         }
     }
@@ -460,7 +467,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         try {
             return in.decompress(tempDir);
         } catch (IOException e) {
-            cleanupTempDirectory(tempDir);
             throw new IllegalArgumentException("Unable to decompress stream", e);
         }
     }
