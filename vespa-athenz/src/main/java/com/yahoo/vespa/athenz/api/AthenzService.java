@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.api;
 
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
+
 import java.util.Objects;
 
 /**
@@ -20,6 +22,15 @@ public class AthenzService implements AthenzIdentity {
         this(new AthenzDomain(domain), serviceName);
     }
 
+    public AthenzService(String fullName) {
+        AthenzIdentity identity = AthenzIdentities.from(fullName);
+        if (!(identity instanceof AthenzService)) {
+            throw new IllegalArgumentException(String.format("'%s' is not an Athenz service", fullName));
+        }
+        AthenzService service = (AthenzService) identity;
+        this.domain = service.getDomain();
+        this.serviceName = service.serviceName;
+    }
 
     @Override
     public AthenzDomain getDomain() {

@@ -7,6 +7,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
+import com.yahoo.vespa.athenz.utils.SiaUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
@@ -42,8 +44,8 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     @Inject
     public SiaIdentityProvider(SiaProviderConfig config) {
         this(new AthenzService(config.athenzDomain(), config.athenzService()),
-             getPrivateKeyFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
-             getCertificateFile(config.keyPathPrefix(), config.athenzDomain(), config.athenzService()),
+             SiaUtils.getPrivateKeyFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())).toFile(),
+             SiaUtils.getCertificateFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())).toFile(),
              new File(config.trustStorePath()),
              createScheduler());
     }
@@ -52,8 +54,8 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
                                Path siaPath,
                                File trustStoreFile) {
         this(service,
-             getPrivateKeyFile(siaPath.toString(), service.getDomain().getName(), service.getName()),
-             getCertificateFile(siaPath.toString(), service.getDomain().getName(), service.getName()),
+             SiaUtils.getPrivateKeyFile(siaPath, service).toFile(),
+             SiaUtils.getCertificateFile(siaPath, service).toFile(),
              trustStoreFile,
              createScheduler());
     }
@@ -119,13 +121,6 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         }
     }
 
-    private static File getCertificateFile(String rootPath, String domain, String service) {
-        return Paths.get(rootPath, "certs", String.format("%s.%s.cert.pem", domain, service)).toFile();
-    }
-
-    private static File getPrivateKeyFile(String rootPath, String domain, String service) {
-        return Paths.get(rootPath, "keys", String.format("%s.%s.key.pem", domain, service)).toFile();
-    }
 
     @Override
     public void deconstruct() {
