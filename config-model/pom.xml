@@ -276,11 +276,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.major-version}</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
     </dependency>
@@ -297,11 +292,6 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.scala-lang.modules</groupId>
-      <artifactId>scala-xml_${scala.major-version}</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -530,19 +520,6 @@
         <configuration>
           <updateReleaseInfo>true</updateReleaseInfo>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-          <executions>
-              <execution>
-                  <id>test-compile</id>
-                  <goals>
-                      <goal>testCompile</goal>
-                  </goals>
-                  <phase>test-compile</phase>
-              </execution>
-          </executions>
       </plugin>
     </plugins>
   </build>
