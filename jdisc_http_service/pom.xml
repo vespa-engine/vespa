@@ -175,7 +175,6 @@
         <extensions>true</extensions>
         <configuration>
           <discPreInstallBundle>
-            asm-debug-all-${asm-debug-all.version}.jar,
             bcpkix-jdk15on-${bouncycastle.version}.jar,
             bcprov-jdk15on-${bouncycastle.version}.jar,
             javax.servlet-api-3.1.0.jar,
@@ -188,8 +187,6 @@
             jetty-servlet-${jetty.version}.jar,
             jetty-servlets-${jetty.version}.jar,
             jetty-util-${jetty.version}.jar,
-            org.apache.aries.spifly.dynamic.bundle-${aries.spifly.version}.jar,
-            org.apache.aries.util-${aries.util.version}.jar,
             component-jar-with-dependencies.jar
           </discPreInstallBundle>
         </configuration>
