@@ -26,8 +26,9 @@ protected:
     void doUnpack(uint32_t docid) override;
     Trinary is_strict() const override { return _search->is_strict(); }
     void initRange(uint32_t beginid, uint32_t endid) override {
+        SearchIterator::initRange(beginid, endid);
         _search->initRange(beginid, endid);
-        SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
+        setDocId(_search->getDocId());
     }
 
 public:
