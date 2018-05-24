@@ -26,7 +26,7 @@ public class ConfiggenUtil {
         return className;
     }
 
-    private static String capitalize(String in) {
+    static String capitalize(String in) {
         StringBuilder sb = new StringBuilder(in);
         sb.setCharAt(0, Character.toTitleCase(in.charAt(0)));
         return sb.toString();
