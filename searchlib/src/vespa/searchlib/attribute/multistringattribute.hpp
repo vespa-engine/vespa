@@ -66,7 +66,7 @@ int32_t
 MultiValueStringAttributeT<B, M>::StringSetImplSearchContext::onFind(DocId doc, int32_t elemId, int32_t &weight) const
 {
     StringAttribute::StringSearchContext::CollectWeight collector;
-    return this->collectWeight(doc, elemId, weight, collector);
+    return this->findNextWeight(doc, elemId, weight, collector);
 }
 
 template <typename B, typename M>
@@ -74,18 +74,18 @@ int32_t
 MultiValueStringAttributeT<B, M>::StringArrayImplSearchContext::onFind(DocId doc, int32_t elemId, int32_t &weight) const
 {
     StringAttribute::StringSearchContext::CollectHitCount collector;
-    return this->collectWeight(doc, elemId, weight, collector);
+    return this->findNextWeight(doc, elemId, weight, collector);
 }
 
 template <typename B, typename M>
 template <typename Collector>
 int32_t
-MultiValueStringAttributeT<B, M>::StringImplSearchContext::collectWeight(DocId doc, int32_t elemId, int32_t & weight, Collector & collector) const
+MultiValueStringAttributeT<B, M>::StringImplSearchContext::findNextWeight(DocId doc, int32_t elemId, int32_t & weight, Collector & collector) const
 {
     WeightedIndexArrayRef indices(myAttribute()._mvMapping.get(doc));
 
     EnumAccessor<typename B::EnumStore> accessor(myAttribute()._enumStore);
-    int32_t foundElem = collectMatches(indices, elemId, accessor, collector);
+    int32_t foundElem = findNextMatch(indices, elemId, accessor, collector);
     weight = collector.getWeight();
     return foundElem;
 }

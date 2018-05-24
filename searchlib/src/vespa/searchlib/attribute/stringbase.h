@@ -147,7 +147,7 @@ private:
         };
 
         template<typename WeightedT, typename Accessor, typename Collector>
-        int32_t collectMatches(vespalib::ConstArrayRef<WeightedT> w, int32_t elemId, const Accessor & ac, Collector & collector) const {
+        int32_t findNextMatch(vespalib::ConstArrayRef<WeightedT> w, int32_t elemId, const Accessor & ac, Collector & collector) const {
             for (uint32_t i(elemId); i < w.size(); i++) {
                 if (isMatch(ac.get(w[i].value()))) {
                     collector.addWeight(w[i].weight());

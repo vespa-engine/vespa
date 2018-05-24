@@ -122,7 +122,7 @@ public:
         int32_t onFind(DocId docId, int32_t elemId) const override;
 
         template <typename Collector>
-        int32_t collectWeight(DocId doc, int32_t elemId, int32_t & weight, Collector & collector) const;
+        int32_t findNextWeight(DocId doc, int32_t elemId, int32_t & weight, Collector & collector) const;
     };
 
     /*

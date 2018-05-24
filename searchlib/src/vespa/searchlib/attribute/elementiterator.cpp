@@ -16,10 +16,10 @@ ElementIterator::doSeek(uint32_t docid) {
 
 void
 ElementIterator::doUnpack(uint32_t docid) {
-    _tfmda.reset(docid);
+    _tfmd.reset(docid);
     int32_t weight(0);
     for (int32_t id = _searchContext.find(docid, 0, weight); id >= 0; id = _searchContext.find(docid, id+1, weight)) {
-        _tfmda.appendPosition(TermFieldMatchDataPosition(id, 0, weight, 1));
+        _tfmd.appendPosition(TermFieldMatchDataPosition(id, 0, weight, 1));
     }
 }
 
@@ -30,14 +30,15 @@ ElementIterator::is_strict() const {
 
 void
 ElementIterator::initRange(uint32_t beginid, uint32_t endid) {
+    SearchIterator::initRange(beginid, endid);
     _search->initRange(beginid, endid);
-    SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
+    setDocId(_search->getDocId());
 }
 
-ElementIterator::ElementIterator(SearchIterator::UP search, ISearchContext & sc, fef::TermFieldMatchData & tfmda)
+ElementIterator::ElementIterator(SearchIterator::UP search, const ISearchContext & sc, fef::TermFieldMatchData & tfmd)
     : _search(std::move(search)),
       _searchContext(sc),
-      _tfmda(tfmda)
+      _tfmd(tfmd)
 {
 }
 

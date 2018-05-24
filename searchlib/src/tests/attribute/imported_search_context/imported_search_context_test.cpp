@@ -301,7 +301,7 @@ TEST_F("Strict iterator handles seek outside of LID space", ArrayValueFixture) {
     EXPECT_TRUE(iter->isAtEnd());
 }
 
-TEST_F("cmp() performs GID mapping and forwards to target attribute", SingleValueFixture) {
+TEST_F("matches() performs GID mapping and forwards to target attribute", SingleValueFixture) {
     auto ctx = f.create_context(word_term("5678"));
     EXPECT_FALSE(ctx->matches(DocId(2)));
     EXPECT_TRUE(ctx->matches(DocId(3)));
@@ -309,7 +309,7 @@ TEST_F("cmp() performs GID mapping and forwards to target attribute", SingleValu
     EXPECT_TRUE(ctx->matches(DocId(5)));
 }
 
-TEST_F("cmp(weight) performs GID mapping and forwards to target attribute", WsetValueFixture) {
+TEST_F("matches(weight) performs GID mapping and forwards to target attribute", WsetValueFixture) {
     auto ctx = f.create_context(word_term("foo"));
     int32_t weight = 0;
     EXPECT_FALSE(ctx->matches(DocId(1), weight));

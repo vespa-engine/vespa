@@ -13,15 +13,15 @@ class ElementIterator : public queryeval::SearchIterator
 {
 private:
     SearchIterator::UP        _search;
-    ISearchContext          & _searchContext;
-    fef::TermFieldMatchData & _tfmda;
+    const ISearchContext    & _searchContext;
+    fef::TermFieldMatchData & _tfmd;
 
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
     Trinary is_strict() const override;
     void initRange(uint32_t beginid, uint32_t endid) override;
 public:
-    ElementIterator(SearchIterator::UP search, ISearchContext & sc, fef::TermFieldMatchData & tfmda);
+    ElementIterator(SearchIterator::UP search, const ISearchContext & sc, fef::TermFieldMatchData & tfmd);
     ~ElementIterator();
 };
 
