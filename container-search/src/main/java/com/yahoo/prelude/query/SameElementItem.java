@@ -7,7 +7,7 @@ import com.yahoo.protect.Validator;
 import java.util.Iterator;
 
 /**
- * This represents a query where all terms are required to match in the sma element id.
+ * This represents a query where all terms are required to match in the same element id.
  * The primary usecase is to allow efficient search in arrays and maps of struct.
  * The common path is the field name containing the struct.
  * @author baldersheim
@@ -30,7 +30,22 @@ public class SameElementItem extends CompositeIndexedItem {
                 buf.append(' ');
             }
         }
-        return buf.toString();    }
+        return buf.toString();
+    }
+
+    protected void appendHeadingString(StringBuilder buffer) { }
+    protected void appendBodyString(StringBuilder buffer) {
+        appendIndexString(buffer);
+        buffer.append('{');
+        for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
+            TermItem term = (TermItem) i.next();
+            buffer.append(term.getIndexName()).append(':').append(term.getIndexedString());
+            if (i.hasNext()) {
+                buffer.append(' ');
+            }
+        }
+        buffer.append('}');
+    }
 
     @Override
     public int getNumWords() {
@@ -41,8 +56,6 @@ public class SameElementItem extends CompositeIndexedItem {
     protected void adding(Item item) {
         Validator.ensureInstanceOf("Child item", item, TermItem.class);
         TermItem asTerm = (TermItem) item;
-        Validator.ensureNotNull("Struct fieldname", asTerm.getIndexName());
-        Validator.ensureNotNull("Query term", asTerm.getIndexedString());
         Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
         Validator.ensureNonEmpty("Query term", asTerm.getIndexedString());
     }

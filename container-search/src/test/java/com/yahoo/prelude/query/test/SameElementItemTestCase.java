@@ -14,7 +14,7 @@ public class SameElementItemTestCase {
         s.addItem(new WordItem("b", "f1"));
         s.addItem(new WordItem("c", "f2"));
         s.addItem(new WordItem("d", "f3"));
-        assertEquals("SAME_ELEMENT f1:b f2:c f3:d", s.toString());
+        assertEquals("structa:{f1:b f2:c f3:d}", s.toString());
     }
     @Test(expected = IllegalArgumentException.class)
     public void requireAllChildrenHaveStructMemberNameSet() {
