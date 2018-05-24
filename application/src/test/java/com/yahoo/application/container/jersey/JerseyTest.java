@@ -34,8 +34,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author tonytv
- * @author Olli Virtanen
+ * @author Tony Vaagenes
+ * @author ovirtanen
  */
 public class JerseyTest {
     private final Path testJar = Paths.get("target/test-jars/jersey-resources.jar");

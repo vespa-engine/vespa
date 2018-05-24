@@ -14,8 +14,7 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author gjoranv
- * @author Olli Virtanen
- * @since 5.1.15
+ * @author ovirtanen
  */
 public class JDiscContainerSearchTest {
     @Test

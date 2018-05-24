@@ -6,7 +6,8 @@ import com.yahoo.container.test.jars.jersey.resources.TestResourceBase;
 import javax.ws.rs.Path;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
+ * @author ovirtanen
  */
 @Path("/nested-test-resource2")
 public class NestedTestResource2 extends TestResourceBase {

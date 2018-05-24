@@ -7,6 +7,10 @@ import com.yahoo.jdisc.handler.FastContentWriter;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 
+/**
+ * @author gjoranv
+ * @author ovirtanen
+ */
 public class TestHandler extends AbstractRequestHandler {
     public static final String RESPONSE = "Hello, World!";
 

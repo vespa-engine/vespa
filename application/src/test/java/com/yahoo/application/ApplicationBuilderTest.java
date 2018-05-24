@@ -12,8 +12,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @author tonytv
- * @author Olli Virtanen
+ * @author Tony Vaagenes
+ * @author ovirtanen
  */
 public class ApplicationBuilderTest {
     @Test

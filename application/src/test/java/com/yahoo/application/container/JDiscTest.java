@@ -27,6 +27,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+/**
+ * @author Tony Vaagenes
+ * @author gjoranv
+ * @author ovirtanen
+ */
 public class JDiscTest {
     @Test
     public void jdisc_can_be_used_as_top_level_element() throws Exception {
