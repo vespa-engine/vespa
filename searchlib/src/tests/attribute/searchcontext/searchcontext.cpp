@@ -204,6 +204,7 @@ private:
     // test search iterator unpacking
     void fillForSearchIteratorUnpackingTest(IntegerAttribute * ia, bool extra);
     void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc, bool extra, bool strict) {
+        sc.fetchPostings(strict);
         for (bool withElementId : {false, true}) {
             testSearchIteratorUnpacking(ptr, sc, extra, strict, withElementId);
         }
@@ -951,7 +952,6 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     pos.setElementWeight(100);
     md.appendPosition(pos);
 
-    sc.fetchPostings(strict);
     SearchBasePtr sb = sc.createIterator(&md, strict);
     if (withElementId) {
         sb = std::make_unique<attribute::ElementIterator>(std::move(sb), sc, md);
