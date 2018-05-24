@@ -9,7 +9,10 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.application.ZoneApplication;
+import com.yahoo.vespa.service.monitor.internal.health.HealthMonitorManager;
+import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 
 /**
  * @author hakon
@@ -32,6 +35,12 @@ public class UnionMonitorManager implements MonitorManager {
                                    ClusterId clusterId,
                                    ServiceType serviceType,
                                    ConfigId configId) {
+
+        if (applicationId.equals(ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId())) {
+            // todo: use health
+            return ServiceStatus.NOT_CHECKED;
+        }
+
         MonitorManager monitorManager = useHealth(applicationId, clusterId, serviceType) ?
                 healthMonitorManager :
                 slobrokMonitorManager;

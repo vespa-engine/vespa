@@ -12,6 +12,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
+import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -37,12 +38,12 @@ public class ModelGeneratorTest {
     public void toApplicationModelWithConfigServerApplication() throws Exception {
         SuperModel superModel =
                 ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
-        ModelGenerator modelGenerator = new ModelGenerator();
-
-        Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
 
         List<String> configServerHosts = Stream.of("cfg1", "cfg2", "cfg3")
                 .collect(Collectors.toList());
+        ModelGenerator modelGenerator = new ModelGenerator(configServerHosts);
+
+        Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
 
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         when(slobrokMonitorManager.getStatus(any(), any(), any(), any()))
@@ -52,7 +53,6 @@ public class ModelGeneratorTest {
                 modelGenerator.toServiceModel(
                         superModel,
                         zone,
-                        configServerHosts,
                         slobrokMonitorManager);
 
         Map<ApplicationInstanceReference,
@@ -82,11 +82,9 @@ public class ModelGeneratorTest {
     public void toApplicationModel() throws Exception {
         SuperModel superModel =
                 ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
-        ModelGenerator modelGenerator = new ModelGenerator();
+        ModelGenerator modelGenerator = new ModelGenerator(Collections.emptyList());
 
         Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
-
-        List<String> configServerHosts = Collections.emptyList();
 
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         when(slobrokMonitorManager.getStatus(any(), any(), any(), any()))
@@ -96,7 +94,6 @@ public class ModelGeneratorTest {
                 modelGenerator.toServiceModel(
                         superModel,
                         zone,
-                        configServerHosts,
                         slobrokMonitorManager);
 
         Map<ApplicationInstanceReference,

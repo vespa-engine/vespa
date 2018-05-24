@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -19,24 +18,21 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
     private final ServiceMonitorMetrics metrics;
     private final ModelGenerator modelGenerator;
     private final Zone zone;
-    private final List<String> configServerHosts;
 
-    // superModel and slobrokMonitorManager are always updated together
+    // superModel and monitorManager are always updated together
     // and atomically using this monitor.
     private final Object monitor = new Object();
-    private final MonitorManager slobrokMonitorManager;
+    private final MonitorManager monitorManager;
     private SuperModel superModel;
 
-    SuperModelListenerImpl(MonitorManager slobrokMonitorManager,
+    SuperModelListenerImpl(MonitorManager monitorManager,
                            ServiceMonitorMetrics metrics,
                            ModelGenerator modelGenerator,
-                           Zone zone,
-                           List<String> configServerHosts) {
-        this.slobrokMonitorManager = slobrokMonitorManager;
+                           Zone zone) {
+        this.monitorManager = monitorManager;
         this.metrics = metrics;
         this.modelGenerator = modelGenerator;
         this.zone = zone;
-        this.configServerHosts = configServerHosts;
     }
 
     void start(SuperModelProvider superModelProvider) {
@@ -46,7 +42,7 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
             // asynchronously even before snapshot() returns.
             this.superModel = superModelProvider.snapshot(this);
             superModel.getAllApplicationInfos().stream().forEach(application ->
-                    slobrokMonitorManager.applicationActivated(superModel, application));
+                    monitorManager.applicationActivated(superModel, application));
         }
     }
 
@@ -54,7 +50,7 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
     public void applicationActivated(SuperModel superModel, ApplicationInfo application) {
         synchronized (monitor) {
             this.superModel = superModel;
-            slobrokMonitorManager.applicationActivated(superModel, application);
+            monitorManager.applicationActivated(superModel, application);
         }
     }
 
@@ -62,7 +58,7 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
     public void applicationRemoved(SuperModel superModel, ApplicationId id) {
         synchronized (monitor) {
             this.superModel = superModel;
-            slobrokMonitorManager.applicationRemoved(superModel, id);
+            monitorManager.applicationRemoved(superModel, id);
         }
     }
 
@@ -75,11 +71,7 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
             dummy(measurement);
 
             // WARNING: The slobrok monitor manager may be out-of-sync with super model (no locking)
-            return modelGenerator.toServiceModel(
-                    superModel,
-                    zone,
-                    configServerHosts,
-                    slobrokMonitorManager);
+            return modelGenerator.toServiceModel(superModel, zone, monitorManager);
         }
     }
 

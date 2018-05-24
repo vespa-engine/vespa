@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.service.monitor.internal;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.service.monitor.internal.slobrok;
 
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
+import com.yahoo.vespa.service.monitor.internal.MonitorManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -75,7 +76,8 @@ public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokApi
 
     @Override
     public ServiceStatus getStatus(ApplicationId applicationId,
-                                   ClusterId clusterId, ServiceType serviceType,
+                                   ClusterId clusterId,
+                                   ServiceType serviceType,
                                    ConfigId configId) {
         Optional<String> slobrokServiceName = findSlobrokServiceName(serviceType, configId);
         if (slobrokServiceName.isPresent()) {
