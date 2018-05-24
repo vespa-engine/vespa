@@ -20,7 +20,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
     protected static final Logger log = Logger.getLogger(Maintainer.class.getName());
     private static final Path root = Path.fromString("/configserver/v1/");
-    private static final com.yahoo.path.Path lockRoot = root.append("locks");
+    private static final Path lockRoot = root.append("locks");
 
     private final Duration maintenanceInterval;
     private final ScheduledExecutorService service;
@@ -40,7 +40,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     public void run() {
         try {
             Path path = lockRoot.append(name());
-            try (Lock lock = new Lock(path.toString(), curator)) {
+            try (Lock lock = new Lock(path.getAbsolute(), curator)) {
                 maintain();
             }
         } catch (UncheckedTimeoutException e) {
