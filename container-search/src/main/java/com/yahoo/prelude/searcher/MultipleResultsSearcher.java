@@ -17,7 +17,7 @@ import java.util.*;
  *
  * <p> For each group, the desired number of hits can be specified. </p>
  *
- *  @author  tonytv
+ * @author tonytv
  */
 public class MultipleResultsSearcher extends Searcher {
 

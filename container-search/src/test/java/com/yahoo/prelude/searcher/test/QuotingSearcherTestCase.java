@@ -15,9 +15,9 @@ import com.yahoo.search.Result;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.search.Searcher;
-import com.yahoo.prelude.searcher.DocumentSourceSearcher;
 import com.yahoo.prelude.searcher.QuotingSearcher;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ public class QuotingSearcherTestCase {
         hit.setRelevance(new Relevance(1));
         hit.setField("title", "smith & jones");
         r.hits().add(hit);
-        docsource.addResultSet(q, r);
+        docsource.addResult(q, r);
         Result check = doSearch(s, q, 0, 10, chained);
         assertEquals("smith &amp; jones", check.hits().get(0).getField("title").toString());
         assertTrue(check.hits().get(0).fields().containsKey("title"));
@@ -75,7 +75,7 @@ public class QuotingSearcherTestCase {
         hit.setRelevance(new Relevance(1));
         hit.setField("title", "&smith &jo& nes");
         r.hits().add(hit);
-        docsource.addResultSet(q, r);
+        docsource.addResult(q, r);
         Result check = doSearch(s, q, 0, 10, chained);
         assertEquals("&amp;smith &amp;jo&amp; nes", check.hits().get(0).getField("title").toString());
         assertTrue(check.hits().get(0).fields().containsKey("title"));
@@ -95,7 +95,7 @@ public class QuotingSearcherTestCase {
         hit.setRelevance(new Relevance(1));
         hit.setField("title", new HitField("title", "&smith &jo& nes"));
         r.hits().add(hit);
-        docsource.addResultSet(q, r);
+        docsource.addResult(q, r);
         Result check = doSearch(s, q, 0, 10, chained);
         assertEquals("&amp;smith &amp;jo&amp; nes", check.hits().get(0).getField("title").toString());
         assertTrue(check.hits().get(0).fields().containsKey("title"));
@@ -116,7 +116,7 @@ public class QuotingSearcherTestCase {
         hit.setRelevance(new Relevance(1));
         hit.setField("title", Integer.valueOf(42));
         r.hits().add(hit);
-        docsource.addResultSet(q, r);
+        docsource.addResult(q, r);
         Result check = doSearch(s, q, 0, 10, chained);
         // should not quote non-string properties
         assertEquals(Integer.valueOf(42), check.hits().get(0).getField("title"));

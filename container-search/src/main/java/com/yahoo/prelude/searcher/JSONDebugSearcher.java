@@ -16,16 +16,17 @@ import java.util.Iterator;
 /**
  * Save the query in the incoming state to a meta hit in the result.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-
 public class JSONDebugSearcher extends Searcher {
+
     public static final String JSON_FIELD = "JSON field: ";
     public static final String STRUCT_FIELD = "Structured data field (as json): ";
     public static final String FEATURE_FIELD = "Feature data field (as json): ";
 
     private static CompoundName PROPERTYNAME = new CompoundName("dumpjson");
 
+    @Override
     public Result search(com.yahoo.search.Query query, Execution execution) {
         Result r = execution.search(query);
         String propertyName = query.properties().getString(PROPERTYNAME);
@@ -53,4 +54,5 @@ public class JSONDebugSearcher extends Searcher {
         }
         return r;
     }
+
 }

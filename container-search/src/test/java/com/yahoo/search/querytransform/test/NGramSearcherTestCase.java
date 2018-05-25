@@ -46,32 +46,32 @@ public class NGramSearcherTestCase {
 
     @Before
     public void setUp() {
-        searcher=new NGramSearcher(new SimpleLinguistics());
-        indexFacts=new IndexFacts();
+        searcher = new NGramSearcher(new SimpleLinguistics());
+        indexFacts = new IndexFacts();
 
-        Index defaultIndex=new Index("default");
-        defaultIndex.setNGram(true,3);
+        Index defaultIndex = new Index("default");
+        defaultIndex.setNGram(true, 3);
         defaultIndex.setDynamicSummary(true);
-        indexFacts.addIndex("default",defaultIndex);
+        indexFacts.addIndex("default", defaultIndex);
 
-        Index test=new Index("test");
+        Index test = new Index("test");
         test.setHighlightSummary(true);
-        indexFacts.addIndex("default",test);
+        indexFacts.addIndex("default", test);
 
-        Index gram2=new Index("gram2");
-        gram2.setNGram(true,2);
+        Index gram2 = new Index("gram2");
+        gram2.setNGram(true, 2);
         gram2.setDynamicSummary(true);
-        indexFacts.addIndex("default",gram2);
+        indexFacts.addIndex("default", gram2);
 
-        Index gram3=new Index("gram3");
-        gram3.setNGram(true,3);
+        Index gram3 = new Index("gram3");
+        gram3.setNGram(true, 3);
         gram3.setHighlightSummary(true);
-        indexFacts.addIndex("default",gram3);
+        indexFacts.addIndex("default", gram3);
 
-        Index gram14=new Index("gram14");
-        gram14.setNGram(true,14);
+        Index gram14 = new Index("gram14");
+        gram14.setNGram(true, 14);
         gram14.setDynamicSummary(true);
-        indexFacts.addIndex("default",gram14);
+        indexFacts.addIndex("default", gram14);
     }
 
     private IndexFacts getMixedSetup() {

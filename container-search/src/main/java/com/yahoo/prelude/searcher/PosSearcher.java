@@ -34,6 +34,7 @@ import com.yahoo.prelude.Location;
 @Before(PhaseNames.TRANSFORMED_QUERY)
 @Provides(PosSearcher.POSITION_PARSING)
 public class PosSearcher extends Searcher {
+
     public static final String POSITION_PARSING = "PositionParsing";
 
     private static final CompoundName posBb = new CompoundName("pos.bb");
@@ -52,7 +53,7 @@ public class PosSearcher extends Searcher {
     public final static double km2deg = 1000.000 * 180.0 / (Math.PI * 6356752.0);
     public final static double mi2deg = 1609.344 * 180.0 / (Math.PI * 6356752.0);
 
-
+    @Override
     public Result search(Query query, Execution execution) {
         String bb = query.properties().getString(posBb);
         String ll = query.properties().getString(posLl);
@@ -92,9 +93,8 @@ public class PosSearcher extends Searcher {
             }
         }
         catch (IllegalArgumentException e) {
-            // System.err.println("error: "+e);
-            return new Result(query, ErrorMessage.createInvalidQueryParameter(
-                                                                                      "Error in pos parameters: " + Exceptions.toMessageString(e)));
+            return new Result(query, ErrorMessage.createInvalidQueryParameter("Error in pos parameters: " +
+                                                                              Exceptions.toMessageString(e)));
         }
         // and finally:
         query.getRanking().setLocation(loc);
@@ -102,8 +102,8 @@ public class PosSearcher extends Searcher {
     }
 
     private void handleGeoCircle(Query query, String ll, Location target) {
-        double ewCoord = 0;
-        double nsCoord = 0;
+        double ewCoord;
+        double nsCoord;
         try {
             DegreesParser parsed = new DegreesParser(ll);
             ewCoord = parsed.longitude;
@@ -111,9 +111,9 @@ public class PosSearcher extends Searcher {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unable to parse lat/long string '" +ll + "'", e);
         }
-        String radius = query.properties().getString(posRadius);
-        double radiusdegrees = 0.0;
 
+        String radius = query.properties().getString(posRadius);
+        double radiusdegrees;
         if (radius == null) {
             radiusdegrees = 50.0 * km2deg;
         } else if (radius.endsWith("km")) {
@@ -133,8 +133,8 @@ public class PosSearcher extends Searcher {
 
 
     private void handleXyCircle(Query query, String xy, Location target) {
-        int xcoord = 0;
-        int ycoord = 0;
+        int xcoord;
+        int ycoord;
         // parse xy
         int semipos = xy.indexOf(';');
         if (semipos > 0 && semipos < xy.length()) {
@@ -143,8 +143,9 @@ public class PosSearcher extends Searcher {
         } else {
             throw new IllegalArgumentException("pos.xy must be in the format 'digits;digits' but was: '"+xy+"'");
         }
+
         String radius = query.properties().getString(posRadius);
-        int radiusUnits = 0;
+        int radiusUnits;
         if (radius == null) {
             radiusUnits = 5000;
         } else if (radius.endsWith("km")) {
@@ -164,7 +165,6 @@ public class PosSearcher extends Searcher {
         }
         target.setXyCircle(xcoord, ycoord, radiusUnits);
     }
-
 
     private static void parseBoundingBox(String bb, Location target) {
         BoundingBoxParser parser = new BoundingBoxParser(bb);
