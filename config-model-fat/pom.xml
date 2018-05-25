@@ -25,6 +25,13 @@
       <artifactId>guava</artifactId>
       <version>13.0.1</version>
     </dependency>
+    <dependency>
+      <!-- TODO: can probably be removed. Added to get the same set of embedded deps with maven-bundle-plugin 3.5 as with 2.4. -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>annotations</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
 
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -114,8 +121,6 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <!-- version >= 2.5.0 causes java.lang.ArrayIndexOutOfBoundsException: 176 -->
-        <version>2.4.0</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
