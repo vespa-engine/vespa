@@ -33,6 +33,8 @@ vespa_add_library(searchlib_queryeval OBJECT
     predicate_blueprint.cpp
     predicate_search.cpp
     ranksearch.cpp
+    same_element_blueprint.cpp
+    same_element_search.cpp
     searchable.cpp
     searchiterator.cpp
     simple_phrase_blueprint.cpp
