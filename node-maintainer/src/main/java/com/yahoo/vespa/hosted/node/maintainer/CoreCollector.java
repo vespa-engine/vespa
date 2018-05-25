@@ -157,7 +157,7 @@ public class CoreCollector {
     private Path compressCoredump(Path coredumpPath) throws IOException {
         if (! coredumpPath.toString().endsWith(".lz4")) {
             processExecuter.exec(
-                    new String[]{LZ4_PATH, coredumpPath.toString(), coredumpPath.toString() + ".lz4"});
+                    new String[]{LZ4_PATH, "-f", coredumpPath.toString(), coredumpPath.toString() + ".lz4"});
             return coredumpPath;
 
         } else {
@@ -167,7 +167,7 @@ public class CoreCollector {
 
             Path decompressedPath = Paths.get(coredumpPath.toString().replaceFirst("\\.lz4$", ""));
             Pair<Integer, String> result = processExecuter.exec(
-                    new String[]{LZ4_PATH, "-f", "-d", coredumpPath.toString(), decompressedPath.toString()});
+                    new String[] {LZ4_PATH, "-f", "-d", coredumpPath.toString(), decompressedPath.toString()});
             if (result.getFirst() != 0) {
                 throw new RuntimeException("Failed to decompress file " + coredumpPath + ": " + result);
             }
