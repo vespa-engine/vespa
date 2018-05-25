@@ -1,22 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for querybuilder.
 
-#include <vespa/log/log.h>
-LOG_SETUP("querybuilder_test");
-
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/parsequery/simplequerystack.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
-#include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
-#include <vespa/searchlib/query/tree/querytreecreator.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
-#include <vespa/searchlib/query/tree/termnodes.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <string>
+
+#include <vespa/log/log.h>
+LOG_SETUP("querybuilder_test");
+#include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using std::string;
 using search::SimpleQueryStackDumpIterator;

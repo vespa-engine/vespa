@@ -1,11 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for querynodes.
 
-#include <vespa/log/log.h>
-LOG_SETUP("querynodes_test");
-
 #include <vespa/searchcore/proton/matching/querynodes.h>
-
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/blueprintbuilder.h>
 #include <vespa/searchcore/proton/matching/matchdatareservevisitor.h>
@@ -33,10 +29,11 @@ LOG_SETUP("querynodes_test");
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <cstdarg>
-#include <string>
-#include <vector>
+
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP("querynodes_test");
 
 using search::fef::FieldInfo;
 using search::fef::FieldType;
@@ -210,9 +207,8 @@ public:
 };
 
 typedef QueryBuilder<ProtonNodeTypes> QB;
-struct Phrase {
-    void addToBuilder(QB& b) { b.addPhrase(2, view, id, weight); }
-};
+struct Phrase { void addToBuilder(QB& b) { b.addPhrase(2, view, id, weight); }};
+struct SameElement { void addToBuilder(QB& b) { b.addSameElement(2, view, id, weight); }};
 struct Near   { void addToBuilder(QB& b) { b.addNear(2, distance); } };
 struct ONear  { void addToBuilder(QB& b) { b.addONear(2, distance); } };
 struct Or     { void addToBuilder(QB& b) { b.addOr(2); } };
@@ -464,6 +460,11 @@ TEST("requireThatTermNodeSearchIteratorsGetProperBlending") {
 
 TEST("requireThatPhrasesGetProperBlending") {
     TEST_DO(checkProperBlending<Phrase>());
+}
+
+TEST("requireThatSameElementGetProperBlending") {
+    //TODO SameEelement needs proper testing/implementation
+    //TEST_DO(checkProperBlending<SameElement>());
 }
 
 TEST("requireThatNearGetProperBlending") {

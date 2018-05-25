@@ -6,8 +6,7 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/common/feature.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Define the point type that makes up the end-points in our path.
@@ -52,7 +51,7 @@ private:
 
 public:
     DistanceToPathBlueprint();
-    ~DistanceToPathBlueprint();
+    ~DistanceToPathBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
@@ -64,6 +63,4 @@ public:
 };
 
 
-} // namespace features
-} // namespace search
-
+}

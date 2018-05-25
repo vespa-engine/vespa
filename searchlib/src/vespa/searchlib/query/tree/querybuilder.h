@@ -20,10 +20,9 @@
 #pragma once
 
 #include "predicate_query_term.h"
-#include <stack>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchlib/query/weight.h>
 #include "node.h"
+#include <vespa/searchlib/query/weight.h>
+#include <stack>
 
 namespace search::query {
 

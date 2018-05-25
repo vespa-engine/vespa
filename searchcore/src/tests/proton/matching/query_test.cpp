@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for query.
 
-#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/matchdatareservevisitor.h>
 #include <vespa/searchcore/proton/matching/blueprintbuilder.h>
@@ -26,8 +25,9 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/termasstring.h>
+#include <vespa/document/datatype/positiondatatype.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vector>
 
 using document::PositionDataType;
 using search::fef::FieldInfo;
@@ -62,8 +62,7 @@ using std::vector;
 namespace fef_test = search::fef::test;
 using CollectionType = FieldInfo::CollectionType;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 namespace {
 
 class Test : public vespalib::TestApp {
@@ -175,6 +174,12 @@ Node::UP buildQueryTree(const ViewResolver &resolver,
     query_builder.addPhrase(2, field, 7, Weight(0));
     query_builder.addStringTerm(phrase_term, field, 8, Weight(0));
     query_builder.addStringTerm(phrase_term, field, 9, Weight(0));
+#if 0
+    //TODO Add SameElement and proper testing of the same when complete
+    query_builder.addSameElement(2, field, 10, Weight(0));
+    query_builder.addStringTerm(phrase_term, field, 11, Weight(0));
+    query_builder.addStringTerm(phrase_term, field, 12, Weight(0));
+#endif
     Node::UP node = query_builder.build();
 
     ResolveViewVisitor visitor(resolver, idxEnv);
@@ -857,7 +862,7 @@ Test::requireThatWhiteListBlueprintCanBeUsed()
     EXPECT_EQUAL(exp, act);
 }
 
-Test::~Test() {}
+Test::~Test() = default;
 
 int
 Test::Main()
@@ -879,6 +884,7 @@ Test::Main()
     TEST_CALL(requireThatNearIteratorsCanBeBuilt);
     TEST_CALL(requireThatONearIteratorsCanBeBuilt);
     TEST_CALL(requireThatPhraseIteratorsCanBeBuilt);
+    //TODO Add SameElement testing
     TEST_CALL(requireThatUnknownFieldActsEmpty);
     TEST_CALL(requireThatIllegalFieldsAreIgnored);
     TEST_CALL(requireThatQueryGluesEverythingTogether);
@@ -895,7 +901,6 @@ Test::Main()
 
 
 }  // namespace
-}  // namespace matching
-}  // namespace proton
+}  // namespace proton::matching
 
 TEST_APPHOOK(proton::matching::Test);

@@ -44,7 +44,7 @@ CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
 void
 CreateBlueprintVisitorHelper::visitSameElement(query::SameElement &n) {
     (void) n;
-    //TODO Implement Blueprint creation.
+    //TODO Implement SameElementBlueprint creation.
 }
 
 void

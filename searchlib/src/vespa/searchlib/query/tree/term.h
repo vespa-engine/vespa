@@ -1,10 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchlib/query/tree/node.h>
+#include "node.h"
 #include <vespa/searchlib/query/weight.h>
-#include <cassert>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search::query {
 
@@ -28,15 +27,7 @@ public:
     void setRanked(bool ranked) { _ranked = ranked; }
     void setPositionData(bool position_data) { _position_data = position_data; }
 
-    void setStateFrom(const Term& other) {
-        setTermIndex(other.getTermIndex());
-        setRanked(other.isRanked());
-        setPositionData(other.usePositionData());
-        // too late to copy this state:
-        assert(_view == other.getView());
-        assert(_id == other.getId());
-        assert(_weight == other.getWeight());
-    }
+    void setStateFrom(const Term& other);
 
     const vespalib::string & getView() const { return _view; }
     Weight getWeight() const { return _weight; }
