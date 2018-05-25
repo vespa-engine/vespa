@@ -36,12 +36,10 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     }
 
     @Override
-    @SuppressWarnings("try")
+    @SuppressWarnings({"try", "unused"})
     public void run() {
-        try {
-            try (Lock lock = lock(lockRoot.append(name()))) {
-                maintain();
-            }
+        try (Lock lock = lock(lockRoot.append(name()))) {
+            maintain();
         } catch (UncheckedTimeoutException e) {
             // another config server instance is running this job at the moment; ok
         } catch (Throwable t) {
