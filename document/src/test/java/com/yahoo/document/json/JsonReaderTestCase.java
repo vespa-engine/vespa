@@ -1112,33 +1112,46 @@ public class JsonReaderTestCase {
                     "]");
 
             new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("", e.getMessage());
+            assertEquals("Missing a document operation ('put', 'update' or 'remove')", e.getMessage());
         }
     }
 
     @Test
-    public void testMissingFieldsMap() { todo ...
+    public void testMissingFieldsMapInPut() {
         try {
             String jsonData = inputJson(
                     "[",
                     "      {",
-                    "          'fields': {",
-                    "              'actualarray': {",
-                    "                  'add': [",
-                    "                      'person',",
-                    "                      'another person'",
-                    "                   ]",
-                    "              }",
-                    "          }",
+                    "          'put': 'id:unittest:smoke::whee'",
                     "      }",
                     "]");
 
             new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("", e.getMessage());
+            assertEquals("put of document id:unittest:smoke::whee is missing a 'fields' map", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMissingFieldsMapInUpdate() {
+        try {
+            String jsonData = inputJson(
+                    "[",
+                    "      {",
+                    "          'update': 'id:unittest:smoke::whee'",
+                    "      }",
+                    "]");
+
+            new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("update of document id:unittest:smoke::whee is missing a 'fields' map", e.getMessage());
         }
     }
 

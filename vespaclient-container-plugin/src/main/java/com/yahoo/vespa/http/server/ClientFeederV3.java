@@ -150,11 +150,7 @@ class ClientFeederV3 {
                 log.log(LogLevel.WARNING, "Unhandled exception while feeding: "
                         + Exceptions.toMessageString(e), e);
             } finally {
-                try {
-                    replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, false, null));
-                } catch (InterruptedException e) {
-                    // NOP, we are already exiting the thread
-                }
+                replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, false, null));
             }
             return new FeedResponse(200, replies, 3 /* protocol version */, clientId, outstandingOperations.get(), hostName);
         } finally {
@@ -266,8 +262,8 @@ class ClientFeederV3 {
         }
     }
 
-    private OperationStatus createOperationStatus(String id, String message, ErrorCode code, boolean isConditionNotMet, Message msg)
-            throws InterruptedException {
+    private OperationStatus createOperationStatus(String id, String message,
+                                                  ErrorCode code, boolean isConditionNotMet, Message msg) {
         String traceMessage = msg != null && msg.getTrace() != null &&  msg.getTrace().getLevel() > 0
                 ? msg.getTrace().toString()
                 : "";
@@ -288,7 +284,6 @@ class ClientFeederV3 {
         }
 
         DocumentOperationMessageV3 msg = DocumentOperationMessageV3.create(operation, operationId, metric);
-        xxx
         if (msg == null) {
             // typical end of feed
             return null;

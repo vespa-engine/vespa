@@ -13,9 +13,10 @@ import com.google.common.base.Preconditions;
 /**
  * Helper class to enable lookahead in the token stream.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class TokenBuffer {
+
     public static final class Token {
         public final JsonToken token;
         public final String name;
@@ -42,6 +43,9 @@ public class TokenBuffer {
         }
     }
 
+    /** Returns whether any tokens are available in this */
+    public boolean isEmpty() { return size() == 0; }
+
     public JsonToken next() {
         buffer.removeFirst();
         Token t = buffer.peekFirst();
@@ -52,16 +56,25 @@ public class TokenBuffer {
         return t.token;
     }
 
+    /** Returns the current token without changing position, or null if none */
     public JsonToken currentToken() {
-        return buffer.peekFirst().token;
+        Token token = buffer.peekFirst();
+        if (token == null) return null;
+        return token.token;
     }
 
+    /** Returns the current token name without changing position, or null if none */
     public String currentName() {
-        return buffer.peekFirst().name;
+        Token token = buffer.peekFirst();
+        if (token == null) return null;
+        return token.name;
     }
 
+    /** Returns the current token text without changing position, or null if none */
     public String currentText() {
-        return buffer.peekFirst().text;
+        Token token = buffer.peekFirst();
+        if (token == null) return null;
+        return token.text;
     }
 
     public int size() {
