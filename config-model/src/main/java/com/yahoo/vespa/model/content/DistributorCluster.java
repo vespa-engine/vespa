@@ -60,7 +60,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             return s.toString();
         }
 
-        private int getGCInterval(ModelElement documentNode) throws ParseException {
+        private int getGCInterval(ModelElement documentNode) {
             int gcInterval = 3600;
             if (documentNode != null) {
                 gcInterval = documentNode.getIntegerAttribute("garbage-collection-interval", gcInterval);

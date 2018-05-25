@@ -10,7 +10,10 @@ import java.io.Writer;
  * template mechanism by subclassing this.
  *
  * @author bratseth
+ * @deprecated use a Renderer instead
  */
+@SuppressWarnings("deprecation")
+@Deprecated // TODO: Remove on Vespa 7
 public abstract class Template<T extends Writer> {
 
     /**
@@ -19,8 +22,7 @@ public abstract class Template<T extends Writer> {
      * @param context the context to evaluate in
      * @param writer the writer to render to
      */
-    public abstract void render(Context context,T writer)
-        throws java.io.IOException;
+    public abstract void render(Context context,T writer) throws java.io.IOException;
 
 
     /**
