@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.yolean;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
 /**
  * Helper methods for handling exceptions
  *
@@ -44,4 +47,59 @@ public class Exceptions {
         return message;
     }
 
+    /**
+     * Wraps any IOException thrown from a runnable in an UncheckedIOException.
+     */
+    public static void uncheck(RunnableThrowingIOException runnable) {
+        try {
+            runnable.run();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Wraps any IOException thrown from a runnable in an UncheckedIOException w/message.
+     */
+    public static void uncheck(RunnableThrowingIOException runnable, String format, String... args) {
+        try {
+            runnable.run();
+        } catch (IOException e) {
+            String message = String.format(format, (Object[]) args);
+            throw new UncheckedIOException(message, e);
+        }
+    }
+
+    @FunctionalInterface
+    public interface RunnableThrowingIOException {
+        void run() throws IOException;
+    }
+
+    /**
+     * Wraps any IOException thrown from a supplier in an UncheckedIOException.
+     */
+    public static <T> T uncheck(SupplierThrowingIOException<T> supplier) {
+        try {
+            return supplier.get();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Wraps any IOException thrown from a supplier in an UncheckedIOException w/message.
+     */
+    public static <T> T uncheck(SupplierThrowingIOException<T> supplier, String format, String... args) {
+        try {
+            return supplier.get();
+        } catch (IOException e) {
+            String message = String.format(format, (Object[]) args);
+            throw new UncheckedIOException(message, e);
+        }
+    }
+
+    @FunctionalInterface
+    public interface SupplierThrowingIOException<T> {
+        T get() throws IOException;
+    }
 }

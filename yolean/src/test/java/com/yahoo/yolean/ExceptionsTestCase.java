@@ -3,6 +3,9 @@ package com.yahoo.yolean;
 
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -21,4 +24,38 @@ public class ExceptionsTestCase {
         assertEquals("Foo",Exceptions.toMessageString(new Exception(new Exception("Foo"))));
     }
 
+    @Test
+    public void testUnchecks() {
+        try {
+            Exceptions.uncheck(this::throwIO);
+        } catch (UncheckedIOException e) {
+            assertEquals("root cause", e.getCause().getMessage());
+        }
+
+        try {
+            Exceptions.uncheck(this::throwIO, "additional %s", "info");
+        } catch (UncheckedIOException e) {
+            assertEquals("additional info", e.getMessage());
+        }
+
+        try {
+            int i = Exceptions.uncheck(this::throwIOWithReturnValue);
+        } catch (UncheckedIOException e) {
+            assertEquals("root cause", e.getCause().getMessage());
+        }
+
+        try {
+            int i = Exceptions.uncheck(this::throwIOWithReturnValue, "additional %s", "info");
+        } catch (UncheckedIOException e) {
+            assertEquals("additional info", e.getMessage());
+        }
+    }
+
+    private void throwIO() throws IOException {
+        throw new IOException("root cause");
+    }
+
+    private int throwIOWithReturnValue() throws IOException {
+        throw new IOException("root cause");
+    }
 }

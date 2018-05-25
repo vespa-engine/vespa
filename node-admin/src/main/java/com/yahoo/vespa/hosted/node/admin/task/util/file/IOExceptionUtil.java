@@ -7,6 +7,10 @@ import java.nio.file.NoSuchFileException;
 import java.util.Optional;
 
 /**
+ * Utils related to IOException.
+ *
+ * todo: replace much of the below with com.yahoo.yolean.Exceptions::uncheck
+ *
  * @author hakonhall
  */
 public class IOExceptionUtil {
