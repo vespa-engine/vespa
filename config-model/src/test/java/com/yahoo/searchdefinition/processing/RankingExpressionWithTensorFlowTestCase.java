@@ -162,7 +162,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved'): " +
-                         "Model refers Placeholder 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
+                         "Model refers placeholder 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
                          "not present in rank profile 'my_profile'",
                          Exceptions.toMessageString(expected));
         }
@@ -179,8 +179,8 @@ public class RankingExpressionWithTensorFlowTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved'): " +
-                         "Model refers Placeholder 'Placeholder' of type tensor(d0[],d1[784]) which must be produced " +
-                         "by a macro in the rank profile, but this macro produces type tensor(d0[2],d5[10])",
+                         "Model refers placeholder 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
+                         "but this macro returns tensor(d0[2],d5[10])",
                          Exceptions.toMessageString(expected));
         }
     }

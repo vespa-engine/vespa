@@ -28,12 +28,12 @@ public class ConcatV2 extends TensorFlowOperation {
         TensorFlowOperation concatDimOp = inputs.get(inputs.size() - 1);  // ConcatV2: concat dimension is the last input
         if (!concatDimOp.getConstantValue().isPresent()) {
             throw new IllegalArgumentException("ConcatV2 in " + node.getName() + ": " +
-                    "concat dimension must be a constant.");
+                                               "concat dimension must be a constant.");
         }
         Tensor concatDimTensor = concatDimOp.getConstantValue().get().asTensor();
         if (concatDimTensor.type().rank() != 0) {
             throw new IllegalArgumentException("ConcatV2 in " + node.getName() + ": " +
-                    "concat dimension must be a scalar.");
+                                               "concat dimension must be a scalar.");
         }
 
         OrderedTensorType aType = inputs.get(0).type().get();
@@ -45,7 +45,7 @@ public class ConcatV2 extends TensorFlowOperation {
             OrderedTensorType bType = inputs.get(i).type().get();
             if (bType.rank() != aType.rank()) {
                 throw new IllegalArgumentException("ConcatV2 in " + node.getName() + ": " +
-                        "inputs must have save rank.");
+                                                   "inputs must have save rank.");
             }
             for (int j = 0; j < aType.rank(); ++j) {
                 long dimSizeA = aType.dimensions().get(j).size().orElse(-1L);
@@ -54,7 +54,7 @@ public class ConcatV2 extends TensorFlowOperation {
                     concatDimSize += dimSizeB;
                 } else if (dimSizeA != dimSizeB) {
                     throw new IllegalArgumentException("ConcatV2 in " + node.getName() + ": " +
-                            "input dimension " + j + " differs in input tensors.");
+                                                       "input dimension " + j + " differs in input tensors.");
                 }
             }
         }

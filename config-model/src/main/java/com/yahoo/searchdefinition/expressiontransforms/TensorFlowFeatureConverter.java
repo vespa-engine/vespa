@@ -127,7 +127,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         addGeneratedMacros(model, profile);
         reduceBatchDimensions(expression, model, profile, queryProfiles);
 
-        model.macros().forEach((k, v) -> transformGeneratedMacro(store, profile, constantsReplacedByMacros, k, v));
+        model.macros().forEach((k, v) -> transformGeneratedMacro(store, constantsReplacedByMacros, k, v));
 
         store.writeConverted(expression);
         return expression.getRoot();
@@ -215,8 +215,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             TensorType macroType = macroOverridingConstant.getRankingExpression().type(profile.typeContext(queryProfiles));
             if ( ! macroType.equals(constantValue.type()))
                 throw new IllegalArgumentException("Macro '" + constantName + "' replaces the constant with this name. " +
-                                                   "The required type of this is " + constantValue.type() +
-                                                   ", but the macro returns " + macroType);
+                                                   typeMismatchExplanation(constantValue.type(), macroType));
             constantsReplacedByMacros.add(constantName); // will replace constant(constantName) by constantName later
         }
         else {
@@ -228,7 +227,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
     }
 
-    private void transformGeneratedMacro(ModelStore store, RankProfile profile,
+    private void transformGeneratedMacro(ModelStore store,
                                          Set<String> constantsReplacedByMacros,
                                          String macroName, RankingExpression expression) {
 
@@ -267,7 +266,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
             RankProfile.Macro macro = profile.getMacros().get(macroName);
             if (macro == null)
-                throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
+                throw new IllegalArgumentException("Model refers placeholder '" + macroName +
                                                    "' of type " + requiredType + " but this macro is not present in " +
                                                    profile);
             // TODO: We should verify this in the (function reference(s) this is invoked (starting from first/second
@@ -276,16 +275,21 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             // type verification
             TensorType actualType = macro.getRankingExpression().getRoot().type(profile.typeContext(queryProfiles));
             if ( actualType == null)
-                throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
+                throw new IllegalArgumentException("Model refers placeholder '" + macroName +
                                                    "' of type " + requiredType +
                                                    " which must be produced by a macro in the rank profile, but " +
                                                    "this macro references a feature which is not declared");
             if ( ! actualType.isAssignableTo(requiredType))
-                throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
-                                                   "' of type " + requiredType +
-                                                   " which must be produced by a macro in the rank profile, but " +
-                                                   "this macro produces type " + actualType);
+                throw new IllegalArgumentException("Model refers placeholder '" + macroName + "'. " +
+                                                   typeMismatchExplanation(requiredType, actualType));
         }
+    }
+
+    private String typeMismatchExplanation(TensorType requiredType, TensorType actualType) {
+        return "The required type of this is " + requiredType + ", but this macro returns " + actualType +
+               (actualType.rank() == 0 ? ". This is often due to missing declaration of query tensor features " +
+                                         "in query profile types - see the documentation."
+                                       : "");
     }
 
     /**
