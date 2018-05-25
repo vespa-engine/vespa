@@ -36,18 +36,21 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     }
 
     @Override
-    @SuppressWarnings("try")
+    @SuppressWarnings({"try", "unused"})
     public void run() {
-        try {
-            Path path = lockRoot.append(name());
-            try (Lock lock = new Lock(path.getAbsolute(), curator)) {
-                maintain();
-            }
+        try (Lock lock = lock(lockRoot.append(name()))) {
+            maintain();
         } catch (UncheckedTimeoutException e) {
             // another config server instance is running this job at the moment; ok
         } catch (Throwable t) {
             log.log(Level.WARNING, this + " failed. Will retry in " + maintenanceInterval.toMinutes() + " minutes", t);
         }
+    }
+
+    private Lock lock(Path path) {
+        Lock lock = new Lock(path.getAbsolute(), curator);
+        lock.acquire(Duration.ofSeconds(1));
+        return lock;
     }
 
     @Override
