@@ -52,7 +52,7 @@ PredicateQueryTerm::UP getPredicateQueryTerm() {
 template <class NodeTypes>
 Node::UP createQueryTree() {
     QueryBuilder<NodeTypes> builder;
-    builder.addAnd(9);
+    builder.addAnd(10);
     {
         builder.addRank(2);
         {
@@ -109,6 +109,12 @@ Node::UP createQueryTree() {
             builder.addStringTerm(str[2], view[2], id[2], weight[2]);
         }
         builder.addRegExpTerm(str[5], view[5], id[5], weight[5]);
+        builder.addSameElement(3, view[4], id[4], weight[4]);
+        {
+            builder.addStringTerm(str[4], view[4], id[4], weight[5]);
+            builder.addStringTerm(str[5], view[5], id[5], weight[6]);
+            builder.addStringTerm(str[6], view[6], id[6], weight[7]);
+        }
     }
     Node::UP node = builder.build();
     ASSERT_TRUE(node.get());
@@ -165,7 +171,7 @@ void checkQueryTreeTypes(Node *node) {
     ASSERT_TRUE(node);
     And *and_node = dynamic_cast<And *>(node);
     ASSERT_TRUE(and_node);
-    EXPECT_EQUAL(9u, and_node->getChildren().size());
+    EXPECT_EQUAL(10u, and_node->getChildren().size());
 
 
     Rank *rank = dynamic_cast<Rank *>(and_node->getChildren()[0]);
@@ -176,22 +182,18 @@ void checkQueryTreeTypes(Node *node) {
     ASSERT_TRUE(near);
     EXPECT_EQUAL(2u, near->getChildren().size());
     EXPECT_EQUAL(distance, near->getDistance());
-    StringTerm *string_term =
-        dynamic_cast<StringTerm *>(near->getChildren()[0]);
+    StringTerm *string_term = dynamic_cast<StringTerm *>(near->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[0], view[0], id[0], weight[0]));
-    SubstringTerm *substring_term =
-        dynamic_cast<SubstringTerm *>(near->getChildren()[1]);
+    SubstringTerm *substring_term = dynamic_cast<SubstringTerm *>(near->getChildren()[1]);
     EXPECT_TRUE(checkTerm(substring_term, str[1], view[1], id[1], weight[1]));
 
     ONear *onear = dynamic_cast<ONear *>(rank->getChildren()[1]);
     ASSERT_TRUE(onear);
     EXPECT_EQUAL(2u, onear->getChildren().size());
     EXPECT_EQUAL(distance, onear->getDistance());
-    SuffixTerm *suffix_term =
-        dynamic_cast<SuffixTerm *>(onear->getChildren()[0]);
+    SuffixTerm *suffix_term = dynamic_cast<SuffixTerm *>(onear->getChildren()[0]);
     EXPECT_TRUE(checkTerm(suffix_term, str[2], view[2], id[2], weight[2]));
-    PrefixTerm *prefix_term =
-        dynamic_cast<PrefixTerm *>(onear->getChildren()[1]);
+    PrefixTerm *prefix_term = dynamic_cast<PrefixTerm *>(onear->getChildren()[1]);
     EXPECT_TRUE(checkTerm(prefix_term, str[3], view[3], id[3], weight[3]));
 
 
@@ -224,25 +226,19 @@ void checkQueryTreeTypes(Node *node) {
     AndNot *and_not = dynamic_cast<AndNot *>(or_node->getChildren()[2]);
     ASSERT_TRUE(and_not);
     EXPECT_EQUAL(2u, and_not->getChildren().size());
-    NumberTerm *integer_term =
-        dynamic_cast<NumberTerm *>(and_not->getChildren()[0]);
+    NumberTerm *integer_term = dynamic_cast<NumberTerm *>(and_not->getChildren()[0]);
     EXPECT_TRUE(checkTerm(integer_term, int1, view[7], id[7], weight[7]));
-    NumberTerm *float_term =
-        dynamic_cast<NumberTerm *>(and_not->getChildren()[1]);
-    EXPECT_TRUE(checkTerm(float_term, float1, view[8], id[8], weight[8],
-                         false));
+    NumberTerm *float_term = dynamic_cast<NumberTerm *>(and_not->getChildren()[1]);
+    EXPECT_TRUE(checkTerm(float_term, float1, view[8], id[8], weight[8], false));
 
 
-    RangeTerm *range_term =
-        dynamic_cast<RangeTerm *>(and_node->getChildren()[2]);
+    RangeTerm *range_term = dynamic_cast<RangeTerm *>(and_node->getChildren()[2]);
     ASSERT_TRUE(range_term);
     EXPECT_TRUE(checkTerm(range_term, range, view[9], id[9], weight[9]));
 
-    LocationTerm *loc_term =
-        dynamic_cast<LocationTerm *>(and_node->getChildren()[3]);
+    LocationTerm *loc_term = dynamic_cast<LocationTerm *>(and_node->getChildren()[3]);
     ASSERT_TRUE(loc_term);
     EXPECT_TRUE(checkTerm(loc_term, location, view[10], id[10], weight[10]));
-
 
     WeakAnd *wand = dynamic_cast<WeakAnd *>(and_node->getChildren()[4]);
     ASSERT_TRUE(wand != 0);
@@ -253,15 +249,12 @@ void checkQueryTreeTypes(Node *node) {
     string_term = dynamic_cast<StringTerm *>(wand->getChildren()[1]);
     EXPECT_TRUE(checkTerm(string_term, str[5], view[5], id[5], weight[5]));
 
-    PredicateQuery *predicateQuery =
-        dynamic_cast<PredicateQuery *>(and_node->getChildren()[5]);
+    PredicateQuery *predicateQuery = dynamic_cast<PredicateQuery *>(and_node->getChildren()[5]);
     ASSERT_TRUE(predicateQuery);
     PredicateQueryTerm::UP pqt(new PredicateQueryTerm);
-    EXPECT_TRUE(checkTerm(predicateQuery, getPredicateQueryTerm(),
-                          view[3], id[3], weight[3]));
+    EXPECT_TRUE(checkTerm(predicateQuery, getPredicateQueryTerm(), view[3], id[3], weight[3]));
 
-    DotProduct *dotProduct =
-        dynamic_cast<DotProduct *>(and_node->getChildren()[6]);
+    DotProduct *dotProduct = dynamic_cast<DotProduct *>(and_node->getChildren()[6]);
     ASSERT_TRUE(dotProduct);
     EXPECT_EQUAL(3u, dotProduct->getChildren().size());
     string_term = dynamic_cast<StringTerm *>(dotProduct->getChildren()[0]);
@@ -282,8 +275,7 @@ void checkQueryTreeTypes(Node *node) {
     string_term = dynamic_cast<StringTerm *>(wandTerm->getChildren()[1]);
     EXPECT_TRUE(checkTerm(string_term, str[2], view[2], id[2], weight[2]));
 
-    RegExpTerm *regexp_term =
-        dynamic_cast<RegExpTerm *>(and_node->getChildren()[8]);
+    RegExpTerm *regexp_term = dynamic_cast<RegExpTerm *>(and_node->getChildren()[8]);
     EXPECT_TRUE(checkTerm(regexp_term, str[5], view[5], id[5], weight[5]));
 }
 
