@@ -50,12 +50,15 @@ public class SystemUpgrader extends Maintainer {
     private void deploy(List<SystemApplication> applications, Version target) {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
             boolean converged = true;
-            for (SystemApplication application : applications) {
-                for (ZoneId zone : zones) {
-                    if (dependenciesConvergedOn(target, application, zone)) {
+            for (ZoneId zone : zones) {
+                for (SystemApplication application : applications) {
+                    boolean dependenciesConverged = application.dependencies().stream()
+                                                               .filter(applications::contains) // TODO: Remove when all() is used.
+                                                               .allMatch(dependency -> currentVersion(zone, dependency.id()).equals(target));
+                    if (dependenciesConverged) {
                         deploy(target, application, zone);
                     }
-                    converged &= convergedOn(target, application, zone);
+                    converged &= currentVersion(zone, application.id()).equals(target);
                 }
             }
             if (!converged) {
@@ -72,20 +75,12 @@ public class SystemUpgrader extends Maintainer {
         }
     }
 
-    private boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
-        return currentVersion(zone, application.id(), target).equals(target);
-    }
-
-    private boolean dependenciesConvergedOn(Version target, SystemApplication application, ZoneId zone) {
-        return application.dependencies().stream().allMatch(dependency -> convergedOn(target, dependency, zone));
-    }
-
     private Version wantedVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
         return minVersion(zone, application, Node::wantedVersion).orElse(defaultVersion);
     }
 
-    private Version currentVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
-        return minVersion(zone, application, Node::currentVersion).orElse(defaultVersion);
+    private Version currentVersion(ZoneId zone, ApplicationId application) {
+        return minVersion(zone, application, Node::currentVersion).orElse(Version.emptyVersion);
     }
 
     private Optional<Version> minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
