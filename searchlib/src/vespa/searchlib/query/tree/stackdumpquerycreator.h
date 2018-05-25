@@ -93,7 +93,7 @@ private:
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            t = &builder.addPhrase(arity, view, id, weight);
+            t = &builder.addSameElement(arity, view, id, weight);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEIGHTED_SET) {
             vespalib::stringref view = queryStack.getIndexName();
