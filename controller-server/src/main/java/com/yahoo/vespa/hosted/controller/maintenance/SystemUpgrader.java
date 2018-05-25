@@ -51,10 +51,12 @@ public class SystemUpgrader extends Maintainer {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
             boolean converged = true;
             for (SystemApplication application : applications) {
-                if (application.dependencies().stream().allMatch(dep -> convergedOn(target, dep, zones))) {
-                    deploy(zones, application, target);
+                for (ZoneId zone : zones) {
+                    if (dependenciesConvergedOn(target, application, zone)) {
+                        deploy(target, application, zone);
+                    }
+                    converged &= convergedOn(target, application, zone);
                 }
-                converged &= convergedOn(target, application, zones);
             }
             if (!converged) {
                 break;
@@ -63,17 +65,19 @@ public class SystemUpgrader extends Maintainer {
     }
 
     /** Deploy application on given version idempotently */
-    private void deploy(List<ZoneId> zones, SystemApplication application, Version target) {
-        for (ZoneId zone : zones) {
-            if (!wantedVersion(zone, application.id(), target).equals(target)) {
-                log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
-                controller().applications().deploy(application, zone, target);
-            }
+    private void deploy(Version target, SystemApplication application, ZoneId zone) {
+        if (!wantedVersion(zone, application.id(), target).equals(target)) {
+            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
+            controller().applications().deploy(application, zone, target);
         }
     }
 
-    private boolean convergedOn(Version target, SystemApplication application, List<ZoneId> zones) {
-        return zones.stream().allMatch(zone -> currentVersion(zone, application.id(), target).equals(target));
+    private boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
+        return currentVersion(zone, application.id(), target).equals(target);
+    }
+
+    private boolean dependenciesConvergedOn(Version target, SystemApplication application, ZoneId zone) {
+        return application.dependencies().stream().allMatch(dependency -> convergedOn(target, dependency, zone));
     }
 
     private Version wantedVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {

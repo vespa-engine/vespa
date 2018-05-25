@@ -79,12 +79,18 @@ public class SystemUpgraderTest {
         assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3, zone4);
         assertWantedVersion(SystemApplication.zone, version1, zone2, zone3, zone4);
 
-        // zone 2 and 3: zone-config-server upgrades in parallel
+        // zone 2 and 3: zone-config-server upgrades, first in zone 2, then in zone 3
         tester.systemUpgrader().maintain();
         assertWantedVersion(SystemApplication.configServer, version2, zone2, zone3);
         assertWantedVersion(SystemApplication.configServer, version1, zone4);
         assertWantedVersion(SystemApplication.zone, version1, zone2, zone3, zone4);
-        completeUpgrade(SystemApplication.configServer, version2, zone2, zone3);
+        completeUpgrade(SystemApplication.configServer, version2, zone2);
+
+        // zone-application starts upgrading in zone 2, while zone-config-server completes upgrade in zone 3
+        tester.systemUpgrader().maintain();
+        assertWantedVersion(SystemApplication.zone, version2, zone2);
+        assertWantedVersion(SystemApplication.zone, version1, zone3);
+        completeUpgrade(SystemApplication.configServer, version2, zone3);
 
         // zone 2 and 3: zone-application upgrades in parallel
         tester.systemUpgrader().maintain();
