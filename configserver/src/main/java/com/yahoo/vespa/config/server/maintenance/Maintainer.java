@@ -39,8 +39,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @SuppressWarnings("try")
     public void run() {
         try {
-            Path path = lockRoot.append(name());
-            try (Lock lock = new Lock(path.getAbsolute(), curator)) {
+            try (Lock lock = lock(lockRoot.append(name()))) {
                 maintain();
             }
         } catch (UncheckedTimeoutException e) {
@@ -48,6 +47,12 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         } catch (Throwable t) {
             log.log(Level.WARNING, this + " failed. Will retry in " + maintenanceInterval.toMinutes() + " minutes", t);
         }
+    }
+
+    private Lock lock(Path path) {
+        Lock lock = new Lock(path.getAbsolute(), curator);
+        lock.acquire(Duration.ofSeconds(1));
+        return lock;
     }
 
     @Override
