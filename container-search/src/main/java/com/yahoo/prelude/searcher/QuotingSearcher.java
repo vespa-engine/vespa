@@ -113,6 +113,22 @@ public class QuotingSearcher extends Searcher {
     }
 
     private void quoteFields(FastHit hit, QuoteTable translations) {
+        // TODO: Iterate using callback (see below)
+        for (Iterator<?> i = ((Set<?>) hit.fields().keySet()).iterator(); i.hasNext(); ) {
+            String propertyName = (String) i.next();
+            Object entry = hit.getField(propertyName);
+            if (entry == null) {
+                continue;
+            }
+            Class<? extends Object> propertyType = entry.getClass();
+            if (propertyType.equals(HitField.class)) {
+                quoteField((HitField) entry, translations);
+            } else if (propertyType.equals(String.class)) {
+                quoteField(hit, propertyName, (String)entry, translations);
+            }
+        }
+
+        /*
         hit.forEachField((fieldName, fieldValue) -> {
             if (fieldValue != null) {
                 Class<?> fieldType = fieldValue.getClass();
@@ -122,6 +138,7 @@ public class QuotingSearcher extends Searcher {
                     quoteField(hit, fieldName, (String) fieldValue, translations);
             }
         });
+        */
     }
 
     private void quoteField(Hit hit, String fieldname, String toQuote, QuoteTable translations) {

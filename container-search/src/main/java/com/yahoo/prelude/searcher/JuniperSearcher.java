@@ -106,6 +106,13 @@ public class JuniperSearcher extends Searcher {
             Object searchDefinitionField = hit.getField(MAGIC_FIELD);
             if (searchDefinitionField == null) continue;
 
+            // TODO: Loop using callback (see below)
+            for (String fieldName : hit.fields().keySet()) {
+                Index index = indexFacts.getIndex(fieldName, searchDefinitionField.toString());
+                if (index.getDynamicSummary() || index.getHighlightSummary())
+                    insertTags(hit.buildHitField(fieldName, true, true), bolding, index.getDynamicSummary());
+            }
+            /*
             for (Index index : indexFacts.getIndexes(searchDefinitionField.toString())) {
                 if (index.getDynamicSummary() || index.getHighlightSummary()) {
                     HitField fieldValue = hit.buildHitField(index.getName(), true, true);
@@ -113,6 +120,7 @@ public class JuniperSearcher extends Searcher {
                         insertTags(fieldValue, bolding, index.getDynamicSummary());
                 }
             }
+            */
         }
     }
 
