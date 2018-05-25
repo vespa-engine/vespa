@@ -139,4 +139,9 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("tensor");
     }
 
+    @Test
+    public void testArrayOfStructAttribute() throws IOException, ParseException {
+        assertCorrectDeriving("array_of_struct_attribute");
+    }
+
 }
