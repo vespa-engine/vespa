@@ -498,6 +498,11 @@
                 <version>${antlr4.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.aries.spifly</groupId>
+                <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+                <version>${aries.spifly.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>3.1</version>
@@ -681,6 +686,9 @@
     <properties>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
+        <aries.spifly.version>1.0.8</aries.spifly.version>
+        <aries.util.version>1.0.0</aries.util.version>
+        <asm-debug-all.version>5.0.3</asm-debug-all.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
         <athenz.version>1.7.43</athenz.version>
         <commons-lang.version>2.6</commons-lang.version>
