@@ -2,8 +2,11 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.subscription.ConfigInstanceUtil;
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
@@ -41,16 +44,51 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     /** Derives everything from a field */
     @Override
     protected void derive(ImmutableSDField field, Search search) {
+        boolean fieldIsArrayOfSimpleStruct = isArrayOfSimpleStruct(field);
         if (field.usesStructOrMap() &&
+            !fieldIsArrayOfSimpleStruct &&
             !field.getDataType().equals(PositionDataType.INSTANCE) &&
             !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE))) {
             return; // Ignore struct fields for indexed search (only implemented for streaming search)
         }
         if (field.isImportedField()) {
             deriveImportedAttributes(field);
+        } else if (fieldIsArrayOfSimpleStruct) {
+            deriveArrayOfSimpleStruct(field);
         } else {
             deriveAttributes(field);
         }
+    }
+
+    private static boolean isArrayOfSimpleStruct(ImmutableSDField field) {
+        DataType fieldType = field.getDataType();
+        if (fieldType instanceof ArrayDataType) {
+            ArrayDataType arrayType = (ArrayDataType)fieldType;
+            DataType nestedType = arrayType.getNestedType();
+            if (nestedType instanceof StructDataType &&
+                !(nestedType.equals(PositionDataType.INSTANCE))) {
+                StructDataType structType = (StructDataType)nestedType;
+                for (Field innerField : structType.getFields()) {
+                    if (!isPrimitiveType(innerField.getDataType())) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean isPrimitiveType(DataType dataType) {
+        return dataType.equals(DataType.BYTE) ||
+                dataType.equals(DataType.INT) ||
+                dataType.equals(DataType.LONG) ||
+                dataType.equals(DataType.FLOAT) ||
+                dataType.equals(DataType.DOUBLE) ||
+                dataType.equals(DataType.STRING);
     }
 
     /** Returns an attribute by name, or null if it doesn't exist */
@@ -94,6 +132,16 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         for (Attribute attribute : field.getAttributes().values()) {
             if (!importedAttributes.containsKey(field.getName())) {
                 importedAttributes.put(field.getName(), attribute);
+            }
+        }
+    }
+
+    private void deriveArrayOfSimpleStruct(ImmutableSDField field) {
+        for (ImmutableSDField structField : field.getStructFields()) {
+            for (Attribute attribute : structField.getAttributes().values()) {
+                if (structField.getName().equals(attribute.getName())) {
+                    attributes.put(attribute.getName(), attribute.convertToArray());
+                }
             }
         }
     }
