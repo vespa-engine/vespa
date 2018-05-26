@@ -2,6 +2,7 @@
 
 #include "attribute_writer.h"
 #include "attributemanager.h"
+#include "document_field_extractor.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -51,7 +52,9 @@ AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
         FieldPath fp;
         try {
             docType.buildFieldPath(fp, name);
-        } catch (document::FieldNotFoundException & e) { }
+        } catch (document::FieldNotFoundException & e) {
+            fp = FieldPath();
+        }
 
         assert(fieldId < _fieldPaths.size());
         _fieldPaths[fieldId] = std::move(fp);
@@ -200,12 +203,12 @@ class PutTask : public vespalib::Executor::Task
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
     std::vector<FieldValue::UP> _fieldValues;
 public:
-    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document &doc, uint32_t lid, bool immediateCommit, AttributeWriter::OnWriteDoneType onWriteDone);
+    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, DocumentFieldExtractor &fieldExtractor, uint32_t lid, bool immediateCommit, AttributeWriter::OnWriteDoneType onWriteDone);
     virtual ~PutTask() override;
     virtual void run() override;
 };
 
-PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document &doc, uint32_t lid, bool immediateCommit, AttributeWriter::OnWriteDoneType onWriteDone)
+PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, DocumentFieldExtractor  &fieldExtractor, uint32_t lid, bool immediateCommit, AttributeWriter::OnWriteDoneType onWriteDone)
     : _wc(wc),
       _serialNum(serialNum),
       _lid(lid),
@@ -215,10 +218,7 @@ PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, c
     const auto &fieldPaths = _wc.getFieldPaths();
     _fieldValues.reserve(fieldPaths.size());
     for (const auto &fieldPath : fieldPaths) {
-        FieldValue::UP fv;
-        if (!fieldPath.empty()) {
-            fv = doc.getNestedFieldValue(fieldPath.getFullRange());
-        }
+        FieldValue::UP fv = fieldExtractor.getFieldValue(fieldPath);
         _fieldValues.emplace_back(std::move(fv));
     }
 }
@@ -382,8 +382,9 @@ void
 AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                              bool immediateCommit, OnWriteDoneType onWriteDone)
 {
+    DocumentFieldExtractor extractor(doc);
     for (const auto &wc : _writeContexts) {
-        auto putTask = std::make_unique<PutTask>(wc, serialNum, doc, lid, immediateCommit, onWriteDone);
+        auto putTask = std::make_unique<PutTask>(wc, serialNum, extractor, lid, immediateCommit, onWriteDone);
         _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(putTask));
     }
 }
