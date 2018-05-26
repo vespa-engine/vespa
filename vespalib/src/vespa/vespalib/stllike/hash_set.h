@@ -37,6 +37,7 @@ public:
     size_t size()                      const { return _ht.size(); }
     bool empty()                       const { return _ht.empty(); }
     insert_result insert(const K & value);
+    insert_result insert(K &&value);
     template<typename InputIt>
     void insert(InputIt first, InputIt last);
     void erase(const K & key);
