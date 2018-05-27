@@ -15,10 +15,8 @@ import com.yahoo.search.query.Presentation;
  * Helper methods and data store for result attributes geared towards result
  * rendering and presentation.
  *
- * @author Steinar Knutsen
- * @deprecated do not use
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
-@Deprecated // TODO: Remove on Vespa 7
 public class Templating {
 
     private final Result result;

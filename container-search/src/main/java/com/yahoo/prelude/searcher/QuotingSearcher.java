@@ -35,7 +35,6 @@ public class QuotingSearcher extends Searcher {
     }
 
     private static class QuoteTable {
-
         private final int lowerUncachedBound;
         private final int upperUncachedBound;
         private final Map<Character, String> quoteMap;
@@ -51,10 +50,12 @@ public class QuotingSearcher extends Searcher {
             boolean newIsEmpty = true;
             Map<Character, String> newQuoteMap = new HashMap<>();
             for (Iterator<?> i = config.character().iterator(); i.hasNext(); ) {
-                QrQuotetableConfig.Character character = (QrQuotetableConfig.Character)i.next();
+                QrQuotetableConfig.Character character
+                    = (QrQuotetableConfig.Character)i.next();
                 if (character.ordinal() > 256) {
                     newIsEmpty = false;
-                    newQuoteMap.put(new Character((char)character.ordinal()), character.quoting());
+                    newQuoteMap.put(new Character((char)character.ordinal()),
+                                    character.quoting());
                     newUseMap = true;
                     if (minOrd == 0 || character.ordinal() < minOrd)
                         minOrd = character.ordinal();
@@ -63,7 +64,8 @@ public class QuotingSearcher extends Searcher {
                 }
                 else {
                     newIsEmpty = false;
-                    newLowerTable[character.ordinal()] = character.quoting();
+                    newLowerTable[character.ordinal()]
+                        = character.quoting();
                 }
             }
             lowerUncachedBound = minOrd;
@@ -73,19 +75,22 @@ public class QuotingSearcher extends Searcher {
             isEmpty = newIsEmpty;
             lowerTable = newLowerTable;
         }
-
         public String get(char c) {
-            if (isEmpty) return null;
-
+            if (isEmpty)
+                return null;
             int ord = (int)c;
             if (ord < 256) {
                 return lowerTable[ord];
             }
             else {
-                if ((!useMap) || ord < lowerUncachedBound || ord > upperUncachedBound)
+                if ((!useMap) || ord < lowerUncachedBound
+                    || ord > upperUncachedBound)
+                {
                     return null;
-                else
+                }
+                else {
                     return quoteMap.get(new Character(c));
+                }
             }
         }
         public boolean isEmpty() {
@@ -102,18 +107,19 @@ public class QuotingSearcher extends Searcher {
         Result result = execution.search(query);
         execution.fill(result);
         QuoteTable translations = getQuoteTable();
-        if (translations == null || translations.isEmpty()) return result;
-
+        if (translations == null || translations.isEmpty()) {
+            return result;
+        }
         for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext(); ) {
             Hit h = i.next();
-            if (h instanceof FastHit)
-                quoteFields((FastHit) h, translations);
+            if (h instanceof FastHit) {
+                quoteProperties((FastHit)h, translations);
+            }
         }
         return result;
     }
 
-    private void quoteFields(FastHit hit, QuoteTable translations) {
-        // TODO: Iterate using callback (see below)
+    private void quoteProperties(FastHit hit, QuoteTable translations) {
         for (Iterator<?> i = ((Set<?>) hit.fields().keySet()).iterator(); i.hasNext(); ) {
             String propertyName = (String) i.next();
             Object entry = hit.getField(propertyName);
@@ -124,24 +130,12 @@ public class QuotingSearcher extends Searcher {
             if (propertyType.equals(HitField.class)) {
                 quoteField((HitField) entry, translations);
             } else if (propertyType.equals(String.class)) {
-                quoteField(hit, propertyName, (String)entry, translations);
+                quoteProperty(hit, propertyName, (String)entry, translations);
             }
         }
-
-        /*
-        hit.forEachField((fieldName, fieldValue) -> {
-            if (fieldValue != null) {
-                Class<?> fieldType = fieldValue.getClass();
-                if (fieldType.equals(HitField.class))
-                    quoteField((HitField) fieldValue, translations);
-                else if (fieldType.equals(String.class))
-                    quoteField(hit, fieldName, (String) fieldValue, translations);
-            }
-        });
-        */
     }
 
-    private void quoteField(Hit hit, String fieldname, String toQuote, QuoteTable translations) {
+    private void quoteProperty(Hit hit, String fieldname, String toQuote, QuoteTable translations) {
         List<FieldPart> l = translate(toQuote, translations, true);
         if (l != null) {
             HitField hf = new HitField(fieldname, toQuote);
@@ -150,11 +144,13 @@ public class QuotingSearcher extends Searcher {
         }
     }
 
+
     private void quoteField(HitField field, QuoteTable translations) {
         for (ListIterator<FieldPart> i = field.listIterator(); i.hasNext(); ) {
             FieldPart f = i.next();
-            if ( ! f.isFinal()) {
-                List<FieldPart> newFieldParts = translate(f.getContent(), translations, f.isToken());
+            if (!f.isFinal()) {
+                List<FieldPart> newFieldParts = translate(f.getContent(), translations,
+                                               f.isToken());
                 if (newFieldParts != null) {
                     i.remove();
                     for (Iterator<FieldPart> j = newFieldParts.iterator(); j.hasNext(); ) {
@@ -165,24 +161,33 @@ public class QuotingSearcher extends Searcher {
         }
     }
 
-    private List<FieldPart> translate(String toQuote, QuoteTable translations, boolean isToken) {
+    private List<FieldPart> translate(String toQuote, QuoteTable translations,
+                           boolean isToken) {
         List<FieldPart> newFieldParts = null;
         int lastIdx = 0;
         for (int i = 0; i < toQuote.length(); i++) {
             String quote = translations.get(toQuote.charAt(i));
             if (quote != null) {
-                if (newFieldParts == null)
+                if (newFieldParts == null) {
                     newFieldParts = new ArrayList<>();
-                if (lastIdx != i)
-                    newFieldParts.add(new StringFieldPart(toQuote.substring(lastIdx, i), isToken));
+                }
+                if (lastIdx != i) {
+                    newFieldParts.add(
+                                      new StringFieldPart(toQuote.substring(lastIdx, i),
+                                                          isToken));
+                }
                 String initContent = Character.toString(toQuote.charAt(i));
-                newFieldParts.add(new ImmutableFieldPart(initContent, quote, isToken));
+                newFieldParts.add(new ImmutableFieldPart(initContent,
+                                                         quote,
+                                                         isToken));
                 lastIdx = i+1;
             }
         }
-        if (lastIdx > 0 && lastIdx < toQuote.length())
-            newFieldParts.add(new StringFieldPart(toQuote.substring(lastIdx), isToken));
+        if (lastIdx > 0 && lastIdx < toQuote.length()) {
+            newFieldParts.add(
+                              new StringFieldPart(toQuote.substring(lastIdx),
+                                                  isToken));
+        }
         return newFieldParts;
     }
-
 }

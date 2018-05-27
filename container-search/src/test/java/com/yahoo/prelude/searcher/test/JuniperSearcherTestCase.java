@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Tests juniper highlighting
+ * Tests conversion of juniper highlighting to XML
  *
- * @author Steinar Knutsen
+ * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class JuniperSearcherTestCase {
 

@@ -83,7 +83,7 @@ public class SearchDefinition {
     }
 
     /** Returns the indices of this as a map */
-    public Map<String, Index> indices() {
+    public Map<String,Index> indices() {
         return indices;
     }
 

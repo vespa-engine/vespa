@@ -78,13 +78,13 @@ public class JuniperSearcher extends Searcher {
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
         Result workResult = result;
-        int worstCase = workResult.getHitCount();
-        List<Hit> hits = new ArrayList<>(worstCase);
-        for (Iterator<Hit> i = workResult.hits().deepIterator(); i.hasNext();) {
-            Hit sniffHit = i.next();
+        final int worstCase = workResult.getHitCount();
+        final List<Hit> hits = new ArrayList<>(worstCase);
+        for (final Iterator<Hit> i = workResult.hits().deepIterator(); i.hasNext();) {
+            final Hit sniffHit = i.next();
             if ( ! (sniffHit instanceof FastHit)) continue;
 
-            FastHit hit = (FastHit) sniffHit;
+            final FastHit hit = (FastHit) sniffHit;
             if (hit.isFilled(summaryClass)) continue;
 
             hits.add(hit);
@@ -105,54 +105,54 @@ public class JuniperSearcher extends Searcher {
 
             Object searchDefinitionField = hit.getField(MAGIC_FIELD);
             if (searchDefinitionField == null) continue;
+            String searchDefinitionName = searchDefinitionField.toString();
 
-            // TODO: Loop using callback (see below)
+            // TODO: Switch to iterate over indexes in the outer loop:
+            //for (Index index : indexFacts.getIndexes(searchDefinitionName())) {
+            //    if (index.getDynamicSummary() || index.getHighlightSummary()) {
+            //        insertTags(hit.buildHitField(index.getName(), true, true), bolding, index.getDynamicSummary());
+            //    }
+            //}
             for (String fieldName : hit.fields().keySet()) {
-                Index index = indexFacts.getIndex(fieldName, searchDefinitionField.toString());
+                Index index = indexFacts.getIndex(fieldName, searchDefinitionName);
                 if (index.getDynamicSummary() || index.getHighlightSummary())
                     insertTags(hit.buildHitField(fieldName, true, true), bolding, index.getDynamicSummary());
             }
-            /*
-            for (Index index : indexFacts.getIndexes(searchDefinitionField.toString())) {
-                if (index.getDynamicSummary() || index.getHighlightSummary()) {
-                    HitField fieldValue = hit.buildHitField(index.getName(), true, true);
-                    if (fieldValue != null)
-                        insertTags(fieldValue, bolding, index.getDynamicSummary());
-                }
-            }
-            */
         }
     }
 
-    private void insertTags(HitField oldProperty, boolean bolding, boolean dynteaser) {
+    private void insertTags(final HitField oldProperty, final boolean bolding, final boolean dynteaser) {
         boolean insideHighlight = false;
-        for (ListIterator<FieldPart> i = oldProperty.listIterator(); i.hasNext();) {
-            FieldPart f = i.next();
-            if (f instanceof SeparatorFieldPart)
+        for (final ListIterator<FieldPart> i = oldProperty.listIterator(); i.hasNext();) {
+            final FieldPart f = i.next();
+            if (f instanceof SeparatorFieldPart) {
                 setSeparatorString(bolding, (SeparatorFieldPart) f);
-            if (f.isFinal()) continue;
+            }
+            if (f.isFinal()) {
+                continue;
+            }
 
-            String toQuote = f.getContent();
+            final String toQuote = f.getContent();
             List<FieldPart> newFieldParts = null;
             int previous = 0;
             for (int j = 0; j < toQuote.length(); j++) {
-                char key = toQuote.charAt(j);
+                final char key = toQuote.charAt(j);
                 switch (key) {
-                    case RAW_HIGHLIGHT_CHAR:
-                        newFieldParts = initFieldParts(newFieldParts);
-                        addBolding(bolding, insideHighlight, f, toQuote, newFieldParts, previous, j);
-                        previous = j + 1;
-                        insideHighlight = !insideHighlight;
-                        break;
-                    case RAW_SEPARATOR_CHAR:
-                        newFieldParts = initFieldParts(newFieldParts);
-                        addSeparator(bolding, dynteaser, f, toQuote, newFieldParts,
-                                     previous, j);
-                        previous = j + 1;
-                        break;
-                    default:
-                        // no action
-                        break;
+                case RAW_HIGHLIGHT_CHAR:
+                    newFieldParts = initFieldParts(newFieldParts);
+                    addBolding(bolding, insideHighlight, f, toQuote, newFieldParts, previous, j);
+                    previous = j + 1;
+                    insideHighlight = !insideHighlight;
+                    break;
+                case RAW_SEPARATOR_CHAR:
+                    newFieldParts = initFieldParts(newFieldParts);
+                    addSeparator(bolding, dynteaser, f, toQuote, newFieldParts,
+                            previous, j);
+                    previous = j + 1;
+                    break;
+                default:
+                    // no action
+                    break;
                 }
             }
             if (previous > 0 && previous < toQuote.length()) {
@@ -160,30 +160,37 @@ public class JuniperSearcher extends Searcher {
             }
             if (newFieldParts != null) {
                 i.remove();
-                for (Iterator<FieldPart> j = newFieldParts.iterator(); j.hasNext();) {
+                for (final Iterator<FieldPart> j = newFieldParts.iterator(); j.hasNext();) {
                     i.add(j.next());
                 }
             }
         }
     }
 
-    private void setSeparatorString(boolean bolding, SeparatorFieldPart f) {
-        if (bolding)
+    private void setSeparatorString(final boolean bolding,final SeparatorFieldPart f) {
+        if (bolding) {
             f.setContent(separatorTag);
-        else
+        } else {
             f.setContent(ELLIPSIS);
+        }
     }
 
-    private void addSeparator(boolean bolding, boolean dynteaser, FieldPart f, String toQuote,
-                              List<FieldPart> newFieldParts, int previous, int j) {
-        if (previous != j)
+    private void addSeparator(final boolean bolding, final boolean dynteaser,
+                              final FieldPart f, final String toQuote,
+                              final List<FieldPart> newFieldParts, final int previous, final int j) {
+        if (previous != j) {
             newFieldParts.add(new StringFieldPart(toQuote.substring(previous, j), f.isToken()));
-        if (dynteaser)
-            newFieldParts.add(bolding ? new SeparatorFieldPart(separatorTag) : new SeparatorFieldPart(ELLIPSIS));
+        }
+        if (dynteaser) {
+            final FieldPart s = (bolding ? new SeparatorFieldPart(separatorTag) : new SeparatorFieldPart(ELLIPSIS));
+            newFieldParts.add(s);
+        }
     }
 
-    private void addBolding(boolean bolding, boolean insideHighlight, FieldPart f, String toQuote,
-                            List<FieldPart> newFieldParts, int previous, int j) {
+    private void addBolding(final boolean bolding,
+            final boolean insideHighlight, final FieldPart f,
+            final String toQuote, final List<FieldPart> newFieldParts,
+            final int previous, final int j) {
         if (previous != j) {
             newFieldParts.add(new StringFieldPart(toQuote.substring(previous, j), f.isToken()));
         }
@@ -202,8 +209,9 @@ public class JuniperSearcher extends Searcher {
     }
 
     private List<FieldPart> initFieldParts(List<FieldPart> newFieldParts) {
-        if (newFieldParts == null)
+        if (newFieldParts == null) {
             newFieldParts = new ArrayList<>();
+        }
         return newFieldParts;
     }
 
