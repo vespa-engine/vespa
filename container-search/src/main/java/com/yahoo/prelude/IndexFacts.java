@@ -166,8 +166,8 @@ public class IndexFacts {
     }
 
     private Index getIndexFromDocumentTypes(String indexName, List<String> documentTypes) {
-        if (indexName==null || indexName.isEmpty())
-            indexName="default";
+        if (indexName == null || indexName.isEmpty())
+            indexName = "default";
 
         return getIndexByCanonicNameFromDocumentTypes(indexName, documentTypes);
     }
@@ -189,6 +189,13 @@ public class IndexFacts {
             sd = chooseSearchDefinition(documentTypes, sd.offset);
         }
         return Index.nullIndex;
+    }
+
+    private Collection<Index> getIndexes(String documentType) {
+        if ( ! isInitialized()) return Collections.emptyList();
+        SearchDefinition sd = searchDefinitions.get(documentType);
+        if (sd == null) return Collections.emptyList();
+        return sd.indices().values();
     }
 
     /** Calls resolveDocumentTypes(query.getModel().getSources(), query.getModel().getRestrict()) */
@@ -419,6 +426,11 @@ public class IndexFacts {
         // That can be fixed without changing this API.
         public Index getIndex(String indexName, String documentType) {
             return IndexFacts.this.getIndexFromDocumentTypes(indexName, Collections.singletonList(documentType));
+        }
+
+        /** Returns all the indexes of a given search definition */
+        public Collection<Index> getIndexes(String documentType) {
+            return IndexFacts.this.getIndexes(documentType);
         }
 
         /**
