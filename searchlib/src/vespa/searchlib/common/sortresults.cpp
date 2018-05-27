@@ -459,16 +459,16 @@ public:
         default:
         case 4:
             r |= _data[a._idx + a._pos + 3] << 0;
-            //@fallthrough@
+            [[fallthrough]];
         case 3:
             r |= _data[a._idx + a._pos + 2] << 8;
-            //@fallthrough@
+            [[fallthrough]];
         case 2:
             r |= _data[a._idx + a._pos + 1] << 16;
-            //@fallthrough@
+            [[fallthrough]];
         case 1:
             r |= _data[a._idx + a._pos + 0] << 24;
-            //@fallthrough@
+            [[fallthrough]];
         case 0:;
         }
         a._pos += std::min(4u, left);
