@@ -147,12 +147,6 @@ public final class Attribute implements Cloneable, Serializable {
         this.referenceDocumentType = referenceDocumentType;
     }
 
-    public Attribute convertToArray() {
-        Attribute result = clone();
-        result.collectionType = CollectionType.ARRAY;
-        return result;
-    }
-
     /**
      * <p>Returns whether this attribute should be included in the "attributeprefetch" summary
      * which is returned to the Qrs by prefetchAttributes, used by blending, uniquing etc.
@@ -187,7 +181,6 @@ public final class Attribute implements Cloneable, Serializable {
     public long upperBound() { return upperBound; }
     public double densePostingListThreshold() { return densePostingListThreshold; }
     public Optional<TensorType> tensorType() { return tensorType; }
-    public Optional<StructuredDataType> referenceDocumentType() { return referenceDocumentType; }
 
     public Sorting getSorting() { return sorting; }
 
