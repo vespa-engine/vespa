@@ -434,6 +434,45 @@ TEST("test that for_each member works as std::for_each") {
     TEST_DO(verify_sum(m, expected_sum));
 }
 
+namespace {
+
+class WrappedKey
+{
+    std::unique_ptr<const int> _key;
+public:
+    WrappedKey() : _key() { }
+    WrappedKey(int key) : _key(std::make_unique<const int>(key)) { }
+    size_t hash() const { return vespalib::hash<int>()(*_key); }
+    bool operator==(const WrappedKey &rhs) const { return *_key == *rhs._key; }
+};
+
+}
+
+TEST("test that hash map can have non-copyable key")
+{
+    hash_map<WrappedKey, int> m;
+    EXPECT_TRUE(m.insert(std::make_pair(WrappedKey(4), 5)).second);
+    WrappedKey testKey(4);
+    ASSERT_TRUE(m.find(testKey) != m.end());
+    EXPECT_EQUAL(5, m.find(testKey)->second);
+}
+
+TEST("test that hash map can have non-copyable value")
+{
+    hash_map<int, std::unique_ptr<int>> m;
+    EXPECT_TRUE(m.insert(std::make_pair(4, std::make_unique<int>(5))).second);
+    EXPECT_TRUE(m[4]);
+    EXPECT_EQUAL(5, *m[4]);
+}
+
+TEST("test that hash set can have non-copyable key")
+{
+    hash_set<WrappedKey> m;
+    EXPECT_TRUE(m.insert(WrappedKey(4)).second);
+    WrappedKey testKey(4);
+    ASSERT_TRUE(m.find(testKey) != m.end());
+}
+
 using IntHashSet = hash_set<int>;
 
 TEST("test hash set initializer list - empty")

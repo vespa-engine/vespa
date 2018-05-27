@@ -74,6 +74,12 @@ hash_set<K, H, EQ, M>::insert(const K & value) {
     return _ht.insert(value);
 }
 
+template<typename K, typename H, typename EQ, typename M>
+typename hash_set<K, H, EQ, M>::insert_result
+hash_set<K, H, EQ, M>::insert(K &&value) {
+    return _ht.insert(std::move(value));
+}
+
 }
 
 #define VESPALIB_HASH_SET_INSTANTIATE(K) \
