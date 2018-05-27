@@ -29,7 +29,7 @@ import java.util.List;
 @Provides(PhrasingSearcher.PHRASE_REPLACEMENT)
 public class PhrasingSearcher extends Searcher {
 
-    private static final CompoundName suggestonly = new CompoundName("suggestonly");
+    private static final CompoundName suggestonly=new CompoundName("suggestonly");
 
     public static final String PHRASE_REPLACEMENT = "PhraseReplacement";
 

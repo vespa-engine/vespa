@@ -27,12 +27,9 @@ import java.util.Set;
  * will be returned when attribute prefetch filling is requested.</p>
  *
  * @author  bratseth
- * @deprecated use {@link com.yahoo.search.searchchain.testutil.DocumentSourceSearcher}
  */
 @SuppressWarnings({"rawtypes"})
-@Deprecated // TODO: Remove on Vespa 7
 public class DocumentSourceSearcher extends Searcher {
-
     // as for the SuppressWarnings annotation above, we are inside
     // com.yahoo.prelude, this is old stuff, really no point firing off those
     // warnings here...
@@ -41,6 +38,7 @@ public class DocumentSourceSearcher extends Searcher {
     private Map<Query, Result> completelyFilledResults = new HashMap<>();
     private Map<Query, Result> attributeFilledResults = new HashMap<>();
     private Map<Query, Result> unFilledResults = new HashMap<>();
+    //private Result defaultUnfilledResult;
 
     /** Time (in ms) at which the index of this searcher was last modified */
     long editionTimeStamp=0;
@@ -103,11 +101,11 @@ public class DocumentSourceSearcher extends Searcher {
     }
 
     /**
-     * Returns a query clone which has source, offset and hits set to null. This is used by access to
+     * Returns a query clone which has offset and hits set to null. This is used by access to
      * the maps using the query as key to achieve lookup independent of offset/hits value
      */
-    private Query getQueryKeyClone(Query query) {
-        Query key = query.clone();
+    private com.yahoo.search.Query getQueryKeyClone(com.yahoo.search.Query query) {
+        com.yahoo.search.Query key=query.clone();
         key.setWindow(0,0);
         key.getModel().setSources("");
         return key;

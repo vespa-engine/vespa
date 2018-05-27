@@ -70,10 +70,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  * @author laboisse
- * @deprecated use a Renderer instead
  */
-@SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
 public class TiledTemplateSet extends DefaultTemplateSet {
 
     private FormattingOptions hitOptionsForProvider;

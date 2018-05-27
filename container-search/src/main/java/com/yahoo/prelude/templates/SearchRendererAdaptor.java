@@ -21,10 +21,8 @@ import java.util.Iterator;
  * Renders a search result using the old templates API.
  *
  * @author tonytv
- * @deprecated do not use
  */
 @SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
-@Deprecated // TODO: Remove on Vespa 7
 public final class SearchRendererAdaptor extends Renderer {
 
     private final LogExceptionUserTemplateDelegator templates;

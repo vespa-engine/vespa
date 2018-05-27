@@ -20,15 +20,15 @@ public class PhraseMatcher {
 
     private FSA phraseFSA = null;
 
-    private boolean matchPhraseItems = false;
+    private boolean matchPhraseItems=false;
 
-    private boolean matchSingleItems = false;
+    private boolean matchSingleItems=false;
 
     /** Whether this should ignore regular plural/singular form differences when matching */
-    private boolean ignorePluralForm = false;
+    private boolean ignorePluralForm=false;
 
     /** False to matche the longest phrase, true to match <i>all</i> phrases */
-    private boolean matchAll = false;
+    private boolean matchAll =false;
 
     /** For null subclass only */
     private PhraseMatcher() {
