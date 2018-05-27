@@ -99,7 +99,7 @@ PingProxy::Main()
         case '?':
         default:
             retval = 1;
-            // fallthrough
+            [[fallthrough]];
         case 'h':
             usage();
             return retval;
