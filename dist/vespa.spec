@@ -21,9 +21,9 @@ BuildRequires: centos-release-scl
 BuildRequires: devtoolset-7-gcc-c++
 BuildRequires: devtoolset-7-libatomic-devel
 BuildRequires: devtoolset-7-binutils
-BuildRequires: rh-maven33
+BuildRequires: rh-maven35
 %define _devtoolset_enable /opt/rh/devtoolset-7/enable
-%define _rhmaven33_enable /opt/rh/rh-maven33/enable
+%define _rhmaven35_enable /opt/rh/rh-maven35/enable
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
@@ -158,8 +158,8 @@ Vespa - The open big data serving engine
 %if 0%{?_devtoolset_enable:1}
 source %{_devtoolset_enable} || true
 %endif
-%if 0%{?_rhmaven33_enable:1}
-source %{_rhmaven33_enable} || true
+%if 0%{?_rhmaven35_enable:1}
+source %{_rhmaven35_enable} || true
 %endif
 sh bootstrap.sh java
 mvn --batch-mode -nsu -T 2C install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
