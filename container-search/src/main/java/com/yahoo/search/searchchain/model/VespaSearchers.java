@@ -9,13 +9,10 @@ import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.model.federation.FederationSearcherModel;
 import com.yahoo.search.searchchain.model.federation.FederationSearcherModel.TargetSpec;
+import org.apache.commons.collections.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
 
 /**
  * Defines the searcher models used in the vespa and native search chains, except for federation.
@@ -26,6 +23,8 @@ import java.util.Set;
 public class VespaSearchers {
     public static final Collection<ChainedComponentModel> vespaSearcherModels =
             toSearcherModels(
+                    com.yahoo.prelude.querytransform.IndexCombinatorSearcher.class,
+                    //com.yahoo.prelude.querytransform.LocalitySearcher.class,
                     com.yahoo.prelude.querytransform.PhrasingSearcher.class,
                     com.yahoo.prelude.searcher.FieldCollapsingSearcher.class,
                     com.yahoo.search.yql.MinimalQueryInserter.class,
@@ -60,8 +59,8 @@ public class VespaSearchers {
 
     private static FederationSearcherModel federationSearcherModel() {
         return new FederationSearcherModel(new ComponentSpecification("federation"),
-                                           Dependencies.emptyDependencies(),
-                                           Collections.<TargetSpec>emptyList(), true);
+                Dependencies.emptyDependencies(),
+                Collections.<TargetSpec>emptyList(), true);
     }
 
     private static boolean allAdded(Collection<ChainedComponentModel> searcherModels, Set<ComponentId> componentIds) {
