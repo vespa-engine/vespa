@@ -48,17 +48,16 @@ public class ApplicationBuilderTest {
         });
     }
 
-    @Test
-    @SuppressWarnings("try") // app unreferenced inside try
+    @Test(expected = RuntimeException.class)
+    @SuppressWarnings("try") // application unreferenced inside try
     public void builder_cannot_be_reused() throws Exception {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.servicesXml("<jdisc version=\"1.0\" />");
-        try (Application app = builder.build()) {
-            builder.servicesXml("");
-            fail("Expected exception.");
-        } catch (RuntimeException e) {
-            assertThat(e.getMessage(), containsString("build method"));
+        try (Application application = builder.build()) {
+            // do nothing
         }
+
+        builder.servicesXml(""); // should fail
     }
 
     private interface TestCase {
