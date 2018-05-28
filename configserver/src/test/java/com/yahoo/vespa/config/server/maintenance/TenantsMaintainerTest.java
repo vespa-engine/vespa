@@ -29,6 +29,7 @@ public class TenantsMaintainerTest {
 
         tenantRepository.addTenant(shouldBeDeleted);
         tenantRepository.addTenant(shouldNotBeDeleted);
+        tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         applicationRepository.deploy(new File("src/test/apps/app"),
                 new PrepareParams.Builder()
                         .applicationId(ApplicationId.from(shouldNotBeDeleted, ApplicationName.from("foo"), InstanceName.defaultName()))
@@ -41,5 +42,9 @@ public class TenantsMaintainerTest {
         // One tenant should now have been deleted
         assertNull(tenantRepository.getTenant(shouldBeDeleted));
         assertNotNull(tenantRepository.getTenant(shouldNotBeDeleted));
+
+        // System tenants should not be deleted
+        assertNotNull(tenantRepository.getTenant(TenantName.defaultName()));
+        assertNotNull(tenantRepository.getTenant(TenantRepository.HOSTED_VESPA_TENANT));
     }
 }

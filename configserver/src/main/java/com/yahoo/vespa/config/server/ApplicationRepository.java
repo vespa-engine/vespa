@@ -382,6 +382,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Set<TenantName> tenantsToBeDeleted = tenantRepository.getAllTenantNames().stream()
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())
                 .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
+                .filter(tenantName -> !tenantName.equals(TenantRepository.HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
                 .collect(Collectors.toSet());
         tenantsToBeDeleted.forEach(tenantRepository::deleteTenant);
         return tenantsToBeDeleted;
