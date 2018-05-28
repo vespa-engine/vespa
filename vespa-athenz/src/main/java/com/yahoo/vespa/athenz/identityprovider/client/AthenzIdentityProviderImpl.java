@@ -127,8 +127,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         X509Certificate roleCertificate = ztsClient.getRoleCertificate(
                 new AthenzDomain(domain),
                 role,
-                credentials.getIdentityDocument().dnsSuffix,
-                credentials.getIdentityDocument().ztsEndpoint,
+                credentials.getIdentityDocument().dnsSuffix(),
+                credentials.getIdentityDocument().ztsEndpoint(),
                 identity,
                 privateKey,
                 credentials.getIdentitySslContext());
@@ -143,7 +143,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         return ztsClient
                 .getRoleToken(
                         new AthenzDomain(domain),
-                        credentials.getIdentityDocument().ztsEndpoint,
+                        credentials.getIdentityDocument().ztsEndpoint(),
                         credentials.getIdentitySslContext())
                 .getRawToken();
     }
@@ -154,7 +154,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 .getRoleToken(
                         new AthenzDomain(domain),
                         role,
-                        credentials.getIdentityDocument().ztsEndpoint,
+                        credentials.getIdentityDocument().ztsEndpoint(),
                         credentials.getIdentitySslContext())
                 .getRawToken();
     }

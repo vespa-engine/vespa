@@ -3,28 +3,25 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.core.identity.IdentityConfig;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
-import com.yahoo.vespa.athenz.tls.SignatureAlgorithm;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
-import com.yahoo.vespa.athenz.tls.SubjectAlternativeName;
 
 import javax.net.ssl.SSLContext;
-import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Set;
 
 import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
-import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.IP_ADDRESS;
 
 /**
  * @author bjorncs
@@ -52,39 +49,39 @@ class AthenzCredentialsService {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         String rawDocument = identityDocumentClient.getSignedIdentityDocument();
         SignedIdentityDocument document = parseSignedIdentityDocument(rawDocument);
-        Pkcs10Csr csr = createCSR(identityConfig.domain(),
-                                  identityConfig.service(),
-                                  document.dnsSuffix,
-                                  document.providerUniqueId,
-                                  document.identityDocument.ipAddresses,
-                                  keyPair);
+        InstanceCsrGenerator instanceCsrGenerator = new InstanceCsrGenerator(document.dnsSuffix());
+        Pkcs10Csr csr = instanceCsrGenerator.generateCsr(
+                new AthenzService(identityConfig.domain(), identityConfig.service()),
+                document.providerUniqueId(),
+                document.identityDocument().ipAddresses(),
+                keyPair);
         InstanceRegisterInformation instanceRegisterInformation =
-                new InstanceRegisterInformation(document.providerService,
+                new InstanceRegisterInformation(document.providerService().getFullName(),
                                                 identityConfig.domain(),
                                                 identityConfig.service(),
                                                 rawDocument,
                                                 Pkcs10CsrUtils.toPem(csr));
         InstanceIdentity instanceIdentity = ztsClient.sendInstanceRegisterRequest(instanceRegisterInformation,
-                                                                                  document.ztsEndpoint);
+                                                                                  document.ztsEndpoint());
         return toAthenzCredentials(instanceIdentity, keyPair, document);
     }
 
     AthenzCredentials updateCredentials(SignedIdentityDocument document, SSLContext sslContext) {
         KeyPair newKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        Pkcs10Csr csr = createCSR(identityConfig.domain(),
-                                  identityConfig.service(),
-                                  document.dnsSuffix,
-                                  document.providerUniqueId,
-                                  document.identityDocument.ipAddresses,
-                                  newKeyPair);
+        InstanceCsrGenerator instanceCsrGenerator = new InstanceCsrGenerator(document.dnsSuffix());
+        Pkcs10Csr csr = instanceCsrGenerator.generateCsr(
+                new AthenzService(identityConfig.domain(), identityConfig.service()),
+                document.providerUniqueId(),
+                document.identityDocument().ipAddresses(),
+                newKeyPair);
         InstanceRefreshInformation refreshInfo = new InstanceRefreshInformation(Pkcs10CsrUtils.toPem(csr));
         InstanceIdentity instanceIdentity =
-                ztsClient.sendInstanceRefreshRequest(document.providerService,
+                ztsClient.sendInstanceRefreshRequest(document.providerService().getFullName(),
                                                      identityConfig.domain(),
                                                      identityConfig.service(),
-                                                     document.providerUniqueId,
+                                                     document.providerUniqueId().asDottedString(),
                                                      refreshInfo,
-                                                     document.ztsEndpoint,
+                                                     document.ztsEndpoint(),
                                                      sslContext);
         return toAthenzCredentials(instanceIdentity, newKeyPair, document);
     }
@@ -107,32 +104,9 @@ class AthenzCredentialsService {
 
     private static SignedIdentityDocument parseSignedIdentityDocument(String rawDocument) {
         try {
-            return mapper.readValue(rawDocument, SignedIdentityDocument.class);
+            return EntityBindingsMapper.toSignedIdentityDocument(mapper.readValue(rawDocument, SignedIdentityDocumentEntity.class));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private static Pkcs10Csr createCSR(String identityDomain,
-                                       String identityService,
-                                       String dnsSuffix,
-                                       String providerUniqueId,
-                                       Set<String> ipAddresses,
-                                       KeyPair keyPair) {
-        X500Principal subject = new X500Principal(String.format("CN=%s.%s", identityDomain, identityService));
-        // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
-        // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
-        Pkcs10CsrBuilder pkcs10CsrBuilder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA256_WITH_RSA)
-                .addSubjectAlternativeName(String.format("%s.%s.%s",
-                                                         identityService,
-                                                         identityDomain.replace(".", "-"),
-                                                         dnsSuffix))
-                .addSubjectAlternativeName(String.format("%s.instanceid.athenz.%s",
-                                                         providerUniqueId,
-                                                         dnsSuffix));
-        if(ipAddresses != null) {
-            ipAddresses.forEach(ipaddress ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP_ADDRESS, ipaddress)));
-        }
-        return pkcs10CsrBuilder.build();
     }
 }

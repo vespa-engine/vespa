@@ -1,14 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -40,7 +38,6 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
@@ -50,14 +47,11 @@ import static java.util.Collections.singleton;
  *
  * @author bjorncs
  */
-@SuppressWarnings("deprecation") // TODO Use new entity response types
 public class AthenzCredentialsMaintainer {
 
     private static final Duration EXPIRY_MARGIN = Duration.ofDays(1);
     private static final Duration REFRESH_PERIOD = Duration.ofDays(1);
     private static final Path CONTAINER_SIA_DIRECTORY = Paths.get("/var/lib/sia");
-
-    private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final boolean enabled;
     private final PrefixLogger log;
@@ -190,7 +184,7 @@ public class AthenzCredentialsMaintainer {
                             configserverIdentity,
                             containerIdentity,
                             instanceId.asDottedString(),
-                            toAttestationDataString(signedIdentityDocument),
+                            EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             false,
                             csr);
             writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
@@ -241,30 +235,6 @@ public class AthenzCredentialsMaintainer {
 
     private static Path toTempPath(Path file) {
         return Paths.get(file.toAbsolutePath().toString() + ".tmp");
-    }
-
-    // TODO Move to vespa-athenz
-    private String toAttestationDataString(SignedIdentityDocument signedIdDoc) throws JsonProcessingException {
-        com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument idDoc = signedIdDoc.identityDocument();
-        com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocument identityDocumentPayload =
-                new com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocument(
-                        com.yahoo.vespa.athenz.identityprovider.api.bindings.ProviderUniqueId.fromVespaUniqueInstanceId(idDoc.providerUniqueId()),
-                        idDoc.configServerHostname(),
-                        idDoc.instanceHostname(),
-                        idDoc.createdAt(),
-                        idDoc.ipAddresses());
-        String rawIdentityDocument = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(identityDocumentPayload).getBytes());
-        com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument payload =
-                new com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument(
-                        rawIdentityDocument,
-                        signedIdDoc.signature(),
-                        signedIdDoc.signingKeyVersion(),
-                        signedIdDoc.providerUniqueId().asDottedString(),
-                        signedIdDoc.dnsSuffix(),
-                        signedIdDoc.providerService().getFullName(),
-                        signedIdDoc.ztsEndpoint(),
-                        signedIdDoc.documentVersion());
-        return objectMapper.writeValueAsString(payload);
     }
 
     // TODO Move to vespa-athenz
