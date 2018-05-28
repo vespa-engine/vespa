@@ -58,7 +58,7 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(10), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
-        systemUpgrader = new SystemUpgrader(controller, maintenanceInterval, jobControl);
+        systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }

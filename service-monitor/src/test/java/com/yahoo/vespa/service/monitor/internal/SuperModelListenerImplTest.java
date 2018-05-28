@@ -6,9 +6,9 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,13 +24,11 @@ public class SuperModelListenerImplTest {
         ServiceMonitorMetrics metrics = mock(ServiceMonitorMetrics.class);
         ModelGenerator modelGenerator = mock(ModelGenerator.class);
         Zone zone = mock(Zone.class);
-        List<String> configServers = new ArrayList<>();
         SuperModelListenerImpl listener = new SuperModelListenerImpl(
                 slobrokMonitorManager,
                 metrics,
                 modelGenerator,
-                zone,
-                configServers);
+                zone);
 
         SuperModelProvider superModelProvider = mock(SuperModelProvider.class);
         SuperModel superModel = mock(SuperModel.class);
@@ -47,6 +45,6 @@ public class SuperModelListenerImplTest {
         verify(slobrokMonitorManager).applicationActivated(superModel, application2);
 
         ServiceModel serviceModel = listener.get();
-        verify(modelGenerator).toServiceModel(superModel, zone, configServers, slobrokMonitorManager);
+        verify(modelGenerator).toServiceModel(superModel, zone, slobrokMonitorManager);
     }
 }

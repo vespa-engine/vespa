@@ -569,7 +569,7 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
         }
         // Follow onto next to move queue or fail
     }
-    //@fallthrough@
+    [[fallthrough]];
     case api::MessageType::SPLITBUCKET_ID:
         // Move to correct queue if op == MOVE
         // Fail with bucket not found if op is JOIN
@@ -640,7 +640,7 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
             break;
         case GetIterCommand::ID:
             bucket = static_cast<GetIterCommand&>(msg).getBucket();
-            //@fallthrough@
+            [[fallthrough]];
         case RepairBucketCommand::ID:
             if (bucket.getBucketId().getRawId() == 0) {
                 bucket = static_cast<RepairBucketCommand&>(msg).getBucket();

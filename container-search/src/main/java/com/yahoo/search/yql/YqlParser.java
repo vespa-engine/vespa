@@ -47,6 +47,7 @@ import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.Substring;
@@ -161,6 +162,7 @@ public class YqlParser implements Parser {
     static final String RANGE = "range";
     static final String RANKED = "ranked";
     static final String RANK = "rank";
+    static final String SAME_ELEMENT = "sameElement";
     static final String SCORE_THRESHOLD = "scoreThreshold";
     static final String SIGNIFICANCE = "significance";
     static final String STEM = "stem";
@@ -530,6 +532,17 @@ public class YqlParser implements Parser {
                                             @NonNull WeightedSetItem out) {
         addItems(arg, out);
         return leafStyleSettings(ast, out);
+    }
+
+    @NonNull
+    private Item instantiateSameElementItem(String field, OperatorNode<ExpressionOperator> ast) {
+        assertHasFunctionName(ast, SAME_ELEMENT);
+
+        SameElementItem sameElement = new SameElementItem(field);
+        for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+            sameElement.addItem(buildTermSearch(word));
+        }
+        return leafStyleSettings(ast, sameElement);
     }
 
     @NonNull
@@ -1183,6 +1196,8 @@ public class YqlParser implements Parser {
         List<String> names = ast.getArgument(0);
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
         switch (names.get(0)) {
+            case SAME_ELEMENT:
+                return instantiateSameElementItem(field, ast);
             case PHRASE:
                 return instantiatePhraseItem(field, ast);
             case NEAR:
@@ -1194,7 +1209,7 @@ public class YqlParser implements Parser {
             case ALTERNATIVES:
                 return instantiateWordAlternativesItem(field, ast);
             default:
-                throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE);
+                throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT);
         }
     }
 

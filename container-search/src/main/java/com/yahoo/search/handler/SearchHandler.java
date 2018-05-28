@@ -230,7 +230,7 @@ public class SearchHandler extends LoggingRequestHandler {
                 return (e.getCause() instanceof IllegalArgumentException)
                         ? invalidParameterResponse(request, e)
                         : illegalQueryResponse(request, e);
-            } catch (RuntimeException e) { // Make sure we generate a valid XML response even on unexpected errors
+            } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
                 return internalServerErrorResponse(request, e);
             }

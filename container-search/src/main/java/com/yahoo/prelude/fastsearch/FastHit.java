@@ -98,16 +98,18 @@ public class FastHit extends Hit {
         if (uri != null) return uri;
 
         // TODO: Remove on Vespa 7, this should be one of the last vestiges of URL field magic
-        if (fields().containsKey("uri")) {
-            // trigger decoding
-            Object o = getField("uri");
-            setId(o.toString());
+        Object uriField = getField("uri");
+        if (uriField != null) {
+            setId(uriField.toString());
             return super.getId();
         }
 
         // Fallback to index:[source]/[partid]/[id]
         if (indexUri != null) return indexUri;
-        indexUri = new URI("index:" + getSource() + "/" + getPartId() + "/" + asHexString(getGlobalId()));
+        StringBuilder sb = new StringBuilder(64);
+        sb.append("index:").append(getSource()).append('/').append(getPartId()).append('/');
+        asHexString(sb, getGlobalId());
+        indexUri = new URI(sb.toString());
         return indexUri;
     }
 
@@ -348,7 +350,10 @@ public class FastHit extends Hit {
     /** @deprecated do not use */
     @Deprecated // TODO: Make private on Vespa 7
     public static String asHexString(GlobalId gid) {
-        StringBuilder sb = new StringBuilder();
+        return asHexString(new StringBuilder(), gid).toString();
+    }
+
+    private static StringBuilder asHexString(StringBuilder sb, GlobalId gid) {
         byte[] rawGid = gid.getRawId();
         for (byte b : rawGid) {
             String hex = Integer.toHexString(0xFF & b);
@@ -357,7 +362,7 @@ public class FastHit extends Hit {
             }
             sb.append(hex);
         }
-        return sb.toString();
+        return sb;
     }
 
     /** A set view of all the field names in this hit. Add/addAll is not supported but remove is. */

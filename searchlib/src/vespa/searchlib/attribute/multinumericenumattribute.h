@@ -52,12 +52,12 @@ protected:
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
 
-        bool onCmp(DocId docId, int32_t & weight) const override {
-            return cmp(docId, weight);
+        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
+            return find(docId, elemId, weight);
         }
 
-        bool onCmp(DocId docId) const override {
-            return cmp(docId);
+        int32_t onFind(DocId docId, int32_t elemId) const override {
+            return find(docId, elemId);
         }
 
         bool valid() const override { return this->isValid(); }
@@ -65,31 +65,31 @@ protected:
     public:
         SetSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched);
 
-        bool
-        cmp(DocId doc, int32_t & weight) const
+        int32_t
+        find(DocId doc, int32_t elemId, int32_t & weight) const
         {
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
-            for (const WeightedIndex &wi : indices) {
-                T v = _toBeSearched._enumStore.getValue(wi.value());
+            for (uint32_t i(elemId); i < indices.size(); i++) {
+                T v = _toBeSearched._enumStore.getValue(indices[i].value());
                 if (this->match(v)) {
-                    weight = wi.weight();
-                    return true;
+                    weight = indices[i].weight();
+                    return i;
                 }
             }
-            return false;
+            return -1;
         }
 
-        bool
-        cmp(DocId doc) const
+        int32_t
+        find(DocId doc, int32_t elemId) const
         {
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
-            for (const WeightedIndex &wi : indices) {
-                T v = _toBeSearched._enumStore.getValue(wi.value());
+            for (uint32_t i(elemId); i < indices.size(); i++) {
+                T v = _toBeSearched._enumStore.getValue(indices[i].value());
                 if (this->match(v)) {
-                    return true;
+                    return i;
                 }
             }
-            return false;
+            return -1;
         }
         Int64Range getAsIntegerTerm() const override;
 
@@ -105,12 +105,12 @@ protected:
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
 
-        bool onCmp(DocId docId, int32_t & weight) const override {
-            return cmp(docId, weight);
+        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
+            return find(docId, elemId, weight);
         }
 
-        bool onCmp(DocId docId) const override {
-            return cmp(docId);
+        int32_t onFind(DocId docId, int32_t elemId) const override {
+            return find(docId, elemId);
         }
 
         bool valid() const override { return this->isValid(); }
@@ -119,34 +119,34 @@ protected:
         ArraySearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched);
         Int64Range getAsIntegerTerm() const override;
 
-        bool
-        cmp(DocId doc, int32_t & weight) const
+        int32_t
+        find(DocId doc, int32_t elemId, int32_t & weight) const
         {
-            uint32_t hitCount = 0;
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
-            for (const WeightedIndex &wi : indices) {
-                T v = _toBeSearched._enumStore.getValue(wi.value());
+            for (uint32_t i(elemId); i < indices.size(); i++) {
+                T v = _toBeSearched._enumStore.getValue(indices[i].value());
                 if (this->match(v)) {
-                    hitCount++;
+                    weight = 1;
+                    return i;
                 }
             }
-            weight = hitCount;
+            weight = 0;
 
-            return hitCount != 0;
+            return -1;
         }
 
         bool
-        cmp(DocId doc) const
+        find(DocId doc, int32_t elemId) const
         {
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
-            for (const WeightedIndex &wi : indices) {
-                T v = _toBeSearched._enumStore.getValue(wi.value());
+            for (uint32_t i(elemId); i < indices.size(); i++) {
+                T v = _toBeSearched._enumStore.getValue(indices[i].value());
                 if (this->match(v)) {
-                    return true;
+                    return i;
                 }
             }
 
-            return false;
+            return -1;
         }
 
         std::unique_ptr<queryeval::SearchIterator>

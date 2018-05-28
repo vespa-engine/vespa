@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,13 +52,13 @@ public class ExampleModel {
         return new SuperModel(applicationInfos);
     }
 
-    static ApplicationBuilder createApplication(String tenant,
-                                                String applicationName) {
+    public static ApplicationBuilder createApplication(String tenant,
+                                                       String applicationName) {
         return new ApplicationBuilder(tenant, applicationName);
     }
 
 
-    static class ApplicationBuilder {
+    public static class ApplicationBuilder {
         private final String tenant;
         private final String applicationName;
         private final List<ClusterBuilder> clusters = new ArrayList<>();
@@ -80,7 +81,7 @@ public class ExampleModel {
                     hosts);
         }
 
-        ApplicationInfo build() {
+        public ApplicationInfo build() {
             List<String> allHosts = clusters.stream()
                     .flatMap(clusterBuilder -> clusterBuilder.hosts.stream())
                     .distinct()

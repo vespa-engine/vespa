@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
@@ -108,7 +109,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             catch (RuntimeException e) {
                 boolean isOldestMajor = i == majorVersions.size() - 1;
                 if (isOldestMajor) {
-                    if (e instanceof NullPointerException || e instanceof NoSuchElementException) {
+                    if (e instanceof NullPointerException || e instanceof NoSuchElementException | e instanceof UncheckedTimeoutException) {
                         log.log(LogLevel.WARNING, "Unexpected error when building model ", e);
                         throw new InternalServerException(applicationId + ": Error loading model", e);
                     } else {

@@ -59,6 +59,11 @@ public final class Change {
     /** Returns an instance representing no change */
     public static Change empty() { return empty; }
 
+    /** Returns a version of this change which replaces or adds this platform change */
+    public Change with(Version platformVersion) {
+        return new Change(Optional.of(platformVersion), application);
+    }
+
     /** Returns a version of this change which replaces or adds this application change */
     public Change with(ApplicationVersion applicationVersion) {
         return new Change(platform, Optional.of(applicationVersion));

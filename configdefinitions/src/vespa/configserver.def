@@ -52,5 +52,6 @@ ztsUrl string default=""
 nodeAdminInContainer bool default=true
 
 # Maintainers
+maintainerIntervalMinutes int default=30
 # TODO: Default set to a high value (1 year) => maintainer will not run, change when maintainer verified out in prod
 tenantsMaintainerIntervalMinutes int default=525600

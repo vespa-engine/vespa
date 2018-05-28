@@ -7,7 +7,6 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.Raw;
 import com.yahoo.io.ByteWriter;
-import com.yahoo.prelude.templates.Context;
 import com.yahoo.text.XML;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class DocumentFieldTemplate extends com.yahoo.prelude.templates.UserTempl
     }
 
     @Override
-    public void error(Context context, Writer writer) throws IOException {
+    public void error(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
         // Error shouldn't be handled by this template, but rather
         // delegated to the searcher
     }
@@ -55,7 +54,7 @@ public class DocumentFieldTemplate extends com.yahoo.prelude.templates.UserTempl
     }
 
     @Override
-    public void header(Context context, Writer writer) throws IOException {
+    public void header(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
         if (wrapXml) {
             // XML wrapping should only be used for default field rendering
             writer.write("<?xml version=\"1.0\" encoding=\"" + encoding + "\"?>\n");
@@ -64,14 +63,14 @@ public class DocumentFieldTemplate extends com.yahoo.prelude.templates.UserTempl
     }
 
     @Override
-    public void footer(Context context, Writer writer) throws IOException {
+    public void footer(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
         if (wrapXml) {
             writer.write("</result>\n");
         }
     }
 
     @Override
-    public void hit(Context context, Writer writer) throws IOException {
+    public void hit(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
         DocumentHit hit = (DocumentHit)context.get("hit");
         Document doc = hit.getDocument();
         // Assume field existence has been checked before we ever get here.
@@ -88,11 +87,11 @@ public class DocumentFieldTemplate extends com.yahoo.prelude.templates.UserTempl
     }
 
     @Override
-    public void hitFooter(Context context, Writer writer) throws IOException {
+    public void hitFooter(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
     }
 
     @Override
-    public void noHits(Context context, Writer writer) throws IOException {
+    public void noHits(com.yahoo.prelude.templates.Context context, Writer writer) throws IOException {
     }
 
 }

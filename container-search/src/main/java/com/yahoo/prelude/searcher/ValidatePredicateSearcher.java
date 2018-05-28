@@ -20,7 +20,7 @@ import java.util.Collection;
 /**
  * Checks that predicate queries don't use values outside the defined upper/lower bounds.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 @After(BooleanSearcher.PREDICATE)
 public class ValidatePredicateSearcher extends Searcher {
@@ -78,4 +78,5 @@ public class ValidatePredicateSearcher extends Searcher {
         @Override
         public void onExit() {}
     }
+
 }

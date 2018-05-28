@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
+#include <vespa/searchlib/attribute/elementiterator.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -193,12 +194,8 @@ private:
 
 
     // test search iterator functionality
-    void testStrictSearchIterator(SearchContext & threeHits,
-                                  SearchContext & noHits,
-                                  const IteratorTester & typeTester);
-    void testNonStrictSearchIterator(SearchContext & threeHits,
-                                     SearchContext & noHits,
-                                     const IteratorTester & typeTester);
+    void testStrictSearchIterator(SearchContext & threeHits, SearchContext & noHits, const IteratorTester & typeTester);
+    void testNonStrictSearchIterator(SearchContext & threeHits, SearchContext & noHits, const IteratorTester & typeTester);
     void fillForSearchIteratorTest(IntegerAttribute * ia);
     void fillForSemiNibbleSearchIteratorTest(IntegerAttribute * ia);
     void testSearchIterator();
@@ -206,17 +203,20 @@ private:
 
     // test search iterator unpacking
     void fillForSearchIteratorUnpackingTest(IntegerAttribute * ia, bool extra);
-    void testSearchIteratorUnpacking(const AttributePtr & ptr,
-                                     SearchContext & sc,
-                                     bool extra,
-                                     bool strict);
+    void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc, bool extra, bool strict) {
+        sc.fetchPostings(strict);
+        for (bool withElementId : {false, true}) {
+            testSearchIteratorUnpacking(ptr, sc, extra, strict, withElementId);
+        }
+    }
+    void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc,
+                                     bool extra, bool strict, bool withElementId);
     void testSearchIteratorUnpacking();
 
 
     // test range search
     template <typename VectorType>
-    void performRangeSearch(const VectorType & vec, const vespalib::string & term,
-                            const DocSet & expected);
+    void performRangeSearch(const VectorType & vec, const vespalib::string & term, const DocSet & expected);
     template <typename VectorType, typename ValueType>
     void testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, std::vector<ValueType> values);
     void testRangeSearch();
@@ -224,8 +224,7 @@ private:
 
 
     // test case insensitive search
-    void performCaseInsensitiveSearch(const StringAttribute & vec, const vespalib::string & term,
-                                      const DocSet & expected);
+    void performCaseInsensitiveSearch(const StringAttribute & vec, const vespalib::string & term, const DocSet & expected);
     void testCaseInsensitiveSearch(const AttributePtr & ptr);
     void testCaseInsensitiveSearch();
     void testRegexSearch(const AttributePtr & ptr);
@@ -252,25 +251,19 @@ private:
     void requireThatSearchIsWorkingAfterLoadAndClearDoc();
 
     template <typename VectorType, typename ValueType>
-    void requireThatSearchIsWorkingAfterUpdates(const vespalib::string & name,
-                                                const Config & cfg,
-                                                ValueType value1,
-                                                ValueType value2);
+    void requireThatSearchIsWorkingAfterUpdates(const vespalib::string & name, const Config & cfg,
+                                                ValueType value1, ValueType value2);
     void requireThatSearchIsWorkingAfterUpdates();
 
     void requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded();
 
     template <typename VectorType, typename ValueType>
-    void requireThatInvalidSearchTermGivesZeroHits(const vespalib::string & name,
-                                                   const Config & cfg,
-                                                   ValueType value);
+    void requireThatInvalidSearchTermGivesZeroHits(const vespalib::string & name, const Config & cfg, ValueType value);
     void requireThatInvalidSearchTermGivesZeroHits();
 
     void requireThatFlagAttributeHandlesTheByteRange();
 
-    void requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name,
-                                                       const Config &cfg,
-                                                       int64_t maxValue);
+    void requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name, const Config &cfg, int64_t maxValue);
     void requireThatOutOfBoundsSearchTermGivesZeroHits();
 
     // init maps with config objects
@@ -620,21 +613,30 @@ void SearchContextTest::testSearch(const ConfigMap & cfgs) {
 template<typename T, typename A>
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name, const Config & cfg);
+    Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name,
+             const Config & cfg, bool withElementId);
     ~Verifier();
-    SearchIterator::UP create(bool strict) const override {
-        return _sc->createIterator(&_dummy, strict);
+    SearchIterator::UP
+    create(bool strict) const override {
+        auto search = _sc->createIterator(&_dummy, strict);
+        if (_withElementId) {
+            search = std::make_unique<attribute::ElementIterator>(std::move(search), *_sc, _dummy);
+        }
+        return search;
     }
 private:
     mutable TermFieldMatchData _dummy;
-    AttributePtr _attribute;
+    const bool       _withElementId;
+    AttributePtr     _attribute;
     SearchContextPtr _sc;
 };
 
 template<typename T, typename A>
-Verifier<T, A>::Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name, const Config & cfg)
-    :_attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
-     _sc()
+Verifier<T, A>::Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name,
+                         const Config & cfg, bool withElementId)
+    : _withElementId(withElementId),
+      _attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
+      _sc()
 {
     SearchContextTest::addDocs(*_attribute, getDocIdLimit());
     for (uint32_t doc : getExpectedDocIds()) {
@@ -648,15 +650,18 @@ Verifier<T, A>::Verifier(T key, const vespalib::string & keyAsString, const vesp
 }
 
 template<typename T, typename A>
-Verifier<T, A>::~Verifier() {}
+Verifier<T, A>::~Verifier() = default;
 
 template<typename T, typename A>
 void SearchContextTest::testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs) {
 
-    for (const auto & cfg : cfgs) {
-        Verifier<T, A> verifier(key, keyAsString, cfg.first, cfg.second);
-        verifier.verify();
+    for (bool withElementId : {false, true} ) {
+        for (const auto & cfg : cfgs) {
+            Verifier<T, A> verifier(key, keyAsString, cfg.first, cfg.second, withElementId);
+            verifier.verify();
+        }
     }
+
 }
 
 void SearchContextTest::testSearchIteratorConformance() {
@@ -935,13 +940,10 @@ SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute * ia,
 }
 
 void
-SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr,
-                                               SearchContext & sc,
-                                               bool extra,
-                                               bool strict)
+SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, SearchContext & sc,
+                                               bool extra, bool strict, bool withElementId)
 {
-    LOG(info,
-        "testSearchIteratorUnpacking: vector '%s'", attr->getName().c_str());
+    LOG(info, "testSearchIteratorUnpacking: vector '%s'", attr->getName().c_str());
 
     TermFieldMatchData md;
     md.reset(100);
@@ -950,8 +952,10 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr,
     pos.setElementWeight(100);
     md.appendPosition(pos);
 
-    sc.fetchPostings(strict);
     SearchBasePtr sb = sc.createIterator(&md, strict);
+    if (withElementId) {
+        sb = std::make_unique<attribute::ElementIterator>(std::move(sb), sc, md);
+    }
     sb->initFullRange();
 
     std::vector<int32_t> weights(3);
@@ -980,12 +984,30 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr,
     sb->unpack(2);
     EXPECT_EQUAL(sb->getDocId(), 2u);
     EXPECT_EQUAL(md.getDocId(), 2u);
-    EXPECT_EQUAL(md.getWeight(), weights[1]);
+    if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
+        EXPECT_EQUAL(2, md.end()- md.begin());
+        EXPECT_EQUAL(md.begin()[0].getElementId(), 0u);
+        EXPECT_EQUAL(md.begin()[0].getElementWeight(), 1);
+        EXPECT_EQUAL(md.begin()[1].getElementId(), 1u);
+        EXPECT_EQUAL(md.begin()[1].getElementWeight(), 1);
+    } else {
+        EXPECT_EQUAL(md.getWeight(), weights[1]);
+    }
 
     sb->unpack(3);
     EXPECT_EQUAL(sb->getDocId(), 3u);
     EXPECT_EQUAL(md.getDocId(), 3u);
-    EXPECT_EQUAL(md.getWeight(), weights[2]);
+    if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
+        EXPECT_EQUAL(3, md.end()- md.begin());
+        EXPECT_EQUAL(md.begin()[0].getElementId(), 0u);
+        EXPECT_EQUAL(md.begin()[0].getElementWeight(), 1);
+        EXPECT_EQUAL(md.begin()[1].getElementId(), 1u);
+        EXPECT_EQUAL(md.begin()[1].getElementWeight(), 1);
+        EXPECT_EQUAL(md.begin()[2].getElementId(), 2u);
+        EXPECT_EQUAL(md.begin()[2].getElementWeight(), 1);
+    } else {
+        EXPECT_EQUAL(md.getWeight(), weights[2]);
+    }
     if (extra) {
         sb->unpack(4);
         EXPECT_EQUAL(sb->getDocId(), 4u);
@@ -1894,7 +1916,7 @@ SearchContextTest::SearchContextTest() :
     initStringConfig();
 }
 
-SearchContextTest::~SearchContextTest() {}
+SearchContextTest::~SearchContextTest() = default;
 
 int
 SearchContextTest::Main()

@@ -5,8 +5,7 @@
 #include "searchiterator.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A term iterator wrapper used to hide detailed match
@@ -22,16 +21,14 @@ private:
     SearchIterator::UP       _search;
     fef::TermFieldMatchData *_tfmdp;
 
-    BooleanMatchIteratorWrapper(const BooleanMatchIteratorWrapper &);
-    BooleanMatchIteratorWrapper &operator=(const BooleanMatchIteratorWrapper &);
-
 protected:
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
     Trinary is_strict() const override { return _search->is_strict(); }
     void initRange(uint32_t beginid, uint32_t endid) override {
+        SearchIterator::initRange(beginid, endid);
         _search->initRange(beginid, endid);
-        SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
+        setDocId(_search->getDocId());
     }
 
 public:
@@ -49,12 +46,9 @@ public:
      * @param search internal search, must be a term iterator
      * @param match term match data used by the internal iterator
      **/
-    BooleanMatchIteratorWrapper(SearchIterator::UP search,
-                                const fef::TermFieldMatchDataArray &matchData);
+    BooleanMatchIteratorWrapper(SearchIterator::UP search, const fef::TermFieldMatchDataArray &matchData);
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

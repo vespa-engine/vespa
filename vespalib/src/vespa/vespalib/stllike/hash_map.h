@@ -36,6 +36,7 @@ public:
     size_t size()                      const { return _ht.size(); }
     bool empty()                       const { return _ht.empty(); }
     insert_result insert(const value_type & value) { return _ht.insert(value); }
+    insert_result insert(value_type &&value) { return _ht.insert(std::move(value)); }
     template <typename InputIt>
     void insert(InputIt first, InputIt last);
 

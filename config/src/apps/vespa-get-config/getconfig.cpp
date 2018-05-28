@@ -164,7 +164,7 @@ GetConfig::Main()
             break;
         case 'h':
             retval = 0;
-            //@fallthrough@
+            [[fallthrough]];
         case '?':
         default:
             usage();

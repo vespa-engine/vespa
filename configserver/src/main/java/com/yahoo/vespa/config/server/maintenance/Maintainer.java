@@ -20,7 +20,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
     protected static final Logger log = Logger.getLogger(Maintainer.class.getName());
     private static final Path root = Path.fromString("/configserver/v1/");
-    private static final com.yahoo.path.Path lockRoot = root.append("locks");
+    private static final Path lockRoot = root.append("locks");
 
     private final Duration maintenanceInterval;
     private final ScheduledExecutorService service;
@@ -36,18 +36,21 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     }
 
     @Override
-    @SuppressWarnings("try")
+    @SuppressWarnings({"try", "unused"})
     public void run() {
-        try {
-            Path path = lockRoot.append(name());
-            try (Lock lock = new Lock(path.toString(), curator)) {
-                maintain();
-            }
+        try (Lock lock = lock(lockRoot.append(name()))) {
+            maintain();
         } catch (UncheckedTimeoutException e) {
             // another config server instance is running this job at the moment; ok
         } catch (Throwable t) {
             log.log(Level.WARNING, this + " failed. Will retry in " + maintenanceInterval.toMinutes() + " minutes", t);
         }
+    }
+
+    private Lock lock(Path path) {
+        Lock lock = new Lock(path.getAbsolute(), curator);
+        lock.acquire(Duration.ofSeconds(1));
+        return lock;
     }
 
     @Override

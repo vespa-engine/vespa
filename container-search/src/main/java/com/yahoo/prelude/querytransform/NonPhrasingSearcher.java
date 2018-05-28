@@ -5,6 +5,8 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.searchchain.Execution;
@@ -12,7 +14,7 @@ import com.yahoo.search.searchchain.Execution;
 import java.util.List;
 
 /**
- * <p>Detects and removes certain phrases from the query.</p>
+ * Detects and removes certain phrases from the query.
  *
  * @author bratseth
  */
@@ -52,9 +54,9 @@ public class NonPhrasingSearcher extends Searcher {
     }
 
     @Override
-    public com.yahoo.search.Result search(com.yahoo.search.Query query, Execution execution) {
-        List<PhraseMatcher.Phrase> phrases=phraseMatcher.matchPhrases(query.getModel().getQueryTree().getRoot());
-        if (phrases!=null && !query.properties().getBoolean(suggestonly, false)) {
+    public Result search(Query query, Execution execution) {
+        List<PhraseMatcher.Phrase> phrases = phraseMatcher.matchPhrases(query.getModel().getQueryTree().getRoot());
+        if (phrases != null && !query.properties().getBoolean(suggestonly, false)) {
             remove(phrases);
             query.trace("Removing stop words",true,2);
         }
@@ -64,9 +66,9 @@ public class NonPhrasingSearcher extends Searcher {
     private void remove(List<PhraseMatcher.Phrase> phrases) {
         // Removing the leaf replace phrases first to preserve
         // the start index of each replace phrase until removing
-        for (int i=phrases.size()-1; i>=0; i-- ) {
-            PhraseMatcher.Phrase phrase= phrases.get(i);
-            if (phrase.getLength()<phrase.getOwner().getItemCount()) // Don't removeField all
+        for (int i = phrases.size()-1; i >= 0; i-- ) {
+            PhraseMatcher.Phrase phrase = phrases.get(i);
+            if (phrase.getLength() < phrase.getOwner().getItemCount()) // Don't removeField all
                 phrase.remove();
         }
     }

@@ -17,11 +17,9 @@ import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.MessagePropertyProcessor;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
-import com.yahoo.prelude.templates.SearchRendererAdaptor;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
@@ -740,7 +738,7 @@ public class GetSearcherTestCase {
         assertEquals("application/octet-stream", result.getTemplating().getTemplates().getMimeType());
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        SearchRendererAdaptor.callRender(stream, result);
+        com.yahoo.prelude.templates.SearchRendererAdaptor.callRender(stream, result);
         stream.flush();
 
         byte[] resultBytes = stream.toByteArray();
@@ -769,7 +767,7 @@ public class GetSearcherTestCase {
         assertEquals("text/fancy", result.getTemplating().getTemplates().getMimeType());
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        SearchRendererAdaptor.callRender(stream, result);
+        com.yahoo.prelude.templates.SearchRendererAdaptor.callRender(stream, result);
         stream.flush();
 
         byte[] resultBytes = stream.toByteArray();

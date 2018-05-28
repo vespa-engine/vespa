@@ -11,19 +11,20 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * Save the query in the incoming state to a meta hit in the result.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
+ * @deprecated do not use
  */
-
+@Deprecated // TODO: Remove on Vespa 7
 public class QuerySnapshotSearcher extends Searcher {
 
     public Result search(Query query, Execution execution) {
         Query q = query.clone();
         Result r = execution.search(query);
-        Hit h = new Hit("meta:querysnapshot", new Relevance(
-                Double.POSITIVE_INFINITY));
+        Hit h = new Hit("meta:querysnapshot", new Relevance(Double.POSITIVE_INFINITY));
         h.setMeta(true);
         h.setField("query", q);
         r.hits().add(h);
         return r;
     }
+
 }

@@ -30,6 +30,7 @@ import static com.yahoo.search.yql.YqlParser.PREFIX;
 import static com.yahoo.search.yql.YqlParser.RANGE;
 import static com.yahoo.search.yql.YqlParser.RANK;
 import static com.yahoo.search.yql.YqlParser.RANKED;
+import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
 import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
 import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
 import static com.yahoo.search.yql.YqlParser.STEM;
@@ -79,6 +80,7 @@ import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
@@ -106,8 +108,7 @@ public class VespaSerializer {
     // TODO refactor, too much copy/paste
 
     private static class AndSegmentSerializer extends Serializer {
-        private static void serializeWords(StringBuilder destination,
-                AndSegmentItem segment) {
+        private static void serializeWords(StringBuilder destination, AndSegmentItem segment) {
             for (int i = 0; i < segment.getItemCount(); ++i) {
                 if (i > 0) {
                     destination.append(", ");
@@ -115,28 +116,23 @@ public class VespaSerializer {
                 Item current = segment.getItem(i);
                 if (current instanceof WordItem) {
                     destination.append('"');
-                    escape(((WordItem) current).getIndexedString(), destination)
-                            .append('"');
+                    escape(((WordItem) current).getIndexedString(), destination).append('"');
                 } else {
-                    throw new IllegalArgumentException(
-                            "Serializing of "
-                                    + current.getClass().getSimpleName()
+                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName()
                                     + " in segment AND expressions not implemented, please report this as a bug.");
                 }
             }
         }
 
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
             return serialize(destination, item, true);
         }
 
-        static boolean serialize(StringBuilder destination, Item item,
-                boolean includeField) {
+        static boolean serialize(StringBuilder destination, Item item, boolean includeField) {
             AndSegmentItem phrase = (AndSegmentItem) item;
             Substring origin = phrase.getOrigin();
             String image;
@@ -154,13 +150,11 @@ public class VespaSerializer {
             }
 
             if (includeField) {
-                destination.append(normalizeIndexName(phrase.getIndexName()))
-                        .append(" contains ");
+                destination.append(normalizeIndexName(phrase.getIndexName())).append(" contains ");
             }
             destination.append("([{");
             serializeOrigin(destination, image, offset, length);
-            destination.append(", \"").append(AND_SEGMENTING)
-                    .append("\": true");
+            destination.append(", \"").append(AND_SEGMENTING).append("\": true");
             destination.append("}]");
             destination.append(PHRASE).append('(');
             serializeWords(destination, phrase);
@@ -189,13 +183,11 @@ public class VespaSerializer {
 
     private static class DotProductSerializer extends Serializer {
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
-            serializeWeightedSetContents(destination, DOT_PRODUCT,
-                    (WeightedSetItem) item);
+            serializeWeightedSetContents(destination, DOT_PRODUCT, (WeightedSetItem) item);
             return false;
         }
 
@@ -203,8 +195,7 @@ public class VespaSerializer {
 
     private static class EquivSerializer extends Serializer {
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
@@ -240,8 +231,7 @@ public class VespaSerializer {
 
     private static class NearSerializer extends Serializer {
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
@@ -304,8 +294,7 @@ public class VespaSerializer {
     private static class NullSerializer extends Serializer {
 
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
@@ -319,31 +308,22 @@ public class VespaSerializer {
     private static class NumberSerializer extends Serializer {
 
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
             IntItem intItem = (IntItem) item;
-            if (intItem.getFromLimit().number()
-                    .equals(intItem.getToLimit().number())) {
-                destination.append(normalizeIndexName(intItem.getIndexName()))
-                        .append(" = ");
-                annotatedNumberImage(intItem, intItem.getFromLimit().number()
-                        .toString(), destination);
+            if (intItem.getFromLimit().number().equals(intItem.getToLimit().number())) {
+                destination.append(normalizeIndexName(intItem.getIndexName())).append(" = ");
+                annotatedNumberImage(intItem, intItem.getFromLimit().number().toString(), destination);
             } else if (intItem.getFromLimit().isInfinite()) {
                 destination.append(normalizeIndexName(intItem.getIndexName()));
-                destination.append(intItem.getToLimit().isInclusive() ? " <= "
-                        : " < ");
-                annotatedNumberImage(intItem, intItem.getToLimit().number()
-                        .toString(), destination);
+                destination.append(intItem.getToLimit().isInclusive() ? " <= " : " < ");
+                annotatedNumberImage(intItem, intItem.getToLimit().number().toString(), destination);
             } else if (intItem.getToLimit().isInfinite()) {
                 destination.append(normalizeIndexName(intItem.getIndexName()));
-                destination
-                        .append(intItem.getFromLimit().isInclusive() ? " >= "
-                                : " > ");
-                annotatedNumberImage(intItem, intItem.getFromLimit().number()
-                        .toString(), destination);
+                destination.append(intItem.getFromLimit().isInclusive() ? " >= " : " > ");
+                annotatedNumberImage(intItem, intItem.getFromLimit().number().toString(), destination);
             } else {
                 serializeAsRange(destination, intItem);
             }
@@ -358,21 +338,17 @@ public class VespaSerializer {
             int initLen;
 
             if (leftOpen && rightOpen) {
-                boundsAnnotation = "\"" + BOUNDS + "\": " + "\"" + BOUNDS_OPEN
-                        + "\"";
+                boundsAnnotation = "\"" + BOUNDS + "\": " + "\"" + BOUNDS_OPEN + "\"";
             } else if (leftOpen) {
-                boundsAnnotation = "\"" + BOUNDS + "\": " + "\""
-                        + BOUNDS_LEFT_OPEN + "\"";
+                boundsAnnotation = "\"" + BOUNDS + "\": " + "\"" + BOUNDS_LEFT_OPEN + "\"";
             } else if (rightOpen) {
-                boundsAnnotation = "\"" + BOUNDS + "\": " + "\""
-                        + BOUNDS_RIGHT_OPEN + "\"";
+                boundsAnnotation = "\"" + BOUNDS + "\": " + "\"" + BOUNDS_RIGHT_OPEN + "\"";
             }
             if (annotations.length() > 0 || boundsAnnotation.length() > 0) {
                 destination.append("[{");
             }
             initLen = destination.length();
             if (annotations.length() > 0) {
-
                 destination.append(annotations);
             }
             comma(destination, initLen);
@@ -389,8 +365,7 @@ public class VespaSerializer {
                     .append(")");
         }
 
-        private void annotatedNumberImage(IntItem item, String rawNumber,
-                StringBuilder image) {
+        private void annotatedNumberImage(IntItem item, String rawNumber, StringBuilder image) {
             String annotations = leafAnnotations(item);
 
             if (annotations.length() > 0) {
@@ -430,16 +405,14 @@ public class VespaSerializer {
     private static class RegExpSerializer extends Serializer {
 
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
             RegExpItem regexp = (RegExpItem) item;
 
             String annotations = leafAnnotations(regexp);
-            destination.append(normalizeIndexName(regexp.getIndexName())).append(
-                    " matches ");
+            destination.append(normalizeIndexName(regexp.getIndexName())).append(" matches ");
             annotatedTerm(destination, regexp, annotations);
             return false;
         }
@@ -498,8 +471,7 @@ public class VespaSerializer {
 
     private static class PhraseSegmentSerializer extends Serializer {
 
-        private static void serializeWords(StringBuilder destination,
-                PhraseSegmentItem segment) {
+        private static void serializeWords(StringBuilder destination, PhraseSegmentItem segment) {
             for (int i = 0; i < segment.getItemCount(); ++i) {
                 if (i > 0) {
                     destination.append(", ");
@@ -507,20 +479,16 @@ public class VespaSerializer {
                 Item current = segment.getItem(i);
                 if (current instanceof WordItem) {
                     destination.append('"');
-                    escape(((WordItem) current).getIndexedString(), destination)
-                            .append('"');
+                    escape(((WordItem) current).getIndexedString(), destination).append('"');
                 } else {
-                    throw new IllegalArgumentException(
-                            "Serializing of "
-                                    + current.getClass().getSimpleName()
-                                    + " in phrases not implemented, please report this as a bug.");
+                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName()
+                                                       + " in phrases not implemented, please report this as a bug.");
                 }
             }
         }
 
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
@@ -535,8 +503,7 @@ public class VespaSerializer {
             int length;
 
             if (includeField) {
-                destination.append(normalizeIndexName(phrase.getIndexName()))
-                        .append(" contains ");
+                destination.append(normalizeIndexName(phrase.getIndexName())).append(" contains ");
             }
             if (origin == null) {
                 image = phrase.getRawWord();
@@ -555,8 +522,7 @@ public class VespaSerializer {
                 destination.append(", ").append(annotations);
             }
             if (phrase.getSegmentingRule() == SegmentingRule.BOOLEAN_AND) {
-                destination.append(", ").append('"').append(AND_SEGMENTING)
-                        .append("\": true");
+                destination.append(", ").append('"').append(AND_SEGMENTING).append("\": true");
             }
             destination.append("}]");
             destination.append(PHRASE).append('(');
@@ -568,16 +534,14 @@ public class VespaSerializer {
 
     private static class PhraseSerializer extends Serializer {
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
             return serialize(destination, item, true);
         }
 
-        static boolean serialize(StringBuilder destination, Item item,
-                boolean includeField) {
+        static boolean serialize(StringBuilder destination, Item item, boolean includeField) {
 
             PhraseItem phrase = (PhraseItem) item;
             String annotations = leafAnnotations(phrase);
@@ -598,11 +562,9 @@ public class VespaSerializer {
                 }
                 Item current = phrase.getItem(i);
                 if (current instanceof WordItem) {
-                    WordSerializer.serializeWordWithoutIndex(destination,
-                            current);
+                    WordSerializer.serializeWordWithoutIndex(destination, current);
                 } else if (current instanceof PhraseSegmentItem) {
-                    PhraseSegmentSerializer.serialize(destination, current,
-                            false);
+                    PhraseSegmentSerializer.serialize(destination, current, false);
                 } else if (current instanceof WordAlternativesItem) {
                     WordAlternativesSerializer.serialize(destination, (WordAlternativesItem) current, false);
                 } else {
@@ -621,16 +583,60 @@ public class VespaSerializer {
 
     }
 
+    private static class SameElementSerializer extends Serializer {
+        @Override
+        void onExit(StringBuilder destination, Item item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, Item item) {
+            return serialize(destination, item, true);
+        }
+
+        static boolean serialize(StringBuilder destination, Item item, boolean includeField) {
+
+            SameElementItem phrase = (SameElementItem) item;
+            String annotations = leafAnnotations(phrase);
+
+            if (includeField) {
+                destination.append(normalizeIndexName(phrase.getIndexName())).append(" contains ");
+
+            }
+            if (annotations.length() > 0) {
+                destination.append("([{").append(annotations).append("}]");
+            }
+
+            destination.append(SAME_ELEMENT).append('(');
+            for (int i = 0; i < phrase.getItemCount(); ++i) {
+                if (i > 0) {
+                    destination.append(", ");
+                }
+                Item current = phrase.getItem(i);
+                if (current instanceof WordItem) {
+                    new WordSerializer().serialize(destination, current);
+
+                } else {
+                    throw new IllegalArgumentException(
+                            "Serializing of " + current.getClass().getSimpleName()
+                                    + " in same_element is not implemented, please report this as a bug.");
+                }
+            }
+            destination.append(')');
+            if (annotations.length() > 0) {
+                destination.append(')');
+            }
+            return false;
+        }
+
+    }
+
     private static class PredicateQuerySerializer extends Serializer {
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
             PredicateQueryItem pItem = (PredicateQueryItem) item;
-            destination.append("predicate(").append(pItem.getIndexName())
-                    .append(',');
+            destination.append("predicate(").append(pItem.getIndexName()).append(',');
             appendFeatures(destination, pItem.getFeatures());
             destination.append(',');
             appendFeatures(destination, pItem.getRangeFeatures());
@@ -638,8 +644,7 @@ public class VespaSerializer {
             return false;
         }
 
-        private void appendFeatures(StringBuilder destination,
-                Collection<? extends PredicateQueryItem.EntryBase> features) {
+        private void appendFeatures(StringBuilder destination, Collection<? extends PredicateQueryItem.EntryBase> features) {
             if (features.isEmpty()) {
                 destination.append('0'); // Workaround for empty maps.
                 return;
@@ -651,8 +656,7 @@ public class VespaSerializer {
                     destination.append(',');
                 }
                 if (entry.getSubQueryBitmap() != PredicateQueryItem.ALL_SUB_QUERIES) {
-                    destination.append("\"0x").append(
-                            Long.toHexString(entry.getSubQueryBitmap()));
+                    destination.append("\"0x").append(Long.toHexString(entry.getSubQueryBitmap()));
                     destination.append("\":{");
                     appendKeyValue(destination, entry);
                     destination.append('}');
@@ -664,19 +668,16 @@ public class VespaSerializer {
             destination.append('}');
         }
 
-        private void appendKeyValue(StringBuilder destination,
-                PredicateQueryItem.EntryBase entry) {
+        private void appendKeyValue(StringBuilder destination, PredicateQueryItem.EntryBase entry) {
             destination.append('"');
             escape(entry.getKey(), destination);
             destination.append("\":");
             if (entry instanceof PredicateQueryItem.Entry) {
                 destination.append('"');
-                escape(((PredicateQueryItem.Entry) entry).getValue(),
-                        destination);
+                escape(((PredicateQueryItem.Entry) entry).getValue(), destination);
                 destination.append('"');
             } else {
-                destination.append(((PredicateQueryItem.RangeEntry) entry)
-                        .getValue());
+                destination.append(((PredicateQueryItem.RangeEntry) entry).getValue());
                 destination.append('L');
             }
         }
@@ -685,8 +686,7 @@ public class VespaSerializer {
 
     private static class RangeSerializer extends Serializer {
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
@@ -737,8 +737,7 @@ public class VespaSerializer {
     private static class WordAlternativesSerializer extends Serializer {
 
         @Override
-        void onExit(StringBuilder destination, Item item) {
-        }
+        void onExit(StringBuilder destination, Item item) { }
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
@@ -800,10 +799,8 @@ public class VespaSerializer {
         abstract void onExit(StringBuilder destination, Item item);
 
         String separator(Deque<SerializerWrapper> state) {
-            throw new UnsupportedOperationException(
-                    "Having several items for this query operator serializer, "
-                            + this.getClass().getSimpleName()
-                            + ", not yet implemented.");
+            throw new UnsupportedOperationException("Having several items for this query operator serializer, "
+                    + this.getClass().getSimpleName() + ", not yet implemented.");
         }
 
         abstract boolean serialize(StringBuilder destination, Item item);
@@ -822,8 +819,7 @@ public class VespaSerializer {
 
     }
 
-    private static final class TokenComparator implements
-            Comparator<Entry<Object, Integer>> {
+    private static final class TokenComparator implements Comparator<Entry<Object, Integer>> {
 
         @SuppressWarnings({ "rawtypes", "unchecked" })
         @Override
@@ -858,8 +854,7 @@ public class VespaSerializer {
             Serializer doIt = dispatch.get(item.getClass());
 
             if (doIt == null) {
-                throw new IllegalArgumentException(item.getClass()
-                        + " not supported for YQL+ marshalling.");
+                throw new IllegalArgumentException(item.getClass() + " not supported for YQL+ marshalling.");
             }
 
             if (state.peekFirst() != null && state.peekFirst().subItems > 0) {
@@ -878,9 +873,7 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
-            serializeWeightedSetContents(destination, WAND,
-                    (WeightedSetItem) item,
-                    specificAnnotations((WandItem) item));
+            serializeWeightedSetContents(destination, WAND, (WeightedSetItem) item, specificAnnotations((WandItem) item));
             return false;
         }
 
@@ -890,18 +883,15 @@ public class VespaSerializer {
             double scoreThreshold = w.getScoreThreshold();
             double thresholdBoostFactor = w.getThresholdBoostFactor();
             if (targetNumHits != 10) {
-                annotations.append('"').append(TARGET_NUM_HITS).append("\": ")
-                        .append(targetNumHits);
+                annotations.append('"').append(TARGET_NUM_HITS).append("\": ").append(targetNumHits);
             }
             if (scoreThreshold != 0) {
                 comma(annotations, 0);
-                annotations.append('"').append(SCORE_THRESHOLD).append("\": ")
-                        .append(scoreThreshold);
+                annotations.append('"').append(SCORE_THRESHOLD).append("\": ").append(scoreThreshold);
             }
             if (thresholdBoostFactor != 1) {
                 comma(annotations, 0);
-                annotations.append('"').append(THRESHOLD_BOOST_FACTOR)
-                        .append("\": ").append(thresholdBoostFactor);
+                annotations.append('"').append(THRESHOLD_BOOST_FACTOR).append("\": ").append(thresholdBoostFactor);
             }
             return annotations.toString();
         }
@@ -963,8 +953,7 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, Item item) {
-            serializeWeightedSetContents(destination, WEIGHTED_SET,
-                    (WeightedSetItem) item);
+            serializeWeightedSetContents(destination, WEIGHTED_SET, (WeightedSetItem) item);
             return false;
         }
 
@@ -981,14 +970,12 @@ public class VespaSerializer {
             WordItem w = (WordItem) item;
             StringBuilder wordAnnotations = getAllAnnotations(w);
 
-            destination.append(normalizeIndexName(w.getIndexName())).append(
-                    " contains ");
+            destination.append(normalizeIndexName(w.getIndexName())).append(" contains ");
             VespaSerializer.annotatedTerm(destination, w, wordAnnotations.toString());
             return false;
         }
 
-        static void serializeWordWithoutIndex(StringBuilder destination,
-                Item item) {
+        static void serializeWordWithoutIndex(StringBuilder destination, Item item) {
             WordItem w = (WordItem) item;
             StringBuilder wordAnnotations = getAllAnnotations(w);
 
@@ -996,8 +983,7 @@ public class VespaSerializer {
         }
 
         private static StringBuilder getAllAnnotations(WordItem w) {
-            StringBuilder wordAnnotations = new StringBuilder(
-                    WordSerializer.wordAnnotations(w));
+            StringBuilder wordAnnotations = new StringBuilder(WordSerializer.wordAnnotations(w));
             String leafAnnotations = leafAnnotations(w);
 
             if (leafAnnotations.length() > 0) {
@@ -1034,15 +1020,12 @@ public class VespaSerializer {
                 length = origin.end - origin.start;
             }
 
-            if (!image.substring(offset, offset + length).equals(
-                    item.getIndexedString())) {
-                VespaSerializer.serializeOrigin(annotation, image, offset,
-                        length);
+            if (!image.substring(offset, offset + length).equals(item.getIndexedString())) {
+                VespaSerializer.serializeOrigin(annotation, image, offset, length);
             }
             if (usePositionData != true) {
                 VespaSerializer.comma(annotation, initLen);
-                annotation.append('"').append(USE_POSITION_DATA)
-                        .append("\": false");
+                annotation.append('"').append(USE_POSITION_DATA).append("\": false");
             }
             if (stemmed == true) {
                 VespaSerializer.comma(annotation, initLen);
@@ -1050,8 +1033,7 @@ public class VespaSerializer {
             }
             if (lowercased == true) {
                 VespaSerializer.comma(annotation, initLen);
-                annotation.append('"').append(NORMALIZE_CASE)
-                        .append("\": false");
+                annotation.append('"').append(NORMALIZE_CASE).append("\": false");
             }
             if (accentDrop == false) {
                 VespaSerializer.comma(annotation, initLen);
@@ -1059,13 +1041,11 @@ public class VespaSerializer {
             }
             if (andSegmenting == SegmentingRule.BOOLEAN_AND) {
                 VespaSerializer.comma(annotation, initLen);
-                annotation.append('"').append(AND_SEGMENTING)
-                        .append("\": true");
+                annotation.append('"').append(AND_SEGMENTING).append("\": true");
             }
             if (!isFromQuery) {
                 VespaSerializer.comma(annotation, initLen);
-                annotation.append('"').append(IMPLICIT_TRANSFORMS)
-                        .append("\": false");
+                annotation.append('"').append(IMPLICIT_TRANSFORMS).append("\": false");
             }
             if (prefix) {
                 VespaSerializer.comma(annotation, initLen);
@@ -1106,9 +1086,9 @@ public class VespaSerializer {
         dispatchBuilder.put(ONearItem.class, new ONearSerializer());
         dispatchBuilder.put(OrItem.class, new OrSerializer());
         dispatchBuilder.put(PhraseItem.class, new PhraseSerializer());
+        dispatchBuilder.put(SameElementItem.class, new SameElementSerializer());
         dispatchBuilder.put(PhraseSegmentItem.class, new PhraseSegmentSerializer());
-        dispatchBuilder.put(PredicateQueryItem.class,
-                new PredicateQuerySerializer());
+        dispatchBuilder.put(PredicateQueryItem.class, new PredicateQuerySerializer());
         dispatchBuilder.put(PrefixItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(WordAlternativesItem.class, new WordAlternativesSerializer());
         dispatchBuilder.put(RangeItem.class, new RangeSerializer());
@@ -1225,24 +1205,20 @@ public class VespaSerializer {
         return out.toString();
     }
 
-    private static void serializeWeightedSetContents(StringBuilder destination,
-            String opName, WeightedSetItem weightedSet) {
+    private static void serializeWeightedSetContents(StringBuilder destination, String opName,
+                                                     WeightedSetItem weightedSet) {
         serializeWeightedSetContents(destination, opName, weightedSet, "");
     }
 
-    private static void serializeWeightedSetContents(
-            StringBuilder destination,
-            String opName, WeightedSetItem weightedSet,
-            String optionalAnnotations) {
+    private static void serializeWeightedSetContents(StringBuilder destination, String opName,
+                                                     WeightedSetItem weightedSet, String optionalAnnotations) {
         addAnnotations(destination, weightedSet, optionalAnnotations);
         destination.append(opName).append('(')
                 .append(normalizeIndexName(weightedSet.getIndexName()))
                 .append(", {");
         int initLen = destination.length();
-        List<Entry<Object, Integer>> tokens = new ArrayList<>(
-                weightedSet.getNumTokens());
-        for (Iterator<Entry<Object, Integer>> i = weightedSet.getTokens(); i
-                .hasNext();) {
+        List<Entry<Object, Integer>> tokens = new ArrayList<>(weightedSet.getNumTokens());
+        for (Iterator<Entry<Object, Integer>> i = weightedSet.getTokens(); i.hasNext();) {
             tokens.add(i.next());
         }
         Collections.sort(tokens, tokenComparator);
@@ -1255,9 +1231,8 @@ public class VespaSerializer {
         destination.append("})");
     }
 
-    private static void addAnnotations(
-            StringBuilder destination,
-            WeightedSetItem weightedSet, String optionalAnnotations) {
+    private static void addAnnotations(StringBuilder destination, WeightedSetItem weightedSet,
+                                       String optionalAnnotations) {
         int preAnnotationValueLen;
         int incomingLen = destination.length();
         String annotations = leafAnnotations(weightedSet);
@@ -1303,13 +1278,11 @@ public class VespaSerializer {
             }
             if (item.hasExplicitSignificance()) {
                 comma(annotation, initLen);
-                annotation.append('"').append(SIGNIFICANCE).append("\": ")
-                        .append(significance);
+                annotation.append('"').append(SIGNIFICANCE).append("\": ").append(significance);
             }
             if (uniqueId != 0) {
                 comma(annotation, initLen);
-                annotation.append('"').append(UNIQUE_ID).append("\": ")
-                        .append(uniqueId);
+                annotation.append('"').append(UNIQUE_ID).append("\": ").append(uniqueId);
             }
         }
         {
@@ -1335,25 +1308,21 @@ public class VespaSerializer {
             }
             if (weight != 100) {
                 comma(annotation, initLen);
-                annotation.append('"').append(WEIGHT).append("\": ")
-                        .append(weight);
+                annotation.append('"').append(WEIGHT).append("\": ").append(weight);
             }
         }
         if (item instanceof IntItem) {
             int hitLimit = ((IntItem) item).getHitLimit();
             if (hitLimit != 0) {
                 comma(annotation, initLen);
-                annotation.append('"').append(HIT_LIMIT).append("\": ")
-                        .append(hitLimit);
+                annotation.append('"').append(HIT_LIMIT).append("\": ").append(hitLimit);
             }
         }
         return annotation.toString();
     }
 
-    private static void serializeOrigin(StringBuilder destination,
-            String image, int offset, int length) {
-        destination.append('"').append(ORIGIN).append("\": {\"")
-                .append(ORIGIN_ORIGINAL).append("\": \"");
+    private static void serializeOrigin(StringBuilder destination, String image, int offset, int length) {
+        destination.append('"').append(ORIGIN).append("\": {\"").append(ORIGIN_ORIGINAL).append("\": \"");
         escape(image, destination);
         destination.append("\", \"").append(ORIGIN_OFFSET).append("\": ")
                 .append(offset).append(", \"").append(ORIGIN_LENGTH)

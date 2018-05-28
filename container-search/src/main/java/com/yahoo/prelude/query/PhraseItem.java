@@ -205,8 +205,7 @@ public class PhraseItem extends CompositeIndexedItem {
     }
 
     /** Phrase items uses a empty heading instead of "PHRASE " */
-    protected void appendHeadingString(StringBuilder buffer) {
-    }
+    protected void appendHeadingString(StringBuilder buffer) { }
 
     protected void appendBodyString(StringBuilder buffer) {
         appendIndexString(buffer);

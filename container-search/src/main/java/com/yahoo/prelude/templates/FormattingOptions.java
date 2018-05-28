@@ -13,7 +13,10 @@ import java.util.Set;
  * Defines formatting options used with special kinds of hits.
  *
  * @author laboisse
+ * @deprecated use a Renderer instead
  */
+@SuppressWarnings("deprecation")
+@Deprecated // TODO: Remove on Vespa 7
 public class FormattingOptions {
 
 	public static final String DEFAULT_TYPE_ATTRIBUTE_NAME = "type";

@@ -11,6 +11,8 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
+import com.yahoo.vespa.service.monitor.internal.health.HealthMonitorManager;
+import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +30,6 @@ public class ServiceMonitorImpl implements ServiceMonitor {
                               Metric metric,
                               Timer timer) {
         Zone zone = superModelProvider.getZone();
-        List<String> configServerHosts = toConfigServerList(configserverConfig);
         ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
 
         UnionMonitorManager monitorManager = new UnionMonitorManager(
@@ -39,9 +40,8 @@ public class ServiceMonitorImpl implements ServiceMonitor {
         SuperModelListenerImpl superModelListener = new SuperModelListenerImpl(
                 monitorManager,
                 metrics,
-                new ModelGenerator(),
-                zone,
-                configServerHosts);
+                new ModelGenerator(toConfigServerList(configserverConfig)),
+                zone);
         superModelListener.start(superModelProvider);
         serviceModelCache = new ServiceModelCache(superModelListener, timer);
     }

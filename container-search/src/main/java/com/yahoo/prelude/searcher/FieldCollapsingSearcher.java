@@ -19,10 +19,9 @@ import java.util.Map;
 
 
 /**
- * A searcher which does parametrized collapsing. Based on
- * SiteCollapsingSearcher. Deprecated - use grouping.
+ * A searcher which does parametrized collapsing.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @SuppressWarnings("deprecation")
 @After(PhaseNames.RAW_QUERY)
@@ -174,17 +173,18 @@ public class FieldCollapsingSearcher extends Searcher {
             }
 
             if (knownCollapses.containsKey(collapseId)) {
-                int numHitsThisField = knownCollapses.get(collapseId).intValue();
+                int numHitsThisField = knownCollapses.get(collapseId);
 
                 if (numHitsThisField < collapseSize) {
                     result.hits().add(hit);
                     ++numHitsThisField;
-                    knownCollapses.put(collapseId, Integer.valueOf(numHitsThisField));
+                    knownCollapses.put(collapseId, numHitsThisField);
                 }
             } else {
-                knownCollapses.put(collapseId, Integer.valueOf(1));
+                knownCollapses.put(collapseId, 1);
                 result.hits().add(hit);
             }
         }
     }
+
 }

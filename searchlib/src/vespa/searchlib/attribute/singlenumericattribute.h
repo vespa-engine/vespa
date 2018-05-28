@@ -41,27 +41,29 @@ private:
     private:
         const T * _data;
 
-        bool onCmp(DocId docId, int32_t & weight) const override {
-            return cmp(docId, weight);
+        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
+            return find(docId, elemId, weight);
         }
 
-        bool onCmp(DocId docId) const override {
-            return cmp(docId);
+        int32_t onFind(DocId docId, int elemId) const override {
+            return find(docId, elemId);
         }
 
         bool valid() const override;
 
     public:
     SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
-        bool cmp(DocId docId, int32_t & weight) const {
+        int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
+            if ( elemId != 0) return -1;
             const T v = _data[docId];
             weight = 1;
-            return this->match(v);
+            return this->match(v) ? 0 : -1;
         }
 
-        bool cmp(DocId docId) const {
+        int32_t find(DocId docId, int elemId) const {
+            if ( elemId != 0) return -1;
             const T v = _data[docId];
-            return this->match(v);
+            return this->match(v) ? 0 : -1;
         }
 
         Int64Range getAsIntegerTerm() const override;

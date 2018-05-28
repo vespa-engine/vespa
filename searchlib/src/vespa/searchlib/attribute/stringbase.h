@@ -96,7 +96,7 @@ private:
     class StringSearchContext : public SearchContext {
     public:
         StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
-        virtual ~StringSearchContext();
+        ~StringSearchContext() override;
     private:
         bool                        _isPrefix;
         bool                        _isRegex;
@@ -147,17 +147,19 @@ private:
         };
 
         template<typename WeightedT, typename Accessor, typename Collector>
-        void collectMatches(vespalib::ConstArrayRef<WeightedT> w, const Accessor & ac, Collector & collector) const {
-            for (const WeightedT &wRef : w) {
-                if (isMatch(ac.get(wRef.value()))) {
-                    collector.addWeight(wRef.weight());
+        int32_t findNextMatch(vespalib::ConstArrayRef<WeightedT> w, int32_t elemId, const Accessor & ac, Collector & collector) const {
+            for (uint32_t i(elemId); i < w.size(); i++) {
+                if (isMatch(ac.get(w[i].value()))) {
+                    collector.addWeight(w[i].weight());
+                    return i;
                 }
             }
+            return -1;
         }
 
 
-        bool onCmp(DocId docId, int32_t & weight) const override;
-        bool onCmp(DocId docId) const override;
+        int32_t onFind(DocId docId, int32_t elementId, int32_t &weight) const override;
+        int32_t onFind(DocId docId, int32_t elementId) const override;
 
         bool isPrefix() const { return _isPrefix; }
         bool  isRegex() const { return _isRegex; }
@@ -166,7 +168,7 @@ private:
         const vespalib::Regexp * getRegex() const { return _regex.get(); }
     private:
         WeightedConstChar * getBuffer() const {
-            if (_buffer == NULL) {
+            if (_buffer == nullptr) {
                 _buffer = new WeightedConstChar[_bufferLen];
             }
             return _buffer;

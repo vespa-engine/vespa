@@ -621,9 +621,6 @@ public class UpgraderTest {
     public void testBlockVersionChangeHalfwayThough() {
         ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:00:00.00Z")); // Tuesday, 17:00
         DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
-        ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
-                                                                 Duration.ofHours(1),
-                                                                 new JobControl(tester.controllerTester().curator()));
 
         Version version = Version.fromString("5.0");
         tester.upgradeSystem(version);
@@ -934,6 +931,67 @@ public class UpgraderTest {
             assertEquals(version, deployment.version());
             assertEquals(applicationVersion, deployment.applicationVersion().id());
         }
+    }
+
+    @Test
+    public void testBlockRevisionChangeHalfwayThoughThenUpgrade() {
+        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:00:00.00Z")); // Tuesday, 17:00.
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+
+        Version version = Version.fromString("5.0");
+        tester.upgradeSystem(version);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("canary")
+                // Block upgrades on Tuesday in hours 18 and 19.
+                .blockChange(true, false, "tue", "18-19", "UTC")
+                .region("us-west-1")
+                .region("us-central-1")
+                .region("us-east-3")
+                .build();
+
+        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+
+        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+
+        // Application upgrade starts.
+        tester.upgrader().maintain();
+        tester.triggerUntilQuiescence();
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered.
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
+        assertTrue(tester.buildService().jobs().isEmpty()); // Next job not triggered due to being in the block window.
+
+        // One hour passes, time is 19:00, still no upgrade.
+        tester.clock().advance(Duration.ofHours(1));
+        tester.triggerUntilQuiescence();
+        assertTrue("No jobs scheduled", tester.buildService().jobs().isEmpty());
+
+        // New version is released and upgrades are started in the two first production zones.
+        version = Version.fromString("5.1");
+        tester.upgradeSystem(version);
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
+
+        // Tests for central-1.
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+
+        // Another hour pass, time is 20:00 and both revision and version upgrades are now allowed.
+        tester.clock().advance(Duration.ofHours(1));
+        tester.triggerUntilQuiescence(); // Tests that trigger now test the full upgrade, since central-1 is still on old versions.
+        tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1); // Only upgrade for now.
+        // west-1 is now fully upgraded, central-1 only has new version, and east-3 has only old versions.
+
+        // These tests were triggered with an upgrade of both version and revision. Since central-1 no longer upgrades version,
+        // it ignores the initial version of the staging job, and so the current staging job is OK for both zones.
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
+        assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
     }
 
 }
