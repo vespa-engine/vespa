@@ -20,9 +20,6 @@ import java.util.Objects;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SignedIdentityDocumentEntity {
 
-    public static final int DEFAULT_KEY_VERSION = 0;
-    public static final int DEFAULT_DOCUMENT_VERSION = 1;
-
     private static final ObjectMapper mapper = createObjectMapper();
 
     @JsonProperty("identity-document")public final String rawIdentityDocument;

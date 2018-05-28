@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -29,6 +30,7 @@ import java.util.logging.Logger;
  */
 public class InstanceValidator {
 
+    private static final AthenzService TENANT_DOCKER_CONTAINER_IDENTITY = new AthenzService("vespa.vespa.tenant");
     private static final Logger log = Logger.getLogger(InstanceValidator.class.getName());
     static final String SERVICE_PROPERTIES_DOMAIN_KEY = "identity.domain";
     static final String SERVICE_PROPERTIES_SERVICE_KEY = "identity.service";
@@ -81,11 +83,16 @@ public class InstanceValidator {
 
     // If/when we dont care about logging exactly whats wrong, this can be simplified
     boolean isSameIdentityAsInServicesXml(ApplicationId applicationId, String domain, String service) {
+
         Optional<ApplicationInfo> applicationInfo = superModelProvider.getSuperModel().getApplicationInfo(applicationId);
 
         if (!applicationInfo.isPresent()) {
             log.info(String.format("Could not find application info for %s", applicationId.serializedForm()));
             return false;
+        }
+
+        if (TENANT_DOCKER_CONTAINER_IDENTITY.equals(new AthenzService(domain, service))) {
+            return true;
         }
 
         Optional<ServiceInfo> matchingServiceInfo = applicationInfo.get()
