@@ -261,6 +261,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private Query cloneFederationQuery(Query query, Window window, long timeout, Target target) {
+        query.getModel().getQueryTree(); // performance: parse query before cloning such that it is only done once
         Query clonedQuery = Query.createNewQuery(query);
         return createFederationQuery(query, clonedQuery, window, timeout, target);
     }

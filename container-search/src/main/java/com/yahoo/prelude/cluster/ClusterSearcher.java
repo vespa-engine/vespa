@@ -469,6 +469,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     private List<Query> createQueries(Query query, Set<String> docTypes) {
+        query.getModel().getQueryTree(); // performance: parse query before cloning such that it is only done once
         List<Query> retval = new ArrayList<>(docTypes.size());
         if (docTypes.size() == 1) {
             query.getModel().setRestrict(docTypes.iterator().next());

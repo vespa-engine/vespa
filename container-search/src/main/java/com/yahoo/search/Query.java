@@ -351,10 +351,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     /**
-     * Creates a new query from another query, but with time sensitive
-     * fields reset.
-     *
-     * @return new query
+     * Creates a new query from another query, but with time sensitive fields reset.
      */
     public static Query createNewQuery(Query query) {
         return new Query(query, System.currentTimeMillis());

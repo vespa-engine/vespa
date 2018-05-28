@@ -295,6 +295,7 @@ public abstract class QueryRewriteSearcher extends Searcher {
 
         // Store rewriter result
         HashMap<String, Object> rewriterResult = null;
+        query.getModel().getQueryTree(); // performance: parse query before cloning such that it is only done once
         Query originalQueryObj = query.clone();
 
         try {

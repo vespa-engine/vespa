@@ -158,6 +158,7 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
             return marshalQuery(query.getModel().getQueryTree());
         }
 
+        query.getModel().getQueryTree(); // performance: parse query before cloning such that it is only done once
         Query workQuery = query.clone();
         String error = QueryCanonicalizer.canonicalize(workQuery);
         if (error != null) {
