@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
@@ -20,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 // Model with two services, one that does not have a state port
@@ -107,6 +107,9 @@ class MockModel implements Model {
     public void distributeFiles(FileDistribution fileDistribution) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public Set<FileReference> fileReferences() { return new HashSet<>(); }
 
     @Override
     public AllocatedHosts allocatedHosts() {

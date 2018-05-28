@@ -5,6 +5,7 @@ import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationId;
@@ -202,6 +203,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     public FileDistributor getFileDistributor() {
         return fileDistributor;
+    }
+
+    @Override
+    public Set<FileReference> fileReferences() {
+        return fileDistributor.allFilesToSend();
     }
 
     /** Returns this models Vespa instance */

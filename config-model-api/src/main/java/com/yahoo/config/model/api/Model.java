@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -47,6 +48,10 @@ public interface Model {
      */
     void distributeFiles(FileDistribution fileDistribution);
 
+    /**
+     * The set of files that should be distributed to the hosts in this model.
+     */
+    Set<FileReference> fileReferences();
 
     /**
      * Gets the allocated hosts for this model.
