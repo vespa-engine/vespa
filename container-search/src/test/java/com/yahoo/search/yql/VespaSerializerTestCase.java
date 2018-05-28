@@ -3,6 +3,7 @@ package com.yahoo.search.yql;
 
 import static org.junit.Assert.*;
 
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
@@ -218,6 +219,15 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    public final void testSameElement() {
+        SameElementItem sameElement = new SameElementItem("ss");
+        sameElement.addItem(new WordItem("a", "f1"));
+        sameElement.addItem(new WordItem("b", "f2"));
+        assertEquals("ss:{f1:a f2:b}", sameElement.toString());
+        assertEquals("ss contains sameElement(f1 contains ([{\"implicitTransforms\": false}]\"a\"), f2 contains ([{\"implicitTransforms\": false}]\"b\"))", VespaSerializer.serialize(sameElement));
+
+    }
+    @Test
     public final void testAnnotatedAndSegment() {
         AndSegmentItem andSegment = new AndSegmentItem("abc", true, false);
         andSegment.addItem(new WordItem("a", "indexNamePlaceholder"));
@@ -306,6 +316,7 @@ public class VespaSerializerTestCase {
         String q = VespaSerializer.serialize(item);
         assertEquals("default contains \"nalle\"", q);
     }
+
 
     @Test
     public final void testLongAndNot() {
