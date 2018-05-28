@@ -53,5 +53,4 @@ public class Placeholder extends TensorFlowOperation {
         return false;
     }
 
-
 }

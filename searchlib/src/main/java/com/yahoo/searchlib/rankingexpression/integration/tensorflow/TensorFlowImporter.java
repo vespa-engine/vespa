@@ -255,7 +255,7 @@ public class TensorFlowImporter {
             }
             catch (ParseException e) {
                 throw new RuntimeException("Tensorflow function " + function +
-                        " cannot be parsed as a ranking expression", e);
+                                           " cannot be parsed as a ranking expression", e);
             }
         }
     }
