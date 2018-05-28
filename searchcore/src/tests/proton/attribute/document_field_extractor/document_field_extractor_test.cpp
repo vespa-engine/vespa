@@ -12,6 +12,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchcore/proton/attribute/document_field_extractor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -42,7 +43,7 @@ const ArrayDataType arrayTypeInt(*DataType::INT);
 const ArrayDataType arrayTypeString(*DataType::STRING);
 const WeightedSetDataType weightedSetTypeInt(*DataType::INT, false, false);
 const WeightedSetDataType weightedSetTypeString(*DataType::STRING, false, false);
-const int32_t noInt(std::numeric_limits<int32_t>::min());
+const int32_t noInt(search::attribute::getUndefined<int32_t>());
 const vespalib::string noString("");
 
 std::unique_ptr<FieldValue>
@@ -103,22 +104,28 @@ checkFieldPathChange(F1 f1, F2 f2, const vespalib::string &path, bool same)
 struct FixtureBase
 {
     DocumentType   type;
-    const Field    tagField;
+    const Field    weightField;
     const Field    nameField;
+    std::unique_ptr<Document> doc;
+    std::unique_ptr<DocumentFieldExtractor> extractor;
 
-    FixtureBase(bool byteTag)
+    FixtureBase(bool byteWeight)
         : type("test"),
-          tagField("tag", 1, byteTag ? *DataType::BYTE : *DataType::INT, true),
-          nameField("name", 2, *DataType::STRING, true)
+          weightField("weight", 1, byteWeight ? *DataType::BYTE : *DataType::INT, true),
+          nameField("name", 2, *DataType::STRING, true),
+          doc(),
+          extractor()
     {
     }
 
     ~FixtureBase();
 
-    std::unique_ptr<Document>
+    Document *
     makeDoc()
     {
-        return std::make_unique<Document>(type, DocumentId("id::test::1"));
+        doc = std::make_unique<Document>(type, DocumentId("id::test::1"));
+        extractor = std::make_unique<DocumentFieldExtractor>(*doc);
+        return doc.get();
     }
 
     FieldPath
@@ -137,11 +144,10 @@ struct FixtureBase
     }
 
     void
-    assertExtracted(DocumentFieldExtractor &extractor,
-                    const vespalib::string &path,
+    assertExtracted(const vespalib::string &path,
                     std::unique_ptr<FieldValue> expected) {
         FieldPath fieldPath(makeFieldPath(path));
-        std::unique_ptr<FieldValue> fv = extractor.getFieldValue(fieldPath);
+        std::unique_ptr<FieldValue> fv = extractor->getFieldValue(fieldPath);
         if (expected) {
             ASSERT_TRUE(fv);
             EXPECT_EQUAL(*expected, *fv);
@@ -155,10 +161,10 @@ FixtureBase::~FixtureBase() = default;
 
 struct SimpleFixture : public FixtureBase
 {
-    SimpleFixture(bool byteTag = false)
-        : FixtureBase(byteTag)
+    SimpleFixture(bool byteWeight = false)
+        : FixtureBase(byteWeight)
     {
-        type.addField(tagField);
+        type.addField(weightField);
         type.addField(nameField);
     }
 };
@@ -166,28 +172,27 @@ struct SimpleFixture : public FixtureBase
 TEST_F("require that simple fields give simple values", SimpleFixture)
 {
     auto doc = f.makeDoc();
-    doc->setValue(f.tagField, IntFieldValue(200));
+    doc->setValue(f.weightField, IntFieldValue(200));
     doc->setValue(f.nameField, StringFieldValue("name200b"));
-    DocumentFieldExtractor extractor(*doc);
-    TEST_DO(f.assertExtracted(extractor, "tag", std::make_unique<IntFieldValue>(200)));
-    TEST_DO(f.assertExtracted(extractor, "name", std::make_unique<StringFieldValue>("name200b")));
+    TEST_DO(f.assertExtracted("weight", std::make_unique<IntFieldValue>(200)));
+    TEST_DO(f.assertExtracted("name", std::make_unique<StringFieldValue>("name200b")));
 }
 
 struct ArrayFixture : public FixtureBase
 {
-    const ArrayDataType tagArrayFieldType;
-    const Field tagArrayField;
+    const ArrayDataType weightArrayFieldType;
+    const Field weightArrayField;
     const ArrayDataType valueArrayFieldType;
     const Field valueArrayField;
 
-    ArrayFixture(bool byteTag = false)
-        : FixtureBase(byteTag),
-          tagArrayFieldType(tagField.getDataType()),
-          tagArrayField("tag", tagArrayFieldType, true),
+    ArrayFixture(bool byteWeight = false)
+        : FixtureBase(byteWeight),
+          weightArrayFieldType(weightField.getDataType()),
+          weightArrayField("weight", weightArrayFieldType, true),
           valueArrayFieldType(nameField.getDataType()),
           valueArrayField("val", valueArrayFieldType, true)
     {
-        type.addField(tagArrayField);
+        type.addField(weightArrayField);
         type.addField(valueArrayField);
     }
 
@@ -199,28 +204,27 @@ ArrayFixture::~ArrayFixture() = default;
 TEST_F("require that array fields give array values", ArrayFixture)
 {
     auto doc = f.makeDoc();
-    doc->setValue(f.tagArrayField, *makeIntArray({ 300, 301 }));
+    doc->setValue(f.weightArrayField, *makeIntArray({ 300, 301 }));
     doc->setValue(f.valueArrayField, *makeStringArray({"v500", "v502"}));
-    DocumentFieldExtractor extractor(*doc);
-    TEST_DO(f.assertExtracted(extractor, "tag", makeIntArray({ 300, 301})));
-    TEST_DO(f.assertExtracted(extractor, "val", makeStringArray({"v500", "v502"})));
+    TEST_DO(f.assertExtracted("weight", makeIntArray({ 300, 301})));
+    TEST_DO(f.assertExtracted("val", makeStringArray({"v500", "v502"})));
 }
 
 struct WeightedSetFixture : public FixtureBase
 {
-    const WeightedSetDataType tagWeightedSetFieldType;
-    const Field tagWeightedSetField;
+    const WeightedSetDataType weightWeightedSetFieldType;
+    const Field weightWeightedSetField;
     const WeightedSetDataType valueWeightedSetFieldType;
     const Field valueWeightedSetField;
 
-    WeightedSetFixture(bool byteTag = false)
-        : FixtureBase(byteTag),
-          tagWeightedSetFieldType(tagField.getDataType(), false, false),
-          tagWeightedSetField("tag", tagWeightedSetFieldType, true),
+    WeightedSetFixture(bool byteWeight = false)
+        : FixtureBase(byteWeight),
+          weightWeightedSetFieldType(weightField.getDataType(), false, false),
+          weightWeightedSetField("weight", weightWeightedSetFieldType, true),
           valueWeightedSetFieldType(*DataType::STRING, false, false),
           valueWeightedSetField("val", valueWeightedSetFieldType, true)
     {
-        type.addField(tagWeightedSetField);
+        type.addField(weightWeightedSetField);
         type.addField(valueWeightedSetField);
     }
 
@@ -232,22 +236,21 @@ WeightedSetFixture::~WeightedSetFixture() = default;
 TEST_F("require that weighted set fields give weighted set values", WeightedSetFixture)
 {
     auto doc = f.makeDoc();
-    doc->setValue(f.tagWeightedSetField, *makeIntWeightedSet({{400, 10}, { 401, 13}}));
+    doc->setValue(f.weightWeightedSetField, *makeIntWeightedSet({{400, 10}, { 401, 13}}));
     doc->setValue(f.valueWeightedSetField, *makeStringWeightedSet({{"600", 17}, {"604", 19}}));
-    DocumentFieldExtractor extractor(*doc);
-    TEST_DO(f.assertExtracted(extractor, "tag", makeIntWeightedSet({{ 400, 10}, {401, 13}})));
-    TEST_DO(f.assertExtracted(extractor, "val", makeStringWeightedSet({{"600", 17}, {"604", 19}})));
+    TEST_DO(f.assertExtracted("weight", makeIntWeightedSet({{ 400, 10}, {401, 13}})));
+    TEST_DO(f.assertExtracted("val", makeStringWeightedSet({{"600", 17}, {"604", 19}})));
 }
 
 struct StructFixtureBase : public FixtureBase
 {
     StructDataType structFieldType;
 
-    StructFixtureBase(bool byteTag)
-        : FixtureBase(byteTag),
+    StructFixtureBase(bool byteWeight)
+        : FixtureBase(byteWeight),
           structFieldType("struct")
     {
-        structFieldType.addField(tagField);
+        structFieldType.addField(weightField);
         structFieldType.addField(nameField);
     }
 
@@ -258,19 +261,19 @@ struct StructFixtureBase : public FixtureBase
     }
 
     std::unique_ptr<StructFieldValue>
-    makeStruct(int tag, const vespalib::string &value)
+    makeStruct(int weight, const vespalib::string &value)
     {
         auto ret = makeStruct();
-        ret->setValue(tagField, IntFieldValue(tag));
+        ret->setValue(weightField, IntFieldValue(weight));
         ret->setValue(nameField, StringFieldValue(value));
         return ret;
     }
 
     std::unique_ptr<StructFieldValue>
-    makeStruct(int tag)
+    makeStruct(int weight)
     {
         auto ret = makeStruct();
-        ret->setValue(tagField, IntFieldValue(tag));
+        ret->setValue(weightField, IntFieldValue(weight));
         return ret;
     }
 
@@ -288,8 +291,8 @@ struct StructArrayFixture : public StructFixtureBase
     const ArrayDataType structArrayFieldType;
     const Field structArrayField;
 
-    StructArrayFixture(bool byteTag = false)
-        : StructFixtureBase(byteTag),
+    StructArrayFixture(bool byteWeight = false)
+        : StructFixtureBase(byteWeight),
           structArrayFieldType(structFieldType),
           structArrayField("s", 11, structArrayFieldType, true)
     {
@@ -309,9 +312,8 @@ TEST_F("require that struct array field gives array values", StructArrayFixture)
     structArrayFieldValue.add(*f.makeStruct(2));
     structArrayFieldValue.add(*f.makeStruct("name3"));
     doc->setValue(f.structArrayField, structArrayFieldValue);
-    DocumentFieldExtractor extractor(*doc);
-    TEST_DO(f.assertExtracted(extractor, "s.tag", makeIntArray({ 1, 2, noInt })));
-    TEST_DO(f.assertExtracted(extractor, "s.name", makeStringArray({ "name1", noString, "name3" })));
+    TEST_DO(f.assertExtracted("s.weight", makeIntArray({ 1, 2, noInt })));
+    TEST_DO(f.assertExtracted("s.name", makeStringArray({ "name1", noString, "name3" })));
 }
 
 struct StructMapFixture : public StructFixtureBase
@@ -319,8 +321,8 @@ struct StructMapFixture : public StructFixtureBase
     const MapDataType structMapFieldType;
     const Field structMapField;
 
-    StructMapFixture(bool byteTag = false, bool byteKey = false)
-        : StructFixtureBase(byteTag),
+    StructMapFixture(bool byteWeight = false, bool byteKey = false)
+        : StructFixtureBase(byteWeight),
           structMapFieldType(byteKey ? *DataType::BYTE : *DataType::STRING, structFieldType),
           structMapField("s", 12, structMapFieldType, true)
     {
@@ -341,35 +343,33 @@ TEST_F("require that struct map field gives array values", StructMapFixture)
     structMapFieldValue.put(StringFieldValue("m2"), *f.makeStruct("name12"));
     structMapFieldValue.put(StringFieldValue("m3"), *f.makeStruct());
     doc->setValue(f.structMapField, structMapFieldValue);
-    DocumentFieldExtractor extractor(*doc);
-    TEST_DO(f.assertExtracted(extractor, "s.key", makeStringArray({ "m0", "m1", "m2", "m3" })));
-    TEST_DO(f.assertExtracted(extractor, "s.value.tag", makeIntArray({ 10, 11, noInt, noInt })));
-    TEST_DO(f.assertExtracted(extractor, "s.value.name", makeStringArray({ "name10", noString, "name12", noString })));
+    TEST_DO(f.assertExtracted("s.key", makeStringArray({ "m0", "m1", "m2", "m3" })));
+    TEST_DO(f.assertExtracted("s.value.weight", makeIntArray({ 10, 11, noInt, noInt })));
+    TEST_DO(f.assertExtracted("s.value.name", makeStringArray({ "name10", noString, "name12", noString })));
 }
 
 TEST_F("require that unknown field gives null value", FixtureBase(false))
 {
-    auto doc = f.makeDoc();
-    DocumentFieldExtractor extractor(*doc);
-    TEST_DO(f.assertExtracted(extractor, "unknown", std::unique_ptr<FieldValue>()));
+    f.makeDoc();
+    TEST_DO(f.assertExtracted("unknown", std::unique_ptr<FieldValue>()));
 }
 
 TEST("require that type changes are detected")
 {
-    TEST_DO(checkFieldPathChange(SimpleFixture(false), SimpleFixture(false), "tag", true));
-    TEST_DO(checkFieldPathChange(SimpleFixture(false), SimpleFixture(true), "tag", false));
-    TEST_DO(checkFieldPathChange(ArrayFixture(false), ArrayFixture(false), "tag", true));
-    TEST_DO(checkFieldPathChange(ArrayFixture(false), ArrayFixture(true), "tag", false));
-    TEST_DO(checkFieldPathChange(SimpleFixture(false), ArrayFixture(false), "tag", false));
-    TEST_DO(checkFieldPathChange(WeightedSetFixture(false), WeightedSetFixture(false), "tag", true));
-    TEST_DO(checkFieldPathChange(WeightedSetFixture(false), WeightedSetFixture(true), "tag", false));
-    TEST_DO(checkFieldPathChange(SimpleFixture(false), WeightedSetFixture(false), "tag", false));
-    TEST_DO(checkFieldPathChange(ArrayFixture(false), WeightedSetFixture(false), "tag", false));
-    TEST_DO(checkFieldPathChange(StructArrayFixture(false), StructArrayFixture(false), "s.tag", true));
-    TEST_DO(checkFieldPathChange(StructArrayFixture(false), StructArrayFixture(true), "s.tag", false));
-    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, false), "s.value.tag", true));
-    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(true, false), "s.value.tag", false));
-    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, true), "s.value.tag", false));
+    TEST_DO(checkFieldPathChange(SimpleFixture(false), SimpleFixture(false), "weight", true));
+    TEST_DO(checkFieldPathChange(SimpleFixture(false), SimpleFixture(true), "weight", false));
+    TEST_DO(checkFieldPathChange(ArrayFixture(false), ArrayFixture(false), "weight", true));
+    TEST_DO(checkFieldPathChange(ArrayFixture(false), ArrayFixture(true), "weight", false));
+    TEST_DO(checkFieldPathChange(SimpleFixture(false), ArrayFixture(false), "weight", false));
+    TEST_DO(checkFieldPathChange(WeightedSetFixture(false), WeightedSetFixture(false), "weight", true));
+    TEST_DO(checkFieldPathChange(WeightedSetFixture(false), WeightedSetFixture(true), "weight", false));
+    TEST_DO(checkFieldPathChange(SimpleFixture(false), WeightedSetFixture(false), "weight", false));
+    TEST_DO(checkFieldPathChange(ArrayFixture(false), WeightedSetFixture(false), "weight", false));
+    TEST_DO(checkFieldPathChange(StructArrayFixture(false), StructArrayFixture(false), "s.weight", true));
+    TEST_DO(checkFieldPathChange(StructArrayFixture(false), StructArrayFixture(true), "s.weight", false));
+    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, false), "s.value.weight", true));
+    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(true, false), "s.value.weight", false));
+    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, true), "s.value.weight", false));
     TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, false), "s.key", true));
     TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, true), "s.key", false));
 }
