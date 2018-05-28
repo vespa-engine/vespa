@@ -23,6 +23,7 @@ vespa_add_library(searchcore_attribute STATIC
     attributedisklayout.cpp
     attributemanager.cpp
     attributesconfigscout.cpp
+    document_field_extractor.cpp
     document_field_populator.cpp
     document_field_retriever.cpp
     exclusive_attribute_read_accessor.cpp
