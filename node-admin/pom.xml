@@ -94,6 +94,12 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
+            <artifactId>configsource</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>orchestrator</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

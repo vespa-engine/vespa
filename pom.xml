@@ -48,6 +48,7 @@
         <module>config-provisioning</module>
         <module>config-proxy</module>
         <module>configserver</module>
+        <module>configsource</module>
         <module>config_test</module>
         <module>container</module>
         <module>container-core</module>
