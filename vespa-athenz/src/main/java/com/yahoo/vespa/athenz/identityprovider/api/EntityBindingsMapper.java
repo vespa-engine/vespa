@@ -4,11 +4,10 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentEntity;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.VespaUniqueInstanceIdEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.VespaUniqueInstanceIdEntity;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
 import java.util.Base64;
@@ -37,7 +36,7 @@ public class EntityBindingsMapper {
                 entity.clusterIndex, entity.clusterId, entity.instance, entity.application, entity.tenant, entity.region, entity.environment);
     }
 
-    private static IdentityDocument toIdentityDocument(IdentityDocumentEntity entity) {
+    public static IdentityDocument toIdentityDocument(IdentityDocumentEntity entity) {
         return new IdentityDocument(
                 toVespaUniqueInstanceId(entity.providerUniqueId),
                 entity.configServerHostname,

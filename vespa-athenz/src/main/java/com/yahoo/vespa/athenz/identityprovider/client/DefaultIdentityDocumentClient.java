@@ -4,10 +4,11 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
-import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -80,12 +81,9 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
             try (CloseableHttpResponse response = client.execute(request)) {
                 String responseContent = EntityUtils.toString(response.getEntity());
                 if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
-                    com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument entity =
-                            objectMapper.readValue(
-                                    responseContent,
-                                    com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocument.class);
+                    SignedIdentityDocumentEntity entity = objectMapper.readValue(responseContent, SignedIdentityDocumentEntity.class);
                     return new SignedIdentityDocument(
-                            toEntityDocument(entity.identityDocument),
+                            EntityBindingsMapper.toIdentityDocument(entity.identityDocument),
                             entity.signature,
                             entity.signingKeyVersion,
                             VespaUniqueInstanceId.fromDottedString(entity.providerUniqueId),
@@ -105,16 +103,6 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private static IdentityDocument toEntityDocument(
-            com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocument identityDocument) {
-        return new IdentityDocument(
-                identityDocument.providerUniqueId.toVespaUniqueInstanceId(),
-                identityDocument.configServerHostname,
-                identityDocument.instanceHostname,
-                identityDocument.createdAt,
-                identityDocument.ipAddresses);
     }
 
     private static CloseableHttpClient createHttpClient(SSLContext sslContext,
