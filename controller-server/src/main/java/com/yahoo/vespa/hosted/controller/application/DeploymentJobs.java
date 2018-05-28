@@ -180,10 +180,15 @@ public class DeploymentJobs {
             return zone(system).map(ZoneId::region);
         }
 
-        public static JobType fromJobName(String jobName) {
+        public static Optional<JobType> fromOptionalJobName(String jobName) {
             return Stream.of(values())
                     .filter(jobType -> jobType.jobName.equals(jobName))
-                    .findAny().orElseThrow(() -> new IllegalArgumentException("Unknown job name '" + jobName + "'"));
+                    .findAny();
+        }
+
+        public static JobType fromJobName(String jobName) {
+            return fromOptionalJobName(jobName)
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown job name '" + jobName + "'"));
         }
 
         /** Returns the job type for the given zone */

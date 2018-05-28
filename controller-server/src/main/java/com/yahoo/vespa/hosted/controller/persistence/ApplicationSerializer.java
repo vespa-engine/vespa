@@ -382,22 +382,25 @@ public class ApplicationSerializer {
 
     private List<JobStatus> jobStatusListFromSlime(Inspector array) {
         List<JobStatus> jobStatusList = new ArrayList<>();
-        array.traverse((ArrayTraverser) (int i, Inspector item) -> jobStatusList.add(jobStatusFromSlime(item)));
+        array.traverse((ArrayTraverser) (int i, Inspector item) -> jobStatusFromSlime(item).ifPresent(jobStatusList::add));
         return jobStatusList;
     }
 
-    private JobStatus jobStatusFromSlime(Inspector object) {
-        DeploymentJobs.JobType jobType = DeploymentJobs.JobType.fromJobName(object.field(jobTypeField).asString());
+    private Optional<JobStatus> jobStatusFromSlime(Inspector object) {
+        // if the job type has since been removed, ignore it
+        Optional<DeploymentJobs.JobType> jobType =
+                DeploymentJobs.JobType.fromOptionalJobName(object.field(jobTypeField).asString());
+        if (! jobType.isPresent()) return Optional.empty();
 
         Optional<JobError> jobError = Optional.empty();
         if (object.field(errorField).valid())
             jobError = Optional.of(JobError.valueOf(object.field(errorField).asString()));
 
-        return new JobStatus(jobType, jobError,
+        return Optional.of(new JobStatus(jobType.get(), jobError,
                              jobRunFromSlime(object.field(lastTriggeredField)),
                              jobRunFromSlime(object.field(lastCompletedField)),
                              jobRunFromSlime(object.field(firstFailingField)),
-                             jobRunFromSlime(object.field(lastSuccessField)));
+                             jobRunFromSlime(object.field(lastSuccessField))));
     }
 
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
