@@ -65,9 +65,7 @@ public class IndexCombinatorSearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        // TODO
         Item root = query.getModel().getQueryTree().getRoot();
-        if (1==1) return execution.search(query);
         IndexFacts.Session session = execution.context().getIndexFacts().newSession(query);
         String oldQuery = (query.getTraceLevel() >= 2) ? root.toString() : "";
 

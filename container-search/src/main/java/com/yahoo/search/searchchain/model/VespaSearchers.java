@@ -23,8 +23,6 @@ import java.util.*;
 public class VespaSearchers {
     public static final Collection<ChainedComponentModel> vespaSearcherModels =
             toSearcherModels(
-                    com.yahoo.prelude.querytransform.IndexCombinatorSearcher.class,
-                    //com.yahoo.prelude.querytransform.LocalitySearcher.class,
                     com.yahoo.prelude.querytransform.PhrasingSearcher.class,
                     com.yahoo.prelude.searcher.FieldCollapsingSearcher.class,
                     com.yahoo.search.yql.MinimalQueryInserter.class,
