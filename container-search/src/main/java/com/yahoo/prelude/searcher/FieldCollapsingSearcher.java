@@ -95,6 +95,7 @@ public class FieldCollapsingSearcher extends Searcher {
      * If collapse is active, do collapsing.
      * Otherwise, act as a simple pass through
      */
+    @Override
     public Result search(com.yahoo.search.Query query, Execution execution) {
         String collapseField = query.properties().getString(collapsefield);
 

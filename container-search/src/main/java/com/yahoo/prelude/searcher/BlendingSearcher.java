@@ -53,7 +53,7 @@ public class BlendingSearcher extends Searcher {
     }
 
     @Override
-    public com.yahoo.search.Result search(com.yahoo.search.Query query, Execution execution) {
+    public Result search(Query query, Execution execution) {
         Result result = execution.search(query);
 
         Result blended = blendResults(result, query, query.getOffset(), query.getHits(), execution);
