@@ -24,7 +24,7 @@ public class Constant extends OnnxOperation {
         this.tensorProto = tensorProto;
     }
 
-    /** todo: Constant names are prefixed by "modelName_" to avoid name conflicts between models */
+    /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
     @Override
     public String vespaName() {
         return modelName + "_" + vespaName(tensorProto.getName());
