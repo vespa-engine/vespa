@@ -17,16 +17,15 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.searcher.BlendingSearcher;
-import com.yahoo.prelude.searcher.DocumentSourceSearcher;
 import com.yahoo.prelude.searcher.FillSearcher;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.federation.FederationSearcher;
-import com.yahoo.search.federation.selection.TargetSelector;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
+import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -40,8 +39,6 @@ import static org.junit.Assert.assertTrue;
  * @author Bob Travis
  * @author bratseth
  */
-// The SuppressWarnings is to shut up the compiler about using
-// deprecated FastHit constructor in the tests.
 @SuppressWarnings({ "rawtypes" })
 public class BlendingSearcherTestCase {
 
@@ -139,19 +136,19 @@ public class BlendingSearcherTestCase {
         r1.hits().add(new Hit("http://host1.com", 101){{setSource("one");}});
         r1.hits().add(new Hit("http://host2.com", 102){{setSource("one");}});
         r1.hits().add(new Hit("http://host3.com", 103){{setSource("one");}});
-        chain1.addResultSet(q, r1);
+        chain1.addResult(q, r1);
 
         r2.setTotalHitCount(17);
         r2.hits().add(new Hit("http://host1.com", 101){{setSource("two");}});
         r2.hits().add(new Hit("http://host2.com", 102){{setSource("two");}});
         r2.hits().add(new Hit("http://host4.com", 104){{setSource("two");}});
-        chain2.addResultSet(q, r2);
+        chain2.addResult(q, r2);
 
         r3.setTotalHitCount(37);
         r3.hits().add(new Hit("http://host5.com", 100){{setSource("three");}});
         r3.hits().add(new Hit("http://host6.com", 106){{setSource("three");}});
         r3.hits().add(new Hit("http://host7.com", 105){{setSource("three");}});
-        chain3.addResultSet(q, r3);
+        chain3.addResult(q, r3);
 
         BlendingSearcherWrapper blender1 = new BlendingSearcherWrapper();
         blender1.addChained(chain1, "one");
@@ -215,10 +212,10 @@ public class BlendingSearcherTestCase {
 
         r1.setTotalHitCount(1);
         r1.hits().add(new FastHit("http://host1.com/", 101));
-        chain1.addResultSet(q, r1);
+        chain1.addResult(q, r1);
         r2.hits().add(new FastHit("http://host1.com/", 102));
         r2.setTotalHitCount(1);
-        chain2.addResultSet(q, r2);
+        chain2.addResult(q, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper("uri");
         blender.addChained(new FillSearcher(chain1), "a");
@@ -239,10 +236,10 @@ public class BlendingSearcherTestCase {
         Result r2 = new Result(q, ErrorMessage.createRequestTooLarge(null));
 
         r1.setTotalHitCount(0);
-        chain1.addResultSet(q, r1);
+        chain1.addResult(q, r1);
         r2.hits().add(new FastHit("http://host1.com/", 102));
         r2.setTotalHitCount(1);
-        chain2.addResultSet(q, r2);
+        chain2.addResult(q, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
         blender.addChained(new FillSearcher(chain1), "a");
@@ -288,7 +285,7 @@ public class BlendingSearcherTestCase {
         r1.hits().add(r1h1);
         r1.hits().add(r1h2);
         r1.hits().add(r1h3);
-        chain1.addResultSet(q, r1);
+        chain1.addResult(q, r1);
 
         r2.setTotalHitCount(3);
         Hit r2h1 = new Hit("http://host1.com/relevancy201", 201);
@@ -303,7 +300,7 @@ public class BlendingSearcherTestCase {
         r2.hits().add(r2h1);
         r2.hits().add(r2h2);
         r2.hits().add(r2h3);
-        chain2.addResultSet(q, r2);
+        chain2.addResult(q, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
         blender.addChained(new FillSearcher(chain1), "chainedone");
@@ -343,7 +340,7 @@ public class BlendingSearcherTestCase {
         r1.hits().add(r1h1);
         r1.hits().add(r1h2);
         r1.hits().add(r1h3);
-        chain1.addResultSet(q, r1);
+        chain1.addResult(q, r1);
 
         r2.setTotalHitCount(3);
         Hit r2h1 = new Hit("http://host1.com/relevancy201", 201);
@@ -355,7 +352,7 @@ public class BlendingSearcherTestCase {
         r2.hits().add(r2h1);
         r2.hits().add(r2h2);
         r2.hits().add(r2h3);
-        chain2.addResultSet(q, r2);
+        chain2.addResult(q, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
         blender.addChained(chain1, "chainedone");
@@ -381,7 +378,7 @@ public class BlendingSearcherTestCase {
         r1.setTotalHitCount(1);
         Hit r1h1 = new Hit("http://first/relevancy100", 200);
         r1.hits().add(r1h1);
-        first.addResultSet(query, r1);
+        first.addResult(query, r1);
 
         Result r2 = new Result(query);
         r2.setTotalHitCount(2);
@@ -389,7 +386,7 @@ public class BlendingSearcherTestCase {
         Hit r2h2 = new Hit("http://second/relevancy100", 100);
         r2.hits().add(r2h1);
         r2.hits().add(r2h2);
-        second.addResultSet(query, r2);
+        second.addResult(query, r2);
 
         BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
         blender.addChained(new FillSearcher(first), "first");
