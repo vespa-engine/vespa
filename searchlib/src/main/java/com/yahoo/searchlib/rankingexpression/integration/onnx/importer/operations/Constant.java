@@ -15,18 +15,19 @@ import java.util.Optional;
 
 public class Constant extends OnnxOperation {
 
+    final String modelName;
     final Onnx.TensorProto tensorProto;
 
-    public Constant(Onnx.TensorProto tensorProto) {
+    public Constant(String modelName, Onnx.TensorProto tensorProto) {
         super(null, Collections.emptyList());
+        this.modelName = modelName;
         this.tensorProto = tensorProto;
     }
 
-    /** todo: Constant names are prefixed by "modelName_" to avoid name conflicts between models */
+    /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
     @Override
     public String vespaName() {
-//        return modelName() + "_" + super.vespaName();
-        return vespaName(tensorProto.getName());
+        return modelName + "_" + vespaName(tensorProto.getName());
     }
 
     @Override

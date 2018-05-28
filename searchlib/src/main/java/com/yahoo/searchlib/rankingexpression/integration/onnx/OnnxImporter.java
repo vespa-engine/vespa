@@ -1,3 +1,5 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package com.yahoo.searchlib.rankingexpression.integration.onnx;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
@@ -13,8 +15,10 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.TensorFunction;
+import com.yahoo.yolean.Exceptions;
 import onnx.Onnx;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
@@ -22,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -31,48 +36,64 @@ import java.util.stream.Collectors;
  */
 public class OnnxImporter {
 
-    public OnnxModel importModel(String modelPath, String outputNode) {
+    private static final Logger log = Logger.getLogger(OnnxImporter.class.getName());
+
+    public OnnxModel importModel(String modelName, File modelDir) {
+        return importModel(modelName, modelDir.toString());
+    }
+
+    public OnnxModel importModel(String modelName, String modelPath) {
         try (FileInputStream inputStream = new FileInputStream(modelPath)) {
             Onnx.ModelProto model = Onnx.ModelProto.parseFrom(inputStream);
-            return importModel(model, outputNode);
+            return importModel(modelName, model);
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not import ONNX model from '" + modelPath + "'", e);
         }
     }
 
-    public OnnxModel importModel(Onnx.ModelProto model, String outputNode) {
-        return importGraph(model.getGraph(), outputNode);
+    public OnnxModel importModel(String modelName, Onnx.ModelProto model) {
+        return importGraph(modelName, model.getGraph());
     }
 
-    private static OnnxModel importGraph(Onnx.GraphProto graph, String outputNode) {
-        OnnxModel model = new OnnxModel(outputNode);
+    private static OnnxModel importGraph(String modelName, Onnx.GraphProto graph) {
+        OnnxModel model = new OnnxModel(modelName);
         OperationIndex index = new OperationIndex();
 
-        OnnxOperation output = importNode(outputNode, graph, index);
-        output.type().orElseThrow(() -> new IllegalArgumentException("Output of '" + outputNode + "' has no type."))
-                .verifyType(getOutputNode(outputNode, graph).getType());
+        importNodes(graph, model, index);
+        verifyOutputTypes(graph, model, index);
+        findDimensionNames(model, index);
+        importExpressions(model, index);
 
-        findDimensionNames(output);
-        importExpressions(output, model);
+        reportWarnings(model, index);
 
         return model;
     }
 
-    private static OnnxOperation importNode(String nodeName, Onnx.GraphProto graph, OperationIndex index) {
-        if (index.alreadyImported(nodeName)) {
-            return index.get(nodeName);
+    private static void importNodes(Onnx.GraphProto graph, OnnxModel model, OperationIndex index) {
+        for (Onnx.ValueInfoProto valueInfo : graph.getOutputList()) {
+            importNode(valueInfo.getName(), graph, model, index);
+        }
+    }
+
+    private static OnnxOperation importNode(String name, Onnx.GraphProto graph, OnnxModel model, OperationIndex index) {
+        if (index.alreadyImported(name)) {
+            return index.get(name);
         }
         OnnxOperation operation;
-        if (isArgumentTensor(nodeName, graph)) {
-            operation = new Argument(getArgumentTensor(nodeName, graph));
-        } else if (isConstantTensor(nodeName, graph)) {
-            operation = new Constant(getConstantTensor(nodeName, graph));
+        if (isArgumentTensor(name, graph)) {
+            operation = new Argument(getArgumentTensor(name, graph));
+            model.input(OnnxOperation.namePartOf(name), operation.vespaName());
+        } else if (isConstantTensor(name, graph)) {
+            operation = new Constant(model.name(), getConstantTensor(name, graph));
         } else {
-            Onnx.NodeProto node = getNodeFromGraph(nodeName, graph);
-            List<OnnxOperation> inputs = importNodeInputs(node, graph, index);
+            Onnx.NodeProto node = getNodeFromGraph(name, graph);
+            List<OnnxOperation> inputs = importNodeInputs(node, graph, model, index);
             operation = OperationMapper.get(node, inputs);
+            if (isOutputNode(name, graph)) {
+                model.output(OnnxOperation.namePartOf(name), operation.vespaName());
+            }
         }
-        index.put(nodeName, operation);
+        index.put(operation.vespaName(), operation);
 
         return operation;
     }
@@ -113,8 +134,11 @@ public class OnnxImporter {
 
     private static Onnx.ValueInfoProto getOutputNode(String name, Onnx.GraphProto graph) {
         for (Onnx.ValueInfoProto valueInfo : graph.getOutputList()) {
-            Onnx.NodeProto node = getNodeFromGraph(valueInfo.getName(), graph);
-            if (node.getName().equals(name)) {
+            if (valueInfo.getName().equals(name)) {
+                return valueInfo;
+            }
+            String nodeName = OnnxOperation.namePartOf(valueInfo.getName());
+            if (nodeName.equals(name)) {
                 return valueInfo;
             }
         }
@@ -123,18 +147,34 @@ public class OnnxImporter {
 
     private static List<OnnxOperation> importNodeInputs(Onnx.NodeProto node,
                                                         Onnx.GraphProto graph,
+                                                        OnnxModel model,
                                                         OperationIndex index) {
         return node.getInputList().stream()
-                .map(nodeName -> importNode(nodeName, graph, index))
+                .map(nodeName -> importNode(nodeName, graph, model, index))
                 .collect(Collectors.toList());
     }
 
+    private static void verifyOutputTypes(Onnx.GraphProto graph, OnnxModel model, OperationIndex index) {
+        for (String outputName : model.outputs().values()) {
+            OnnxOperation operation = index.get(outputName);
+            Onnx.ValueInfoProto onnxNode = getOutputNode(outputName, graph);
+            operation.type().orElseThrow(
+                        () -> new IllegalArgumentException("Output of '" + outputName + "' has no type."))
+                    .verifyType(onnxNode.getType());
+        }
+    }
+
+
     /** Find dimension names to avoid excessive renaming while evaluating the model. */
-    private static void findDimensionNames(OnnxOperation output) {
+    private static void findDimensionNames(OnnxModel model, OperationIndex index) {
         DimensionRenamer renamer = new DimensionRenamer();
-        addDimensionNameConstraints(output, renamer);
+        for (String output : model.outputs().values()) {
+            addDimensionNameConstraints(index.get(output), renamer);
+        }
         renamer.solve();
-        renameDimensions(output, renamer);
+        for (String output : model.outputs().values()) {
+            renameDimensions(index.get(output), renamer);
+        }
     }
 
     private static void addDimensionNameConstraints(OnnxOperation operation, DimensionRenamer renamer) {
@@ -151,10 +191,17 @@ public class OnnxImporter {
         }
     }
 
-    private static void importExpressions(OnnxOperation output, OnnxModel model) {
-        Optional<TensorFunction> function = importExpression(output, model);
-        if (!function.isPresent()) {
-            throw new IllegalArgumentException("No valid output function could be found.");
+    private static void importExpressions(OnnxModel model, OperationIndex index) {
+        for (String outputName : model.outputs().values()) {
+            try {
+                Optional<TensorFunction> function = importExpression(index.get(outputName), model);
+                if (!function.isPresent()) {
+                    model.skippedOutput(outputName, "No valid output function could be found.");
+                }
+            }
+            catch (IllegalArgumentException e) {
+                model.skippedOutput(outputName, Exceptions.toMessageString(e));
+            }
         }
     }
 
@@ -167,7 +214,7 @@ public class OnnxImporter {
         }
         importInputExpressions(operation, model);
         importRankingExpression(operation, model);
-        importInputExpression(operation, model);
+        importArgumentExpression(operation, model);
 
         return operation.function();
     }
@@ -204,7 +251,7 @@ public class OnnxImporter {
             if (!model.expressions().containsKey(name)) {
                 TensorFunction function = operation.function().get();
 
-                if (name.equals(model.output())) {
+                if (model.outputs().containsKey(name)) {
                     OrderedTensorType operationType = operation.type().get();
                     OrderedTensorType standardNamingType = OrderedTensorType.standardType(operationType);
                     if ( ! operationType.equals(standardNamingType)) {
@@ -228,7 +275,7 @@ public class OnnxImporter {
         }
     }
 
-    private static void importInputExpression(OnnxOperation operation, OnnxModel model) {
+    private static void importArgumentExpression(OnnxOperation operation, OnnxModel model) {
         if (operation.isInput()) {
             // All inputs must have dimensions with standard naming convention: d0, d1, ...
             OrderedTensorType standardNamingConvention = OrderedTensorType.standardType(operation.type().get());
@@ -237,6 +284,20 @@ public class OnnxImporter {
         }
     }
 
+    private static void reportWarnings(OnnxModel model, OperationIndex index) {
+        for (String output : model.outputs().values()) {
+            reportWarnings(model, index.get(output));
+        }
+    }
+
+    private static void reportWarnings(OnnxModel model, OnnxOperation operation) {
+        for (String warning : operation.warnings()) {
+            model.importWarning(warning);
+        }
+        for (OnnxOperation input : operation.inputs()) {
+            reportWarnings(model, input);
+        }
+    }
 
     private static Onnx.NodeProto getNodeFromGraph(String nodeName, Onnx.GraphProto graph) {
         boolean hasPortNumber = nodeName.contains(":");
