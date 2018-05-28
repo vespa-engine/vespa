@@ -92,7 +92,7 @@ public abstract class OnnxOperation {
 
     /** Retrieve the valid Vespa name of this node */
     public String vespaName() { return vespaName(node.getName()); }
-    public String vespaName(String name) { return name != null ? name.replace('/', '_').replace(':','_') : null; }
+    public String vespaName(String name) { return name != null ? namePartOf(name).replace('/', '_') : null; }
 
     /** Retrieve the list of warnings produced during its lifetime */
     public List<String> warnings() { return Collections.unmodifiableList(importWarnings); }
@@ -114,6 +114,24 @@ public abstract class OnnxOperation {
 
     boolean allInputFunctionsPresent(int expected) {
         return verifyInputs(expected, OnnxOperation::function);
+    }
+
+    /**
+     * A method signature input and output has the form name:index.
+     * This returns the name part without the index.
+     */
+    public static String namePartOf(String name) {
+        name = name.startsWith("^") ? name.substring(1) : name;
+        return name.split(":")[0];
+    }
+
+    /**
+     * This return the output index part. Indexes are used for nodes with
+     * multiple outputs.
+     */
+    public static int indexPartOf(String name) {
+        int i = name.indexOf(":");
+        return i < 0 ? 0 : Integer.parseInt(name.substring(i + 1));
     }
 
 }
