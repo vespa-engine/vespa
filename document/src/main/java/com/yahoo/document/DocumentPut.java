@@ -45,4 +45,9 @@ public class DocumentPut extends DocumentOperation {
         this.document = newDocument;
     }
 
+    @Override
+    public String toString() {
+        return "put of document " + getId();
+    }
+
 }

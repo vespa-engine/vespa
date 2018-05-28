@@ -33,31 +33,43 @@ public class DocumentParser {
         this.parser = parser;
     }
 
+    /**
+     * Parses a single document and returns it.
+     * Returns empty is we have reached the end of the stream.
+     */
     public Optional<DocumentParseInfo> parse(Optional<DocumentId> documentIdArg) throws IOException {
         indentLevel = 0;
         DocumentParseInfo documentParseInfo = new DocumentParseInfo();
         documentIdArg.ifPresent(documentId -> documentParseInfo.documentId = documentId);
+        boolean foundItems = false;
         do {
-            parseOneItem(documentParseInfo, documentIdArg.isPresent() /* doc id set externally */);
+            foundItems |= parseOneItem(documentParseInfo, documentIdArg.isPresent() /* doc id set externally */);
         } while (indentLevel > 0L);
 
-        if (documentParseInfo.documentId != null) {
-            return Optional.of(documentParseInfo);
+        if (documentParseInfo.documentId == null) {
+            if (foundItems)
+                throw new IllegalArgumentException("Missing a document operation ('put', 'update' or 'remove')");
+            else
+                return Optional.empty();
         }
-        return Optional.empty();
+        return Optional.of(documentParseInfo);
     }
 
-    private void parseOneItem(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally) throws IOException {
+    /**
+     * Parses one item from the stream.
+     *
+     * @return whether an item was found
+     */
+    private boolean parseOneItem(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally) throws IOException {
         parser.nextValue();
         processIndent();
-        if (parser.getCurrentName() == null) {
-            return;
-        }
+        if (parser.getCurrentName() == null) return false;
         if (indentLevel == 1L) {
             handleIdentLevelOne(documentParseInfo, docIdAndOperationIsSetExternally);
         } else if (indentLevel == 2L) {
             handleIdentLevelTwo(documentParseInfo);
         }
+        return true;
     }
 
     private void processIndent() {

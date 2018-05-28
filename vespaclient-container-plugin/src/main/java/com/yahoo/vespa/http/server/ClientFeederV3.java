@@ -40,6 +40,8 @@ import static com.yahoo.messagebus.ErrorCode.SEND_QUEUE_FULL;
  * The implementation is based on the code from V2, but the object model is rewritten to simplify the logic and
  * avoid using a threadpool that has no effect with all the extra that comes with it. V2 has one instance per thread
  * on the client, while this is one instance for all threads.
+ *
+ * @author dybis
  */
 class ClientFeederV3 {
 
@@ -109,7 +111,7 @@ class ClientFeederV3 {
         ongoingRequests.incrementAndGet();
         try {
             FeederSettings feederSettings = new FeederSettings(request);
-            /**
+            /*
              * The gateway handle overload from clients in different ways.
              *
              * If the backend is overloaded, but not the gateway, it will fill the backend, messagebus throttler
@@ -132,7 +134,7 @@ class ClientFeederV3 {
             }
 
             InputStream inputStream = StreamReaderV3.unzipStreamIfNeeded(request);
-            final BlockingQueue<OperationStatus> replies = new LinkedBlockingQueue<>();
+            BlockingQueue<OperationStatus> replies = new LinkedBlockingQueue<>();
             try {
                 feed(feederSettings, inputStream, replies, threadsAvailableForFeeding);
                 synchronized (monitor) {
@@ -148,11 +150,7 @@ class ClientFeederV3 {
                 log.log(LogLevel.WARNING, "Unhandled exception while feeding: "
                         + Exceptions.toMessageString(e), e);
             } finally {
-                try {
-                    replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, false, null));
-                } catch (InterruptedException e) {
-                    // NOP, we are already exiting the thread
-                }
+                replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, false, null));
             }
             return new FeedResponse(200, replies, 3 /* protocol version */, clientId, outstandingOperations.get(), hostName);
         } finally {
@@ -171,7 +169,7 @@ class ClientFeederV3 {
     private Optional<DocumentOperationMessageV3> pullMessageFromRequest(
             FeederSettings settings, InputStream requestInputStream, BlockingQueue<OperationStatus> repliesFromOldMessages) {
         while (true) {
-            final Optional<String> operationId;
+            Optional<String> operationId;
             try {
                 operationId = streamReaderV3.getNextOperationId(requestInputStream);
             } catch (IOException ioe) {
@@ -183,7 +181,8 @@ class ClientFeederV3 {
             if (! operationId.isPresent()) {
                 return Optional.empty();
             }
-            final DocumentOperationMessageV3 message;
+
+            DocumentOperationMessageV3 message;
             try {
                 message = getNextMessage(operationId.get(), requestInputStream, settings);
             } catch (Exception e) {
@@ -236,7 +235,7 @@ class ClientFeederV3 {
             }
             setMessageParameters(msg.get(), settings);
 
-            final Result result;
+            Result result;
             try {
                 result = sendMessage(settings, msg.get(), threadsAvailableForFeeding);
 
@@ -265,8 +264,8 @@ class ClientFeederV3 {
         }
     }
 
-    private OperationStatus createOperationStatus(String id, String message, ErrorCode code, boolean isConditionNotMet, Message msg)
-            throws InterruptedException {
+    private OperationStatus createOperationStatus(String id, String message,
+                                                  ErrorCode code, boolean isConditionNotMet, Message msg) {
         String traceMessage = msg != null && msg.getTrace() != null &&  msg.getTrace().getLevel() > 0
                 ? msg.getTrace().toString()
                 : "";

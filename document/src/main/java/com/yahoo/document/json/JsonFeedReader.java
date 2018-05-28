@@ -23,6 +23,7 @@ import com.yahoo.vespaxmlparser.VespaXMLFeedReader.Operation;
  * @author steinar
  */
 public class JsonFeedReader implements FeedReader {
+
     private final JsonReader reader;
     private InputStream stream;
     private static final JsonFactory jsonFactory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);

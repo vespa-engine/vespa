@@ -74,6 +74,8 @@ public class VespaJsonDocumentReader {
     // Exposed for unit testing...
     public void readPut(TokenBuffer buffer, DocumentPut put) {
         try {
+            if (buffer.isEmpty()) // no "fields" map
+                throw new IllegalArgumentException(put + " is missing a 'fields' map");
             populateComposite(buffer, put.getDocument());
         } catch (JsonReaderException e) {
             throw JsonReaderException.addDocId(e, put.getId());
@@ -82,6 +84,8 @@ public class VespaJsonDocumentReader {
 
     // Exposed for unit testing...
     public void readUpdate(TokenBuffer buffer, DocumentUpdate update) {
+        if (buffer.isEmpty())
+            throw new IllegalArgumentException("update of document " + update.getId() + " is missing a 'fields' map");
         expectObjectStart(buffer.currentToken());
         int localNesting = buffer.nesting();
 

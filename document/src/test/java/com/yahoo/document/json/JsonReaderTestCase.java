@@ -1094,6 +1094,67 @@ public class JsonReaderTestCase {
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
     }
 
+    @Test
+    public void testMissingOperation() {
+        try {
+            String jsonData = inputJson(
+                    "[",
+                    "      {",
+                    "          'fields': {",
+                    "              'actualarray': {",
+                    "                  'add': [",
+                    "                      'person',",
+                    "                      'another person'",
+                    "                   ]",
+                    "              }",
+                    "          }",
+                    "      }",
+                    "]");
+
+            new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Missing a document operation ('put', 'update' or 'remove')", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMissingFieldsMapInPut() {
+        try {
+            String jsonData = inputJson(
+                    "[",
+                    "      {",
+                    "          'put': 'id:unittest:smoke::whee'",
+                    "      }",
+                    "]");
+
+            new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("put of document id:unittest:smoke::whee is missing a 'fields' map", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMissingFieldsMapInUpdate() {
+        try {
+            String jsonData = inputJson(
+                    "[",
+                    "      {",
+                    "          'update': 'id:unittest:smoke::whee'",
+                    "      }",
+                    "]");
+
+            new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("update of document id:unittest:smoke::whee is missing a 'fields' map", e.getMessage());
+        }
+    }
+
     static ByteArrayInputStream jsonToInputStream(String json) {
         return new ByteArrayInputStream(Utf8.toBytes(json));
     }

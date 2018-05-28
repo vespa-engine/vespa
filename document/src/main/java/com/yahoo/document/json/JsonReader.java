@@ -28,7 +28,6 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart
  * @author Steinar Knutsen
  * @author dybis
  */
-@Beta
 public class JsonReader {
 
     public Optional<DocumentParseInfo> parseDocument() throws IOException {
@@ -79,6 +78,7 @@ public class JsonReader {
         return operation;
     }
 
+    /** Returns the next document operation, or null if we have reached the end */
     public DocumentOperation next() {
         switch (state) {
             case AT_START:
