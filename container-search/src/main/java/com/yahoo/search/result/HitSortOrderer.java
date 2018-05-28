@@ -11,7 +11,7 @@ import java.util.List;
  * A hit orderer which can be assigned to a HitGroup to keep that group's
  * hit sorted in accordance with the sorting specification given when this is created.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class HitSortOrderer extends HitOrderer {
 
