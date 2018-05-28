@@ -40,6 +40,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,16 +81,12 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
 
         // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
+        List<URI> allServers = zoneRegistry.getConfigServerVipUri(zoneId)
+                // TODO: Use config server VIP for all zones that have one
+                .filter(zone -> zoneId.region().value().startsWith("aws-") || zoneId.region().value().startsWith("cd-aws-"))
 
-        // TODO: Use config server VIP for all zones that have one
-
-        // For now, just add config server VIP as first element in list of servers if it exists
-        if (zoneId.region().value().startsWith("aws-")
-                || zoneId.region().value().startsWith("cd-aws-")
-                || zoneId.region().value().equals("cd-us-east-1a")) {
-            zoneRegistry.getConfigServerVipUri(zoneId).ifPresent(uri -> allServers.add(0, uri));
-        }
+                .map(Collections::singletonList)
+                .orElseGet(() -> new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId)));
 
         StringBuilder errorBuilder = new StringBuilder();
         if (queueFirstServerIfDown(allServers, proxyRequest)) {
