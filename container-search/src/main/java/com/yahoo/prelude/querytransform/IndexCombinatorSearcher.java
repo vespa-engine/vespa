@@ -12,6 +12,7 @@ import com.yahoo.prelude.Index.Attribute;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.*;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
@@ -63,8 +64,10 @@ public class IndexCombinatorSearcher extends Searcher {
     }
 
     @Override
-    public com.yahoo.search.Result search(Query query, Execution execution) {
+    public Result search(Query query, Execution execution) {
+        // TODO
         Item root = query.getModel().getQueryTree().getRoot();
+        if (1==1) return execution.search(query);
         IndexFacts.Session session = execution.context().getIndexFacts().newSession(query);
         String oldQuery = (query.getTraceLevel() >= 2) ? root.toString() : "";
 
@@ -176,22 +179,22 @@ public class IndexCombinatorSearcher extends Searcher {
         if (c instanceof NotItem) {
             c = rewriteNot((NotItem) c, session);
             return c;
-        } else if (c instanceof CompositeItem) {
+        } else {
             switch (chooseRewriteStrategy(c, session)) {
-            case NONE:
-                c = traverse(c, session);
-                break;
-            case CHEAP_AND:
-                c = cheapTransform(c, session);
-                break;
-            case EXPENSIVE_AND:
-                c = expensiveTransform((AndItem) c, session);
-                break;
-            case FLAT:
-                c = flatTransform(c, session);
-                break;
-            default:
-                break;
+                case NONE:
+                    c = traverse(c, session);
+                    break;
+                case CHEAP_AND:
+                    c = cheapTransform(c, session);
+                    break;
+                case EXPENSIVE_AND:
+                    c = expensiveTransform((AndItem) c, session);
+                    break;
+                case FLAT:
+                    c = flatTransform(c, session);
+                    break;
+                default:
+                    break;
             }
         }
         return c;
@@ -201,8 +204,7 @@ public class IndexCombinatorSearcher extends Searcher {
         int length = c.getItemCount();
         for (int i = 0; i < length; ++i) {
             Item word = c.getItem(i);
-            if (word instanceof CompositeItem && !(word instanceof PhraseItem)
-                    && !(word instanceof BlockItem)) {
+            if (word instanceof CompositeItem && !(word instanceof PhraseItem) && !(word instanceof BlockItem)) {
                 c.setItem(i, rewrite((CompositeItem) word, session));
             }
         }
@@ -336,7 +338,7 @@ public class IndexCombinatorSearcher extends Searcher {
             WordItem newWord = new WordItem(asPhrase.getIndexedString(), newIndex.name, false);
             return newWord;
         } else if (word instanceof IndexedItem) {
-                word.setIndexName(newIndex.name);
+            word.setIndexName(newIndex.name);
         } else if (word instanceof CompositeItem) {
             CompositeItem asComposite = (CompositeItem) word;
             for (Iterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
