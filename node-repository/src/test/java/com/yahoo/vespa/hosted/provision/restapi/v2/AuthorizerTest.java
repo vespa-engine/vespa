@@ -111,6 +111,7 @@ public class AuthorizerTest {
         assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/"));
         assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/node1"));
         assertTrue(authorizedController("vespa.vespa.configserver", "/nodes/v2/node/node1"));
+        assertTrue(authorizedController("vespa.vespa.proxy", "/routing/v1/status/canary-docker.vespa.cd-us-central-1.prod"));
     }
 
     @Test

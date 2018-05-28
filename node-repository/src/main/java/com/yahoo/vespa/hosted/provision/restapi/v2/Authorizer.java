@@ -103,6 +103,7 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
     private static Set<AthenzIdentity> getTrustedIdentities(SystemName system) {
         Set<AthenzIdentity> trustedIdentities = new HashSet<>();
         trustedIdentities.add(new AthenzService("vespa.vespa", "configserver"));
+        trustedIdentities.add(new AthenzService("vespa.vespa", "proxy"));
         AthenzService controllerIdentity =
                 system == SystemName.main
                         ? new AthenzService("vespa.vespa", "hosting")
