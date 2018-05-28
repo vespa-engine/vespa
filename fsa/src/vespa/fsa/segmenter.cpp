@@ -77,16 +77,16 @@ void Segmenter::Segments::buildSegmentation(Segmenter::SegmentationMethod method
   switch(method){
   case SEGMENTATION_WEIGHTED_BIAS100:
     bias+=50;
-    //@fallthrough@
+    [[fallthrough]];
   case SEGMENTATION_WEIGHTED_BIAS50:
     bias+=30;
-    //@fallthrough@
+    [[fallthrough]];
   case SEGMENTATION_WEIGHTED_BIAS20:
     bias+=10;
-    //@fallthrough@
+    [[fallthrough]];
   case SEGMENTATION_WEIGHTED_BIAS10:
     bias+=10;
-    //@fallthrough@
+    [[fallthrough]];
   case SEGMENTATION_WEIGHTED:
     bestid=-1;
     for(i=n_txt;i>=0;i--){

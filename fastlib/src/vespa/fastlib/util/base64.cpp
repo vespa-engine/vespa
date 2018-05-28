@@ -90,7 +90,7 @@ Fast_Base64::Decode(const char *source, unsigned int length, char *destination) 
             if (symbol != '=' || i == length)
                 return -1;
             symbol = source[++i];
-            //@fallthrough@
+            [[fallthrough]];
         case 3: for (; i < length; ++i) {
                 symbol = source[i];
                 if (symbol == '\0')

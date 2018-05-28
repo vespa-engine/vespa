@@ -905,7 +905,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                             slval.getValue() + srval.getValue()));
             }
         }
-        //@fallthrough@
+        [[fallthrough]];
         case SUB:
         case MUL:
         case DIV:
@@ -995,7 +995,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                 return result;
             }
         }
-        //@fallthrough@
+        [[fallthrough]];
         case SUB:
         case MUL:
         case DIV:

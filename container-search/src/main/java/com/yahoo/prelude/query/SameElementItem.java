@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query;
 
 
+import com.google.common.annotations.Beta;
 import com.yahoo.protect.Validator;
 
 import java.util.Iterator;
@@ -12,6 +13,7 @@ import java.util.Iterator;
  * The common path is the field name containing the struct.
  * @author baldersheim
  */
+@Beta
 public class SameElementItem extends CompositeIndexedItem {
 
     public SameElementItem(String commonPath) {

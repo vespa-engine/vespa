@@ -22,14 +22,15 @@ import java.util.*;
  * Searcher to rewrite queries to achieve mixed recall between indices and
  * memory attributes.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
+ * @deprecated do not use
  */
 @After({PhaseNames.RAW_QUERY, PHRASE_REPLACEMENT})
 @Before(PhaseNames.TRANSFORMED_QUERY)
 @Provides(IndexCombinatorSearcher.MIXED_RECALL_REWRITE)
-// TODO: This is not necessary on Vespa 6, we should probably remove it from the default chain but keep it
-//       around until Vespa 6 to avoid breaking those who refer to it.
+@Deprecated // TODO: Remove on Vespa 7 (not necessary any more)
 public class IndexCombinatorSearcher extends Searcher {
+
     public static final String MIXED_RECALL_REWRITE = "MixedRecallRewrite";
 
     private static class ArrayComparator implements Comparator<Attribute[]> {

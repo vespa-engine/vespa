@@ -128,18 +128,18 @@ public:
         c += length;
         switch(len)              /* all the case statements fall through */
         {
-        case 11: c += (static_cast<uint32_t>(k[10]) << 24); //@fallthrough@
-        case 10: c += (static_cast<uint32_t>(k[9]) << 16); //@fallthrough@
-        case 9 : c += (static_cast<uint32_t>(k[8]) << 8); //@fallthrough@
+        case 11: c += (static_cast<uint32_t>(k[10]) << 24); [[fallthrough]];
+        case 10: c += (static_cast<uint32_t>(k[9]) << 16); [[fallthrough]];
+        case 9 : c += (static_cast<uint32_t>(k[8]) << 8); [[fallthrough]];
             /* the first byte of c is reserved for the length */
-        case 8 : b += (static_cast<uint32_t>(k[7]) << 24); //@fallthrough@
-        case 7 : b += (static_cast<uint32_t>(k[6]) << 16); //@fallthrough@
-        case 6 : b += (static_cast<uint32_t>(k[5]) << 8); //@fallthrough@
-        case 5 : b += k[4]; //@fallthrough@
-        case 4 : a += (static_cast<uint32_t>(k[3]) << 24); //@fallthrough@
-        case 3 : a += (static_cast<uint32_t>(k[2]) << 16); //@fallthrough@
-        case 2 : a += (static_cast<uint32_t>(k[1]) << 8); //@fallthrough@
-        case 1 : a += k[0]; //@fallthrough@
+        case 8 : b += (static_cast<uint32_t>(k[7]) << 24); [[fallthrough]];
+        case 7 : b += (static_cast<uint32_t>(k[6]) << 16); [[fallthrough]];
+        case 6 : b += (static_cast<uint32_t>(k[5]) << 8); [[fallthrough]];
+        case 5 : b += k[4]; [[fallthrough]];
+        case 4 : a += (static_cast<uint32_t>(k[3]) << 24); [[fallthrough]];
+        case 3 : a += (static_cast<uint32_t>(k[2]) << 16); [[fallthrough]];
+        case 2 : a += (static_cast<uint32_t>(k[1]) << 8); [[fallthrough]];
+        case 1 : a += k[0];
             /* case 0: nothing left to add */
         }
         bobhash_mix(a,b,c);

@@ -50,11 +50,16 @@ public class SystemUpgrader extends Maintainer {
     private void deploy(List<SystemApplication> applications, Version target) {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
             boolean converged = true;
-            for (SystemApplication application : applications) {
-                if (application.dependencies().stream().allMatch(dep -> convergedOn(target, dep, zones))) {
-                    deploy(zones, application, target);
+            for (ZoneId zone : zones) {
+                for (SystemApplication application : applications) {
+                    boolean dependenciesConverged = application.dependencies().stream()
+                                                               .filter(applications::contains) // TODO: Remove when all() is used.
+                                                               .allMatch(dependency -> currentVersion(zone, dependency.id()).equals(target));
+                    if (dependenciesConverged) {
+                        deploy(target, application, zone);
+                    }
+                    converged &= currentVersion(zone, application.id()).equals(target);
                 }
-                converged &= convergedOn(target, application, zones);
             }
             if (!converged) {
                 break;
@@ -63,25 +68,19 @@ public class SystemUpgrader extends Maintainer {
     }
 
     /** Deploy application on given version idempotently */
-    private void deploy(List<ZoneId> zones, SystemApplication application, Version target) {
-        for (ZoneId zone : zones) {
-            if (!wantedVersion(zone, application.id(), target).equals(target)) {
-                log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
-                controller().applications().deploy(application, zone, target);
-            }
+    private void deploy(Version target, SystemApplication application, ZoneId zone) {
+        if (!wantedVersion(zone, application.id(), target).equals(target)) {
+            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
+            controller().applications().deploy(application, zone, target);
         }
-    }
-
-    private boolean convergedOn(Version target, SystemApplication application, List<ZoneId> zones) {
-        return zones.stream().allMatch(zone -> currentVersion(zone, application.id(), target).equals(target));
     }
 
     private Version wantedVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
         return minVersion(zone, application, Node::wantedVersion).orElse(defaultVersion);
     }
 
-    private Version currentVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
-        return minVersion(zone, application, Node::currentVersion).orElse(defaultVersion);
+    private Version currentVersion(ZoneId zone, ApplicationId application) {
+        return minVersion(zone, application, Node::currentVersion).orElse(Version.emptyVersion);
     }
 
     private Optional<Version> minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
