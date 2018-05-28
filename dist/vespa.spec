@@ -42,18 +42,24 @@ BuildRequires: maven
 %if 0%{?fc26}
 BuildRequires: llvm-devel >= 4.0
 BuildRequires: boost-devel >= 1.63
+BuildRequires: vespa-gtest >= 1.8.0-2
 %endif
 %if 0%{?fc27}
 BuildRequires: llvm4.0-devel >= 4.0
 BuildRequires: boost-devel >= 1.64
+BuildRequires: vespa-gtest >= 1.8.0-2
 %endif
 %if 0%{?fc28}
 BuildRequires: llvm4.0-devel >= 4.0
 BuildRequires: boost-devel >= 1.66
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
 %endif
 %if 0%{?fc29}
 BuildRequires: llvm4.0-devel >= 4.0
 BuildRequires: boost-devel >= 1.66
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
 %endif
 %endif
 BuildRequires: lz4-devel
@@ -106,12 +112,16 @@ Requires: llvm3.9
 %if 0%{?fc26}
 Requires: llvm-libs >= 4.0
 %define _vespa_llvm_version 4.0
+%define _vespa_gtest_link_directory /opt/vespa-gtest/lib
+%define _vespa_gtest_include_directory /opt/vespa-gtest/include
 %endif
 %if 0%{?fc27}
 Requires: llvm4.0-libs >= 4.0
 %define _vespa_llvm_version 4.0
 %define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
 %define _vespa_llvm_include_directory /usr/include/llvm4.0
+%define _vespa_gtest_link_directory /opt/vespa-gtest/lib
+%define _vespa_gtest_include_directory /opt/vespa-gtest/include
 %endif
 %if 0%{?fc28}
 Requires: llvm4.0-libs >= 4.0
@@ -125,8 +135,8 @@ Requires: llvm4.0-libs >= 4.0
 %define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
 %define _vespa_llvm_include_directory /usr/include/llvm4.0
 %endif
-%define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}
-%define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}
+%define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}%{?_vespa_gtest_link_directory:;%{_vespa_gtest_link_directory}}
+%define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}%{?_vespa_gtest_include_directory:;%{_vespa_gtest_include_directory}}
 %endif
 Requires: java-1.8.0-openjdk
 Requires: openssl
