@@ -96,6 +96,11 @@ void FeedHandler::performPut(FeedToken token, PutOperation &op) {
         }
         return;
     }
+    /*
+     * Check if document type repos are equal. DocumentTypeRepoFactory::make
+     * returns the same document type repo if document type configs are equal,
+     * thus we can just perform a cheaper identity check here.
+     */
     if (_repo != op.getDocument()->getRepo()) {
         op.deserializeDocument(*_repo);
     }
