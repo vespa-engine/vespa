@@ -16,21 +16,9 @@ FieldUpdate::FieldUpdate(const Field& field)
 {
 }
 
-// Construct a field update by deserialization.
-FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo,
-                         const DocumentType& type,
-                         ByteBuffer& buffer,
-                         int16_t version)
-    : Printable(),
-      _field(),
-      _updates()
-{
-    deserialize(repo, type, buffer, version);
-}
-
 FieldUpdate::FieldUpdate(const FieldUpdate &) = default;
 FieldUpdate & FieldUpdate::operator = (const FieldUpdate &) = default;
-FieldUpdate::~FieldUpdate() {}
+FieldUpdate::~FieldUpdate() = default;
 
 bool
 FieldUpdate::operator==(const FieldUpdate& other) const

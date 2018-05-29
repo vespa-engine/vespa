@@ -49,7 +49,13 @@ public:
      * @param serializationVersion The serialization version the update was serialized with.
      */
     FieldUpdate(const DocumentTypeRepo& repo, const DocumentType& type,
-                ByteBuffer& buffer, int16_t serializationVersion);
+                ByteBuffer& buffer, int16_t version)
+        : Printable(),
+          _field(),
+          _updates()
+    {
+        deserialize(repo, type, buffer, version);
+    }
 
     bool operator==(const FieldUpdate&) const;
     bool operator!=(const FieldUpdate & rhs) const { return ! (*this == rhs); }
