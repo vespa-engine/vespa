@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Iterator;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -65,6 +66,38 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         assertEquals(Attribute.Type.INTEGER, attribute.getType());
         assertEquals(Attribute.CollectionType.SINGLE, attribute.getCollectionType());
 
+        assertTrue(!attributes.hasNext());
+    }
+
+    @Test
+    public void array_of_struct_field_is_derived_into_array_attributes() throws IOException, ParseException {
+        Search search = SearchBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
+        Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
+
+        assertAttribute("elem_array.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("elem_array.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
+        assertTrue(!attributes.hasNext());
+    }
+
+    private static void assertAttribute(String name, Attribute.Type type, Attribute.CollectionType collection, Attribute attr) {
+        assertEquals(name, attr.getName());
+        assertEquals(type, attr.getType());
+        assertEquals(collection, attr.getCollectionType());
+    }
+
+    @Test
+    public void only_zcurve_attribute_is_derived_from_array_of_position_field() throws ParseException {
+        Search search = SearchBuilder.createFromString(
+                joinLines("search test {",
+                          "  document test {",
+                          "    field pos_array type array<position> {",
+                          "      indexing: attribute",
+                          "    }",
+                          "  }",
+                          "}")).getSearch();
+        Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
+
+        assertAttribute("pos_array_zcurve", Attribute.Type.LONG, Attribute.CollectionType.ARRAY, attributes.next());
         assertTrue(!attributes.hasNext());
     }
 
