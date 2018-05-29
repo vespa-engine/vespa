@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
+import com.yahoo.yolean.Exceptions;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
@@ -94,9 +95,13 @@ public class RestApiHandler extends LoggingRequestHandler{
         }
 
         if (wantedState != null) {
-            return refresher.setResumeStateAndCheckIfResumed(wantedState) ?
-                    new SimpleResponse(200, "ok") :
-                    new SimpleResponse(409, "fail");
+            try {
+                refresher.setResumeStateAndCheckIfResumed(wantedState);
+                return new SimpleResponse(200, "ok");
+            } catch (RuntimeException e) {
+                return new SimpleResponse(409, "Failed to converge to " + wantedState + ": " +
+                        Exceptions.toMessageString(e));
+            }
         }
         return new SimpleResponse(400, "unknown path " + path);
     }
@@ -107,7 +112,7 @@ public class RestApiHandler extends LoggingRequestHandler{
         SimpleResponse(int code, String message) {
             super(code);
             ObjectNode objectNode = objectMapper.createObjectNode();
-            objectNode.put("jsonMessage", message);
+            objectNode.put("message", message);
             this.jsonMessage = objectNode.toString();
         }
 
