@@ -594,26 +594,22 @@ public class VespaSerializer {
 
         static boolean serialize(StringBuilder destination, Item item, boolean includeField) {
 
-            SameElementItem phrase = (SameElementItem) item;
-            String annotations = leafAnnotations(phrase);
+            SameElementItem sameElement = (SameElementItem) item;
 
             if (includeField) {
-                destination.append(normalizeIndexName(phrase.getIndexName())).append(" contains ");
-
-            }
-            if (annotations.length() > 0) {
-                destination.append("([{").append(annotations).append("}]");
+                destination.append(normalizeIndexName(sameElement.getFieldName())).append(" contains ");
             }
 
             destination.append(SAME_ELEMENT).append('(');
-            for (int i = 0; i < phrase.getItemCount(); ++i) {
+            for (int i = 0; i < sameElement.getItemCount(); ++i) {
                 if (i > 0) {
                     destination.append(", ");
                 }
-                Item current = phrase.getItem(i);
+                Item current = sameElement.getItem(i);
                 if (current instanceof WordItem) {
-                    new WordSerializer().serialize(destination, current);
-
+                    WordItem modified = (WordItem)current.clone();
+                    modified.setIndexName(sameElement.extractSubFieldName(modified));
+                    new WordSerializer().serialize(destination, modified);
                 } else {
                     throw new IllegalArgumentException(
                             "Serializing of " + current.getClass().getSimpleName()
@@ -621,9 +617,7 @@ public class VespaSerializer {
                 }
             }
             destination.append(')');
-            if (annotations.length() > 0) {
-                destination.append(')');
-            }
+
             return false;
         }
 
