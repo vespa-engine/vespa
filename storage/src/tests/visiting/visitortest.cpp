@@ -62,7 +62,7 @@ private:
     CPPUNIT_TEST(testNormalUsage);
     CPPUNIT_TEST(testFailedCreateIterator);
     CPPUNIT_TEST(testFailedGetIter);
-    CPPUNIT_TEST(testMultipleFailedGetIter);
+    CPPUNIT_TEST(iterators_per_bucket_config_is_ignored_and_hardcoded_to_1);
     CPPUNIT_TEST(testDocumentAPIClientError);
     CPPUNIT_TEST(testNoDocumentAPIResendingForFailedVisitor);
     CPPUNIT_TEST(testIteratorCreatedForFailedVisitor);
@@ -90,7 +90,7 @@ public:
     void testNormalUsage();
     void testFailedCreateIterator();
     void testFailedGetIter();
-    void testMultipleFailedGetIter();
+    void iterators_per_bucket_config_is_ignored_and_hardcoded_to_1();
     void testDocumentAPIClientError();
     void testNoDocumentAPIResendingForFailedVisitor();
     void testIteratorCreatedForFailedVisitor();
@@ -592,36 +592,31 @@ VisitorTest::testFailedGetIter()
     CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
 }
 
-void
-VisitorTest::testMultipleFailedGetIter()
-{
-    initializeTest(TestParams().iteratorsPerBucket(2));
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+void VisitorTest::iterators_per_bucket_config_is_ignored_and_hardcoded_to_1() {
+    initializeTest(TestParams().iteratorsPerBucket(20));
+    auto cmd = makeCreateVisitor();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
-    std::vector<GetIterCommand::SP> getIterCmds(
-            fetchMultipleCommands<GetIterCommand>(*_bottom, 2));
-
-    sendGetIterReply(*getIterCmds[0],
-                     api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
-
-    // Wait for an "appropriate" amount of time so that wrongful logic
-    // will send a DestroyIteratorCommand before all pending GetIters
-    // have been replied to.
-    std::this_thread::sleep_for(100ms);
+    auto getIterCmd = fetchSingleCommand<GetIterCommand>(*_bottom);
+    CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1234),
+                         getIterCmd->getIteratorId());
+    sendGetIterReply(*getIterCmd);
 
     CPPUNIT_ASSERT_EQUAL(size_t(0), _bottom->getNumCommands());
 
-    sendGetIterReply(*getIterCmds[1],
-                     api::ReturnCode(api::ReturnCode::BUCKET_DELETED));
+    std::vector<document::Document::SP> docs;
+    std::vector<document::DocumentId> docIds;
+    std::vector<std::string> infoMessages;
+    getMessagesAndReply(_documents.size(), getSession(0), docs, docIds, infoMessages);
+    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), docIds.size());
 
-    DestroyIteratorCommand::SP destroyIterCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    auto destroyIterCmd = fetchSingleCommand<DestroyIteratorCommand>(*_bottom);
 
-    verifyCreateVisitorReply(api::ReturnCode::BUCKET_DELETED, 0, 0);
+    verifyCreateVisitorReply(api::ReturnCode::OK);
     CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+    CPPUNIT_ASSERT_EQUAL(0L, getFailedVisitorDestinationReplyCount());
 }
 
 void

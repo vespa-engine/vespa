@@ -24,6 +24,7 @@ defaultparalleliterators int default=8
 ## will be 16 requests to persistence layer, but only 8 will be able to execute
 ## at the same time, since only one operation can be executed at the same time
 ## for one bucket)
+## DEPRECATED: ignored by backend, 1 is always used.
 iterators_per_bucket int default=1
 
 ## Default number of maximum client replies pending.

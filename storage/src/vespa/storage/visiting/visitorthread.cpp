@@ -637,7 +637,6 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
             _ignoreNonExistingVisitorTimeLimit
                     = config.ignorenonexistingvisitortimelimit;
             _defaultParallelIterators = config.defaultparalleliterators;
-            _iteratorsPerBucket = config.iteratorsPerBucket;
             _defaultPendingMessages = config.defaultpendingmessages;
             _defaultDocBlockSize = config.defaultdocblocksize;
             _visitorMemoryUsageLimit = config.visitorMemoryUsageLimit;
@@ -646,12 +645,6 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
             if (_defaultParallelIterators < 1) {
                 LOG(config, "Cannot use value of defaultParallelIterators < 1");
                 _defaultParallelIterators = 1;
-            }
-            if (_iteratorsPerBucket < 1 && _iteratorsPerBucket > 10) {
-                if (_iteratorsPerBucket < 1) _iteratorsPerBucket = 1;
-                else _iteratorsPerBucket = 10;
-                LOG(config, "Invalid value of iterators per bucket %u using %u",
-                    config.iteratorsPerBucket, _iteratorsPerBucket);
             }
             if (_defaultPendingMessages < 1) {
                 LOG(config, "Cannot use value of defaultPendingMessages < 1");
