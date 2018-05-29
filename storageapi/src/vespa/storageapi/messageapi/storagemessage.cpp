@@ -302,4 +302,14 @@ StorageMessage::getSummary() const {
     return toString();
 }
 
+const char* to_string(LockingRequirements req) noexcept {
+    switch (req) {
+    case LockingRequirements::Exclusive:
+        return "Exclusive";
+    case LockingRequirements::Shared:
+        return "Shared";
+    }
+    assert(false);
+}
+
 }

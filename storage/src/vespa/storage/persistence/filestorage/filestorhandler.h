@@ -58,8 +58,9 @@ public:
         typedef std::shared_ptr<BucketLockInterface> SP;
 
         virtual const document::Bucket &getBucket() const = 0;
+        virtual api::LockingRequirements lockingRequirements() const noexcept = 0;
 
-        virtual ~BucketLockInterface() {};
+        virtual ~BucketLockInterface() = default;
     };
 
     typedef std::pair<BucketLockInterface::SP, api::StorageMessage::SP> LockedMessage;
@@ -139,7 +140,7 @@ public:
      *
      *
      */
-    BucketLockInterface::SP lock(const document::Bucket&, uint16_t disk);
+    BucketLockInterface::SP lock(const document::Bucket&, uint16_t disk, api::LockingRequirements lockReq);
 
     /**
      * Called by FileStorThread::onBucketDiskMove() after moving file, in case

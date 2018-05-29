@@ -370,16 +370,16 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint32_t stripeId)
 }
 
 std::shared_ptr<FileStorHandler::BucketLockInterface>
-FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket)
-{
+FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket, api::LockingRequirements lockReq) {
     vespalib::MonitorGuard guard(_lock);
 
-    while (isLocked(guard, bucket)) {
-        LOG(spam, "Contending for filestor lock for %s", bucket.getBucketId().toString().c_str());
+    while (isLocked(guard, bucket, lockReq)) {
+        LOG(spam, "Contending for filestor lock for %s with %s access",
+            bucket.getBucketId().toString().c_str(), api::to_string(lockReq));
         guard.wait(100);
     }
 
-    auto locker = std::make_shared<BucketLock>(guard, *this, bucket, 255, api::MessageType::INTERNAL_ID, 0);
+    auto locker = std::make_shared<BucketLock>(guard, *this, bucket, 255, api::MessageType::INTERNAL_ID, 0, lockReq);
 
     guard.broadcast();
     return locker;
@@ -388,9 +388,9 @@ FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket)
 namespace {
     struct MultiLockGuard {
         std::map<uint16_t, vespalib::Monitor*> monitors;
-        std::vector<std::shared_ptr<vespalib::MonitorGuard> > guards;
+        std::vector<std::shared_ptr<vespalib::MonitorGuard>> guards;
 
-        MultiLockGuard() {}
+        MultiLockGuard() = default;
 
         void addLock(vespalib::Monitor& monitor, uint16_t index) {
             monitors[index] = &monitor;
@@ -931,7 +931,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(uint32_t timeout, Disk & disk)
         PriorityIdx& idx(bmi::get<1>(_queue));
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
 
-        while (iter != end && isLocked(guard, iter->_bucket)) {
+        while (iter != end && isLocked(guard, iter->_bucket, iter->_command->lockingRequirements())) {
             iter++;
         }
         if (iter != end) {
@@ -959,6 +959,11 @@ FileStorHandlerImpl::Stripe::getNextMessage(FileStorHandler::LockedMessage& lck)
     }
 
     api::StorageMessage & m(*range.first->_command);
+    // We don't allow batching of operations across lock requirement modes.
+    if (lck.first->lockingRequirements() != m.lockingRequirements()) {
+        lck.second.reset();
+        return lck;
+    }
 
     uint64_t waitTime(range.first->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()]));
 
@@ -992,7 +997,8 @@ FileStorHandlerImpl::Stripe::getMessage(vespalib::MonitorGuard & guard, Priority
 
     if (!messageTimedOutInQueue(*msg, waitTime)) {
         auto locker = std::make_unique<BucketLock>(guard, *this, bucket, msg->getPriority(),
-                                                   msg->getType().getId(), msg->getMsgId());
+                                                   msg->getType().getId(), msg->getMsgId(),
+                                                   msg->lockingRequirements());
         guard.unlock();
         return FileStorHandler::LockedMessage(std::move(locker), std::move(msg));
     } else {
@@ -1090,10 +1096,65 @@ FileStorHandlerImpl::Stripe::flush()
         lockGuard.wait(100);
     }
 }
+
+void FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
+                                          api::LockingRequirements reqOfReleasedLock,
+                                          api::StorageMessage::Id lockMsgId) {
+    vespalib::MonitorGuard guard(_lock);
+    auto iter = _lockedBuckets.find(bucket);
+    assert(iter != _lockedBuckets.end());
+    auto& entry = iter->second;
+
+    if (reqOfReleasedLock == api::LockingRequirements::Exclusive) {
+        assert(entry._exclusiveLock);
+        assert(entry._exclusiveLock->msgId == lockMsgId);
+        entry._exclusiveLock.reset();
+    } else {
+        assert(!entry._exclusiveLock);
+        auto shared_iter = entry._sharedLocks.find(lockMsgId);
+        assert(shared_iter != entry._sharedLocks.end());
+        entry._sharedLocks.erase(shared_iter);
+    }
+
+    if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
+        _lockedBuckets.erase(iter); // No more locks held
+    }
+    guard.broadcast();
+}
+
+void FileStorHandlerImpl::Stripe::lock(const vespalib::MonitorGuard &, const document::Bucket & bucket,
+                                       api::LockingRequirements lockReq, const LockEntry & lockEntry) {
+    auto& entry = _lockedBuckets[bucket];
+    assert(!entry._exclusiveLock);
+    if (lockReq == api::LockingRequirements::Exclusive) {
+        assert(entry._sharedLocks.empty());
+        entry._exclusiveLock = lockEntry;
+    } else {
+        // TODO use a hash set with a custom comparator/hasher instead...?
+        auto inserted = entry._sharedLocks.insert(std::make_pair(lockEntry.msgId, lockEntry));
+        (void) inserted;
+        assert(inserted.second);
+    }
+}
+
 bool
-FileStorHandlerImpl::Stripe::isLocked(const vespalib::MonitorGuard &, const document::Bucket& bucket) const noexcept
+FileStorHandlerImpl::Stripe::isLocked(const vespalib::MonitorGuard &, const document::Bucket& bucket,
+                                      api::LockingRequirements lockReq) const noexcept
 {
-    return (bucket.getBucketId().getRawId() != 0) && (_lockedBuckets.find(bucket) != _lockedBuckets.end());
+    if (bucket.getBucketId().getRawId() == 0) {
+        return false;
+    }
+    auto iter = _lockedBuckets.find(bucket);
+    if (iter == _lockedBuckets.end()) {
+        return false;
+    }
+    if (iter->second._exclusiveLock) {
+        return true;
+    }
+    // Shared locks can be taken alongside other shared locks, but exclusive locks
+    // require that no shared locks are currently present.
+    return ((lockReq == api::LockingRequirements::Exclusive)
+            && !iter->second._sharedLocks.empty());
 }
 
 uint32_t
@@ -1114,33 +1175,26 @@ FileStorHandlerImpl::getQueueSize(uint16_t disk) const
 
 FileStorHandlerImpl::BucketLock::BucketLock(const vespalib::MonitorGuard & guard, Stripe& stripe,
                                             const document::Bucket &bucket, uint8_t priority,
-                                            api::MessageType::Id msgType, api::StorageMessage::Id msgId)
+                                            api::MessageType::Id msgType, api::StorageMessage::Id msgId,
+                                            api::LockingRequirements lockReq)
     : _stripe(stripe),
-      _bucket(bucket)
+      _bucket(bucket),
+      _uniqueMsgId(msgId),
+      _lockReq(lockReq)
 {
-    (void) guard;
     if (_bucket.getBucketId().getRawId() != 0) {
-        // Lock the bucket and wait until it is not the current operation for
-        // the disk itself.
-        _stripe.lock(guard, _bucket, Stripe::LockEntry(priority, msgType, msgId));
-        LOG(debug, "Locked bucket %s with priority %u",
-            bucket.getBucketId().toString().c_str(), priority);
-
-        LOG_BUCKET_OPERATION_SET_LOCK_STATE(
-                _bucket.getBucketId(), "acquired filestor lock", false,
-                debug::BucketOperationLogger::State::BUCKET_LOCKED);
+        _stripe.lock(guard, _bucket, lockReq, Stripe::LockEntry(priority, msgType, msgId));
+        LOG(debug, "Locked bucket %s for message %zu with priority %u in mode %s",
+            bucket.getBucketId().toString().c_str(), msgId, priority, api::to_string(lockReq));
     }
 }
 
 
-FileStorHandlerImpl::BucketLock::~BucketLock()
-{
+FileStorHandlerImpl::BucketLock::~BucketLock() {
     if (_bucket.getBucketId().getRawId() != 0) {
-        _stripe.release(_bucket);
-        LOG(debug, "Unlocked bucket %s", _bucket.getBucketId().toString().c_str());
-        LOG_BUCKET_OPERATION_SET_LOCK_STATE(
-                _bucket.getBucketId(), "released filestor lock", true,
-                debug::BucketOperationLogger::State::BUCKET_UNLOCKED);
+        _stripe.release(_bucket, _lockReq, _uniqueMsgId);
+        LOG(debug, "Unlocked bucket %s for message %zu in mode %s",
+            _bucket.getBucketId().toString().c_str(), _uniqueMsgId, api::to_string(_lockReq));
     }
 }
 
@@ -1182,14 +1236,31 @@ FileStorHandlerImpl::Stripe::dumpQueueHtml(std::ostream & os) const
     }
 }
 
+namespace {
+
+void dump_lock_entry(const document::BucketId& bucketId, const FileStorHandlerImpl::Stripe::LockEntry& entry,
+                     api::LockingRequirements lock_mode, uint32_t now_ts, std::ostream& os) {
+    os << api::MessageType::get(entry.msgType).getName() << ":" << entry.msgId << " ("
+       << bucketId << ", " << api::to_string(lock_mode)
+       << " lock) Running for " << (now_ts - entry.timestamp) << " secs<br/>\n";
+}
+
+}
+
 void
 FileStorHandlerImpl::Stripe::dumpActiveHtml(std::ostream & os) const
 {
     uint32_t now = time(nullptr);
     vespalib::MonitorGuard guard(_lock);
     for (const auto & e : _lockedBuckets) {
-        os << api::MessageType::get(e.second.msgType).getName() << ":" << e.second.msgId << " (" << e.first.getBucketId()
-           << ") Running for " << (now - e.second.timestamp) << " secs<br/>\n";
+        if (e.second._exclusiveLock) {
+            dump_lock_entry(e.first.getBucketId(), *e.second._exclusiveLock,
+                            api::LockingRequirements::Exclusive, now, os);
+        }
+        for (const auto& shared : e.second._sharedLocks) {
+            dump_lock_entry(e.first.getBucketId(), shared.second,
+                            api::LockingRequirements::Shared, now, os);
+        }
     }
 }
 
@@ -1238,7 +1309,6 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
         }
         for (auto & entry : _mergeStates) {
             out << "<b>" << entry.first.toString() << "</b><br>\n";
-            //    << "<p>" << it->second << "</p>\n"; // Gets very spammy with the complete state here..
         }
     }
 }
