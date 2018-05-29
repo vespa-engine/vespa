@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.jrt.Supervisor;
 
 import java.io.File;
 
@@ -17,13 +16,11 @@ public class FileDistributionProvider {
     private final FileRegistry fileRegistry;
     private final FileDistribution fileDistribution;
 
-    public FileDistributionProvider(Supervisor supervisor, File applicationDir) {
+    public FileDistributionProvider(File applicationDir, FileDistribution fileDistribution) {
+        this(new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory())), fileDistribution);
         ensureDirExists(FileDistribution.getDefaultFileDBPath());
-        this.fileDistribution = new FileDistributionImpl(supervisor);
-        this.fileRegistry = new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory()));
     }
 
-    // For testing only
     FileDistributionProvider(FileRegistry fileRegistry, FileDistribution fileDistribution) {
         this.fileRegistry = fileRegistry;
         this.fileDistribution = fileDistribution;
@@ -37,7 +34,7 @@ public class FileDistributionProvider {
         return fileDistribution;
     }
 
-    private void ensureDirExists(File dir) {
+    private static void ensureDirExists(File dir) {
         if (!dir.exists()) {
             boolean success = dir.mkdirs();
             if (!success)
