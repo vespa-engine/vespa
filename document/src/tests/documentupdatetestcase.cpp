@@ -590,24 +590,21 @@ void DocumentUpdateTest::testReadSerializedFile()
     DocumentUpdate& upd(*updp);
 
     const DocumentType *type = repo.getDocumentType("serializetest");
-    CPPUNIT_ASSERT_EQUAL(DocumentId(DocIdString("update", "test")),
-                         upd.getId());
+    CPPUNIT_ASSERT_EQUAL(DocumentId(DocIdString("update", "test")), upd.getId());
     CPPUNIT_ASSERT_EQUAL(*type, upd.getType());
 
     // Verify assign value update.
-    FieldUpdate serField = upd[0];
+    FieldUpdate serField = upd.getUpdates()[0];
     CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("intfield").getId());
 
     const ValueUpdate* serValue = &serField[0];
     CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Assign);
 
-    const AssignValueUpdate* assign(
-            static_cast<const AssignValueUpdate*>(serValue));
-    CPPUNIT_ASSERT_EQUAL(IntFieldValue(4),
-                         static_cast<const IntFieldValue&>(assign->getValue()));
+    const AssignValueUpdate* assign(static_cast<const AssignValueUpdate*>(serValue));
+    CPPUNIT_ASSERT_EQUAL(IntFieldValue(4), static_cast<const IntFieldValue&>(assign->getValue()));
 
     // Verify clear field update.
-    serField = upd[1];
+    serField = upd.getUpdates()[1];
     CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("floatfield").getId());
 
     serValue = &serField[0];
@@ -615,7 +612,7 @@ void DocumentUpdateTest::testReadSerializedFile()
     CPPUNIT_ASSERT(serValue->inherits(ClearValueUpdate::classId));
 
     // Verify add value update.
-    serField = upd[2];
+    serField = upd.getUpdates()[2];
     CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("arrayoffloatfield").getId());
 
     serValue = &serField[0];
@@ -762,14 +759,11 @@ DocumentUpdateTest::testUpdateArrayEmptyParamValue()
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("tags"));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0,
-                         doc->getValue(field).get());
+    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, doc->getValue(field).get());
 
     // Assign array field with no array values = empty array.
     DocumentUpdate update(*doc->getDataType(), doc->getId());
-    update.addUpdate(FieldUpdate(field)
-                     .addUpdate(AssignValueUpdate(
-                                     ArrayFieldValue(field.getDataType()))));
+    update.addUpdate(FieldUpdate(field).addUpdate(AssignValueUpdate(ArrayFieldValue(field.getDataType()))));
     update.applyTo(*doc);
 
     // Verify that the field was set in the document.
@@ -778,10 +772,9 @@ DocumentUpdateTest::testUpdateArrayEmptyParamValue()
     CPPUNIT_ASSERT_EQUAL((size_t) 0, fval1->size());
 
     // Remove array field.
-    update.clear();
-    update.addUpdate(FieldUpdate(field)
-		    .addUpdate(ClearValueUpdate()));
-    update.applyTo(*doc);
+    DocumentUpdate update2(*doc->getDataType(), doc->getId());
+    update2.addUpdate(FieldUpdate(field).addUpdate(ClearValueUpdate()));
+    update2.applyTo(*doc);
 
     // Verify that the field was cleared in the document.
     std::unique_ptr<ArrayFieldValue> fval2(doc->getAs<ArrayFieldValue>(field));
@@ -795,31 +788,25 @@ DocumentUpdateTest::testUpdateWeightedSetEmptyParamValue()
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("stringweightedset"));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0,
-			             doc->getValue(field).get());
+    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, doc->getValue(field).get());
 
     // Assign weighted set with no items = empty set.
     DocumentUpdate update(*doc->getDataType(), doc->getId());
-    update.addUpdate(FieldUpdate(field)
-		    .addUpdate(AssignValueUpdate(
-                    WeightedSetFieldValue(field.getDataType()))));
+    update.addUpdate(FieldUpdate(field).addUpdate(AssignValueUpdate(WeightedSetFieldValue(field.getDataType()))));
     update.applyTo(*doc);
 
     // Verify that the field was set in the document.
-    std::unique_ptr<WeightedSetFieldValue>
-        fval1(doc->getAs<WeightedSetFieldValue>(field));
+    auto fval1(doc->getAs<WeightedSetFieldValue>(field));
     CPPUNIT_ASSERT(fval1.get());
     CPPUNIT_ASSERT_EQUAL((size_t) 0, fval1->size());
 
     // Remove weighted set field.
-    update.clear();
-    update.addUpdate(FieldUpdate(field)
-		    .addUpdate(ClearValueUpdate()));
-    update.applyTo(*doc);
+    DocumentUpdate update2(*doc->getDataType(), doc->getId());
+    update2.addUpdate(FieldUpdate(field).addUpdate(ClearValueUpdate()));
+    update2.applyTo(*doc);
 
     // Verify that the field was cleared in the document.
-    std::unique_ptr<WeightedSetFieldValue>
-        fval2(doc->getAs<WeightedSetFieldValue>(field));
+    auto fval2(doc->getAs<WeightedSetFieldValue>(field));
     CPPUNIT_ASSERT(!fval2);
 }
 
@@ -830,8 +817,7 @@ DocumentUpdateTest::testUpdateArrayWrongSubtype()
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("tags"));
-    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0,
-			             doc->getValue(field).get());
+    CPPUNIT_ASSERT_EQUAL((document::FieldValue*) 0, doc->getValue(field).get());
 
     // Assign int values to string array.
     DocumentUpdate update(*doc->getDataType(), doc->getId());

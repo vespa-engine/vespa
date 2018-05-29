@@ -107,11 +107,6 @@ public:
      * type as this.
      */
     void applyTo(Document& doc) const;
-
-    void clear() { _updates.clear(); }
-    size_t size() const { return _updates.size(); }
-    const FieldUpdate& operator[](int index) const { return _updates[index]; }
-    FieldUpdate& operator[](int index) { return _updates[index]; }
 	
     /**
      * Add a field update to this document update.
