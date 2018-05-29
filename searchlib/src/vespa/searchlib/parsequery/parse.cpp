@@ -111,8 +111,12 @@ ParseItem::AppendBuffer(RawBuf *buf) const
     case ITEM_WEAK_AND:
     case ITEM_NEAR:
     case ITEM_ONEAR:
+    case ITEM_SAME_ELEMENT:
         buf->appendCompressedPositiveNumber(_arity);
-        buf->appendCompressedPositiveNumber(_arg1);
+        if (Type() != ITEM_SAME_ELEMENT) {
+            buf->appendCompressedPositiveNumber(_arg1);
+        }
+
         if (Type() == ITEM_WEAK_AND) {
             buf->appendCompressedPositiveNumber(indexLen);
             if (indexLen != 0) {
@@ -124,7 +128,6 @@ ParseItem::AppendBuffer(RawBuf *buf) const
     case ITEM_DOT_PRODUCT:
     case ITEM_WAND:
     case ITEM_PHRASE:
-    case ITEM_SAME_ELEMENT:
         buf->appendCompressedPositiveNumber(_arity);
         buf->appendCompressedPositiveNumber(indexLen);
         if (indexLen != 0) {
@@ -198,6 +201,8 @@ ParseItem::GetBufferLen() const
     case ITEM_WEIGHTED_SET:
     case ITEM_DOT_PRODUCT:
     case ITEM_PHRASE:
+        len += sizeof(uint32_t) * 2 + indexLen;
+        break;
     case ITEM_SAME_ELEMENT:
         len += sizeof(uint32_t) * 2 + indexLen;
         break;

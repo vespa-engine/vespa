@@ -235,7 +235,6 @@ public:
     void visit(ProtonSubstringTerm &n) override { checkNode(n, 0, true); }
     void visit(ProtonSuffixTerm &n) override { checkNode(n, 2, false); }
     void visit(ProtonPhrase &n) override { checkNode(n, 0, true); }
-    void visit(ProtonSameElement &n) override { checkNode(n, 0, true); }
     void visit(ProtonWeightedSetTerm &) override {}
     void visit(ProtonDotProduct &) override {}
     void visit(ProtonWandTerm &) override {}
@@ -383,7 +382,6 @@ public:
 
     void visit(ProtonSubstringTerm &) override {}
     void visit(ProtonSuffixTerm &) override {}
-    void visit(ProtonSameElement &) override {}
     void visit(ProtonPhrase &n) override {
         const ITermData &term_data = n;
         EXPECT_EQUAL(2u, term_data.getPhraseLength());

@@ -37,8 +37,6 @@ class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
     // overridden to do so.
     void visit(typename NodeTypes::Phrase &n) override { myVisit(n); }
 
-    void visit(typename NodeTypes::SameElement &n) override { myVisit(n); }
-
     // WeightedSetTerms are terms with children. This visitor will not visit
     // the weighted set's children, unless this member function is
     // overridden to do so.

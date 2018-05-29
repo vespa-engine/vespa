@@ -104,13 +104,15 @@ struct ProtonTerm : public ProtonTermBase<Base> {
     ~ProtonTerm() {}
 };
 
-typedef search::query::SimpleAnd     ProtonAnd;
-typedef search::query::SimpleAndNot  ProtonAndNot;
-typedef search::query::SimpleNear    ProtonNear;
-typedef search::query::SimpleONear   ProtonONear;
-typedef search::query::SimpleOr      ProtonOr;
-typedef search::query::SimpleRank    ProtonRank;
-typedef search::query::SimpleWeakAnd ProtonWeakAnd;
+typedef search::query::SimpleAnd         ProtonAnd;
+typedef search::query::SimpleAndNot      ProtonAndNot;
+typedef search::query::SimpleNear        ProtonNear;
+typedef search::query::SimpleONear       ProtonONear;
+typedef search::query::SimpleOr          ProtonOr;
+typedef search::query::SimpleRank        ProtonRank;
+typedef search::query::SimpleWeakAnd     ProtonWeakAnd;
+typedef search::query::SimpleSameElement ProtonSameElement;
+
 
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv>
 {
@@ -121,7 +123,6 @@ struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv>
 typedef ProtonTerm<search::query::LocationTerm>    ProtonLocationTerm;
 typedef ProtonTerm<search::query::NumberTerm>      ProtonNumberTerm;
 typedef ProtonTerm<search::query::Phrase>          ProtonPhrase;
-typedef ProtonTerm<search::query::SameElement>     ProtonSameElement;
 
 typedef ProtonTerm<search::query::PrefixTerm>      ProtonPrefixTerm;
 typedef ProtonTerm<search::query::RangeTerm>       ProtonRangeTerm;

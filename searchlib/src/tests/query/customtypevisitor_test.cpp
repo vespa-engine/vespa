@@ -39,7 +39,7 @@ struct MyNear : Near { MyNear() : Near(1) {} };
 struct MyONear : ONear { MyONear() : ONear(1) {} };
 struct MyOr : Or {};
 struct MyPhrase : Phrase { MyPhrase() : Phrase("view", 0, Weight(42)) {} };
-struct MySameElement : SameElement { MySameElement() : SameElement("view", 0, Weight(42)) {} };
+struct MySameElement : SameElement { MySameElement() : SameElement("view") {} };
 struct MyRank : Rank {};
 struct MyNumberTerm : InitTerm<NumberTerm>  {};
 struct MyLocationTerm : InitTerm<LocationTerm> {};

@@ -75,8 +75,7 @@ private:
     }
 
     void visit(SameElement &node) override {
-        replicate(node, _builder.addSameElement(node.getChildren().size(), node.getView(),
-                                                node.getId(), node.getWeight()));
+        _builder.addSameElement(node.getChildren().size(), node.getView());
         visitNodes(node.getChildren());
     }
 

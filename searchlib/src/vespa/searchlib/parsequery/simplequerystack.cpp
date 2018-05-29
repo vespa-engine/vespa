@@ -204,13 +204,17 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             result.append(make_string("%c/%d~", _G_ItemName[type], arity));
             break;
         case ParseItem::ITEM_WEAK_AND:
+        case ParseItem::ITEM_SAME_ELEMENT:
         case ParseItem::ITEM_NEAR:
         case ParseItem::ITEM_ONEAR:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             arity = tmp;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            arg1 = tmp;
-            if (type == ParseItem::ITEM_WEAK_AND) {
+            if (type != ParseItem::ITEM_SAME_ELEMENT) {
+                p += vespalib::compress::Integer::decompressPositive(tmp, p);
+                arg1 = tmp;
+            }
+
+            if (type == ParseItem::ITEM_WEAK_AND || type == ParseItem::ITEM_SAME_ELEMENT) {
                 p += vespalib::compress::Integer::decompressPositive(tmp, p);
                 idxRefLen = tmp;
                 idxRef = p;
@@ -256,7 +260,6 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             break;
 
         case ParseItem::ITEM_PHRASE:
-        case ParseItem::ITEM_SAME_ELEMENT:
         case ParseItem::ITEM_WEIGHTED_SET:
         case ParseItem::ITEM_DOT_PRODUCT:
         case ParseItem::ITEM_WAND:

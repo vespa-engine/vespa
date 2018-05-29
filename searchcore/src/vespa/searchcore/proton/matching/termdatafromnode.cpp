@@ -25,12 +25,12 @@ struct TermDataFromTermVisitor
     void visit(ProtonOr &) override {}
     void visit(ProtonRank &) override {}
     void visit(ProtonWeakAnd &) override {}
+    void visit(ProtonSameElement &) override { }
 
     void visit(ProtonWeightedSetTerm &n) override { visitTerm(n); }
     void visit(ProtonDotProduct &n) override { visitTerm(n); }
     void visit(ProtonWandTerm &n) override { visitTerm(n); }
     void visit(ProtonPhrase &n) override { visitTerm(n); }
-    void visit(ProtonSameElement &n) override { visitTerm(n); }
     void visit(ProtonEquiv &n) override { visitTerm(n); }
 
     void visit(ProtonNumberTerm &n) override { visitTerm(n); }

@@ -123,21 +123,22 @@ private:
     }
 
 protected:
-    void visit(ProtonAnd &n)     override { buildIntermediate(new AndBlueprint(), n); }
-    void visit(ProtonAndNot &n)  override { buildIntermediate(new AndNotBlueprint(), n); }
-    void visit(ProtonOr &n)      override { buildIntermediate(new OrBlueprint(), n); }
-    void visit(ProtonWeakAnd &n) override { buildWeakAnd(n); }
-    void visit(ProtonEquiv &n)   override { buildEquiv(n); }
-    void visit(ProtonRank &n)    override { buildIntermediate(new RankBlueprint(), n); }
-    void visit(ProtonNear &n)    override { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
-    void visit(ProtonONear &n)   override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
+    void visit(ProtonAnd &n)         override { buildIntermediate(new AndBlueprint(), n); }
+    void visit(ProtonAndNot &n)      override { buildIntermediate(new AndNotBlueprint(), n); }
+    void visit(ProtonOr &n)          override { buildIntermediate(new OrBlueprint(), n); }
+    void visit(ProtonWeakAnd &n)     override { buildWeakAnd(n); }
+    void visit(ProtonEquiv &n)       override { buildEquiv(n); }
+    void visit(ProtonRank &n)        override { buildIntermediate(new RankBlueprint(), n); }
+    void visit(ProtonNear &n)        override { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
+    void visit(ProtonONear &n)       override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
+    void visit(ProtonSameElement &n) override { buildIntermediate(nullptr /*new SameElementBlueprint())*/, n); }
+
 
     void visit(ProtonWeightedSetTerm &n) override { buildTerm(n); }
     void visit(ProtonDotProduct &n)      override { buildTerm(n); }
     void visit(ProtonWandTerm &n)        override { buildTerm(n); }
 
     void visit(ProtonPhrase &n)          override { buildTerm(n); }
-    void visit(ProtonSameElement &n)     override { buildTerm(n); }
     void visit(ProtonNumberTerm &n)      override { buildTerm(n); }
     void visit(ProtonLocationTerm &n)    override { buildTerm(n); }
     void visit(ProtonPrefixTerm &n)      override { buildTerm(n); }

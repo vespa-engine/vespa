@@ -105,7 +105,7 @@ Node::UP createQueryTree() {
             builder.addStringTerm(str[2], view[2], id[2], weight[2]);
         }
         builder.addRegExpTerm(str[5], view[5], id[5], weight[5]);
-        builder.addSameElement(3, view[4], id[4], weight[4]);
+        builder.addSameElement(3, view[4]);
         {
             builder.addStringTerm(str[4], view[4], id[4], weight[5]);
             builder.addStringTerm(str[5], view[5], id[5], weight[6]);
@@ -322,7 +322,7 @@ struct MyONear : ONear { MyONear(size_t dist) : ONear(dist) {} };
 struct MyWeakAnd : WeakAnd { MyWeakAnd(uint32_t minHits, const vespalib::string & v) : WeakAnd(minHits, v) {} };
 struct MyOr : Or {};
 struct MyPhrase : Phrase { MyPhrase(const string &f, int32_t i, Weight w) : Phrase(f, i, w) {}};
-struct MySameElement : SameElement { MySameElement(const string &f, int32_t i, Weight w) : SameElement(f, i, w) {}};
+struct MySameElement : SameElement { MySameElement(const string &f) : SameElement(f) {}};
 
 struct MyWeightedSetTerm : WeightedSetTerm {
     MyWeightedSetTerm(const string &f, int32_t i, Weight w) : WeightedSetTerm(f, i, w) {}
@@ -545,8 +545,7 @@ TEST("require that Query Tree Creator Can Create Queries From Stack") {
     string stackDump = StackDumpCreator::create(*node);
     SimpleQueryStackDumpIterator iterator(stackDump);
 
-    Node::UP new_node =
-        QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     checkQueryTreeTypes<SimpleQueryNodeTypes>(new_node.get());
 }
 

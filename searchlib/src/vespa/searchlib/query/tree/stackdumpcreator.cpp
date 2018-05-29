@@ -98,6 +98,13 @@ class QueryNodeConverter : public QueryVisitor {
         visitNodes(node.getChildren());
     }
 
+    void createIntermediate(const Intermediate &node, size_t type, const vespalib::string & view) {
+        appendByte(type);
+        appendCompressedPositiveNumber(node.getChildren().size());
+        appendString(view);
+        visitNodes(node.getChildren());
+    }
+
     void createIntermediate(const Intermediate &node, size_t type, size_t distance, const vespalib::string & view) {
         appendByte(type);
         appendCompressedPositiveNumber(node.getChildren().size());
@@ -135,7 +142,7 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void visit(SameElement &node) override {
-        createComplexIntermediate(node, node.getChildren(), (ParseItem::ITEM_SAME_ELEMENT | ParseItem::IF_WEIGHT));
+        createIntermediate(node, ParseItem::ITEM_SAME_ELEMENT, node.getView());
     }
 
     void visit(Phrase &node) override {

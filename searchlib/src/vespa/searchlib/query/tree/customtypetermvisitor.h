@@ -26,6 +26,7 @@ private:
     void visit(typename NodeTypes::Or &n) override { visitChildren(n); }
     void visit(typename NodeTypes::Rank &n) override { visitChildren(n); }
     void visit(typename NodeTypes::WeakAnd &n) override { visitChildren(n); }
+    void visit(typename NodeTypes::SameElement &n) override { visitChildren(n); }
 
     // phrases and weighted set terms are conceptual leaf nodes and
     // should be handled that way.

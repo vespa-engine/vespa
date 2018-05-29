@@ -103,11 +103,13 @@ public:
     virtual ~Phrase() = 0;
 };
 
-class SameElement : public QueryNodeMixin<SameElement, Intermediate>, public Term {
+class SameElement : public QueryNodeMixin<SameElement, Intermediate> {
 public:
-    SameElement(const vespalib::string &view, int32_t id, Weight weight)
-            : Term(view, id, weight) {}
+    SameElement(const vespalib::string &view) : _view(view) {}
     virtual ~SameElement() = 0;
+    const vespalib::string & getView() const { return _view; }
+private:
+    vespalib::string _view;
 };
 
 class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, Intermediate>, public Term {

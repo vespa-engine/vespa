@@ -32,8 +32,7 @@ struct SimplePhrase : Phrase {
 };
 
 struct SimpleSameElement : SameElement {
-    SimpleSameElement(const vespalib::stringref &view, int32_t id, Weight weight)
-            : SameElement(view, id, weight) {}
+    SimpleSameElement(const vespalib::stringref &view) : SameElement(view) {}
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {
     SimpleWeightedSetTerm(const vespalib::stringref &view, int32_t id, Weight weight)

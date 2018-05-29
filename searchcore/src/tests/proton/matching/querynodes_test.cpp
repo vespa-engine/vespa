@@ -208,7 +208,7 @@ public:
 
 typedef QueryBuilder<ProtonNodeTypes> QB;
 struct Phrase { void addToBuilder(QB& b) { b.addPhrase(2, view, id, weight); }};
-struct SameElement { void addToBuilder(QB& b) { b.addSameElement(2, view, id, weight); }};
+struct SameElement { void addToBuilder(QB& b) { b.addSameElement(2, view); }};
 struct Near   { void addToBuilder(QB& b) { b.addNear(2, distance); } };
 struct ONear  { void addToBuilder(QB& b) { b.addONear(2, distance); } };
 struct Or     { void addToBuilder(QB& b) { b.addOr(2); } };

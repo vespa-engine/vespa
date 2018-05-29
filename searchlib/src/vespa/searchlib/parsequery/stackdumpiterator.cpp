@@ -34,9 +34,7 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(const vespalib::strin
 {
 }
 
-SimpleQueryStackDumpIterator::~SimpleQueryStackDumpIterator()
-{
-}
+SimpleQueryStackDumpIterator::~SimpleQueryStackDumpIterator() = default;
 
 vespalib::string SimpleQueryStackDumpIterator::readString(const char *&p) {
     if (p >= _bufEnd) throw false;
@@ -154,6 +152,20 @@ SimpleQueryStackDumpIterator::next()
         _currTerm = NULL;
         _currTermLen = 0;
         break;
+    case ParseItem::ITEM_SAME_ELEMENT:
+        if (p >= _bufEnd) return false;
+        p += vespalib::compress::Integer::decompressPositive(tmp, p);
+        _currArity = tmp;
+        _currArg1 = 0;
+        p += vespalib::compress::Integer::decompressPositive(tmp, p);
+        _currIndexNameLen = tmp;
+        if (p > _bufEnd) return false;
+        _currIndexName = p;
+        p += _currIndexNameLen;
+        if (p > _bufEnd) return false;
+        _currTerm = NULL;
+        _currTermLen = 0;
+        break;
 
     case ParseItem::ITEM_PURE_WEIGHTED_STRING:
         if (p >= _bufEnd) return false;
@@ -250,7 +262,6 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_DOT_PRODUCT:
     case ParseItem::ITEM_WAND:
     case ParseItem::ITEM_PHRASE:
-    case ParseItem::ITEM_SAME_ELEMENT:
         p += vespalib::compress::Integer::decompressPositive(tmp, p);
         _currArity = tmp;
         if (p > _bufEnd) return false;
