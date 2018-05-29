@@ -38,6 +38,9 @@ public:
     void setMaxByteSize(uint32_t maxByteSize) { _maxByteSize = maxByteSize; }
     uint32_t getMaxByteSize() const { return _maxByteSize; }
 
+    api::LockingRequirements lockingRequirements() const noexcept override {
+        return api::LockingRequirements::Shared;
+    }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 private:
@@ -104,6 +107,9 @@ public:
     }
     spi::ReadConsistency getReadConsistency() const noexcept {
         return _readConsistency;
+    }
+    api::LockingRequirements lockingRequirements() const noexcept override {
+        return api::LockingRequirements::Shared;
     }
 
     std::unique_ptr<api::StorageReply> makeReply() override;

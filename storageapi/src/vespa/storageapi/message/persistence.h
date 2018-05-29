@@ -24,7 +24,7 @@ class TestAndSetCommand : public BucketInfoCommand {
     TestAndSetCondition _condition;
 public:
     TestAndSetCommand(const MessageType & messageType, const document::Bucket &bucket);
-    ~TestAndSetCommand();
+    ~TestAndSetCommand() override;
 
     void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
     const TestAndSetCondition & getCondition() const { return _condition; }
@@ -49,7 +49,7 @@ class PutCommand : public TestAndSetCommand {
 
 public:
     PutCommand(const document::Bucket &bucket, const DocumentSP&, Timestamp);
-    ~PutCommand();
+    ~PutCommand() override;
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
 
@@ -86,7 +86,7 @@ class PutReply : public BucketInfoReply {
 
 public:
     explicit PutReply(const PutCommand& cmd, bool wasFound = true);
-    ~PutReply();
+    ~PutReply() override;
 
     const document::DocumentId& getDocumentId() const { return _docId; }
     bool hasDocument() const { return _document.get(); }
@@ -116,7 +116,7 @@ class UpdateCommand : public TestAndSetCommand {
 public:
     UpdateCommand(const document::Bucket &bucket,
                   const std::shared_ptr<document::DocumentUpdate>&, Timestamp);
-    ~UpdateCommand();
+    ~UpdateCommand() override;
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
     void setOldTimestamp(Timestamp ts) { _oldTimestamp = ts; }
@@ -147,7 +147,7 @@ class UpdateReply : public BucketInfoReply {
 
 public:
     UpdateReply(const UpdateCommand& cmd, Timestamp oldTimestamp = 0);
-    ~UpdateReply();
+    ~UpdateReply() override;
 
     void setOldTimestamp(Timestamp ts) { _oldTimestamp = ts; }
 
@@ -189,7 +189,7 @@ class GetCommand : public BucketInfoCommand {
 public:
     GetCommand(const document::Bucket &bucket, const document::DocumentId&,
                const vespalib::stringref & fieldSet, Timestamp before = MAX_TIMESTAMP);
-    ~GetCommand();
+    ~GetCommand() override;
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
@@ -198,6 +198,10 @@ public:
 
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    api::LockingRequirements lockingRequirements() const noexcept override {
+        return api::LockingRequirements::Shared;
+    }
 
     DECLARE_STORAGECOMMAND(GetCommand, onGet)
 };
@@ -219,7 +223,7 @@ public:
     GetReply(const GetCommand& cmd,
              const DocumentSP& doc = DocumentSP(),
              Timestamp lastModified = 0);
-    ~GetReply();
+    ~GetReply() override;
 
     const DocumentSP& getDocument() const { return _doc; }
     const document::DocumentId& getDocumentId() const { return _docId; }
@@ -245,7 +249,7 @@ class RemoveCommand : public TestAndSetCommand {
 
 public:
     RemoveCommand(const document::Bucket &bucket, const document::DocumentId& docId, Timestamp timestamp);
-    ~RemoveCommand();
+    ~RemoveCommand() override;
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
     const document::DocumentId& getDocumentId() const override { return _docId; }
@@ -267,7 +271,7 @@ class RemoveReply : public BucketInfoReply {
     Timestamp _oldTimestamp;
 public:
     explicit RemoveReply(const RemoveCommand& cmd, Timestamp oldTimestamp = 0);
-    ~RemoveReply();
+    ~RemoveReply() override;
 
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getTimestamp() { return _timestamp; };
@@ -289,7 +293,7 @@ class RevertCommand : public BucketInfoCommand {
 public:
     RevertCommand(const document::Bucket &bucket,
                   const std::vector<Timestamp>& revertTokens);
-    ~RevertCommand();
+    ~RevertCommand() override;
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(RevertCommand, onRevert)
@@ -305,7 +309,7 @@ class RevertReply : public BucketInfoReply {
     std::vector<Timestamp> _tokens;
 public:
     explicit RevertReply(const RevertCommand& cmd);
-    ~RevertReply();
+    ~RevertReply() override;
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(RevertReply, onRevertReply)
