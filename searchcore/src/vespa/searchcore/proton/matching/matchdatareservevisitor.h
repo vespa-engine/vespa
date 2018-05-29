@@ -22,13 +22,14 @@ public:
     template <class TermNode>
     void visitTerm(TermNode &n) { n.allocateTerms(_mdl); }
 
-    virtual void visit(ProtonNodeTypes::Equiv &n) override {
+    void visit(ProtonNodeTypes::Equiv &n) override {
         MatchDataReserveVisitor subAllocator(n.children_mdl);
         for (size_t i = 0; i < n.getChildren().size(); ++i) {
             n.getChildren()[i]->accept(subAllocator);
         }
         n.allocateTerms(_mdl);
     }
+    void visit(ProtonNodeTypes::SameElement &) override { }
 
     MatchDataReserveVisitor(search::fef::MatchDataLayout &mdl) : _mdl(mdl) {}
 };
