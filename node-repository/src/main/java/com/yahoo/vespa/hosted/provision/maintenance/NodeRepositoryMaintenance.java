@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -65,7 +66,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig) {
-        DefaultTimes defaults = new DefaultTimes(zone.environment());
+        DefaultTimes defaults = new DefaultTimes(zone);
         jobControl = new JobControl(nodeRepository.database());
         infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
 
@@ -151,7 +152,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
-        DefaultTimes(Environment environment) {
+        DefaultTimes(Zone zone) {
             failGrace = Duration.ofMinutes(60);
             periodicRedeployInterval = Duration.ofMinutes(30);
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
@@ -164,13 +165,14 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
+            Environment environment = zone.environment();
             if (environment.isTest())
                 retiredExpiry = Duration.ofMinutes(1); // fast turnaround as test envs don't have persistent data
             else
                 retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
 
 
-            if (environment.equals(Environment.prod)) {
+            if (environment.equals(Environment.prod) && zone.system() == SystemName.main) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(29);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
