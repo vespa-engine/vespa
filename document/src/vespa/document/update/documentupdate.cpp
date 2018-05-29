@@ -21,18 +21,14 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(DocumentUpdate, vespalib::Identifiable);
-
 // Declare content bits.
 static const unsigned char CONTENT_HASTYPE = 0x01;
-
-typedef std::vector<FieldUpdate> FieldUpdateList;
-typedef std::vector<FieldPathUpdate::CP> FieldPathUpdateList;
 
 DocumentUpdate::DocumentUpdate()
     : _documentId("doc::"),
       _type(DataType::DOCUMENT),
       _updates(),
+      _fieldPathUpdates(),
       _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false)
 {
@@ -42,6 +38,7 @@ DocumentUpdate::DocumentUpdate(const DataType &type, const DocumentId& id)
     : _documentId(id),
       _type(&type),
       _updates(),
+      _fieldPathUpdates(),
       _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false)
 {
@@ -107,11 +104,6 @@ DocumentUpdate&
 DocumentUpdate::addFieldPathUpdate(const FieldPathUpdate::CP& update) {
     _fieldPathUpdates.push_back(update);
     return *this;
-}
-
-DocumentUpdate*
-DocumentUpdate::clone() const {
-    return new DocumentUpdate(*this);
 }
 
 void
@@ -223,15 +215,13 @@ namespace {
 DocumentUpdate::UP
 DocumentUpdate::create42(const DocumentTypeRepo& repo, ByteBuffer& buffer)
 {
-    return std::make_unique<DocumentUpdate>(repo, buffer,
-                                            SerializeVersion::SERIALIZE_42);
+    return std::make_unique<DocumentUpdate>(repo, buffer, SerializeVersion::SERIALIZE_42);
 }
 
 DocumentUpdate::UP
 DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, ByteBuffer& buffer)
 {
-    return std::make_unique<DocumentUpdate>(repo, buffer,
-                                            SerializeVersion::SERIALIZE_HEAD);
+    return std::make_unique<DocumentUpdate>(repo, buffer, SerializeVersion::SERIALIZE_HEAD);
 }
 
 void

@@ -41,9 +41,7 @@ class Document;
  * path updates was added, and a new serialization format was
  * introduced while keeping the old one.
  */
-class DocumentUpdate : public vespalib::Identifiable,
-                       public Printable,
-                       public XmlSerializable
+class DocumentUpdate final : public Printable, public XmlSerializable
 {
 public:
     typedef std::unique_ptr<DocumentUpdate> UP;
@@ -90,10 +88,11 @@ public:
      * @param buffer The buffer containing the serialized document update
      * @param serializeVersion Selector between serialization formats.
      */
-    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer,
-                   SerializeVersion serializeVersion);
+    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer, SerializeVersion serializeVersion);
 
-    ~DocumentUpdate();
+    DocumentUpdate(const DocumentUpdate &) = delete;
+    DocumentUpdate & operator = (const DocumentUpdate &) = delete;
+    ~DocumentUpdate() override;
 
     bool operator==(const DocumentUpdate&) const;
     bool operator!=(const DocumentUpdate & rhs) const { return ! (*this == rhs); }
@@ -139,8 +138,6 @@ public:
 
     void printXml(XmlOutputStream&) const override;
 
-    virtual DocumentUpdate* clone() const;
-
     /**
      * Sets whether this update should create the document it updates if that document does not exist.
      * In this case an empty document is created before the update is applied.
@@ -159,7 +156,6 @@ public:
     int serializeFlags(int size_) const;
     int16_t getVersion() const { return _version; }
 
-    DECLARE_IDENTIFIABLE(DocumentUpdate);
 private:
     DocumentId       _documentId; // The ID of the document to update.
     const DataType  *_type; // The type of document this update is for.
