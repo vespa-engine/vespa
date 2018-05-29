@@ -179,20 +179,21 @@ private:
         _result = mixer.mix();
     }
 
-    void visit(And &)     override { }
-    void visit(AndNot &)  override { }
-    void visit(Or &)      override { }
-    void visit(WeakAnd &) override { }
-    void visit(Equiv &)   override { }
-    void visit(Rank &)    override { }
-    void visit(Near &)    override { }
-    void visit(ONear &)   override { }
+    void visit(And &)         override { }
+    void visit(AndNot &)      override { }
+    void visit(Or &)          override { }
+    void visit(WeakAnd &)     override { }
+    void visit(Equiv &)       override { }
+    void visit(Rank &)        override { }
+    void visit(Near &)        override { }
+    void visit(ONear &)       override { }
+    void visit(SameElement &) override { }
+
 
     void visit(WeightedSetTerm &n) override { visitTerm(n); }
     void visit(DotProduct &n)      override { visitTerm(n); }
     void visit(WandTerm &n)        override { visitTerm(n); }
     void visit(Phrase &n)          override { visitTerm(n); }
-    void visit(SameElement &n)     override { visitTerm(n); }
     void visit(NumberTerm &n)      override { visitTerm(n); }
     void visit(LocationTerm &n)    override { visitTerm(n); }
     void visit(PrefixTerm &n)      override { visitTerm(n); }
