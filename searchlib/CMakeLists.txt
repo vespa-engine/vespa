@@ -194,6 +194,7 @@ vespa_define_module(
     src/tests/queryeval/multibitvectoriterator
     src/tests/queryeval/parallel_weak_and
     src/tests/queryeval/predicate
+    src/tests/queryeval/same_element
     src/tests/queryeval/simple_phrase
     src/tests/queryeval/sourceblender
     src/tests/queryeval/sparse_vector_benchmark
