@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.google.common.io.Files;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.test.ManualClock;
 import com.yahoo.config.provision.TenantName;
@@ -41,7 +42,7 @@ public class LocalSessionRepoTest extends TestWithCurator {
 
     private void setupSessions(TenantName tenantName, boolean createInitialSessions) throws Exception {
         GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        TenantFileSystemDirs tenantFileSystemDirs = TenantFileSystemDirs.createTestDirs(tenantName);
+        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(Files.createTempDir(), tenantName);
         if (createInitialSessions) {
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "1"));
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "2"));

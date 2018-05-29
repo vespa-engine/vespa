@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server;
 
 import com.google.common.io.Files;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,25 +14,26 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ConfigServerDBTest {
     private ConfigServerDB serverDB;
-    private File dbDir;
-    private File definitionsDir;
+    private ConfigserverConfig configserverConfig;
 
     @Before
     public void setup() {
-        dbDir = Files.createTempDir();
-        definitionsDir = Files.createTempDir();
-        serverDB = ConfigServerDB.createTestConfigServerDb(dbDir.getAbsolutePath(), definitionsDir.getAbsolutePath());
+        File dbDir = Files.createTempDir();
+        File definitionsDir = Files.createTempDir();
+        configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                                            .configServerDBDir(dbDir.getAbsolutePath())
+                                                            .configDefinitionsDir(definitionsDir.getAbsolutePath()));
+        serverDB = new ConfigServerDB(configserverConfig);
     }
 
     private void createInitializer() throws IOException {
         File existingDef = new File(serverDB.classes(), "test.def");
         IOUtils.writeFile(existingDef, "hello", false);
-        ConfigServerDB.createTestConfigServerDb(dbDir.getAbsolutePath(), definitionsDir.getAbsolutePath());
+        new ConfigServerDB(configserverConfig);
     }
 
     @Test

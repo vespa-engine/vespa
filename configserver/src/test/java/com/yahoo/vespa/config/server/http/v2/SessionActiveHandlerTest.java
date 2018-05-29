@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.google.common.io.Files;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -223,7 +224,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) {
         writeApplicationId(zkc, deployData.getApplicationName());
-        TenantFileSystemDirs tenantFileSystemDirs = TenantFileSystemDirs.createTestDirs(tenantName);
+        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(Files.createTempDir(), tenantName);
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
                                               new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),

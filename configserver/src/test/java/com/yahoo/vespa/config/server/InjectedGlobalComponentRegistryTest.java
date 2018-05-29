@@ -31,14 +31,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class InjectedGlobalComponentRegistryTest {
 
     private Curator curator;
     private Metrics metrics;
-    private ConfigServerDB serverDB;
     private SessionPreparer sessionPreparer;
     private ConfigserverConfig configserverConfig;
     private RpcServer rpcServer;
@@ -60,7 +58,6 @@ public class InjectedGlobalComponentRegistryTest {
                 new ConfigserverConfig.Builder()
                         .configServerDBDir(Files.createTempDir().getAbsolutePath())
                         .configDefinitionsDir(Files.createTempDir().getAbsolutePath()));
-        serverDB = new ConfigServerDB(configserverConfig);
         sessionPreparer = new SessionTest.MockSessionPreparer();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(), 
                                   new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(FileDistribution.getDefaultFileDBPath()));
@@ -70,13 +67,14 @@ public class InjectedGlobalComponentRegistryTest {
         hostRegistries = new HostRegistries();
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner());
         zone = Zone.defaultZone();
-        globalComponentRegistry = new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, serverDB, sessionPreparer, rpcServer, configserverConfig, generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone);
+        globalComponentRegistry =
+                new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,
+                                                    generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone);
     }
 
     @Test
     public void testThatAllComponentsAreSetup() {
         assertThat(globalComponentRegistry.getModelFactoryRegistry(), is(modelFactoryRegistry));
-        assertThat(globalComponentRegistry.getServerDB(), is(serverDB));
         assertThat(globalComponentRegistry.getSessionPreparer(), is(sessionPreparer));
         assertThat(globalComponentRegistry.getMetrics(), is(metrics));
         assertThat(globalComponentRegistry.getCurator(), is(curator));

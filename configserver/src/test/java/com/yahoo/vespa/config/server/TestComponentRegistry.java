@@ -37,7 +37,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Curator curator;
     private final ConfigCurator configCurator;
     private final Metrics metrics;
-    private final ConfigServerDB serverDB;
     private final SessionPreparer sessionPreparer;
     private final ConfigserverConfig configserverConfig;
     private final SuperModelGenerationCounter superModelGenerationCounter;
@@ -57,7 +56,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   PermanentApplicationPackage permanentApplicationPackage,
                                   FileDistributionFactory fileDistributionFactory,
                                   SuperModelGenerationCounter superModelGenerationCounter,
-                                  ConfigServerDB configServerDB,
                                   HostRegistries hostRegistries,
                                   ConfigserverConfig configserverConfig,
                                   SessionPreparer sessionPreparer,
@@ -71,7 +69,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.configCurator = configCurator;
         this.metrics = metrics;
         this.configserverConfig = configserverConfig;
-        this.serverDB = configServerDB;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
         this.superModelGenerationCounter = superModelGenerationCounter;
@@ -168,7 +165,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                              permApp,
                                              fileDistributionFactory,
                                              new SuperModelGenerationCounter(curator),
-                                             new ConfigServerDB(configserverConfig),
                                              hostRegistries, configserverConfig, sessionPreparer,
                                              hostProvisioner, defRepo, reloadListener,
                                              tenantListener, zone, clock);
@@ -181,8 +177,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public ConfigCurator getConfigCurator() { return configCurator; }
     @Override
     public Metrics getMetrics() { return metrics; }
-    @Override
-    public ConfigServerDB getServerDB() { return serverDB; }
     @Override
     public SessionPreparer getSessionPreparer() { return sessionPreparer; }
     @Override

@@ -31,7 +31,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final ConfigCurator configCurator;
     private final Metrics metrics;
     private final ModelFactoryRegistry modelFactoryRegistry;
-    private final ConfigServerDB serverDB;
     private final SessionPreparer sessionPreparer;
     private final RpcServer rpcServer;
     private final ConfigserverConfig configserverConfig;
@@ -47,7 +46,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            ConfigCurator configCurator,
                                            Metrics metrics,
                                            ModelFactoryRegistry modelFactoryRegistry,
-                                           ConfigServerDB serverDB,
                                            SessionPreparer sessionPreparer,
                                            RpcServer rpcServer,
                                            ConfigserverConfig configserverConfig,
@@ -61,7 +59,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.configCurator = configCurator;
         this.metrics = metrics;
         this.modelFactoryRegistry = modelFactoryRegistry;
-        this.serverDB = serverDB;
         this.sessionPreparer = sessionPreparer;
         this.rpcServer = rpcServer;
         this.configserverConfig = configserverConfig;
@@ -79,8 +76,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public ConfigCurator getConfigCurator() { return configCurator; }
     @Override
     public Metrics getMetrics() { return metrics; }
-    @Override
-    public ConfigServerDB getServerDB() { return serverDB; }
     @Override
     public SessionPreparer getSessionPreparer() { return sessionPreparer; }
     @Override
