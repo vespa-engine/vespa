@@ -16,27 +16,28 @@ import java.util.Iterator;
 @Beta
 public class SameElementItem extends CompositeItem {
 
-    private final String commonPath;
+    private final String fieldName;
 
     public SameElementItem(String commonPath) {
-        this.commonPath = commonPath;
+        Validator.ensureNonEmpty("Field name", commonPath);
+        this.fieldName = commonPath;
     }
 
     @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer);
-        putString(commonPath, buffer);
+        putString(fieldName, buffer);
     }
 
     @Override
     protected void appendHeadingString(StringBuilder buffer) { }
     @Override
     protected void appendBodyString(StringBuilder buffer) {
-        buffer.append(commonPath).append(':');
+        buffer.append(fieldName).append(':');
         buffer.append('{');
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             TermItem term = (TermItem) i.next();
-            buffer.append(term.getIndexName()).append(':').append(term.getIndexedString());
+            buffer.append(extractSubFieldName(term)).append(':').append(term.getIndexedString());
             if (i.hasNext()) {
                 buffer.append(' ');
             }
@@ -50,6 +51,9 @@ public class SameElementItem extends CompositeItem {
         TermItem asTerm = (TermItem) item;
         Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
         Validator.ensureNonEmpty("Query term", asTerm.getIndexedString());
+        Validator.ensure("Struct fieldname does not start with '" + getFieldName() + "'",
+                !asTerm.getIndexName().startsWith(fieldName));
+        item.setIndexName(fieldName + '.' + asTerm.getIndexName());
     }
     @Override
     public ItemType getItemType() {
@@ -60,5 +64,8 @@ public class SameElementItem extends CompositeItem {
     public String getName() {
         return getItemType().toString();
     }
-    public String getCommonPath() { return commonPath; }
+    public String getFieldName() { return fieldName; }
+    public String extractSubFieldName(TermItem full) {
+        return full.getIndexName().substring(getFieldName().length()+1);
+    }
 }

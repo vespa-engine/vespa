@@ -597,7 +597,7 @@ public class VespaSerializer {
             SameElementItem sameElement = (SameElementItem) item;
 
             if (includeField) {
-                destination.append(normalizeIndexName(sameElement.getCommonPath())).append(" contains ");
+                destination.append(normalizeIndexName(sameElement.getFieldName())).append(" contains ");
             }
 
             destination.append(SAME_ELEMENT).append('(');
@@ -607,8 +607,9 @@ public class VespaSerializer {
                 }
                 Item current = sameElement.getItem(i);
                 if (current instanceof WordItem) {
-                    new WordSerializer().serialize(destination, current);
-
+                    WordItem modified = (WordItem)current.clone();
+                    modified.setIndexName(sameElement.extractSubFieldName(modified));
+                    new WordSerializer().serialize(destination, modified);
                 } else {
                     throw new IllegalArgumentException(
                             "Serializing of " + current.getClass().getSimpleName()
