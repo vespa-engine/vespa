@@ -42,11 +42,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
      **/
     public WeakAndItem(String index, int N) {
         this.N = N;
-        if (index == null) {
-            this.index = "";
-        } else {
-            this.index = index;
-        }
+        this.index = (index == null) ? "" : index;
     }
     public WeakAndItem(int N) {
         this("", N);
@@ -54,12 +50,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
 
     /** Sets the index name of all subitems of this */
     public void setIndexName(String index) {
-        String toSet;
-        if (index == null) {
-            toSet = "";
-        } else {
-            toSet = index;
-        }
+        String toSet = (index == null) ? "" : index;
         super.setIndexName(toSet);
         this.index = toSet;
     }

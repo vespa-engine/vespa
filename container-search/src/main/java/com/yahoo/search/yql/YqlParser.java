@@ -542,7 +542,7 @@ public class YqlParser implements Parser {
         for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
             sameElement.addItem(buildTermSearch(word));
         }
-        return leafStyleSettings(ast, sameElement);
+        return sameElement;
     }
 
     @NonNull

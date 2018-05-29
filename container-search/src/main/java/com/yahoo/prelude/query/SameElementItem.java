@@ -1,10 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 import com.google.common.annotations.Beta;
 import com.yahoo.protect.Validator;
 
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 
 /**
@@ -14,30 +14,25 @@ import java.util.Iterator;
  * @author baldersheim
  */
 @Beta
-public class SameElementItem extends CompositeIndexedItem {
+public class SameElementItem extends CompositeItem {
+
+    private final String commonPath;
 
     public SameElementItem(String commonPath) {
-        setIndexName(commonPath);
+        this.commonPath = commonPath;
     }
 
     @Override
-    public String getIndexedString() {
-        StringBuilder buf = new StringBuilder();
-
-        for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
-            IndexedItem indexedItem = (IndexedItem) i.next();
-
-            buf.append(indexedItem.getIndexedString());
-            if (i.hasNext()) {
-                buf.append(' ');
-            }
-        }
-        return buf.toString();
+    protected void encodeThis(ByteBuffer buffer) {
+        super.encodeThis(buffer);
+        putString(commonPath, buffer);
     }
 
+    @Override
     protected void appendHeadingString(StringBuilder buffer) { }
+    @Override
     protected void appendBodyString(StringBuilder buffer) {
-        appendIndexString(buffer);
+        buffer.append(commonPath).append(':');
         buffer.append('{');
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             TermItem term = (TermItem) i.next();
@@ -47,11 +42,6 @@ public class SameElementItem extends CompositeIndexedItem {
             }
         }
         buffer.append('}');
-    }
-
-    @Override
-    public int getNumWords() {
-        return getItemCount();
     }
 
     @Override
@@ -70,4 +60,5 @@ public class SameElementItem extends CompositeIndexedItem {
     public String getName() {
         return getItemType().toString();
     }
+    public String getCommonPath() { return commonPath; }
 }
