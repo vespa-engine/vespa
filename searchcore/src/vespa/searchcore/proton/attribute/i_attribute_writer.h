@@ -47,6 +47,11 @@ public:
      */
     virtual void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
                         bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
+    /*
+     * Update the underlying compund attributes based on updated document.
+     */
+    virtual void update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
+                        bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
     virtual void heartBeat(SerialNum serialNum) = 0;
     /**
      * Compact the lid space of the underlying attribute vectors.

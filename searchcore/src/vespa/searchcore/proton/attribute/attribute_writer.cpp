@@ -22,10 +22,21 @@ namespace proton {
 
 using LidVector = LidVectorContext::LidVector;
 
+AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
+    : _fieldPath(),
+      _attribute(attribute),
+      _compoundAttribute(false)
+{
+    const vespalib::string &name = attribute.getName();
+    _compoundAttribute = name.find('.') != vespalib::string::npos;
+}
+
+AttributeWriter::WriteField::~WriteField() = default;
+
 AttributeWriter::WriteContext::WriteContext(uint32_t executorId)
     : _executorId(executorId),
-      _fieldPaths(),
-      _attributes()
+      _fields(),
+      _hasCompoundAttribute(false)
 {
 }
 
@@ -37,30 +48,27 @@ AttributeWriter::WriteContext::~WriteContext() = default;
 AttributeWriter::WriteContext &AttributeWriter::WriteContext::operator=(WriteContext &&rhs) = default;
 
 void
-AttributeWriter::WriteContext::add(AttributeVector *attr)
+AttributeWriter::WriteContext::add(AttributeVector &attr)
 {
-    _attributes.emplace_back(attr);
-    _fieldPaths.emplace_back();
+    _fields.emplace_back(attr);
+    if (_fields.back().getCompoundAttribute()) {
+        _hasCompoundAttribute = true;
+    }
 }
 
 void
 AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
 {
-    size_t fieldId = 0;
-    for (const auto &attrp : _attributes) {
-        const vespalib::string &name = attrp->getName();
+    for (auto &field : _fields) {
+        const vespalib::string &name = field.getAttribute().getName();
         FieldPath fp;
         try {
             docType.buildFieldPath(fp, name);
         } catch (document::FieldNotFoundException & e) {
             fp = FieldPath();
         }
-
-        assert(fieldId < _fieldPaths.size());
-        _fieldPaths[fieldId] = std::move(fp);
-        ++fieldId;
+        field.setFieldPath(std::move(fp));
     }
-    assert(fieldId == _fieldPaths.size());
 }
 
 namespace {
@@ -200,26 +208,30 @@ class PutTask : public vespalib::Executor::Task
     const SerialNum      _serialNum;
     const uint32_t       _lid;
     const bool           _immediateCommit;
+    const bool           _allAttributes;
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
     std::vector<FieldValue::UP> _fieldValues;
 public:
-    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, DocumentFieldExtractor &fieldExtractor, uint32_t lid, bool immediateCommit, AttributeWriter::OnWriteDoneType onWriteDone);
+    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, DocumentFieldExtractor &fieldExtractor, uint32_t lid, bool immediateCommit, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone);
     virtual ~PutTask() override;
     virtual void run() override;
 };
 
-PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, DocumentFieldExtractor  &fieldExtractor, uint32_t lid, bool immediateCommit, AttributeWriter::OnWriteDoneType onWriteDone)
+PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, DocumentFieldExtractor  &fieldExtractor, uint32_t lid, bool immediateCommit, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone)
     : _wc(wc),
       _serialNum(serialNum),
       _lid(lid),
       _immediateCommit(immediateCommit),
+      _allAttributes(allAttributes),
       _onWriteDone(onWriteDone)
 {
-    const auto &fieldPaths = _wc.getFieldPaths();
-    _fieldValues.reserve(fieldPaths.size());
-    for (const auto &fieldPath : fieldPaths) {
-        FieldValue::UP fv = fieldExtractor.getFieldValue(fieldPath);
-        _fieldValues.emplace_back(std::move(fv));
+    const auto &fields = _wc.getFields();
+    _fieldValues.reserve(fields.size());
+    for (const auto &field : fields) {
+        if (_allAttributes || field.getCompoundAttribute()) {
+            FieldValue::UP fv = fieldExtractor.getFieldValue(field.getFieldPath());
+            _fieldValues.emplace_back(std::move(fv));
+        }
     }
 }
 
@@ -231,13 +243,15 @@ void
 PutTask::run()
 {
     uint32_t fieldId = 0;
-    const auto &attributes = _wc.getAttributes();
-    for (auto attrp : attributes) {
-        AttributeVector &attr = *attrp;
-        if (attr.getStatus().getLastSyncToken() < _serialNum) {
-            applyPutToAttribute(_serialNum, _fieldValues[fieldId], _lid, _immediateCommit, attr, _onWriteDone);
+    const auto &fields = _wc.getFields();
+    for (auto field : fields) {
+        if (_allAttributes || field.getCompoundAttribute()) {
+            AttributeVector &attr = field.getAttribute();
+            if (attr.getStatus().getLastSyncToken() < _serialNum) {
+                applyPutToAttribute(_serialNum, _fieldValues[fieldId], _lid, _immediateCommit, attr, _onWriteDone);
+            }
+            ++fieldId;
         }
-        ++fieldId;
     }
 }
 
@@ -271,9 +285,9 @@ RemoveTask::~RemoveTask()
 void
 RemoveTask::run()
 {
-    const auto &attributes = _wc.getAttributes();
-    for (auto &attrp : attributes) {
-        AttributeVector &attr = *attrp;
+    const auto &fields = _wc.getFields();
+    for (auto &field : fields) {
+        AttributeVector &attr = field.getAttribute();
         // Must use <= due to how move operations are handled
         if (attr.getStatus().getLastSyncToken() <= _serialNum) {
             applyRemoveToAttribute(_serialNum, _lid, _immediateCommit, attr, _onWriteDone);
@@ -303,13 +317,14 @@ public:
     {}
     virtual ~BatchRemoveTask() override {}
     virtual void run() override {
-        for (auto attr : _writeCtx.getAttributes()) {
-            if (attr->getStatus().getLastSyncToken() < _serialNum) {
+        for (auto field : _writeCtx.getFields()) {
+            auto &attr = field.getAttribute();
+            if (attr.getStatus().getLastSyncToken() < _serialNum) {
                 for (auto lidToRemove : _lidsToRemove) {
-                    applyRemoveToAttribute(_serialNum, lidToRemove, false, *attr, _onWriteDone);
+                    applyRemoveToAttribute(_serialNum, lidToRemove, false, attr, _onWriteDone);
                 }
                 if (_immediateCommit) {
-                    attr->commit(_serialNum, _serialNum);
+                    attr.commit(_serialNum, _serialNum);
                 }
             }
         }
@@ -342,9 +357,9 @@ CommitTask::~CommitTask()
 void
 CommitTask::run()
 {
-    const auto &attributes = _wc.getAttributes();
-    for (auto &attrp : attributes) {
-        AttributeVector &attr = *attrp;
+    const auto &fields = _wc.getFields();
+    for (auto &field : fields) {
+        AttributeVector &attr = field.getAttribute();
         applyCommit(_serialNum, _onWriteDone, attr);
     }
 }
@@ -365,7 +380,7 @@ AttributeWriter::setupWriteContexts()
             (_writeContexts.back().getExecutorId() != fc.getExecutorId())) {
             _writeContexts.emplace_back(fc.getExecutorId());
         }
-        _writeContexts.back().add(fc.getAttribute());
+        _writeContexts.back().add(*fc.getAttribute());
     }
 }
 
@@ -380,12 +395,18 @@ AttributeWriter::buildFieldPaths(const DocumentType & docType, const DataType *d
 
 void
 AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-                             bool immediateCommit, OnWriteDoneType onWriteDone)
+                             bool immediateCommit, bool allAttributes, OnWriteDoneType onWriteDone)
 {
+    const DataType *dataType(doc.getDataType());
+    if (_dataType != dataType) {
+        buildFieldPaths(doc.getType(), dataType);
+    }
     DocumentFieldExtractor extractor(doc);
     for (const auto &wc : _writeContexts) {
-        auto putTask = std::make_unique<PutTask>(wc, serialNum, extractor, lid, immediateCommit, onWriteDone);
-        _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(putTask));
+        if (allAttributes || wc.getHasCompoundAttribute()) {
+            auto putTask = std::make_unique<PutTask>(wc, serialNum, extractor, lid, immediateCommit, allAttributes, onWriteDone);
+            _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(putTask));
+        }
     }
 }
 
@@ -432,18 +453,26 @@ void
 AttributeWriter::put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                      bool immediateCommit, OnWriteDoneType onWriteDone)
 {
-    FieldValue::UP attrVal;
     LOG(spam,
         "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
         serialNum,
         doc.getId().toString().c_str(),
         lid,
         doc.toString(true).c_str());
-    const DataType *dataType(doc.getDataType());
-    if (_dataType != dataType) {
-        buildFieldPaths(doc.getType(), dataType);
-    }
-    internalPut(serialNum, doc, lid, immediateCommit, onWriteDone);
+    internalPut(serialNum, doc, lid, immediateCommit, true, onWriteDone);
+}
+
+void
+AttributeWriter::update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
+                        bool immediateCommit, OnWriteDoneType onWriteDone)
+{
+    LOG(spam,
+        "Handle update: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
+        serialNum,
+        doc.getId().toString().c_str(),
+        lid,
+        doc.toString(true).c_str());
+    internalPut(serialNum, doc, lid, immediateCommit, false, onWriteDone);
 }
 
 void

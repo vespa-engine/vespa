@@ -23,21 +23,34 @@ private:
     search::ISequencedTaskExecutor &_attributeFieldWriter;
     const std::vector<search::AttributeVector *> &_writableAttributes;
 public:
+    class WriteField
+    {
+        FieldPath        _fieldPath;
+        AttributeVector &_attribute;
+        bool             _compoundAttribute; // in array/map of struct
+    public:
+        WriteField(AttributeVector &attribute);
+        ~WriteField();
+        AttributeVector &getAttribute() const { return _attribute; }
+        const FieldPath &getFieldPath() const { return _fieldPath; }
+        void setFieldPath(FieldPath &&fieldPath) { _fieldPath = std::move(fieldPath); }
+        bool getCompoundAttribute() const { return _compoundAttribute; }
+    };
     class WriteContext
     {
         uint32_t _executorId;
-        std::vector<FieldPath> _fieldPaths;
-        std::vector<AttributeVector *> _attributes;
+        std::vector<WriteField> _fields;
+        bool _hasCompoundAttribute;
     public:
         WriteContext(uint32_t executorId);
         WriteContext(WriteContext &&rhs);
         ~WriteContext();
         WriteContext &operator=(WriteContext &&rhs);
         void buildFieldPaths(const DocumentType &docType);
-        void add(AttributeVector *attr);
+        void add(AttributeVector &attr);
         uint32_t getExecutorId() const { return _executorId; }
-        const std::vector<FieldPath> &getFieldPaths() const { return _fieldPaths; }
-        const std::vector<AttributeVector *> &getAttributes() const { return _attributes; }
+        const std::vector<WriteField> &getFields() const { return _fields; }
+        bool getHasCompoundAttribute() const { return _hasCompoundAttribute; }
     };
 private:
     std::vector<WriteContext> _writeContexts;
@@ -46,7 +59,7 @@ private:
     void setupWriteContexts();
     void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
     void internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-                     bool immediateCommit, OnWriteDoneType onWriteDone);
+                     bool immediateCommit, bool allAttributes, OnWriteDoneType onWriteDone);
     void internalRemove(SerialNum serialNum, DocumentIdT lid,
                         bool immediateCommit, OnWriteDoneType onWriteDone);
 
@@ -68,6 +81,8 @@ public:
     void remove(const LidVector &lidVector, SerialNum serialNum,
                 bool immediateCommit, OnWriteDoneType onWriteDone) override;
     void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
+                bool immediateCommit, OnWriteDoneType onWriteDone) override;
+    void update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                 bool immediateCommit, OnWriteDoneType onWriteDone) override;
     void heartBeat(SerialNum serialNum) override;
     void compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum) override;
