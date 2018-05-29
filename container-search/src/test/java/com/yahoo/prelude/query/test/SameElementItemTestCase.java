@@ -22,6 +22,19 @@ public class SameElementItemTestCase {
         s.addItem(new WordItem("b", "f1"));
         s.addItem(new WordItem("c"));
     }
+    @Test
+    public void requireAllowCommonPrefix() {
+        SameElementItem s = new SameElementItem("structa");
+        s.addItem(new WordItem("b", "f1"));
+        s.addItem(new WordItem("c", "structaf2"));
+        assertEquals("structa:{f1:b structaf2:c}", s.toString());
+    }
+    @Test(expected = IllegalArgumentException.class)
+    public void requireNoChildrenHasCommonPrefixWithDot() {
+        SameElementItem s = new SameElementItem("structa");
+        s.addItem(new WordItem("b", "f1"));
+        s.addItem(new WordItem("c", "structa.f2"));
+    }
     @Test(expected = IllegalArgumentException.class)
     public void requireAllChildrenHaveNonEmptyTerm() {
         SameElementItem s = new SameElementItem("structa");

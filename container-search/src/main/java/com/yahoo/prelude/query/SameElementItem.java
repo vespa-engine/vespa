@@ -51,8 +51,8 @@ public class SameElementItem extends CompositeItem {
         TermItem asTerm = (TermItem) item;
         Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
         Validator.ensureNonEmpty("Query term", asTerm.getIndexedString());
-        Validator.ensure("Struct fieldname does not start with '" + getFieldName() + "'",
-                !asTerm.getIndexName().startsWith(fieldName));
+        Validator.ensure("Struct fieldname starts with '" + getFieldName() + ".'",
+                !asTerm.getIndexName().startsWith(fieldName+"."));
         item.setIndexName(fieldName + '.' + asTerm.getIndexName());
     }
     @Override
