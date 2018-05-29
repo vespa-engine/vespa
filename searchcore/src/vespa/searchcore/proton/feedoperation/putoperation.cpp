@@ -49,6 +49,15 @@ PutOperation::deserialize(vespalib::nbostream &is,
     _serializedDocSize = oldSize - is.size();
 }
 
+void
+PutOperation::deserializeDocument(const DocumentTypeRepo &repo)
+{
+    vespalib::nbostream stream;
+    _doc->serialize(stream);
+    auto fixedDoc = std::make_shared<Document>(repo, stream);
+    _doc = std::move(fixedDoc);
+}
+
 vespalib::string
 PutOperation::toString() const
 {

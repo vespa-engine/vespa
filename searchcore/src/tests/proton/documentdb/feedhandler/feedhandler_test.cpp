@@ -2,6 +2,7 @@
 
 #include <vespa/persistence/spi/result.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -35,6 +36,7 @@ LOG_SETUP("feedhandler_test");
 using document::BucketId;
 using document::Document;
 using document::DocumentId;
+using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::GlobalId;
@@ -181,7 +183,9 @@ struct MyFeedView : public test::DummyFeedView {
     int prune_removed_count;
     int update_count;
     SerialNum update_serial;
-    MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr);
+    const DocumentType *documentType;
+    MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr,
+               const DocTypeName &docTypeName);
     ~MyFeedView() override;
     void resetPutLatch(uint32_t count) { putLatch.reset(new vespalib::CountDownLatch(count)); }
     void preparePut(PutOperation &op) override {
@@ -203,6 +207,8 @@ struct MyFeedView : public test::DummyFeedView {
         if (usePutRdz) {
             putRdz.run();
         }
+        EXPECT_EQUAL(_docTypeRepo.get(), putOp.getDocument()->getRepo());
+        EXPECT_EQUAL(documentType, &putOp.getDocument()->getType());
         ++put_count;
         put_serial = putOp.getSerialNum();
         metaStore.allocate(putOp.getDocument()->getId().getGlobalId());
@@ -216,6 +222,7 @@ struct MyFeedView : public test::DummyFeedView {
     void handleUpdate(FeedToken token, const UpdateOperation &op) override {
         (void) token;
 
+        EXPECT_EQUAL(documentType, &op.getUpdate()->getType());
         ++update_count;
         update_serial = op.getSerialNum();
     }
@@ -237,7 +244,7 @@ struct MyFeedView : public test::DummyFeedView {
     }
 };
 
-MyFeedView::MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr)
+MyFeedView::MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr, const DocTypeName &docTypeName)
     : test::DummyFeedView(dtr),
       putRdz(),
       usePutRdz(false),
@@ -250,7 +257,8 @@ MyFeedView::MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr)
       move_count(0),
       prune_removed_count(0),
       update_count(0),
-      update_serial(0)
+      update_serial(0),
+      documentType(dtr->getDocumentType(docTypeName.getName()))
 {}
 MyFeedView::~MyFeedView() {}
 
@@ -294,6 +302,13 @@ struct DocumentContext {
     }
 };
 
+struct TwoFieldsSchemaContext : public SchemaContext {
+    TwoFieldsSchemaContext()
+        : SchemaContext()
+    {
+        addField("i2");
+    }
+};
 
 struct UpdateContext {
     DocumentUpdate::SP update;
@@ -433,7 +448,7 @@ struct FeedHandlerFixture
           owner(),
           _state(),
           replayConfig(),
-          feedView(schema.getRepo()),
+          feedView(schema.getRepo(), schema.getDocType()),
           _bucketDB(),
           _bucketDBHandler(_bucketDB),
           handler(writeService, tlsSpec, schema.getDocType(), _state, owner,
@@ -714,15 +729,13 @@ TEST_F("require that update with same document type repo is ok", FeedHandlerFixt
 
 TEST_F("require that update with different document type repo can be ok", FeedHandlerFixture)
 {
-    SchemaContext schema;
-    schema.addField("i2");
+    TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i1", false, true);
 }
 
 TEST_F("require that update with different document type repo can be rejected", FeedHandlerFixture)
 {
-    SchemaContext schema;
-    schema.addField("i2");
+    TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i2", true, true);
 }
 
@@ -733,16 +746,29 @@ TEST_F("require that update with same document type repo is ok, fallback to crea
 
 TEST_F("require that update with different document type repo can be ok, fallback to create document", FeedHandlerFixture)
 {
-    SchemaContext schema;
-    schema.addField("i2");
+    TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i1", false, false);
 }
 
 TEST_F("require that update with different document type repo can be rejected, preventing fallback to create document", FeedHandlerFixture)
 {
-    SchemaContext schema;
-    schema.addField("i2");
+    TwoFieldsSchemaContext schema;
     checkUpdate(f, schema, "i2", true, false);
+}
+
+TEST_F("require that put with different document type repo is ok", FeedHandlerFixture)
+{
+    TwoFieldsSchemaContext schema;
+    DocumentContext doc_context("doc:test:foo", *schema.builder);
+    auto op = std::make_unique<PutOperation>(doc_context.bucketId,
+                                             Timestamp(10), doc_context.doc);
+    FeedTokenContext token_context;
+    EXPECT_EQUAL(schema.getRepo().get(), op->getDocument()->getRepo());
+    EXPECT_NOT_EQUAL(f.schema.getRepo().get(), op->getDocument()->getRepo());
+    EXPECT_NOT_EQUAL(f.feedView.documentType, &op->getDocument()->getType());
+    f.handler.performOperation(std::move(token_context.token), std::move(op));
+    EXPECT_EQUAL(1, f.feedView.put_count);
+    EXPECT_EQUAL(1, f.tls_writer.store_count);
 }
 
 }  // namespace
