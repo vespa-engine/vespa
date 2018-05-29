@@ -175,10 +175,10 @@ Node::UP buildQueryTree(const ViewResolver &resolver,
     query_builder.addStringTerm(phrase_term, field, 8, Weight(0));
     query_builder.addStringTerm(phrase_term, field, 9, Weight(0));
 #if 0
-    //TODO Add SameElement and proper testing of the same when complete
-    query_builder.addSameElement(2, field, 10, Weight(0));
-    query_builder.addStringTerm(phrase_term, field, 11, Weight(0));
-    query_builder.addStringTerm(phrase_term, field, 12, Weight(0));
+    //Todo add testing when SameElement blueprints are ready
+    query_builder.addSameElement(2, field);
+    query_builder.addStringTerm(string_term, field, 10, Weight(0));
+    query_builder.addStringTerm(prefix_term, field, 11, Weight(0));
 #endif
     Node::UP node = query_builder.build();
 
