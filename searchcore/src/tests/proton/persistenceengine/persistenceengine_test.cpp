@@ -68,24 +68,8 @@ createUpd(const DocumentType& docType, const DocumentId &docId)
     return document::DocumentUpdate::SP(new document::DocumentUpdate(docType, docId));
 }
 
-
-document::Document::UP
-clone(const document::Document::SP &doc)
-{
-    return document::Document::UP(doc->clone());
-}
-
-
-document::DocumentUpdate::UP
-clone(const document::DocumentUpdate::SP &upd)
-{
-    return document::DocumentUpdate::UP(upd->clone());
-}
-
-
 storage::spi::ClusterState
-createClusterState(const storage::lib::State& nodeState =
-                   storage::lib::State::UP)
+createClusterState(const storage::lib::State& nodeState = storage::lib::State::UP)
 {
     using storage::lib::Distribution;
     using storage::lib::Node;
@@ -99,11 +83,7 @@ createClusterState(const storage::lib::State& nodeState =
     StorDistributionConfigBuilder dc;
 
     cstate.setNodeState(Node(NodeType::STORAGE, 0),
-                        NodeState(NodeType::STORAGE,
-                                  nodeState,
-                                  "dummy desc",
-                                  1.0,
-                                  1));
+                        NodeState(NodeType::STORAGE, nodeState, "dummy desc", 1.0, 1));
     cstate.setClusterState(State::UP);
     dc.redundancy = 1;
     dc.readyCopies = 1;
@@ -222,8 +202,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
 
     void handleUpdate(FeedToken token, const Bucket& bucket,
                       Timestamp timestamp, const document::DocumentUpdate::SP& upd) override {
-        token->setResult(ResultUP(new storage::spi::UpdateResult(existingTimestamp)),
-                        existingTimestamp > 0);
+        token->setResult(ResultUP(new storage::spi::UpdateResult(existingTimestamp)), existingTimestamp > 0);
         handle(token, bucket, timestamp, upd->getId());
     }
 
@@ -312,8 +291,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         return frozen.find(bucket.getBucketId().getId()) != frozen.end();
     }
     bool wasFrozen(const Bucket &bucket) {
-        return was_frozen.find(bucket.getBucketId().getId())
-            != was_frozen.end();
+        return was_frozen.find(bucket.getBucketId().getId()) != was_frozen.end();
     }
 };
 
@@ -335,7 +313,7 @@ HandlerSet::HandlerSet()
       handler1(static_cast<MyHandler &>(*phandler1.get())),
       handler2(static_cast<MyHandler &>(*phandler2.get()))
 {}
-HandlerSet::~HandlerSet() {}
+HandlerSet::~HandlerSet() = default;
 
 DocumentType type1(createDocType("type1", 1));
 DocumentType type2(createDocType("type2", 2));
@@ -405,8 +383,8 @@ struct SimpleResourceWriteFilter : public IResourceWriteFilter
           _message()
     {}
 
-    virtual bool acceptWriteOperation() const override { return _acceptWriteOperation; }
-    virtual State getAcceptState() const override {
+    bool acceptWriteOperation() const override { return _acceptWriteOperation; }
+    State getAcceptState() const override {
         return IResourceWriteFilter::State(acceptWriteOperation(), _message);
     }
 };
@@ -475,8 +453,7 @@ TEST_F("require that getPartitionStates() prepares all handlers", SimpleFixture)
 TEST_F("require that puts are routed to handler", SimpleFixture)
 {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     f.engine.put(bucket1, tstamp1, doc1, context);
     assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
     assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
@@ -485,20 +462,16 @@ TEST_F("require that puts are routed to handler", SimpleFixture)
     assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
     assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
 
-    EXPECT_EQUAL(
-            Result(Result::PERMANENT_ERROR, "No handler for document type 'type3'"),
-            f.engine.put(bucket1, tstamp1, doc3, context));
+    EXPECT_EQUAL(Result(Result::PERMANENT_ERROR, "No handler for document type 'type3'"),
+                 f.engine.put(bucket1, tstamp1, doc3, context));
 }
 
 
 TEST_F("require that puts with old id scheme are rejected", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
-    EXPECT_EQUAL(
-            Result(Result::PERMANENT_ERROR, "Old id scheme not supported in "
-                   "elastic mode (doc:old:id-scheme)"),
-            f.engine.put(bucket1, tstamp1, old_doc, context));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+    EXPECT_EQUAL(Result(Result::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
+                 f.engine.put(bucket1, tstamp1, old_doc, context));
 }
 
 
@@ -508,8 +481,7 @@ TEST_F("require that put is rejected if resource limit is reached", SimpleFixtur
     f._writeFilter._message = "Disk is full";
 
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     EXPECT_EQUAL(
             Result(Result::RESOURCE_EXHAUSTED,
                    "Put operation rejected for document 'doc:old:id-scheme': 'Disk is full'"),
@@ -520,8 +492,7 @@ TEST_F("require that put is rejected if resource limit is reached", SimpleFixtur
 TEST_F("require that updates are routed to handler", SimpleFixture)
 {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     f.hset.handler1.setExistingTimestamp(tstamp2);
     UpdateResult ur = f.engine.update(bucket1, tstamp1, upd1, context);
     assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
@@ -534,9 +505,8 @@ TEST_F("require that updates are routed to handler", SimpleFixture)
     assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
     EXPECT_EQUAL(tstamp3, ur.getExistingTimestamp());
 
-    EXPECT_EQUAL(
-            Result(Result::PERMANENT_ERROR, "No handler for document type 'type3'"),
-            f.engine.update(bucket1, tstamp1, upd3, context));
+    EXPECT_EQUAL(Result(Result::PERMANENT_ERROR, "No handler for document type 'type3'"),
+                 f.engine.update(bucket1, tstamp1, upd3, context));
 }
 
 
@@ -546,8 +516,7 @@ TEST_F("require that update is rejected if resource limit is reached", SimpleFix
     f._writeFilter._message = "Disk is full";
 
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
 
     EXPECT_EQUAL(
             Result(Result::RESOURCE_EXHAUSTED,
@@ -559,8 +528,7 @@ TEST_F("require that update is rejected if resource limit is reached", SimpleFix
 TEST_F("require that removes are routed to handlers", SimpleFixture)
 {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     RemoveResult rr = f.engine.remove(bucket1, tstamp1, docId3, context);
     assertHandler(bucket0, tstamp0, docId0, f.hset.handler1);
     assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
@@ -598,8 +566,7 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", Simpl
     f._writeFilter._message = "Disk is full";
 
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
 
     EXPECT_EQUAL(RemoveResult(false), f.engine.remove(bucket1, tstamp1, docId1, context));
 }
@@ -628,8 +595,7 @@ TEST_F("require that setActiveState() is routed to handlers and merged", SimpleF
     f.hset.handler1.bucketStateResult = Result(Result::TRANSIENT_ERROR, "err1");
     f.hset.handler2.bucketStateResult = Result(Result::PERMANENT_ERROR, "err2");
 
-    Result result = f.engine.setActiveState(bucket1,
-                                             storage::spi::BucketInfo::NOT_ACTIVE);
+    Result result = f.engine.setActiveState(bucket1, storage::spi::BucketInfo::NOT_ACTIVE);
     EXPECT_EQUAL(Result::PERMANENT_ERROR, result.getErrorCode());
     EXPECT_EQUAL("err1, err2", result.getErrorMessage());
     EXPECT_EQUAL(storage::spi::BucketInfo::NOT_ACTIVE, f.hset.handler1.lastBucketState);
@@ -651,16 +617,12 @@ TEST_F("require that getBucketInfo() is routed to handlers and merged", SimpleFi
 }
 
 
-TEST_F("require that createBucket() is routed to handlers and merged",
-       SimpleFixture)
+TEST_F("require that createBucket() is routed to handlers and merged", SimpleFixture)
 {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
-    f.hset.handler1._createBucketResult =
-        Result(Result::TRANSIENT_ERROR, "err1a");
-    f.hset.handler2._createBucketResult =
-        Result(Result::PERMANENT_ERROR, "err2a");
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+    f.hset.handler1._createBucketResult = Result(Result::TRANSIENT_ERROR, "err1a");
+    f.hset.handler2._createBucketResult = Result(Result::PERMANENT_ERROR, "err2a");
 
     Result result = f.engine.createBucket(bucket1, context);
     EXPECT_EQUAL(Result::PERMANENT_ERROR, result.getErrorCode());
@@ -671,8 +633,7 @@ TEST_F("require that createBucket() is routed to handlers and merged",
 TEST_F("require that deleteBucket() is routed to handlers and merged", SimpleFixture)
 {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     f.hset.handler1.deleteBucketResult = Result(Result::TRANSIENT_ERROR, "err1");
     f.hset.handler2.deleteBucketResult = Result(Result::PERMANENT_ERROR, "err2");
 
@@ -691,10 +652,8 @@ TEST_F("require that getModifiedBuckets() is routed to handlers and merged", Sim
 
 TEST_F("require that get is sent to all handlers", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
-    GetResult result = f.engine.get(bucket1, document::AllFields(), docId1,
-                                    context);
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+    GetResult result = f.engine.get(bucket1, document::AllFields(), docId1, context);
 
     EXPECT_EQUAL(docId1, f.hset.handler1.lastDocId);
     EXPECT_EQUAL(docId1, f.hset.handler2.lastDocId);
@@ -704,8 +663,7 @@ TEST_F("require that get freezes the bucket", SimpleFixture) {
     EXPECT_FALSE(f.hset.handler1.wasFrozen(bucket1));
     EXPECT_FALSE(f.hset.handler2.wasFrozen(bucket1));
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     f.engine.get(bucket1, document::AllFields(), docId1, context);
     EXPECT_TRUE(f.hset.handler1.wasFrozen(bucket1));
     EXPECT_TRUE(f.hset.handler2.wasFrozen(bucket1));
@@ -717,10 +675,8 @@ TEST_F("require that get returns the first document found", SimpleFixture) {
     f.hset.handler1.setDocument(*doc1, tstamp1);
     f.hset.handler2.setDocument(*doc2, tstamp2);
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
-    GetResult result = f.engine.get(bucket1, document::AllFields(), docId1,
-                                    context);
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+    GetResult result = f.engine.get(bucket1, document::AllFields(), docId1, context);
 
     EXPECT_EQUAL(docId1, f.hset.handler1.lastDocId);
     EXPECT_EQUAL(DocumentId(), f.hset.handler2.lastDocId);
@@ -732,8 +688,7 @@ TEST_F("require that get returns the first document found", SimpleFixture) {
 
 TEST_F("require that createIterator does", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult result =
         f.engine.createIterator(bucket1, document::AllFields(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
@@ -741,15 +696,13 @@ TEST_F("require that createIterator does", SimpleFixture) {
     EXPECT_TRUE(result.getIteratorId());
 
     uint64_t max_size = 1024;
-    IterateResult it_result =
-        f.engine.iterate(result.getIteratorId(), max_size, context);
+    IterateResult it_result = f.engine.iterate(result.getIteratorId(), max_size, context);
     EXPECT_FALSE(it_result.hasError());
 }
 
 TEST_F("require that iterator ids are unique", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult result =
         f.engine.createIterator(bucket1, document::AllFields(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
@@ -764,10 +717,8 @@ TEST_F("require that iterator ids are unique", SimpleFixture) {
 TEST_F("require that iterate requires valid iterator", SimpleFixture) {
     uint64_t max_size = 1024;
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
-    IterateResult it_result = f.engine.iterate(IteratorId(1), max_size,
-                                               context);
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+    IterateResult it_result = f.engine.iterate(IteratorId(1), max_size, context);
     EXPECT_TRUE(it_result.hasError());
     EXPECT_EQUAL(Result::PERMANENT_ERROR, it_result.getErrorCode());
     EXPECT_EQUAL("Unknown iterator with id 1", it_result.getErrorMessage());
@@ -786,16 +737,14 @@ TEST_F("require that iterate returns documents", SimpleFixture) {
     f.hset.handler2.setDocument(*doc2, tstamp2);
 
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     uint64_t max_size = 1024;
     CreateIteratorResult result =
         f.engine.createIterator(bucket1, document::AllFields(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_TRUE(result.getIteratorId());
 
-    IterateResult it_result =
-        f.engine.iterate(result.getIteratorId(), max_size, context);
+    IterateResult it_result = f.engine.iterate(result.getIteratorId(), max_size, context);
     EXPECT_FALSE(it_result.hasError());
     EXPECT_EQUAL(2u, it_result.getEntries().size());
 }
@@ -804,33 +753,28 @@ TEST_F("require that destroyIterator prevents iteration", SimpleFixture) {
     f.hset.handler1.setDocument(*doc1, tstamp1);
 
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult create_result =
         f.engine.createIterator(bucket1, document::AllFields(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_TRUE(create_result.getIteratorId());
 
-    Result result = f.engine.destroyIterator(create_result.getIteratorId(),
-                                             context);
+    Result result = f.engine.destroyIterator(create_result.getIteratorId(), context);
     EXPECT_FALSE(result.hasError());
 
     uint64_t max_size = 1024;
-    IterateResult it_result =
-        f.engine.iterate(create_result.getIteratorId(), max_size, context);
+    IterateResult it_result = f.engine.iterate(create_result.getIteratorId(), max_size, context);
     EXPECT_TRUE(it_result.hasError());
     EXPECT_EQUAL(Result::PERMANENT_ERROR, it_result.getErrorCode());
     string msg_prefix = "Unknown iterator with id";
-    EXPECT_EQUAL(msg_prefix,
-                 it_result.getErrorMessage().substr(0, msg_prefix.size()));
+    EXPECT_EQUAL(msg_prefix, it_result.getErrorMessage().substr(0, msg_prefix.size()));
 }
 
 TEST_F("require that buckets are frozen during iterator life", SimpleFixture) {
     EXPECT_FALSE(f.hset.handler1.isFrozen(bucket1));
     EXPECT_FALSE(f.hset.handler2.isFrozen(bucket1));
     storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult create_result =
         f.engine.createIterator(bucket1, document::AllFields(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
