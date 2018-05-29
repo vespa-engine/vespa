@@ -171,7 +171,7 @@ public class AthenzCredentialsMaintainer {
     }
 
     private boolean isCertificateExpired(Instant expiry, Instant now) {
-        return expiry.minus(EXPIRY_MARGIN).isAfter(now);
+        return now.isAfter(expiry.minus(EXPIRY_MARGIN));
     }
 
     private void registerIdentity(VespaUniqueInstanceId instanceId, Set<String> ipAddresses) {
