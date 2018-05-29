@@ -141,7 +141,7 @@ MatchThread::try_share(DocidRange &docid_range, uint32_t next_docid) {
 
 template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work>
 uint32_t
-MatchThread::inner_match_loop(Context &context, MatchTools &tools, DocidRange docid_range)
+MatchThread::inner_match_loop(Context &context, MatchTools &tools, DocidRange &docid_range)
 {
     SearchIterator *search = &tools.search();
     search->initRange(docid_range.begin, docid_range.end);
@@ -175,12 +175,14 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
     uint32_t docsCovered = 0;
     Context context(matchParams.rankDropLimit, tools, hits, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
-         !docid_range.empty() && ! softDoomed;
+         !docid_range.empty();
          docid_range = scheduler.next_range(thread_id))
     {
-        uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work>(context, tools, docid_range);
-        softDoomed = (lastCovered < docid_range.end);
-        docsCovered += std::min(lastCovered, docid_range.end) - docid_range.begin;
+        if (!softDoomed) {
+            uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work>(context, tools, docid_range);
+            softDoomed = (lastCovered < docid_range.end);
+            docsCovered += std::min(lastCovered, docid_range.end) - docid_range.begin;
+        }
     }
     uint32_t matches = context.matches;
     if (do_limit && context.isBelowLimit()) {
