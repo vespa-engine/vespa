@@ -72,7 +72,7 @@ nbostream::operator = (const nbostream & rhs) {
     return *this;
 }
 
-nbostream::~nbostream() { }
+nbostream::~nbostream() = default;
 
 void nbostream::fail(State s)
 {
