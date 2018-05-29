@@ -203,26 +203,33 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             arity = tmp;
             result.append(make_string("%c/%d~", _G_ItemName[type], arity));
             break;
-        case ParseItem::ITEM_WEAK_AND:
-        case ParseItem::ITEM_SAME_ELEMENT:
         case ParseItem::ITEM_NEAR:
         case ParseItem::ITEM_ONEAR:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             arity = tmp;
-            if (type != ParseItem::ITEM_SAME_ELEMENT) {
-                p += vespalib::compress::Integer::decompressPositive(tmp, p);
-                arg1 = tmp;
-            }
-
-            if (type == ParseItem::ITEM_WEAK_AND || type == ParseItem::ITEM_SAME_ELEMENT) {
-                p += vespalib::compress::Integer::decompressPositive(tmp, p);
-                idxRefLen = tmp;
-                idxRef = p;
-                p += idxRefLen;
-                result.append(make_string("%c/%d/%d/%d:%.*s~", _G_ItemName[type], arity, arg1, idxRefLen, idxRefLen, idxRef));
-            } else {
-                result.append(make_string("%c/%d/%d~", _G_ItemName[type], arity, arg1));
-            }
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            arg1 = tmp;
+            result.append(make_string("%c/%d/%d~", _G_ItemName[type], arity, arg1));
+            break;
+        case ParseItem::ITEM_WEAK_AND:
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            arity = tmp;
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            arg1 = tmp;
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            idxRefLen = tmp;
+            idxRef = p;
+            p += idxRefLen;
+            result.append(make_string("%c/%d/%d/%d:%.*s~", _G_ItemName[type], arity, arg1, idxRefLen, idxRefLen, idxRef));
+            break;
+        case ParseItem::ITEM_SAME_ELEMENT:
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            arity = tmp;
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            idxRefLen = tmp;
+            idxRef = p;
+            p += idxRefLen;
+            result.append(make_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen, idxRefLen, idxRef));
             break;
 
         case ParseItem::ITEM_NUMTERM:
