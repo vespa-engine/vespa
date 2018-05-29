@@ -244,6 +244,7 @@ StackDumpIteratorTest::RunTest(int testno, bool verify)
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_NUMTERM, "foo", "[0;22]"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_PREFIXTERM, "bar", "baz"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 3, "bar"));
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_SAME_ELEMENT, 3, "bar"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_OR, 2));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_AND, 3));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_RANK, 5));

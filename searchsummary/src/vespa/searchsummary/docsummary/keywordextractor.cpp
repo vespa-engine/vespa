@@ -165,7 +165,7 @@ KeywordExtractor::ExtractKeywords(vespalib::stringref buf) const
             break;
 
         case search::ParseItem::ITEM_PHRASE:
-        {
+            {
             // Must take the next arity TERMS and put together
             bool phraseterms_was_added = false;
             int phraseterms = si.getArity();

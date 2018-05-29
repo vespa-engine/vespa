@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for customtypevisitor.
 
-#include <vespa/log/log.h>
-LOG_SETUP("customtypevisitor_test");
-
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("customtypevisitor_test");
 
 using std::string;
 
@@ -39,6 +39,7 @@ struct MyNear : Near { MyNear() : Near(1) {} };
 struct MyONear : ONear { MyONear() : ONear(1) {} };
 struct MyOr : Or {};
 struct MyPhrase : Phrase { MyPhrase() : Phrase("view", 0, Weight(42)) {} };
+struct MySameElement : SameElement { MySameElement() : SameElement("view") {} };
 struct MyRank : Rank {};
 struct MyNumberTerm : InitTerm<NumberTerm>  {};
 struct MyLocationTerm : InitTerm<LocationTerm> {};
@@ -64,6 +65,7 @@ struct MyQueryNodeTypes {
     typedef MyONear ONear;
     typedef MyOr Or;
     typedef MyPhrase Phrase;
+    typedef MySameElement SameElement;
     typedef MyPrefixTerm PrefixTerm;
     typedef MyRangeTerm RangeTerm;
     typedef MyRank Rank;
@@ -89,27 +91,28 @@ public:
 
     template <typename T> void setVisited() { isVisited<T>() = true; }
 
-    virtual void visit(MyAnd &) override { setVisited<MyAnd>(); }
-    virtual void visit(MyAndNot &) override { setVisited<MyAndNot>(); }
-    virtual void visit(MyEquiv &) override { setVisited<MyEquiv>(); }
-    virtual void visit(MyNumberTerm &) override { setVisited<MyNumberTerm>(); }
-    virtual void visit(MyLocationTerm &) override { setVisited<MyLocationTerm>(); }
-    virtual void visit(MyNear &) override { setVisited<MyNear>(); }
-    virtual void visit(MyONear &) override { setVisited<MyONear>(); }
-    virtual void visit(MyOr &) override { setVisited<MyOr>(); }
-    virtual void visit(MyPhrase &) override { setVisited<MyPhrase>(); }
-    virtual void visit(MyPrefixTerm &) override { setVisited<MyPrefixTerm>(); }
-    virtual void visit(MyRangeTerm &) override { setVisited<MyRangeTerm>(); }
-    virtual void visit(MyRank &) override { setVisited<MyRank>(); }
-    virtual void visit(MyStringTerm &) override { setVisited<MyStringTerm>(); }
-    virtual void visit(MySubstrTerm &) override { setVisited<MySubstrTerm>(); }
-    virtual void visit(MySuffixTerm &) override { setVisited<MySuffixTerm>(); }
-    virtual void visit(MyWeakAnd &) override { setVisited<MyWeakAnd>(); }
-    virtual void visit(MyWeightedSetTerm &) override { setVisited<MyWeightedSetTerm>(); }
-    virtual void visit(MyDotProduct &) override { setVisited<MyDotProduct>(); }
-    virtual void visit(MyWandTerm &) override { setVisited<MyWandTerm>(); }
-    virtual void visit(MyPredicateQuery &) override { setVisited<MyPredicateQuery>(); }
-    virtual void visit(MyRegExpTerm &) override { setVisited<MyRegExpTerm>(); }
+    void visit(MyAnd &) override { setVisited<MyAnd>(); }
+    void visit(MyAndNot &) override { setVisited<MyAndNot>(); }
+    void visit(MyEquiv &) override { setVisited<MyEquiv>(); }
+    void visit(MyNumberTerm &) override { setVisited<MyNumberTerm>(); }
+    void visit(MyLocationTerm &) override { setVisited<MyLocationTerm>(); }
+    void visit(MyNear &) override { setVisited<MyNear>(); }
+    void visit(MyONear &) override { setVisited<MyONear>(); }
+    void visit(MyOr &) override { setVisited<MyOr>(); }
+    void visit(MyPhrase &) override { setVisited<MyPhrase>(); }
+    void visit(MySameElement &) override { setVisited<MySameElement>(); }
+    void visit(MyPrefixTerm &) override { setVisited<MyPrefixTerm>(); }
+    void visit(MyRangeTerm &) override { setVisited<MyRangeTerm>(); }
+    void visit(MyRank &) override { setVisited<MyRank>(); }
+    void visit(MyStringTerm &) override { setVisited<MyStringTerm>(); }
+    void visit(MySubstrTerm &) override { setVisited<MySubstrTerm>(); }
+    void visit(MySuffixTerm &) override { setVisited<MySuffixTerm>(); }
+    void visit(MyWeakAnd &) override { setVisited<MyWeakAnd>(); }
+    void visit(MyWeightedSetTerm &) override { setVisited<MyWeightedSetTerm>(); }
+    void visit(MyDotProduct &) override { setVisited<MyDotProduct>(); }
+    void visit(MyWandTerm &) override { setVisited<MyWandTerm>(); }
+    void visit(MyPredicateQuery &) override { setVisited<MyPredicateQuery>(); }
+    void visit(MyRegExpTerm &) override { setVisited<MyRegExpTerm>(); }
 };
 
 template <class T>

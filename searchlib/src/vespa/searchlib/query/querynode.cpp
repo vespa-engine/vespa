@@ -26,6 +26,7 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFa
     case search::ParseItem::ITEM_WAND:
     case search::ParseItem::ITEM_NOT:
     case search::ParseItem::ITEM_PHRASE:
+    case search::ParseItem::ITEM_SAME_ELEMENT:
     case search::ParseItem::ITEM_NEAR:
     case search::ParseItem::ITEM_ONEAR:
     {

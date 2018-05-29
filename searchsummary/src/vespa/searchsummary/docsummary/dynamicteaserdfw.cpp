@@ -280,6 +280,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_SUFFIXTERM:
         case search::ParseItem::ITEM_REGEXP:
         case search::ParseItem::ITEM_PREDICATE_QUERY:
+        case search::ParseItem::ITEM_SAME_ELEMENT:
             if (!v->VisitOther(&item, iterator.getArity())) {
                 rc = SkipItem(&iterator);
             }

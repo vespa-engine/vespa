@@ -64,23 +64,48 @@ class QueryNodeConverter : public QueryVisitor {
     template <typename V>
     void appendPredicateQueryTermVector(const V& v);
 
+    void createComplexIntermediate(const Term &node, const std::vector<Node *> & children, size_t type) {
+        uint8_t flags = 0;
+        if (!node.isRanked()) {
+            flags |= ParseItem::IFLAG_NORANK;
+        }
+        if (!node.usePositionData()) {
+            flags |= ParseItem::IFLAG_NOPOSITIONDATA;
+        }
+        if (flags != 0) {
+            type |= ParseItem::IF_FLAGS;
+        }
+        appendByte(type);
+        appendCompressedNumber(node.getWeight().percent());
+        if (type & ParseItem::IF_FLAGS) {
+            appendByte(flags);
+        }
+        appendCompressedPositiveNumber(children.size());
+        appendString(node.getView());
+        visitNodes(children);
+    }
+
     void createIntermediate(const Intermediate &node, size_t type) {
         appendByte(type);
         appendCompressedPositiveNumber(node.getChildren().size());
         visitNodes(node.getChildren());
     }
 
-    void createIntermediate(const Intermediate &node, size_t type,
-                            size_t distance) {
+    void createIntermediate(const Intermediate &node, size_t type, size_t distance) {
         appendByte(type);
         appendCompressedPositiveNumber(node.getChildren().size());
         appendCompressedPositiveNumber(distance);
         visitNodes(node.getChildren());
     }
 
-    void createIntermediate(const Intermediate &node, size_t type,
-                            size_t distance,
-                            const vespalib::string & view) {
+    void createIntermediate(const Intermediate &node, size_t type, const vespalib::string & view) {
+        appendByte(type);
+        appendCompressedPositiveNumber(node.getChildren().size());
+        appendString(view);
+        visitNodes(node.getChildren());
+    }
+
+    void createIntermediate(const Intermediate &node, size_t type, size_t distance, const vespalib::string & view) {
         appendByte(type);
         appendCompressedPositiveNumber(node.getChildren().size());
         appendCompressedPositiveNumber(distance);
@@ -116,26 +141,12 @@ class QueryNodeConverter : public QueryVisitor {
         createIntermediate(node, ParseItem::ITEM_EQUIV);
     }
 
+    void visit(SameElement &node) override {
+        createIntermediate(node, ParseItem::ITEM_SAME_ELEMENT, node.getView());
+    }
+
     void visit(Phrase &node) override {
-        uint8_t typefield = (ParseItem::ITEM_PHRASE | ParseItem::IF_WEIGHT);
-        uint8_t flags = 0;
-        if (!node.isRanked()) {
-            flags |= ParseItem::IFLAG_NORANK;
-        }
-        if (!node.usePositionData()) {
-            flags |= ParseItem::IFLAG_NOPOSITIONDATA;
-        }
-        if (flags != 0) {
-            typefield |= ParseItem::IF_FLAGS;
-        }
-        appendByte(typefield);
-        appendCompressedNumber(node.getWeight().percent());
-        if (typefield & ParseItem::IF_FLAGS) {
-            appendByte(flags);
-        }
-        appendCompressedPositiveNumber(node.getChildren().size());
-        appendString(node.getView());
-        visitNodes(node.getChildren());
+        createComplexIntermediate(node, node.getChildren(), (ParseItem::ITEM_PHRASE | ParseItem::IF_WEIGHT));
     }
 
     template <typename NODE>
@@ -187,9 +198,7 @@ class QueryNodeConverter : public QueryVisitor {
 
     template <class Term>
     void createTerm(const Term &node, size_t type) {
-        uint8_t typefield = type |
-                             ParseItem::IF_WEIGHT |
-                             ParseItem::IF_UNIQUEID;
+        uint8_t typefield = type | ParseItem::IF_WEIGHT | ParseItem::IF_UNIQUEID;
         uint8_t flags = 0;
         if (!node.isRanked()) {
             flags |= ParseItem::IFLAG_NORANK;

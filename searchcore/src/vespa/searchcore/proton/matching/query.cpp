@@ -78,8 +78,8 @@ void AddLocationNode(const string &location_str, Node::UP &query_tree, Location 
 }
 }  // namespace
 
-Query::Query() {}
-Query::~Query() {}
+Query::Query() = default;
+Query::~Query() = default;
 
 bool
 Query::buildTree(const vespalib::stringref &stack, const string &location,

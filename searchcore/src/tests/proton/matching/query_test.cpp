@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for query.
 
-#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/matchdatareservevisitor.h>
 #include <vespa/searchcore/proton/matching/blueprintbuilder.h>
@@ -26,8 +25,9 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/termasstring.h>
+#include <vespa/document/datatype/positiondatatype.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vector>
 
 using document::PositionDataType;
 using search::fef::FieldInfo;
@@ -62,8 +62,7 @@ using std::vector;
 namespace fef_test = search::fef::test;
 using CollectionType = FieldInfo::CollectionType;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 namespace {
 
 class Test : public vespalib::TestApp {
@@ -175,6 +174,12 @@ Node::UP buildQueryTree(const ViewResolver &resolver,
     query_builder.addPhrase(2, field, 7, Weight(0));
     query_builder.addStringTerm(phrase_term, field, 8, Weight(0));
     query_builder.addStringTerm(phrase_term, field, 9, Weight(0));
+#if 0
+    //Todo add testing when SameElement blueprints are ready
+    query_builder.addSameElement(2, field);
+    query_builder.addStringTerm(string_term, field, 10, Weight(0));
+    query_builder.addStringTerm(prefix_term, field, 11, Weight(0));
+#endif
     Node::UP node = query_builder.build();
 
     ResolveViewVisitor visitor(resolver, idxEnv);
@@ -222,19 +227,19 @@ public:
         EXPECT_EQUAL((double)estimatedHitCount / doc_count, n.field(0).getDocFreq());
     }
 
-    virtual void visit(ProtonNumberTerm &n) override { checkNode(n, 1, false); }
-    virtual void visit(ProtonLocationTerm &n) override { checkNode(n, 0, true); }
-    virtual void visit(ProtonPrefixTerm &n) override { checkNode(n, 1, false); }
-    virtual void visit(ProtonRangeTerm &n) override { checkNode(n, 2, false); }
-    virtual void visit(ProtonStringTerm &n) override { checkNode(n, 2, false); }
-    virtual void visit(ProtonSubstringTerm &n) override { checkNode(n, 0, true); }
-    virtual void visit(ProtonSuffixTerm &n) override { checkNode(n, 2, false); }
-    virtual void visit(ProtonPhrase &n) override { checkNode(n, 0, true); }
-    virtual void visit(ProtonWeightedSetTerm &) override {}
-    virtual void visit(ProtonDotProduct &) override {}
-    virtual void visit(ProtonWandTerm &) override {}
-    virtual void visit(ProtonPredicateQuery &) override {}
-    virtual void visit(ProtonRegExpTerm &) override {}
+    void visit(ProtonNumberTerm &n) override { checkNode(n, 1, false); }
+    void visit(ProtonLocationTerm &n) override { checkNode(n, 0, true); }
+    void visit(ProtonPrefixTerm &n) override { checkNode(n, 1, false); }
+    void visit(ProtonRangeTerm &n) override { checkNode(n, 2, false); }
+    void visit(ProtonStringTerm &n) override { checkNode(n, 2, false); }
+    void visit(ProtonSubstringTerm &n) override { checkNode(n, 0, true); }
+    void visit(ProtonSuffixTerm &n) override { checkNode(n, 2, false); }
+    void visit(ProtonPhrase &n) override { checkNode(n, 0, true); }
+    void visit(ProtonWeightedSetTerm &) override {}
+    void visit(ProtonDotProduct &) override {}
+    void visit(ProtonWandTerm &) override {}
+    void visit(ProtonPredicateQuery &) override {}
+    void visit(ProtonRegExpTerm &) override {}
 };
 
 void Test::requireThatTermsAreLookedUp() {
@@ -354,12 +359,12 @@ class SetUpTermDataTestCheckerVisitor
     int Main() { return 0; }
 
 public:
-    virtual void visit(ProtonNumberTerm &) override {}
-    virtual void visit(ProtonLocationTerm &) override {}
-    virtual void visit(ProtonPrefixTerm &) override {}
-    virtual void visit(ProtonRangeTerm &) override {}
+    void visit(ProtonNumberTerm &) override {}
+    void visit(ProtonLocationTerm &) override {}
+    void visit(ProtonPrefixTerm &) override {}
+    void visit(ProtonRangeTerm &) override {}
 
-    virtual void visit(ProtonStringTerm &n) override {
+    void visit(ProtonStringTerm &n) override {
         const ITermData &term_data = n;
         EXPECT_EQUAL(string_weight.percent(),
                    term_data.getWeight().percent());
@@ -375,17 +380,17 @@ public:
         }
     }
 
-    virtual void visit(ProtonSubstringTerm &) override {}
-    virtual void visit(ProtonSuffixTerm &) override {}
-    virtual void visit(ProtonPhrase &n) override {
+    void visit(ProtonSubstringTerm &) override {}
+    void visit(ProtonSuffixTerm &) override {}
+    void visit(ProtonPhrase &n) override {
         const ITermData &term_data = n;
         EXPECT_EQUAL(2u, term_data.getPhraseLength());
     }
-    virtual void visit(ProtonWeightedSetTerm &) override {}
-    virtual void visit(ProtonDotProduct &) override {}
-    virtual void visit(ProtonWandTerm &) override {}
-    virtual void visit(ProtonPredicateQuery &) override {}
-    virtual void visit(ProtonRegExpTerm &) override {}
+    void visit(ProtonWeightedSetTerm &) override {}
+    void visit(ProtonDotProduct &) override {}
+    void visit(ProtonWandTerm &) override {}
+    void visit(ProtonPredicateQuery &) override {}
+    void visit(ProtonRegExpTerm &) override {}
 };
 
 void Test::requireThatTermDataIsFilledIn() {
@@ -855,7 +860,7 @@ Test::requireThatWhiteListBlueprintCanBeUsed()
     EXPECT_EQUAL(exp, act);
 }
 
-Test::~Test() {}
+Test::~Test() = default;
 
 int
 Test::Main()
@@ -877,6 +882,7 @@ Test::Main()
     TEST_CALL(requireThatNearIteratorsCanBeBuilt);
     TEST_CALL(requireThatONearIteratorsCanBeBuilt);
     TEST_CALL(requireThatPhraseIteratorsCanBeBuilt);
+    //TODO Add SameElement testing
     TEST_CALL(requireThatUnknownFieldActsEmpty);
     TEST_CALL(requireThatIllegalFieldsAreIgnored);
     TEST_CALL(requireThatQueryGluesEverythingTogether);
@@ -893,7 +899,6 @@ Test::Main()
 
 
 }  // namespace
-}  // namespace matching
-}  // namespace proton
+}  // namespace proton::matching
 
 TEST_APPHOOK(proton::matching::Test);

@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 class Node;
 
@@ -14,6 +13,4 @@ struct StackDumpCreator {
     static vespalib::string create(const Node &node);
 };
 
-}  // namespace query
-}  // namespace search
-
+}

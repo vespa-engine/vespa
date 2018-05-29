@@ -20,13 +20,11 @@
 #pragma once
 
 #include "predicate_query_term.h"
-#include <stack>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchlib/query/weight.h>
 #include "node.h"
+#include <vespa/searchlib/query/weight.h>
+#include <stack>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 class Intermediate;
 class Location;
@@ -122,6 +120,10 @@ typename NodeTypes::Equiv *createEquiv(int32_t id, Weight weight) {
 template <class NodeTypes>
 typename NodeTypes::Phrase *createPhrase(const vespalib::stringref &view, int32_t id, Weight weight) {
     return new typename NodeTypes::Phrase(view, id, weight);
+}
+template <class NodeTypes>
+typename NodeTypes::SameElement *createSameElement(const vespalib::stringref &view) {
+    return new typename NodeTypes::SameElement(view);
 }
 template <class NodeTypes>
 typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(const vespalib::stringref &view, int32_t id, Weight weight) {
@@ -243,6 +245,9 @@ public:
         setWeightOverride(weight);
         return node;
     }
+    typename NodeTypes::SameElement &addSameElement(int child_count, const stringref &view) {
+        return addIntermediate(createSameElement<NodeTypes>(view), child_count);
+    }
     typename NodeTypes::WeightedSetTerm &addWeightedSetTerm( int child_count, const stringref &view, int32_t id, Weight weight) {
         adjustWeight(weight);
         typename NodeTypes::WeightedSetTerm &node = addIntermediate(createWeightedSetTerm<NodeTypes>(view, id, weight), child_count);
@@ -306,6 +311,4 @@ public:
     }
 };
 
-}  // namespace query
-}  // namespace search
-
+}

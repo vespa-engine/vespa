@@ -14,8 +14,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.distancetopathfeature");
 
-namespace search {
-namespace features {
+namespace search::features {
 
 const feature_t DistanceToPathExecutor::DEFAULT_DISTANCE(6400000000.0);
 
@@ -96,9 +95,7 @@ DistanceToPathBlueprint::DistanceToPathBlueprint() :
 {
 }
 
-DistanceToPathBlueprint::~DistanceToPathBlueprint()
-{
-}
+DistanceToPathBlueprint::~DistanceToPathBlueprint() = default;
 
 void
 DistanceToPathBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
@@ -175,5 +172,4 @@ DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
     return stash.create<DistanceToPathExecutor>(path, pos);
 }
 
-} // namespace features
-} // namespace search
+}

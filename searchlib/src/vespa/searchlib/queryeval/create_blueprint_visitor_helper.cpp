@@ -19,7 +19,7 @@ CreateBlueprintVisitorHelper::CreateBlueprintVisitorHelper(Searchable &searchabl
       _result()
 {}
 
-CreateBlueprintVisitorHelper::~CreateBlueprintVisitorHelper() {}
+CreateBlueprintVisitorHelper::~CreateBlueprintVisitorHelper() = default;
 
 Blueprint::UP
 CreateBlueprintVisitorHelper::getResult()
@@ -30,7 +30,7 @@ CreateBlueprintVisitorHelper::getResult()
 }
 
 void
-CreateBlueprintVisitorHelper::visitPhrase(search::query::Phrase &n) {
+CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     SimplePhraseBlueprint *phrase = new SimplePhraseBlueprint(_field, _requestContext);
     Blueprint::UP result(phrase);
     for (size_t i = 0; i < n.getChildren().size(); ++i) {
@@ -42,7 +42,7 @@ CreateBlueprintVisitorHelper::visitPhrase(search::query::Phrase &n) {
 }
 
 void
-CreateBlueprintVisitorHelper::handleNumberTermAsText(search::query::NumberTerm &n)
+CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
 {
     vespalib::string termStr = termAsString(n);
     queryeval::SplitFloat splitter(termStr);
@@ -73,24 +73,24 @@ CreateBlueprintVisitorHelper::createWeightedSet(WS *bp, NODE &n) {
     for (size_t i = 0; i < n.getChildren().size(); ++i) {
         fields.clear();
         fields.add(bp->getNextChildField(_field));
-        const search::query::Node &node = *n.getChildren()[i];
+        const query::Node &node = *n.getChildren()[i];
         uint32_t weight = getWeightFromNode(node).percent();
         bp->addTerm(_searchable.createBlueprint(_requestContext, fields, node), weight);
     }
     setResult(std::move(result));
 }
 void
-CreateBlueprintVisitorHelper::visitWeightedSetTerm(search::query::WeightedSetTerm &n) {
+CreateBlueprintVisitorHelper::visitWeightedSetTerm(query::WeightedSetTerm &n) {
     WeightedSetTermBlueprint *bp = new WeightedSetTermBlueprint(_field);
     createWeightedSet(bp, n);
 }
 void
-CreateBlueprintVisitorHelper::visitDotProduct(search::query::DotProduct &n) {
+CreateBlueprintVisitorHelper::visitDotProduct(query::DotProduct &n) {
     DotProductBlueprint *bp = new DotProductBlueprint(_field);
     createWeightedSet(bp, n);
 }
 void
-CreateBlueprintVisitorHelper::visitWandTerm(search::query::WandTerm &n) {
+CreateBlueprintVisitorHelper::visitWandTerm(query::WandTerm &n) {
     ParallelWeakAndBlueprint *bp = new ParallelWeakAndBlueprint(_field,
                                                                 n.getTargetNumHits(),
                                                                 n.getScoreThreshold(),

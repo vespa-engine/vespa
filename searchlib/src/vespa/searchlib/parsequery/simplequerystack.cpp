@@ -25,12 +25,12 @@ SimpleQueryStack::~SimpleQueryStack()
 }
 
 void
-SimpleQueryStack::Push(search::ParseItem *item)
+SimpleQueryStack::Push(ParseItem *item)
 {
     // Check if query OK for FirstPage
     _FP_queryOK &=
-        ( item->Type() != search::ParseItem::ITEM_UNDEF
-         && item->Type() != search::ParseItem::ITEM_PAREN
+        ( item->Type() != ParseItem::ITEM_UNDEF
+         && item->Type() != ParseItem::ITEM_PAREN
           );
 
 
@@ -40,10 +40,10 @@ SimpleQueryStack::Push(search::ParseItem *item)
     _numItems++;
 }
 
-search::ParseItem *
+ParseItem *
 SimpleQueryStack::Pop()
 {
-    search::ParseItem *item = _stack;
+    ParseItem *item = _stack;
     if (_stack != NULL) {
         _numItems--;
         _stack = _stack->_next;
@@ -53,9 +53,9 @@ SimpleQueryStack::Pop()
 }
 
 void
-SimpleQueryStack::AppendBuffer(search::RawBuf *buf) const
+SimpleQueryStack::AppendBuffer(RawBuf *buf) const
 {
-    for (search::ParseItem *item = _stack; item != NULL; item = item->_next) {
+    for (ParseItem *item = _stack; item != NULL; item = item->_next) {
         item->AppendBuffer(buf);
     }
 }
@@ -66,7 +66,7 @@ SimpleQueryStack::GetBufferLen() const
     size_t result;
 
     result = 0;
-    for (const search::ParseItem *item = _stack;
+    for (const ParseItem *item = _stack;
          item != NULL; item = item->_next) {
         result += item->GetBufferLen();
     }
@@ -90,34 +90,35 @@ class ItemName {
 public:
     ItemName() {
         memset(_name, 'X', sizeof(_name));
-        _name[search::ParseItem::ITEM_OR] = '|';
-        _name[search::ParseItem::ITEM_WEAK_AND] = 'w';
-        _name[search::ParseItem::ITEM_EQUIV] = 'E';
-        _name[search::ParseItem::ITEM_AND] = '&';
-        _name[search::ParseItem::ITEM_NOT] = '-';
-        _name[search::ParseItem::ITEM_ANY] = '?';
-        _name[search::ParseItem::ITEM_RANK] = '%';
-        _name[search::ParseItem::ITEM_NEAR] = 'N';
-        _name[search::ParseItem::ITEM_ONEAR] = 'O';
-        _name[search::ParseItem::ITEM_NUMTERM] = '#';
-        _name[search::ParseItem::ITEM_TERM] = 't';
-        _name[search::ParseItem::ITEM_PURE_WEIGHTED_STRING] = 'T';
-        _name[search::ParseItem::ITEM_PURE_WEIGHTED_LONG] = 'L';
-        _name[search::ParseItem::ITEM_PREFIXTERM] = '*';
-        _name[search::ParseItem::ITEM_SUBSTRINGTERM] = 's';
-        _name[search::ParseItem::ITEM_EXACTSTRINGTERM] = 'e';
-        _name[search::ParseItem::ITEM_SUFFIXTERM] = 'S';
-        _name[search::ParseItem::ITEM_PHRASE] = '"';
-        _name[search::ParseItem::ITEM_WEIGHTED_SET] = 'W';
-        _name[search::ParseItem::ITEM_DOT_PRODUCT] = 'D';
-        _name[search::ParseItem::ITEM_WAND] = 'A';
-        _name[search::ParseItem::ITEM_PREDICATE_QUERY] = 'P';
-        _name[search::ParseItem::ITEM_REGEXP] = '^';
+        _name[ParseItem::ITEM_OR] = '|';
+        _name[ParseItem::ITEM_WEAK_AND] = 'w';
+        _name[ParseItem::ITEM_EQUIV] = 'E';
+        _name[ParseItem::ITEM_AND] = '&';
+        _name[ParseItem::ITEM_NOT] = '-';
+        _name[ParseItem::ITEM_ANY] = '?';
+        _name[ParseItem::ITEM_RANK] = '%';
+        _name[ParseItem::ITEM_NEAR] = 'N';
+        _name[ParseItem::ITEM_ONEAR] = 'O';
+        _name[ParseItem::ITEM_NUMTERM] = '#';
+        _name[ParseItem::ITEM_TERM] = 't';
+        _name[ParseItem::ITEM_PURE_WEIGHTED_STRING] = 'T';
+        _name[ParseItem::ITEM_PURE_WEIGHTED_LONG] = 'L';
+        _name[ParseItem::ITEM_PREFIXTERM] = '*';
+        _name[ParseItem::ITEM_SUBSTRINGTERM] = 's';
+        _name[ParseItem::ITEM_EXACTSTRINGTERM] = 'e';
+        _name[ParseItem::ITEM_SUFFIXTERM] = 'S';
+        _name[ParseItem::ITEM_PHRASE] = '"';
+        _name[ParseItem::ITEM_SAME_ELEMENT] = 'M';
+        _name[ParseItem::ITEM_WEIGHTED_SET] = 'W';
+        _name[ParseItem::ITEM_DOT_PRODUCT] = 'D';
+        _name[ParseItem::ITEM_WAND] = 'A';
+        _name[ParseItem::ITEM_PREDICATE_QUERY] = 'P';
+        _name[ParseItem::ITEM_REGEXP] = '^';
     }
-    char operator[] (search::ParseItem::ItemType i) const { return _name[i]; }
+    char operator[] (ParseItem::ItemType i) const { return _name[i]; }
     char operator[] (size_t i) const { return _name[i]; }
 private:
-    char _name[search::ParseItem::ITEM_MAX];
+    char _name[ParseItem::ITEM_MAX];
 };
 
 static ItemName _G_ItemName;
@@ -162,29 +163,29 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
     while (p < ep) {
         vespalib::string metaStr;
         rawtype = *p++;
-        type = search::ParseItem::GetType(rawtype);
-        if (search::ParseItem::GetFeature_Weight(rawtype)) {
+        type = ParseItem::GetType(rawtype);
+        if (ParseItem::GetFeature_Weight(rawtype)) {
             int64_t tmpLong(0);
             p += vespalib::compress::Integer::decompress(tmpLong, p);
             metaStr.append("(w:");
             metaStr.append(make_string("%ld", tmpLong));
             metaStr.append(")");
         }
-        if (search::ParseItem::getFeature_UniqueId(rawtype)) {
+        if (ParseItem::getFeature_UniqueId(rawtype)) {
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             metaStr.append("(u:");
             metaStr.append(make_string("%ld", tmp));
             metaStr.append(")");
         }
-        if (search::ParseItem::getFeature_Flags(rawtype)) {
+        if (ParseItem::getFeature_Flags(rawtype)) {
             flags = *p++;
             metaStr.append("(f:");
             metaStr.append(make_string("%d", flags));
             metaStr.append(")");
         }
-        if (search::ParseItem::GetCreator(flags) != search::ParseItem::CREA_ORIG) {
+        if (ParseItem::GetCreator(flags) != ParseItem::CREA_ORIG) {
             metaStr.append("(c:");
-            metaStr.append(make_string("%d", search::ParseItem::GetCreator(flags)));
+            metaStr.append(make_string("%d", ParseItem::GetCreator(flags)));
             metaStr.append(")");
         }
 
@@ -192,41 +193,52 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
         result.append(metaStr);
 
         switch (type) {
-        case search::ParseItem::ITEM_OR:
-        case search::ParseItem::ITEM_AND:
-        case search::ParseItem::ITEM_EQUIV:
-        case search::ParseItem::ITEM_NOT:
-        case search::ParseItem::ITEM_RANK:
-        case search::ParseItem::ITEM_ANY:
+        case ParseItem::ITEM_OR:
+        case ParseItem::ITEM_AND:
+        case ParseItem::ITEM_EQUIV:
+        case ParseItem::ITEM_NOT:
+        case ParseItem::ITEM_RANK:
+        case ParseItem::ITEM_ANY:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             arity = tmp;
             result.append(make_string("%c/%d~", _G_ItemName[type], arity));
             break;
-        case search::ParseItem::ITEM_WEAK_AND:
-        case search::ParseItem::ITEM_NEAR:
-        case search::ParseItem::ITEM_ONEAR:
+        case ParseItem::ITEM_NEAR:
+        case ParseItem::ITEM_ONEAR:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             arity = tmp;
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             arg1 = tmp;
-            if (type == search::ParseItem::ITEM_WEAK_AND) {
-                p += vespalib::compress::Integer::decompressPositive(tmp, p);
-                idxRefLen = tmp;
-                idxRef = p;
-                p += idxRefLen;
-                result.append(make_string("%c/%d/%d/%d:%.*s~", _G_ItemName[type], arity, arg1, idxRefLen, idxRefLen, idxRef));
-            } else {
-                result.append(make_string("%c/%d/%d~", _G_ItemName[type], arity, arg1));
-            }
+            result.append(make_string("%c/%d/%d~", _G_ItemName[type], arity, arg1));
+            break;
+        case ParseItem::ITEM_WEAK_AND:
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            arity = tmp;
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            arg1 = tmp;
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            idxRefLen = tmp;
+            idxRef = p;
+            p += idxRefLen;
+            result.append(make_string("%c/%d/%d/%d:%.*s~", _G_ItemName[type], arity, arg1, idxRefLen, idxRefLen, idxRef));
+            break;
+        case ParseItem::ITEM_SAME_ELEMENT:
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            arity = tmp;
+            p += vespalib::compress::Integer::decompressPositive(tmp, p);
+            idxRefLen = tmp;
+            idxRef = p;
+            p += idxRefLen;
+            result.append(make_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen, idxRefLen, idxRef));
             break;
 
-        case search::ParseItem::ITEM_NUMTERM:
-        case search::ParseItem::ITEM_TERM:
-        case search::ParseItem::ITEM_PREFIXTERM:
-        case search::ParseItem::ITEM_SUBSTRINGTERM:
-        case search::ParseItem::ITEM_EXACTSTRINGTERM:
-        case search::ParseItem::ITEM_SUFFIXTERM:
-        case search::ParseItem::ITEM_REGEXP:
+        case ParseItem::ITEM_NUMTERM:
+        case ParseItem::ITEM_TERM:
+        case ParseItem::ITEM_PREFIXTERM:
+        case ParseItem::ITEM_SUBSTRINGTERM:
+        case ParseItem::ITEM_EXACTSTRINGTERM:
+        case ParseItem::ITEM_SUFFIXTERM:
+        case ParseItem::ITEM_REGEXP:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             idxRefLen = tmp;
             idxRef = p;
@@ -239,7 +251,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
                                             idxRefLen, idxRefLen, idxRef,
                                             termRefLen, termRefLen, termRef));
             break;
-        case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
+        case ParseItem::ITEM_PURE_WEIGHTED_STRING:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             termRefLen = tmp;
             termRef = p;
@@ -248,23 +260,23 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
                                             termRefLen, termRefLen, termRef));
             break;
 
-        case search::ParseItem::ITEM_PURE_WEIGHTED_LONG:
+        case ParseItem::ITEM_PURE_WEIGHTED_LONG:
             tmp = vespalib::nbo::n2h(*reinterpret_cast<const uint64_t *>(p));
             p += sizeof(uint64_t);
             result.append(make_string("%c/%lu", _G_ItemName[type], tmp));
             break;
 
-        case search::ParseItem::ITEM_PHRASE:
-        case search::ParseItem::ITEM_WEIGHTED_SET:
-        case search::ParseItem::ITEM_DOT_PRODUCT:
-        case search::ParseItem::ITEM_WAND:
+        case ParseItem::ITEM_PHRASE:
+        case ParseItem::ITEM_WEIGHTED_SET:
+        case ParseItem::ITEM_DOT_PRODUCT:
+        case ParseItem::ITEM_WAND:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             arity = tmp;
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             idxRefLen = tmp;
             idxRef = p;
             p += idxRefLen;
-            if (type == search::ParseItem::ITEM_WAND) {
+            if (type == ParseItem::ITEM_WAND) {
                 p += vespalib::compress::Integer::decompressPositive(tmp, p);
                 uint32_t targetNumHits = tmp;
                 double scoreThreshold = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); 
@@ -279,7 +291,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             }
             break;
 
-        case search::ParseItem::ITEM_PREDICATE_QUERY:
+        case ParseItem::ITEM_PREDICATE_QUERY:
         {
             idxRefLen = static_cast<uint32_t>(ReadCompressedPositiveInt(p));
             idxRef = p;

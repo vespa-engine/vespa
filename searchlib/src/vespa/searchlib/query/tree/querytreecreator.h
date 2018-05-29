@@ -5,8 +5,7 @@
 #include "queryreplicator.h"
 #include "stackdumpquerycreator.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
 /**
  * Holds functions for creating query trees, either from a stack dump
@@ -27,6 +26,4 @@ private:
     QueryTreeCreator();
 };
 
-}  // namespace query
-}  // namespace search
-
+}

@@ -200,7 +200,7 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foobar"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "bar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 3));
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 3, "index"));
 
         stack.AppendBuffer(&buf);
         keywords = _extractor->ExtractKeywords(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
@@ -216,11 +216,11 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
         // multiple phrase and term query
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "xyzzy"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "xyz"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 2));
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 2, "index"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foobar"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "bar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 3));
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 3, "index"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "baz"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "zog"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_AND, 3));
@@ -241,7 +241,7 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo"));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_AND, 2));
         stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "bar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 2));
+        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 2, "index"));
 
         stack.AppendBuffer(&buf);
         keywords = _extractor->ExtractKeywords(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));

@@ -3,8 +3,7 @@
 #include "range.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 Range::Range(int64_t f, int64_t t)
 {
@@ -18,5 +17,4 @@ vespalib::asciistream &operator<<(vespalib::asciistream &out, const Range &range
     return out << range.getRangeString();
 }
 
-}  // namespace query
-}  // namespace search
+}

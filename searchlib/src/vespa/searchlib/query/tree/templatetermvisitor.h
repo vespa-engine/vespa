@@ -4,8 +4,7 @@
 
 #include "customtypetermvisitor.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
 /**
  * Use this class to visit all term nodes by deriving from this class
@@ -54,5 +53,4 @@ class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
     void visit(typename NodeTypes::WandTerm &n) override { myVisit(n); }
 };
 
-}  // namespace query
-}  // namespace search
+}

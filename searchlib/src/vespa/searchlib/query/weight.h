@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 /**
  * Represents the weight given on a query item such as a term, phrase, or equiv.
@@ -44,8 +43,7 @@ public:
     bool operator== (const Weight& other) const { return _weight == other._weight; }
 };
 
-} // namespace query
-} // namespace search
+}
 
 inline search::query::Weight operator+(const search::query::Weight& a, const search::query::Weight& b)
 {

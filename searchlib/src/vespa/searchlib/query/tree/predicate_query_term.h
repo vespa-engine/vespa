@@ -6,8 +6,7 @@
 #include <memory>
 #include <vector>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 /**
  * Represents a predicate query, with features and range features.
@@ -71,6 +70,4 @@ public:
     }
 };
 
-}  // namespace query
-}  // namespace search
-
+}

@@ -10,8 +10,7 @@
 
 using namespace search::queryeval;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -124,29 +123,31 @@ private:
     }
 
 protected:
-    virtual void visit(ProtonAnd &n)     override { buildIntermediate(new AndBlueprint(), n); }
-    virtual void visit(ProtonAndNot &n)  override { buildIntermediate(new AndNotBlueprint(), n); }
-    virtual void visit(ProtonOr &n)      override { buildIntermediate(new OrBlueprint(), n); }
-    virtual void visit(ProtonWeakAnd &n) override { buildWeakAnd(n); }
-    virtual void visit(ProtonEquiv &n)   override { buildEquiv(n); }
-    virtual void visit(ProtonRank &n)    override { buildIntermediate(new RankBlueprint(), n); }
-    virtual void visit(ProtonNear &n)    override { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
-    virtual void visit(ProtonONear &n)   override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
+    void visit(ProtonAnd &n)         override { buildIntermediate(new AndBlueprint(), n); }
+    void visit(ProtonAndNot &n)      override { buildIntermediate(new AndNotBlueprint(), n); }
+    void visit(ProtonOr &n)          override { buildIntermediate(new OrBlueprint(), n); }
+    void visit(ProtonWeakAnd &n)     override { buildWeakAnd(n); }
+    void visit(ProtonEquiv &n)       override { buildEquiv(n); }
+    void visit(ProtonRank &n)        override { buildIntermediate(new RankBlueprint(), n); }
+    void visit(ProtonNear &n)        override { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
+    void visit(ProtonONear &n)       override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
+    void visit(ProtonSameElement &n) override { buildIntermediate(nullptr /*new SameElementBlueprint())*/, n); }
 
-    virtual void visit(ProtonWeightedSetTerm &n) override { buildTerm(n); }
-    virtual void visit(ProtonDotProduct &n) override { buildTerm(n); }
-    virtual void visit(ProtonWandTerm &n) override { buildTerm(n); }
 
-    virtual void visit(ProtonPhrase &n)        override { buildTerm(n); }
-    virtual void visit(ProtonNumberTerm &n)    override { buildTerm(n); }
-    virtual void visit(ProtonLocationTerm &n)  override { buildTerm(n); }
-    virtual void visit(ProtonPrefixTerm &n)    override { buildTerm(n); }
-    virtual void visit(ProtonRangeTerm &n)     override { buildTerm(n); }
-    virtual void visit(ProtonStringTerm &n)    override { buildTerm(n); }
-    virtual void visit(ProtonSubstringTerm &n) override { buildTerm(n); }
-    virtual void visit(ProtonSuffixTerm &n)    override { buildTerm(n); }
-    virtual void visit(ProtonPredicateQuery &n) override { buildTerm(n); }
-    virtual void visit(ProtonRegExpTerm &n)    override { buildTerm(n); }
+    void visit(ProtonWeightedSetTerm &n) override { buildTerm(n); }
+    void visit(ProtonDotProduct &n)      override { buildTerm(n); }
+    void visit(ProtonWandTerm &n)        override { buildTerm(n); }
+
+    void visit(ProtonPhrase &n)          override { buildTerm(n); }
+    void visit(ProtonNumberTerm &n)      override { buildTerm(n); }
+    void visit(ProtonLocationTerm &n)    override { buildTerm(n); }
+    void visit(ProtonPrefixTerm &n)      override { buildTerm(n); }
+    void visit(ProtonRangeTerm &n)       override { buildTerm(n); }
+    void visit(ProtonStringTerm &n)      override { buildTerm(n); }
+    void visit(ProtonSubstringTerm &n)   override { buildTerm(n); }
+    void visit(ProtonSuffixTerm &n)      override { buildTerm(n); }
+    void visit(ProtonPredicateQuery &n)  override { buildTerm(n); }
+    void visit(ProtonRegExpTerm &n)      override { buildTerm(n); }
 
 public:
     BlueprintBuilderVisitor(const IRequestContext & requestContext, ISearchContext &context) :
@@ -174,5 +175,4 @@ BlueprintBuilder::build(const IRequestContext & requestContext,
     return result;
 }
 
-}  // namespace matching
-}  // namespace proton
+}

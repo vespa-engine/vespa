@@ -7,8 +7,7 @@
 
 using vespalib::asciistream;
 
-namespace search {
-namespace query {
+namespace search::query {
 
 Location::Location(const Point &point, uint32_t max_dist, uint32_t x_aspect) {
     asciistream loc;
@@ -61,5 +60,4 @@ vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &lo
     return out << loc.getLocationString();
 }
 
-}  // namespace query
-}  // namespace search
+}

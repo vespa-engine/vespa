@@ -4,8 +4,7 @@
 
 #include "queryvisitor.h"
 
-namespace search {
-namespace query {
+namespace search::query {
 
 /**
  * By typedefing a (complete) set of subclasses to the query nodes in
@@ -37,6 +36,7 @@ public:
     virtual void visit(typename NodeTypes::ONear &) = 0;
     virtual void visit(typename NodeTypes::Or &) = 0;
     virtual void visit(typename NodeTypes::Phrase &) = 0;
+    virtual void visit(typename NodeTypes::SameElement &) = 0;
     virtual void visit(typename NodeTypes::PrefixTerm &) = 0;
     virtual void visit(typename NodeTypes::RangeTerm &) = 0;
     virtual void visit(typename NodeTypes::Rank &) = 0;
@@ -62,6 +62,7 @@ private:
     typedef typename NodeTypes::ONear TONear;
     typedef typename NodeTypes::Or TOr;
     typedef typename NodeTypes::Phrase TPhrase;
+    typedef typename NodeTypes::SameElement TSameElement;
     typedef typename NodeTypes::PrefixTerm TPrefixTerm;
     typedef typename NodeTypes::RangeTerm TRangeTerm;
     typedef typename NodeTypes::Rank TRank;
@@ -84,6 +85,7 @@ private:
     void visit(ONear &n) override { visit(static_cast<TONear&>(n)); }
     void visit(Or &n) override { visit(static_cast<TOr&>(n)); }
     void visit(Phrase &n) override { visit(static_cast<TPhrase&>(n)); }
+    void visit(SameElement &n) override { visit(static_cast<TSameElement &>(n)); }
     void visit(PrefixTerm &n) override { visit(static_cast<TPrefixTerm&>(n)); }
     void visit(RangeTerm &n) override { visit(static_cast<TRangeTerm&>(n)); }
     void visit(Rank &n) override { visit(static_cast<TRank&>(n)); }
@@ -98,5 +100,4 @@ private:
     void visit(RegExpTerm &n) override { visit(static_cast<TRegExpTerm&>(n)); }
 };
 
-}  // namespace query
-}  // namespace search
+}

@@ -30,7 +30,7 @@ namespace proton::matching {
 ProtonTermData::ProtonTermData() = default;
 ProtonTermData::ProtonTermData(const ProtonTermData &) = default;
 ProtonTermData & ProtonTermData::operator = (const ProtonTermData &) = default;
-ProtonTermData::~ProtonTermData() { }
+ProtonTermData::~ProtonTermData() = default;
 
 void
 ProtonTermData::setDocumentFrequency(double freq)
@@ -42,9 +42,9 @@ ProtonTermData::setDocumentFrequency(double freq)
 
 void
 ProtonTermData::resolve(const ViewResolver &resolver,
-                         const IIndexEnvironment &idxEnv,
-                         const string &view,
-                         bool forceFilter)
+                        const IIndexEnvironment &idxEnv,
+                        const string &view,
+                        bool forceFilter)
 {
     std::vector<string> fields;
     resolver.resolve(((view == "") ? "default" : view), fields);

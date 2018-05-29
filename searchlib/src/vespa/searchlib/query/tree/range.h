@@ -3,12 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-namespace vespalib {
-    class asciistream;
-}
+namespace vespalib { class asciistream; }
 
-namespace search {
-namespace query {
+namespace search::query {
 
 class Range {
     vespalib::string _range;
@@ -27,6 +24,4 @@ inline bool operator==(const Range &r1, const Range &r2) {
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Range &range);
 
-}  // namespace query
-}  // namespace search
-
+}
