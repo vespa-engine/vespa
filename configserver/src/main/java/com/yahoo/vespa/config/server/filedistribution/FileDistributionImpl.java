@@ -9,6 +9,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 
 import java.util.Set;
@@ -20,11 +21,7 @@ import java.util.logging.Logger;
 public class FileDistributionImpl implements FileDistribution {
     private final static Logger log = Logger.getLogger(FileDistributionImpl.class.getName());
 
-    private final Supervisor supervisor;
-
-    FileDistributionImpl(Supervisor supervisor) {
-        this.supervisor = supervisor;
-    }
+    private final Supervisor supervisor = new Supervisor(new Transport());
 
     @Override
     public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {

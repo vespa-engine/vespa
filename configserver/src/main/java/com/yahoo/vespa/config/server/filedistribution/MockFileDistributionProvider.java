@@ -5,8 +5,7 @@ import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class MockFileDistributionProvider extends FileDistributionProvider {
     public int timesCalled = 0;
@@ -20,7 +19,4 @@ public class MockFileDistributionProvider extends FileDistributionProvider {
         return super.getFileDistribution();
     }
 
-    public MockFileDBHandler getMockFileDBHandler() {
-        return (MockFileDBHandler) getFileDistribution();
-    }
 }
