@@ -148,6 +148,7 @@ void checkQueryTreeTypes(Node *node) {
     //typedef typename NodeTypes::NumberTerm FloatTrm;
     typedef typename NodeTypes::Near Near;
     typedef typename NodeTypes::ONear ONear;
+    typedef typename NodeTypes::SameElement SameElement;
     typedef typename NodeTypes::Or Or;
     typedef typename NodeTypes::Phrase Phrase;
     typedef typename NodeTypes::PrefixTerm PrefixTerm;
@@ -273,6 +274,18 @@ void checkQueryTreeTypes(Node *node) {
 
     RegExpTerm *regexp_term = dynamic_cast<RegExpTerm *>(and_node->getChildren()[8]);
     EXPECT_TRUE(checkTerm(regexp_term, str[5], view[5], id[5], weight[5]));
+
+    SameElement *same = dynamic_cast<SameElement *>(and_node->getChildren()[9]);
+    ASSERT_TRUE(same != nullptr);
+    EXPECT_EQUAL(view[4], same->getView());
+    EXPECT_EQUAL(3u, same->getChildren().size());
+    string_term = dynamic_cast<StringTerm *>(same->getChildren()[0]);
+    EXPECT_TRUE(checkTerm(string_term, str[4], view[4], id[4], weight[5]));
+    string_term = dynamic_cast<StringTerm *>(same->getChildren()[1]);
+    EXPECT_TRUE(checkTerm(string_term, str[5], view[5], id[5], weight[6]));
+    string_term = dynamic_cast<StringTerm *>(same->getChildren()[2]);
+    EXPECT_TRUE(checkTerm(string_term, str[6], view[6], id[6], weight[7]));
+
 }
 
 struct AbstractTypes {
@@ -282,6 +295,7 @@ struct AbstractTypes {
     typedef search::query::LocationTerm LocationTerm;
     typedef search::query::Near Near;
     typedef search::query::ONear ONear;
+    typedef search::query::SameElement SameElement;
     typedef search::query::Or Or;
     typedef search::query::Phrase Phrase;
     typedef search::query::PrefixTerm PrefixTerm;
