@@ -42,12 +42,6 @@ CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
 }
 
 void
-CreateBlueprintVisitorHelper::visitSameElement(query::SameElement &n) {
-    (void) n;
-    //TODO Implement SameElementBlueprint creation.
-}
-
-void
 CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
 {
     vespalib::string termStr = termAsString(n);

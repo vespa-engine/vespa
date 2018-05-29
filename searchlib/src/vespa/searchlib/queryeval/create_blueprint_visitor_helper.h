@@ -38,7 +38,6 @@ public:
     const FieldSpec &getField() const { return _field; }
 
     void visitPhrase(query::Phrase &n);
-    void visitSameElement(query::SameElement &n);
 
     template <typename WS, typename NODE>
     void createWeightedSet(WS *bp, NODE &n);
@@ -58,12 +57,10 @@ public:
     void visit(query::Or &) override { illegalVisit(); }
     void visit(query::Rank &) override { illegalVisit(); }
     void visit(query::WeakAnd &) override { illegalVisit(); }
+    void visit(query::SameElement &) override { illegalVisit(); }
 
     void visit(query::Phrase &n) override {
         visitPhrase(n);
-    }
-    void visit(query::SameElement &n) override {
-        visitSameElement(n);
     }
     void visit(query::WeightedSetTerm &n) override { visitWeightedSetTerm(n); }
     void visit(query::DotProduct &n) override { visitDotProduct(n); }
