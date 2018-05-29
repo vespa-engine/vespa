@@ -1,0 +1,4 @@
+This module contains all dependencies that must be embedded in the config-model-fat bundle.
+This artifact should be depended on by config-model-fat and all amended versions of the
+fat config model. This allows pulling in the same set of dependencies without duplication
+in pom.xml.
