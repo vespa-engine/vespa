@@ -17,7 +17,6 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProviderListenerHelper;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
-import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
@@ -25,7 +24,6 @@ import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
-import java.net.URI;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
@@ -35,8 +33,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import static java.util.Collections.singleton;
 
 /**
  * @author mortent
@@ -71,8 +67,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this(config,
              metric,
              new AthenzCredentialsService(config,
-                                          createIdentityDocumentClient(config),
-                                          new ZtsClient(),
+                                          createNodeIdentityProvider(config),
                                           getDefaultTrustStoreLocation(),
                                           Defaults.getDefaults().vespaHostname()),
              new ScheduledThreadPoolExecutor(1),
@@ -201,12 +196,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         }
     }
 
-    private static DefaultIdentityDocumentClient createIdentityDocumentClient(IdentityConfig config) {
-        return new DefaultIdentityDocumentClient(
-                URI.create(config.loadBalancerAddress()),
-                new SiaIdentityProvider(
-                        new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, getDefaultTrustStoreLocation()),
-                new AthenzIdentityVerifier(singleton(new AthenzService(config.configserverIdentityName()))));
+    private static SiaIdentityProvider createNodeIdentityProvider(IdentityConfig config) {
+        return new SiaIdentityProvider(
+                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, getDefaultTrustStoreLocation());
     }
 
     private static File getDefaultTrustStoreLocation() {
