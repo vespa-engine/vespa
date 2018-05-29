@@ -200,8 +200,6 @@ DocumentUpdateTest::testSimpleUsage() {
     ByteBuffer::UP docBuf = serialize42(docUpdate);
     docBuf->flip();
     DocumentUpdate::UP docUpdateCopy(DocumentUpdate::create42(repo, *docBuf));
-    CPPUNIT_ASSERT(!docUpdate.affectsDocumentBody());
-    CPPUNIT_ASSERT(!docUpdateCopy->affectsDocumentBody());
 
         // Create a test document
     Document doc(*docType, DocumentId("doc::testdoc"));
@@ -252,7 +250,6 @@ DocumentUpdateTest::testSimpleUsage() {
                     updated.getValue("intarr").release()));
         CPPUNIT_ASSERT_EQUAL(size_t(3), val->size());
         CPPUNIT_ASSERT_EQUAL(4, (*val)[2].getAsInt());
-        CPPUNIT_ASSERT(upd.affectsDocumentBody());
     }
     {
         Document updated(doc);

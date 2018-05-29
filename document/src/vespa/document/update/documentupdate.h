@@ -131,8 +131,6 @@ public:
     /** @return The list of fieldpath updates. */
     const FieldPathUpdateV & getFieldPathUpdates() const { return _fieldPathUpdates; }
 
-    bool affectsDocumentBody() const;
-
     /** @return The type of document this update is for. */
     const DocumentType& getType() const;
 	
@@ -140,9 +138,6 @@ public:
 
     void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
     void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
-
-    // Deserializable implementation. Kept as search relies on it currently.
-    virtual void onDeserialize42(const DocumentTypeRepo &repo, ByteBuffer&);
 
     void serialize42(vespalib::nbostream &stream) const;
     void serializeHEAD(vespalib::nbostream &stream) const;

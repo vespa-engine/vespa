@@ -72,7 +72,7 @@ DocumentUpdate::DocumentUpdate(const DocumentTypeRepo& repo,
     }
 }
 
-DocumentUpdate::~DocumentUpdate() { }
+DocumentUpdate::~DocumentUpdate() = default;
 
 
 bool
@@ -90,22 +90,6 @@ DocumentUpdate::operator==(const DocumentUpdate& other) const
     }
     if (_createIfNonExistent != other._createIfNonExistent) return false;
     return true;
-}
-
-bool
-DocumentUpdate::affectsDocumentBody() const
-{
-    for(const auto & update : _updates) {
-        if (!update.getField().isHeaderField()) {
-            return true;
-        }
-    }
-    for (const auto & update : _fieldPathUpdates) {
-        if (update->affectsDocumentBody(*_type)) {
-            return true;
-        }
-    }
-    return false;
 }
 
 const DocumentType&
@@ -330,13 +314,6 @@ DocumentUpdate::deserializeFlags(int sizeAndFlags)
 {
     _createIfNonExistent = DocumentUpdateFlags::extractFlags(sizeAndFlags).getCreateIfNonExistent();
     return DocumentUpdateFlags::extractValue(sizeAndFlags);
-}
-
-void
-DocumentUpdate::onDeserialize42(const DocumentTypeRepo &repo,
-                                ByteBuffer& buffer)
-{
-    deserialize42(repo, buffer);
 }
 
 void
