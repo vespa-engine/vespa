@@ -213,6 +213,7 @@ alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(1024);
 alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(4096);
 alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
 alloc::MMapAllocator _G_mmapAllocatorDefault;
+alloc::MemoryAllocator *_G_defaultAutAllocator = nullptr;
 
 }
 
@@ -463,6 +464,15 @@ Alloc
 Alloc::allocMMap(size_t sz)
 {
     return Alloc(&MMapAllocator::getDefault(), sz);
+}
+
+Alloc
+Alloc::alloc()
+{
+    if (_G_defaultAutAllocator == nullptr) {
+        _G_defaultAutAllocator = &AutoAllocator::getDefault();
+    }
+    return Alloc(_G_defaultAutAllocator);
 }
 
 Alloc
