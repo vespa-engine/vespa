@@ -16,6 +16,28 @@ FieldUpdate::FieldUpdate(const Field& field)
 {
 }
 
+namespace {
+
+    int readInt(ByteBuffer & buffer) {
+        int fieldId;
+        buffer.getIntNetwork(fieldId);
+        return fieldId;
+    }
+}
+
+FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DocumentType& type, ByteBuffer& buffer, int16_t version)
+    : Printable(),
+      _field(type.getField(readInt(buffer))),
+      _updates()
+{
+    int numUpdates = readInt(buffer);
+    _updates.reserve(numUpdates);
+    const DataType& dataType = _field.getDataType();
+    for(int i(0); i < numUpdates; i++) {
+        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, buffer, version).release());
+    }
+}
+
 FieldUpdate::FieldUpdate(const FieldUpdate &) = default;
 FieldUpdate & FieldUpdate::operator = (const FieldUpdate &) = default;
 FieldUpdate::~FieldUpdate() = default;
@@ -65,8 +87,7 @@ FieldUpdate::applyTo(Document& doc) const
 
 // Print this field update as a human readable string.
 void
-FieldUpdate::print(std::ostream& out, bool verbose,
-                   const std::string& indent) const
+FieldUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "FieldUpdate(" << _field.toString(verbose);
     for(const auto & update : _updates) {
@@ -81,8 +102,8 @@ FieldUpdate::print(std::ostream& out, bool verbose,
 
 // Deserialize this field update from the given buffer.
 void
-FieldUpdate::deserialize(const DocumentTypeRepo& repo,
-                         const DocumentType& docType, ByteBuffer& buffer, int16_t version)
+FieldUpdate::deserialize(const DocumentTypeRepo& repo, const DocumentType& docType,
+                         ByteBuffer& buffer, int16_t version)
 {
     int fieldId;
     buffer.getIntNetwork(fieldId);
