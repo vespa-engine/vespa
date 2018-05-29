@@ -6,6 +6,14 @@
    fun:pthread_create@@GLIBC_2.2.5
 }
 {
+   NPTL keeps a cache of thread stacks, and metadata for thread local storage is not freed for threads in that cache
+   Memcheck:Leak
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+}
+{
    This is a bug in glibc. We can not suffer for that.
    Memcheck:Free
    fun:free
