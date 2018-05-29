@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
@@ -16,8 +14,6 @@ import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -25,31 +21,32 @@ import java.security.cert.X509Certificate;
 import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
 
 /**
+ * A service that provides method for initially registering the instance and refreshing it.
+ *
  * @author bjorncs
  */
 class AthenzCredentialsService {
-
-    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
-
     private final IdentityConfig identityConfig;
     private final IdentityDocumentClient identityDocumentClient;
     private final ZtsClient ztsClient;
     private final File trustStoreJks;
+    private final String hostname;
 
     AthenzCredentialsService(IdentityConfig identityConfig,
                              IdentityDocumentClient identityDocumentClient,
                              ZtsClient ztsClient,
-                             File trustStoreJks) {
+                             File trustStoreJks,
+                             String hostname) {
         this.identityConfig = identityConfig;
         this.identityDocumentClient = identityDocumentClient;
         this.ztsClient = ztsClient;
         this.trustStoreJks = trustStoreJks;
+        this.hostname = hostname;
     }
 
     AthenzCredentials registerInstance() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        String rawDocument = identityDocumentClient.getSignedIdentityDocument();
-        SignedIdentityDocument document = parseSignedIdentityDocument(rawDocument);
+        SignedIdentityDocument document = identityDocumentClient.getTenantIdentityDocument(hostname);
         InstanceCsrGenerator instanceCsrGenerator = new InstanceCsrGenerator(document.dnsSuffix());
         Pkcs10Csr csr = instanceCsrGenerator.generateCsr(
                 new AthenzService(identityConfig.domain(), identityConfig.service()),
@@ -60,7 +57,7 @@ class AthenzCredentialsService {
                 new InstanceRegisterInformation(document.providerService().getFullName(),
                                                 identityConfig.domain(),
                                                 identityConfig.service(),
-                                                rawDocument,
+                                                EntityBindingsMapper.toAttestationData(document),
                                                 Pkcs10CsrUtils.toPem(csr));
         InstanceIdentity instanceIdentity = ztsClient.sendInstanceRegisterRequest(instanceRegisterInformation,
                                                                                   document.ztsEndpoint());
@@ -103,11 +100,4 @@ class AthenzCredentialsService {
                 .build();
     }
 
-    private static SignedIdentityDocument parseSignedIdentityDocument(String rawDocument) {
-        try {
-            return EntityBindingsMapper.toSignedIdentityDocument(mapper.readValue(rawDocument, SignedIdentityDocumentEntity.class));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 }

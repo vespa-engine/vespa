@@ -1,17 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
@@ -55,7 +52,13 @@ public class AthenzIdentityProviderImplTest {
 
     private static final IdentityConfig IDENTITY_CONFIG =
             new IdentityConfig(new IdentityConfig.Builder()
-                                       .service("tenantService").domain("tenantDomain").loadBalancerAddress("cfg").ztsUrl("https:localhost:4443/zts/v1").athenzDnsSuffix("vespa.cloud"));
+                                       .service("tenantService")
+                                       .domain("tenantDomain")
+                                       .nodeIdentityName("vespa.tenant")
+                                       .configserverIdentityName("vespa.configserver")
+                                       .loadBalancerAddress("cfg")
+                                       .ztsUrl("https:localhost:4443/zts/v1")
+                                       .athenzDnsSuffix("dev-us-north-1.vespa.cloud"));
 
     @Test(expected = AthenzIdentityProviderException.class)
     public void component_creation_fails_when_credentials_not_found() {
@@ -73,7 +76,7 @@ public class AthenzIdentityProviderImplTest {
         ManualClock clock = new ManualClock(Instant.EPOCH);
         Metric metric = mock(Metric.class);
 
-        when(identityDocumentClient.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
+        when(identityDocumentClient.getTenantIdentityDocument(any())).thenReturn(getIdentityDocument());
         when(ztsClient.sendInstanceRegisterRequest(any(), any())).then(new Answer<InstanceIdentity>() {
             @Override
             public InstanceIdentity answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -87,7 +90,7 @@ public class AthenzIdentityProviderImplTest {
                 .thenReturn(new InstanceIdentity(getCertificate(getExpirationSupplier(clock)), "TOKEN"));
 
         AthenzCredentialsService credentialService =
-                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentClient, ztsClient, createDummyTrustStore());
+                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentClient, ztsClient, createDummyTrustStore(), "localhost");
 
         AthenzIdentityProviderImpl identityProvider =
                 new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, credentialService, mock(ScheduledExecutorService.class), clock);
@@ -132,9 +135,9 @@ public class AthenzIdentityProviderImplTest {
         return file;
     }
 
-    private static String getIdentityDocument() throws JsonProcessingException {
+    private static SignedIdentityDocument getIdentityDocument() {
         VespaUniqueInstanceId instanceId = new VespaUniqueInstanceId(0, "default", "default", "application", "tenant", "us-north-1", "dev", IdentityType.TENANT);
-        SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
+        return new SignedIdentityDocument(
                 new IdentityDocument(instanceId, "localhost", "x.y.com", Instant.EPOCH, Collections.emptySet()),
                 "dummysignature",
                 0,
@@ -148,8 +151,5 @@ public class AthenzIdentityProviderImplTest {
                 Instant.EPOCH,
                 Collections.emptySet(),
                 IdentityType.TENANT);
-
-        return new ObjectMapper().registerModule(new JavaTimeModule())
-                .writeValueAsString(EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument));
     }
 }
