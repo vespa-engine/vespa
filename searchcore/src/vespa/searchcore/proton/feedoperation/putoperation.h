@@ -21,6 +21,7 @@ public:
     virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
                              const document::DocumentTypeRepo &repo) override;
+    void deserializeDocument(const document::DocumentTypeRepo &repo);
     virtual vespalib::string toString() const override;
 };
 

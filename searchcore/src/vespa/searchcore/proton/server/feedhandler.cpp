@@ -96,6 +96,9 @@ void FeedHandler::performPut(FeedToken token, PutOperation &op) {
         }
         return;
     }
+    if (_repo != op.getDocument()->getRepo()) {
+        op.deserializeDocument(*_repo);
+    }
     storeOperation(op, token);
     if (token) {
         token->setResult(make_unique<Result>(), false);
@@ -344,6 +347,8 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _feedLock(),
       _feedState(make_shared<InitState>(getDocTypeName())),
       _activeFeedView(nullptr),
+      _repo(nullptr),
+      _documentType(nullptr),
       _bucketDBHandler(nullptr),
       _syncLock(),
       _syncedSerialNum(0),
@@ -406,6 +411,14 @@ FeedHandler::flushDone(SerialNum flushedSerial)
 
 void FeedHandler::changeToNormalFeedState() {
     changeFeedState(make_shared<NormalState>(*this));
+}
+
+void
+FeedHandler::setActiveFeedView(IFeedView *feedView)
+{
+    _activeFeedView = feedView;
+    _repo = feedView->getDocumentTypeRepo().get();
+    _documentType = _repo->getDocumentType(_docTypeName.getName());
 }
 
 bool
@@ -492,22 +505,17 @@ FeedHandler::considerWriteOperationForRejection(FeedToken & token, const FeedOpe
 }
 
 bool
-FeedHandler::considerUpdateOperationForRejection(FeedToken &token, const UpdateOperation &op)
+FeedHandler::considerUpdateOperationForRejection(FeedToken &token, UpdateOperation &op)
 {
-    const auto *repo = _activeFeedView->getDocumentTypeRepo().get();
     const auto &update = *op.getUpdate();
     /*
      * Check if document types are equal. DocumentTypeRepoFactory::make returns
      * the same document type repo if document type configs are equal, thus we
      * can just perform a cheaper identity check here.
      */
-    if (repo->getDocumentType(_docTypeName.getName()) != &update.getType()) {
+    if (_documentType != &update.getType()) {
         try {
-            vespalib::nbostream stream;
-            op.serialize(stream);
-            UpdateOperation checkOp(op.getType());
-            vespalib::nbostream checkStream(stream.peek(), stream.size());
-            checkOp.deserialize(stream, *repo);
+            op.deserializeUpdate(*_repo);
         } catch (document::FieldNotFoundException &e) {
             if (token) {
                 auto message = make_string("Update operation rejected for document '%s' of type '%s': 'Field not found'",
@@ -515,6 +523,14 @@ FeedHandler::considerUpdateOperationForRejection(FeedToken &token, const UpdateO
                 token->setResult(make_unique<UpdateResult>(Result::TRANSIENT_ERROR, message), false);
                 token->fail();
             }
+            return true;
+        } catch (document::DocumentTypeNotFoundException &e) {
+            auto message = make_string("Update operation rejected for document '%s' of type '%s': 'Uknown document type', expected '%s'",
+                                       update.getId().toString().c_str(),
+                                       e.getDocumentTypeName().c_str(),
+                                       _docTypeName.toString().c_str());
+            token->setResult(make_unique<UpdateResult>(Result::TRANSIENT_ERROR, message), false);
+            token->fail();
             return true;
         }
     }

@@ -8,6 +8,7 @@ LOG_SETUP(".proton.feedoperation.updateoperation");
 
 
 using document::BucketId;
+using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using storage::spi::Timestamp;
@@ -46,17 +47,33 @@ UpdateOperation::UpdateOperation(const BucketId &bucketId,
 {
 }
 
+void
+UpdateOperation::serializeUpdate(vespalib::nbostream &os) const
+{
+    if (getType() == FeedOperation::UPDATE_42) {
+        _upd->serialize42(os);
+    } else {
+        _upd->serializeHEAD(os);
+    }
+}
+
+void
+UpdateOperation::deserializeUpdate(vespalib::nbostream &is, const document::DocumentTypeRepo &repo)
+{
+    document::ByteBuffer buf(is.peek(), is.size());
+    using Version = DocumentUpdate::SerializeVersion;
+    Version version = ((getType() == FeedOperation::UPDATE_42) ? Version::SERIALIZE_42 : Version::SERIALIZE_HEAD);
+    DocumentUpdate::SP update(std::make_shared<DocumentUpdate>(repo, buf, version));
+    is.adjustReadPos(buf.getPos());
+    _upd = std::move(update);
+}
 
 void
 UpdateOperation::serialize(vespalib::nbostream &os) const
 {
     assertValidBucketId(_upd->getId());
     DocumentOperation::serialize(os);
-    if (getType() == FeedOperation::UPDATE_42) {
-        _upd->serialize42(os);
-    } else {
-        _upd->serializeHEAD(os);
-    }
+    serializeUpdate(os);
 }
 
 
@@ -65,19 +82,22 @@ UpdateOperation::deserialize(vespalib::nbostream &is,
                              const DocumentTypeRepo &repo)
 {
     DocumentOperation::deserialize(is, repo);
-    document::ByteBuffer buf(is.peek(), is.size());
-    using Version = DocumentUpdate::SerializeVersion;
-    Version version = ((getType() == FeedOperation::UPDATE_42) ? Version::SERIALIZE_42 : Version::SERIALIZE_HEAD);
     try {
-        DocumentUpdate::SP update(std::make_shared<DocumentUpdate>(repo, buf, version));
-        is.adjustReadPos(buf.getPos());
-        _upd = update;
+        deserializeUpdate(is, repo);
     } catch (document::DocumentTypeNotFoundException &e) {
         LOG(warning, "Failed deserialize update operation using unknown document type '%s'",
             e.getDocumentTypeName().c_str());
         // Ignore this piece of data
         is.clear();
     }
+}
+
+void
+UpdateOperation::deserializeUpdate(const DocumentTypeRepo &repo)
+{
+    vespalib::nbostream stream;
+    serializeUpdate(stream);
+    deserializeUpdate(stream, repo);
 }
 
 vespalib::string UpdateOperation::toString() const {

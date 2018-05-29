@@ -90,6 +90,8 @@ private:
     FeedStateSP                            _feedState;
     // used by master write thread tasks
     IFeedView                             *_activeFeedView;
+    const document::DocumentTypeRepo      *_repo;
+    const document::DocumentType          *_documentType;
     bucketdb::IBucketDBHandler            *_bucketDBHandler;
     std::mutex                             _syncLock;
     SerialNum                              _syncedSerialNum; 
@@ -102,7 +104,7 @@ private:
     void doHandleOperation(FeedToken token, FeedOperationUP op);
 
     bool considerWriteOperationForRejection(FeedToken & token, const FeedOperation &op);
-    bool considerUpdateOperationForRejection(FeedToken &token, const UpdateOperation &op);
+    bool considerUpdateOperationForRejection(FeedToken &token, UpdateOperation &op);
 
     /**
      * Delayed execution of feed operations against feed view, in
@@ -203,9 +205,7 @@ public:
      * Update the active feed view.
      * Always called by the master write thread so locking is not needed.
      */
-    void setActiveFeedView(IFeedView *feedView) {
-        _activeFeedView = feedView;
-    }
+    void setActiveFeedView(IFeedView *feedView);
 
     void setBucketDBHandler(bucketdb::IBucketDBHandler *bucketDBHandler) {
         _bucketDBHandler = bucketDBHandler;
