@@ -404,11 +404,23 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     /**
      * Receive a callback on the given object for each field in this hit.
-     * This is the most resource efficient way of traversing all the fields of a hit.
+     * This is more efficient than accessing the fields as a map or iterator.
      */
     public void forEachField(BiConsumer<String, Object> consumer) {
         if (fields == null) return;
         fields.forEach(consumer);
+    }
+
+    /**
+     * Receive a callback on the given object for each field in this hit,
+     * where the callback will provide raw utf-8 byte data for strings whose data
+     * is already available at this form.
+     * This is the most resource efficient way of traversing all the fields of a hit
+     * in renderers which produces utf-8.
+     */
+    public void forEachFieldAsRaw(RawUtf8Consumer consumer) {
+        if (fields == null) return;
+        fields.forEach(consumer); // No utf-8 fields available in Hit
     }
 
     /** Returns the fields of this as a read-only map. This is more costly than fieldIterator() */
@@ -798,6 +810,20 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     @Override
     public String toString() {
         return "hit " + getId() + " (relevance " + getRelevance() + ")";
+    }
+
+    public interface RawUtf8Consumer extends BiConsumer<String, Object> {
+
+        /**
+         * Called for fields which are available as UTF-8 instead of accept(String, Object).
+         *
+         * @param fieldName the name of the field
+         * @param utf8Data raw utf-8 data. The reciver <b>must not</b> modify this data
+         * @param offset the start index of the data to accept into the utf8Data array
+         * @param length the length of the data to accept into the utf8Data array
+         */
+        void accept(String fieldName, byte[] utf8Data, int offset, int length);
+
     }
 
 }

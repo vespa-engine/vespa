@@ -68,24 +68,13 @@ import java.util.function.LongSupplier;
  * JSON renderer for search results.
  *
  * @author Steinar Knutsen
+ * @author bratseth
  */
 // NOTE: The JSON format is a public API. If new elements are added be sure to update the reference doc.
 public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");
     private static final CompoundName JSON_CALLBACK = new CompoundName("jsoncallback");
-
-    private enum RenderDecision {
-        YES, NO, DO_NOT_KNOW;
-
-        boolean booleanValue() {
-            switch (this) {
-                case YES: return true;
-                case NO: return false;
-                default: throw new IllegalStateException();
-            }
-        }
-    }
 
     // if this must be optimized, simply use com.fasterxml.jackson.core.SerializableString
     private static final String BUCKET_LIMITS = "limits";
@@ -133,6 +122,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private final JsonFactory generatorFactory;
 
     private JsonGenerator generator;
+    private FieldConsumer fieldConsumer;
     private Deque<Integer> renderedChildren;
     private boolean debugRendering;
     private LongSupplier timeSource;
@@ -304,9 +294,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void init() {
         super.init();
-        generator = null;
-        renderedChildren = null;
         debugRendering = false;
+        setGenerator(null, debugRendering);
+        renderedChildren = null;
         timeSource = System::currentTimeMillis;
         stream = null;
     }
@@ -314,9 +304,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
         beginJsonCallback(stream);
-        generator = generatorFactory.createGenerator(stream, JsonEncoding.UTF8);
-        renderedChildren = new ArrayDeque<>();
         debugRendering = getDebugRendering(getResult().getQuery());
+        setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), debugRendering);
+        renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
         renderTrace(getExecution().trace());
         renderTiming();
@@ -473,7 +463,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return ! (hit instanceof DefaultErrorHit);
     }
 
-    private void fieldsStart(MutableBoolean hasFieldsField) throws IOException {
+    private static void fieldsStart(MutableBoolean hasFieldsField, JsonGenerator generator) throws IOException {
         if (hasFieldsField.get()) return;
         generator.writeObjectFieldStart(FIELDS);
         hasFieldsField.set(true);
@@ -516,32 +506,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private void renderStandardFields(Hit hit, MutableBoolean hasFieldsField) {
-        hit.forEachField((name, value) -> {
-            try {
-                if (shouldRender(name, value)) {
-                    fieldsStart(hasFieldsField);
-                    renderField(name, value);
-                }
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
-    }
-
-    private boolean shouldRender(String name, Object value) {
-        if (debugRendering) return true;
-
-        if (name.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
-
-        if (value instanceof CharSequence && ((CharSequence) value).length() == 0) return false;
-
-        // StringFieldValue cannot hold a null, so checking length directly is OK:
-        if (value instanceof StringFieldValue && ((StringFieldValue) value).getString().isEmpty()) return false;
-
-        if (value instanceof NanNumber) return false;
-
-        return true;
+        fieldConsumer.setCurrent(hasFieldsField);
+        hit.forEachFieldAsRaw(fieldConsumer);
     }
 
     private void renderSpecialCasesForGrouping(Hit hit) throws IOException {
@@ -609,93 +575,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private void renderTotalHitCount(Hit hit, MutableBoolean hasFieldsField) throws IOException {
         if ( ! (getRecursionLevel() == 1 && hit instanceof HitGroup)) return;
 
-        fieldsStart(hasFieldsField);
+        fieldsStart(hasFieldsField, generator);
         generator.writeNumberField(TOTAL_COUNT, getResult().getTotalHitCount());
-    }
-
-    private void renderField(String name, Object value) throws IOException {
-        generator.writeFieldName(name);
-        renderFieldContents(value);
-    }
-
-    private void renderFieldContents(Object field) throws IOException {
-        if (field == null) {
-            generator.writeNull();
-        } else if (field instanceof Number) {
-            renderNumberField((Number) field);
-        } else if (field instanceof TreeNode) {
-            generator.writeTree((TreeNode) field);
-        } else if (field instanceof Tensor) {
-            renderTensor(Optional.of((Tensor)field));
-        } else if (field instanceof JsonProducer) {
-            generator.writeRawValue(((JsonProducer) field).toJson());
-        } else if (field instanceof Inspectable) {
-            StringBuilder intermediate = new StringBuilder();
-            JsonRender.render((Inspectable) field, intermediate, true);
-            generator.writeRawValue(intermediate.toString());
-        } else if (field instanceof StringFieldValue) {
-            // This needs special casing as JsonWriter hides empty strings now
-            generator.writeString(((StringFieldValue)field).getString());
-        } else if (field instanceof TensorFieldValue) {
-            renderTensor(((TensorFieldValue)field).getTensor());
-        } else if (field instanceof FieldValue) {
-            // the null below is the field which has already been written
-            ((FieldValue) field).serialize(null, new JsonWriter(generator));
-        } else if (field instanceof JSONArray || field instanceof JSONObject) {
-            // org.json returns null if the object would not result in
-            // syntactically correct JSON
-            String s = field.toString();
-            if (s == null) {
-                generator.writeNull();
-            } else {
-                generator.writeRawValue(s);
-            }
-        } else {
-            generator.writeString(field.toString());
-        }
-    }
-
-    private void renderNumberField(Number field) throws IOException {
-        if (field instanceof Integer) {
-            generator.writeNumber(field.intValue());
-        }  else if (field instanceof Float) {
-            generator.writeNumber(field.floatValue());
-        }  else if (field instanceof Double) {
-            generator.writeNumber(field.doubleValue());
-        } else if (field instanceof Long) {
-            generator.writeNumber(field.longValue());
-        } else if (field instanceof Byte || field instanceof Short) {
-            generator.writeNumber(field.intValue());
-        } else if (field instanceof BigInteger) {
-            generator.writeNumber((BigInteger) field);
-        } else if (field instanceof BigDecimal) {
-            generator.writeNumber((BigDecimal) field);
-        } else {
-            generator.writeNumber(field.doubleValue());
-        }
-    }
-
-    private void renderTensor(Optional<Tensor> tensor) throws IOException {
-        generator.writeStartObject();
-        generator.writeArrayFieldStart("cells");
-        if (tensor.isPresent()) {
-            for (Iterator<Tensor.Cell> i = tensor.get().cellIterator(); i.hasNext(); ) {
-                Tensor.Cell cell = i.next();
-
-                generator.writeStartObject();
-
-                generator.writeObjectFieldStart("address");
-                for (int d = 0; d < cell.getKey().size(); d++)
-                    generator.writeObjectField(tensor.get().type().dimensions().get(d).name(), cell.getKey().label(d));
-                generator.writeEndObject();
-
-                generator.writeObjectField("value", cell.getValue());
-
-                generator.writeEndObject();
-            }
-        }
-        generator.writeEndArray();
-        generator.writeEndObject();
     }
 
     @Override
@@ -774,11 +655,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return null;
     }
 
-    /**
-     * Only for testing. Never to be used in any other context.
-     */
-    void setGenerator(JsonGenerator generator) {
+    private void setGenerator(JsonGenerator generator, boolean debugRendering) {
         this.generator = generator;
+        this.fieldConsumer = generator == null ? null : new FieldConsumer(generator, debugRendering);
     }
 
     /**
@@ -787,5 +666,156 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     void setTimeSource(LongSupplier timeSource) {
         this.timeSource = timeSource;
     }
-    
+
+    /**
+     * Received callbacks when fields of hits are encountered.
+     * This instance is reused for all hits of a Result since we are in a single-threaded context
+     * and want to limit object creation.
+     */
+    private static class FieldConsumer implements Hit.RawUtf8Consumer {
+
+        private final JsonGenerator generator;
+        private final boolean debugRendering;
+
+        private MutableBoolean hasFieldsField;
+
+        public FieldConsumer(JsonGenerator generator, boolean debugRendering) {
+            this.generator = generator;
+            this.debugRendering = debugRendering;
+        }
+
+        /**
+         * Called before each use of this for a hit to keep track of whether we
+         * have created the "fields" field of the JSON object
+         */
+        void setCurrent(MutableBoolean hasFieldsField) {
+            this.hasFieldsField = hasFieldsField;
+        }
+
+        @Override
+        public void accept(String name, Object value) {
+            try {
+                if (shouldRender(name, value)) {
+                    fieldsStart(hasFieldsField, generator);
+                    generator.writeFieldName(name);
+                    renderFieldContents(value);
+                }
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public void accept(String name, byte[] utf8Data, int offset, int length) {
+            try {
+                if (shouldRenderUtf8Value(name, length)) {
+                    fieldsStart(hasFieldsField, generator);
+                    generator.writeFieldName(name);
+                    generator.writeUTF8String(utf8Data, offset, length);
+                }
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        private boolean shouldRender(String name, Object value) {
+            if (debugRendering) return true;
+            if (name.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
+            if (value instanceof CharSequence && ((CharSequence) value).length() == 0) return false;
+            // StringFieldValue cannot hold a null, so checking length directly is OK:
+            if (value instanceof StringFieldValue && ((StringFieldValue) value).getString().isEmpty()) return false;
+            if (value instanceof NanNumber) return false;
+            return true;
+        }
+
+        private boolean shouldRenderUtf8Value(String name, int length) {
+            if (debugRendering) return true;
+            if (name.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
+            if (length == 0) return false;
+            return true;
+        }
+
+        private void renderFieldContents(Object field) throws IOException {
+            if (field == null) {
+                generator.writeNull();
+            } else if (field instanceof Number) {
+                renderNumberField((Number) field);
+            } else if (field instanceof TreeNode) {
+                generator.writeTree((TreeNode) field);
+            } else if (field instanceof Tensor) {
+                renderTensor(Optional.of((Tensor)field));
+            } else if (field instanceof JsonProducer) {
+                generator.writeRawValue(((JsonProducer) field).toJson());
+            } else if (field instanceof Inspectable) {
+                StringBuilder intermediate = new StringBuilder();
+                JsonRender.render((Inspectable) field, intermediate, true);
+                generator.writeRawValue(intermediate.toString());
+            } else if (field instanceof StringFieldValue) {
+                generator.writeString(((StringFieldValue)field).getString());
+            } else if (field instanceof TensorFieldValue) {
+                renderTensor(((TensorFieldValue)field).getTensor());
+            } else if (field instanceof FieldValue) {
+                // the null below is the field which has already been written
+                ((FieldValue) field).serialize(null, new JsonWriter(generator));
+            } else if (field instanceof JSONArray || field instanceof JSONObject) {
+                // org.json returns null if the object would not result in
+                // syntactically correct JSON
+                String s = field.toString();
+                if (s == null) {
+                    generator.writeNull();
+                } else {
+                    generator.writeRawValue(s);
+                }
+            } else {
+                generator.writeString(field.toString());
+            }
+        }
+
+        private void renderNumberField(Number field) throws IOException {
+            if (field instanceof Integer) {
+                generator.writeNumber(field.intValue());
+            }  else if (field instanceof Float) {
+                generator.writeNumber(field.floatValue());
+            }  else if (field instanceof Double) {
+                generator.writeNumber(field.doubleValue());
+            } else if (field instanceof Long) {
+                generator.writeNumber(field.longValue());
+            } else if (field instanceof Byte || field instanceof Short) {
+                generator.writeNumber(field.intValue());
+            } else if (field instanceof BigInteger) {
+                generator.writeNumber((BigInteger) field);
+            } else if (field instanceof BigDecimal) {
+                generator.writeNumber((BigDecimal) field);
+            } else {
+                generator.writeNumber(field.doubleValue());
+            }
+        }
+
+        private void renderTensor(Optional<Tensor> tensor) throws IOException {
+            generator.writeStartObject();
+            generator.writeArrayFieldStart("cells");
+            if (tensor.isPresent()) {
+                for (Iterator<Tensor.Cell> i = tensor.get().cellIterator(); i.hasNext(); ) {
+                    Tensor.Cell cell = i.next();
+
+                    generator.writeStartObject();
+
+                    generator.writeObjectFieldStart("address");
+                    for (int d = 0; d < cell.getKey().size(); d++)
+                        generator.writeObjectField(tensor.get().type().dimensions().get(d).name(), cell.getKey().label(d));
+                    generator.writeEndObject();
+
+                    generator.writeObjectField("value", cell.getValue());
+
+                    generator.writeEndObject();
+                }
+            }
+            generator.writeEndArray();
+            generator.writeEndObject();
+        }
+
+    }
+
 }
