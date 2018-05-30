@@ -133,7 +133,6 @@ public:
     void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
     void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
 
-    void serialize42(vespalib::nbostream &stream) const;
     void serializeHEAD(vespalib::nbostream &stream) const;
 
     void printXml(XmlOutputStream&) const override;

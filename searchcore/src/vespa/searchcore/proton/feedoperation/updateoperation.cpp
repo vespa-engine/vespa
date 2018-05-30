@@ -50,11 +50,7 @@ UpdateOperation::UpdateOperation(const BucketId &bucketId,
 void
 UpdateOperation::serializeUpdate(vespalib::nbostream &os) const
 {
-    if (getType() == FeedOperation::UPDATE_42) {
-        _upd->serialize42(os);
-    } else {
-        _upd->serializeHEAD(os);
-    }
+     _upd->serializeHEAD(os);
 }
 
 void

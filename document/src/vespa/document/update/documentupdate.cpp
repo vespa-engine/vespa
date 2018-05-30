@@ -159,13 +159,6 @@ DocumentUpdate::applyTo(Document& doc) const
 }
 
 void
-DocumentUpdate::serialize42(nbostream &stream) const
-{
-    VespaDocumentSerializer serializer(stream);
-    serializer.write42(*this);
-}
-
-void
 DocumentUpdate::serializeHEAD(nbostream &stream) const
 {
     VespaDocumentSerializer serializer(stream);
