@@ -61,14 +61,12 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                            MessagetyperouteselectorpolicyConfig.Producer,
                                                            BucketspacesConfig.Producer {
 
-    // TODO: Make private
     private String documentSelection;
     private ContentSearchCluster search;
     private final boolean isHostedVespa;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
-    // Experimental flag (TODO: remove when feature is enabled by default)
-    private boolean enableMultipleBucketSpaces = false;
+    private boolean forceEnableMultipleBucketSpaces = false;
     private com.yahoo.vespa.model.content.StorageGroup rootGroup;
     private StorageCluster storageNodes;
     private DistributorCluster distributorNodes;
@@ -250,7 +248,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         private void setupExperimental(ContentCluster cluster, ModelElement experimental) {
             Boolean enableMultipleBucketSpaces = experimental.childAsBoolean("enable-multiple-bucket-spaces");
             if (enableMultipleBucketSpaces != null) {
-                cluster.enableMultipleBucketSpaces = enableMultipleBucketSpaces;
+                cluster.forceEnableMultipleBucketSpaces = enableMultipleBucketSpaces;
             }
         }
 
@@ -596,13 +594,13 @@ public class ContentCluster extends AbstractConfigProducer implements
             builder.min_distributor_up_ratio(0);
             builder.min_storage_up_ratio(0);
         }
-        builder.enable_multiple_bucket_spaces(enableMultipleBucketSpaces);
+        builder.enable_multiple_bucket_spaces(true);
         // Telling the controller whether we actually _have_ global document types lets
         // it selectively enable or disable constraints that aren't needed when these
         // are not are present, even if full protocol and backend support is enabled
         // for multiple bucket spaces. Basically, if you don't use it, you don't
         // pay for it.
-        builder.cluster_has_global_document_types(enableMultipleBucketSpaces && !globallyDistributedDocuments.isEmpty());
+        builder.cluster_has_global_document_types(!globallyDistributedDocuments.isEmpty());
     }
 
     @Override
@@ -646,7 +644,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
         }
         new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
-        new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments, redundancy, enableMultipleBucketSpaces);
+        new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments);
     }
 
     public static Map<String, Integer> METRIC_INDEX_MAP = new TreeMap<>();
@@ -727,11 +725,13 @@ public class ContentCluster extends AbstractConfigProducer implements
         for (NewDocumentType docType : getDocumentDefinitions().values()) {
             BucketspacesConfig.Documenttype.Builder docTypeBuilder = new BucketspacesConfig.Documenttype.Builder();
             docTypeBuilder.name(docType.getName());
-            String bucketSpace = ((enableMultipleBucketSpaces && isGloballyDistributed(docType))
-                    ? GLOBAL_BUCKET_SPACE : DEFAULT_BUCKET_SPACE);
+            String bucketSpace = (isGloballyDistributed(docType) ? GLOBAL_BUCKET_SPACE : DEFAULT_BUCKET_SPACE);
             docTypeBuilder.bucketspace(bucketSpace);
             builder.documenttype(docTypeBuilder);
         }
-        builder.enable_multiple_bucket_spaces(enableMultipleBucketSpaces);
+        // NOTE: this config is kept around to allow the use of multiple bucket spaces
+        // on older versions of Vespa. It is for all intents and purposes a no-op in
+        // newer versions where multiple bucket spaces are enabled by default.
+        builder.enable_multiple_bucket_spaces(forceEnableMultipleBucketSpaces);
     }
 }

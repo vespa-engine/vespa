@@ -21,43 +21,9 @@ import static java.util.stream.Collectors.toSet;
 public class GlobalDistributionValidator {
 
     public void validate(Map<String, NewDocumentType> documentDefinitions,
-                         Set<NewDocumentType> globallyDistributedDocuments,
-                         Redundancy redundancy,
-                         boolean enableMultipleBucketSpaces) {
-        if (!enableMultipleBucketSpaces) {
-            verifyGlobalDocumentsHaveRequiredRedundancy(globallyDistributedDocuments, redundancy);
-            verifySearchableCopiesIsSameAsRedundancy(globallyDistributedDocuments, redundancy);
-        }
+                         Set<NewDocumentType> globallyDistributedDocuments) {
         verifyReferredDocumentsArePresent(documentDefinitions);
         verifyReferredDocumentsAreGlobal(documentDefinitions, globallyDistributedDocuments);
-    }
-
-    private static void verifyGlobalDocumentsHaveRequiredRedundancy(Set<NewDocumentType> globallyDistributedDocuments,
-                                                                    Redundancy redundancy) {
-        if (!globallyDistributedDocuments.isEmpty() && !redundancy.isEffectivelyGloballyDistributed()) {
-            throw new IllegalArgumentException(
-                    String.format(
-                            "The following document types are marked as global, " +
-                                    "but do not have high enough redundancy to make the documents globally distributed: %s. " +
-                                    "Redundancy is %d, expected %d.",
-                            asPrintableString(toDocumentNameStream(globallyDistributedDocuments)),
-                            redundancy.effectiveFinalRedundancy(),
-                            redundancy.totalNodes()));
-        }
-    }
-
-    private static void verifySearchableCopiesIsSameAsRedundancy(Set<NewDocumentType> globallyDistributedDocuments,
-                                                                 Redundancy redundancy) {
-        if (!globallyDistributedDocuments.isEmpty() &&
-                redundancy.effectiveReadyCopies() != redundancy.effectiveFinalRedundancy()) {
-            throw new IllegalArgumentException(
-                    String.format(
-                            "The following document types have the number of searchable copies less than redundancy: %s. " +
-                                    "Searchable copies is %d, while redundancy is %d.",
-                            asPrintableString(toDocumentNameStream(globallyDistributedDocuments)),
-                            redundancy.effectiveReadyCopies(),
-                            redundancy.effectiveFinalRedundancy()));
-        }
     }
 
     private static void verifyReferredDocumentsArePresent(Map<String, NewDocumentType> documentDefinitions) {
