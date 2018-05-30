@@ -48,7 +48,7 @@ public:
     virtual void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
                         bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
     /*
-     * Update the underlying compund attributes based on updated document.
+     * Update the underlying compound attributes based on updated document.
      */
     virtual void update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                         bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
