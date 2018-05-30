@@ -12,7 +12,6 @@ SingleStringExtAttribute::SingleStringExtAttribute(const vespalib::string & name
     StringDirectAttrVector< AttrVector::Features<false> >(name, Config(BasicType::STRING, CollectionType::SINGLE))
 {
     setEnum(false);
-    setSortedEnum(false);
 }
 
 bool SingleStringExtAttribute::addDoc(DocId & docId)
@@ -45,7 +44,6 @@ MultiStringExtAttribute::MultiStringExtAttribute(const vespalib::string & name, 
     (name,  Config(BasicType::STRING, ctype))
 {
     setEnum(false);
-    setSortedEnum(false);
 }
 
 MultiStringExtAttribute::MultiStringExtAttribute(const vespalib::string & name) :
@@ -53,7 +51,6 @@ MultiStringExtAttribute::MultiStringExtAttribute(const vespalib::string & name) 
     (name,  Config(BasicType::STRING, CollectionType::ARRAY))
 {
     setEnum(false);
-    setSortedEnum(false);
 }
 
 bool MultiStringExtAttribute::addDoc(DocId & docId)
@@ -138,7 +135,6 @@ WeightedSetStringExtAttribute::WeightedSetStringExtAttribute(const vespalib::str
     WeightedSetExtAttributeBase<MultiStringExtAttribute>(name)
 {
     setEnum(false);
-    setSortedEnum(false);
 }
 
 WeightedSetStringExtAttribute::~WeightedSetStringExtAttribute() {}
