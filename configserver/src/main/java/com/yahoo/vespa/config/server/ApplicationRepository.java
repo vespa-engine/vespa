@@ -295,6 +295,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, boolean deleteFromDisk) {
+        if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
+
         // Find all file references in use
         Set<String> fileReferencesInUse = new HashSet<>();
         Set<ApplicationId> applicationIds = listApplications();
@@ -305,8 +307,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         log.log(LogLevel.INFO, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
-        if (!fileReferencesPath.isDirectory())
-            throw new RuntimeException(fileReferencesPath + " is not a directory");
         Set<String> fileReferencesOnDisk = new HashSet<>();
         File[] filesOnDisk = fileReferencesPath.listFiles();
         if (filesOnDisk != null)

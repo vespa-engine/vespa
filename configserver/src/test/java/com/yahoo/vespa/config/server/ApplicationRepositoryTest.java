@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -21,7 +20,9 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +30,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -52,6 +52,9 @@ public class ApplicationRepositoryTest {
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
     private TimeoutBudget timeoutBudget;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void setup() {
@@ -114,8 +117,8 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void deleteUnusedFileReferences() {
-        File fileReferencesDir = Files.createTempDir();
+    public void deleteUnusedFileReferences() throws IOException {
+        File fileReferencesDir = temporaryFolder.newFolder();
 
         // Add file reference that is not in use and should be deleted
         File filereferenceDir = new File(fileReferencesDir, "foo");
@@ -134,12 +137,12 @@ public class ApplicationRepositoryTest {
 
         boolean deleteFiles = false;
         Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
-        assertEquals(new HashSet<>(Collections.singletonList("foo")), toBeDeleted);
+        assertEquals(Collections.singleton("foo"), toBeDeleted);
         assertTrue(filereferenceDir.exists());
 
         deleteFiles = true;
         toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
-        assertEquals(new HashSet<>(Collections.singletonList("foo")), toBeDeleted);
+        assertEquals(Collections.singleton("foo"), toBeDeleted);
         assertFalse(filereferenceDir.exists());
     }
 
