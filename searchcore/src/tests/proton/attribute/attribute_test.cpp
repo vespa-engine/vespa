@@ -139,6 +139,7 @@ struct Fixture
         : Fixture(1)
     {
     }
+    ~Fixture();
     void allocAttributeWriter() {
         _aw = std::make_unique<AttributeWriter>(_m);
     }
@@ -158,6 +159,10 @@ struct Fixture
                 DocumentIdT lid, bool immediateCommit) {
         _aw->update(serialNum, upd, lid, immediateCommit, emptyCallback);
     }
+    void update(SerialNum serialNum, const Document &doc,
+                DocumentIdT lid, bool immediateCommit) {
+        _aw->update(serialNum, doc, lid, immediateCommit, emptyCallback);
+    }
     void remove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit = true) {
         _aw->remove(serialNum, lid, immediateCommit, emptyCallback);
     }
@@ -172,6 +177,7 @@ struct Fixture
     }
 };
 
+Fixture::~Fixture() = default;
 
 TEST_F("require that attribute writer handles put", Fixture)
 {
@@ -771,6 +777,95 @@ TEST_F("require that AttributeWriter::forceCommit() clears search cache in impor
     f.commit(10);
     EXPECT_EQUAL(0u, f._m->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
     EXPECT_EQUAL(0u, f._m->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
+}
+
+struct StructFixtureBase : public Fixture
+{
+    DocumentType _type;
+    const Field _valueField;
+    StructDataType _structFieldType;
+
+    StructFixtureBase()
+        : Fixture(),
+          _type("test"),
+          _valueField("value", 2, *DataType::INT, true),
+          _structFieldType("struct")
+    {
+        addAttribute({"value", AVConfig(AVBasicType::INT32, AVCollectionType::SINGLE)}, createSerialNum);
+        _type.addField(_valueField);
+        _structFieldType.addField(_valueField);
+    }
+
+    std::unique_ptr<StructFieldValue>
+    makeStruct()
+    {
+        return std::make_unique<StructFieldValue>(_structFieldType);
+    }
+
+    std::unique_ptr<StructFieldValue>
+    makeStruct(const int32_t value)
+    {
+        auto ret = makeStruct();
+        ret->setValue(_valueField, IntFieldValue(value));
+        return ret;
+    }
+
+    std::unique_ptr<Document>
+    makeDoc()
+    {
+        return std::make_unique<Document>(_type, DocumentId("id::test::1"));
+    }
+};
+
+
+struct StructArrayFixture : public StructFixtureBase
+{
+    using StructFixtureBase::makeDoc;
+    const ArrayDataType _structArrayFieldType;
+    const Field _structArrayField;
+
+    StructArrayFixture()
+        : StructFixtureBase(),
+          _structArrayFieldType(_structFieldType),
+          _structArrayField("s", _structArrayFieldType, true)
+    {
+        addAttribute({"s.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        _type.addField(_structArrayField);
+    }
+
+    std::unique_ptr<Document>
+    makeDoc(int32_t value, const std::vector<int32_t> &svalues)
+    {
+        auto doc = makeDoc();
+        doc->setValue(_valueField, IntFieldValue(value));
+        ArrayFieldValue s(_structArrayFieldType);
+        for (const auto &svalue : svalues) {
+            s.add(*makeStruct(svalue));
+        }
+        doc->setValue(_structArrayField, s);
+        return doc;
+    }
+    void checkAttrs(uint32_t lid, int32_t value, const std::vector<int32_t> &svalues) {
+        auto valueAttr = _m->getAttribute("value")->getSP();
+        auto svalueAttr = _m->getAttribute("s.value")->getSP();
+        EXPECT_EQUAL(value, valueAttr->getInt(lid));
+        attribute::IntegerContent ibuf;
+        ibuf.fill(*svalueAttr, lid);
+        EXPECT_EQUAL(svalues.size(), ibuf.size());
+        for (size_t i = 0; i < svalues.size(); ++i) {
+            EXPECT_EQUAL(svalues[i], ibuf[i]);
+        }
+    }
+};
+
+TEST_F("require that update with doc argument only updates compound attributes", StructArrayFixture)
+{
+    auto doc = f.makeDoc(10,  {11, 12});
+    f.put(10, *doc, 1);
+    TEST_DO(f.checkAttrs(1, 10, {11, 12}));
+    doc = f.makeDoc(20, {21});
+    f.update(11, *doc, 1, true);
+    TEST_DO(f.checkAttrs(1, 10, {21}));
 }
 
 TEST_MAIN()
