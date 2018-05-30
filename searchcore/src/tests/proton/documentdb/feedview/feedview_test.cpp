@@ -317,9 +317,8 @@ struct MyAttributeWriter : public IAttributeWriter
     std::set<vespalib::string> _attrs;
     proton::IAttributeManager::SP _mgr;
     MyTracer &_tracer;
-    bool _isNotReady;
 
-    MyAttributeWriter(MyTracer &tracer, bool isNotReady);
+    MyAttributeWriter(MyTracer &tracer);
     ~MyAttributeWriter();
 
     std::vector<AttributeVector *>
@@ -393,12 +392,12 @@ struct MyAttributeWriter : public IAttributeWriter
     bool getHasCompoundAttribute() const override { return false; }
 };
 
-MyAttributeWriter::MyAttributeWriter(MyTracer &tracer, bool isNotReady)
+MyAttributeWriter::MyAttributeWriter(MyTracer &tracer)
     : _removes(), _putSerial(0), _putDocId(), _putLid(0),
       _updateSerial(0), _updateDocId(), _updateLid(0),
       _removeSerial(0), _removeLid(0), _heartBeatCount(0),
       _commitCount(0), _wantedLidLimit(0),
-      _attrMap(), _attrs(), _mgr(), _tracer(tracer), _isNotReady(isNotReady)
+      _attrMap(), _attrs(), _mgr(), _tracer(tracer)
 {
     search::attribute::Config cfg(search::attribute::BasicType::INT32);
     _attrMap["a1"] = search::AttributeFactory::createAttribute("test", cfg);
@@ -520,7 +519,7 @@ struct FixtureBase
     CommitTimeTracker     _commitTimeTracker;
     SerialNum             serial;
     std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
-    FixtureBase(TimeStamp visibilityDelay, bool isNotReady);
+    FixtureBase(TimeStamp visibilityDelay);
 
     virtual ~FixtureBase();
 
@@ -685,12 +684,12 @@ struct FixtureBase
 };
 
 
-FixtureBase::FixtureBase(TimeStamp visibilityDelay, bool isNotReady)
+FixtureBase::FixtureBase(TimeStamp visibilityDelay)
     : _tracer(),
       sc(),
       iw(new MyIndexWriter(_tracer)),
       sa(new MySummaryAdapter(*sc._builder->getDocumentTypeRepo())),
-      aw(new MyAttributeWriter(_tracer, isNotReady)),
+      aw(new MyAttributeWriter(_tracer)),
       miw(static_cast<MyIndexWriter&>(*iw)),
       msa(static_cast<MySummaryAdapter&>(*sa)),
       maw(static_cast<MyAttributeWriter&>(*aw)),
@@ -724,7 +723,7 @@ struct SearchableFeedViewFixture : public FixtureBase
 {
     SearchableFeedView fv;
     SearchableFeedViewFixture(TimeStamp visibilityDelay = 0) :
-        FixtureBase(visibilityDelay, false),
+        FixtureBase(visibilityDelay),
         fv(StoreOnlyFeedView::Context(sa,
                 sc._schema,
                 _dmsc,
@@ -746,7 +745,7 @@ struct FastAccessFeedViewFixture : public FixtureBase
 {
     FastAccessFeedView fv;
     FastAccessFeedViewFixture(TimeStamp visibilityDelay = 0) :
-        FixtureBase(visibilityDelay, true),
+        FixtureBase(visibilityDelay),
         fv(StoreOnlyFeedView::Context(sa,
                 sc._schema,
                 _dmsc,
