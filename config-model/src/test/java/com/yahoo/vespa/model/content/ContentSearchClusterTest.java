@@ -173,17 +173,17 @@ public class ContentSearchClusterTest {
     }
 
     @Test
-    public void require_that_document_types_belong_to_correct_bucket_spaces() throws Exception {
+    public void require_that_all_document_types_belong_to_default_bucket_space_by_default() throws Exception {
         BucketspacesConfig config = getBucketspacesConfig(createClusterWithGlobalType());
         assertEquals(2, config.documenttype().size());
-        assertDocumentType("global", "global", config.documenttype(0));
+        assertDocumentType("global", "default", config.documenttype(0));
         assertDocumentType("regular", "default", config.documenttype(1));
         // Safeguard against flipping the switch
         assertFalse(config.enable_multiple_bucket_spaces());
     }
 
     @Test
-    public void require_that_multiple_bucket_spaces_can_be_force_enabled() throws Exception {
+    public void require_that_multiple_bucket_spaces_can_be_enabled() throws Exception {
         ContentCluster cluster = createClusterWithMultipleBucketSpacesEnabled();
         {
             BucketspacesConfig config = getBucketspacesConfig(cluster);
@@ -210,9 +210,9 @@ public class ContentSearchClusterTest {
     }
 
     @Test
-    public void controller_global_documents_config_always_enabled_even_without_experimental_flag_set() throws Exception {
+    public void controller_global_documents_config_forced_to_false_if_multiple_spaces_not_enabled() throws Exception {
         ContentCluster cluster = createClusterWithGlobalDocsButNotMultipleSpacesEnabled();
-        assertTrue(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
+        assertFalse(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
     }
 
 }
