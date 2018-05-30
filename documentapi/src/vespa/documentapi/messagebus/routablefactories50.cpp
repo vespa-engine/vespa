@@ -887,10 +887,7 @@ RoutableFactories50::StatDocumentReplyFactory::doEncode(const DocumentReply &obj
 
 void
 RoutableFactories50::UpdateDocumentMessageFactory::decodeInto(UpdateDocumentMessage & msg, document::ByteBuffer & buf) const {
-    msg.setDocumentUpdate(make_shared<document::DocumentUpdate>
-                          (_repo, buf,
-                           document::DocumentUpdate::SerializeVersion::
-                           SERIALIZE_HEAD));
+    msg.setDocumentUpdate(document::DocumentUpdate::createHEAD(_repo, buf));
     msg.setOldTimestamp(static_cast<uint64_t>(decodeLong(buf)));
     msg.setNewTimestamp(static_cast<uint64_t>(decodeLong(buf)));
 }

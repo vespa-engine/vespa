@@ -48,15 +48,6 @@ public:
     typedef std::shared_ptr<DocumentUpdate> SP;
     typedef std::vector<FieldUpdate> FieldUpdateV;
     typedef std::vector<FieldPathUpdate::CP> FieldPathUpdateV;
-    /**
-     * Enum class containing the legal serialization version for
-     * document updates. This version is not encoded in the serialized
-     * document update.
-     */
-    enum class SerializeVersion {
-        SERIALIZE_42,  // old style format, before vespa 5.0
-        SERIALIZE_HEAD // new style format, since vespa 5.0
-    };
 
     /**
      * Create old style document update, no support for field path updates.
@@ -79,16 +70,6 @@ public:
      * @param id The identifier of the document that this update is created for.
      */
     DocumentUpdate(const DataType &type, const DocumentId& id);
-
-    /**
-     * Create a document update from a byte buffer containing a serialized
-     * document update.
-     *
-     * @param repo Document type repo used to find proper document type
-     * @param buffer The buffer containing the serialized document update
-     * @param serializeVersion Selector between serialization formats.
-     */
-    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer, SerializeVersion serializeVersion);
 
     DocumentUpdate(const DocumentUpdate &) = delete;
     DocumentUpdate & operator = (const DocumentUpdate &) = delete;
@@ -164,6 +145,24 @@ private:
     bool             _createIfNonExistent;
 
     int deserializeFlags(int sizeAndFlags);
+    /**
+     * Enum class containing the legal serialization version for
+     * document updates. This version is not encoded in the serialized
+     * document update.
+     */
+    enum class SerializeVersion {
+        SERIALIZE_42,  // old style format, before vespa 5.0
+        SERIALIZE_HEAD // new style format, since vespa 5.0
+    };
+    /**
+     * Create a document update from a byte buffer containing a serialized
+     * document update.
+     *
+     * @param repo Document type repo used to find proper document type
+     * @param buffer The buffer containing the serialized document update
+     * @param serializeVersion Selector between serialization formats.
+     */
+    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer, SerializeVersion serializeVersion);
 };
 
 } // document

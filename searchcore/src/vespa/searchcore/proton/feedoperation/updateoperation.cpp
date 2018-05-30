@@ -57,9 +57,7 @@ void
 UpdateOperation::deserializeUpdate(vespalib::nbostream &is, const document::DocumentTypeRepo &repo)
 {
     document::ByteBuffer buf(is.peek(), is.size());
-    using Version = DocumentUpdate::SerializeVersion;
-    Version version = ((getType() == FeedOperation::UPDATE_42) ? Version::SERIALIZE_42 : Version::SERIALIZE_HEAD);
-    DocumentUpdate::SP update(std::make_shared<DocumentUpdate>(repo, buf, version));
+    DocumentUpdate::UP update = (getType() == FeedOperation::UPDATE_42) ? DocumentUpdate::create42(repo, buf) : DocumentUpdate::createHEAD(repo, buf);
     is.adjustReadPos(buf.getPos());
     _upd = std::move(update);
 }
@@ -74,8 +72,7 @@ UpdateOperation::serialize(vespalib::nbostream &os) const
 
 
 void
-UpdateOperation::deserialize(vespalib::nbostream &is,
-                             const DocumentTypeRepo &repo)
+UpdateOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &repo)
 {
     DocumentOperation::deserialize(is, repo);
     try {
