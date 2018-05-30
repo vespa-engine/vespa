@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
@@ -14,6 +13,7 @@ import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 
+import java.io.File;
 import java.util.Optional;
 import java.util.concurrent.CompletionService;
 
@@ -36,20 +36,20 @@ public class MockRpc extends RpcServer {
     public volatile JRTServerConfigRequest latestRequest = null;
 
 
-    public MockRpc(int port, boolean createDefaultTenant, boolean pretendToHaveLoadedAnyApplication) {
+    public MockRpc(int port, boolean createDefaultTenant, boolean pretendToHaveLoadedAnyApplication, File tempDir) {
         super(createConfig(port), null, Metrics.createTestMetrics(), 
-              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(Files.createTempDir()));
+              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(tempDir));
         if (createDefaultTenant) {
             onTenantCreate(TenantName.from("default"), new MockTenantProvider(pretendToHaveLoadedAnyApplication));
         }
     }
 
-    public MockRpc(int port, boolean createDefaultTenant) {
-        this(port, createDefaultTenant, true);
+    public MockRpc(int port, boolean createDefaultTenant, File tempDir) {
+        this(port, createDefaultTenant, true, tempDir);
     }
 
-    public MockRpc(int port) {
-        this(port, true);
+    public MockRpc(int port, File tempDir) {
+        this(port, true, tempDir);
     }
 
     /** Reset fields used to assert on the calls made to this */

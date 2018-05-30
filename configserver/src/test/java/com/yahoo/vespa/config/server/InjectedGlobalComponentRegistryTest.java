@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
@@ -22,8 +20,11 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.is;
@@ -48,19 +49,22 @@ public class InjectedGlobalComponentRegistryTest {
     private ModelFactoryRegistry modelFactoryRegistry;
     private Zone zone;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupRegistry() {
+    public void setupRegistry() throws IOException {
         curator = new MockCurator();
         ConfigCurator configCurator = ConfigCurator.create(curator);
         metrics = Metrics.createTestMetrics();
         modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
-                        .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                        .configDefinitionsDir(Files.createTempDir().getAbsolutePath()));
+                        .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                        .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
         sessionPreparer = new SessionTest.MockSessionPreparer();
-        rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(), 
-                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(Files.createTempDir()));
+        rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(),
+                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(temporaryFolder.newFolder("filereferences")));
         generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);

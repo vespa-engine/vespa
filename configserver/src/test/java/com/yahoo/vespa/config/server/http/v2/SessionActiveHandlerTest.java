@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.google.common.io.Files;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -51,7 +50,9 @@ import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -89,6 +90,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private TestComponentRegistry componentRegistry;
     private TenantRepository tenantRepository;
     private SessionActiveHandler handler;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void setup() {
@@ -222,9 +226,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         return session;
     }
 
-    private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) {
+    private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) throws IOException {
         writeApplicationId(zkc, deployData.getApplicationName());
-        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(Files.createTempDir(), tenantName);
+        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
                                               new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),

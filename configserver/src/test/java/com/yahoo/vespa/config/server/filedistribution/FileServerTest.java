@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +36,9 @@ public class FileServerTest {
         assertTrue(dummy.delete());
         created.add(dir);
     }
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void requireThatExistingFileCanBeFound() throws IOException {
@@ -72,11 +76,11 @@ public class FileServerTest {
     }
 
     @Test
-    public void requireThatDifferentNumberOfConfigServersWork() {
+    public void requireThatDifferentNumberOfConfigServersWork() throws IOException {
         // Empty connection pool in tests etc.
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder()
-                .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                .configDefinitionsDir(Files.createTempDir().getAbsolutePath());
+                .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath());
         FileServer fileServer = createFileServer(builder);
         assertEquals(0, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
 
@@ -100,8 +104,8 @@ public class FileServerTest {
         assertEquals(1, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
     }
 
-    private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) {
-        File fileReferencesDir = Files.createTempDir();
+    private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) throws IOException {
+        File fileReferencesDir = temporaryFolder.newFolder();
         configBuilder.fileReferencesDir(fileReferencesDir.getAbsolutePath());
         return new FileServer(new ConfigserverConfig(configBuilder));
     }
