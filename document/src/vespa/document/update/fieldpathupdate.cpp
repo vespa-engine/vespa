@@ -45,7 +45,7 @@ FieldPathUpdate::FieldPathUpdate(stringref fieldPath, stringref whereClause) :
     _originalWhereClause(whereClause)
 { }
 
-FieldPathUpdate::~FieldPathUpdate()  { }
+FieldPathUpdate::~FieldPathUpdate() = default;
 
 bool
 FieldPathUpdate::operator==(const FieldPathUpdate& other) const
@@ -74,16 +74,6 @@ FieldPathUpdate::applyTo(Document& doc) const
             }
         }
     }
-}
-
-bool
-FieldPathUpdate::affectsDocumentBody(const DataType & type) const
-{
-    FieldPath path;
-    type.buildFieldPath(path, _originalFieldPath);
-    if (path.empty() || !path[0].hasField()) return false;
-    const Field& field = path[0].getFieldRef();
-    return !field.isHeaderField();
 }
 
 void

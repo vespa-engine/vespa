@@ -64,9 +64,6 @@ public:
      */
     void checkCompatibility(const FieldValue& fv, const DataType & type) const;
 
-    /** @return Whether or not the first field path element is a body field */
-    bool affectsDocumentBody(const DataType & type) const;
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(FieldPathUpdate);
