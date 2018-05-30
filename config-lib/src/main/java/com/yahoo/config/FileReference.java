@@ -7,18 +7,20 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An immutable file reference that can only be created from classes within the same package.
  * This is to prevent clients from creating arbitrary and invalid file references.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class FileReference {
 
     private final String value;
 
     public FileReference(String value) {
+        Objects.requireNonNull(value);
         this.value = value;
     }
 
