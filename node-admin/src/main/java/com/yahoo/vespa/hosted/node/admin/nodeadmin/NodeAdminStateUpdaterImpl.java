@@ -43,6 +43,7 @@ import static com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater.S
  */
 public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
+    static final String TRANSITION_EXCEPTION_MESSAGE = "NodeAdminStateUpdater has not run since current wanted state was set";
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private State currentState = SUSPENDED_NODE_ADMIN;
@@ -50,6 +51,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     private boolean workToDoNow = true;
 
     private final Object monitor = new Object();
+    private RuntimeException lastConvergenceException;
 
     private final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
     private final ScheduledExecutorService specVerifierScheduler =
@@ -143,15 +145,19 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     @Override
-    public boolean setResumeStateAndCheckIfResumed(State wantedState) {
+    public void setResumeStateAndCheckIfResumed(State wantedState) {
         synchronized (monitor) {
             if (this.wantedState != wantedState) {
                 log.info("Wanted state change: " + this.wantedState + " -> " + wantedState);
                 this.wantedState = wantedState;
+                setLastConvergenceException(null);
                 signalWorkToBeDone();
             }
 
-            return currentState == wantedState;
+            if (currentState != wantedState) {
+                throw Optional.ofNullable(lastConvergenceException)
+                        .orElseGet(() -> new RuntimeException(TRANSITION_EXCEPTION_MESSAGE));
+            }
         }
     }
 
@@ -187,9 +193,12 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
         try {
             convergeState(wantedStateCopy);
+            setLastConvergenceException(null);
         } catch (OrchestratorException | ConvergenceException | HttpException e) {
+            setLastConvergenceException(e);
             log.info("Unable to converge to " + wantedStateCopy + ": " + e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            setLastConvergenceException(e);
             log.log(LogLevel.ERROR, "Error while trying to converge to " + wantedStateCopy, e);
         }
 
@@ -204,6 +213,12 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         }
 
         fetchContainersToRunFromNodeRepository();
+    }
+
+    private void setLastConvergenceException(RuntimeException exception) {
+        synchronized (monitor) {
+            lastConvergenceException = exception;
+        }
     }
 
     /**

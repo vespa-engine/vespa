@@ -8,9 +8,11 @@ public interface NodeAdminStateUpdater extends NodeAdminDebugHandler {
     enum State { TRANSITIONING, RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
 
     /**
-     * Set the wanted state, and return whether the current state equals it.
+     * Set the wanted state, and assert whether the current state equals it.
      * Typically, this method should be called repeatedly until current state
      * has converged.
+     *
+     * @throws RuntimeException (or a subclass) if the state has not converged yet.
      */
-    boolean setResumeStateAndCheckIfResumed(State wantedState);
+    void setResumeStateAndCheckIfResumed(State wantedState);
 }
