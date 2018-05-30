@@ -244,7 +244,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         if (result.isFilled(summaryClass)) return;
 
         Query query = result.getQuery();
-        traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 2, quotedSummaryClass(summaryClass));
+        traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 1, quotedSummaryClass(summaryClass));
 
         if (query.properties().getBoolean(dispatchSummaries, true)
             && ! summaryNeedsQuery(query)
