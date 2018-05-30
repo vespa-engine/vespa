@@ -38,6 +38,8 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
+
 /**
  * API for handling single operation on a document and visiting.
  *
@@ -58,6 +60,7 @@ public class RestApi extends LoggingRequestHandler {
     private static final String WANTED_DOCUMENT_COUNT = "wantedDocumentCount";
     private static final String FIELD_SET = "fieldSet";
     private static final String CONCURRENCY = "concurrency";
+    private static final String BUCKET_SPACE = "bucketSpace";
     private static final String APPLICATION_JSON = "application/json";
     private final OperationHandler operationHandler;
     private SingleDocumentParser singleDocumentParser;
@@ -148,11 +151,24 @@ public class RestApi extends LoggingRequestHandler {
         }
     }
 
+    private static void validateUriStructureForRequestMethod(RestUri uri, com.yahoo.jdisc.http.HttpRequest.Method method) throws RestApiException {
+        if ((method != com.yahoo.jdisc.http.HttpRequest.Method.GET) && uri.isRootOnly()) {
+            throw new RestApiException(Response.createErrorResponse(BAD_REQUEST,
+                    "Root /document/v1/ requests only supported for HTTP GET",
+                    RestUri.apiErrorCodes.ERROR_ID_BASIC_USAGE));
+        }
+    }
+
+    private static boolean isVisitRequestUri(RestUri uri) {
+        return (uri.isRootOnly() || uri.getDocId().isEmpty());
+    }
+
     // protected for testing
     protected HttpResponse handleInternal(HttpRequest request) {
         final RestUri restUri;
         try {
             restUri = new RestUri(request.getUri());
+            validateUriStructureForRequestMethod(restUri, request.getMethod());
         } catch (RestApiException e) {
             return e.getResponse();
         } catch (Exception e2) {
@@ -173,7 +189,7 @@ public class RestApi extends LoggingRequestHandler {
         try {
             switch (request.getMethod()) {
                 case GET:    // Vespa Visit/Get
-                    return restUri.getDocId().isEmpty() ? handleVisit(restUri, request) : handleGet(restUri, request);
+                    return isVisitRequestUri(restUri) ? handleVisit(restUri, request) : handleGet(restUri, request);
                 case POST:   // Vespa Put
                     operationHandler.put(restUri, createPutOperation(request, restUri.generateFullId(), condition), route);
                     break;
@@ -276,6 +292,7 @@ public class RestApi extends LoggingRequestHandler {
         Optional.ofNullable(request.getProperty(CLUSTER)).ifPresent(c -> optionsBuilder.cluster(c));
         Optional.ofNullable(request.getProperty(CONTINUATION)).ifPresent(c -> optionsBuilder.continuation(c));
         Optional.ofNullable(request.getProperty(FIELD_SET)).ifPresent(fs -> optionsBuilder.fieldSet(fs));
+        Optional.ofNullable(request.getProperty(BUCKET_SPACE)).ifPresent(s -> optionsBuilder.bucketSpace(s));
         parsePositiveIntegerRequestParameter(WANTED_DOCUMENT_COUNT, request).ifPresent(c -> optionsBuilder.wantedDocumentCount(c));
         parsePositiveIntegerRequestParameter(CONCURRENCY, request).ifPresent(c -> optionsBuilder.concurrency(c));
 

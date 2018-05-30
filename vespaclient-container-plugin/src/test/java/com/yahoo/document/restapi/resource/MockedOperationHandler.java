@@ -24,7 +24,9 @@ public class MockedOperationHandler implements OperationHandler {
                 + documentSelection + "'"
                 + options.wantedDocumentCount.map(n -> String.format(", min docs returned: %d", n)).orElse("")
                 + options.fieldSet.map(s -> String.format(", field set: '%s'", s)).orElse("")
-                + options.concurrency.map(n -> String.format(", concurrency: %d", n)).orElse(""));
+                + options.concurrency.map(n -> String.format(", concurrency: %d", n)).orElse("")
+                + options.bucketSpace.map(s -> String.format(", bucket space: '%s'", s)).orElse("")
+                + options.cluster.map(s -> String.format(", cluster: '%s'", s)).orElse(""));
     }
 
     @Override

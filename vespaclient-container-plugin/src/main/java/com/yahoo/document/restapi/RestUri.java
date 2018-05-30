@@ -36,7 +36,7 @@ public class RestUri {
         TOO_MANY_PARALLEL_REQUESTS(-8),
         MISSING_CLUSTER(-9), INTERNAL_EXCEPTION(-9),
         DOCUMENT_CONDITION_NOT_MET(-10),
-        DOCUMENT_EXCPETION(-11),
+        DOCUMENT_EXCEPTION(-11),
         PARSER_ERROR(-11),
         GROUP_AND_EXPRESSION_ERROR(-12),
         TIME_OUT(-13),
@@ -67,6 +67,10 @@ public class RestUri {
     private Optional<Group> group = Optional.empty();
     private final String rawPath;
 
+    public boolean isRootOnly() {
+        return namespace == null;
+    }
+
     public String getRawPath() {
         return rawPath;
     }
@@ -89,8 +93,8 @@ public class RestUri {
 
     public String generateFullId() {
         return ID + namespace + ":" + documentType + ":"
-	    + (getGroup().isPresent() ? group.get().name + "=" + group.get().value : "")
-	    + ":" + docId;
+            + group.map(g -> String.format("%s=%s", g.name, g.value)).orElse("")
+            + ":" + docId;
     }
 
     static class PathParser {
@@ -102,6 +106,11 @@ public class RestUri {
             this.originalPath = path;
             this.rawParts = Splitter.on('/').splitToList(path);
         }
+
+        boolean hasNextToken() {
+            return readPos < rawParts.size();
+        }
+
         String nextTokenOrException() throws RestApiException {
             if (readPos >= rawParts.size()) {
                 throwUsage(originalPath);
@@ -132,7 +141,15 @@ public class RestUri {
                 ! pathParser.nextTokenOrException().equals(V_1)) {
             throwUsage(uri.getRawPath());
         }
-        namespace = pathParser.nextTokenOrException();
+        // If /document/v1 root request, there's an empty token at the end.
+        String maybeNamespace = pathParser.nextTokenOrException();
+        if (maybeNamespace.isEmpty()) {
+            namespace = null;
+            documentType = null;
+            docId = null;
+            return;
+        }
+        namespace = maybeNamespace;
         documentType = pathParser.nextTokenOrException();
         switch (pathParser.nextTokenOrException()) {
             case "number":
