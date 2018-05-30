@@ -31,4 +31,6 @@ public class StringField extends DocsumField {
         return value.asString("");
     }
 
+    boolean isString() { return true; }
+
 }
