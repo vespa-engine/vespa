@@ -163,14 +163,6 @@ private:
     int16_t          _version; // Serialization version
     bool             _createIfNonExistent;
 
-    /**
-     * This function exist because search relies on deserialization through
-     * creating object through empty constructor and calling deserialize.
-     *
-     * It is hidden to prevent accidental other usage.
-     */
-    DocumentUpdate();
-
     int deserializeFlags(int sizeAndFlags);
 };
 
