@@ -236,6 +236,7 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
     if (result == api::ReturnCode::Result::ENCODE_ERROR) {
         // Handle failure to encode bucket space due to use of old storage api
         // protocol.  Pretend that request succeeded with no buckets returned.
+        // TODO remove this workaround for Vespa 7
         LOG(debug, "Got ENCODE_ERROR, pretending success with no buckets");
     } else if (!result.success()) {
         framework::MilliSecTime resendTime(_clock);

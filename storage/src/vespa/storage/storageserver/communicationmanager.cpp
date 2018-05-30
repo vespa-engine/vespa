@@ -19,6 +19,7 @@
 
 #include <vespa/log/bufferedlogger.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
 
 LOG_SETUP(".communication.manager");
 
@@ -258,8 +259,17 @@ void CommunicationManager::fail_with_unresolvable_bucket_space(
 {
     LOG(debug, "Could not map DocumentAPI message to internal bucket: %s", error_message.c_str());
     MBUS_TRACE(msg->getTrace(), 6, "Communication manager: Failing message as its document type has no known bucket space mapping");
-    std::unique_ptr<mbus::Reply> reply(new mbus::EmptyReply());
-    reply->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_REJECTED, error_message));
+    std::unique_ptr<mbus::Reply> reply;
+    if (msg->getType() == documentapi::DocumentProtocol::MESSAGE_GETDOCUMENT) {
+        // HACK: to avoid breaking legacy routing of GetDocumentMessages to _all_ clusters
+        // regardless of them having a document type or not, we remap missing bucket spaces
+        // to explicit Not Found replies (empty document GetDocumentReply).
+        // TODO remove this workaround for Vespa 7
+        reply = std::make_unique<documentapi::GetDocumentReply>(std::shared_ptr<document::Document>());
+    } else {
+        reply = std::make_unique<mbus::EmptyReply>();
+        reply->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_REJECTED, error_message));
+    }
     msg->swapState(*reply);
     _metrics.bucketSpaceMappingFailures.inc();
     _messageBusSession->reply(std::move(reply));
