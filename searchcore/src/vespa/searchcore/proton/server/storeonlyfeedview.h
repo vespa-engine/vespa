@@ -9,6 +9,7 @@
 #include "searchcontext.h"
 #include "pendinglidtracker.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
@@ -33,6 +34,7 @@ class PutDoneContext;
 class RemoveDoneContext;
 class CommitTimeTracker;
 class IGidToLidChangeHandler;
+class IFieldUpdateCallback;
 
 namespace documentmetastore { class ILidReuseDelayer; }
 
@@ -120,18 +122,19 @@ public:
     };
 
 protected:
-    struct UpdateScope
+    class UpdateScope : public IFieldUpdateCallback
     {
+    private:
+        const search::index::Schema *_schema;
+    public:
         bool _indexedFields;
         bool _nonAttributeFields;
 
-        UpdateScope()
-            : _indexedFields(false),
-              _nonAttributeFields(false)
-        {}
+        UpdateScope(const search::index::Schema & schema, const DocumentUpdate & upd);
         bool hasIndexOrNonAttributeFields() const {
             return _indexedFields || _nonAttributeFields;
         }
+        void onUpdateField(vespalib::stringref fieldName, const search::AttributeVector * attr) override;
     };
 
 private:
@@ -200,10 +203,8 @@ private:
     virtual void putIndexedFields(SerialNum serialNum, Lid lid, const DocumentSP &newDoc,
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual UpdateScope getUpdateScope(const DocumentUpdate &upd);
-
     virtual void updateAttributes(SerialNum serialNum, Lid lid, const DocumentUpdate &upd,
-                                  bool immediateCommit, OnOperationDoneType onWriteDone);
+                                  bool immediateCommit, OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate);
 
     virtual void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc,
                                   bool immediateCommit, OnOperationDoneType onWriteDone);

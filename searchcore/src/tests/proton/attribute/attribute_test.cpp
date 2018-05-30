@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_test");
 
 #include <vespa/config-attributes.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -15,6 +13,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -43,6 +42,9 @@ LOG_SETUP("attribute_test");
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_test");
 
 namespace vespa { namespace config { namespace search {}}}
 
@@ -156,8 +158,8 @@ struct Fixture
         _aw->put(serialNum, doc, lid, immediateCommit, emptyCallback);
     }
     void update(SerialNum serialNum, const DocumentUpdate &upd,
-                DocumentIdT lid, bool immediateCommit) {
-        _aw->update(serialNum, upd, lid, immediateCommit, emptyCallback);
+                DocumentIdT lid, bool immediateCommit, IFieldUpdateCallback & onUpdate) {
+        _aw->update(serialNum, upd, lid, immediateCommit, emptyCallback, onUpdate);
     }
     void update(SerialNum serialNum, const Document &doc,
                 DocumentIdT lid, bool immediateCommit) {
@@ -448,8 +450,9 @@ TEST_F("require that attribute writer handles update", Fixture)
     upd.addUpdate(FieldUpdate(upd.getType().getField("a2"))
                   .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10)));
 
+    DummyFieldUpdateCallback onUpdate;
     bool immediateCommit = true;
-    f.update(2, upd, 1, immediateCommit);
+    f.update(2, upd, 1, immediateCommit, onUpdate);
 
     attribute::IntegerContent ibuf;
     ibuf.fill(*a1, 1);
@@ -459,9 +462,9 @@ TEST_F("require that attribute writer handles update", Fixture)
     EXPECT_EQUAL(1u, ibuf.size());
     EXPECT_EQUAL(30u, ibuf[0]);
 
-    f.update(2, upd, 1, immediateCommit); // same sync token as previous
+    f.update(2, upd, 1, immediateCommit, onUpdate); // same sync token as previous
     try {
-        f.update(1, upd, 1, immediateCommit); // lower sync token than previous
+        f.update(1, upd, 1, immediateCommit, onUpdate); // lower sync token than previous
         EXPECT_TRUE(true);  // update is ignored
     } catch (vespalib::IllegalStateException & e) {
         LOG(info, "Got expected exception: '%s'", e.getMessage().c_str());
@@ -494,7 +497,8 @@ TEST_F("require that attribute writer handles predicate update", Fixture)
     EXPECT_EQUAL(1u, index.getZeroConstraintDocs().size());
     EXPECT_FALSE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
     bool immediateCommit = true;
-    f.update(2, upd, 1, immediateCommit);
+    DummyFieldUpdateCallback onUpdate;
+    f.update(2, upd, 1, immediateCommit, onUpdate);
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
     EXPECT_TRUE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
 }
@@ -681,7 +685,8 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(AssignValueUpdate(new_value)));
     bool immediateCommit = true;
-    f.update(2, upd, 1, immediateCommit);
+    DummyFieldUpdateCallback onUpdate;
+    f.update(2, upd, 1, immediateCommit, onUpdate);
     EXPECT_EQUAL(2u, a1->getNumDocs());
     EXPECT_TRUE(tensorAttribute != nullptr);
     tensor2 = tensorAttribute->getTensor(1);
