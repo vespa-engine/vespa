@@ -5,16 +5,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
+import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 
@@ -46,6 +49,7 @@ public class StorageMaintainer {
     private static final ContainerName NODE_ADMIN = new ContainerName("node-admin");
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final GaugeWrapper numberOfCoredumpsOnHost;
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final DockerOperations dockerOperations;
     private final ProcessExecuter processExecuter;
@@ -53,7 +57,6 @@ public class StorageMaintainer {
     private final Clock clock;
 
     private Map<ContainerName, MaintenanceThrottler> maintenanceThrottlerByContainerName = new ConcurrentHashMap<>();
-
 
     public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter, MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
         this.dockerOperations = dockerOperations;
@@ -63,44 +66,98 @@ public class StorageMaintainer {
 
         Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
+        numberOfCoredumpsOnHost = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.coredumps");
     }
 
     public void writeMetricsConfig(ContainerName containerName, NodeSpec node) {
-        final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(
-                containerName, Paths.get("/etc/yamas-agent/"));
+        List<SecretAgentCheckConfig> configs = new ArrayList<>();
 
-        Path vespaCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
-        SecretAgentCheckConfig vespaSchedule = new SecretAgentCheckConfig("vespa", 60, vespaCheckPath, "all")
-                .withTag("parentHostname", environment.getParentHostHostname());
-
+        // host-life
         Path hostLifeCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
-        SecretAgentCheckConfig hostLifeSchedule = new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath)
-                .withTag("namespace", "Vespa")
+        SecretAgentCheckConfig hostLifeSchedule = new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath);
+        configs.add(annotatedCheck(node, hostLifeSchedule));
+
+        // ntp
+        Path ntpCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_ntp");
+        SecretAgentCheckConfig ntpSchedule = new SecretAgentCheckConfig("ntp", 60, ntpCheckPath);
+        configs.add(annotatedCheck(node, ntpSchedule));
+
+        // coredumps (except for the done coredumps which is handled by the host)
+        Path coredumpCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_coredumps");
+        SecretAgentCheckConfig coredumpSchedule = new SecretAgentCheckConfig("system-coredumps-processing", 300,
+                coredumpCheckPath, "--application", "system-coredumps-processing", "--lastmin",
+                "129600", "--crit", "1", "--coredir", environment.pathInNodeUnderVespaHome("var/crash/processing").toString());
+        configs.add(annotatedCheck(node, coredumpSchedule));
+
+        if (node.getNodeType() != NodeType.config) {
+            // vespa-health
+            Path vespaHealthCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");
+            SecretAgentCheckConfig vespaHealthSchedule = new SecretAgentCheckConfig("vespa", 60, vespaHealthCheckPath, "all");
+            configs.add(annotatedCheck(node, vespaHealthSchedule));
+
+            // vespa
+            Path vespaCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
+            SecretAgentCheckConfig vespaSchedule = new SecretAgentCheckConfig("vespa", 60, vespaCheckPath, "all");
+            configs.add(annotatedCheck(node, vespaSchedule));
+        }
+
+        if (node.getNodeType() == NodeType.config) {
+            // configserver
+            Path configServerCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_ymonsb2");
+            SecretAgentCheckConfig configServerSchedule = new SecretAgentCheckConfig("configserver", 60,
+                    configServerCheckPath, "-zero", "configserver");
+            configs.add(annotatedCheck(node, configServerSchedule));
+
+            //zkbackupage
+            Path zkbackupCheckPath = environment.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
+            SecretAgentCheckConfig zkbackupSchedule = new SecretAgentCheckConfig("zkbackupage", 300,
+                    zkbackupCheckPath, "-f", environment.pathInNodeUnderVespaHome("var/vespa-hosted/zkbackup.stat").toString(),
+                    "-m", "150", "-a", "config-zkbackupage");
+            configs.add(annotatedCheck(node, zkbackupSchedule));
+        }
+
+        if (node.getNodeType() == NodeType.proxy) {
+            //routing-configage
+            Path routingAgeCheckPath = environment.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
+            SecretAgentCheckConfig routingAgeSchedule = new SecretAgentCheckConfig("routing-configage", 60,
+                    routingAgeCheckPath, "-f", environment.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf").toString(),
+                    "-m", "90", "-a", "routing-configage");
+            configs.add(annotatedCheck(node, routingAgeSchedule));
+
+            //ssl-check
+            Path sslCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_ssl_status");
+            SecretAgentCheckConfig sslSchedule = new SecretAgentCheckConfig("ssh-status", 300,
+                    sslCheckPath, "-e", "localhost", "-p", "4443", "-t", "30");
+            configs.add(annotatedCheck(node, sslSchedule));
+        }
+
+        // Write config and restart yamas-agent
+        Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(containerName, Paths.get("/etc/yamas-agent/"));
+        configs.forEach(s -> IOExceptionUtil.uncheck(() -> s.writeTo(yamasAgentFolder)));
+        final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
+        dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
+    }
+
+    private SecretAgentCheckConfig annotatedCheck(NodeSpec node, SecretAgentCheckConfig check) {
+        check.withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
                 .withTag("flavor", node.getFlavor())
                 .withTag("canonicalFlavor", node.getCanonicalFlavor())
                 .withTag("state", node.getState().toString())
                 .withTag("zone", environment.getZone())
                 .withTag("parentHostname", environment.getParentHostHostname());
-        node.getOwner().ifPresent(owner -> hostLifeSchedule
+        node.getOwner().ifPresent(owner -> check
                 .withTag("tenantName", owner.getTenant())
                 .withTag("app", owner.getApplication() + "." + owner.getInstance())
                 .withTag("applicationName", owner.getApplication())
                 .withTag("instanceName", owner.getInstance())
                 .withTag("applicationId", owner.getTenant() + "." + owner.getApplication() + "." + owner.getInstance()));
-        node.getMembership().ifPresent(membership -> hostLifeSchedule
+        node.getMembership().ifPresent(membership -> check
                 .withTag("clustertype", membership.getClusterType())
                 .withTag("clusterid", membership.getClusterId()));
-        node.getVespaVersion().ifPresent(version -> hostLifeSchedule.withTag("vespaVersion", version));
+        node.getVespaVersion().ifPresent(version -> check.withTag("vespaVersion", version));
 
-        try {
-            vespaSchedule.writeTo(yamasAgentFolder);
-            hostLifeSchedule.writeTo(yamasAgentFolder);
-            final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
-            dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write secret-agent schedules for " + containerName, e);
-        }
+        return check;
     }
 
     public void writeFilebeatConfig(ContainerName containerName, NodeSpec node) {
@@ -218,6 +275,14 @@ public class StorageMaintainer {
      * @param force Set to true to bypass throttling
      */
     public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node, boolean force) {
+        // Sample number of coredumps on the host
+        try {
+            numberOfCoredumpsOnHost.sample(Files.list(environment.pathInNodeAdminToDoneCoredumps()).count());
+        } catch (IOException e) {
+            // Ignore for now - this is either test or a misconfiguration
+        }
+
+        // Return early if throttled
         if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow() && !force) return;
 
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
