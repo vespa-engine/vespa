@@ -24,7 +24,6 @@ import com.yahoo.vespa.config.TimingValues;
  * {@link ConfigHandle} which {@link #subscribe(Class, String)} returned.
  *
  * @author vegardh
- * @since 5.1
  */
 public class ConfigSubscriber {
 

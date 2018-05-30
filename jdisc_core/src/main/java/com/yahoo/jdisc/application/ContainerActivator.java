@@ -13,27 +13,28 @@ import com.yahoo.jdisc.Container;
  * #newContainerBuilder()}, 2) configure the returned {@link ContainerBuilder}, and 3) pass the builder to the {@link
  * #activateContainer(ContainerBuilder)} method.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public interface ContainerActivator {
 
     /**
-     * <p>This method creates and returns a new {@link ContainerBuilder} object that has the necessary references to the
-     * application and its internal components.</p>
+     * This method creates and returns a new {@link ContainerBuilder} object that has the necessary references to the
+     * application and its internal components.
      *
      * @return The created builder.
      */
-    public ContainerBuilder newContainerBuilder();
+    ContainerBuilder newContainerBuilder();
 
     /**
-     * <p>Creates and activates a {@link Container} based on the provided {@link ContainerBuilder}. By providing a
+     * Creates and activates a {@link Container} based on the provided {@link ContainerBuilder}. By providing a
      * <em>null</em> argument, this method can be used to deactivate the current Container. The returned object can be
-     * used to schedule a cleanup task that is executed once the the deactivated Container has terminated.</p>
+     * used to schedule a cleanup task that is executed once the the deactivated Container has terminated.
      *
      * @param builder The builder to activate.
      * @return The previous container, if any.
      * @throws ApplicationNotReadyException If this method is called before {@link Application#start()} or after {@link
      *                                      Application#stop()}.
      */
-    public DeactivatedContainer activateContainer(ContainerBuilder builder);
+    DeactivatedContainer activateContainer(ContainerBuilder builder);
+
 }

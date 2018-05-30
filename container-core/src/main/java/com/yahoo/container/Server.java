@@ -19,7 +19,7 @@ public class Server {
     private ConfigSubscriber subscriber = new ConfigSubscriber();
 
     /** The OSGi container instance of this server */
-    private Container container=Container.get();
+    private Container container = Container.get();
 
     /** A short string which is different for all the qrserver instances on a given node. */
     private String localServerDiscriminator = "qrserver.0";
@@ -48,7 +48,6 @@ public class Server {
         return instance;
     }
 
-
     private void initRpcServer(Rpc rpcConfig) {
         if (rpcConfig.enabled()) {
             ContainerRpcAdaptor rpcAdaptor = container.getRpcAdaptor();
@@ -57,8 +56,7 @@ public class Server {
         }
     }
 
-    /** Ugly hack, see Container.resetInstance
-     **/
+    /** Ugly hack, see Container.resetInstance */
     static void resetInstance() {
         instance = new Server();
     }

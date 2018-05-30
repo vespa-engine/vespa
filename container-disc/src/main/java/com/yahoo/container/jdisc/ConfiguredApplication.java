@@ -128,7 +128,7 @@ public final class ConfiguredApplication implements Application {
         configureComponents(builder.guiceModules().activate());
 
         intitializeAndActivateContainer(builder);
-        if (! qrConfig.restartOnDeploy()) startReconfigurerThread();
+        startReconfigurerThread();
         portWatcher = new Thread(this::watchPortChange);
         portWatcher.setDaemon(true);
         portWatcher.start();
@@ -199,8 +199,12 @@ public final class ConfiguredApplication implements Application {
             while ( ! Thread.interrupted()) {
                 try {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
-                    configurer.runOnceAndEnsureRegistryHackRun(builder.guiceModules().activate());
-                    intitializeAndActivateContainer(builder);
+
+                    // Block until new config:
+                    boolean gotNewConfigToApply = configurer.getNewConfigGraph(builder.guiceModules().activate(),
+                                                                               qrConfig.restartOnDeploy());
+                    if (gotNewConfigToApply)
+                        intitializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException | InterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems

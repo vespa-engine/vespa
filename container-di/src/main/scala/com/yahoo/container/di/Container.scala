@@ -44,9 +44,9 @@ class Container(
   var leastGeneration = -1L
 
   @throws(classOf[InterruptedException])
-  def runOnce(
-               oldGraph: ComponentGraph = new ComponentGraph,
-               fallbackInjector: GuiceInjector = Guice.createInjector()): ComponentGraph = {
+  def getNewConfigGraph(oldGraph: ComponentGraph = new ComponentGraph,
+                        fallbackInjector: GuiceInjector = Guice.createInjector(),
+                        restartOnRedeploy: Boolean = false): ComponentGraph = {
 
     def deconstructObsoleteComponents(oldGraph: ComponentGraph, newGraph: ComponentGraph) {
       val oldComponents = new IdentityHashMap[AnyRef, AnyRef]()
@@ -56,7 +56,8 @@ class Container(
     }
 
     try {
-      val newGraph = createNewGraph(oldGraph, fallbackInjector)
+      val newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector)
+      if (restartOnRedeploy) return oldGraph // wait for restart to cause reconfig instead
       newGraph.reuseNodes(oldGraph)
       constructComponents(newGraph)
       deconstructObsoleteComponents(oldGraph, newGraph)
@@ -113,10 +114,11 @@ class Container(
     }
   }
 
-  final def createNewGraph(graph: ComponentGraph = new ComponentGraph,
-                           fallbackInjector: Injector): ComponentGraph = {
+  final def getConfigAndCreateGraph(graph: ComponentGraph = new ComponentGraph,
+                                    fallbackInjector: Injector): ComponentGraph = {
 
     val snapshot = configurer.getConfigs(graph.configKeys, leastGeneration)
+
     log.log(DEBUG,
             """createNewGraph:
               |graph.configKeys = %s
@@ -138,7 +140,7 @@ class Container(
               |previous generation: %d"""
               .format(getBootstrapGeneration, getComponentsGeneration, previousConfigGeneration).stripMargin)
           installBundles(configs)
-          createNewGraph(
+          getConfigAndCreateGraph(
             createComponentsGraph(configs, getBootstrapGeneration,fallbackInjector),
             fallbackInjector)
         case ComponentsConfigs(configs) =>
