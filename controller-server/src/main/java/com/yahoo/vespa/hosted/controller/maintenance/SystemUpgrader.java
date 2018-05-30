@@ -38,11 +38,7 @@ public class SystemUpgrader extends Maintainer {
             return;
         }
 
-        try {
-            deploy(SystemApplication.all(), target.get());
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Failed to upgrade system. Retrying in " + maintenanceInterval(), e);
-        }
+        deploy(SystemApplication.all(), target.get());
     }
 
     /** Deploy a list of system applications until they converge on the given version */
@@ -50,19 +46,34 @@ public class SystemUpgrader extends Maintainer {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
             boolean converged = true;
             for (ZoneId zone : zones) {
-                for (SystemApplication application : applications) {
-                    boolean dependenciesConverged = application.dependencies().stream()
-                                                               .allMatch(dependency -> convergedOn(zone, dependency, target));
-                    if (dependenciesConverged) {
-                        deploy(target, application, zone);
-                    }
-                    converged &= convergedOn(zone, application, target);
+                try {
+                    converged &= deployInZone(zone, applications, target);
+                } catch (UnreachableNodeRepositoryException e) {
+                    converged = false;
+                    log.log(Level.WARNING, e.getMessage() + ". Continuing to next parallel deployed zone");
+                } catch (Exception e) {
+                    converged = false;
+                    log.log(Level.WARNING, "Failed to upgrade " + zone + ". Continuing to next parallel deployed zone", e);
                 }
             }
             if (!converged) {
                 break;
             }
         }
+    }
+
+    /** @return true if all applications have converged to the target version in the zone */
+    private boolean deployInZone(ZoneId zone, List<SystemApplication> applications, Version target) {
+        boolean converged = true;
+        for (SystemApplication application : applications) {
+            boolean dependenciesConverged = application.dependencies().stream()
+                    .allMatch(dependency -> convergedOn(zone, dependency, target));
+            if (dependenciesConverged) {
+                deploy(target, application, zone);
+            }
+            converged &= convergedOn(zone, application, target);
+        }
+        return converged;
     }
 
     /** Deploy application on given version idempotently */
@@ -94,9 +105,8 @@ public class SystemUpgrader extends Maintainer {
                                .map(versionField)
                                .min(Comparator.naturalOrder());
         } catch (Exception e) {
-            log.log(Level.WARNING, String.format("Failed to get version for %s in %s: %s", application, zone,
-                                                 Exceptions.toMessageString(e)));
-            return Optional.empty();
+            throw new UnreachableNodeRepositoryException(String.format("Failed to get version for %s in %s: %s",
+                    application, zone, Exceptions.toMessageString(e)));
         }
     }
 
@@ -107,4 +117,9 @@ public class SystemUpgrader extends Maintainer {
                            .map(VespaVersion::versionNumber);
     }
 
+    private class UnreachableNodeRepositoryException extends RuntimeException {
+        private UnreachableNodeRepositoryException(String reason) {
+            super(reason);
+        }
+    }
 }
