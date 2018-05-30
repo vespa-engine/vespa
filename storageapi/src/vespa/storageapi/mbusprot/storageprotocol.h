@@ -29,7 +29,7 @@ private:
     ProtocolSerialization5_1 _serializer5_1;
     ProtocolSerialization5_2 _serializer5_2;
     ProtocolSerialization6_0 _serializer6_0;
-    bool _configForcedBucketSpaceSerialization;
+    bool _activateBucketSpaceSerialization;
 };
 
 }

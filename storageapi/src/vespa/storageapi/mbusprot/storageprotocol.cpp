@@ -17,12 +17,12 @@ mbus::string StorageProtocol::NAME = "StorageProtocol";
 
 StorageProtocol::StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo> repo,
                                  const documentapi::LoadTypeSet& loadTypes,
-                                 bool configForcedBucketSpaceSerialization)
+                                 bool activateBucketSpaceSerialization)
     : _serializer5_0(repo, loadTypes),
       _serializer5_1(repo, loadTypes),
       _serializer5_2(repo, loadTypes),
       _serializer6_0(repo, loadTypes),
-      _configForcedBucketSpaceSerialization(configForcedBucketSpaceSerialization)
+      _activateBucketSpaceSerialization(activateBucketSpaceSerialization)
 {
 }
 
@@ -106,7 +106,7 @@ StorageProtocol::encode(const vespalib::Version& version,
         } else if (version < version5_2) {
             return encodeMessage(_serializer5_1, routable, message, version5_1, version);
         } else {
-            if (_configForcedBucketSpaceSerialization) {
+            if (_activateBucketSpaceSerialization) {
                 return encodeMessage(_serializer6_0, routable, message, version6_0, version);
             } else {
                if (version < version6_0) {
@@ -184,7 +184,7 @@ StorageProtocol::decode(const vespalib::Version & version,
         } else if (version < version5_2) {
             return decodeMessage(_serializer5_1, data, type, version5_1, version);
         } else {
-            if (_configForcedBucketSpaceSerialization) {
+            if (_activateBucketSpaceSerialization) {
                 return decodeMessage(_serializer6_0, data, type, version6_0, version);
             } else {
                 if (version < version6_0) {
