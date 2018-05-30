@@ -7,6 +7,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;
@@ -240,6 +241,8 @@ Messages50Test::testRemoveLocationMessage()
             if (EXPECT_TRUE(obj.get() != NULL)) {
                 RemoveLocationMessage &ref = static_cast<RemoveLocationMessage&>(*obj);
                 EXPECT_EQUAL(string("id.group == \"mygroup\""), ref.getDocumentSelection());
+                // FIXME add to wire format, currently hardcoded.
+                EXPECT_EQUAL(string(document::FixedBucketSpaces::default_space_name()), ref.getBucketSpace());
             }
         }
     }
