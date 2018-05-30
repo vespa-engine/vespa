@@ -827,33 +827,33 @@ struct StructArrayFixture : public StructFixtureBase
     StructArrayFixture()
         : StructFixtureBase(),
           _structArrayFieldType(_structFieldType),
-          _structArrayField("s", _structArrayFieldType, true)
+          _structArrayField("array", _structArrayFieldType, true)
     {
-        addAttribute({"s.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
         _type.addField(_structArrayField);
     }
 
     std::unique_ptr<Document>
-    makeDoc(int32_t value, const std::vector<int32_t> &svalues)
+    makeDoc(int32_t value, const std::vector<int32_t> &arrayValues)
     {
         auto doc = makeDoc();
         doc->setValue(_valueField, IntFieldValue(value));
         ArrayFieldValue s(_structArrayFieldType);
-        for (const auto &svalue : svalues) {
-            s.add(*makeStruct(svalue));
+        for (const auto &arrayValue : arrayValues) {
+            s.add(*makeStruct(arrayValue));
         }
         doc->setValue(_structArrayField, s);
         return doc;
     }
-    void checkAttrs(uint32_t lid, int32_t value, const std::vector<int32_t> &svalues) {
+    void checkAttrs(uint32_t lid, int32_t value, const std::vector<int32_t> &arrayValues) {
         auto valueAttr = _m->getAttribute("value")->getSP();
-        auto svalueAttr = _m->getAttribute("s.value")->getSP();
+        auto arrayValueAttr = _m->getAttribute("array.value")->getSP();
         EXPECT_EQUAL(value, valueAttr->getInt(lid));
         attribute::IntegerContent ibuf;
-        ibuf.fill(*svalueAttr, lid);
-        EXPECT_EQUAL(svalues.size(), ibuf.size());
-        for (size_t i = 0; i < svalues.size(); ++i) {
-            EXPECT_EQUAL(svalues[i], ibuf[i]);
+        ibuf.fill(*arrayValueAttr, lid);
+        EXPECT_EQUAL(arrayValues.size(), ibuf.size());
+        for (size_t i = 0; i < arrayValues.size(); ++i) {
+            EXPECT_EQUAL(arrayValues[i], ibuf[i]);
         }
     }
 };
