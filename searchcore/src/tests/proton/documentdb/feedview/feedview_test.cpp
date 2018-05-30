@@ -362,6 +362,13 @@ struct MyAttributeWriter : public IAttributeWriter
         _updateDocId = upd.getId();
         _updateLid = lid;
     }
+    virtual void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid,
+                        bool immediateCommit, OnWriteDoneType) override {
+        (void) serialNum;
+        (void) doc;
+        (void) lid;
+        (void) immediateCommit;
+    }
     virtual void heartBeat(SerialNum) override { ++_heartBeatCount; }
     virtual void compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum) override {
         (void) serialNum;
