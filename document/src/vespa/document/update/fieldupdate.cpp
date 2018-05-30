@@ -18,11 +18,12 @@ FieldUpdate::FieldUpdate(const Field& field)
 
 namespace {
 
-    int readInt(ByteBuffer & buffer) {
-        int fieldId;
-        buffer.getIntNetwork(fieldId);
-        return fieldId;
-    }
+int readInt(ByteBuffer & buffer) {
+    int tmp;
+    buffer.getIntNetwork(tmp);
+    return tmp;
+}
+
 }
 
 FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DocumentType& type, ByteBuffer& buffer, int16_t version)
