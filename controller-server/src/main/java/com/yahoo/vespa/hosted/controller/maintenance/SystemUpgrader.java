@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -38,9 +37,9 @@ public class SystemUpgrader extends Maintainer {
         if (!target.isPresent()) {
             return;
         }
-        // TODO: Change to SystemApplication.all() once host applications support upgrade
+
         try {
-            deploy(Arrays.asList(SystemApplication.configServer, SystemApplication.zone), target.get());
+            deploy(SystemApplication.all(), target.get());
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to upgrade system. Retrying in " + maintenanceInterval(), e);
         }
@@ -53,12 +52,11 @@ public class SystemUpgrader extends Maintainer {
             for (ZoneId zone : zones) {
                 for (SystemApplication application : applications) {
                     boolean dependenciesConverged = application.dependencies().stream()
-                                                               .filter(applications::contains) // TODO: Remove when all() is used.
-                                                               .allMatch(dependency -> currentVersion(zone, dependency.id()).equals(target));
+                                                               .allMatch(dependency -> convergedOn(zone, dependency, target));
                     if (dependenciesConverged) {
                         deploy(target, application, zone);
                     }
-                    converged &= currentVersion(zone, application.id()).equals(target);
+                    converged &= convergedOn(zone, application, target);
                 }
             }
             if (!converged) {
@@ -75,12 +73,16 @@ public class SystemUpgrader extends Maintainer {
         }
     }
 
+    private boolean convergedOn(ZoneId zone, SystemApplication application, Version target) {
+        return currentVersion(zone, application.id(), target).equals(target);
+    }
+
     private Version wantedVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
         return minVersion(zone, application, Node::wantedVersion).orElse(defaultVersion);
     }
 
-    private Version currentVersion(ZoneId zone, ApplicationId application) {
-        return minVersion(zone, application, Node::currentVersion).orElse(Version.emptyVersion);
+    private Version currentVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
+        return minVersion(zone, application, Node::currentVersion).orElse(defaultVersion);
     }
 
     private Optional<Version> minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
