@@ -382,6 +382,11 @@ AttributeWriter::setupWriteContexts()
         }
         _writeContexts.back().add(*fc.getAttribute());
     }
+    for (const auto &wc : _writeContexts) {
+        if (wc.getHasCompoundAttribute()) {
+            _hasCompoundAttribute = true;
+        }
+    }
 }
 
 void
@@ -426,7 +431,8 @@ AttributeWriter::AttributeWriter(const proton::IAttributeManager::SP &mgr)
       _attributeFieldWriter(mgr->getAttributeFieldWriter()),
       _writableAttributes(mgr->getWritableAttributes()),
       _writeContexts(),
-      _dataType(nullptr)
+      _dataType(nullptr),
+      _hasCompoundAttribute(false)
 {
     setupWriteContexts();
 }
@@ -577,6 +583,12 @@ AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum)
                     { applyCompactLidSpace(wantedLidLimit, serialNum, attr); });
     }
     _attributeFieldWriter.sync();
+}
+
+bool
+AttributeWriter::getHasCompoundAttribute() const
+{
+    return _hasCompoundAttribute;
 }
 
 

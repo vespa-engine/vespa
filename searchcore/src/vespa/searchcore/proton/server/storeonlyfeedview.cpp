@@ -316,6 +316,11 @@ void
 StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate &, bool, OnOperationDoneType) {}
 
 void
+StoreOnlyFeedView::updateAttributes(SerialNum, Lid, FutureDoc, bool, OnOperationDoneType)
+{
+}
+
+void
 StoreOnlyFeedView::updateIndexedFields(SerialNum, Lid, FutureDoc, bool, OnOperationDoneType)
 {
     abort(); // Should never be called.
@@ -422,10 +427,10 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
     UpdateScope updateScope(getUpdateScope(upd));
     if (updateScope.hasIndexOrNonAttributeFields()) {
         PromisedDoc promisedDoc;
-        FutureDoc futureDoc = promisedDoc.get_future();
+        FutureDoc futureDoc = promisedDoc.get_future().share();
         _pendingLidTracker.waitForConsumedLid(lid);
         if (updateScope._indexedFields) {
-            updateIndexedFields(serialNum, lid, std::move(futureDoc), immediateCommit, onWriteDone);
+            updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }
         PromisedStream promisedStream;
         FutureStream futureStream = promisedStream.get_future();
@@ -444,6 +449,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
                                                  std::move(promisedDoc), std::move(promisedStream));
                          });
 #pragma GCC diagnostic pop
+        updateAttributes(serialNum, lid, std::move(futureDoc), immediateCommit, onWriteDone);
     }
 }
 

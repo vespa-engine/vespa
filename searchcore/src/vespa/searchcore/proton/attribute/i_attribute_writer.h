@@ -65,6 +65,8 @@ public:
     virtual void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
 
     virtual void onReplayDone(uint32_t docIdLimit) = 0;
+
+    virtual bool getHasCompoundAttribute() const = 0;
 };
 
 } // namespace proton
