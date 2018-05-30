@@ -13,23 +13,6 @@ using search::index::Schema;
 
 namespace proton {
 
-FastAccessFeedView::UpdateScope
-FastAccessFeedView::getUpdateScope(const DocumentUpdate &upd)
-{
-    UpdateScope updateScope;
-    for (const auto &update : upd.getUpdates()) {
-        const vespalib::string &fieldName = update.getField().getName();
-        if (!fastPartialUpdateAttribute(fieldName)) {
-            updateScope._nonAttributeFields = true;
-            break;
-        }
-    }
-    if (!upd.getFieldPathUpdates().empty()) {
-        updateScope._nonAttributeFields = true;
-    }
-    return updateScope;
-}
-
 /**
  * NOTE: For both put, update and remove we only need to pass the 'onWriteDone'
  * instance when we are going to commit as part of handling the operation.
@@ -47,9 +30,9 @@ FastAccessFeedView::putAttributes(SerialNum serialNum, search::DocumentIdT lid, 
 
 void
 FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate &upd,
-                                     bool immediateCommit, OnOperationDoneType onWriteDone)
+                                     bool immediateCommit, OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate)
 {
-    _attributeWriter->update(serialNum, upd, lid, immediateCommit, onWriteDone);
+    _attributeWriter->update(serialNum, upd, lid, immediateCommit, onWriteDone, onUpdate);
 }
 
 void
@@ -105,21 +88,6 @@ FastAccessFeedView::sync()
 {
     Parent::sync();
     _writeService.attributeFieldWriter().sync();
-}
-
-bool
-FastAccessFeedView::fastPartialUpdateAttribute(const vespalib::string &fieldName) const {
-    search::AttributeVector *attribute = _attributeWriter->getWritableAttribute(fieldName);
-    if (attribute == nullptr) {
-        // Partial update to non-attribute field must update document
-        return false;
-    }
-    search::attribute::BasicType::Type attrType = attribute->getBasicType();
-    // Partial update to tensor, predicate or reference attribute
-    // must update document
-    return ((attrType != search::attribute::BasicType::Type::PREDICATE) &&
-            (attrType != search::attribute::BasicType::Type::TENSOR) &&
-            (attrType != search::attribute::BasicType::Type::REFERENCE));
 }
 
 } // namespace proton
