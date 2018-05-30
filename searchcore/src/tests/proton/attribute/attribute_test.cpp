@@ -800,6 +800,7 @@ struct StructFixtureBase : public Fixture
         _type.addField(_valueField);
         _structFieldType.addField(_valueField);
     }
+    ~StructFixtureBase();
 
     std::unique_ptr<StructFieldValue>
     makeStruct()
@@ -822,6 +823,7 @@ struct StructFixtureBase : public Fixture
     }
 };
 
+StructFixtureBase::~StructFixtureBase() = default;
 
 struct StructArrayFixture : public StructFixtureBase
 {
@@ -837,6 +839,7 @@ struct StructArrayFixture : public StructFixtureBase
         addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
         _type.addField(_structArrayField);
     }
+    ~StructArrayFixture();
 
     std::unique_ptr<Document>
     makeDoc(int32_t value, const std::vector<int32_t> &arrayValues)
@@ -862,6 +865,8 @@ struct StructArrayFixture : public StructFixtureBase
         }
     }
 };
+
+StructArrayFixture::~StructArrayFixture() = default;
 
 TEST_F("require that update with doc argument only updates compound attributes", StructArrayFixture)
 {
