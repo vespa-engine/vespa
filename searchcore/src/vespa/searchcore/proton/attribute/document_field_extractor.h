@@ -41,15 +41,6 @@ public:
      * Check if fieldPath is in a supported form.
      */
     static bool isSupported(const document::FieldPath &fieldPath);
-
-    /**
-     * Check if two field paths are compatible, i.e. same types in whole path
-     * and same data type would be returned from getFieldValue().  This is
-     * meant to be used when document type in received document doesn't match
-     * the document type for the current config (can happen right before and
-     * after live config change when validation override is used).
-     */
-    static bool isCompatible(const document::FieldPath &fieldPath1, const document::FieldPath &fieldPath2);
 };
 
 }

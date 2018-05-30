@@ -86,19 +86,6 @@ makeStringWeightedSet(const std::vector<std::pair<vespalib::string, int32_t>> &a
     return result;
 }
 
-template <typename F1, typename F2>
-void
-checkFieldPathChange(F1 f1, F2 f2, const vespalib::string &path, bool same)
-{
-    FieldPath fieldPath1 = f1.makeFieldPath(path);
-    FieldPath fieldPath2 = f2.makeFieldPath(path);
-    EXPECT_TRUE(!fieldPath1.empty());
-    EXPECT_TRUE(!fieldPath2.empty());
-    EXPECT_TRUE(DocumentFieldExtractor::isSupported(fieldPath1));
-    EXPECT_TRUE(DocumentFieldExtractor::isSupported(fieldPath2));
-    EXPECT_EQUAL(same, DocumentFieldExtractor::isCompatible(fieldPath1, fieldPath2));
-}
-
 }
 
 struct FixtureBase
@@ -352,26 +339,6 @@ TEST_F("require that unknown field gives null value", FixtureBase(false))
 {
     f.makeDoc();
     TEST_DO(f.assertExtracted("unknown", std::unique_ptr<FieldValue>()));
-}
-
-TEST("require that type changes are detected")
-{
-    TEST_DO(checkFieldPathChange(SimpleFixture(false), SimpleFixture(false), "weight", true));
-    TEST_DO(checkFieldPathChange(SimpleFixture(false), SimpleFixture(true), "weight", false));
-    TEST_DO(checkFieldPathChange(ArrayFixture(false), ArrayFixture(false), "weight", true));
-    TEST_DO(checkFieldPathChange(ArrayFixture(false), ArrayFixture(true), "weight", false));
-    TEST_DO(checkFieldPathChange(SimpleFixture(false), ArrayFixture(false), "weight", false));
-    TEST_DO(checkFieldPathChange(WeightedSetFixture(false), WeightedSetFixture(false), "weight", true));
-    TEST_DO(checkFieldPathChange(WeightedSetFixture(false), WeightedSetFixture(true), "weight", false));
-    TEST_DO(checkFieldPathChange(SimpleFixture(false), WeightedSetFixture(false), "weight", false));
-    TEST_DO(checkFieldPathChange(ArrayFixture(false), WeightedSetFixture(false), "weight", false));
-    TEST_DO(checkFieldPathChange(StructArrayFixture(false), StructArrayFixture(false), "s.weight", true));
-    TEST_DO(checkFieldPathChange(StructArrayFixture(false), StructArrayFixture(true), "s.weight", false));
-    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, false), "s.value.weight", true));
-    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(true, false), "s.value.weight", false));
-    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, true), "s.value.weight", false));
-    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, false), "s.key", true));
-    TEST_DO(checkFieldPathChange(StructMapFixture(false, false), StructMapFixture(false, true), "s.key", false));
 }
 
 TEST_MAIN()
