@@ -696,7 +696,10 @@ RoutableFactories50::RemoveLocationMessageFactory::doDecode(document::ByteBuffer
     document::BucketIdFactory factory;
     document::select::Parser parser(_repo, factory);
 
-    return DocumentMessage::UP(new RemoveLocationMessage(factory, parser, selection));
+    auto msg = std::make_unique<RemoveLocationMessage>(factory, parser, selection);
+    // FIXME bucket space not part of wire format, implicitly limiting to only default space for now.
+    msg->setBucketSpace(document::FixedBucketSpaces::default_space_name());
+    return msg;
 }
 
 bool
