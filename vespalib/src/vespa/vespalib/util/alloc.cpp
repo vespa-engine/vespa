@@ -186,6 +186,7 @@ struct MMapLimitAndAlignmentHash {
 };
 
 using AutoAllocatorsMap = std::unordered_map<MMapLimitAndAlignment, AutoAllocator::UP, MMapLimitAndAlignmentHash>;
+using AutoAllocatorsMapWithDefault = std::pair<AutoAllocatorsMap, alloc::MemoryAllocator *>;
 
 void createAlignedAutoAllocators(AutoAllocatorsMap & map, size_t mmapLimit) {
     for (size_t alignment : {0,0x200, 0x400, 0x1000}) {
@@ -197,7 +198,8 @@ void createAlignedAutoAllocators(AutoAllocatorsMap & map, size_t mmapLimit) {
     }
 }
 
-AutoAllocatorsMap createAutoAllocators() {
+AutoAllocatorsMap
+createAutoAllocators() {
     AutoAllocatorsMap map;
     map.reserve(3*5);
     for (size_t pages : {1,2,4,8,16}) {
@@ -207,21 +209,45 @@ AutoAllocatorsMap createAutoAllocators() {
     return map;
 }
 
-AutoAllocatorsMap  _G_availableAutoAllocators = createAutoAllocators();
+MemoryAllocator &
+getAutoAllocator(AutoAllocatorsMap & map, size_t mmapLimit, size_t alignment) {
+    MMapLimitAndAlignment key(mmapLimit, alignment);
+    auto found = map.find(key);
+    if (found == map.end()) {
+    throw IllegalArgumentException(make_string("We currently have no support for mmapLimit(%0lx) and alignment(%0lx)", mmapLimit, alignment));
+}
+    return *(found->second);
+}
+
+MemoryAllocator &
+getDefaultAutoAllocator(AutoAllocatorsMap & map) {
+    return getAutoAllocator(map, 1 * MemoryAllocator::HUGEPAGE_SIZE, 0);
+}
+
+AutoAllocatorsMapWithDefault
+createAutoAllocatorsWithDefault() {
+    AutoAllocatorsMapWithDefault tmp(createAutoAllocators(), nullptr);
+    tmp.second = &getDefaultAutoAllocator(tmp.first);
+    return tmp;
+}
+
+
+AutoAllocatorsMapWithDefault  _G_availableAutoAllocators = createAutoAllocatorsWithDefault();
 alloc::HeapAllocator _G_heapAllocatorDefault;
 alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(1024);
 alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(4096);
 alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
 alloc::MMapAllocator _G_mmapAllocatorDefault;
-alloc::MemoryAllocator *_G_defaultAutAllocator = nullptr;
 
 }
 
-MemoryAllocator & HeapAllocator::getDefault() {
+MemoryAllocator &
+HeapAllocator::getDefault() {
     return _G_heapAllocatorDefault;
 }
 
-MemoryAllocator & AlignedHeapAllocator::get4K() {
+MemoryAllocator &
+AlignedHeapAllocator::get4K() {
     return _G_4KalignedHeapAllocator;
 }
 
@@ -229,25 +255,23 @@ MemoryAllocator & AlignedHeapAllocator::get1K() {
     return _G_1KalignedHeapAllocator;
 }
 
-MemoryAllocator & AlignedHeapAllocator::get512B() {
+MemoryAllocator &
+AlignedHeapAllocator::get512B() {
     return _G_512BalignedHeapAllocator;
 }
 
-MemoryAllocator & MMapAllocator::getDefault() {
+MemoryAllocator &
+MMapAllocator::getDefault() {
     return _G_mmapAllocatorDefault;
 }
 
-MemoryAllocator & AutoAllocator::getDefault() {
-    return getAllocator(1 * MemoryAllocator::HUGEPAGE_SIZE, 0);
+MemoryAllocator &
+AutoAllocator::getDefault() {
+    return *_G_availableAutoAllocators.second;
 }
 
 MemoryAllocator & AutoAllocator::getAllocator(size_t mmapLimit, size_t alignment) {
-    MMapLimitAndAlignment key(mmapLimit, alignment);
-    auto found = _G_availableAutoAllocators.find(key);
-    if (found == _G_availableAutoAllocators.end()) {
-        throw IllegalArgumentException(make_string("We currently have no support for mmapLimit(%0lx) and alignment(%0lx)", mmapLimit, alignment));
-    }
-    return *(found->second);
+    return getAutoAllocator(_G_availableAutoAllocators.first, mmapLimit, alignment);
 }
 
 MemoryAllocator::PtrAndSize
@@ -469,10 +493,7 @@ Alloc::allocMMap(size_t sz)
 Alloc
 Alloc::alloc()
 {
-    if (_G_defaultAutAllocator == nullptr) {
-        _G_defaultAutAllocator = &AutoAllocator::getDefault();
-    }
-    return Alloc(_G_defaultAutAllocator);
+    return Alloc(&AutoAllocator::getDefault());
 }
 
 Alloc
