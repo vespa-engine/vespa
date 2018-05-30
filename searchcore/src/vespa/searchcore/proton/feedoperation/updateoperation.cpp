@@ -28,21 +28,15 @@ UpdateOperation::UpdateOperation(Type type)
 }
 
 
-UpdateOperation::UpdateOperation(Type type,
-                                 const BucketId &bucketId,
-                                 const Timestamp &timestamp,
-                                 const DocumentUpdate::SP &upd)
-    : DocumentOperation(type,
-                        bucketId,
-                        timestamp),
+UpdateOperation::UpdateOperation(Type type, const BucketId &bucketId,
+                                 const Timestamp &timestamp, const DocumentUpdate::SP &upd)
+    : DocumentOperation(type, bucketId, timestamp),
       _upd(upd)
 {
 }
 
 
-UpdateOperation::UpdateOperation(const BucketId &bucketId,
-                                 const Timestamp &timestamp,
-                                 const DocumentUpdate::SP &upd)
+UpdateOperation::UpdateOperation(const BucketId &bucketId, const Timestamp &timestamp, const DocumentUpdate::SP &upd)
     : UpdateOperation(FeedOperation::UPDATE, bucketId, timestamp, upd)
 {
 }
@@ -50,6 +44,7 @@ UpdateOperation::UpdateOperation(const BucketId &bucketId,
 void
 UpdateOperation::serializeUpdate(vespalib::nbostream &os) const
 {
+    assert(getType() == UPDATE);
      _upd->serializeHEAD(os);
 }
 
@@ -57,7 +52,7 @@ void
 UpdateOperation::deserializeUpdate(vespalib::nbostream &is, const document::DocumentTypeRepo &repo)
 {
     document::ByteBuffer buf(is.peek(), is.size());
-    DocumentUpdate::UP update = (getType() == FeedOperation::UPDATE_42) ? DocumentUpdate::create42(repo, buf) : DocumentUpdate::createHEAD(repo, buf);
+    DocumentUpdate::UP update = (getType() == UPDATE_42) ? DocumentUpdate::create42(repo, buf) : DocumentUpdate::createHEAD(repo, buf);
     is.adjustReadPos(buf.getPos());
     _upd = std::move(update);
 }
@@ -99,14 +94,6 @@ vespalib::string UpdateOperation::toString() const {
                        _upd.get() ?
                        _upd->getId().getScheme().toString().c_str() : "NULL",
                        docArgsToString().c_str());
-}
-
-UpdateOperation
-UpdateOperation::makeOldUpdate(const document::BucketId &bucketId,
-                               const storage::spi::Timestamp &timestamp,
-                               const document::DocumentUpdate::SP &upd)
-{
-    return UpdateOperation(FeedOperation::UPDATE_42, bucketId, timestamp, upd);
 }
 
 } // namespace proton

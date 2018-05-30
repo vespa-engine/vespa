@@ -26,9 +26,7 @@ DocumentOperation::DocumentOperation(Type type)
 }
 
 
-DocumentOperation::DocumentOperation(Type type,
-                                     const BucketId &bucketId,
-                                     const Timestamp &timestamp)
+DocumentOperation::DocumentOperation(Type type, const BucketId &bucketId, const Timestamp &timestamp)
     : FeedOperation(type),
       _bucketId(bucketId),
       _timestamp(timestamp),
@@ -62,7 +60,12 @@ vespalib::string DocumentOperation::docArgsToString() const {
 }
 
 void
-DocumentOperation::serialize(vespalib::nbostream &os) const
+DocumentOperation::serialize(vespalib::nbostream &os) const {
+    serializeDocumentOperationOnly(os);
+}
+
+void
+DocumentOperation::serializeDocumentOperationOnly(vespalib::nbostream &os) const
 {
     os << _bucketId;
     os << _timestamp;
@@ -74,8 +77,7 @@ DocumentOperation::serialize(vespalib::nbostream &os) const
 
 
 void
-DocumentOperation::deserialize(vespalib::nbostream &is,
-                               const DocumentTypeRepo &)
+DocumentOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &)
 {
     is >> _bucketId;
     is >> _timestamp;
@@ -84,5 +86,9 @@ DocumentOperation::deserialize(vespalib::nbostream &is,
     is >> _prevMarkedAsRemoved;
     is >> _prevTimestamp;
 }
+
+    DbDocumentId DocumentOperation::getDbDocumentId() const {
+        return _dbdId;
+    }
 
 } // namespace proton

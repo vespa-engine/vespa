@@ -32,9 +32,6 @@ public:
     void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
     void deserializeUpdate(const document::DocumentTypeRepo &repo);
     vespalib::string toString() const override;
-    static UpdateOperation makeOldUpdate(const document::BucketId &bucketId,
-                                         const storage::spi::Timestamp &timestamp,
-                                         const DocumentUpdateSP &upd);
 };
 
 } // namespace proton
