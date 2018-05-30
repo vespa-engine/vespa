@@ -463,17 +463,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return ! (hit instanceof DefaultErrorHit);
     }
 
-    private static void fieldsStart(MutableBoolean hasFieldsField, JsonGenerator generator) throws IOException {
-        if (hasFieldsField.get()) return;
-        generator.writeObjectFieldStart(FIELDS);
-        hasFieldsField.set(true);
-    }
-
-    private void fieldsEnd(MutableBoolean hasFieldsField) throws IOException {
-        if ( ! hasFieldsField.get()) return;
-        generator.writeEndObject();
-    }
-
     private void renderHitContents(Hit hit) throws IOException {
         String id = hit.getDisplayId();
         if (id != null)
@@ -499,14 +488,13 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private void renderAllFields(Hit hit) throws IOException {
-        MutableBoolean hasFieldsField = new MutableBoolean(false);
-        renderTotalHitCount(hit, hasFieldsField);
-        renderStandardFields(hit, hasFieldsField);
-        fieldsEnd(hasFieldsField);
+        fieldConsumer.startHitFields();
+        renderTotalHitCount(hit);
+        renderStandardFields(hit);
+        fieldConsumer.endHitFields();
     }
 
-    private void renderStandardFields(Hit hit, MutableBoolean hasFieldsField) {
-        fieldConsumer.setCurrent(hasFieldsField);
+    private void renderStandardFields(Hit hit) {
         hit.forEachFieldAsRaw(fieldConsumer);
     }
 
@@ -572,11 +560,13 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id).getTo()) : id.getTo()).toString();
     }
 
-    private void renderTotalHitCount(Hit hit, MutableBoolean hasFieldsField) throws IOException {
+    private void renderTotalHitCount(Hit hit) throws IOException {
         if ( ! (getRecursionLevel() == 1 && hit instanceof HitGroup)) return;
 
-        fieldsStart(hasFieldsField, generator);
+        fieldConsumer.ensureFieldsField();
         generator.writeNumberField(TOTAL_COUNT, getResult().getTotalHitCount());
+        // alternative for the above two lines:
+        // fieldConsumer.accept(TOTAL_COUNT, getResult().getTotalHitCount());
     }
 
     @Override
@@ -685,18 +675,32 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         /**
-         * Called before each use of this for a hit to keep track of whether we
+         * Call before using this for a hit to track whether we
          * have created the "fields" field of the JSON object
          */
-        void setCurrent(MutableBoolean hasFieldsField) {
-            this.hasFieldsField = hasFieldsField;
+        void startHitFields() {
+            this.hasFieldsField = new MutableBoolean(false);
+        }
+
+        /** Call before rendering a field to the generator */
+        void ensureFieldsField() throws IOException {
+            if (hasFieldsField.get()) return;
+            generator.writeObjectFieldStart(FIELDS);
+            hasFieldsField.set(true);
+        }
+
+        /** Call after all fields in a hit to close the "fields" field of the JSON object */
+        void endHitFields() throws IOException {
+            if ( ! hasFieldsField.get()) return;
+            generator.writeEndObject();
+            this.hasFieldsField = null;
         }
 
         @Override
         public void accept(String name, Object value) {
             try {
                 if (shouldRender(name, value)) {
-                    fieldsStart(hasFieldsField, generator);
+                    ensureFieldsField();
                     generator.writeFieldName(name);
                     renderFieldContents(value);
                 }
@@ -710,7 +714,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         public void accept(String name, byte[] utf8Data, int offset, int length) {
             try {
                 if (shouldRenderUtf8Value(name, length)) {
-                    fieldsStart(hasFieldsField, generator);
+                    ensureFieldsField();
                     generator.writeFieldName(name);
                     generator.writeUTF8String(utf8Data, offset, length);
                 }
