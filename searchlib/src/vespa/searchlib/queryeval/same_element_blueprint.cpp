@@ -3,6 +3,7 @@
 #include "same_element_blueprint.h"
 #include "same_element_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/attribute/elementiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 #include <map>
@@ -67,7 +68,13 @@ SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArra
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);
         childMatch.add(childState.field(0).resolve(*md));
-        children[i] = _terms[i]->createSearch(*md, (strict && (i == 0)));
+        SearchIterator::UP child = _terms[i]->createSearch(*md, (strict && (i == 0)));
+        const attribute::ISearchContext *context = child->getAttributeSearchContext();
+        if (context == nullptr) {
+            children[i] = std::move(child);
+        } else {
+            children[i] = std::make_unique<attribute::ElementIterator>(std::move(child), *context, *childMatch[i]);
+        }
     }
     return std::make_unique<SameElementSearch>(std::move(md), std::move(children), childMatch, strict);
 }
