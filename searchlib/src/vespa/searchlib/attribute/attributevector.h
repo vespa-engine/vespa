@@ -213,7 +213,6 @@ protected:
 
     void setEnumMax(uint32_t e)          { _enumMax = e; setEnum(); }
     void setEnum(bool hasEnum_=true)     { _hasEnum = hasEnum_; }
-    void setSortedEnum(bool sorted=true) { _hasSortedEnum = sorted; }
     void setNumDocs(uint32_t n)          { _status.setNumDocs(n); }
     void incNumDocs()                    { _status.incNumDocs(); }
 
@@ -398,7 +397,7 @@ public:
     bool isLoaded() const { return _loaded; }
 
     /** Return the fixed length of the attribute. If 0 then you must inquire each document. */
-    virtual size_t getFixedWidth() const override;
+    size_t getFixedWidth() const override { return _config.basicType().fixedSize(); }
     const Config &getConfig() const { return _config; }
     BasicType getInternalBasicType() const { return _config.basicType(); }
     CollectionType getInternalCollectionType() const { return _config.collectionType(); }
@@ -406,17 +405,16 @@ public:
     void setBaseFileName(const vespalib::stringref & name) { _baseFileName = name; }
 
     // Implements IAttributeVector
-    virtual const vespalib::string & getName() const override;
+    const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
 
     bool hasArrayType() const { return _config.collectionType().isArray(); }
-    bool hasEnum() const override;
-    bool hasSortedEnum() const { return _hasSortedEnum; }
+    bool hasEnum() const override final;
     virtual bool hasEnum2Value() const;
     uint32_t getMaxValueCount() const override;
     uint32_t getEnumMax() const { return _enumMax; }
 
     // Implements IAttributeVector
-    uint32_t getNumDocs() const override;
+    uint32_t getNumDocs() const override final { return _status.getNumDocs(); }
     uint32_t & getCommittedDocIdLimitRef() { return _committedDocIdLimit; }
     void setCommittedDocIdLimit(uint32_t committedDocIdLimit) {
         _committedDocIdLimit = committedDocIdLimit;
@@ -427,13 +425,12 @@ public:
 
     AddressSpaceUsage getAddressSpaceUsage() const;
 
-    // Implements IAttributeVector
-    virtual BasicType::Type getBasicType() const override;
-    virtual CollectionType::Type getCollectionType() const override;
-    virtual bool getIsFilter() const override;
-    virtual bool getIsFastSearch() const override;
-    virtual uint32_t getCommittedDocIdLimit() const override;
-    virtual bool isImported() const override;
+    BasicType::Type getBasicType() const override final { return getInternalBasicType().type(); }
+    CollectionType::Type getCollectionType() const override final { return getInternalCollectionType().type(); }
+    bool getIsFilter() const override final { return _config.getIsFilter(); }
+    bool getIsFastSearch() const override final { return _config.fastSearch(); }
+    uint32_t getCommittedDocIdLimit() const override final { return _committedDocIdLimit; }
+    bool isImported() const override;
 
     /**
      * Updates the base file name of this attribute vector and saves
@@ -604,7 +601,6 @@ private:
     uint64_t               _createSerialNum;
     uint64_t               _compactLidSpaceGeneration; 
     bool                   _hasEnum;
-    bool                   _hasSortedEnum;
     bool                   _loaded;
     bool                   _enableEnumeratedSave;
     fastos::TimeStamp      _nextStatUpdateTime;
@@ -634,8 +630,8 @@ private:
     friend class AttributeManagerTest;
 public:
     bool headerTypeOK(const vespalib::GenericHeader &header) const;
-    bool hasMultiValue() const override;
-    bool hasWeightedSetType() const override;
+    bool hasMultiValue() const override final { return _config.collectionType().isMultiValue(); }
+    bool hasWeightedSetType() const override final { return _config.collectionType().isWeightedSet(); }
     /**
      * Should be called by the writer thread.
      */

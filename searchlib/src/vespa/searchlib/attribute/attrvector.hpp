@@ -170,7 +170,6 @@ StringDirectAttrVector(const vespalib::string & baseFileName, const Config & c) 
         _idx.push_back(0);
     }
     setEnum();
-    setSortedEnum(true);
 }
 
 template <typename F>
@@ -182,6 +181,5 @@ StringDirectAttrVector(const vespalib::string & baseFileName) :
         _idx.push_back(0);
     }
     setEnum();
-    setSortedEnum(true);
 }
 

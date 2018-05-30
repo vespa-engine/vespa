@@ -73,7 +73,7 @@ AttributeVector::BaseName::BaseName(const vespalib::stringref &base,
     append(name);
 }
 
-AttributeVector::BaseName::~BaseName() { }
+AttributeVector::BaseName::~BaseName() = default;
 
 
 AttributeVector::BaseName::string
@@ -165,9 +165,7 @@ AttributeVector::AttributeVector(const vespalib::stringref &baseFileName, const 
       _genHandler(),
       _genHolder(),
       _status(Status::createName((_baseFileName.getIndexName() +
-                                  (_baseFileName.getSnapshotName().empty() ?
-                                   "" :
-                                   ".") +
+                                  (_baseFileName.getSnapshotName().empty() ? "" : ".") +
                                   _baseFileName.getSnapshotName()),
                                  _baseFileName.getAttributeName())),
       _highestValueCount(1),
@@ -177,29 +175,24 @@ AttributeVector::AttributeVector(const vespalib::stringref &baseFileName, const 
       _createSerialNum(0u),
       _compactLidSpaceGeneration(0u),
       _hasEnum(false),
-      _hasSortedEnum(false),
       _loaded(false),
       _enableEnumeratedSave(false)
 { }
 
-
-AttributeVector::~AttributeVector() { }
+AttributeVector::~AttributeVector() = default;
 
 void AttributeVector::updateStat(bool force) {
     if (force) {
         onUpdateStat();
     } else if (_nextStatUpdateTime < fastos::ClockSystem::now()) {
         onUpdateStat();
-        _nextStatUpdateTime = fastos::ClockSystem::now() +
-                              fastos::TimeStamp::SEC;
+        _nextStatUpdateTime = fastos::ClockSystem::now() + fastos::TimeStamp::SEC;
     }
 }
 
-size_t AttributeVector::getFixedWidth() const { return _config.basicType().fixedSize(); }
 bool AttributeVector::hasEnum() const { return _hasEnum; }
 bool AttributeVector::hasEnum2Value() const { return false; }
 uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount; }
-uint32_t AttributeVector::getNumDocs() const { return _status.getNumDocs(); }
 
 bool
 AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
@@ -217,20 +210,17 @@ AttributeVector::commit(bool forceUpdateStat)
     _loaded = true;
 }
 
-
 void
 AttributeVector::commit(uint64_t firstSyncToken, uint64_t lastSyncToken)
 {
     if (firstSyncToken < getStatus().getLastSyncToken()) {
-        LOG(error,
-            "Expected first token to be >= %" PRIu64 ", got %" PRIu64 ".",
+        LOG(error, "Expected first token to be >= %" PRIu64 ", got %" PRIu64 ".",
             getStatus().getLastSyncToken(), firstSyncToken);
         abort();
     }
     commit();
     _status.setLastSyncToken(lastSyncToken);
 }
-
 
 bool
 AttributeVector::addDocs(DocId &startDoc, DocId &lastDoc, uint32_t numDocs)
@@ -271,35 +261,16 @@ AttributeVector::incGeneration()
 
 
 void
-AttributeVector::updateStatistics(uint64_t numValues,
-                                  uint64_t numUniqueValue,
-                                  uint64_t allocated,
-                                  uint64_t used,
-                                  uint64_t dead,
-                                  uint64_t onHold)
+AttributeVector::updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,
+                                  uint64_t used, uint64_t dead, uint64_t onHold)
 {
-    _status.updateStatistics(numValues,
-                             numUniqueValue,
-                             allocated,
-                             used,
-                             dead,
-                             onHold);
+    _status.updateStatistics(numValues, numUniqueValue, allocated, used, dead, onHold);
 }
 
 AddressSpace
 AttributeVector::getEnumStoreAddressSpaceUsage() const
 {
     return AddressSpaceUsage::defaultEnumStoreUsage();
-}
-
-bool
-AttributeVector::hasMultiValue() const {
-    return _config.collectionType().isMultiValue();
-}
-
-bool
-AttributeVector::hasWeightedSetType() const {
-    return _config.collectionType().isWeightedSet();
 }
 
 AddressSpace
@@ -311,38 +282,7 @@ AttributeVector::getMultiValueAddressSpaceUsage() const
 AddressSpaceUsage
 AttributeVector::getAddressSpaceUsage() const
 {
-    return AddressSpaceUsage(getEnumStoreAddressSpaceUsage(),
-                             getMultiValueAddressSpaceUsage());
-}
-
-const vespalib::string &
-AttributeVector::getName() const {
-    return _baseFileName.getAttributeName();
-}
-
-attribute::BasicType::Type
-AttributeVector::getBasicType() const {
-    return getInternalBasicType().type();
-}
-attribute::CollectionType::Type
-AttributeVector::getCollectionType() const {
-    return getInternalCollectionType().type();
-}
-
-bool
-AttributeVector::getIsFilter() const {
-    return _config.getIsFilter();
-}
-
-bool
-AttributeVector::getIsFastSearch() const {
-    return _config.fastSearch();
-}
-
-uint32_t
-AttributeVector::getCommittedDocIdLimit() const
-{
-    return _committedDocIdLimit;
+    return AddressSpaceUsage(getEnumStoreAddressSpaceUsage(), getMultiValueAddressSpaceUsage());
 }
 
 bool
