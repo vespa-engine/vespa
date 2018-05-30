@@ -1,3 +1,0 @@
-This module contains all dependencies that must be embedded in the config-model-fat bundle.
-Split out into a separate module in order to avoid duplication of these dependencies in
-amended versions of the fat config model.
