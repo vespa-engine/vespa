@@ -214,8 +214,8 @@ getAutoAllocator(AutoAllocatorsMap & map, size_t mmapLimit, size_t alignment) {
     MMapLimitAndAlignment key(mmapLimit, alignment);
     auto found = map.find(key);
     if (found == map.end()) {
-    throw IllegalArgumentException(make_string("We currently have no support for mmapLimit(%0lx) and alignment(%0lx)", mmapLimit, alignment));
-}
+        throw IllegalArgumentException(make_string("We currently have no support for mmapLimit(%0lx) and alignment(%0lx)", mmapLimit, alignment));
+    }
     return *(found->second);
 }
 
