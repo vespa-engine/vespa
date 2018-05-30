@@ -55,6 +55,7 @@ public:
 private:
     std::vector<WriteContext> _writeContexts;
     const DataType           *_dataType;
+    bool                      _hasCompoundAttribute;
 
     void setupWriteContexts();
     void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
@@ -92,6 +93,7 @@ public:
     void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
 
     virtual void onReplayDone(uint32_t docIdLimit) override;
+    virtual bool getHasCompoundAttribute() const override;
 };
 
 } // namespace proton

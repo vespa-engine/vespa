@@ -386,6 +386,7 @@ struct MyAttributeWriter : public IAttributeWriter
     {
         (void) docIdLimit;
     }
+    virtual bool getHasCompoundAttribute() const override { return false; }
 };
 
 MyAttributeWriter::MyAttributeWriter(MyTracer &tracer)

@@ -53,6 +53,15 @@ FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT li
 }
 
 void
+FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc,
+                                     bool immediateCommit, OnOperationDoneType onWriteDone)
+{
+    if (_attributeWriter->getHasCompoundAttribute()) {
+        _attributeWriter->update(serialNum, *doc.get(), lid, immediateCommit, onWriteDone);
+    }
+}
+
+void
 FastAccessFeedView::removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
                                      bool immediateCommit, OnRemoveDoneType onWriteDone)
 {

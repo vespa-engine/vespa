@@ -46,7 +46,8 @@ private:
 
     void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
                           bool immediateCommit, OnOperationDoneType onWriteDone) override;
-
+    void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc,
+                          bool immediateCommit, OnOperationDoneType onWriteDone) override;
     void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
                           bool immediateCommit, OnRemoveDoneType onWriteDone) override;
 
