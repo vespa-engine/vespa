@@ -146,23 +146,6 @@ DocumentFieldExtractor::isSupported(const FieldPath &fieldPath)
     return true;
 }
 
-bool
-DocumentFieldExtractor::isCompatible(const FieldPath &fieldPath1, const FieldPath &fieldPath2)
-{
-    if (fieldPath1.size() != fieldPath2.size()) {
-        return false;
-    }
-    uint32_t arrayIndex = 0;
-    for (const auto &fieldPathEntry1 : fieldPath1) {
-        const auto &fieldPathEntry2 = fieldPath2[arrayIndex++];
-        if (fieldPathEntry1->getType() != fieldPathEntry2.getType() ||
-            fieldPathEntry1->getDataType() != fieldPathEntry2.getDataType()) {
-            return false;
-        }
-    }
-    return true;
-}
-
 const FieldValue *
 DocumentFieldExtractor::getCachedFieldValue(const FieldPathEntry &fieldPathEntry)
 {
