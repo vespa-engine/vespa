@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
+import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.provision.HostLivenessTracker;
@@ -94,7 +95,7 @@ public class TestWithRpc {
                                                                        emptyNodeFlavors(),
                                                                        generationCounter)),
                                   Metrics.createTestMetrics(), new HostRegistries(),
-                                  hostLivenessTracker, new FileServer(FileDistribution.getDefaultFileDBPath()));
+                                  hostLivenessTracker, new FileServer(Files.createTempDir()));
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);
         t.start();

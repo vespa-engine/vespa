@@ -59,13 +59,13 @@ public class ApplicationHandler extends HttpHandler {
         Tenant tenant = verifyTenantAndApplication(applicationId);
 
         if (isServiceConvergeRequest(request)) {
-            return applicationRepository.serviceConvergenceCheck(tenant, applicationId, getHostNameFromRequest(request), request.getUri());
+            return applicationRepository.serviceConvergenceCheck(applicationId, getHostNameFromRequest(request), request.getUri());
         }
 
         if (isClusterControllerStatusRequest(request)) {
             String hostName = getHostNameFromRequest(request);
             String pathSuffix = getPathSuffix(request);
-            return applicationRepository.clusterControllerStatusPage(tenant, applicationId, hostName, pathSuffix);
+            return applicationRepository.clusterControllerStatusPage(applicationId, hostName, pathSuffix);
         }
 
         if (isContentRequest(request)) {
@@ -86,15 +86,15 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isServiceConvergeListRequest(request)) {
-            return applicationRepository.serviceListToCheckForConfigConvergence(tenant, applicationId, request.getUri());
+            return applicationRepository.serviceListToCheckForConfigConvergence(applicationId, request.getUri());
         }
 
         if (isFiledistributionStatusRequest(request)) {
             Duration timeout = HttpHandler.getRequestTimeout(request, Duration.ofSeconds(5));
-            return applicationRepository.filedistributionStatus(tenant, applicationId, timeout);
+            return applicationRepository.filedistributionStatus(applicationId, timeout);
         }
 
-        return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(tenant, applicationId));
+        return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(applicationId));
     }
 
     @Override

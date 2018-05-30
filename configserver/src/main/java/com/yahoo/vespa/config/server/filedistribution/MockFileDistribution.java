@@ -4,14 +4,23 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 
+import java.io.File;
 import java.util.Set;
 
 /**
  * @author Ulf Lilleengen
  */
-public class MockFileDBHandler implements FileDistribution {
+public class MockFileDistribution implements FileDistribution {
+    private final File fileReferencesDir;
+
+    MockFileDistribution(File fileReferencesDir) {
+        this.fileReferencesDir = fileReferencesDir;
+    }
 
     @Override
     public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {}
+
+    @Override
+    public File getFileReferencesDir() { return fileReferencesDir; }
 
 }

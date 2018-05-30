@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
+import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -38,7 +38,7 @@ public class MockRpc extends RpcServer {
 
     public MockRpc(int port, boolean createDefaultTenant, boolean pretendToHaveLoadedAnyApplication) {
         super(createConfig(port), null, Metrics.createTestMetrics(), 
-              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(FileDistribution.getDefaultFileDBPath()));
+              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(Files.createTempDir()));
         if (createDefaultTenant) {
             onTenantCreate(TenantName.from("default"), new MockTenantProvider(pretendToHaveLoadedAnyApplication));
         }

@@ -23,12 +23,18 @@ public interface FileDistribution {
      */
     void startDownload(String hostName, int port, Set<FileReference> fileReferences);
 
+    // TODO: Remove when 6.244 is oldest version in use
+    @Deprecated
     static String getDefaultFileDBRoot() {
         return Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution");
     }
 
+    // TODO: Remove when 6.244 is oldest version in use
+    @Deprecated
     static File getDefaultFileDBPath() {
         return new File(getDefaultFileDBRoot());
     }
+
+    File getFileReferencesDir();
 
 }

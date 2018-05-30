@@ -7,10 +7,10 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.test.MockHosts;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -47,6 +47,11 @@ public class FileDistributorTestCase {
         @Override
         public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
             filesToDownloadCalled++;
+        }
+
+        @Override
+        public File getFileReferencesDir() {
+            return null;
         }
     }
 }

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
+import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
@@ -73,8 +74,10 @@ public class FileServerTest {
     @Test
     public void requireThatDifferentNumberOfConfigServersWork() {
         // Empty connection pool in tests etc.
-        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-        FileServer fileServer = new FileServer(new ConfigserverConfig(builder));
+        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder()
+                .configServerDBDir(Files.createTempDir().getAbsolutePath())
+                .configDefinitionsDir(Files.createTempDir().getAbsolutePath());
+        FileServer fileServer = createFileServer(builder);
         assertEquals(0, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
 
         // Empty connection pool when only one server, no use in downloading from yourself
@@ -84,7 +87,7 @@ public class FileServerTest {
         serverBuilder.port(123456);
         servers.add(serverBuilder);
         builder.zookeeperserver(servers);
-        fileServer = new FileServer(new ConfigserverConfig(builder));
+        fileServer = createFileServer(builder);
         assertEquals(0, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
 
         // connection pool of size 1 when 2 servers
@@ -93,8 +96,14 @@ public class FileServerTest {
         serverBuilder2.port(123456);
         servers.add(serverBuilder2);
         builder.zookeeperserver(servers);
-        fileServer = new FileServer(new ConfigserverConfig(builder));
+        fileServer = createFileServer(builder);
         assertEquals(1, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
+    }
+
+    private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) {
+        File fileReferencesDir = Files.createTempDir();
+        configBuilder.fileReferencesDir(fileReferencesDir.getAbsolutePath());
+        return new FileServer(new ConfigserverConfig(configBuilder));
     }
 
     private static class FileReceiver implements FileServer.Receiver {

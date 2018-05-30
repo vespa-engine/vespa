@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.google.common.io.Files;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -10,10 +11,9 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
-import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
+import com.yahoo.io.IOUtils;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -24,11 +24,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -48,18 +50,19 @@ public class ApplicationRepositoryTest {
 
     private Tenant tenant;
     private ApplicationRepository applicationRepository;
+    private TenantRepository tenantRepository;
     private TimeoutBudget timeoutBudget;
 
     @Before
     public void setup() {
         Curator curator = new MockCurator();
-        TenantRepository tenants = new TenantRepository(new TestComponentRegistry.Builder()
+        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
                                                                 .curator(curator)
                                                                 .build());
-        tenants.addTenant(tenantName);
-        tenant = tenants.getTenant(tenantName);
+        tenantRepository.addTenant(tenantName);
+        tenant = tenantRepository.getTenant(tenantName);
         Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenants, provisioner, clock);
+        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -79,15 +82,15 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void createAndPrepareAndActivate() throws IOException {
-        PrepareResult result = deployApp();
+    public void createAndPrepareAndActivate() {
+        PrepareResult result = deployApp(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
     }
 
     @Test
-    public void deleteUnusedTenants() throws IOException {
-        deployApp();
+    public void deleteUnusedTenants() {
+        deployApp(testApp);
         assertTrue(applicationRepository.removeUnusedTenants().isEmpty());
         applicationRepository.remove(applicationId());
         assertEquals(tenantName, applicationRepository.removeUnusedTenants().iterator().next());
@@ -110,17 +113,48 @@ public class ApplicationRepositoryTest {
         assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, targetVersion));
     }
 
+    @Test
+    public void deleteUnusedFileReferences() {
+        File fileReferencesDir = Files.createTempDir();
+
+        // Add file reference that is not in use and should be deleted
+        File filereferenceDir = new File(fileReferencesDir, "foo");
+        assertTrue(filereferenceDir.mkdir());
+        IOUtils.writeFile(new File(filereferenceDir, "bar"), Utf8.toBytes("test"));
+
+        tenantRepository.addTenant(tenantName);
+        tenant = tenantRepository.getTenant(tenantName);
+        Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
+        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, clock);
+        timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
+
+        // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now
+        PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
+        deployApp(new File("src/test/apps/app"), prepareParams);
+
+        boolean deleteFiles = false;
+        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
+        assertEquals(new HashSet<>(Collections.singletonList("foo")), toBeDeleted);
+        assertTrue(filereferenceDir.exists());
+
+        deleteFiles = true;
+        toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
+        assertEquals(new HashSet<>(Collections.singletonList("foo")), toBeDeleted);
+        assertFalse(filereferenceDir.exists());
+    }
+
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
         FilesApplicationPackage appDir = FilesApplicationPackage.fromFile(application);
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, appDir.getAppDir());
         return applicationRepository.prepareAndActivate(tenant, sessionId, prepareParams(), false, false, Instant.now());
     }
 
-    private PrepareResult deployApp() throws IOException {
-        File file = CompressedApplicationInputStreamTest.createTarFile();
-        return applicationRepository.deploy(CompressedApplicationInputStream.createFromCompressedStream(
-                                                    new FileInputStream(file), ApplicationApiHandler.APPLICATION_X_GZIP),
-                                            prepareParams(), false, false, Instant.now());
+    private PrepareResult deployApp(File applicationPackage) {
+        return deployApp(applicationPackage, prepareParams());
+    }
+
+    private PrepareResult deployApp(File applicationPackage, PrepareParams prepareParams) {
+        return applicationRepository.deploy(applicationPackage, prepareParams);
     }
 
     private PrepareParams prepareParams() {
