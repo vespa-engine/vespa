@@ -18,4 +18,14 @@ public class AttributesTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("attributes");
     }
 
+    @Test
+    public void testArrayOfStructAttribute() throws IOException, ParseException {
+        assertCorrectDeriving("array_of_struct_attribute");
+    }
+
+    @Test
+    public void testMapOfStructAttribute() throws IOException, ParseException {
+        assertCorrectDeriving("map_of_struct_attribute");
+    }
+
 }
