@@ -11,8 +11,6 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -24,25 +22,12 @@ import static org.mockito.Mockito.when;
  * @author hakon
  */
 public class DuperModelTest {
-    private static final String configServer1 = "cfg1.yahoo.com";
-    private static final String configServer2 = "cfg2.yahoo.com";
-    private static final String configServer3 = "cfg3.yahoo.com";
-    private static final List<String> configServerList = Stream.of(
-            configServer1,
-            configServer2,
-            configServer3).collect(Collectors.toList());
-
     private final ServiceStatusProvider statusProvider = mock(ServiceStatusProvider.class);
 
     @Test
-    public void toApplicationInstance() throws Exception {
+    public void toApplicationInstance() {
         when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.NOT_CHECKED);
-        ConfigserverConfig config = new ConfigserverConfig(
-                new ConfigserverConfig.Builder()
-                        .hostedVespa(true)
-                        .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServer1).port(1))
-                        .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServer2).port(2))
-                        .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServer3).port(3)));
+        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig(true);
         DuperModel duperModel = new DuperModel(config);
         SuperModel superModel = mock(SuperModel.class);
         ApplicationInfo superModelApplicationInfo = mock(ApplicationInfo.class);
