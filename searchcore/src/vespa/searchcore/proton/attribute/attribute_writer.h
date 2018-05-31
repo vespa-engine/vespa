@@ -33,7 +33,7 @@ public:
         ~WriteField();
         AttributeVector &getAttribute() const { return _attribute; }
         const FieldPath &getFieldPath() const { return _fieldPath; }
-        void setFieldPath(FieldPath &&fieldPath) { _fieldPath = std::move(fieldPath); }
+        void buildFieldPath(const DocumentType &docType);
         bool getCompoundAttribute() const { return _compoundAttribute; }
     };
     class WriteContext
