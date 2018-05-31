@@ -246,14 +246,15 @@ VisitorManagerTest::addSomeRemoves(bool removeAll)
 void
 VisitorManagerTest::tearDown()
 {
-    if (_top.get() != 0) {
+    if (_top) {
+        assert(_top->getNumReplies() == 0);
         _top->close();
         _top->flush();
-        _top.reset(0);
+        _top.reset();
     }
-    _node.reset(0);
-    _messageSessionFactory.reset(0);
-    _manager = 0;
+    _node.reset();
+    _messageSessionFactory.reset();
+    _manager = nullptr;
 }
 
 TestVisitorMessageSession&
@@ -711,16 +712,17 @@ VisitorManagerTest::testVisitorCleanup()
         _top->sendDown(cmd);
     }
 
-
-    // Should get 14 immediate replies - 10 failures and 4 busy
+    // Should get 16 immediate replies - 10 failures and 6 busy
     {
-        _top->waitForMessages(14, 60);
+        const int expected_total = 16;
+        _top->waitForMessages(expected_total, 60);
         const msg_ptr_vector replies = _top->getRepliesOnce();
+        CPPUNIT_ASSERT_EQUAL(size_t(expected_total), replies.size());
 
         int failures = 0;
         int busy = 0;
 
-        for (uint32_t i=0; i< 14; ++i) {
+        for (uint32_t i=0; i< expected_total; ++i) {
             std::shared_ptr<api::StorageMessage> msg(replies[i]);
             CPPUNIT_ASSERT_EQUAL(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
             std::shared_ptr<api::CreateVisitorReply> reply(
@@ -741,8 +743,10 @@ VisitorManagerTest::testVisitorCleanup()
         }
 
         CPPUNIT_ASSERT_EQUAL(10, failures);
-        CPPUNIT_ASSERT_EQUAL(4, busy);
+        CPPUNIT_ASSERT_EQUAL(expected_total - 10, busy);
     }
+
+    // 4 pending
 
     // Finish a visitor
     std::vector<document::Document::SP > docs;
@@ -753,15 +757,17 @@ VisitorManagerTest::testVisitorCleanup()
     // Should get a reply for the visitor.
     verifyCreateVisitorReply(api::ReturnCode::OK);
 
+    // 3 pending
+
     // Fail a visitor
     getMessagesAndReply(1, getSession(1), docs, docIds, api::ReturnCode::INTERNAL_FAILURE);
 
     // Should get a reply for the visitor.
     verifyCreateVisitorReply(api::ReturnCode::INTERNAL_FAILURE);
 
-    while (_manager->getActiveVisitorCount() > 2) {
-        FastOS_Thread::Sleep(10);
-    }
+    // 2 pending
+
+    CPPUNIT_ASSERT_EQUAL(2u, _manager->getActiveVisitorCount());
 
     // Start a bunch of more visitors
     for (uint32_t i=0; i<10; ++i) {
@@ -778,7 +784,7 @@ VisitorManagerTest::testVisitorCleanup()
     // Should now get 8 busy.
     _top->waitForMessages(8, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
-    CPPUNIT_ASSERT_EQUAL(8, (int)replies.size());
+    CPPUNIT_ASSERT_EQUAL(size_t(8), replies.size());
 
     for (uint32_t i=0; i< replies.size(); ++i) {
         std::shared_ptr<api::StorageMessage> msg(replies[i]);
@@ -789,6 +795,16 @@ VisitorManagerTest::testVisitorCleanup()
 
         CPPUNIT_ASSERT_EQUAL(api::ReturnCode::BUSY, reply->getResult().getResult());
     }
+
+    // 4 still pending, need to clean up our stuff before tearing down.
+    CPPUNIT_ASSERT_EQUAL(4u, _manager->getActiveVisitorCount());
+
+    for (uint32_t i = 0; i < 4; ++i) {
+        getMessagesAndReply(1, getSession(i + 2), docs, docIds);
+        verifyCreateVisitorReply(api::ReturnCode::OK);
+    }
+
+    CPPUNIT_ASSERT_EQUAL(0u, _manager->getActiveVisitorCount());
 }
 
 void
