@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.standalone;
 
 import com.google.inject.Module;
@@ -25,7 +25,6 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Einar M R Rosenvinge
- * @since 5.22.0
  */
 public class StandaloneContainerActivatorTest {
 
@@ -100,7 +99,7 @@ public class StandaloneContainerActivatorTest {
 
     private static Module newAppDirBinding(final Path applicationDir) {
         return binder -> binder.bind(Path.class)
-                .annotatedWith(StandaloneContainerApplication.applicationPathName())
+                .annotatedWith(StandaloneContainerApplication.APPLICATION_PATH_NAME)
                 .toInstance(applicationDir);
     }
 
