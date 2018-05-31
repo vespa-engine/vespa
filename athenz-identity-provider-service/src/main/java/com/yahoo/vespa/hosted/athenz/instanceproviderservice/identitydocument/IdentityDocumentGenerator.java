@@ -87,15 +87,7 @@ public class IdentityDocumentGenerator {
                 zone.region().value(),
                 zone.environment().value());
 
-        // TODO: Hack to allow access from docker containers to non-ipv6 services.
-        // Remove when yca-bridge is no longer needed
         Set<String> ips = new HashSet<>(node.ipAddresses());
-        if(node.parentHostname().isPresent()) {
-            String parentHostName = node.parentHostname().get();
-            nodeRepository.getNode(parentHostName)
-                    .map(Node::ipAddresses)
-                    .ifPresent(ips::addAll);
-        }
         return new IdentityDocument(
                 providerUniqueId,
                 HostName.getLocalhost(),
