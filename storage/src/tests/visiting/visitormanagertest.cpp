@@ -19,9 +19,11 @@
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/config/common/exceptions.h>
+#include <optional>
 
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
+using documentapi::Priority;
 
 namespace storage {
 namespace {
@@ -78,8 +80,9 @@ public:
             std::vector<document::Document::SP >& docs,
             std::vector<document::DocumentId>& docIds,
             api::ReturnCode::Result returnCode = api::ReturnCode::OK,
-            documentapi::Priority::Value priority = documentapi::Priority::PRI_NORMAL_4);
+            std::optional<Priority::Value> priority = documentapi::Priority::PRI_NORMAL_4);
     uint32_t getMatchingDocuments(std::vector<document::Document::SP >& docs);
+    void finishAndWaitForVisitorSessionCompletion(uint32_t sessionIndex);
 
     void testNormalUsage();
     void testResending();
@@ -289,7 +292,7 @@ VisitorManagerTest::getMessagesAndReply(
         std::vector<document::Document::SP >& docs,
         std::vector<document::DocumentId>& docIds,
         api::ReturnCode::Result result,
-        documentapi::Priority::Value priority)
+        std::optional<Priority::Value> priority)
 {
     for (int i = 0; i < expectedCount; i++) {
         session.waitForMessages(i + 1);
@@ -297,8 +300,10 @@ VisitorManagerTest::getMessagesAndReply(
         {
             vespalib::MonitorGuard guard(session.getMonitor());
 
-            CPPUNIT_ASSERT_EQUAL(priority,
-                                 session.sentMessages[i]->getPriority());
+            if (priority) {
+                CPPUNIT_ASSERT_EQUAL(*priority,
+                                     session.sentMessages[i]->getPriority());
+            }
 
             switch (session.sentMessages[i]->getType()) {
             case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
@@ -975,14 +980,26 @@ VisitorManagerTest::testPrioritizedVisitorQueing()
     // Finish the first visitor
     std::vector<document::Document::SP > docs;
     std::vector<document::DocumentId> docIds;
-    getMessagesAndReply(1, getSession(0), docs, docIds, api::ReturnCode::OK,
-                        documentapi::Priority::PRI_HIGHEST);
+    getMessagesAndReply(1, getSession(0), docs, docIds, api::ReturnCode::OK, Priority::PRI_HIGHEST);
     verifyCreateVisitorReply(api::ReturnCode::OK);
 
     // We should now start the highest priority visitor.
-    getMessagesAndReply(1, getSession(4), docs, docIds, api::ReturnCode::OK,
-                        documentapi::Priority::PRI_VERY_HIGH);
+    getMessagesAndReply(1, getSession(4), docs, docIds, api::ReturnCode::OK, Priority::PRI_VERY_HIGH);
     CPPUNIT_ASSERT_EQUAL(ids[9], verifyCreateVisitorReply(api::ReturnCode::OK));
+
+    // 3 pending, 3 in queue. Clean them up
+    std::vector<uint32_t> pending_sessions = {1, 2, 3, 5, 6, 7};
+    for (auto session : pending_sessions) {
+        finishAndWaitForVisitorSessionCompletion(session);
+    }
+    CPPUNIT_ASSERT_EQUAL(0u, _manager->getActiveVisitorCount());
+}
+
+void VisitorManagerTest::finishAndWaitForVisitorSessionCompletion(uint32_t sessionIndex) {
+    std::vector<document::Document::SP > docs;
+    std::vector<document::DocumentId> docIds;
+    getMessagesAndReply(1, getSession(sessionIndex), docs, docIds, api::ReturnCode::OK, std::optional<Priority::Value>());
+    verifyCreateVisitorReply(api::ReturnCode::OK);
 }
 
 void
@@ -1089,6 +1106,7 @@ VisitorManagerTest::testPrioritizedMaxConcurrentVisitors() {
 
     CPPUNIT_ASSERT(finishedVisitors.find(ids[11]) != finishedVisitors.end());
     CPPUNIT_ASSERT(finishedVisitors.find(ids[14]) != finishedVisitors.end());
+    CPPUNIT_ASSERT_EQUAL(0u, _manager->getActiveVisitorCount());
 }
 
 void
@@ -1108,6 +1126,9 @@ VisitorManagerTest::testVisitorQueingZeroQueueSize() {
         sendCreateVisitor(1000, *_top, 100 - i);
         verifyCreateVisitorReply(api::ReturnCode::BUSY);
     }
+    for (uint32_t session = 0; session < 4; ++session) {
+        finishAndWaitForVisitorSessionCompletion(session);
+    }
 }
 
 void
@@ -1121,8 +1142,10 @@ VisitorManagerTest::testStatusPage() {
     sendCreateVisitor(1000000, *_top, 1);
     sendCreateVisitor(1000000, *_top, 128);
 
-    TestVisitorMessageSession& session = getSession(0);
-    session.waitForMessages(1);
+    {
+        TestVisitorMessageSession& session = getSession(0);
+        session.waitForMessages(1);
+    }
 
     std::ostringstream ss;
     static_cast<framework::HtmlStatusReporter&>(*_manager).reportHtmlStatus(ss, path);
@@ -1135,6 +1158,10 @@ VisitorManagerTest::testStatusPage() {
     CPPUNIT_ASSERT(str.find("Visitor thread 0") != std::string::npos);
     CPPUNIT_ASSERT(str.find("Disconnected visitor timeout") != std::string::npos); // verbose per thread
     CPPUNIT_ASSERT(str.find("Message #1 <b>putdocumentmessage</b>") != std::string::npos); // 1 active
+
+    for (uint32_t session = 0; session < 2 ; ++session){
+        finishAndWaitForVisitorSessionCompletion(session);
+    }
 }
 
 }
