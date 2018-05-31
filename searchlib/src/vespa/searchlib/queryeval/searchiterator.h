@@ -12,6 +12,7 @@
 namespace vespalib { class ObjectVisitor; }
 
 namespace search { class BitVector; }
+namespace search::attribute { class ISearchContext; }
 
 namespace search::queryeval {
 
@@ -338,6 +339,8 @@ public:
 
     virtual Trinary is_strict() const { return Trinary::Undefined; }
 
+    /** return the underlying attribute search context (or null if none available) */
+    virtual const attribute::ISearchContext *getAttributeSearchContext() const;
 };
 
 }

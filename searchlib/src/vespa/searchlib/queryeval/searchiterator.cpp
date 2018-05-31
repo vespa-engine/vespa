@@ -118,7 +118,13 @@ SearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "docid", _docid);
     visit(visitor, "endid", _endid);
 }
-    
+
+const attribute::ISearchContext *
+SearchIterator::getAttributeSearchContext() const
+{
+    return nullptr;
+}
+
 } // namespace queryeval
 } // namespace search
 
