@@ -16,8 +16,7 @@ import java.util.logging.Logger;
  * Base class for new generation of config requests based on {@link Slime}. Allows for some customization of
  * payload encoding and decoding, as well as adding extra request/response fields.
  *
- * @author lulf
- * @since 5.18
+ * @author Ulf Lilleengen
  */
 public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest {
 
@@ -82,6 +81,7 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
                 .append(",").append(getVespaVersion()).append("'\n");
         sb.append("response='").append(getNewConfigMd5())
                 .append(",").append(getNewGeneration())
+                .append(",").append(isInternalRedeploy())
                 .append("'\n");
         return sb.toString();
     }
@@ -200,6 +200,11 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
     @Override
     public long getNewGeneration() {
         return responseData.getResponseConfigGeneration();
+    }
+
+    @Override
+    public boolean isInternalRedeploy() {
+        return responseData.getResponseInternalRedeployment();
     }
 
     @Override

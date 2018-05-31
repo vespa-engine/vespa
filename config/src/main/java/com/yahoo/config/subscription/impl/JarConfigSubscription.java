@@ -22,10 +22,9 @@ import com.yahoo.vespa.config.ConfigPayload;
  *
  * @author vegardh
  * @author gjoranv
- * @since 5.1
- *
  */
 public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
+
     private final String jarName;
     private final String path;
     private ZipEntry zipEntry = null;

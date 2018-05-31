@@ -23,9 +23,9 @@ import com.yahoo.vespa.config.protocol.DefContent;
  * Represents one active subscription to one config
  *
  * @author vegardh
- * @since 5.1
  */
 public abstract class ConfigSubscription<T extends ConfigInstance> {
+
     protected static Logger log = Logger.getLogger(ConfigSubscription.class.getName());
     protected final ConfigSubscriber subscriber;
     private final AtomicReference<ConfigState<T>> config = new AtomicReference<>();
@@ -35,34 +35,49 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     private State state = State.OPEN;
 
     public static class ConfigState<T extends ConfigInstance> {
+
         private final boolean configChanged;
         private final boolean generationChanged;
         private final T config;
         private final Long generation;
-        private ConfigState(boolean generationChanged, Long generation, boolean configChanged, T config) {
-            this.configChanged = configChanged;
-            this.config = config;
+        private final boolean internalRedeploy;
+
+        private ConfigState(boolean generationChanged, Long generation, boolean internalRedeploy, boolean configChanged, T config) {
             this.generationChanged = generationChanged;
             this.generation = generation;
+            this.internalRedeploy = internalRedeploy;
+            this.configChanged = configChanged;
+            this.config = config;
         }
+
         private ConfigState(Long generation, T config) {
-            this(false, generation,false, config);
+            this(false, generation, false, false, config);
         }
+
         private ConfigState() {
-            this(false, 0L, false, null);
+            this(false, 0L, false, false, null);
         }
+
         private ConfigState<T> createUnchanged() { return new ConfigState<T>(generation, config); }
         public boolean isConfigChanged() { return configChanged; }
         public boolean isGenerationChanged() { return generationChanged; }
         public Long getGeneration() { return generation; }
+
+        /**
+         * Returns whether this config generation was caused by a system-internal redeploy,
+         * not an application package change
+         */
+        public boolean isInternalRedeploy() { return internalRedeploy; }
+
         public T getConfig() { return config; }
+
     }
+
     /**
      * If non-null: The user has set this generation explicitly. nextConfig should take this into account.
      * Access to these variables _must_ be synchronized, as nextConfig and reload() is likely to be run from
      * independent threads.
      */
-
     private final AtomicReference<Long> reloadedGeneration = new AtomicReference<>();
 
     enum State {
@@ -168,30 +183,28 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     void setConfig(Long generation, T config) {
-        this.config.set(new ConfigState<>(true, generation, true, config));
+        this.config.set(new ConfigState<>(true, generation, false, true, config));
     }
 
     // Only used by {@link FileConfigSubscription}
     protected void setConfigIncGen(T config) {
         ConfigState<T> prev = this.config.get();
-        setConfig(prev.getGeneration() + 1, config);
+        this.config.set(new ConfigState<>(true, prev.getGeneration() + 1, prev.isInternalRedeploy(), true, config));
     }
 
-    // Only used by {@link FileConfigSubscription} and {@link ConfigSetSubscription}
-    protected void setConfigIfChangedIncGen(T config) {
-        ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration() + 1,
-                                          !config.equals(prev.getConfig()), config));
-    }
     protected void setConfigIfChanged(T config) {
         ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration(),
-                !config.equals(prev.getConfig()), config));
+        this.config.set(new ConfigState<>(true, prev.getGeneration(), prev.isInternalRedeploy(), !config.equals(prev.getConfig()), config));
     }
 
     void setGeneration(Long generation) {
-        ConfigState<T> c = config.get();
-        this.config.set(new ConfigState<>(true, generation, c.isConfigChanged(), c.getConfig()));
+        ConfigState<T> prev = config.get();
+        this.config.set(new ConfigState<>(true, generation, prev.isInternalRedeploy(), prev.isConfigChanged(), prev.getConfig()));
+    }
+
+    void setInternalRedeploy(boolean internalRedeploy) {
+        ConfigState<T> prev = config.get();
+        this.config.set(new ConfigState<>(prev.isGenerationChanged(), prev.getGeneration(), prev.isConfigChanged(), internalRedeploy, prev.getConfig()));
     }
 
     /**

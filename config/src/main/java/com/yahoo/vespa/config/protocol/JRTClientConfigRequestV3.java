@@ -19,8 +19,7 @@ import java.util.Optional;
  *
  * See {@link JRTServerConfigRequestV3} for protocol details.
  *
- * @author lulf
- * @since 5.19
+ * @author Ulf Lilleengen
  */
 public class JRTClientConfigRequestV3 extends SlimeClientConfigRequest {
 
@@ -71,7 +70,10 @@ public class JRTClientConfigRequestV3 extends SlimeClientConfigRequest {
                 requestData.getVespaVersion());
     }
 
-    public static <T extends ConfigInstance> JRTClientConfigRequest createFromSub(JRTConfigSubscription<T> sub, Trace trace, CompressionType compressionType, Optional<VespaVersion> vespaVersion) {
+    public static <T extends ConfigInstance> JRTClientConfigRequest createFromSub(JRTConfigSubscription<T> sub,
+                                                                                  Trace trace,
+                                                                                  CompressionType compressionType,
+                                                                                  Optional<VespaVersion> vespaVersion) {
         String hostname = ConfigUtils.getCanonicalHostName();
         ConfigKey<T> key = sub.getKey();
         ConfigSubscription.ConfigState<T> configState = sub.getConfigState();
@@ -88,7 +90,11 @@ public class JRTClientConfigRequestV3 extends SlimeClientConfigRequest {
     }
 
 
-    public static JRTClientConfigRequest createFromRaw(RawConfig config, long serverTimeout, Trace trace, CompressionType compressionType, Optional<VespaVersion> vespaVersion) {
+    public static JRTClientConfigRequest createFromRaw(RawConfig config,
+                                                       long serverTimeout,
+                                                       Trace trace,
+                                                       CompressionType compressionType,
+                                                       Optional<VespaVersion> vespaVersion) {
         String hostname = ConfigUtils.getCanonicalHostName();
         return createWithParams(config.getKey(),
                 DefContent.fromList(config.getDefContent()),

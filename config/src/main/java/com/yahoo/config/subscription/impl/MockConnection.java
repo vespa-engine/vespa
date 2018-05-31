@@ -111,12 +111,14 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     }
 
     static class OKResponseHandler extends AbstractResponseHandler {
+
         protected void createResponse() {
             JRTServerConfigRequestV3 jrtReq = JRTServerConfigRequestV3.createFromRequest(request);
             Payload payload = Payload.from(ConfigPayload.empty());
             long generation = 1;
-            jrtReq.addOkResponse(payload, generation, ConfigUtils.getMd5(payload.getData()));
+            jrtReq.addOkResponse(payload, generation, false, ConfigUtils.getMd5(payload.getData()));
         }
+
     }
 
     public interface ResponseHandler extends Runnable {
@@ -131,6 +133,7 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     }
 
     public abstract static class AbstractResponseHandler implements ResponseHandler {
+
         private RequestWaiter requestWaiter;
         protected Request request;
 

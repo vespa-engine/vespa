@@ -86,7 +86,7 @@ public class HandlersConfigurerDi {
 
         container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
         try {
-            getNewConfigGraph(discInjector, false);
+            getNewComponentGraph(discInjector, false);
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while setting up handlers for the first time.");
         }
@@ -143,13 +143,10 @@ public class HandlersConfigurerDi {
      *
      * @return true if this resulted in a new graph that should be applied to the currently running container
      */
-    public boolean getNewConfigGraph(Injector discInjector, boolean restartOnRedeploy) throws InterruptedException {
-        ComponentGraph newGraph = container.getNewConfigGraph(currentGraph, createFallbackInjector(vespaContainer, discInjector), restartOnRedeploy);
-        if (newGraph == currentGraph) return false;
-        currentGraph = newGraph;
+    public void getNewComponentGraph(Injector discInjector, boolean restartOnRedeploy) throws InterruptedException {
+        currentGraph = container.getNewComponentGraph(currentGraph, createFallbackInjector(vespaContainer, discInjector), restartOnRedeploy);
 
         assert (currentGraph.getInstance(RegistriesHack.class) != null); // TODO: Remove, seems quite pointless?
-        return true;
     }
 
     @SuppressWarnings("deprecation")

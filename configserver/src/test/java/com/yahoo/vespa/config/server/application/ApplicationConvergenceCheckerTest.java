@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThat;
 import static com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker.ServiceResponse;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ApplicationConvergenceCheckerTest {
 
@@ -43,7 +43,12 @@ public class ApplicationConvergenceCheckerTest {
     @Before
     public void setup() {
         Model mockModel = MockModel.createContainer("localhost", 1337);
-        application = new Application(mockModel, new ServerCache(), 3, Version.fromIntValues(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
+        application = new Application(mockModel,
+                                      new ServerCache(),
+                                      3,
+                                      false,
+                                      Version.fromIntValues(0, 0, 0),
+                                      MetricUpdater.createTestUpdater(), appId);
     }
 
     @Test

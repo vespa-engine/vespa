@@ -43,7 +43,14 @@ public class ZooKeeperClientTest extends TestWithCurator {
     public void setupZK() throws IOException {
         this.zk = ConfigCurator.create(curator);
         ZooKeeperClient zkc = new ZooKeeperClient(zk, new BaseDeployLogger(), true, Path.fromString(appPath));
-        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"), new DeployData("foo", "/bar/baz", "appName", 1345l, 3l, 2l));
+        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
+                                                                                new DeployData("foo",
+                                                                                               "/bar/baz",
+                                                                                               "appName",
+                                                                                               1345L,
+                                                                                               false,
+                                                                                               3L,
+                                                                                               2L));
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
         app.writeMetaData();
         zkc.setupZooKeeper();

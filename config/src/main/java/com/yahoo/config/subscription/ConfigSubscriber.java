@@ -31,7 +31,12 @@ public class ConfigSubscriber {
     private State state = State.OPEN;
     protected List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new ArrayList<>();
     private final ConfigSource source;
+
+    /** The last complete config generation received by this */
     private long generation = -1;
+
+    /** Whether the last generation received was due to a system-internal redeploy, not an application package change */
+    private boolean internalRedeploy = false;
 
     /**
      * Reuse requesters for equal source sets, limit number if many subscriptions.
@@ -219,7 +224,7 @@ public class ConfigSubscriber {
      * @param timeoutInMillis timeout to wait in milliseconds
      * @param requireChange if set, at least one config have to change
      * @return true, if a new config generation has been found for all configs (additionally requires
-     * that at lest one of them has changed if <code>requireChange</code> is true), false otherwise
+     *         that at lest one of them has changed if <code>requireChange</code> is true), false otherwise
      */
     private boolean acquireSnapshot(long timeoutInMillis, boolean requireChange) {
         if (state == State.CLOSED) return false;
@@ -234,20 +239,22 @@ public class ConfigSubscriber {
             h.setChanged(false); // Reset this flag, if it was set, the user should have acted on it the last time this method returned true.
         }
         boolean reconfigDue;
+        boolean internalRedeployOnly = true;
         do {
             // Keep on polling the subscriptions until we have a new generation across the board, or it times out
             for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
                 ConfigSubscription<? extends ConfigInstance> subscription = h.subscription();
-                if (!subscription.nextConfig(timeLeftMillis)) {
+                if ( ! subscription.nextConfig(timeLeftMillis)) {
                     // This subscriber has no new state and we know it has exhausted all time
                     return false;
                 }
                 throwIfExceptionSet(subscription);
                 ConfigSubscription.ConfigState<? extends ConfigInstance> config = subscription.getConfigState();
                 if (currentGen == null) currentGen = config.getGeneration();
-                if (!currentGen.equals(config.getGeneration())) allGenerationsTheSame = false;
+                if ( ! currentGen.equals(config.getGeneration())) allGenerationsTheSame = false;
                 allGenerationsChanged = allGenerationsChanged && config.isGenerationChanged();
                 if (config.isConfigChanged()) anyConfigChanged = true;
+                internalRedeployOnly = internalRedeployOnly && config.isInternalRedeploy();
                 timeLeftMillis = timeLeftMillis - (System.currentTimeMillis() - started);
             }
             reconfigDue = (anyConfigChanged || !requireChange) && allGenerationsChanged && allGenerationsTheSame;
@@ -259,6 +266,7 @@ public class ConfigSubscriber {
             // This indicates the clients will possibly reconfigure their services, so "reset" changed-logic in subscriptions.
             // Also if appropriate update the changed flag on the handler, which clients use.
             markSubsChangedSeen(currentGen);
+            internalRedeploy = internalRedeployOnly;
             generation = currentGen;
         }
         return reconfigDue;
@@ -420,6 +428,12 @@ public class ConfigSubscriber {
     public long getGeneration() {
         return generation;
     }
+
+    /**
+     * Whether the current config generation received by this was due to a system-internal redeploy,
+     * not an application package change
+     */
+    public boolean isInternalRedeploy() { return internalRedeploy; }
 
     /**
      * Convenience interface for clients who only subscribe to one config. Implement this, and pass it to {@link ConfigSubscriber#subscribe(SingleSubscriber, Class, String)}.

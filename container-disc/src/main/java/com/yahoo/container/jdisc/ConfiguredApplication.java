@@ -200,11 +200,9 @@ public final class ConfiguredApplication implements Application {
                 try {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
-                    // Block until new config:
-                    boolean gotNewConfigToApply = configurer.getNewConfigGraph(builder.guiceModules().activate(),
-                                                                               qrConfig.restartOnDeploy());
-                    if (gotNewConfigToApply)
-                        intitializeAndActivateContainer(builder);
+                    // Block until new config arrives, and it should be applied
+                    configurer.getNewComponentGraph(builder.guiceModules().activate(), qrConfig.restartOnDeploy());
+                    intitializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException | InterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems

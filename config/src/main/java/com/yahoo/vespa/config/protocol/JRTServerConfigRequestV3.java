@@ -20,17 +20,21 @@ import java.io.IOException;
  * The implementation of addOkResponse is optimized for doing as little copying of payload data as possible, ensuring
  * that we get a lower memory footprint.
  *
- * @author lulf
- * @since 5.19
+ * @author Ulf Lilleengen
  */
+// TODO: Merge with parent
 public class JRTServerConfigRequestV3 extends SlimeServerConfigRequest {
+
+    /** Response field */
+    private boolean internalRedeploy = false;
 
     protected JRTServerConfigRequestV3(Request request) {
         super(request);
     }
 
     @Override
-    public void addOkResponse(Payload payload, long generation, String configMd5) {
+    public void addOkResponse(Payload payload, long generation, boolean internalRedeploy, String configMd5) {
+        this.internalRedeploy = internalRedeploy;
         boolean changedConfig = !configMd5.equals(getRequestConfigMd5());
         boolean changedConfigAndNewGeneration = changedConfig && ConfigUtils.isGenerationNewer(generation, getRequestGeneration());
         Payload responsePayload = payload.withCompression(getCompressionType());
@@ -41,6 +45,7 @@ public class JRTServerConfigRequestV3 extends SlimeServerConfigRequest {
             addCommonReturnValues(jsonGenerator);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, configMd5);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_GENERATION, generation);
+            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_INTERNAL_REDEPLOY, internalRedeploy);
             jsonGenerator.writeObjectFieldStart(SlimeResponseData.RESPONSE_COMPRESSION_INFO);
             if (responsePayload == null) {
                 throw new RuntimeException("Payload is null for ' " + this + ", not able to create response");
@@ -73,7 +78,11 @@ public class JRTServerConfigRequestV3 extends SlimeServerConfigRequest {
         return 3;
     }
 
+    @Override
+    public boolean isInternalRedeploy() { return internalRedeploy; }
+
     public static JRTServerConfigRequestV3 createFromRequest(Request req) {
         return new JRTServerConfigRequestV3(req);
     }
+
 }

@@ -11,27 +11,32 @@ import java.io.*;
  * Metadata about an application package.
  *
  * @author hmusum
- * @since 5.0
  */
 public class ApplicationMetaData {
+
     private final String deployedByUser;
     private final String deployedFromDir;
     private final long deployTimestamp;
+    private final boolean internalRedeploy;
     private final long generation;
     private final long previousActiveGeneration;
     private final String checkSum;
     private final String appName;
 
     public ApplicationMetaData(File appDir, String deployedByUser, String deployedFromDir, Long deployTimestamp,
+                               boolean internalRedeploy,
                                String checkSum, Long generation, long previousActiveGeneration) {
-        this(deployedByUser, deployedFromDir, deployTimestamp, appDir.getName(), checkSum, generation, previousActiveGeneration);
+        this(deployedByUser, deployedFromDir, deployTimestamp, internalRedeploy,
+             appDir.getName(), checkSum, generation, previousActiveGeneration);
     }
 
-    public ApplicationMetaData(String deployedByUser, String deployedFromDir, Long deployTimestamp, String applicationName, String checkSum, Long generation, long previousActiveGeneration) {
+    public ApplicationMetaData(String deployedByUser, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
+                               String applicationName, String checkSum, Long generation, long previousActiveGeneration) {
         this.appName = applicationName;
         this.deployedByUser = deployedByUser;
         this.deployedFromDir = deployedFromDir;
         this.deployTimestamp = deployTimestamp;
+        this.internalRedeploy = internalRedeploy;
         this.checkSum = checkSum;
         this.generation = generation;
         this.previousActiveGeneration = previousActiveGeneration;
@@ -88,6 +93,12 @@ public class ApplicationMetaData {
     }
 
     /**
+     * Returns whether this application generation was produced by a system internal redeployment,
+     * not an application package change
+     */
+    public boolean isInternalRedeploy() { return internalRedeploy; }
+
+    /**
      * Returns an md5 hash of the contents of the application package
      * @return an md5sum of the application package
      */
@@ -115,7 +126,14 @@ public class ApplicationMetaData {
             Inspector root = data.get();
             Inspector deploy = root.field("deploy");
             Inspector app = root.field("application");
-            return new ApplicationMetaData(deploy.field("user").asString(), deploy.field("from").asString(), deploy.field("timestamp").asLong(), app.field("name").asString(), app.field("checksum").asString(), app.field("generation").asLong(), app.field("previousActiveGeneration").asLong());
+            return new ApplicationMetaData(deploy.field("user").asString(),
+                                           deploy.field("from").asString(),
+                                           deploy.field("timestamp").asLong(),
+                                           booleanField("internalRedeploy", false, deploy),
+                                           app.field("name").asString(),
+                                           app.field("checksum").asString(),
+                                           app.field("generation").asLong(),
+                                           app.field("previousActiveGeneration").asLong());
         } catch (Exception e) {
             throw new IllegalArgumentException("Error parsing json metadata", e);
         }
@@ -128,12 +146,19 @@ public class ApplicationMetaData {
         deploy.setString("user", deployedByUser);
         deploy.setString("from", deployedFromDir);
         deploy.setLong("timestamp", deployTimestamp);
+        deploy.setBool("internalRedeploy", internalRedeploy);
         Cursor app = meta.setObject("application");
         app.setString("name", appName);
         app.setString("checksum", checkSum);
         app.setLong("generation", generation);
         app.setLong("previousActiveGeneration", previousActiveGeneration);
         return slime;
+    }
+
+    private static boolean booleanField(String fieldName, boolean defaultValue, Inspector object) {
+        Inspector value = object.field(fieldName);
+        if ( ! value.valid()) return defaultValue;
+        return value.asBool();
     }
 
     public String asJsonString() {

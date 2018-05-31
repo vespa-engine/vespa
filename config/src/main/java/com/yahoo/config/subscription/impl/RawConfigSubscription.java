@@ -16,10 +16,9 @@ import com.yahoo.vespa.config.ConfigPayload;
  * Config is the actual text given after the config id, with newlines
  *
  * @author vegardh
- * @since 5.1
- *
  */
 public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
+
     final String inputPayload;
     String payload;
 

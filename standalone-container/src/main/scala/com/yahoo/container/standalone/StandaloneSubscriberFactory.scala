@@ -21,6 +21,8 @@ class StandaloneSubscriberFactory(root: VespaModel) extends SubscriberFactory {
 
     override def close() {}
 
+    override def internalRedeploy() = { false }
+
     override def config = {
 
       def getConfig(key: ConfigKeyT) = {
@@ -46,6 +48,7 @@ class StandaloneSubscriberFactory(root: VespaModel) extends SubscriberFactory {
 
     //if waitNextGeneration has not yet been called, -1 should be returned
     var generation = -1L
+
   }
 
   override def getSubscriber(configKeys: java.util.Set[_ <: ConfigKey[_]]) =

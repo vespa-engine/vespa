@@ -71,7 +71,7 @@ public class JRTConfigRequestV3Test extends JRTConfigRequestBase {
     public void emptypayload() {
         ConfigPayload payload = ConfigPayload.empty();
         SlimeConfigResponse response = SlimeConfigResponse.fromConfigPayload(payload, null, 0, ConfigUtils.getMd5(payload));
-        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(), response.getConfigMd5());
+        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(), false, response.getConfigMd5());
         assertTrue(clientReq.validateResponse());
         assertTrue(clientReq.hasUpdatedGeneration());
         assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is("{}"));

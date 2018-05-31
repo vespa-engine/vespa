@@ -54,8 +54,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class TenantRequestHandlerTest extends TestWithCurator {
 
@@ -263,7 +262,8 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     public void testHasApplication() throws IOException, SAXException {
         assertdefaultAppNotFound();
         server.reloadConfig(reloadConfig(1l, Clock.systemUTC()));
-        assertTrue(server.hasApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build(), Optional.of(vespaVersion)));
+        assertTrue(server.hasApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build(),
+                                         Optional.of(vespaVersion)));
     }
 
     private void assertdefaultAppNotFound() {
@@ -286,18 +286,17 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     @Test
     public void testListConfigs() throws IOException, SAXException {
         assertdefaultAppNotFound();
-        /*assertTrue(server.allConfigIds(ApplicationId.defaultId()).isEmpty());
-        assertTrue(server.allConfigsProduced(ApplicationId.defaultId()).isEmpty());
-        assertTrue(server.listConfigs(ApplicationId.defaultId(), false).isEmpty());
-        assertTrue(server.listConfigs(ApplicationId.defaultId(), true).isEmpty());*/
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
-        server.reloadConfig(ApplicationSet.fromSingle(new Application(model, new ServerCache(), 1, vespaVersion, MetricUpdater.createTestUpdater(), ApplicationId.defaultId())));
+        server.reloadConfig(ApplicationSet.fromSingle(new Application(model,
+                                                                      new ServerCache(),
+                                                                      1,
+                                                                      false,
+                                                                      vespaVersion,
+                                                                      MetricUpdater.createTestUpdater(),
+                                                                      ApplicationId.defaultId())));
         Set<ConfigKey<?>> configNames = server.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), false);
         assertTrue(configNames.contains(new ConfigKey<>("sentinel", "hosts", "cloud.config")));
-        //for (ConfigKey<?> ck : configNames) {
-        //    assertTrue(!"".equals(ck.getConfigId()));
-        //}
 
         configNames = server.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), true);
         System.out.println(configNames);

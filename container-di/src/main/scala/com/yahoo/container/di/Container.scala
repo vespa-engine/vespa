@@ -44,9 +44,9 @@ class Container(
   var leastGeneration = -1L
 
   @throws(classOf[InterruptedException])
-  def getNewConfigGraph(oldGraph: ComponentGraph = new ComponentGraph,
-                        fallbackInjector: GuiceInjector = Guice.createInjector(),
-                        restartOnRedeploy: Boolean = false): ComponentGraph = {
+  def getNewComponentGraph(oldGraph: ComponentGraph = new ComponentGraph,
+                           fallbackInjector: GuiceInjector = Guice.createInjector(),
+                           restartOnRedeploy: Boolean = false): ComponentGraph = {
 
     def deconstructObsoleteComponents(oldGraph: ComponentGraph, newGraph: ComponentGraph) {
       val oldComponents = new IdentityHashMap[AnyRef, AnyRef]()
@@ -56,8 +56,7 @@ class Container(
     }
 
     try {
-      val newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector)
-      if (restartOnRedeploy) return oldGraph // wait for restart to cause reconfig instead
+      val newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, restartOnRedeploy)
       newGraph.reuseNodes(oldGraph)
       constructComponents(newGraph)
       deconstructObsoleteComponents(oldGraph, newGraph)
@@ -115,9 +114,10 @@ class Container(
   }
 
   final def getConfigAndCreateGraph(graph: ComponentGraph = new ComponentGraph,
-                                    fallbackInjector: Injector): ComponentGraph = {
+                                    fallbackInjector: Injector,
+                                    restartOnRedeploy: Boolean): ComponentGraph = {
 
-    val snapshot = configurer.getConfigs(graph.configKeys, leastGeneration)
+    val snapshot = configurer.getConfigs(graph.configKeys, leastGeneration, restartOnRedeploy)
 
     log.log(DEBUG,
             """createNewGraph:
@@ -141,8 +141,7 @@ class Container(
               .format(getBootstrapGeneration, getComponentsGeneration, previousConfigGeneration).stripMargin)
           installBundles(configs)
           getConfigAndCreateGraph(
-            createComponentsGraph(configs, getBootstrapGeneration,fallbackInjector),
-            fallbackInjector)
+            createComponentsGraph(configs, getBootstrapGeneration,fallbackInjector), fallbackInjector, restartOnRedeploy)
         case ComponentsConfigs(configs) =>
           log.log(DEBUG,
             """Got components configs,

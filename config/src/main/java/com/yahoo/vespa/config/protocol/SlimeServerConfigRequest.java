@@ -19,8 +19,7 @@ import java.util.logging.Logger;
  * payload encoding and decoding, as well as adding extra request/response fields. Used by both V2 and V3
  * config protocol.
  *
- * @author lulf
- * @since 5.18
+ * @author Ulf Lilleengen
  */
 abstract class SlimeServerConfigRequest implements JRTServerConfigRequest {
 
@@ -162,6 +161,10 @@ abstract class SlimeServerConfigRequest implements JRTServerConfigRequest {
 
     protected static void setResponseField(JsonGenerator jsonGenerator, String fieldName, long value) throws IOException {
         jsonGenerator.writeNumberField(fieldName, value);
+    }
+
+    protected static void setResponseField(JsonGenerator jsonGenerator, String fieldName, boolean value) throws IOException {
+        jsonGenerator.writeBooleanField(fieldName, value);
     }
 
     @Override

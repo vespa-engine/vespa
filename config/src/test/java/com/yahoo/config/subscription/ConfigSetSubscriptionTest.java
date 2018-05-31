@@ -85,7 +85,7 @@ public class ConfigSetSubscriptionTest {
         assertEquals(hA1.getConfig().times(), 89);
         assertEquals(hS.getConfig().stringVal(), "StringVal");
 
-        //Reconfigure all configs, generation should change
+        // Reconfigure all configs, generation should change
         a0builder.message("A new message, 0").times(880);
         a1builder.message("A new message, 1").times(890);
         barBuilder.stringVal("new StringVal");

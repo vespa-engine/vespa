@@ -4,6 +4,7 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.provision.ApplicationId;
 
 public class ApplicationInfo {
+
     private final ApplicationId applicationId;
     private final long generation;
     private final Model model;  // NOT immutable
@@ -23,4 +24,5 @@ public class ApplicationInfo {
     public Model getModel() {
         return model;
     }
+
 }

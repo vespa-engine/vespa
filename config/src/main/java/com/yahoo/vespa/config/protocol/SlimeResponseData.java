@@ -11,10 +11,10 @@ import com.yahoo.text.Utf8;
  * Contains response data for a slime response and methods for decoding the response data that
  * are common to all {@link Slime} based config requests.
  *
- * @author lulf
- * @since 5.18
+ * @author Ulf Lilleengen
  */
 class SlimeResponseData {
+
     static final String RESPONSE_VERSION = "version";
     static final String RESPONSE_DEF_NAME = "defName";
     static final String RESPONSE_DEF_NAMESPACE = "defNamespace";
@@ -24,6 +24,7 @@ class SlimeResponseData {
     static final String RESPONSE_TRACE = "trace";
     static final String RESPONSE_CONFIG_MD5 = "configMD5";
     static final String RESPONSE_CONFIG_GENERATION = "generation";
+    static final String RESPONSE_INTERNAL_REDEPLOY = "internalRedeploy";
     static final String RESPONSE_COMPRESSION_INFO = "compressionInfo";
 
     private final Request request;
@@ -66,4 +67,10 @@ class SlimeResponseData {
     CompressionInfo getCompressionInfo() {
         return CompressionInfo.fromSlime(getResponseField(RESPONSE_COMPRESSION_INFO));
     }
+
+    boolean getResponseInternalRedeployment() {
+        Inspector inspector = getResponseField(RESPONSE_INTERNAL_REDEPLOY);
+        return inspector.valid() ? inspector.asBool() : false;
+    }
+
 }

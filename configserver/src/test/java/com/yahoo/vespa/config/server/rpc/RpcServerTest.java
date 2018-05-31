@@ -73,7 +73,13 @@ public class RpcServerTest extends TestWithRpc {
 
     private void testEnabled() throws IOException, SAXException {
         generationCounter.increment();
-        Application app = new Application(new VespaModel(MockApplicationPackage.createEmpty()), new ServerCache(), 2l, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
+        Application app = new Application(new VespaModel(MockApplicationPackage.createEmpty()),
+                                          new ServerCache(),
+                                          2L,
+                                          false,
+                                          Version.fromIntValues(1, 2, 3),
+                                          MetricUpdater.createTestUpdater(),
+                                          ApplicationId.defaultId());
         ApplicationSet appSet = ApplicationSet.fromSingle(app);
         rpcServer.configActivated(TenantName.defaultName(), appSet);
         ConfigKey<?> key = new ConfigKey<>(LbServicesConfig.class, "*");

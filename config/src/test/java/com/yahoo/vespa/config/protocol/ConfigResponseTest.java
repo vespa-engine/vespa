@@ -20,8 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ConfigResponseTest {
 
@@ -45,13 +44,12 @@ public class ConfigResponseTest {
 
     @Test
     public void require_that_slime_response_decompresses_on_serialize() throws IOException {
-
         ConfigPayload configPayload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         DefParser dParser = new DefParser(SimpletypesConfig.getDefName(), new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
         InnerCNode targetDef = dParser.getTree();
         Utf8Array data = configPayload.toUtf8Array(true);
         Utf8Array bytes = new Utf8Array(new LZ4PayloadCompressor().compress(data.getBytes()));
-        ConfigResponse response = new SlimeConfigResponse(bytes, targetDef, 3, "mymd5", CompressionInfo.create(CompressionType.LZ4, data.getByteLength()));
+        ConfigResponse response = new SlimeConfigResponse(bytes, targetDef, 3, false, "mymd5", CompressionInfo.create(CompressionType.LZ4, data.getByteLength()));
         List<String> payload = response.getLegacyPayload();
         assertNotNull(payload);
         assertThat(payload.size(), is(6));
@@ -63,4 +61,5 @@ public class ConfigResponseTest {
         response.serialize(baos, CompressionType.UNCOMPRESSED);
         assertThat(baos.toString(), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}"));
     }
+
 }

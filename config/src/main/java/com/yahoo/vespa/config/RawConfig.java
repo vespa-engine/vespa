@@ -31,6 +31,7 @@ public class RawConfig extends ConfigInstance {
     private final String configMd5;
     private final Optional<VespaVersion> vespaVersion;
     private long generation;
+    private boolean internalRedeploy;
 
     /**
      * Constructor for an empty config (not yet resolved).
@@ -38,27 +39,29 @@ public class RawConfig extends ConfigInstance {
      * @param defMd5  The md5 sum of the .def-file.
      */
     public RawConfig(ConfigKey<?> key, String defMd5) {
-        this(key, defMd5, null, "", 0L, 0, Collections.emptyList(), Optional.empty());
+        this(key, defMd5, null, "", 0L, false, 0, Collections.emptyList(), Optional.empty());
     }
 
     public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation,
-                     List<String> defContent, Optional<VespaVersion> vespaVersion) {
-        this(key, defMd5, payload, configMd5, generation, 0, defContent, vespaVersion);
+                     boolean internalRedeploy, List<String> defContent, Optional<VespaVersion> vespaVersion) {
+        this(key, defMd5, payload, configMd5, generation, internalRedeploy, 0, defContent, vespaVersion);
     }
 
     /** Copy constructor */
     public RawConfig(RawConfig rawConfig) {
         this(rawConfig.key, rawConfig.defMd5, rawConfig.payload, rawConfig.configMd5,
-                rawConfig.generation, rawConfig.errorCode, rawConfig.defContent, rawConfig.getVespaVersion());
+             rawConfig.generation, rawConfig.internalRedeploy, rawConfig.errorCode,
+             rawConfig.defContent, rawConfig.getVespaVersion());
     }
 
     public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation,
-                     int errorCode, List<String> defContent, Optional<VespaVersion> vespaVersion) {
+                     boolean internalRedeploy, int errorCode, List<String> defContent, Optional<VespaVersion> vespaVersion) {
         this.key = key;
         this.defMd5 = ConfigUtils.getDefMd5FromRequest(defMd5, defContent);
         this.payload = payload;
         this.configMd5 = configMd5;
         this.generation = generation;
+        this.internalRedeploy = internalRedeploy;
         this.errorCode = errorCode;
         this.defContent = defContent;
         this.vespaVersion = vespaVersion;
@@ -69,8 +72,15 @@ public class RawConfig extends ConfigInstance {
      * @param req a {@link JRTClientConfigRequest}
      */
     public static RawConfig createFromResponseParameters(JRTClientConfigRequest req) {
-        return new RawConfig(req.getConfigKey(), req.getConfigKey().getMd5(), req.getNewPayload(), req.getNewConfigMd5(),
-                req.getNewGeneration(), 0, req.getDefContent().asList(), req.getVespaVersion());
+        return new RawConfig(req.getConfigKey(),
+                             req.getConfigKey().getMd5(),
+                             req.getNewPayload(),
+                             req.getNewConfigMd5(),
+                             req.getNewGeneration(),
+                             req.isInternalRedeploy(),
+                             0,
+                             req.getDefContent().asList(),
+                             req.getVespaVersion());
     }
 
     /**
@@ -78,58 +88,47 @@ public class RawConfig extends ConfigInstance {
      * @param req a {@link JRTClientConfigRequest}
      */
     public static RawConfig createFromServerRequest(JRTServerConfigRequest req) {
-        return new RawConfig(req.getConfigKey(), req.getConfigKey().getMd5() , Payload.from(new Utf8String(""), CompressionInfo.uncompressed()), req.getRequestConfigMd5(),
-                             req.getRequestGeneration(), 0, req.getDefContent().asList(), req.getVespaVersion());
+        return new RawConfig(req.getConfigKey(),
+                             req.getConfigKey().getMd5() ,
+                             Payload.from(new Utf8String(""), CompressionInfo.uncompressed()),
+                             req.getRequestConfigMd5(),
+                             req.getRequestGeneration(),
+                             req.isInternalRedeploy(),
+                             0,
+                             req.getDefContent().asList(),
+                             req.getVespaVersion());
     }
 
 
-    public ConfigKey<?> getKey() {
-        return key;
-    }
+    public ConfigKey<?> getKey() { return key; }
 
-    public String getName() {
-        return key.getName();
-    }
+    public String getName() { return key.getName(); }
 
-    public String getNamespace() {
-        return key.getNamespace();
-    }
+    public String getNamespace() { return key.getNamespace(); }
 
-    public String getConfigId() {
-        return key.getConfigId();
-    }
+    public String getConfigId() { return key.getConfigId(); }
 
-    public String getConfigMd5() {
-        return configMd5;
-    }
+    public String getConfigMd5() { return configMd5; }
 
-    public String getDefMd5() {
-        return defMd5;
-    }
+    public String getDefMd5() { return defMd5; }
 
-    public long getGeneration() {
-        return generation;
-    }
+    public long getGeneration() { return generation; }
 
-    public void setGeneration(long generation) {
-        this.generation = generation;
-    }
+    public void setGeneration(long generation) { this.generation = generation; }
 
-    public Payload getPayload() {
-        return payload;
-    }
+    /**
+     * Returns whether this config generation was created by a system internal redeploy, not an
+     * application package change.
+     */
+    public boolean isInternalRedeploy() { return internalRedeploy; }
 
-    public int errorCode() {
-        return errorCode;
-    }
+    public Payload getPayload() { return payload; }
 
-    public String getDefNamespace() {
-        return key.getNamespace();
-    }
+    public int errorCode() { return errorCode; }
 
-    public Optional<VespaVersion> getVespaVersion() {
-        return vespaVersion;
-    }
+    public String getDefNamespace() { return key.getNamespace(); }
+
+    public Optional<VespaVersion> getVespaVersion() { return vespaVersion; }
 
     /**
      * Returns true if this config is equal to the config (same payload md5) in the given request.

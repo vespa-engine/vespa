@@ -27,7 +27,6 @@ import java.util.TreeSet;
 
 /**
  * @author Einar M R Rosenvinge
- * @since 5.1.11
  */
 public class ContainerDocumentApi implements FeederConfig.Producer {
 

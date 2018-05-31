@@ -50,8 +50,11 @@ object CloudSubscriberFactory {
     private val handles: Map[ConfigKeyT, ConfigHandle[_ <: ConfigInstance]] = keys.map(subscribe).toMap
 
 
-    //if waitNextGeneration has not yet been called, -1 should be returned
+    // if waitNextGeneration has not yet been called, -1 should be returned
     var generation: Long = -1
+
+    // True if this reconfiguration was caused by a system-internal redeploy, not an external application change
+    var internalRedeploy: Boolean = false
 
     private def subscribe(key: ConfigKeyT) = (key, subscriber.subscribe(key.getConfigClass, key.getConfigId))
 
@@ -86,6 +89,7 @@ object CloudSubscriberFactory {
       }
 
       generation = subscriber.getGeneration
+      internalRedeploy = subscriber.isInternalRedeploy
       generation
     }
 

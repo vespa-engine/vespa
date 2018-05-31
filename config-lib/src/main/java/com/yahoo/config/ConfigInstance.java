@@ -14,22 +14,25 @@ import java.util.Map;
 public abstract class ConfigInstance extends InnerNode {
 
     public interface Builder extends ConfigBuilder {
+
         /**
          * Dispatches a getConfig() call if this instance's producer is of the right type
          * @param producer a config producer
          * @return true if this instance's producer was the correct type, and hence a getConfig call was dispatched
          */
-        public boolean dispatchGetConfig(Producer producer);
+        boolean dispatchGetConfig(Producer producer);
 
-        public String getDefName();
-        public String getDefNamespace();
-        public String getDefMd5();
+        String getDefName();
+        String getDefNamespace();
+        String getDefMd5();
+
     }
 
     public interface Producer {}
 
     private String configMd5 = "";
 
+    @SuppressWarnings("unused") // Used by reflection from ConfigInstanceUtil
     String configId;
 
     /**

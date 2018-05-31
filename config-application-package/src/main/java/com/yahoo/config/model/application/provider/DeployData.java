@@ -8,27 +8,37 @@ package com.yahoo.config.model.application.provider;
  */
 public class DeployData {
 
-    /* Which user deployed */
+    /** Which user deployed */
     private final String deployedByUser;
 
-    /* Name of application given by user */
+    /** Name of application given by user */
     private final String applicationName;
 
-    /* The absolute path to the directory holding the application */
+    /** The absolute path to the directory holding the application */
     private final String deployedFromDir;
 
-    /* Timestamp when a deployment was made */
+    /** Timestamp when a deployment was made */
     private final long deployTimestamp;
+
+    /** Whether this is an internal redeploy, not caused by an application package change */
+    private final boolean internalRedeploy;
 
     /* Application generation. Incremented by one each time an application is deployed. */
     private final long generation;
     private final long currentlyActiveGeneration;
 
-    public DeployData(String deployedByUser, String deployedFromDir, String applicationName, Long deployTimestamp, Long generation, long currentlyActiveGeneration) {
+    public DeployData(String deployedByUser,
+                      String deployedFromDir,
+                      String applicationName,
+                      Long deployTimestamp,
+                      boolean internalRedeploy,
+                      Long generation,
+                      long currentlyActiveGeneration) {
         this.deployedByUser = deployedByUser;
         this.deployedFromDir = deployedFromDir;
         this.applicationName = applicationName;
         this.deployTimestamp = deployTimestamp;
+        this.internalRedeploy = internalRedeploy;
         this.generation = generation;
         this.currentlyActiveGeneration = currentlyActiveGeneration;
     }
@@ -44,6 +54,8 @@ public class DeployData {
     public long getDeployTimestamp() {
         return deployTimestamp;
     }
+
+    public boolean isInternalRedeploy() { return internalRedeploy; }
 
     public long getGeneration() {
         return generation;

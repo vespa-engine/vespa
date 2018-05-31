@@ -17,9 +17,8 @@ import com.yahoo.log.LogLevel;
 
 /**
  * Subscription used when config id is file:...
- * @author vegardh
- * @since 5.1
  *
+ * @author vegardh
  */
 public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
 
