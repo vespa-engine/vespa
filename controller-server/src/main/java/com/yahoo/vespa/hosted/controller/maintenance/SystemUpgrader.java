@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -38,12 +37,8 @@ public class SystemUpgrader extends Maintainer {
         if (!target.isPresent()) {
             return;
         }
-        // TODO: Change to SystemApplication.all() once host applications support upgrade
-        try {
-            deploy(Arrays.asList(SystemApplication.configServer, SystemApplication.zone), target.get());
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Failed to upgrade system. Retrying in " + maintenanceInterval(), e);
-        }
+
+        deploy(SystemApplication.all(), target.get());
     }
 
     /** Deploy a list of system applications until they converge on the given version */
@@ -51,20 +46,32 @@ public class SystemUpgrader extends Maintainer {
         for (List<ZoneId> zones : controller().zoneRegistry().upgradePolicy().asList()) {
             boolean converged = true;
             for (ZoneId zone : zones) {
-                for (SystemApplication application : applications) {
-                    boolean dependenciesConverged = application.dependencies().stream()
-                                                               .filter(applications::contains) // TODO: Remove when all() is used.
-                                                               .allMatch(dependency -> currentVersion(zone, dependency.id()).equals(target));
-                    if (dependenciesConverged) {
-                        deploy(target, application, zone);
-                    }
-                    converged &= currentVersion(zone, application.id()).equals(target);
+                try {
+                    converged &= deployInZone(zone, applications, target);
+                } catch (UnreachableNodeRepositoryException e) {
+                    converged = false;
+                    log.log(Level.WARNING, e.getMessage() + ". Continuing to next parallel deployed zone");
+                } catch (Exception e) {
+                    converged = false;
+                    log.log(Level.WARNING, "Failed to upgrade " + zone + ". Continuing to next parallel deployed zone", e);
                 }
             }
             if (!converged) {
                 break;
             }
         }
+    }
+
+    /** @return true if all applications have converged to the target version in the zone */
+    private boolean deployInZone(ZoneId zone, List<SystemApplication> applications, Version target) {
+        boolean converged = true;
+        for (SystemApplication application : applications) {
+            if (convergedOn(target, application.dependencies(), zone)) {
+                deploy(target, application, zone);
+            }
+            converged &= convergedOn(target, application, zone);
+        }
+        return converged;
     }
 
     /** Deploy application on given version idempotently */
@@ -75,12 +82,20 @@ public class SystemUpgrader extends Maintainer {
         }
     }
 
+    private boolean convergedOn(Version target, List<SystemApplication> applications, ZoneId zone) {
+        return applications.stream().allMatch(application -> convergedOn(target, application, zone));
+    }
+
+    private boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
+        return currentVersion(zone, application.id(), target).equals(target);
+    }
+
     private Version wantedVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
         return minVersion(zone, application, Node::wantedVersion).orElse(defaultVersion);
     }
 
-    private Version currentVersion(ZoneId zone, ApplicationId application) {
-        return minVersion(zone, application, Node::currentVersion).orElse(Version.emptyVersion);
+    private Version currentVersion(ZoneId zone, ApplicationId application, Version defaultVersion) {
+        return minVersion(zone, application, Node::currentVersion).orElse(defaultVersion);
     }
 
     private Optional<Version> minVersion(ZoneId zone, ApplicationId application, Function<Node, Version> versionField) {
@@ -92,9 +107,8 @@ public class SystemUpgrader extends Maintainer {
                                .map(versionField)
                                .min(Comparator.naturalOrder());
         } catch (Exception e) {
-            log.log(Level.WARNING, String.format("Failed to get version for %s in %s: %s", application, zone,
-                                                 Exceptions.toMessageString(e)));
-            return Optional.empty();
+            throw new UnreachableNodeRepositoryException(String.format("Failed to get version for %s in %s: %s",
+                    application, zone, Exceptions.toMessageString(e)));
         }
     }
 
@@ -105,4 +119,9 @@ public class SystemUpgrader extends Maintainer {
                            .map(VespaVersion::versionNumber);
     }
 
+    private class UnreachableNodeRepositoryException extends RuntimeException {
+        private UnreachableNodeRepositoryException(String reason) {
+            super(reason);
+        }
+    }
 }
