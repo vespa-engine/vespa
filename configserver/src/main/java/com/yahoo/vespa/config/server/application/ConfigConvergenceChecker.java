@@ -17,17 +17,16 @@ import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
-import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 
 /**
  * Checks for convergence of config generation for a given application.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author hmusum
  */
-public class ApplicationConvergenceChecker extends AbstractComponent {
+public class ConfigConvergenceChecker extends AbstractComponent {
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
     private final StateApiFactory stateApiFactory;
@@ -43,15 +42,15 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
     ));
 
     @Inject
-    public ApplicationConvergenceChecker() {
-        this(ApplicationConvergenceChecker::createStateApi);
+    public ConfigConvergenceChecker() {
+        this(ConfigConvergenceChecker::createStateApi);
     }
 
-    public ApplicationConvergenceChecker(StateApiFactory stateApiFactory) {
+    public ConfigConvergenceChecker(StateApiFactory stateApiFactory) {
         this.stateApiFactory = stateApiFactory;
     }
 
-    public ServiceListResponse serviceListToCheckForConfigConvergence(Application application, URI uri) {
+    public ServiceListResponse servicesToCheck(Application application, URI uri) {
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
@@ -60,7 +59,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         return new ServiceListResponse(200, servicesToCheck, uri, application.getApplicationGeneration());
     }
 
-    public ServiceResponse serviceConvergenceCheck(Application application, String hostAndPortToCheck, URI uri) {
+    public ServiceResponse checkService(Application application, String hostAndPortToCheck, URI uri) {
         Long wantedGeneration = application.getApplicationGeneration();
         try {
             if (! hostInApplication(application, hostAndPortToCheck))
@@ -113,7 +112,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         return generationFromContainerState(state.config());
     }
 
-    private boolean hostInApplication(Application application, String hostPort) throws IOException {
+    private boolean hostInApplication(Application application, String hostPort) {
         for (HostInfo host : application.getModel().getHosts()) {
             if (hostPort.startsWith(host.getHostname())) {
                 for (ServiceInfo service : host.getServices()) {
@@ -128,8 +127,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         return false;
     }
 
-    static class ServiceListResponse extends JSONResponse {
-        final Cursor debug;
+    private static class ServiceListResponse extends JSONResponse {
 
         // Pre-condition: servicesToCheck has a state port
         private ServiceListResponse(int status, List<ServiceInfo> servicesToCheck, URI uri, Long wantedGeneration) {
@@ -146,40 +144,28 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
             }
             object.setString("url", uri.toString());
             object.setLong("wantedGeneration", wantedGeneration);
-            // TODO: Remove debug when clients are not using it anymore
-            debug = object.setObject("debug");
-            debug.setLong("wantedGeneration", wantedGeneration);
         }
     }
 
     static class ServiceResponse extends JSONResponse {
-        final Cursor debug;
 
         private ServiceResponse(int status, URI uri, String hostname, Long wantedGeneration) {
             super(status);
             object.setString("url", uri.toString());
             object.setString("host", hostname);
             object.setLong("wantedGeneration", wantedGeneration);
-            // TODO: Remove debug when clients are not using it anymore
-            debug = object.setObject("debug");
-            debug.setString("host", hostname);
-            debug.setLong("wantedGeneration", wantedGeneration);
         }
 
         static ServiceResponse createOkResponse(URI uri, String hostname, Long wantedGeneration, Long currentGeneration, boolean converged) {
             ServiceResponse serviceResponse = new ServiceResponse(200, uri, hostname, wantedGeneration);
             serviceResponse.object.setBool("converged", converged);
             serviceResponse.object.setLong("currentGeneration", currentGeneration);
-            // TODO: Remove debug when clients are not using it anymore
-            serviceResponse.debug.setLong("currentGeneration", currentGeneration);
             return serviceResponse;
         }
 
         static ServiceResponse createHostNotFoundInAppResponse(URI uri, String hostname, Long wantedGeneration) {
             ServiceResponse serviceResponse = new ServiceResponse(410, uri, hostname, wantedGeneration);
             serviceResponse.object.setString("problem", "Host:port (service) no longer part of application, refetch list of services.");
-            // TODO: Remove debug when clients are not using it anymore
-            serviceResponse.debug.setString("problem", "Host:port (service) no longer part of application, refetch list of services.");
             return serviceResponse;
         }
 

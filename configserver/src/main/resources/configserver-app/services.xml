@@ -37,7 +37,7 @@
     <component id="com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker" bundle="configserver" />
     <component id="com.yahoo.container.jdisc.metric.state.StateMetricConsumerFactory" bundle="container-disc" />
     <component id="com.yahoo.config.provision.Zone" bundle="config-provisioning" />
-    <component id="com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.application.ConfigConvergenceChecker" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.application.HttpProxy" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.filedistribution.FileServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.maintenance.ConfigServerMaintenance" bundle="configserver" />

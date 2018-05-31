@@ -12,7 +12,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -161,7 +161,7 @@ public class ApplicationHandlerTest {
         HttpProxy mockHttpProxy = mock(HttpProxy.class);
         ApplicationRepository applicationRepository = new ApplicationRepository(tenantRepository,
                                                                                 HostProvisionerProvider.withProvisioner(provisioner),
-                                                                                new ApplicationConvergenceChecker(stateApiFactory),
+                                                                                new ConfigConvergenceChecker(stateApiFactory),
                                                                                 mockHttpProxy,
                                                                                 new ConfigserverConfig(new ConfigserverConfig.Builder()));
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
@@ -274,10 +274,10 @@ public class ApplicationHandlerTest {
         return createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
     }
 
-    private static class MockStateApiFactory implements ApplicationConvergenceChecker.StateApiFactory {
+    private static class MockStateApiFactory implements ConfigConvergenceChecker.StateApiFactory {
         boolean createdApi = false;
         @Override
-        public ApplicationConvergenceChecker.StateApi createStateApi(Client client, URI serviceUri) {
+        public ConfigConvergenceChecker.StateApi createStateApi(Client client, URI serviceUri) {
             createdApi = true;
             return () -> {
                 try {
