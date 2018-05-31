@@ -38,6 +38,8 @@ public class CuratorDatabase {
     /** Whether we should return data from the cache or always read fro ZooKeeper */
     private final boolean useCache;
 
+    private final Object cacheCreationLock = new Object();
+
     /**
      * All keys, to allow reentrancy.
      * This will grow forever with the number of applications seen, but this should be too slow to be a problem.
@@ -94,14 +96,37 @@ public class CuratorDatabase {
 
     public Optional<byte[]> getData(Path path) { return getCache().getData(path); }
 
-    private CuratorDatabaseCache getCache() {
-        CuratorDatabaseCache cache = this.cache.get();
-        long currentCuratorGeneration = changeGenerationCounter.get();
-        if (currentCuratorGeneration != cache.generation()) { // current cache is invalid - start new
-            cache = newCache(currentCuratorGeneration);
-            this.cache.set(cache);
+    private static class CacheAndGeneration {
+        public CacheAndGeneration(CuratorDatabaseCache cache, long generation)
+        {
+            this.cache = cache;
+            this.generation = generation;
         }
-        return cache;
+        public boolean expired() {
+            return generation != cache.generation();
+        }
+        public CuratorDatabaseCache validCache() {
+            return !expired() ? cache : null;
+        }
+
+        private CuratorDatabaseCache cache;
+        private long generation;
+    }
+    private CacheAndGeneration getCacheSnapshot() {
+        return new CacheAndGeneration(cache.get(), changeGenerationCounter.get());
+    }
+    private CuratorDatabaseCache getCache() {
+        CacheAndGeneration cacheAndGeneration = getCacheSnapshot();
+        while (cacheAndGeneration.expired()) {
+            synchronized (cacheCreationLock) { // Prevent a race for creating new caches
+                cacheAndGeneration = getCacheSnapshot();
+                if (cacheAndGeneration.expired()) {
+                    cache.set(newCache(changeGenerationCounter.get()));
+                    cacheAndGeneration = getCacheSnapshot();
+                }
+            }
+        }
+        return cacheAndGeneration.validCache();
     }
 
     /** Caches must only be instantiated using this method */
