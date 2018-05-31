@@ -1,8 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.tls.SubjectAlternativeName;
 import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
@@ -11,6 +13,10 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
@@ -31,9 +37,23 @@ class NodeIdentifier {
     private final Zone zone;
     private final NodeRepository nodeRepository;
 
+    private final AtomicReference<List<Node>> nodes;
+    private static final Logger logger = Logger.getLogger(NodeIdentifier.class.getName());
+
     NodeIdentifier(Zone zone, NodeRepository nodeRepository) {
         this.zone = zone;
         this.nodeRepository = nodeRepository;
+        nodes = new AtomicReference<>(nodeRepository.getNodes());
+        new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getDaemonThreadFactory("node-identifier-refresh"))
+                .scheduleAtFixedRate(this::updateNodeRepoCache, 1, 1, TimeUnit.MINUTES);
+    }
+
+    private void updateNodeRepoCache() {
+        logger.log(LogLevel.DEBUG, "Refreshing node list in filter");
+        try {
+            this.nodes.set(nodeRepository.getNodes());
+        } catch (Throwable ignored) {
+        }
     }
 
     NodePrincipal resolveNode(List<X509Certificate> certificateChain) throws NodeIdentifierException {
@@ -73,7 +93,7 @@ class NodeIdentifier {
 
     private String getHostFromCalypsoCertificate(List<SubjectAlternativeName> sans) {
         String openstackId = getUniqueInstanceId(sans);
-        return nodeRepository.getNodes().stream()
+        return nodes.get().stream()
                 .filter(node -> node.openStackId().equals(openstackId))
                 .map(Node::hostname)
                 .findFirst()
