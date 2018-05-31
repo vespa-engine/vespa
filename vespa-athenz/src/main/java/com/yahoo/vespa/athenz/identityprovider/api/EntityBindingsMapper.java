@@ -12,6 +12,8 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
 import java.util.Base64;
 
+import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.*;
+
 /**
  * Utility class for mapping objects model types and their Jackson binding versions.
  *
@@ -33,7 +35,7 @@ public class EntityBindingsMapper {
 
     public static VespaUniqueInstanceId toVespaUniqueInstanceId(VespaUniqueInstanceIdEntity entity) {
         return new VespaUniqueInstanceId(
-                entity.clusterIndex, entity.clusterId, entity.instance, entity.application, entity.tenant, entity.region, entity.environment);
+                entity.clusterIndex, entity.clusterId, entity.instance, entity.application, entity.tenant, entity.region, entity.environment, entity.type != null ? IdentityType.fromId(entity.type) : null); // TODO Remove support for legacy representation without type
     }
 
     public static IdentityDocument toIdentityDocument(IdentityDocumentEntity entity) {
@@ -50,7 +52,7 @@ public class EntityBindingsMapper {
                 toIdentityDocument(entity.identityDocument),
                 entity.signature,
                 entity.signingKeyVersion,
-                VespaUniqueInstanceId.fromDottedString(entity.providerUniqueId),
+                fromDottedString(entity.providerUniqueId),
                 entity.dnsSuffix,
                 (AthenzService) AthenzIdentities.from(entity.providerService),
                 entity.ztsEndpoint,
@@ -58,13 +60,14 @@ public class EntityBindingsMapper {
                 entity.configServerHostname,
                 entity.instanceHostname,
                 entity.createdAt,
-                entity.ipAddresses);
+                entity.ipAddresses,
+                entity.identityType != null ? IdentityType.fromId(entity.identityType) : null); // TODO Remove support for legacy representation without type
     }
 
     public static VespaUniqueInstanceIdEntity toVespaUniqueInstanceIdEntity(VespaUniqueInstanceId model) {
         return new VespaUniqueInstanceIdEntity(
                 model.tenant(), model.application(), model.environment(), model.region(),
-                model.instance(), model.clusterId(), model.clusterIndex());
+                model.instance(), model.clusterId(), model.clusterIndex(), model.type() != null ? model.type().id() : null); // TODO Remove support for legacy representation without type
     }
 
     public static IdentityDocumentEntity toIdentityDocumentEntity(IdentityDocument model) {
@@ -92,7 +95,8 @@ public class EntityBindingsMapper {
                     model.configServerHostname(),
                     model.instanceHostname(),
                     model.createdAt(),
-                    model.ipAddresses());
+                    model.ipAddresses(),
+                    model.identityType() != null ? model.identityType().id() : null); // TODO Remove support for legacy representation without type
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

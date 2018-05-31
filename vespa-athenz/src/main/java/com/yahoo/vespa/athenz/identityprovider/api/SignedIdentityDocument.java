@@ -28,6 +28,7 @@ public class SignedIdentityDocument {
     private final String instanceHostname;
     private final Instant createdAt;
     private final Set<String> ipAddresses;
+    private final IdentityType identityType;
 
     public SignedIdentityDocument(IdentityDocument identityDocument,
                                   String signature,
@@ -40,7 +41,8 @@ public class SignedIdentityDocument {
                                   String configServerHostname,
                                   String instanceHostname,
                                   Instant createdAt,
-                                  Set<String> ipAddresses) {
+                                  Set<String> ipAddresses,
+                                  IdentityType identityType) {
         this.identityDocument = identityDocument;
         this.signature = signature;
         this.signingKeyVersion = signingKeyVersion;
@@ -53,6 +55,7 @@ public class SignedIdentityDocument {
         this.instanceHostname = instanceHostname;
         this.createdAt = createdAt;
         this.ipAddresses = ipAddresses;
+        this.identityType = identityType;
     }
 
     public IdentityDocument identityDocument() {
@@ -101,5 +104,9 @@ public class SignedIdentityDocument {
 
     public Set<String> ipAddresses() {
         return ipAddresses;
+    }
+
+    public IdentityType identityType() {
+        return identityType;
     }
 }

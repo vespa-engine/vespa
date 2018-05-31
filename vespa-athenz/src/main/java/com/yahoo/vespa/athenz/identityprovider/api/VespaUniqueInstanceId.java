@@ -4,6 +4,8 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import java.util.Objects;
 
 /**
+ * Represents the unique instance id as used in Vespa's integration with Athenz Copper Argos
+ *
  * @author bjorncs
  */
 public class VespaUniqueInstanceId {
@@ -15,6 +17,7 @@ public class VespaUniqueInstanceId {
     private final String tenant;
     private final String region;
     private final String environment;
+    private final IdentityType type;
 
     public VespaUniqueInstanceId(int clusterIndex,
                                  String clusterId,
@@ -22,7 +25,8 @@ public class VespaUniqueInstanceId {
                                  String application,
                                  String tenant,
                                  String region,
-                                 String environment) {
+                                 String environment,
+                                 IdentityType type) {
         this.clusterIndex = clusterIndex;
         this.clusterId = clusterId;
         this.instance = instance;
@@ -30,21 +34,43 @@ public class VespaUniqueInstanceId {
         this.tenant = tenant;
         this.region = region;
         this.environment = environment;
+        this.type = type;
     }
 
+    // TODO Remove support for legacy representation without type
+    @Deprecated
+    public VespaUniqueInstanceId(int clusterIndex,
+                                 String clusterId,
+                                 String instance,
+                                 String application,
+                                 String tenant,
+                                 String region,
+                                 String environment) {
+        this(clusterIndex, clusterId, instance, application, tenant, region, environment, null);
+    }
+
+
+    // TODO Remove support for legacy representation without type
     public static VespaUniqueInstanceId fromDottedString(String instanceId) {
         String[] tokens = instanceId.split("\\.");
-        if (tokens.length != 7) {
+        if (tokens.length != 7 && tokens.length != 8) {
             throw new IllegalArgumentException("Invalid instance id: " + instanceId);
         }
         return new VespaUniqueInstanceId(
-                Integer.parseInt(tokens[0]), tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6]);
+                Integer.parseInt(tokens[0]), tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], tokens.length == 8 ? IdentityType.fromId(tokens[7]) : null);
     }
 
+    // TODO Remove support for legacy representation without type
     public String asDottedString() {
-        return String.format(
-                "%d.%s.%s.%s.%s.%s.%s",
-                clusterIndex, clusterId, instance, application, tenant, region, environment);
+        if (type != null) {
+            return String.format(
+                    "%d.%s.%s.%s.%s.%s.%s.%s",
+                    clusterIndex, clusterId, instance, application, tenant, region, environment, type.id());
+        } else {
+            return String.format(
+                    "%d.%s.%s.%s.%s.%s.%s",
+                    clusterIndex, clusterId, instance, application, tenant, region, environment);
+        }
     }
 
     public int clusterIndex() {
@@ -75,6 +101,8 @@ public class VespaUniqueInstanceId {
         return environment;
     }
 
+    public IdentityType type() { return type; }
+
     @Override
     public String toString() {
         return "VespaUniqueInstanceId{" +
@@ -85,6 +113,7 @@ public class VespaUniqueInstanceId {
                 ", tenant='" + tenant + '\'' +
                 ", region='" + region + '\'' +
                 ", environment='" + environment + '\'' +
+                ", type=" + type +
                 '}';
     }
 
@@ -99,11 +128,12 @@ public class VespaUniqueInstanceId {
                 Objects.equals(application, that.application) &&
                 Objects.equals(tenant, that.tenant) &&
                 Objects.equals(region, that.region) &&
-                Objects.equals(environment, that.environment);
+                Objects.equals(environment, that.environment) &&
+                type == that.type;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(clusterIndex, clusterId, instance, application, tenant, region, environment);
+        return Objects.hash(clusterIndex, clusterId, instance, application, tenant, region, environment, type);
     }
 }

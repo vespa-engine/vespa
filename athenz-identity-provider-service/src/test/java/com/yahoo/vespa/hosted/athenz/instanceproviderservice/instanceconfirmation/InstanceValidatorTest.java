@@ -147,7 +147,8 @@ public class InstanceValidatorTest {
                                                      identityDocument.configServerHostname,
                                                      identityDocument.instanceHostname,
                                                      identityDocument.createdAt,
-                                                     identityDocument.ipAddresses));
+                                                     identityDocument.ipAddresses,
+                                                     null)); // TODO Remove support for legacy representation without type
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
