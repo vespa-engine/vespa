@@ -120,10 +120,10 @@ public class ApplicationRepositoryTest {
     public void deleteUnusedFileReferences() throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
 
-        // Add file reference that is not in use and should be deleted
-        File filereferenceDir = new File(fileReferencesDir, "foo");
-        assertTrue(filereferenceDir.mkdir());
-        IOUtils.writeFile(new File(filereferenceDir, "bar"), Utf8.toBytes("test"));
+        // Add file reference that is not in use and should be deleted (older than 14 days)
+        File filereferenceDir = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"), Instant.now().minus(Duration.ofDays(15)));
+        // Add file reference that is not in use, but should not be deleted (not older than 14 days)
+        File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), Instant.now());
 
         tenantRepository.addTenant(tenantName);
         tenant = tenantRepository.getTenant(tenantName);
@@ -139,11 +139,21 @@ public class ApplicationRepositoryTest {
         Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
         assertEquals(Collections.singleton("foo"), toBeDeleted);
         assertTrue(filereferenceDir.exists());
+        assertTrue(filereferenceDir2.exists());
 
         deleteFiles = true;
         toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
         assertEquals(Collections.singleton("foo"), toBeDeleted);
         assertFalse(filereferenceDir.exists());
+        assertTrue(filereferenceDir2.exists());
+    }
+
+    private File createFilereferenceOnDisk(File filereferenceDir, Instant lastModifiedTime) {
+        assertTrue(filereferenceDir.mkdir());
+        File bar = new File(filereferenceDir, "file");
+        IOUtils.writeFile(bar, Utf8.toBytes("test"));
+        assertTrue(filereferenceDir.setLastModified(lastModifiedTime.toEpochMilli()));
+        return filereferenceDir;
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {

@@ -51,7 +51,9 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -70,6 +72,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static java.nio.file.Files.readAttributes;
 
 /**
  * The API for managing applications.
@@ -313,10 +317,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
         log.log(LogLevel.INFO, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
 
-        // TODO: Only consider the ones modified more than some time (14 days?) ago
+        Instant instant = Instant.now().minus(Duration.ofDays(14));
         Set<String> fileReferencesToDelete = fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
+                .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .collect(Collectors.toSet());
         if (deleteFromDisk) {
             log.log(LogLevel.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
@@ -345,6 +350,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().listApplications().stream())
                 .collect(Collectors.toSet());
+    }
+
+    private boolean isFileLastModifiedBefore(File fileReference, Instant instant) {
+        BasicFileAttributes fileAttributes;
+        try {
+            fileAttributes = readAttributes(fileReference.toPath(), BasicFileAttributes.class);
+            return fileAttributes.lastModifiedTime().toInstant().isBefore(instant);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
