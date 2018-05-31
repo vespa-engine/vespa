@@ -17,8 +17,8 @@ public class FileDistributionProvider {
     private final FileDistribution fileDistribution;
 
     public FileDistributionProvider(File applicationDir, FileDistribution fileDistribution) {
-        this(new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory())), fileDistribution);
-        ensureDirExists(FileDistribution.getDefaultFileDBPath());
+        this(new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory(fileDistribution.getFileReferencesDir()))), fileDistribution);
+        ensureDirExists(fileDistribution.getFileReferencesDir());
     }
 
     FileDistributionProvider(FileRegistry fileRegistry, FileDistribution fileDistribution) {

@@ -14,7 +14,9 @@ import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.time.Duration;
@@ -34,6 +36,9 @@ public class LocalSessionRepoTest extends TestWithCurator {
     private ManualClock clock;
     private static final TenantName tenantName = TenantName.defaultName();
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
     public void setupSessions() throws Exception {
         setupSessions(tenantName, true);
@@ -41,7 +46,7 @@ public class LocalSessionRepoTest extends TestWithCurator {
 
     private void setupSessions(TenantName tenantName, boolean createInitialSessions) throws Exception {
         GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        TenantFileSystemDirs tenantFileSystemDirs = TenantFileSystemDirs.createTestDirs(tenantName);
+        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
         if (createInitialSessions) {
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "1"));
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "2"));

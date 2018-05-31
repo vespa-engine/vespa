@@ -14,9 +14,7 @@ import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.*;
-import com.yahoo.vespa.defaults.Defaults;
 
-import java.io.File;
 import java.time.Clock;
 import java.util.Collections;
 
@@ -162,12 +160,7 @@ public class TenantBuilder {
 
     private void createServerDbDirs() {
         if (tenantFileSystemDirs == null) {
-            tenantFileSystemDirs = new TenantFileSystemDirs(new File(
-                    Defaults.getDefaults().underVespaHome(componentRegistry
-                                                                  .getServerDB()
-                                                                  .getConfigserverConfig()
-                                                                  .configServerDBDir())),
-                                                            tenant);
+            tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigserverConfig(), tenant);
         }
     }
 

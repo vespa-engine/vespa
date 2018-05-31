@@ -27,7 +27,6 @@ public interface GlobalComponentRegistry {
     Curator getCurator();
     ConfigCurator getConfigCurator();
     Metrics getMetrics();
-    ConfigServerDB getServerDB();
     SessionPreparer getSessionPreparer();
     ConfigserverConfig getConfigserverConfig();
     TenantListener getTenantListener();

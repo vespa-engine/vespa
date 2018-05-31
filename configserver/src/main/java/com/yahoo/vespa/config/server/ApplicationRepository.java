@@ -7,6 +7,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
@@ -54,7 +55,9 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -269,29 +272,61 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return true;
     }
 
-    public HttpResponse clusterControllerStatusPage(Tenant tenant, ApplicationId applicationId, String hostName, String pathSuffix) {
-        Application application = getApplication(tenant, applicationId);
-
+    public HttpResponse clusterControllerStatusPage(ApplicationId applicationId, String hostName, String pathSuffix) {
         // WARNING: pathSuffix may be given by the external user. Make sure no security issues arise...
         // We should be OK here, because at most, pathSuffix may change the parent path, but cannot otherwise
         // change the hostname and port. Exposing other paths on the cluster controller should be fine.
         // TODO: It would be nice to have a simple check to verify pathSuffix doesn't contain /../ components.
         String relativePath = "clustercontroller-status/" + pathSuffix;
 
-        return httpProxy.get(application, hostName, "container-clustercontroller", relativePath);
+        return httpProxy.get(getApplication(applicationId), hostName, "container-clustercontroller", relativePath);
     }
 
-    public Long getApplicationGeneration(Tenant tenant, ApplicationId applicationId) {
-        return getApplication(tenant, applicationId).getApplicationGeneration();
+    public Long getApplicationGeneration(ApplicationId applicationId) {
+        return getApplication(applicationId).getApplicationGeneration();
     }
 
     public void restart(ApplicationId applicationId, HostFilter hostFilter) {
         hostProvisioner.ifPresent(provisioner -> provisioner.restart(applicationId, hostFilter));
     }
 
-    public HttpResponse filedistributionStatus(Tenant tenant, ApplicationId applicationId, Duration timeout) {
-        Application application = getApplication(tenant, applicationId);
-        return fileDistributionStatus.status(application, timeout);
+    public HttpResponse filedistributionStatus(ApplicationId applicationId, Duration timeout) {
+        return fileDistributionStatus.status(getApplication(applicationId), timeout);
+    }
+
+    public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, boolean deleteFromDisk) {
+        if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
+
+        // Find all file references in use
+        Set<String> fileReferencesInUse = new HashSet<>();
+        Set<ApplicationId> applicationIds = listApplications();
+        applicationIds.forEach(applicationId -> fileReferencesInUse.addAll(getApplication(applicationId).getModel().fileReferences()
+                                           .stream()
+                                           .map(FileReference::value)
+                                           .collect(Collectors.toSet())));
+        log.log(LogLevel.INFO, "File references in use : " + fileReferencesInUse);
+
+        // Find those on disk that are not in use
+        Set<String> fileReferencesOnDisk = new HashSet<>();
+        File[] filesOnDisk = fileReferencesPath.listFiles();
+        if (filesOnDisk != null)
+            fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
+        log.log(LogLevel.INFO, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+
+        // TODO: Only consider the ones modified more than some time (14 days?) ago
+        Set<String> fileReferencesToDelete = fileReferencesOnDisk
+                .stream()
+                .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
+                .collect(Collectors.toSet());
+        if (deleteFromDisk) {
+            log.log(LogLevel.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
+            fileReferencesToDelete.forEach(fileReference -> {
+                File file = new File(fileReferencesPath, fileReference);
+                if ( ! IOUtils.recursiveDeleteDir(file))
+                    log.log(LogLevel.WARNING, "Could not delete " + file.getAbsolutePath());
+            });
+        }
+        return fileReferencesToDelete;
     }
 
     public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, LocalSession.Mode mode) {
@@ -299,22 +334,27 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getLocalSession(tenant, sessionId).getApplicationFile(Path.fromString(path), mode);
     }
 
-    private Application getApplication(Tenant tenant, ApplicationId applicationId) {
+    private Application getApplication(ApplicationId applicationId) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         long sessionId = getSessionIdForApplication(tenant, applicationId);
         RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
         return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty(), clock.instant());
     }
 
-    // ---------------- Convergence ----------------------------------------------------------------
-
-    public HttpResponse serviceConvergenceCheck(Tenant tenant, ApplicationId applicationId, String hostname, URI uri) {
-        Application application = getApplication(tenant, applicationId);
-        return convergeChecker.serviceConvergenceCheck(application, hostname, uri);
+    private Set<ApplicationId> listApplications() {
+        return tenantRepository.getAllTenants().stream()
+                .flatMap(tenant -> tenant.getApplicationRepo().listApplications().stream())
+                .collect(Collectors.toSet());
     }
 
-    public HttpResponse serviceListToCheckForConfigConvergence(Tenant tenant, ApplicationId applicationId, URI uri) {
-        Application application = getApplication(tenant, applicationId);
-        return convergeChecker.serviceListToCheckForConfigConvergence(application, uri);
+    // ---------------- Convergence ----------------------------------------------------------------
+
+    public HttpResponse serviceConvergenceCheck(ApplicationId applicationId, String hostname, URI uri) {
+        return convergeChecker.serviceConvergenceCheck(getApplication(applicationId), hostname, uri);
+    }
+
+    public HttpResponse serviceListToCheckForConfigConvergence(ApplicationId applicationId, URI uri) {
+        return convergeChecker.serviceListToCheckForConfigConvergence(getApplication(applicationId), uri);
     }
 
     // ---------------- Session operations ----------------------------------------------------------------

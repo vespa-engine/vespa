@@ -4,14 +4,16 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 
+import java.io.File;
+
 /**
  * @author Ulf Lilleengen
  */
 public class MockFileDistributionProvider extends FileDistributionProvider {
     public int timesCalled = 0;
 
-    public MockFileDistributionProvider() {
-        super(new MockFileRegistry(), new MockFileDBHandler());
+    public MockFileDistributionProvider(File fileReferencesDir) {
+        super(new MockFileRegistry(), new MockFileDistribution(fileReferencesDir));
     }
 
     public FileDistribution getFileDistribution() {

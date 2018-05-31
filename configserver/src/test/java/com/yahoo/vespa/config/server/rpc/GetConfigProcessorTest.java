@@ -16,10 +16,11 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
-import com.yahoo.vespa.config.server.rpc.GetConfigProcessor;
-import com.yahoo.vespa.config.server.rpc.MockRpc;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
@@ -39,9 +40,12 @@ import static org.junit.Assert.assertTrue;
  */
 public class GetConfigProcessorTest {
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Test
-    public void testSentinelConfig() {
-        MockRpc rpc = new MockRpc(13337, false);
+    public void testSentinelConfig() throws IOException {
+        MockRpc rpc = new MockRpc(13337, false, temporaryFolder.newFolder());
         rpc.response = new MockConfigResponse("foo"); // should be a sentinel config, but it does not matter for this test
 
         // one tenant, which has host1 assigned

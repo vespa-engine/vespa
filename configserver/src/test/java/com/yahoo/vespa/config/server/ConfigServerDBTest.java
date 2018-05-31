@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.io.IOUtils;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,25 +15,28 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ConfigServerDBTest {
     private ConfigServerDB serverDB;
-    private File dbDir;
-    private File definitionsDir;
+    private ConfigserverConfig configserverConfig;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void setup() {
-        dbDir = Files.createTempDir();
-        definitionsDir = Files.createTempDir();
-        serverDB = ConfigServerDB.createTestConfigServerDb(dbDir.getAbsolutePath(), definitionsDir.getAbsolutePath());
+    public void setup() throws IOException {
+        configserverConfig = new ConfigserverConfig(
+                new ConfigserverConfig.Builder()
+                        .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                        .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
+        serverDB = new ConfigServerDB(configserverConfig);
     }
 
     private void createInitializer() throws IOException {
         File existingDef = new File(serverDB.classes(), "test.def");
         IOUtils.writeFile(existingDef, "hello", false);
-        ConfigServerDB.createTestConfigServerDb(dbDir.getAbsolutePath(), definitionsDir.getAbsolutePath());
+        new ConfigServerDB(configserverConfig);
     }
 
     @Test

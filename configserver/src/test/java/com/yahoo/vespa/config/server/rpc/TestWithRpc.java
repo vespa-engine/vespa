@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jrt.Request;
@@ -20,7 +19,10 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -36,8 +38,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test running rpc server.
  *
- * @author lulf
- * @since 5.17
+ * @author Ulf Lilleengen
  */
 // TODO: Make this a Tester instead of a superclass
 public class TestWithRpc {
@@ -56,8 +57,11 @@ public class TestWithRpc {
 
     private List<Integer> allocatedPorts;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupRpc() throws InterruptedException {
+    public void setupRpc() throws InterruptedException, IOException {
         allocatedPorts = new ArrayList<>();
         port = allocatePort();
         spec = createSpec(port);
@@ -80,7 +84,7 @@ public class TestWithRpc {
         return port;
     }
 
-    protected void createAndStartRpcServer(boolean hostedVespa) {
+    protected void createAndStartRpcServer(boolean hostedVespa) throws IOException {
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                  .rpcport(port)
@@ -94,7 +98,7 @@ public class TestWithRpc {
                                                                        emptyNodeFlavors(),
                                                                        generationCounter)),
                                   Metrics.createTestMetrics(), new HostRegistries(),
-                                  hostLivenessTracker, new FileServer(FileDistribution.getDefaultFileDBPath()));
+                                  hostLivenessTracker, new FileServer(temporaryFolder.newFolder()));
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);
         t.start();

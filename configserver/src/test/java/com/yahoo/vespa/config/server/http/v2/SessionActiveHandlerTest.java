@@ -50,7 +50,9 @@ import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -88,6 +90,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private TestComponentRegistry componentRegistry;
     private TenantRepository tenantRepository;
     private SessionActiveHandler handler;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void setup() {
@@ -221,9 +226,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         return session;
     }
 
-    private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) {
+    private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) throws IOException {
         writeApplicationId(zkc, deployData.getApplicationName());
-        TenantFileSystemDirs tenantFileSystemDirs = TenantFileSystemDirs.createTestDirs(tenantName);
+        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
                                               new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),

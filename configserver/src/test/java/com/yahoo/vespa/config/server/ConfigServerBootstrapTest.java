@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
@@ -9,12 +8,12 @@ import com.yahoo.jdisc.core.SystemTimer;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,7 +34,7 @@ public class ConfigServerBootstrapTest {
 
     @Test
     public void testBootStrap() throws Exception {
-        ConfigserverConfig configserverConfig = createConfigserverConfig();
+        ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         DeployTester tester = new DeployTester("src/test/apps/hosted/", configserverConfig);
         tester.deployApp("myApp", "4.5.6", Instant.now());
 
@@ -55,7 +54,7 @@ public class ConfigServerBootstrapTest {
 
     @Test
     public void testBootStrapWhenRedeploymentFails() throws Exception {
-        ConfigserverConfig configserverConfig = createConfigserverConfig();
+        ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         DeployTester tester = new DeployTester("src/test/apps/hosted/", configserverConfig);
         tester.deployApp("myApp", "4.5.6", Instant.now());
 
@@ -90,8 +89,8 @@ public class ConfigServerBootstrapTest {
         throw new RuntimeException(messageIfWaitingFails);
     }
 
-    private MockRpc createRpcServer(ConfigserverConfig configserverConfig) {
-        return new MockRpc(configserverConfig.rpcport());
+    private MockRpc createRpcServer(ConfigserverConfig configserverConfig) throws IOException {
+        return new MockRpc(configserverConfig.rpcport(), temporaryFolder.newFolder());
     }
 
     private StateMonitor createStateMonitor() {
@@ -99,10 +98,10 @@ public class ConfigServerBootstrapTest {
                                 new SystemTimer());
     }
 
-    private static ConfigserverConfig createConfigserverConfig() {
+    private static ConfigserverConfig createConfigserverConfig(TemporaryFolder temporaryFolder) throws IOException {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                              .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                                              .configDefinitionsDir(Files.createTempDir().getAbsolutePath())
+                                              .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                                              .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                                               .hostedVespa(true)
                                               .multitenant(true));
     }
@@ -111,8 +110,8 @@ public class ConfigServerBootstrapTest {
 
         volatile boolean isRunning = false;
 
-        MockRpc(int port) {
-            super(port);
+        MockRpc(int port, File tempDir) {
+            super(port, tempDir);
         }
 
         @Override

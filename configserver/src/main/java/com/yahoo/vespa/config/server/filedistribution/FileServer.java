@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
@@ -17,6 +16,7 @@ import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
@@ -72,7 +72,7 @@ public class FileServer {
 
     @Inject
     public FileServer(ConfigserverConfig configserverConfig) {
-        this(createConnectionPool(configserverConfig), FileDistribution.getDefaultFileDBPath());
+        this(createConnectionPool(configserverConfig), new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())));
     }
 
     // For testing only

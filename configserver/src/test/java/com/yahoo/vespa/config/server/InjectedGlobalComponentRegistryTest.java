@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
@@ -22,8 +20,11 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.is;
@@ -31,14 +32,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class InjectedGlobalComponentRegistryTest {
 
     private Curator curator;
     private Metrics metrics;
-    private ConfigServerDB serverDB;
     private SessionPreparer sessionPreparer;
     private ConfigserverConfig configserverConfig;
     private RpcServer rpcServer;
@@ -50,33 +49,36 @@ public class InjectedGlobalComponentRegistryTest {
     private ModelFactoryRegistry modelFactoryRegistry;
     private Zone zone;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupRegistry() {
+    public void setupRegistry() throws IOException {
         curator = new MockCurator();
         ConfigCurator configCurator = ConfigCurator.create(curator);
         metrics = Metrics.createTestMetrics();
         modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
-                        .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                        .configDefinitionsDir(Files.createTempDir().getAbsolutePath()));
-        serverDB = new ConfigServerDB(configserverConfig);
+                        .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                        .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
         sessionPreparer = new SessionTest.MockSessionPreparer();
-        rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(), 
-                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(FileDistribution.getDefaultFileDBPath()));
+        rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(),
+                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(temporaryFolder.newFolder("filereferences")));
         generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         hostRegistries = new HostRegistries();
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner());
         zone = Zone.defaultZone();
-        globalComponentRegistry = new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, serverDB, sessionPreparer, rpcServer, configserverConfig, generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone);
+        globalComponentRegistry =
+                new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,
+                                                    generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone);
     }
 
     @Test
     public void testThatAllComponentsAreSetup() {
         assertThat(globalComponentRegistry.getModelFactoryRegistry(), is(modelFactoryRegistry));
-        assertThat(globalComponentRegistry.getServerDB(), is(serverDB));
         assertThat(globalComponentRegistry.getSessionPreparer(), is(sessionPreparer));
         assertThat(globalComponentRegistry.getMetrics(), is(metrics));
         assertThat(globalComponentRegistry.getCurator(), is(curator));

@@ -12,8 +12,11 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.GetConfigContext;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -28,10 +31,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class DelayedConfigResponseTest {
 
-    @Test
-    public void testDelayedConfigResponses() {
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-        MockRpc rpc = new MockRpc(13337);
+    @Test
+    public void testDelayedConfigResponses() throws IOException {
+
+        MockRpc rpc = new MockRpc(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
         assertThat(responses.size(), is(0));
         JRTServerConfigRequest req = createRequest("foo", "md5", "myid", "mymd5", 3, 1000000, "bar");
@@ -50,9 +56,9 @@ public class DelayedConfigResponseTest {
     }
 
     @Test
-    public void testDelayResponseRemove() {
+    public void testDelayResponseRemove() throws IOException {
         GetConfigContext context = GetConfigContext.testContext(ApplicationId.defaultId());
-        MockRpc rpc = new MockRpc(13337);
+        MockRpc rpc = new MockRpc(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
         responses.delayResponse(createRequest("foolio", "md5", "myid", "mymd5", 3, 100000, "bar"), context);
         assertThat(responses.size(), is(1));
@@ -61,8 +67,8 @@ public class DelayedConfigResponseTest {
     }
 
     @Test
-    public void testDelayedConfigResponse() {
-        MockRpc rpc = new MockRpc(13337);
+    public void testDelayedConfigResponse() throws IOException {
+        MockRpc rpc = new MockRpc(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
         assertThat(responses.size(), is(0));
         assertThat(responses.toString(), is("DelayedConfigResponses. Average Size=0"));
@@ -72,7 +78,7 @@ public class DelayedConfigResponseTest {
         assertThat(rpc.latestRequest, is(req));
     }
 
-    public JRTServerConfigRequest createRequest(String configName, String defMd5, String configId, String md5, long generation, long timeout, String namespace) {
+    private JRTServerConfigRequest createRequest(String configName, String defMd5, String configId, String md5, long generation, long timeout, String namespace) {
         Request request = JRTClientConfigRequestV3.
                 createWithParams(new ConfigKey<>(configName, configId, namespace, defMd5, null), DefContent.fromList(Collections.emptyList()),
                                  "fromHost", md5, generation, timeout, Trace.createDummy(), CompressionType.UNCOMPRESSED,
