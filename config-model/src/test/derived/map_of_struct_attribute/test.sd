@@ -1,0 +1,20 @@
+search test {
+  document test {
+    struct elem {
+      field name type string {}
+      field weight type int {}
+    }
+    field elem_map type map<string,elem> {
+      indexing: summary
+      struct-field key {
+        indexing: attribute
+      }
+      struct-field value.name {
+        indexing: attribute
+      }
+      struct-field value.weight {
+        indexing: attribute
+      }
+    }
+  }
+}
