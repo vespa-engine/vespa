@@ -878,7 +878,7 @@ RoutableFactories50::VisitorInfoMessageFactory::doEncode(const DocumentMessage &
 
     buf.putInt(msg.getFinishedBuckets().size());
     for (const auto & bucketId : msg.getFinishedBuckets()) {
-        uint64_t val =bucketId.getRawId();
+        uint64_t val = bucketId.getRawId();
         buf.putBytes((const char*)&val, 8);
     }
     buf.putString(msg.getErrorMessage());
