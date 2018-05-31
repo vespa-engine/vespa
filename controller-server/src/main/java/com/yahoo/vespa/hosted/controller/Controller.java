@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
@@ -10,7 +9,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
@@ -155,11 +153,6 @@ public class Controller extends AbstractComponent {
 
     public Map<String, RotationStatus> rotationStatus(Rotation rotation) {
         return globalRoutingService.getHealthStatus(rotation.name());
-    }
-
-    // TODO: Model the response properly
-    public JsonNode waitForConfigConvergence(DeploymentId deploymentId, long timeout) {
-        return configServer.waitForConfigConverge(deploymentId, timeout);
     }
 
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
