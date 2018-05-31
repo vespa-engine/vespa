@@ -28,6 +28,7 @@ import java.util.Set;
 
 /**
  * @author mortent
+ * @author bjorncs
  */
 public class IdentityDocumentGenerator {
 
@@ -70,7 +71,11 @@ public class IdentityDocumentGenerator {
                     toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
                     new AthenzService(zoneConfig.domain(), zoneConfig.serviceName()),
                     URI.create(zoneConfig.ztsUrl()),
-                    SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION);
+                    SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION,
+                    identityDocument.configServerHostname(),
+                    identityDocument.instanceHostname(),
+                    identityDocument.createdAt(),
+                    identityDocument.ipAddresses());
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }

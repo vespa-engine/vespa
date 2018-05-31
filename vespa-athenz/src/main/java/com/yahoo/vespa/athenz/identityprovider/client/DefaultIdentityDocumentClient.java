@@ -2,14 +2,11 @@
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -82,15 +79,7 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                 String responseContent = EntityUtils.toString(response.getEntity());
                 if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
                     SignedIdentityDocumentEntity entity = objectMapper.readValue(responseContent, SignedIdentityDocumentEntity.class);
-                    return new SignedIdentityDocument(
-                            EntityBindingsMapper.toIdentityDocument(entity.identityDocument),
-                            entity.signature,
-                            entity.signingKeyVersion,
-                            VespaUniqueInstanceId.fromDottedString(entity.providerUniqueId),
-                            entity.dnsSuffix,
-                            (AthenzService) AthenzIdentities.from(entity.providerService),
-                            entity.ztsEndpoint,
-                            entity.documentVersion);
+                    return EntityBindingsMapper.toSignedIdentityDocument(entity);
                 } else {
                     throw new RuntimeException(
                             String.format(
