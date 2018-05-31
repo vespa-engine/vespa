@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,13 +22,11 @@ public class SuperModelListenerImplTest {
     public void sanityCheck() {
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         ServiceMonitorMetrics metrics = mock(ServiceMonitorMetrics.class);
-        DuperModel duperModel = mock(DuperModel.class);
         ModelGenerator modelGenerator = mock(ModelGenerator.class);
         Zone zone = mock(Zone.class);
         SuperModelListenerImpl listener = new SuperModelListenerImpl(
                 slobrokMonitorManager,
                 metrics,
-                duperModel,
                 modelGenerator,
                 zone);
 
@@ -41,15 +38,13 @@ public class SuperModelListenerImplTest {
         ApplicationInfo application2 = mock(ApplicationInfo.class);
         List<ApplicationInfo> applications = Stream.of(application1, application2)
                 .collect(Collectors.toList());
-        when(duperModel.getApplicationInfos(superModel)).thenReturn(applications);
+        when(superModel.getAllApplicationInfos()).thenReturn(applications);
 
         listener.start(superModelProvider);
-        verify(duperModel, times(1)).getApplicationInfos(superModel);
-        verify(slobrokMonitorManager).applicationActivated(application1);
-        verify(slobrokMonitorManager).applicationActivated(application2);
+        verify(slobrokMonitorManager).applicationActivated(superModel, application1);
+        verify(slobrokMonitorManager).applicationActivated(superModel, application2);
 
         ServiceModel serviceModel = listener.get();
-        verify(duperModel, times(2)).getApplicationInfos(superModel);
-        verify(modelGenerator).toServiceModel(applications, zone, slobrokMonitorManager);
+        verify(modelGenerator).toServiceModel(superModel, zone, slobrokMonitorManager);
     }
 }

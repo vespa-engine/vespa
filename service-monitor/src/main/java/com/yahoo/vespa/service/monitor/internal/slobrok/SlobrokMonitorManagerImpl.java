@@ -3,6 +3,8 @@ package com.yahoo.vespa.service.monitor.internal.slobrok;
 
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.SuperModel;
+import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.log.LogLevel;
@@ -11,7 +13,6 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
-import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.internal.MonitorManager;
 
 import java.util.HashMap;
@@ -20,7 +21,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
+public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokApi, MonitorManager {
     private static final Logger logger =
             Logger.getLogger(SlobrokMonitorManagerImpl.class.getName());
 
@@ -39,11 +40,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
     }
 
     @Override
-    public void applicationActivated(ApplicationInfo application) {
-        if (!applicationMonitoredWithSlobrok(application.getApplicationId())) {
-            return;
-        }
-
+    public void applicationActivated(SuperModel superModel, ApplicationInfo application) {
         synchronized (monitor) {
             SlobrokMonitor slobrokMonitor = slobrokMonitors.computeIfAbsent(
                     application.getApplicationId(),
@@ -53,11 +50,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
     }
 
     @Override
-    public void applicationRemoved(ApplicationId id) {
-        if (!applicationMonitoredWithSlobrok(id)) {
-            return;
-        }
-
+    public void applicationRemoved(SuperModel superModel, ApplicationId id) {
         synchronized (monitor) {
             SlobrokMonitor slobrokMonitor = slobrokMonitors.remove(id);
             if (slobrokMonitor == null) {
@@ -86,10 +79,6 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
                                    ClusterId clusterId,
                                    ServiceType serviceType,
                                    ConfigId configId) {
-        if (!applicationMonitoredWithSlobrok(applicationId)) {
-            return ServiceStatus.NOT_CHECKED;
-        }
-
         Optional<String> slobrokServiceName = findSlobrokServiceName(serviceType, configId);
         if (slobrokServiceName.isPresent()) {
             synchronized (monitor) {
@@ -104,14 +93,6 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
         } else {
             return ServiceStatus.NOT_CHECKED;
         }
-    }
-
-    private boolean applicationMonitoredWithSlobrok(ApplicationId applicationId) {
-        if (applicationId.equals(ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId())) {
-            return false;
-        }
-
-        return true;
     }
 
     /**
