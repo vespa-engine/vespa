@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -316,21 +317,23 @@ struct MyAttributeWriter : public IAttributeWriter
     std::set<vespalib::string> _attrs;
     proton::IAttributeManager::SP _mgr;
     MyTracer &_tracer;
+
     MyAttributeWriter(MyTracer &tracer);
     ~MyAttributeWriter();
-    virtual std::vector<AttributeVector *>
+
+    std::vector<AttributeVector *>
     getWritableAttributes() const override {
         return std::vector<AttributeVector *>();
     }
-    virtual AttributeVector *getWritableAttribute(const vespalib::string &attrName) const override {
+    AttributeVector *getWritableAttribute(const vespalib::string &attrName) const override {
         if (_attrs.count(attrName) == 0) {
             return nullptr;
         }
         AttrMap::const_iterator itr = _attrMap.find(attrName);
         return ((itr == _attrMap.end()) ? nullptr : itr->second.get());
     }
-    virtual void put(SerialNum serialNum, const document::Document &doc, DocumentIdT lid,
-                     bool immediateCommit, OnWriteDoneType) override {
+    void put(SerialNum serialNum, const document::Document &doc, DocumentIdT lid,
+             bool immediateCommit, OnWriteDoneType) override {
         _putSerial = serialNum;
         _putDocId = doc.getId();
         _putLid = lid;
@@ -339,8 +342,8 @@ struct MyAttributeWriter : public IAttributeWriter
             ++_commitCount;
         }
     }
-    virtual void remove(SerialNum serialNum, DocumentIdT lid,
-                        bool immediateCommit, OnWriteDoneType) override {
+    void remove(SerialNum serialNum, DocumentIdT lid,
+                bool immediateCommit, OnWriteDoneType) override {
         _removeSerial = serialNum;
         _removeLid = lid;
         _tracer.traceRemove(attributeAdapterTypeName, serialNum, lid, immediateCommit);
@@ -348,45 +351,45 @@ struct MyAttributeWriter : public IAttributeWriter
             ++_commitCount;
         }
     }
-    virtual void remove(const LidVector & lidsToRemove, SerialNum serialNum,
-                        bool immediateCommit, OnWriteDoneType) override {
+    void remove(const LidVector & lidsToRemove, SerialNum serialNum,
+                bool immediateCommit, OnWriteDoneType) override {
         for (uint32_t lid : lidsToRemove) {
             LOG(info, "MyAttributeAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
            _removes.push_back(lid);
            _tracer.traceRemove(attributeAdapterTypeName, serialNum, lid, immediateCommit);
         }
     }
-    virtual void update(SerialNum serialNum, const document::DocumentUpdate &upd,
-                        DocumentIdT lid, bool, OnWriteDoneType) override {
+    void update(SerialNum serialNum, const document::DocumentUpdate &upd,
+                DocumentIdT lid, bool, OnWriteDoneType, IFieldUpdateCallback & onUpdate) override {
         _updateSerial = serialNum;
         _updateDocId = upd.getId();
         _updateLid = lid;
+        for (const auto & fieldUpdate : upd.getUpdates()) {
+            search::AttributeVector * attr = getWritableAttribute(fieldUpdate.getField().getName());
+            onUpdate.onUpdateField(fieldUpdate.getField().getName(), attr);
+        }
     }
-    virtual void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid,
-                        bool immediateCommit, OnWriteDoneType) override {
+    void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid,
+                bool immediateCommit, OnWriteDoneType) override {
         (void) serialNum;
         (void) doc;
         (void) lid;
         (void) immediateCommit;
     }
-    virtual void heartBeat(SerialNum) override { ++_heartBeatCount; }
-    virtual void compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum) override {
-        (void) serialNum;
+    void heartBeat(SerialNum) override { ++_heartBeatCount; }
+    void compactLidSpace(uint32_t wantedLidLimit, SerialNum ) override {
         _wantedLidLimit = wantedLidLimit;
     }
-    virtual const proton::IAttributeManager::SP &getAttributeManager() const override {
+    const proton::IAttributeManager::SP &getAttributeManager() const override {
         return _mgr;
     }
     void forceCommit(SerialNum serialNum, OnWriteDoneType) override {
-        (void) serialNum; ++_commitCount;
+        ++_commitCount;
         _tracer.traceCommit(attributeAdapterTypeName, serialNum);
     }
 
-    virtual void onReplayDone(uint32_t docIdLimit) override
-    {
-        (void) docIdLimit;
-    }
-    virtual bool getHasCompoundAttribute() const override { return false; }
+    void onReplayDone(uint32_t ) override { }
+    bool getHasCompoundAttribute() const override { return false; }
 };
 
 MyAttributeWriter::MyAttributeWriter(MyTracer &tracer)
@@ -404,7 +407,7 @@ MyAttributeWriter::MyAttributeWriter(MyTracer &tracer)
     cfg3.setTensorType(ValueType::from_spec("tensor(x[10])"));
     _attrMap["a3"] = search::AttributeFactory::createAttribute("test3", cfg3);
 }
-MyAttributeWriter::~MyAttributeWriter() {}
+MyAttributeWriter::~MyAttributeWriter() = default;
 
 struct MyTransport : public feedtoken::ITransport
 {
@@ -428,7 +431,7 @@ struct MyResultHandler : public IGenericResultHandler
 {
     vespalib::Gate _gate;
     MyResultHandler() : _gate() {}
-    virtual void handle(const storage::spi::Result &) override {
+    void handle(const storage::spi::Result &) override {
         _gate.countDown();
     }
     void await() { _gate.await(); }
@@ -454,7 +457,7 @@ SchemaContext::SchemaContext() :
     _schema->addSummaryField(Schema::SummaryField("s1", DataType::STRING, CollectionType::SINGLE));
     _builder.reset(new DocBuilder(*_schema));
 }
-SchemaContext::~SchemaContext() {}
+SchemaContext::~SchemaContext() = default;
 
 
 struct DocumentContext

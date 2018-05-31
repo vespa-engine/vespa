@@ -34,24 +34,19 @@ private:
 
     bool hasIndexedFields() const { return _hasIndexedFields; }
 
-    void
-    performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
-                    bool immediateCommit, OnOperationDoneType onWriteDone);
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
+                         bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    void
-    performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &doc,
-                    bool immediateCommit, OnOperationDoneType onWriteDone);
-    void
-    performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
-                    bool immediateCommit, OnOperationDoneType onWriteDone);
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &doc,
+                         bool immediateCommit, OnOperationDoneType onWriteDone);
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
+                         bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    void
-    performIndexRemove(SerialNum serialNum, search::DocumentIdT lid,
-                       bool immediateCommit, OnRemoveDoneType onWriteDone);
+    void performIndexRemove(SerialNum serialNum, search::DocumentIdT lid,
+                            bool immediateCommit, OnRemoveDoneType onWriteDone);
 
-    void
-    performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove,
-                       bool immediateCommit, OnWriteDoneType onWriteDone);
+    void performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove,
+                            bool immediateCommit, OnWriteDoneType onWriteDone);
 
     void performIndexHeartBeat(SerialNum serialNum);
 
@@ -60,23 +55,17 @@ private:
     void performSync();
     void heartBeatIndexedFields(SerialNum serialNum) override;
 
-    virtual void
-    putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
-                     bool immediateCommit, OnOperationDoneType onWriteDone) override;
+    void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
+                          bool immediateCommit, OnOperationDoneType onWriteDone) override;
 
-    UpdateScope getUpdateScope(const document::DocumentUpdate &upd) override;
+    void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc newDoc,
+                             bool immediateCommit, OnOperationDoneType onWriteDone) override;
 
-    virtual void
-    updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc newDoc,
-                        bool immediateCommit, OnOperationDoneType onWriteDone) override;
+    void removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid,
+                             bool immediateCommit, OnRemoveDoneType onWriteDone) override;
 
-    virtual void
-    removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid,
-                        bool immediateCommit, OnRemoveDoneType onWriteDone) override;
-
-    virtual void
-    removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove,
-                        bool immediateCommit, OnWriteDoneType onWriteDone) override;
+    void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove,
+                             bool immediateCommit, OnWriteDoneType onWriteDone) override;
 
     void performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
     void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
@@ -85,7 +74,7 @@ public:
     SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,
                        const FastAccessFeedView::Context &fastUpdateCtx, Context ctx);
 
-    virtual ~SearchableFeedView();
+    ~SearchableFeedView() override;
     const IIndexWriter::SP &getIndexWriter() const { return _indexWriter; }
     void sync() override;
 };

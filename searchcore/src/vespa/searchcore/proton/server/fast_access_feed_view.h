@@ -39,13 +39,11 @@ private:
     const IAttributeWriter::SP _attributeWriter;
     DocIdLimit                 &_docIdLimit;
 
-    UpdateScope getUpdateScope(const document::DocumentUpdate &upd) override;
-
     void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
                        bool immediateCommit, OnPutDoneType onWriteDone) override;
 
     void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
-                          bool immediateCommit, OnOperationDoneType onWriteDone) override;
+                          bool immediateCommit, OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate) override;
     void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc,
                           bool immediateCommit, OnOperationDoneType onWriteDone) override;
     void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
@@ -74,8 +72,6 @@ public:
 
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
     void sync() override;
-
-    bool fastPartialUpdateAttribute(const vespalib::string &fieldName) const;
 };
 
 } // namespace proton

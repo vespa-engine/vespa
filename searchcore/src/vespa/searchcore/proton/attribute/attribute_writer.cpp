@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_writer.h"
+#include "ifieldupdatecallback.h"
 #include "attributemanager.h"
 #include "document_field_extractor.h"
 #include <vespa/document/base/exceptions.h>
@@ -500,17 +501,15 @@ AttributeWriter::remove(const LidVector &lidsToRemove, SerialNum serialNum,
 
 void
 AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
-                        bool immediateCommit, OnWriteDoneType onWriteDone)
+                        bool immediateCommit, OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate)
 {
     LOG(debug, "Inspecting update for document %d.", lid);
     for (const auto &fupd : upd.getUpdates()) {
-        LOG(debug, "Retrieving guard for attribute vector '%s'.",
-            fupd.getField().getName().c_str());
-        AttributeVector *attrp =
-            _mgr->getWritableAttribute(fupd.getField().getName());
+        LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().c_str());
+        AttributeVector *attrp = _mgr->getWritableAttribute(fupd.getField().getName());
+        onUpdate.onUpdateField(fupd.getField().getName(), attrp);
         if (attrp == nullptr) {
-            LOG(spam, "Failed to find attribute vector %s",
-                fupd.getField().getName().c_str());
+            LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().c_str());
             continue;
         }
         AttributeVector &attr = *attrp;
@@ -519,8 +518,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
         if (attr.getStatus().getLastSyncToken() >= serialNum)
             continue;
 
-        LOG(debug, "About to apply update for docId %u in attribute vector '%s'.",
-                lid, attr.getName().c_str());
+        LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attr.getName().c_str());
 
         // NOTE: The lifetime of the field update will be ensured by keeping the document update alive
         // in a operation done context object.

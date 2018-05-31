@@ -82,7 +82,7 @@ public:
     void remove(const LidVector &lidVector, SerialNum serialNum,
                 bool immediateCommit, OnWriteDoneType onWriteDone) override;
     void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
-                bool immediateCommit, OnWriteDoneType onWriteDone) override;
+                bool immediateCommit, OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate) override;
     void update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                 bool immediateCommit, OnWriteDoneType onWriteDone) override;
     void heartBeat(SerialNum serialNum) override;
@@ -92,8 +92,8 @@ public:
     }
     void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
 
-    virtual void onReplayDone(uint32_t docIdLimit) override;
-    virtual bool getHasCompoundAttribute() const override;
+    void onReplayDone(uint32_t docIdLimit) override;
+    bool getHasCompoundAttribute() const override;
 };
 
 } // namespace proton
