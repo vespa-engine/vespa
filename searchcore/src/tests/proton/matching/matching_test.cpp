@@ -61,6 +61,36 @@ void inject_match_phase_limiting(Properties &setup, const vespalib::string &attr
     setup.import(cfg);
 }
 
+FakeResult make_elem_result(const std::vector<std::pair<uint32_t,std::vector<uint32_t> > > &match_data) {
+    FakeResult result;
+    uint32_t pos_should_be_ignored = 0;
+    for (const auto &doc: match_data) {
+        result.doc(doc.first);
+        for (const auto &elem: doc.second) {
+            result.elem(elem).pos(++pos_should_be_ignored);
+        }
+    }
+    return result;
+}
+
+vespalib::string make_simple_stack_dump(const vespalib::string &field,
+                                        const vespalib::string &term)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addStringTerm(term, field, 1, search::query::Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
+vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term,
+                                              const vespalib::string &f1_term)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addSameElement(2, "ignored field name");
+    builder.addStringTerm(a1_term, "a1", 1, search::query::Weight(1));
+    builder.addStringTerm(f1_term, "f1", 2, search::query::Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
 //-----------------------------------------------------------------------------
 
 const uint32_t NUM_DOCS = 1000;
@@ -238,6 +268,13 @@ struct MyWorld {
         searchContext.attr().addResult("a1", term, result);
     }
 
+    void add_same_element_results(const vespalib::string &a1_term, const vespalib::string &f1_0_term) {
+        auto a1_result   = make_elem_result({{10, {1}}, {20, {2}}, {21, {2}}});
+        auto f1_0_result = make_elem_result({{10, {2}}, {20, {2}}, {21, {2}}});
+        searchContext.attr().addResult("a1", a1_term, a1_result);
+        searchContext.idx(0).getFake().addResult("f1", f1_0_term, f1_0_result);
+    }
+
     void basicResults() {
         searchContext.idx(0).getFake().addResult("f1", "foo",
                                                  FakeResult()
@@ -249,24 +286,30 @@ struct MyWorld {
                 .doc(600).doc(700).doc(800).doc(900));
     }
 
-    void setStackDump(Request &request, const vespalib::string &field,
-                      const vespalib::string &term) {
-        QueryBuilder<ProtonNodeTypes> builder;
-        builder.addStringTerm(term, field, 1, search::query::Weight(1));
-        vespalib::string stack_dump =
-            StackDumpCreator::create(*builder.build());
+    void setStackDump(Request &request, const vespalib::string &stack_dump) {
         request.stackDump.assign(stack_dump.data(),
                                  stack_dump.data() + stack_dump.size());
     }
 
-    SearchRequest::SP createSimpleRequest(const vespalib::string &field,
-            const vespalib::string &term)
+    SearchRequest::SP createRequest(const vespalib::string &stack_dump)
     {
         SearchRequest::SP request(new SearchRequest);
         request->setTimeout(60 * fastos::TimeStamp::SEC);
-        setStackDump(*request, field, term);
+        setStackDump(*request, stack_dump);
         request->maxhits = 10;
         return request;
+    }
+
+    SearchRequest::SP createSimpleRequest(const vespalib::string &field,
+                                          const vespalib::string &term)
+    {
+        return createRequest(make_simple_stack_dump(field, term));
+    }
+
+    SearchRequest::SP createSameElementRequest(const vespalib::string &a1_term,
+                                               const vespalib::string &f1_term)
+    {
+        return createRequest(make_same_element_stack_dump(a1_term, f1_term));
     }
 
     Matcher::SP createMatcher() {
@@ -317,7 +360,7 @@ struct MyWorld {
                                                 const vespalib::string & term)
     {
         DocsumRequest::SP request(new DocsumRequest);
-        setStackDump(*request, field, term);
+        setStackDump(*request, make_simple_stack_dump(field, term));
 
         // match a subset of basic result + request for a non-hit (not
         // sorted on docid)
@@ -798,6 +841,16 @@ TEST("require that fields are tagged with data type") {
     EXPECT_EQUAL(string_field->get_data_type(), FieldInfo::DataType::STRING);
     EXPECT_EQUAL(tensor_field->get_data_type(), FieldInfo::DataType::TENSOR);
     EXPECT_EQUAL(predicate_field->get_data_type(), FieldInfo::DataType::BOOLEANTREE);
+}
+
+TEST("require that same element search works (note that this does not test/use the attribute element iterator wrapper)") {
+    MyWorld world;
+    world.basicSetup();
+    world.add_same_element_results("foo", "bar");
+    SearchRequest::SP request = world.createSameElementRequest("foo", "bar");
+    SearchReply::UP reply = world.performSearch(request, 1);
+    ASSERT_EQUAL(1u, reply->hits.size());
+    EXPECT_EQUAL(document::DocumentId("doc::20").getGlobalId(), reply->hits[0].gid);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
