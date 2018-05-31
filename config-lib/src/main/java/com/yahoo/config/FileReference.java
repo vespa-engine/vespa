@@ -20,8 +20,7 @@ public final class FileReference {
     private final String value;
 
     public FileReference(String value) {
-        Objects.requireNonNull(value);
-        this.value = value;
+        this.value = Objects.requireNonNull(value);
     }
 
     public String value() {

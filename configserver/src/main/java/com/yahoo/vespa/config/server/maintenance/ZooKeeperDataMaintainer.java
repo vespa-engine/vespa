@@ -19,5 +19,6 @@ public class ZooKeeperDataMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         curator.delete(Path.fromString("/vespa/filedistribution"));
+        curator.delete(Path.fromString("/vespa/config"));
     }
 }

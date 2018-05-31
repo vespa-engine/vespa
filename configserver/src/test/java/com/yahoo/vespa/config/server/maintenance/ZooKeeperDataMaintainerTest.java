@@ -20,11 +20,13 @@ public class ZooKeeperDataMaintainerTest {
         curator.create(Path.fromString("/foo"));
         curator.create(Path.fromString("/vespa/bar"));
         curator.create(Path.fromString("/vespa/filedistribution"));
+        curator.create(Path.fromString("/vespa/config"));
 
         new ZooKeeperDataMaintainer(tester.applicationRepository(), curator, Duration.ofDays(1)).run();
 
         assertTrue(curator.exists(Path.fromString("/foo")));
         assertTrue(curator.exists(Path.fromString("/vespa")));
         assertFalse(curator.exists(Path.fromString("/vespa/filedistribution")));
+        assertFalse(curator.exists(Path.fromString("/vespa/config")));
     }
 }
