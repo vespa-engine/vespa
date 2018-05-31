@@ -106,7 +106,12 @@ public class CuratorDatabase {
             return generation != cache.generation();
         }
         public CuratorDatabaseCache validCache() {
-            return !expired() ? cache : null;
+            if (expired()) {
+                throw new IllegalStateException("The cache has generation " + cache.generation() +
+                        " while the root genration counter in zookeeper says " + generation +
+                        ". That is totally unacceptable and must be a sever programming error in my close vicinity.");
+            }
+            return cache;
         }
 
         private CuratorDatabaseCache cache;
