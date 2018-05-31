@@ -61,19 +61,28 @@ SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArra
 {
     (void) tfmda;
     assert(!tfmda.valid());
-    fef::MatchData::UP md = _layout.createMatchData();
+
+    fef::MatchDataLayout my_layout = _layout;
+    std::vector<fef::TermFieldHandle> extra_handles;
+    for (size_t i = 0; i < _terms.size(); ++i) {
+        const State &childState = _terms[i]->getState();
+        assert(childState.numFields() == 1);
+        extra_handles.push_back(my_layout.allocTermField(childState.field(0).getFieldId()));
+    }
+    fef::MatchData::UP md = my_layout.createMatchData();
     search::fef::TermFieldMatchDataArray childMatch;
     std::vector<SearchIterator::UP> children(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
-        assert(childState.numFields() == 1);
-        childMatch.add(childState.field(0).resolve(*md));
         SearchIterator::UP child = _terms[i]->createSearch(*md, (strict && (i == 0)));
         const attribute::ISearchContext *context = child->getAttributeSearchContext();
         if (context == nullptr) {
             children[i] = std::move(child);
+            childMatch.add(childState.field(0).resolve(*md));
         } else {
-            children[i] = std::make_unique<attribute::ElementIterator>(std::move(child), *context, *childMatch[i]);
+            fef::TermFieldMatchData *child_tfmd = md->resolveTermField(extra_handles[i]);
+            children[i] = std::make_unique<attribute::ElementIterator>(std::move(child), *context, *child_tfmd);
+            childMatch.add(child_tfmd);
         }
     }
     return std::make_unique<SameElementSearch>(std::move(md), std::move(children), childMatch, strict);
