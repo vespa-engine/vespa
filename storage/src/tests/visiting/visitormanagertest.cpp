@@ -822,10 +822,6 @@ VisitorManagerTest::testAbortOnFailedVisitorInfo()
         _top->sendDown(cmd);
     }
 
-    uint32_t visitorRepliesReceived = 0;
-    uint32_t oki = 0;
-    uint32_t failed = 0;
-
     std::vector<document::Document::SP > docs;
     std::vector<document::DocumentId> docIds;
 
@@ -845,31 +841,7 @@ VisitorManagerTest::testAbortOnFailedVisitorInfo()
         reply->addError(mbus::Error(api::ReturnCode::NOT_CONNECTED, "Me no ready"));
         session.reply(std::move(reply));
     }
-
-    _top->waitForMessages(1, 60);
-    const msg_ptr_vector replies = _top->getRepliesOnce();
-    for (uint32_t i=0; i< replies.size(); ++i) {
-        std::shared_ptr<api::StorageMessage> msg(replies[i]);
-        if (msg->getType() == api::MessageType::VISITOR_CREATE_REPLY)
-        {
-            ++visitorRepliesReceived;
-            std::shared_ptr<api::CreateVisitorReply> reply(
-                    std::dynamic_pointer_cast<api::CreateVisitorReply>(msg));
-            CPPUNIT_ASSERT(reply.get());
-            if (reply->getResult().success()) {
-                ++oki;
-                std::cerr << "\n" << reply->toString(true) << "\n";
-            } else {
-                ++failed;
-            }
-        }
-    }
-
-    std::ostringstream errmsg;
-    errmsg << "oki " << oki << ", failed " << failed;
-
-    CPPUNIT_ASSERT_EQUAL_MSG(errmsg.str(), 0u, oki);
-    CPPUNIT_ASSERT_EQUAL_MSG(errmsg.str(), 1u, failed);
+    verifyCreateVisitorReply(api::ReturnCode::NOT_CONNECTED);
 }
 
 void
@@ -913,14 +885,11 @@ VisitorManagerTest::testVisitorQueueTimeout()
     }
 
     // Don't answer any messages. Make sure we timeout anyways.
-    uint32_t visitorRepliesReceived = 0;
-
     _top->waitForMessages(1, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
     std::shared_ptr<api::StorageMessage> msg(replies[0]);
 
     CPPUNIT_ASSERT_EQUAL(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
-    ++visitorRepliesReceived;
     std::shared_ptr<api::CreateVisitorReply> reply(
             std::dynamic_pointer_cast<api::CreateVisitorReply>(msg));
     CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::BUSY,
@@ -948,19 +917,7 @@ VisitorManagerTest::testVisitorProcessingTimeout()
 
     _node->getClock().addSecondsToTime(1000);
 
-    // Don't answer any messages. Make sure we timeout anyways.
-    uint32_t visitorRepliesReceived = 0;
-
-    _top->waitForMessages(1, 60);
-    const msg_ptr_vector replies = _top->getRepliesOnce();
-    std::shared_ptr<api::StorageMessage> msg(replies[0]);
-
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
-    ++visitorRepliesReceived;
-    std::shared_ptr<api::CreateVisitorReply> reply(
-            std::dynamic_pointer_cast<api::CreateVisitorReply>(msg));
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
-                         reply->getResult().getResult());
+    verifyCreateVisitorReply(api::ReturnCode::ABORTED);
 }
 
 namespace {
