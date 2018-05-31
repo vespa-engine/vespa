@@ -66,12 +66,10 @@ public class SystemUpgrader extends Maintainer {
     private boolean deployInZone(ZoneId zone, List<SystemApplication> applications, Version target) {
         boolean converged = true;
         for (SystemApplication application : applications) {
-            boolean dependenciesConverged = application.dependencies().stream()
-                    .allMatch(dependency -> convergedOn(zone, dependency, target));
-            if (dependenciesConverged) {
+            if (convergedOn(target, application.dependencies(), zone)) {
                 deploy(target, application, zone);
             }
-            converged &= convergedOn(zone, application, target);
+            converged &= convergedOn(target, application, zone);
         }
         return converged;
     }
@@ -84,7 +82,11 @@ public class SystemUpgrader extends Maintainer {
         }
     }
 
-    private boolean convergedOn(ZoneId zone, SystemApplication application, Version target) {
+    private boolean convergedOn(Version target, List<SystemApplication> applications, ZoneId zone) {
+        return applications.stream().allMatch(application -> convergedOn(target, application, zone));
+    }
+
+    private boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
         return currentVersion(zone, application.id(), target).equals(target);
     }
 
