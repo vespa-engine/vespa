@@ -889,8 +889,8 @@ struct StructMapFixture : public StructFixtureBase
           _structMapFieldType(*DataType::INT, _structFieldType),
           _structMapField("map", _structMapFieldType, true)
     {
-        addAttribute({"map.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
-        addAttribute({"map.[key]", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        addAttribute({"map.value.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        addAttribute({"map.key", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
         _type.addField(_structMapField);
     }
 
@@ -908,8 +908,8 @@ struct StructMapFixture : public StructFixtureBase
     }
     void checkAttrs(uint32_t lid, int32_t expValue, const std::map<int32_t, int32_t> &expMap) {
         auto valueAttr = _m->getAttribute("value")->getSP();
-        auto mapKeyAttr = _m->getAttribute("map.[key]")->getSP();
-        auto mapValueAttr = _m->getAttribute("map.value")->getSP();
+        auto mapKeyAttr = _m->getAttribute("map.key")->getSP();
+        auto mapValueAttr = _m->getAttribute("map.value.value")->getSP();
         EXPECT_EQUAL(expValue, valueAttr->getInt(lid));
         attribute::IntegerContent mapKeys;
         mapKeys.fill(*mapKeyAttr, lid);
