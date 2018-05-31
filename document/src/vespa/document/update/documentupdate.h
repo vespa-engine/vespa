@@ -130,9 +130,6 @@ public:
 	
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
-    void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
-
     void serializeHEAD(vespalib::nbostream &stream) const;
 
     void printXml(XmlOutputStream&) const override;
@@ -164,6 +161,8 @@ private:
     bool             _createIfNonExistent;
 
     int deserializeFlags(int sizeAndFlags);
+    void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
+    void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
 };
 
 } // document
