@@ -141,7 +141,11 @@ public class AthenzIdentityProviderImplTest {
                 "dev-us-north-1.vespa.cloud",
                 new AthenzService("vespa.vespa.provider_dev_us-north-1"),
                 URI.create("https://zts:4443/zts/v1"),
-                1);
+                1,
+                "localhost",
+                "x.y.com",
+                Instant.EPOCH,
+                Collections.emptySet());
 
         return new ObjectMapper().registerModule(new JavaTimeModule())
                 .writeValueAsString(EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument));
