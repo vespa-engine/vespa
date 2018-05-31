@@ -32,7 +32,7 @@ RoutableFactories50::DocumentMessageFactory::decode(document::ByteBuffer &in, co
     uint32_t loadClass = decodeInt(in);
 
     DocumentMessage::UP msg = doDecode(in);
-    if (msg.get() != NULL) {
+    if (msg) {
         msg->setPriority((Priority::Value)pri);
         msg->setLoadType(loadTypes[loadClass]);
     }
@@ -54,7 +54,7 @@ RoutableFactories50::DocumentReplyFactory::decode(document::ByteBuffer &in, cons
     uint8_t pri;
     in.getByte(pri);
     DocumentReply::UP reply = doDecode(in);
-    if (reply.get() != NULL) {
+    if (reply) {
         reply->setPriority((Priority::Value)pri);
     }
     return mbus::Routable::UP(reply.release());
@@ -72,22 +72,17 @@ RoutableFactories50::BatchDocumentUpdateMessageFactory::doDecode(document::ByteB
     uint64_t userId = (uint64_t)decodeLong(buf);
     string group = decodeString(buf);
 
-    BatchDocumentUpdateMessage* msg;
-    if (group.length()) {
-        msg = new BatchDocumentUpdateMessage(group);
-    } else {
-        msg = new BatchDocumentUpdateMessage(userId);
-    }
-    DocumentMessage::UP retVal(msg);
+    auto msg = (group.length())
+               ? std::make_unique<BatchDocumentUpdateMessage>(group)
+               : std::make_unique<BatchDocumentUpdateMessage>(userId);
 
     uint32_t len = decodeInt(buf);
     for (uint32_t i = 0; i < len; i++) {
-        document::DocumentUpdate::SP upd;
-        upd.reset(document::DocumentUpdate::createHEAD(_repo, buf).release());
+        document::DocumentUpdate::SP upd = document::DocumentUpdate::createHEAD(_repo, buf);
         msg->addUpdate(upd);
     }
 
-    return retVal;
+    return msg;
 }
 
 bool
@@ -111,14 +106,14 @@ RoutableFactories50::BatchDocumentUpdateMessageFactory::doEncode(const DocumentM
 DocumentReply::UP
 RoutableFactories50::BatchDocumentUpdateReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    BatchDocumentUpdateReply* reply = new BatchDocumentUpdateReply();
+    auto reply = std::make_unique<BatchDocumentUpdateReply>();
     reply->setHighestModificationTimestamp(decodeLong(buf));
     std::vector<bool>& notFound = reply->getDocumentsNotFound();
     notFound.resize(decodeInt(buf));
     for (std::size_t i = 0; i < notFound.size(); ++i) {
         notFound[i] = decodeBoolean(buf);
     }
-    return DocumentReply::UP(reply);
+    return reply;
 }
 
 bool
@@ -126,10 +121,10 @@ RoutableFactories50::BatchDocumentUpdateReplyFactory::doEncode(const DocumentRep
 {
     const BatchDocumentUpdateReply& reply = static_cast<const BatchDocumentUpdateReply&>(obj);
     buf.putLong(reply.getHighestModificationTimestamp());
-    const std::vector<bool>& notFound = reply.getDocumentsNotFound();
-    buf.putInt(notFound.size());
-    for (std::size_t i = 0; i < notFound.size(); ++i) {
-        buf.putBoolean(notFound[i]);
+    const std::vector<bool>& notFoundV = reply.getDocumentsNotFound();
+    buf.putInt(notFoundV.size());
+    for (bool notFound : notFoundV) {
+        buf.putBoolean(notFound);
     }
     return true;
 }
@@ -137,34 +132,33 @@ RoutableFactories50::BatchDocumentUpdateReplyFactory::doEncode(const DocumentRep
 DocumentMessage::UP
 RoutableFactories50::CreateVisitorMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new CreateVisitorMessage());
-    CreateVisitorMessage &msg = static_cast<CreateVisitorMessage&>(*ret);
+    auto msg = std::make_unique<CreateVisitorMessage>();
 
-    msg.setLibraryName(decodeString(buf));
-    msg.setInstanceId(decodeString(buf));
-    msg.setControlDestination(decodeString(buf));
-    msg.setDataDestination(decodeString(buf));
-    msg.setDocumentSelection(decodeString(buf));
-    msg.setMaximumPendingReplyCount(decodeInt(buf));
+    msg->setLibraryName(decodeString(buf));
+    msg->setInstanceId(decodeString(buf));
+    msg->setControlDestination(decodeString(buf));
+    msg->setDataDestination(decodeString(buf));
+    msg->setDocumentSelection(decodeString(buf));
+    msg->setMaximumPendingReplyCount(decodeInt(buf));
 
     int32_t len = decodeInt(buf);
     for (int32_t i = 0; i < len; i++) {
         int64_t val;
         buf.getLong(val); // NOT using getLongNetwork
-        msg.getBuckets().push_back(document::BucketId(val));
+        msg->getBuckets().push_back(document::BucketId(val));
     }
 
-    msg.setFromTimestamp(decodeLong(buf));
-    msg.setToTimestamp(decodeLong(buf));
-    msg.setVisitRemoves(decodeBoolean(buf));
-    msg.setVisitHeadersOnly(decodeBoolean(buf));
-    msg.setVisitInconsistentBuckets(decodeBoolean(buf));
-    msg.getParameters().deserialize(_repo, buf);
-    msg.setVisitorDispatcherVersion(50);
-    msg.setVisitorOrdering((document::OrderingSpecification::Order)decodeInt(buf));
-    msg.setMaxBucketsPerVisitor(decodeInt(buf));
+    msg->setFromTimestamp(decodeLong(buf));
+    msg->setToTimestamp(decodeLong(buf));
+    msg->setVisitRemoves(decodeBoolean(buf));
+    msg->setVisitHeadersOnly(decodeBoolean(buf));
+    msg->setVisitInconsistentBuckets(decodeBoolean(buf));
+    msg->getParameters().deserialize(_repo, buf);
+    msg->setVisitorDispatcherVersion(50);
+    msg->setVisitorOrdering((document::OrderingSpecification::Order)decodeInt(buf));
+    msg->setMaxBucketsPerVisitor(decodeInt(buf));
 
-    return ret;
+    return msg;
 }
 
 bool
@@ -180,11 +174,8 @@ RoutableFactories50::CreateVisitorMessageFactory::doEncode(const DocumentMessage
     buf.putInt(msg.getMaximumPendingReplyCount());
     buf.putInt(msg.getBuckets().size());
 
-    const std::vector<document::BucketId> &buckets = msg.getBuckets();
-    for (std::vector<document::BucketId>::const_iterator it = buckets.begin();
-         it != buckets.end(); ++it)
-    {
-        uint64_t val = it->getRawId();
+    for (const auto & bucketId : msg.getBuckets()) {
+        uint64_t val = bucketId.getRawId();
         buf.putBytes((const char*)&val, 8);
     }
 
@@ -208,9 +199,8 @@ RoutableFactories50::CreateVisitorMessageFactory::doEncode(const DocumentMessage
 DocumentReply::UP
 RoutableFactories50::CreateVisitorReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new CreateVisitorReply(DocumentProtocol::REPLY_CREATEVISITOR));
-    CreateVisitorReply &reply = static_cast<CreateVisitorReply&>(*ret);
-    reply.setLastBucket(document::BucketId((uint64_t)decodeLong(buf)));
+    auto reply = std::make_unique<CreateVisitorReply>(DocumentProtocol::REPLY_CREATEVISITOR);
+    reply->setLastBucket(document::BucketId((uint64_t)decodeLong(buf)));
     vdslib::VisitorStatistics vs;
     vs.setBucketsVisited(decodeInt(buf));
     vs.setDocumentsVisited(decodeLong(buf));
@@ -219,9 +209,9 @@ RoutableFactories50::CreateVisitorReplyFactory::doDecode(document::ByteBuffer &b
     vs.setBytesReturned(decodeLong(buf));
     vs.setSecondPassDocumentsReturned(decodeLong(buf));
     vs.setSecondPassBytesReturned(decodeLong(buf));
-    reply.setVisitorStatistics(vs);
+    reply->setVisitorStatistics(vs);
 
-    return ret;
+    return reply;
 }
 
 bool
@@ -242,10 +232,9 @@ RoutableFactories50::CreateVisitorReplyFactory::doEncode(const DocumentReply &ob
 DocumentMessage::UP
 RoutableFactories50::DestroyVisitorMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new DestroyVisitorMessage());
-    DestroyVisitorMessage &msg = static_cast<DestroyVisitorMessage&>(*ret);
-    msg.setInstanceId(decodeString(buf));
-    return ret;
+    auto msg = std::make_unique<DestroyVisitorMessage>();
+    msg->setInstanceId(decodeString(buf));
+    return msg;
 }
 
 bool
@@ -257,35 +246,30 @@ RoutableFactories50::DestroyVisitorMessageFactory::doEncode(const DocumentMessag
 }
 
 DocumentReply::UP
-RoutableFactories50::DestroyVisitorReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::DestroyVisitorReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_DESTROYVISITOR));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_DESTROYVISITOR);
 }
 
 bool
-RoutableFactories50::DestroyVisitorReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::DestroyVisitorReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return true;
 }
 
 DocumentMessage::UP
 RoutableFactories50::DocumentListMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new DocumentListMessage());
-    DocumentListMessage &msg = static_cast<DocumentListMessage&>(*ret);
-
-    msg.setBucketId(document::BucketId(decodeLong(buf)));
+    auto msg = std::make_unique<DocumentListMessage>();
+    msg->setBucketId(document::BucketId(decodeLong(buf)));
 
     int32_t len = decodeInt(buf);
     for (int32_t i = 0; i < len; i++) {
         DocumentListMessage::Entry entry(_repo, buf);
-        msg.getDocuments().push_back(entry);
+        msg->getDocuments().push_back(entry);
     }
 
-    return ret;
+    return msg;
 }
 
 bool
@@ -295,40 +279,36 @@ RoutableFactories50::DocumentListMessageFactory::doEncode(const DocumentMessage 
 
     buf.putLong(msg.getBucketId().getRawId());
     buf.putInt(msg.getDocuments().size());
-    for (uint32_t i = 0; i < msg.getDocuments().size(); i++) {
-        int len = msg.getDocuments()[i].getSerializedSize();
+    for (const auto & document : msg.getDocuments()) {
+        int len = document.getSerializedSize();
         char *tmp = buf.allocate(len);
         document::ByteBuffer dbuf(tmp, len);
-        msg.getDocuments()[i].serialize(dbuf);
+        document.serialize(dbuf);
     }
 
     return true;
 }
 
 DocumentReply::UP
-RoutableFactories50::DocumentListReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::DocumentListReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_DOCUMENTLIST));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_DOCUMENTLIST);
 }
 
 bool
-RoutableFactories50::DocumentListReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::DocumentListReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return true;
 }
 
 DocumentMessage::UP
 RoutableFactories50::DocumentSummaryMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new DocumentSummaryMessage());
-    DocumentSummaryMessage &msg = static_cast<DocumentSummaryMessage&>(*ret);
+    auto msg = std::make_unique<DocumentSummaryMessage>();
 
-    msg.deserialize(buf);
+    msg->deserialize(buf);
 
-    return ret;
+    return msg;
 }
 
 bool
@@ -345,34 +325,30 @@ RoutableFactories50::DocumentSummaryMessageFactory::doEncode(const DocumentMessa
 }
 
 DocumentReply::UP
-RoutableFactories50::DocumentSummaryReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::DocumentSummaryReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_DOCUMENTSUMMARY));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_DOCUMENTSUMMARY);
 }
 
 bool
-RoutableFactories50::DocumentSummaryReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::DocumentSummaryReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return true;
 }
 
 DocumentMessage::UP
 RoutableFactories50::EmptyBucketsMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new EmptyBucketsMessage());
-    EmptyBucketsMessage &msg = static_cast<EmptyBucketsMessage&>(*ret);
+    auto msg = std::make_unique<EmptyBucketsMessage>();
 
     int32_t len = decodeInt(buf);
     std::vector<document::BucketId> buckets(len);
     for (int32_t i = 0; i < len; ++i) {
         buckets[i] = document::BucketId(decodeLong(buf));
     }
-    msg.getBucketIds().swap(buckets);
+    msg->getBucketIds().swap(buckets);
 
-    return ret;
+    return msg;
 }
 
 bool
@@ -381,35 +357,28 @@ RoutableFactories50::EmptyBucketsMessageFactory::doEncode(const DocumentMessage 
     const EmptyBucketsMessage &msg = static_cast<const EmptyBucketsMessage&>(obj);
 
     buf.putInt(msg.getBucketIds().size());
-    const std::vector<document::BucketId> &buckets = msg.getBucketIds();
-    for (std::vector<document::BucketId>::const_iterator it = buckets.begin();
-         it != buckets.end(); ++it)
-    {
-        buf.putLong(it->getRawId());
+    for (const auto & bucketId : msg.getBucketIds()) {
+        buf.putLong(bucketId.getRawId());
     }
 
     return true;
 }
 
 DocumentReply::UP
-RoutableFactories50::EmptyBucketsReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::EmptyBucketsReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_EMPTYBUCKETS));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_EMPTYBUCKETS);
 }
 
 bool
-RoutableFactories50::EmptyBucketsReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::EmptyBucketsReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return true;
 }
 
-bool RoutableFactories50::GetBucketListMessageFactory::encodeBucketSpace(
-        vespalib::stringref bucketSpace,
-        vespalib::GrowableByteBuffer& buf) const {
-    (void) buf;
+bool RoutableFactories50::GetBucketListMessageFactory::encodeBucketSpace(vespalib::stringref bucketSpace,
+                                                                         vespalib::GrowableByteBuffer& ) const
+{
     return (bucketSpace == FixedBucketSpaces::default_space_name());
 }
 
@@ -437,18 +406,18 @@ RoutableFactories50::GetBucketListMessageFactory::doEncode(const DocumentMessage
 DocumentReply::UP
 RoutableFactories50::GetBucketListReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new GetBucketListReply());
-    GetBucketListReply &reply = static_cast<GetBucketListReply&>(*ret);
+    auto reply = std::make_unique<GetBucketListReply>();
 
     int32_t len = decodeInt(buf);
+    reply->getBuckets().reserve(len);
     for (int32_t i = 0; i < len; i++) {
         GetBucketListReply::BucketInfo info;
         info._bucket = document::BucketId((uint64_t)decodeLong(buf));
         info._bucketInformation = decodeString(buf);
-        reply.getBuckets().push_back(info);
+        reply->getBuckets().push_back(info);
     }
 
-    return ret;
+    return reply;
 }
 
 bool
@@ -458,11 +427,9 @@ RoutableFactories50::GetBucketListReplyFactory::doEncode(const DocumentReply &ob
 
     const std::vector<GetBucketListReply::BucketInfo> &buckets = reply.getBuckets();
     buf.putInt(buckets.size());
-    for (std::vector<GetBucketListReply::BucketInfo>::const_iterator it = buckets.begin();
-         it != buckets.end(); ++it)
-    {
-        buf.putLong(it->_bucket.getRawId());
-        buf.putString(it->_bucketInformation);
+    for (const auto & bucketInfo : buckets) {
+        buf.putLong(bucketInfo._bucket.getRawId());
+        buf.putString(bucketInfo._bucketInformation);
     }
 
     return true;
@@ -471,12 +438,11 @@ RoutableFactories50::GetBucketListReplyFactory::doEncode(const DocumentReply &ob
 DocumentMessage::UP
 RoutableFactories50::GetBucketStateMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new GetBucketStateMessage());
-    GetBucketStateMessage &msg = static_cast<GetBucketStateMessage&>(*ret);
+    auto msg = std::make_unique<GetBucketStateMessage>();
 
-    msg.setBucketId(document::BucketId((uint64_t)decodeLong(buf)));
+    msg->setBucketId(document::BucketId((uint64_t)decodeLong(buf)));
 
-    return ret;
+    return msg;
 }
 
 bool
@@ -490,16 +456,15 @@ RoutableFactories50::GetBucketStateMessageFactory::doEncode(const DocumentMessag
 DocumentReply::UP
 RoutableFactories50::GetBucketStateReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new GetBucketStateReply());
-    GetBucketStateReply &reply = static_cast<GetBucketStateReply&>(*ret);
+    auto reply = std::make_unique<GetBucketStateReply>();
 
     int32_t len = decodeInt(buf);
+    reply->getBucketState().reserve(len);
     for (int32_t i = 0; i < len; i++) {
-        DocumentState state(buf);
-        reply.getBucketState().push_back(state);
+        reply->getBucketState().emplace_back(buf);
     }
 
-    return ret;
+    return reply;
 }
 
 bool
@@ -508,11 +473,8 @@ RoutableFactories50::GetBucketStateReplyFactory::doEncode(const DocumentReply &o
     const GetBucketStateReply &reply = static_cast<const GetBucketStateReply&>(obj);
 
     buf.putInt(reply.getBucketState().size());
-    const std::vector<DocumentState> &state = reply.getBucketState();
-    for (std::vector<DocumentState>::const_iterator it = state.begin();
-         it != state.end(); ++it)
-    {
-        it->serialize(buf);
+    for (const auto & state : reply.getBucketState()) {
+        state.serialize(buf);
     }
 
     return true;
@@ -521,13 +483,11 @@ RoutableFactories50::GetBucketStateReplyFactory::doEncode(const DocumentReply &o
 DocumentMessage::UP
 RoutableFactories50::GetDocumentMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new GetDocumentMessage());
-    GetDocumentMessage &msg = static_cast<GetDocumentMessage&>(*ret);
+    auto msg = std::make_unique<GetDocumentMessage>();
+    msg->setDocumentId(decodeDocumentId(buf));
+    msg->setFlags(decodeInt(buf));
 
-    msg.setDocumentId(decodeDocumentId(buf));
-    msg.setFlags(decodeInt(buf));
-
-    return ret;
+    return msg;
 }
 
 bool
@@ -544,23 +504,22 @@ RoutableFactories50::GetDocumentMessageFactory::doEncode(const DocumentMessage &
 DocumentReply::UP
 RoutableFactories50::GetDocumentReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new GetDocumentReply());
-    GetDocumentReply &reply = static_cast<GetDocumentReply&>(*ret);
+    auto reply = std::make_unique<GetDocumentReply>();
 
     bool hasDocument = decodeBoolean(buf);
     document::Document * document = nullptr;
     if (hasDocument) {
         auto doc = std::make_shared<document::Document>(_repo, buf);
         document = doc.get();
-        reply.setDocument(std::move(doc));
+        reply->setDocument(std::move(doc));
     }
     int64_t lastModified = decodeLong(buf);
-    reply.setLastModified(lastModified);
+    reply->setLastModified(lastModified);
     if (hasDocument) {
         document->setLastModified(lastModified);
     }
 
-    return ret;
+    return reply;
 }
 
 bool
@@ -582,12 +541,9 @@ RoutableFactories50::GetDocumentReplyFactory::doEncode(const DocumentReply &obj,
 DocumentMessage::UP
 RoutableFactories50::MapVisitorMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new MapVisitorMessage());
-    MapVisitorMessage &msg = static_cast<MapVisitorMessage&>(*ret);
-
-    msg.getData().deserialize(_repo, buf);
-
-    return ret;
+    auto msg = std::make_unique<MapVisitorMessage>();
+    msg->getData().deserialize(_repo, buf);
+    return msg;
 }
 
 bool
@@ -604,17 +560,14 @@ RoutableFactories50::MapVisitorMessageFactory::doEncode(const DocumentMessage &o
 }
 
 DocumentReply::UP
-RoutableFactories50::MapVisitorReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::MapVisitorReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_MAPVISITOR));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_MAPVISITOR);
 }
 
 bool
-RoutableFactories50::MapVisitorReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::MapVisitorReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return true;
 }
 
@@ -672,11 +625,10 @@ RoutableFactories50::RemoveDocumentMessageFactory::doEncode(const DocumentMessag
 DocumentReply::UP
 RoutableFactories50::RemoveDocumentReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new RemoveDocumentReply());
-    RemoveDocumentReply &reply = static_cast<RemoveDocumentReply&>(*ret);
-    reply.setWasFound(decodeBoolean(buf));
-    reply.setHighestModificationTimestamp(decodeLong(buf));
-    return ret;
+    auto reply = std::make_unique<RemoveDocumentReply>();
+    reply->setWasFound(decodeBoolean(buf));
+    reply->setHighestModificationTimestamp(decodeLong(buf));
+    return reply;
 }
 
 bool
@@ -713,7 +665,7 @@ RoutableFactories50::RemoveLocationMessageFactory::doEncode(const DocumentMessag
 DocumentReply::UP
 RoutableFactories50::RemoveLocationReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    return DocumentReply::UP(new DocumentReply(DocumentProtocol::REPLY_REMOVELOCATION));
+    return std::make_unique<DocumentReply>(DocumentProtocol::REPLY_REMOVELOCATION);
 }
 
 bool
@@ -725,12 +677,9 @@ RoutableFactories50::RemoveLocationReplyFactory::doEncode(const DocumentReply &,
 DocumentMessage::UP
 RoutableFactories50::SearchResultMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new SearchResultMessage());
-    SearchResultMessage &msg = static_cast<SearchResultMessage&>(*ret);
-
-    msg.deserialize(buf);
-
-    return ret;
+    auto msg = std::make_unique<SearchResultMessage>();
+    msg->deserialize(buf);
+    return msg;
 }
 
 bool
@@ -749,13 +698,11 @@ RoutableFactories50::SearchResultMessageFactory::doEncode(const DocumentMessage 
 DocumentMessage::UP
 RoutableFactories50::QueryResultMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new QueryResultMessage());
-    QueryResultMessage &msg = static_cast<QueryResultMessage&>(*ret);
+    auto msg = std::make_unique<QueryResultMessage>();
+    msg->getSearchResult().deserialize(buf);
+    msg->getDocumentSummary().deserialize(buf);
 
-    msg.getSearchResult().deserialize(buf);
-    msg.getDocumentSummary().deserialize(buf);
-
-    return ret;
+    return msg;
 }
 
 bool
@@ -773,39 +720,32 @@ RoutableFactories50::QueryResultMessageFactory::doEncode(const DocumentMessage &
 }
 
 DocumentReply::UP
-RoutableFactories50::SearchResultReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::SearchResultReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_SEARCHRESULT));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_SEARCHRESULT);
 }
 
 bool
-RoutableFactories50::SearchResultReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::SearchResultReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return true;
 }
 
 DocumentReply::UP
-RoutableFactories50::QueryResultReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::QueryResultReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_QUERYRESULT));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_QUERYRESULT);
 }
 
 bool
-RoutableFactories50::QueryResultReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::QueryResultReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return true;
 }
 
-bool RoutableFactories50::StatBucketMessageFactory::encodeBucketSpace(
-        vespalib::stringref bucketSpace,
-        vespalib::GrowableByteBuffer& buf) const {
-    (void) buf;
+bool RoutableFactories50::StatBucketMessageFactory::encodeBucketSpace(vespalib::stringref bucketSpace,
+                                                                      vespalib::GrowableByteBuffer& ) const
+{
     return (bucketSpace == FixedBucketSpaces::default_space_name());
 }
 
@@ -816,14 +756,13 @@ string RoutableFactories50::StatBucketMessageFactory::decodeBucketSpace(document
 DocumentMessage::UP
 RoutableFactories50::StatBucketMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new StatBucketMessage());
-    StatBucketMessage &msg = static_cast<StatBucketMessage&>(*ret);
+    auto msg = std::make_unique<StatBucketMessage>();
 
-    msg.setBucketId(document::BucketId(decodeLong(buf)));
-    msg.setDocumentSelection(decodeString(buf));
-    msg.setBucketSpace(decodeBucketSpace(buf));
+    msg->setBucketId(document::BucketId(decodeLong(buf)));
+    msg->setDocumentSelection(decodeString(buf));
+    msg->setBucketSpace(decodeBucketSpace(buf));
 
-    return ret;
+    return msg;
 }
 
 bool
@@ -839,12 +778,9 @@ RoutableFactories50::StatBucketMessageFactory::doEncode(const DocumentMessage &o
 DocumentReply::UP
 RoutableFactories50::StatBucketReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new StatBucketReply());
-    StatBucketReply &reply = static_cast<StatBucketReply&>(*ret);
-
-    reply.setResults(decodeString(buf));
-
-    return ret;
+    auto reply = std::make_unique<StatBucketReply>();
+    reply->setResults(decodeString(buf));
+    return reply;
 }
 
 bool
@@ -856,32 +792,26 @@ RoutableFactories50::StatBucketReplyFactory::doEncode(const DocumentReply &obj, 
 }
 
 DocumentMessage::UP
-RoutableFactories50::StatDocumentMessageFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::StatDocumentMessageFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
     return DocumentMessage::UP(); // TODO: remove message type
 }
 
 bool
-RoutableFactories50::StatDocumentMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::StatDocumentMessageFactory::doEncode(const DocumentMessage &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return false;
 }
 
 DocumentReply::UP
-RoutableFactories50::StatDocumentReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::StatDocumentReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
     return DocumentReply::UP(); // TODO: remove reply type
 }
 
 bool
-RoutableFactories50::StatDocumentReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::StatDocumentReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return false;
 }
 
@@ -909,11 +839,10 @@ RoutableFactories50::UpdateDocumentMessageFactory::doEncode(const DocumentMessag
 DocumentReply::UP
 RoutableFactories50::UpdateDocumentReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new UpdateDocumentReply());
-    UpdateDocumentReply &reply = static_cast<UpdateDocumentReply&>(*ret);
-    reply.setWasFound(decodeBoolean(buf));
-    reply.setHighestModificationTimestamp(decodeLong(buf));
-    return ret;
+    auto reply = std::make_unique<UpdateDocumentReply>();
+    reply->setWasFound(decodeBoolean(buf));
+    reply->setHighestModificationTimestamp(decodeLong(buf));
+    return reply;
 }
 
 bool
@@ -928,18 +857,18 @@ RoutableFactories50::UpdateDocumentReplyFactory::doEncode(const DocumentReply &o
 DocumentMessage::UP
 RoutableFactories50::VisitorInfoMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new VisitorInfoMessage());
-    VisitorInfoMessage &msg = static_cast<VisitorInfoMessage&>(*ret);
+    auto msg = std::make_unique<VisitorInfoMessage>();
 
     int32_t len = decodeInt(buf);
+    msg->getFinishedBuckets().reserve(len);
     for (int32_t i = 0; i < len; i++) {
         int64_t val;
         buf.getLong(val); // NOT using getLongNetwork
-        msg.getFinishedBuckets().push_back(document::BucketId(val));
+        msg->getFinishedBuckets().emplace_back(val);
     }
-    msg.setErrorMessage(decodeString(buf));
+    msg->setErrorMessage(decodeString(buf));
 
-    return ret;
+    return msg;
 }
 
 bool
@@ -948,11 +877,8 @@ RoutableFactories50::VisitorInfoMessageFactory::doEncode(const DocumentMessage &
     const VisitorInfoMessage &msg = static_cast<const VisitorInfoMessage&>(obj);
 
     buf.putInt(msg.getFinishedBuckets().size());
-    const std::vector<document::BucketId> &buckets = msg.getFinishedBuckets();
-    for (std::vector<document::BucketId>::const_iterator it = buckets.begin();
-         it != buckets.end(); ++it)
-    {
-        uint64_t val = it->getRawId();
+    for (const auto & bucketId : msg.getFinishedBuckets()) {
+        uint64_t val =bucketId.getRawId();
         buf.putBytes((const char*)&val, 8);
     }
     buf.putString(msg.getErrorMessage());
@@ -961,29 +887,23 @@ RoutableFactories50::VisitorInfoMessageFactory::doEncode(const DocumentMessage &
 }
 
 DocumentReply::UP
-RoutableFactories50::VisitorInfoReplyFactory::doDecode(document::ByteBuffer &buf) const
+RoutableFactories50::VisitorInfoReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    (void)buf;
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_VISITORINFO));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_VISITORINFO);
 }
 
 bool
-RoutableFactories50::VisitorInfoReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
+RoutableFactories50::VisitorInfoReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
 {
-    (void)obj;
-    (void)buf;
     return true;
 }
 
 DocumentReply::UP
 RoutableFactories50::WrongDistributionReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new WrongDistributionReply());
-    WrongDistributionReply &reply = static_cast<WrongDistributionReply&>(*ret);
-
-    reply.setSystemState(decodeString(buf));
-
-    return ret;
+    auto reply = std::make_unique<WrongDistributionReply>();
+    reply->setSystemState(decodeString(buf));
+    return reply;
 }
 
 bool
@@ -1013,19 +933,19 @@ RoutableFactories50::FeedMessageFactory::myEncode(const FeedMessage &msg, vespal
 DocumentReply::UP
 RoutableFactories50::FeedReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new FeedReply(getType()));
-    FeedReply &reply = static_cast<FeedReply&>(*ret);
+    auto reply = std::make_unique<FeedReply>(getType());
 
-    std::vector<FeedAnswer> &answers = reply.getFeedAnswers();
+    std::vector<FeedAnswer> &answers = reply->getFeedAnswers();
     int32_t len = decodeInt(buf);
+    answers.reserve(len);
     for (int32_t i = 0; i < len; ++i) {
         int32_t typeCode = decodeInt(buf);
         int32_t wantedIncrement = decodeInt(buf);
         string recipient = decodeString(buf);
         string moreInfo = decodeString(buf);
-        answers.push_back(FeedAnswer(typeCode, wantedIncrement, recipient, moreInfo));
+        answers.emplace_back(typeCode, wantedIncrement, recipient, moreInfo);
     }
-    return ret;
+    return reply;
 }
 
 bool
@@ -1033,14 +953,11 @@ RoutableFactories50::FeedReplyFactory::doEncode(const DocumentReply &obj, vespal
 {
     const FeedReply &reply = static_cast<const FeedReply&>(obj);
     buf.putInt(reply.getFeedAnswers().size());
-    const std::vector<FeedAnswer> &answers = reply.getFeedAnswers();
-    for (std::vector<FeedAnswer>::const_iterator it = answers.begin();
-         it != answers.end(); ++it)
-    {
-        buf.putInt(it->getAnswerCode());
-        buf.putInt(it->getWantedIncrement());
-        buf.putString(it->getRecipient());
-        buf.putString(it->getMoreInfo());
+    for (const auto & answer : reply.getFeedAnswers()) {
+        buf.putInt(answer.getAnswerCode());
+        buf.putInt(answer.getWantedIncrement());
+        buf.putString(answer.getRecipient());
+        buf.putString(answer.getMoreInfo());
     }
     return true;
 }
