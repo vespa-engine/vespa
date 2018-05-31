@@ -75,7 +75,8 @@ public class IdentityDocumentGenerator {
                     identityDocument.configServerHostname(),
                     identityDocument.instanceHostname(),
                     identityDocument.createdAt(),
-                    identityDocument.ipAddresses());
+                    identityDocument.ipAddresses(),
+                    null); // TODO Specify identity type
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }
