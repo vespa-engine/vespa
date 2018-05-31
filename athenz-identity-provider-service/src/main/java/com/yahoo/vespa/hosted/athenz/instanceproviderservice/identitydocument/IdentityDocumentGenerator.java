@@ -7,6 +7,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
@@ -27,6 +28,8 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
+ * Generates a signed identity document for a given hostname and type
+ *
  * @author mortent
  * @author bjorncs
  */
@@ -48,10 +51,10 @@ public class IdentityDocumentGenerator {
         this.keyProvider = keyProvider;
     }
 
-    public SignedIdentityDocument generateSignedIdentityDocument(String hostname) {
+    public SignedIdentityDocument generateSignedIdentityDocument(String hostname, IdentityType identityType) {
         Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
         try {
-            IdentityDocument identityDocument = generateIdDocument(node);
+            IdentityDocument identityDocument = generateIdDocument(node, identityType);
             String identityDocumentString = Utils.getMapper().writeValueAsString(EntityBindingsMapper.toIdentityDocumentEntity(identityDocument));
 
             String encodedIdentityDocument =
@@ -76,13 +79,13 @@ public class IdentityDocumentGenerator {
                     identityDocument.instanceHostname(),
                     identityDocument.createdAt(),
                     identityDocument.ipAddresses(),
-                    null); // TODO Specify identity type
+                    identityType);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }
     }
 
-    private IdentityDocument generateIdDocument(Node node) {
+    private IdentityDocument generateIdDocument(Node node, IdentityType identityType) {
         Allocation allocation = node.allocation().orElseThrow(() -> new RuntimeException("No allocation for node " + node.hostname()));
         VespaUniqueInstanceId providerUniqueId = new VespaUniqueInstanceId(
                 allocation.membership().index(),
@@ -91,7 +94,8 @@ public class IdentityDocumentGenerator {
                 allocation.owner().application().value(),
                 allocation.owner().tenant().value(),
                 zone.region().value(),
-                zone.environment().value());
+                zone.environment().value(),
+                identityType);
 
         Set<String> ips = new HashSet<>(node.ipAddresses());
         return new IdentityDocument(
