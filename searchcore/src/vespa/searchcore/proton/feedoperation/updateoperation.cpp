@@ -28,21 +28,15 @@ UpdateOperation::UpdateOperation(Type type)
 }
 
 
-UpdateOperation::UpdateOperation(Type type,
-                                 const BucketId &bucketId,
-                                 const Timestamp &timestamp,
-                                 const DocumentUpdate::SP &upd)
-    : DocumentOperation(type,
-                        bucketId,
-                        timestamp),
+UpdateOperation::UpdateOperation(Type type, const BucketId &bucketId,
+                                 const Timestamp &timestamp, const DocumentUpdate::SP &upd)
+    : DocumentOperation(type, bucketId, timestamp),
       _upd(upd)
 {
 }
 
 
-UpdateOperation::UpdateOperation(const BucketId &bucketId,
-                                 const Timestamp &timestamp,
-                                 const DocumentUpdate::SP &upd)
+UpdateOperation::UpdateOperation(const BucketId &bucketId, const Timestamp &timestamp, const DocumentUpdate::SP &upd)
     : UpdateOperation(FeedOperation::UPDATE, bucketId, timestamp, upd)
 {
 }
@@ -50,20 +44,15 @@ UpdateOperation::UpdateOperation(const BucketId &bucketId,
 void
 UpdateOperation::serializeUpdate(vespalib::nbostream &os) const
 {
-    if (getType() == FeedOperation::UPDATE_42) {
-        _upd->serialize42(os);
-    } else {
-        _upd->serializeHEAD(os);
-    }
+    assert(getType() == UPDATE);
+     _upd->serializeHEAD(os);
 }
 
 void
 UpdateOperation::deserializeUpdate(vespalib::nbostream &is, const document::DocumentTypeRepo &repo)
 {
     document::ByteBuffer buf(is.peek(), is.size());
-    using Version = DocumentUpdate::SerializeVersion;
-    Version version = ((getType() == FeedOperation::UPDATE_42) ? Version::SERIALIZE_42 : Version::SERIALIZE_HEAD);
-    DocumentUpdate::SP update(std::make_shared<DocumentUpdate>(repo, buf, version));
+    DocumentUpdate::UP update = (getType() == UPDATE_42) ? DocumentUpdate::create42(repo, buf) : DocumentUpdate::createHEAD(repo, buf);
     is.adjustReadPos(buf.getPos());
     _upd = std::move(update);
 }
@@ -78,8 +67,7 @@ UpdateOperation::serialize(vespalib::nbostream &os) const
 
 
 void
-UpdateOperation::deserialize(vespalib::nbostream &is,
-                             const DocumentTypeRepo &repo)
+UpdateOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &repo)
 {
     DocumentOperation::deserialize(is, repo);
     try {
@@ -106,14 +94,6 @@ vespalib::string UpdateOperation::toString() const {
                        _upd.get() ?
                        _upd->getId().getScheme().toString().c_str() : "NULL",
                        docArgsToString().c_str());
-}
-
-UpdateOperation
-UpdateOperation::makeOldUpdate(const document::BucketId &bucketId,
-                               const storage::spi::Timestamp &timestamp,
-                               const document::DocumentUpdate::SP &upd)
-{
-    return UpdateOperation(FeedOperation::UPDATE_42, bucketId, timestamp, upd);
 }
 
 } // namespace proton

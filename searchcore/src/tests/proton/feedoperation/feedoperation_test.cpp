@@ -23,6 +23,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -282,8 +283,10 @@ TEST_F("require that we can deserialize old update operations", Fixture)
     BucketId bucket(toBucket(docId.getGlobalId()));
     auto upd(f.makeUpdate());
     {
-        UpdateOperation op(UpdateOperation::makeOldUpdate(bucket, Timestamp(10), upd));
-        op.serialize(stream);
+        UpdateOperation op(bucket, Timestamp(10), upd);
+        op.serializeDocumentOperationOnly(stream);
+        document::VespaDocumentSerializer serializer(stream);
+        serializer.write42(*op.getUpdate());
     }
     {
         UpdateOperation op(FeedOperation::UPDATE_42);

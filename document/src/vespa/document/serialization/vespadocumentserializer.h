@@ -76,7 +76,7 @@ private:
     void write(const AssignFieldPathUpdate &value);
     void write(const RemoveFieldPathUpdate &value);
 
-    void visit(const DocumentUpdate &value)        override { write42(value); }
+    void visit(const DocumentUpdate &value)        override { writeHEAD(value); }
     void visit(const FieldUpdate &value)           override { write(value); }
     void visit(const RemoveValueUpdate &value)     override { write(value); }
     void visit(const AddValueUpdate &value)        override { write(value); }

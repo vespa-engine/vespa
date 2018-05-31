@@ -52,8 +52,7 @@ public:
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
     SerialNum getSerialNum() const { return _serialNum; }
     virtual void serialize(vespalib::nbostream &os) const = 0;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo) = 0;
+    virtual void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) = 0;
     virtual vespalib::string toString() const = 0;
 };
 

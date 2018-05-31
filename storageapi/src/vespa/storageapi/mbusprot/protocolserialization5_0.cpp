@@ -229,8 +229,7 @@ ProtocolSerialization5_0::onDecodeUpdateCommand(BBuf& buf) const
     if (size != 0) {
         document::ByteBuffer bbuf(buf.getBufferAtPos(), size);
         buf.incPos(size);
-        update = std::make_shared<document::DocumentUpdate>(getTypeRepo(), bbuf,
-                                                            document::DocumentUpdate::SerializeVersion::SERIALIZE_HEAD);
+        update = document::DocumentUpdate::createHEAD(getTypeRepo(), bbuf);
     }
 
     document::Bucket bucket = getBucket(buf);

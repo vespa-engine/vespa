@@ -17,8 +17,7 @@ RoutableRepository::VersionMap::VersionMap() :
 { }
 
 bool
-RoutableRepository::VersionMap::putFactory(const vespalib::VersionSpecification &version,
-                                           IRoutableFactory::SP factory)
+RoutableRepository::VersionMap::putFactory(const vespalib::VersionSpecification &version, IRoutableFactory::SP factory)
 {
     bool ret = _factoryVersions.find(version) != _factoryVersions.end();
     _factoryVersions[version] = factory;
@@ -41,7 +40,8 @@ RoutableRepository::VersionMap::getFactory(const vespalib::Version &version) con
         return IRoutableFactory::SP();
     }
 
-    return std::max_element(candidates.begin(), candidates.end(), [](auto & lhs, auto & rhs) { return lhs.first.compareTo(rhs.first) <= 0; })->second;
+    return std::max_element(candidates.begin(), candidates.end(),
+                            [](auto & lhs, auto & rhs) { return lhs.first.compareTo(rhs.first) <= 0; })->second;
 }
 
 RoutableRepository::RoutableRepository(const LoadTypeSet& loadTypes) :
@@ -50,7 +50,6 @@ RoutableRepository::RoutableRepository(const LoadTypeSet& loadTypes) :
     _cache(),
     _loadTypes(loadTypes)
 {
-    // empty
 }
 
 mbus::Routable::UP
@@ -65,13 +64,13 @@ RoutableRepository::decode(const vespalib::Version &version, mbus::BlobRef data)
     int type;
     in.getIntNetwork(type);
     IRoutableFactory::SP factory = getFactory(version, type);
-    if (factory.get() == NULL) {
+    if (!factory) {
         LOG(error, "No routable factory found for routable type %d (version %s).",
             type, version.toString().c_str());
         return mbus::Routable::UP();
     }
     mbus::Routable::UP ret = factory->decode(in, _loadTypes);
-    if (ret.get() == NULL) {
+    if (!ret) {
         LOG(error, "Routable factory failed to deserialize routable of type %d (version %s).",
             type, version.toString().c_str());
 
@@ -89,7 +88,7 @@ RoutableRepository::encode(const vespalib::Version &version, const mbus::Routabl
     uint32_t type = obj.getType();
 
     IRoutableFactory::SP factory = getFactory(version, type);
-    if (factory.get() == NULL) {
+    if (!factory) {
         LOG(error, "No routable factory found for routable type %d (version %s).",
             type, version.toString().c_str());
         return mbus::Blob(0);
@@ -130,7 +129,7 @@ RoutableRepository::getFactory(const vespalib::Version &version, uint32_t type) 
         return IRoutableFactory::SP();
     }
     IRoutableFactory::SP factory = vit->second.getFactory(version);
-    if (factory.get() == NULL) {
+    if (!factory) {
         return IRoutableFactory::SP();
     }
     _cache[cacheKey] = factory;
@@ -141,11 +140,9 @@ uint32_t
 RoutableRepository::getRoutableTypes(const vespalib::Version &version, std::vector<uint32_t> &out) const
 {
     vespalib::LockGuard guard(_lock);
-    for (TypeMap::const_iterator it = _factoryTypes.begin();
-         it != _factoryTypes.end(); ++it)
-    {
-        if (it->second.getFactory(version).get() != NULL) {
-            out.push_back(it->first);
+    for (const auto & type :  _factoryTypes) {
+        if (type.second.getFactory(version)) {
+            out.push_back(type.first);
         }
     }
     return _factoryTypes.size();
