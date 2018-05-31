@@ -15,7 +15,6 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.container.Container;
 import com.yahoo.container.standalone.StandaloneContainerApplication;
-import com.yahoo.container.standalone.StandaloneContainerApplication$;
 import com.yahoo.docproc.jdisc.DocumentProcessingHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -58,10 +57,10 @@ public final class JDisc implements AutoCloseable {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Path.class).annotatedWith(StandaloneContainerApplication.applicationPathName()).toInstance(path);
-                bind(ConfigModelRepo.class).annotatedWith(StandaloneContainerApplication.configModelRepoName()).toInstance(configModelRepo);
+                bind(Path.class).annotatedWith(StandaloneContainerApplication.APPLICATION_PATH_NAME).toInstance(path);
+                bind(ConfigModelRepo.class).annotatedWith(StandaloneContainerApplication.CONFIG_MODEL_REPO_NAME).toInstance(configModelRepo);
                 bind(Boolean.class).annotatedWith( // below is an ugly hack to access fields from a scala object.
-                        Names.named(StandaloneContainerApplication$.MODULE$.disableNetworkingAnnotation())).toInstance(
+                        Names.named(StandaloneContainerApplication.DISABLE_NETWORKING_ANNOTATION)).toInstance(
                         networking == Networking.disable);
             }
         };
