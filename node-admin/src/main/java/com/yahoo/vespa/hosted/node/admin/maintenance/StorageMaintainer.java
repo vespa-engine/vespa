@@ -92,7 +92,7 @@ public class StorageMaintainer {
         if (node.getNodeType() != NodeType.config) {
             // vespa-health
             Path vespaHealthCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");
-            SecretAgentCheckConfig vespaHealthSchedule = new SecretAgentCheckConfig("vespa", 60, vespaHealthCheckPath, "all");
+            SecretAgentCheckConfig vespaHealthSchedule = new SecretAgentCheckConfig("vespa-health", 60, vespaHealthCheckPath, "all");
             configs.add(annotatedCheck(node, vespaHealthSchedule));
 
             // vespa
@@ -126,7 +126,7 @@ public class StorageMaintainer {
 
             //ssl-check
             Path sslCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_ssl_status");
-            SecretAgentCheckConfig sslSchedule = new SecretAgentCheckConfig("ssh-status", 300,
+            SecretAgentCheckConfig sslSchedule = new SecretAgentCheckConfig("ssl-status", 300,
                     sslCheckPath, "-e", "localhost", "-p", "4443", "-t", "30");
             configs.add(annotatedCheck(node, sslSchedule));
         }
