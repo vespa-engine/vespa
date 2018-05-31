@@ -1,9 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
@@ -184,13 +181,6 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public void deactivate(DeploymentId deployment) {
         applications.remove(deployment.applicationId());
-    }
-
-    @Override
-    public JsonNode waitForConfigConverge(DeploymentId applicationInstance, long timeoutInSeconds) {
-        ObjectNode root = new ObjectNode(JsonNodeFactory.instance);
-        root.put("generation", 1);
-        return root;
     }
 
     // Returns a canned example response

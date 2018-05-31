@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -294,14 +293,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Requested restart of tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
+
         // POST a 'restart application' command with a host filter (other filters not supported yet)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart?hostname=host1", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Requested restart of tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
-        // GET (wait for) convergence
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/converge", GET)
-                                      .userIdentity(USER_ID),
-                              new File("convergence.json"));
+
         // GET services
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/service", GET)
                                       .userIdentity(USER_ID),
@@ -319,10 +316,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default", DELETE)
                                       .userIdentity(USER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default");
+
         // DELETE (deactivate) a deployment - prod
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
+
 
         // DELETE (deactivate) a deployment is idempotent
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE)
