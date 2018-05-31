@@ -868,7 +868,7 @@ struct StructArrayFixture : public StructFixtureBase
 
 StructArrayFixture::~StructArrayFixture() = default;
 
-TEST_F("require that update with doc argument only updates compound attributes", StructArrayFixture)
+TEST_F("require that update with doc argument updates compound attributes (array)", StructArrayFixture)
 {
     auto doc = f.makeDoc(10,  {11, 12});
     f.put(10, *doc, 1);
@@ -876,6 +876,64 @@ TEST_F("require that update with doc argument only updates compound attributes",
     doc = f.makeDoc(20, {21});
     f.update(11, *doc, 1, true);
     TEST_DO(f.checkAttrs(1, 10, {21}));
+}
+
+struct StructMapFixture : public StructFixtureBase
+{
+    using StructFixtureBase::makeDoc;
+    const MapDataType _structMapFieldType;
+    const Field _structMapField;
+
+    StructMapFixture()
+        : StructFixtureBase(),
+          _structMapFieldType(*DataType::INT, _structFieldType),
+          _structMapField("map", _structMapFieldType, true)
+    {
+        addAttribute({"map.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        addAttribute({"map.[key]", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        _type.addField(_structMapField);
+    }
+
+    std::unique_ptr<Document>
+    makeDoc(int32_t value, const std::map<int32_t, int32_t> &mapValues)
+    {
+        auto doc = makeDoc();
+        doc->setValue(_valueField, IntFieldValue(value));
+        MapFieldValue s(_structMapFieldType);
+        for (const auto &mapValue : mapValues) {
+            s.put(IntFieldValue(mapValue.first), *makeStruct(mapValue.second));
+        }
+        doc->setValue(_structMapField, s);
+        return doc;
+    }
+    void checkAttrs(uint32_t lid, int32_t expValue, const std::map<int32_t, int32_t> &expMap) {
+        auto valueAttr = _m->getAttribute("value")->getSP();
+        auto mapKeyAttr = _m->getAttribute("map.[key]")->getSP();
+        auto mapValueAttr = _m->getAttribute("map.value")->getSP();
+        EXPECT_EQUAL(expValue, valueAttr->getInt(lid));
+        attribute::IntegerContent mapKeys;
+        mapKeys.fill(*mapKeyAttr, lid);
+        attribute::IntegerContent mapValues;
+        mapValues.fill(*mapValueAttr, lid);
+        EXPECT_EQUAL(expMap.size(), mapValues.size());
+        EXPECT_EQUAL(expMap.size(), mapKeys.size());
+        size_t i = 0;
+        for (const auto &expMapElem : expMap) {
+            EXPECT_EQUAL(expMapElem.first, mapKeys[i]);
+            EXPECT_EQUAL(expMapElem.second, mapValues[i]);
+            ++i;
+        }
+    }
+};
+
+TEST_F("require that update with doc argument updates compound attributes (map)", StructMapFixture)
+{
+    auto doc = f.makeDoc(10,  {{1, 11}, {2, 12}});
+    f.put(10, *doc, 1);
+    TEST_DO(f.checkAttrs(1, 10, {{1, 11}, {2, 12}}));
+    doc = f.makeDoc(20, {{42, 21}});
+    f.update(11, *doc, 1, true);
+    TEST_DO(f.checkAttrs(1, 10, {{42, 21}}));
 }
 
 TEST_MAIN()

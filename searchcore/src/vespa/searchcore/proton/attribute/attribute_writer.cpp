@@ -5,7 +5,9 @@
 #include "attributemanager.h"
 #include "document_field_extractor.h"
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
@@ -21,6 +23,12 @@ using search::attribute::ImportedAttributeVector;
 
 namespace proton {
 
+namespace {
+
+const vespalib::string mapKeyName = "[key]";
+
+}
+
 using LidVector = LidVectorContext::LidVector;
 
 AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
@@ -33,6 +41,43 @@ AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
 }
 
 AttributeWriter::WriteField::~WriteField() = default;
+
+void
+AttributeWriter::WriteField::buildFieldPath(const DocumentType &docType)
+{
+    const vespalib::string &name = _attribute.getName();
+    vespalib::string fpString = name;
+    FieldPath fp;
+    if (_compoundAttribute) {
+        vespalib::string::size_type dotPos = name.find('.');
+        assert(dotPos != vespalib::string::npos);
+        vespalib::string fieldName = name.substr(0, dotPos);
+        if (docType.hasField(fieldName)) {
+            auto &field = docType.getField(fieldName);
+            auto &fieldTypeRc = field.getDataType().getClass();
+            if (fieldTypeRc.inherits(MapDataType::classId)) {
+                vespalib::string subFieldName = name.substr(dotPos + 1);
+                if (subFieldName == mapKeyName) {
+                    fpString = fieldName + ".key";
+                } else {
+                    fpString = fieldName + ".value." + subFieldName;
+                }
+            } else if (fieldTypeRc.inherits(ArrayDataType::classId)) {
+            } else {
+                LOG(error, "Expected '%s' field to be array or map field, got %s", fieldName.c_str(), field.toString(false).c_str());
+                fpString.clear();
+            }
+        }
+    }
+    if (!fpString.empty()) {
+        try {
+            docType.buildFieldPath(fp, fpString);
+        } catch (document::FieldNotFoundException & e) {
+            fp = FieldPath();
+        }
+    }
+    _fieldPath = std::move(fp);
+}
 
 AttributeWriter::WriteContext::WriteContext(uint32_t executorId)
     : _executorId(executorId),
@@ -61,14 +106,7 @@ void
 AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
 {
     for (auto &field : _fields) {
-        const vespalib::string &name = field.getAttribute().getName();
-        FieldPath fp;
-        try {
-            docType.buildFieldPath(fp, name);
-        } catch (document::FieldNotFoundException & e) {
-            fp = FieldPath();
-        }
-        field.setFieldPath(std::move(fp));
+        field.buildFieldPath(docType);
     }
 }
 
