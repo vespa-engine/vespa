@@ -2,5 +2,4 @@
 @ExportPackage
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.config;
 
-import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;
