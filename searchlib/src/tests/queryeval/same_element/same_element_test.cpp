@@ -58,7 +58,7 @@ TEST("require that children must match within same element") {
     auto a = make_result({{5, {1,3,7}}});
     auto b = make_result({{5, {2,5,10}}});
     SimpleResult result = find_matches({a, b});
-    SimpleResult expect({});
+    SimpleResult expect;
     EXPECT_EQUAL(result, expect);
 }
 
