@@ -17,8 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Resolves jdisc container components for jersey 2 components. Similar to
- * Gjoran's ComponentGraphProvider for jersey 1.
+ * Resolves jdisc container components for jersey 2 components.
  *
  * @author Tony Vaagenes
  * @author ollivir

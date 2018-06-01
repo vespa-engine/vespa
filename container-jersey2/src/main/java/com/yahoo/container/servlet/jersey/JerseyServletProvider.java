@@ -67,9 +67,8 @@ public class JerseyServletProvider implements Provider<ServletHolder> {
             ResourceOrProviderClassVisitor visitor = ResourceOrProviderClassVisitor.visit(new ClassReader(inputStream));
             return Optional.ofNullable(visitor.getClassName());
         } catch (IOException e) {
-            // ignored
+            throw new RuntimeException(e);
         }
-        return Optional.empty();
     }
 
     private static InputStream getResourceAsStream(ClassLoader bundleClassLoader, String classEntry) {
