@@ -44,6 +44,7 @@ class Test : public vespalib::TestApp {
     void requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm();
     void requireThatUnrankedTermsAreSkipped();
     void requireThatNegativeTermsAreSkipped();
+    void requireThatSameElementIsSkipped();
 
 public:
     int Main() override;
@@ -58,6 +59,7 @@ Test::Main()
     TEST_DO(requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm());
     TEST_DO(requireThatUnrankedTermsAreSkipped());
     TEST_DO(requireThatNegativeTermsAreSkipped());
+    TEST_DO(requireThatSameElementIsSkipped());
 
     TEST_DONE();
 }
@@ -159,6 +161,24 @@ Test::requireThatNegativeTermsAreSkipped()
     ASSERT_TRUE(term_data.size() >= 2);
     EXPECT_EQUAL(id[0], term_data[0]->getUniqueId());
     EXPECT_EQUAL(id[1], term_data[1]->getUniqueId());
+}
+
+void
+Test::requireThatSameElementIsSkipped()
+{
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    query_builder.addAnd(2);
+    query_builder.addSameElement(2, field);
+    query_builder.addStringTerm("term1", field, id[0], Weight(1));
+    query_builder.addStringTerm("term2", field, id[1], Weight(1));
+    query_builder.addStringTerm("term3", field, id[2], Weight(1));
+    Node::UP node = query_builder.build();
+
+    vector<const ITermData *> term_data;
+    TermDataExtractor::extractTerms(*node, term_data);
+    EXPECT_EQUAL(1u, term_data.size());
+    ASSERT_TRUE(term_data.size() >= 1);
+    EXPECT_EQUAL(id[2], term_data[0]->getUniqueId());
 }
 
 }  // namespace
