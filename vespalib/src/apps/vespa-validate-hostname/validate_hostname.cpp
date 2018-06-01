@@ -25,19 +25,6 @@ vespalib::string normalize(const vespalib::string &hostname) {
     return canon_name;
 }
 
-void check_reverse(const vespalib::string &hostname, const SocketAddress &addr) {
-    std::set<vespalib::string> seen({hostname});
-    vespalib::string reverse = addr.reverse_lookup();
-    for (size_t i = 0; !reverse.empty() && (i < 10); ++i) {
-        if (seen.count(reverse) == 0) {
-            seen.insert(reverse);
-            fprintf(stderr, "warning: hostname validation: found conflicting reverse lookup: '%s' -> %s -> '%s'\n",
-                    hostname.c_str(), addr.ip_address().c_str(), reverse.c_str());
-        }
-        reverse = addr.reverse_lookup();
-    }
-}
-
 int usage(const char *self) {
     fprintf(stderr, "usage: %s <hostname>\n", self);
     return 1;
@@ -62,8 +49,6 @@ int main(int argc, char **argv) {
             valid = false;
             fprintf(stderr, "FATAL: hostname validation failed: '%s' resolves to ip address not owned by this host (%s)\n",
                     hostname.c_str(), ip_addr.c_str());
-        } else {
-            check_reverse(hostname, addr);
         }
     }
     return valid ? 0 : 1;
