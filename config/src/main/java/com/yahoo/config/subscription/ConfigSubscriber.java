@@ -251,7 +251,6 @@ public class ConfigSubscriber {
                 }
                 throwIfExceptionSet(subscription);
                 ConfigSubscription.ConfigState<? extends ConfigInstance> config = subscription.getConfigState();
-                System.out.println("Subscription " + subscription + " of class " + subscription.getClass());
                 if (currentGen == null) currentGen = config.getGeneration();
                 if ( ! currentGen.equals(config.getGeneration())) allGenerationsTheSame = false;
                 allGenerationsChanged = allGenerationsChanged && config.isGenerationChanged();
