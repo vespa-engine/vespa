@@ -48,7 +48,7 @@ public class ZooKeeperClientTest extends TestWithCurator {
                                                                                                "/bar/baz",
                                                                                                "appName",
                                                                                                1345L,
-                                                                                               false,
+                                                                                               true,
                                                                                                3L,
                                                                                                2L));
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
@@ -104,7 +104,7 @@ public class ZooKeeperClientTest extends TestWithCurator {
     // TODO: Evaluate if we want this or not
     @Test
     @Ignore
-    public void testFeedComponentsFileReferencesToZooKeeper() throws IOException {
+    public void testFeedComponentsFileReferencesToZooKeeper() {
         final String appDir = "src/test/apps/app_sdbundles";
         ConfigCurator zk = ConfigCurator.create(new MockCurator());
         BaseDeployLogger logger = new BaseDeployLogger();
@@ -127,6 +127,7 @@ public class ZooKeeperClientTest extends TestWithCurator {
         ApplicationMetaData metaData = ApplicationMetaData.fromJsonString(zk.getData(appPath, ConfigCurator.META_ZK_PATH));
         assertThat(metaData.getApplicationName(), is("appName"));
         assertTrue(metaData.getCheckSum().length() > 0);
+        assertTrue(metaData.isInternalRedeploy());
         assertThat(metaData.getDeployedByUser(), is("foo"));
         assertThat(metaData.getDeployPath(), is("/bar/baz"));
         assertThat(metaData.getDeployTimestamp(), is(1345l));

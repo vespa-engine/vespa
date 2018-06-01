@@ -3,11 +3,11 @@ package com.yahoo.config.subscription;
 
 /**
  * Source specifying raw config, where payload is given programmatically
- * @author vegardh
- * @since 5.1
  *
+ * @author vegardh
  */
 public class RawSource implements ConfigSource {
+
     public final String payload;
 
     /**

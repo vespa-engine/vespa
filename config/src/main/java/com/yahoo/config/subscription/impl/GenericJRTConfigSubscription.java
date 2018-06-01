@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
 /**
  * A JRT subscription which does not use the config class, but {@link com.yahoo.vespa.config.RawConfig} instead.
  * Used by config proxy.
+ *
  * @author vegardh
  *
  */

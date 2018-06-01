@@ -3,6 +3,7 @@ package com.yahoo.config.subscription;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.subscription.impl.GenericConfigHandle;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.AppConfig;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
