@@ -45,14 +45,14 @@ void
 WakeupPipe::write_token()
 {
     char token = 'T';
-    write(_pipe[1], &token, 1);
+    [[maybe_unused]] ssize_t res = write(_pipe[1], &token, 1);
 }
 
 void
 WakeupPipe::read_tokens()
 {
     char token_trash[128];
-    read(_pipe[0], token_trash, sizeof(token_trash));
+    [[maybe_unused]] ssize_t res = read(_pipe[0], token_trash, sizeof(token_trash));
 }
 
 //-----------------------------------------------------------------------------

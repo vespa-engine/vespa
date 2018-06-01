@@ -4,8 +4,12 @@
 using namespace vespalib;
 
 TEST_MAIN() {
-    system("./vespalib_state_test_app > out.txt 2>&1 out.txt");
-    system("cat out.txt | grep STATE | sed 's/([^)].*\\//(/' > actual.txt");
+    int status = system("./vespalib_state_test_app > out.txt 2>&1 out.txt");
+    ASSERT_FALSE(WIFSIGNALED(status));
+    EXPECT_NOT_EQUAL(0, WEXITSTATUS(status));
+    status = system("cat out.txt | grep STATE | sed 's/([^)].*\\//(/' > actual.txt");
+    ASSERT_FALSE(WIFSIGNALED(status));
+    EXPECT_EQUAL(0, WEXITSTATUS(status));
 
     std::string diff_cmd("diff -u actual.txt ");
     diff_cmd += TEST_PATH("expect.txt");
