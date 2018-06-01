@@ -15,6 +15,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
@@ -81,7 +82,7 @@ public class IdentityDocumentGeneratorTest {
         AthenzProviderServiceConfig config = getAthenzProviderConfig("domain", "service", dnsSuffix, ZONE);
         IdentityDocumentGenerator identityDocumentGenerator =
                 new IdentityDocumentGenerator(config, nodeRepository, ZONE, keyProvider);
-        SignedIdentityDocument signedIdentityDocument = identityDocumentGenerator.generateSignedIdentityDocument(containerHostname);
+        SignedIdentityDocument signedIdentityDocument = identityDocumentGenerator.generateSignedIdentityDocument(containerHostname, IdentityType.TENANT);
 
         // Verify attributes
         assertEquals(containerHostname, signedIdentityDocument.identityDocument().instanceHostname());
@@ -92,11 +93,11 @@ public class IdentityDocumentGeneratorTest {
         assertEquals(expectedZoneDnsSuffix, signedIdentityDocument.dnsSuffix());
 
         VespaUniqueInstanceId expectedProviderUniqueId =
-                new VespaUniqueInstanceId(0, "default", "default", "application", "tenant", region, environment);
+                new VespaUniqueInstanceId(0, "default", "default", "application", "tenant", region, environment, IdentityType.TENANT);
         assertEquals(expectedProviderUniqueId, signedIdentityDocument.providerUniqueId());
 
-        // Validate that both parent and container ips are present
-        assertThat(signedIdentityDocument.identityDocument().ipAddresses(), Matchers.containsInAnyOrder("127.0.0.1", "::1"));
+        // Validate that container ips are present
+        assertThat(signedIdentityDocument.identityDocument().ipAddresses(), Matchers.containsInAnyOrder("::1"));
 
         SignedIdentityDocumentEntity signedIdentityDocumentEntity = EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument);
 
