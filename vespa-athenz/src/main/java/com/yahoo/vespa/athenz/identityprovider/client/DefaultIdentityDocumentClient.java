@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
@@ -31,7 +32,7 @@ import java.util.function.Supplier;
 public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
 
     private static final String IDENTITY_DOCUMENT_API = "/athenz/v1/provider/identity-document/";
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final Supplier<SSLContext> sslContextSupplier;
     private final HostnameVerifier hostnameVerifier;
