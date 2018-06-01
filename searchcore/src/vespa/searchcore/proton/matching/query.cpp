@@ -5,6 +5,7 @@
 #include "matchdatareservevisitor.h"
 #include "resolveviewvisitor.h"
 #include "termdataextractor.h"
+#include "sameelementmodifier.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
@@ -42,37 +43,33 @@ void AddLocationNode(const string &location_str, Node::UP &query_tree, Location 
     }
     string::size_type pos = location_str.find(':');
     if (pos == string::npos) {
-        LOG(warning, "Location string lacks attribute vector specification. loc='%s'",
-            location_str.c_str());
+        LOG(warning, "Location string lacks attribute vector specification. loc='%s'", location_str.c_str());
         return;
     }
-    const string view = PositionDataType::getZCurveFieldName(
-            location_str.substr(0, pos));
+    const string view = PositionDataType::getZCurveFieldName(location_str.substr(0, pos));
     const string loc = location_str.substr(pos + 1);
 
     search::common::Location locationSpec;
     if (!locationSpec.parse(loc)) {
-        LOG(warning, "Location parse error (location: '%s'): %s",
-            location_str.c_str(),
-            locationSpec.getParseError());
+        LOG(warning, "Location parse error (location: '%s'): %s", location_str.c_str(), locationSpec.getParseError());
         return;
     }
 
     int32_t id = -1;
     Weight weight(100);
 
-    ProtonAnd::UP new_base(new ProtonAnd);
+    auto new_base = std::make_unique<ProtonAnd>();
     new_base->append(std::move(query_tree));
 
     if (locationSpec.getRankOnDistance()) {
-        new_base->append(Node::UP(new ProtonLocationTerm(loc, view, id, weight)));
+        new_base->append(std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
         fef_location.setAttribute(view);
         fef_location.setXPosition(locationSpec.getX());
         fef_location.setYPosition(locationSpec.getY());
         fef_location.setXAspect(locationSpec.getXAspect());
         fef_location.setValid(true);
     } else if (locationSpec.getPruneOnDistance()) {
-        new_base->append(Node::UP(new ProtonLocationTerm(loc, view, id, weight)));
+        new_base->append(std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
     }
     query_tree = std::move(new_base);
 }
@@ -87,7 +84,9 @@ Query::buildTree(const vespalib::stringref &stack, const string &location,
 {
     SimpleQueryStackDumpIterator stack_dump_iterator(stack);
     _query_tree = QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
-    if (_query_tree.get()) {
+    if (_query_tree) {
+        SameElementModifier prefixSameElementSubIndexes;
+        _query_tree->accept(prefixSameElementSubIndexes);
         AddLocationNode(location, _query_tree, _location);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
         _query_tree->accept(resolve_visitor);
@@ -126,7 +125,7 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
     _blueprint = BlueprintBuilder::build(requestContext, *_query_tree, context);
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
     if (_whiteListBlueprint) {
-        std::unique_ptr<AndBlueprint> andBlueprint(new AndBlueprint());
+        auto andBlueprint = std::make_unique<AndBlueprint>();
         (*andBlueprint)
             .addChild(std::move(_blueprint))
             .addChild(std::move(_whiteListBlueprint));

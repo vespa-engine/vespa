@@ -24,6 +24,7 @@ public:
     virtual ~Term() = 0;
 
     void setTermIndex(int32_t term_index) { _term_index = term_index; }
+    void setView(const vespalib::string & view) { _view = view; }
     void setRanked(bool ranked) { _ranked = ranked; }
     void setPositionData(bool position_data) { _position_data = position_data; }
 

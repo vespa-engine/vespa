@@ -12,9 +12,7 @@ namespace proton::matching {
  * Visits all terms of a node tree, and allocates MatchData space for
  * each.
  */
-class MatchDataReserveVisitor
-    : public search::query::TemplateTermVisitor<MatchDataReserveVisitor,
-                                                ProtonNodeTypes>
+class MatchDataReserveVisitor : public search::query::TemplateTermVisitor<MatchDataReserveVisitor, ProtonNodeTypes>
 {
     search::fef::MatchDataLayout &_mdl;
 
