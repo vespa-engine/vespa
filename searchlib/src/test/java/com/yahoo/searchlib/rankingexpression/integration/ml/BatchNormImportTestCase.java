@@ -23,9 +23,7 @@ public class BatchNormImportTestCase {
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
         assertEquals("dnn/batch_normalization_3/batchnorm/add_1", output.getName());
-//        model.assertEqualResult("X", output.getName());
-
-        model.assertEqualResult("X", "dnn/outputs/BiasAdd");
+        model.assertEqualResult("X", output.getName());
     }
 
 }
