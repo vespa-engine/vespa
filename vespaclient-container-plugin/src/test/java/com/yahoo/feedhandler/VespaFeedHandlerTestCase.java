@@ -39,6 +39,7 @@ import java.util.zip.GZIPOutputStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("deprecation") // Tests a deprecated class
 public class VespaFeedHandlerTestCase {
 
     private VespaFeedHandler feedHandler;
