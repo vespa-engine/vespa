@@ -91,6 +91,14 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withVolume("/var/lib/sia", "/var/lib/sia");
             }
 
+            // TODO When rolling out host-admin on-prem: Always map in /var/zpe from host + make sure zpu is configured on host
+            if (environment.getCloud().equalsIgnoreCase("yahoo")) {
+                command.withVolume(environment.pathInHostFromPathInNode(containerName, Paths.get("var/zpe")).toString(),
+                                   environment.pathInNodeUnderVespaHome("var/zpe").toString());
+            } else if (environment.getNodeType() == NodeType.host) {
+                command.withVolume("/var/zpe", environment.pathInNodeUnderVespaHome("var/zpe").toString());
+            }
+
             if (environment.getNodeType() == NodeType.proxyhost) {
                 command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
             }
@@ -354,7 +362,6 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/yca"), true);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/ycore++"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/zookeeper"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/zpe"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("tmp"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/container-data"), false);
         if (environment.getNodeType() == NodeType.proxyhost)
