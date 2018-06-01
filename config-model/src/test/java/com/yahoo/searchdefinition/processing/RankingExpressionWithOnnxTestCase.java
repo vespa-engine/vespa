@@ -145,7 +145,7 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx'): " +
-                            "Model refers Placeholder 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
+                            "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
                             "not present in rank profile 'my_profile'",
                     Exceptions.toMessageString(expected));
         }
@@ -163,8 +163,8 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx'): " +
-                            "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) which must be produced " +
-                            "by a macro in the rank profile, but this macro produces type tensor(d0[2],d5[10])",
+                            "Model refers input 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
+                            "but this macro returns tensor(d0[2],d5[10])",
                     Exceptions.toMessageString(expected));
         }
     }
@@ -180,7 +180,7 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx','y'): " +
-                            "Model does not have the specified output 'y'",
+                            "Model does not have the output 'y'",
                     Exceptions.toMessageString(expected));
         }
     }
