@@ -15,10 +15,10 @@ public class Argument extends IntermediateOperation {
 
     private OrderedTensorType standardNamingType;  // using standard naming convention: d0, d1, ...
 
-    public Argument(String name, OrderedTensorType argumentType) {
+    public Argument(String name, OrderedTensorType type) {
         super(name, Collections.emptyList());
-        type = argumentType;
-        standardNamingType = OrderedTensorType.standardType(argumentType);
+        this.type = type.rename(vespaName() + "_");
+        standardNamingType = OrderedTensorType.standardType(type);
     }
 
     @Override
