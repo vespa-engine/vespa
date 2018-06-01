@@ -110,6 +110,13 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.memory_mappings.max"));
         metrics.add(new Metric("jdisc.open_file_descriptors.max"));
 
+        metrics.add(new Metric("jdisc.gc.count.average"));
+        metrics.add(new Metric("jdisc.gc.count.max"));
+        metrics.add(new Metric("jdisc.gc.count.last"));
+        metrics.add(new Metric("jdisc.gc.ms.average"));
+        metrics.add(new Metric("jdisc.gc.ms.max"));
+        metrics.add(new Metric("jdisc.gc.ms.last"));
+
         metrics.add(new Metric("jdisc.deactivated_containers.total.last"));
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
 

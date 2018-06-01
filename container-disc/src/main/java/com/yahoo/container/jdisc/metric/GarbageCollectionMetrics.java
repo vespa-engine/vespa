@@ -15,9 +15,8 @@ import java.util.Map;
  * @author ollivir
  */
 public class GarbageCollectionMetrics {
-    private static final String GC_PREFIX = "jdisc.gc.";
-    private static final String GC_COUNT = GC_PREFIX + ".count";
-    private static final String GC_TIME = GC_PREFIX + ".ms";
+    private static final String GC_COUNT = "jdisc.gc.count";
+    private static final String GC_TIME = "jdisc.gc.ms";
     private static final String DIMENSION_KEY = "gcName";
 
     public static final long REPORTING_INTERVAL = Duration.ofSeconds(62).toMillis();
