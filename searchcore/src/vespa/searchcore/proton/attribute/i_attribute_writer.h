@@ -1,17 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/documentupdate.h>
+#include "i_attribute_manager.h"
+#include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
-#include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 
 namespace search { class IDestructorCallback; }
 
 namespace proton {
+
+class IFieldUpdateCallback;
 
 /**
  * Interface for an attribute writer that handles writes in form of put, update and remove
@@ -31,10 +33,8 @@ public:
 
     virtual ~IAttributeWriter() {}
 
-    virtual std::vector<search::AttributeVector *>
-    getWritableAttributes() const = 0;
-    virtual search::AttributeVector *
-    getWritableAttribute(const vespalib::string &attrName) const = 0;
+    virtual std::vector<search::AttributeVector *> getWritableAttributes() const = 0;
+    virtual search::AttributeVector *getWritableAttribute(const vespalib::string &attrName) const = 0;
     virtual void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                      bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
     virtual void remove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit,
@@ -46,6 +46,11 @@ public:
      * The OnWriteDoneType instance should ensure the lifetime of the given DocumentUpdate instance.
      */
     virtual void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
+                        bool immediateCommit, OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate) = 0;
+    /*
+     * Update the underlying compound attributes based on updated document.
+     */
+    virtual void update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                         bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
     virtual void heartBeat(SerialNum serialNum) = 0;
     /**
@@ -60,6 +65,8 @@ public:
     virtual void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
 
     virtual void onReplayDone(uint32_t docIdLimit) = 0;
+
+    virtual bool getHasCompoundAttribute() const = 0;
 };
 
 } // namespace proton

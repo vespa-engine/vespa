@@ -17,8 +17,7 @@ import java.util.List;
  * Config server db is the maintainer of the serverdb directory containing def files and the file system sessions.
  * See also {@link com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs} which maintains directories per tenant.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ConfigServerDB {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigServerDB.class.getName());
@@ -41,16 +40,12 @@ public class ConfigServerDB {
         }
     }
 
-    public static ConfigServerDB createTestConfigServerDb(String dbDir, String definitionsDir) {
-        return new ConfigServerDB(new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                 .configServerDBDir(dbDir)
-                                                                 .configDefinitionsDir(definitionsDir)));
-    }
-
     // The config definitions shipped with Vespa
     public File classes() { return new File(Defaults.getDefaults().underVespaHome(configserverConfig.configDefinitionsDir()));}
 
     public File serverdefs() { return new File(serverDB, "serverdefs"); }
+
+    public File path() { return serverDB; }
 
     public static void createDirectory(File d) {
         if (d.exists()) {
@@ -81,7 +76,4 @@ public class ConfigServerDB {
         }
     }
 
-    public ConfigserverConfig getConfigserverConfig() {
-        return configserverConfig;
-    }
 }

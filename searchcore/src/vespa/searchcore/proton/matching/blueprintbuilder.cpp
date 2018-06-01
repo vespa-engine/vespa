@@ -2,6 +2,8 @@
 
 #include "querynodes.h"
 #include "blueprintbuilder.h"
+#include "termdatafromnode.h"
+#include "same_element_builder.h"
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
@@ -98,6 +100,15 @@ private:
         n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
     }
 
+    void buildSameElement(ProtonSameElement &n) {
+        SameElementBuilder builder(_requestContext, _context);
+        for (size_t i = 0; i < n.getChildren().size(); ++i) {
+            search::query::Node &node = *n.getChildren()[i];
+            builder.add_child(node);
+        }
+        _result = builder.build();
+    }
+
     template <typename NodeType>
     void buildTerm(NodeType &n) {
         FieldSpecList indexFields;
@@ -131,7 +142,7 @@ protected:
     void visit(ProtonRank &n)        override { buildIntermediate(new RankBlueprint(), n); }
     void visit(ProtonNear &n)        override { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
     void visit(ProtonONear &n)       override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
-    void visit(ProtonSameElement &n) override { buildIntermediate(nullptr /*new SameElementBlueprint())*/, n); }
+    void visit(ProtonSameElement &n) override { buildSameElement(n); }
 
 
     void visit(ProtonWeightedSetTerm &n) override { buildTerm(n); }

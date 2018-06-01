@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_test");
 
 #include <vespa/config-attributes.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -15,6 +13,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -43,6 +42,9 @@ LOG_SETUP("attribute_test");
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_test");
 
 namespace vespa { namespace config { namespace search {}}}
 
@@ -139,6 +141,7 @@ struct Fixture
         : Fixture(1)
     {
     }
+    ~Fixture();
     void allocAttributeWriter() {
         _aw = std::make_unique<AttributeWriter>(_m);
     }
@@ -155,8 +158,12 @@ struct Fixture
         _aw->put(serialNum, doc, lid, immediateCommit, emptyCallback);
     }
     void update(SerialNum serialNum, const DocumentUpdate &upd,
+                DocumentIdT lid, bool immediateCommit, IFieldUpdateCallback & onUpdate) {
+        _aw->update(serialNum, upd, lid, immediateCommit, emptyCallback, onUpdate);
+    }
+    void update(SerialNum serialNum, const Document &doc,
                 DocumentIdT lid, bool immediateCommit) {
-        _aw->update(serialNum, upd, lid, immediateCommit, emptyCallback);
+        _aw->update(serialNum, doc, lid, immediateCommit, emptyCallback);
     }
     void remove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit = true) {
         _aw->remove(serialNum, lid, immediateCommit, emptyCallback);
@@ -172,6 +179,7 @@ struct Fixture
     }
 };
 
+Fixture::~Fixture() = default;
 
 TEST_F("require that attribute writer handles put", Fixture)
 {
@@ -442,8 +450,9 @@ TEST_F("require that attribute writer handles update", Fixture)
     upd.addUpdate(FieldUpdate(upd.getType().getField("a2"))
                   .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10)));
 
+    DummyFieldUpdateCallback onUpdate;
     bool immediateCommit = true;
-    f.update(2, upd, 1, immediateCommit);
+    f.update(2, upd, 1, immediateCommit, onUpdate);
 
     attribute::IntegerContent ibuf;
     ibuf.fill(*a1, 1);
@@ -453,9 +462,9 @@ TEST_F("require that attribute writer handles update", Fixture)
     EXPECT_EQUAL(1u, ibuf.size());
     EXPECT_EQUAL(30u, ibuf[0]);
 
-    f.update(2, upd, 1, immediateCommit); // same sync token as previous
+    f.update(2, upd, 1, immediateCommit, onUpdate); // same sync token as previous
     try {
-        f.update(1, upd, 1, immediateCommit); // lower sync token than previous
+        f.update(1, upd, 1, immediateCommit, onUpdate); // lower sync token than previous
         EXPECT_TRUE(true);  // update is ignored
     } catch (vespalib::IllegalStateException & e) {
         LOG(info, "Got expected exception: '%s'", e.getMessage().c_str());
@@ -488,7 +497,8 @@ TEST_F("require that attribute writer handles predicate update", Fixture)
     EXPECT_EQUAL(1u, index.getZeroConstraintDocs().size());
     EXPECT_FALSE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
     bool immediateCommit = true;
-    f.update(2, upd, 1, immediateCommit);
+    DummyFieldUpdateCallback onUpdate;
+    f.update(2, upd, 1, immediateCommit, onUpdate);
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
     EXPECT_TRUE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
 }
@@ -675,7 +685,8 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(AssignValueUpdate(new_value)));
     bool immediateCommit = true;
-    f.update(2, upd, 1, immediateCommit);
+    DummyFieldUpdateCallback onUpdate;
+    f.update(2, upd, 1, immediateCommit, onUpdate);
     EXPECT_EQUAL(2u, a1->getNumDocs());
     EXPECT_TRUE(tensorAttribute != nullptr);
     tensor2 = tensorAttribute->getTensor(1);
@@ -771,6 +782,158 @@ TEST_F("require that AttributeWriter::forceCommit() clears search cache in impor
     f.commit(10);
     EXPECT_EQUAL(0u, f._m->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
     EXPECT_EQUAL(0u, f._m->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
+}
+
+struct StructFixtureBase : public Fixture
+{
+    DocumentType _type;
+    const Field _valueField;
+    StructDataType _structFieldType;
+
+    StructFixtureBase()
+        : Fixture(),
+          _type("test"),
+          _valueField("value", 2, *DataType::INT, true),
+          _structFieldType("struct")
+    {
+        addAttribute({"value", AVConfig(AVBasicType::INT32, AVCollectionType::SINGLE)}, createSerialNum);
+        _type.addField(_valueField);
+        _structFieldType.addField(_valueField);
+    }
+    ~StructFixtureBase();
+
+    std::unique_ptr<StructFieldValue>
+    makeStruct()
+    {
+        return std::make_unique<StructFieldValue>(_structFieldType);
+    }
+
+    std::unique_ptr<StructFieldValue>
+    makeStruct(const int32_t value)
+    {
+        auto ret = makeStruct();
+        ret->setValue(_valueField, IntFieldValue(value));
+        return ret;
+    }
+
+    std::unique_ptr<Document>
+    makeDoc()
+    {
+        return std::make_unique<Document>(_type, DocumentId("id::test::1"));
+    }
+};
+
+StructFixtureBase::~StructFixtureBase() = default;
+
+struct StructArrayFixture : public StructFixtureBase
+{
+    using StructFixtureBase::makeDoc;
+    const ArrayDataType _structArrayFieldType;
+    const Field _structArrayField;
+
+    StructArrayFixture()
+        : StructFixtureBase(),
+          _structArrayFieldType(_structFieldType),
+          _structArrayField("array", _structArrayFieldType, true)
+    {
+        addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        _type.addField(_structArrayField);
+    }
+    ~StructArrayFixture();
+
+    std::unique_ptr<Document>
+    makeDoc(int32_t value, const std::vector<int32_t> &arrayValues)
+    {
+        auto doc = makeDoc();
+        doc->setValue(_valueField, IntFieldValue(value));
+        ArrayFieldValue s(_structArrayFieldType);
+        for (const auto &arrayValue : arrayValues) {
+            s.add(*makeStruct(arrayValue));
+        }
+        doc->setValue(_structArrayField, s);
+        return doc;
+    }
+    void checkAttrs(uint32_t lid, int32_t value, const std::vector<int32_t> &arrayValues) {
+        auto valueAttr = _m->getAttribute("value")->getSP();
+        auto arrayValueAttr = _m->getAttribute("array.value")->getSP();
+        EXPECT_EQUAL(value, valueAttr->getInt(lid));
+        attribute::IntegerContent ibuf;
+        ibuf.fill(*arrayValueAttr, lid);
+        EXPECT_EQUAL(arrayValues.size(), ibuf.size());
+        for (size_t i = 0; i < arrayValues.size(); ++i) {
+            EXPECT_EQUAL(arrayValues[i], ibuf[i]);
+        }
+    }
+};
+
+StructArrayFixture::~StructArrayFixture() = default;
+
+TEST_F("require that update with doc argument updates compound attributes (array)", StructArrayFixture)
+{
+    auto doc = f.makeDoc(10,  {11, 12});
+    f.put(10, *doc, 1);
+    TEST_DO(f.checkAttrs(1, 10, {11, 12}));
+    doc = f.makeDoc(20, {21});
+    f.update(11, *doc, 1, true);
+    TEST_DO(f.checkAttrs(1, 10, {21}));
+}
+
+struct StructMapFixture : public StructFixtureBase
+{
+    using StructFixtureBase::makeDoc;
+    const MapDataType _structMapFieldType;
+    const Field _structMapField;
+
+    StructMapFixture()
+        : StructFixtureBase(),
+          _structMapFieldType(*DataType::INT, _structFieldType),
+          _structMapField("map", _structMapFieldType, true)
+    {
+        addAttribute({"map.value.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        addAttribute({"map.key", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+        _type.addField(_structMapField);
+    }
+
+    std::unique_ptr<Document>
+    makeDoc(int32_t value, const std::map<int32_t, int32_t> &mapValues)
+    {
+        auto doc = makeDoc();
+        doc->setValue(_valueField, IntFieldValue(value));
+        MapFieldValue s(_structMapFieldType);
+        for (const auto &mapValue : mapValues) {
+            s.put(IntFieldValue(mapValue.first), *makeStruct(mapValue.second));
+        }
+        doc->setValue(_structMapField, s);
+        return doc;
+    }
+    void checkAttrs(uint32_t lid, int32_t expValue, const std::map<int32_t, int32_t> &expMap) {
+        auto valueAttr = _m->getAttribute("value")->getSP();
+        auto mapKeyAttr = _m->getAttribute("map.key")->getSP();
+        auto mapValueAttr = _m->getAttribute("map.value.value")->getSP();
+        EXPECT_EQUAL(expValue, valueAttr->getInt(lid));
+        attribute::IntegerContent mapKeys;
+        mapKeys.fill(*mapKeyAttr, lid);
+        attribute::IntegerContent mapValues;
+        mapValues.fill(*mapValueAttr, lid);
+        EXPECT_EQUAL(expMap.size(), mapValues.size());
+        EXPECT_EQUAL(expMap.size(), mapKeys.size());
+        size_t i = 0;
+        for (const auto &expMapElem : expMap) {
+            EXPECT_EQUAL(expMapElem.first, mapKeys[i]);
+            EXPECT_EQUAL(expMapElem.second, mapValues[i]);
+            ++i;
+        }
+    }
+};
+
+TEST_F("require that update with doc argument updates compound attributes (map)", StructMapFixture)
+{
+    auto doc = f.makeDoc(10,  {{1, 11}, {2, 12}});
+    f.put(10, *doc, 1);
+    TEST_DO(f.checkAttrs(1, 10, {{1, 11}, {2, 12}}));
+    doc = f.makeDoc(20, {{42, 21}});
+    f.update(11, *doc, 1, true);
+    TEST_DO(f.checkAttrs(1, 10, {{42, 21}}));
 }
 
 TEST_MAIN()

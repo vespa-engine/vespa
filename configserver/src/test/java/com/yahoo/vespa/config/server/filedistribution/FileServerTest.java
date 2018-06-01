@@ -6,7 +6,9 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +36,9 @@ public class FileServerTest {
         assertTrue(dummy.delete());
         created.add(dir);
     }
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void requireThatExistingFileCanBeFound() throws IOException {
@@ -71,10 +76,12 @@ public class FileServerTest {
     }
 
     @Test
-    public void requireThatDifferentNumberOfConfigServersWork() {
+    public void requireThatDifferentNumberOfConfigServersWork() throws IOException {
         // Empty connection pool in tests etc.
-        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-        FileServer fileServer = new FileServer(new ConfigserverConfig(builder));
+        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath());
+        FileServer fileServer = createFileServer(builder);
         assertEquals(0, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
 
         // Empty connection pool when only one server, no use in downloading from yourself
@@ -84,7 +91,7 @@ public class FileServerTest {
         serverBuilder.port(123456);
         servers.add(serverBuilder);
         builder.zookeeperserver(servers);
-        fileServer = new FileServer(new ConfigserverConfig(builder));
+        fileServer = createFileServer(builder);
         assertEquals(0, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
 
         // connection pool of size 1 when 2 servers
@@ -93,8 +100,14 @@ public class FileServerTest {
         serverBuilder2.port(123456);
         servers.add(serverBuilder2);
         builder.zookeeperserver(servers);
-        fileServer = new FileServer(new ConfigserverConfig(builder));
+        fileServer = createFileServer(builder);
         assertEquals(1, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
+    }
+
+    private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) throws IOException {
+        File fileReferencesDir = temporaryFolder.newFolder();
+        configBuilder.fileReferencesDir(fileReferencesDir.getAbsolutePath());
+        return new FileServer(new ConfigserverConfig(configBuilder));
     }
 
     private static class FileReceiver implements FileServer.Receiver {

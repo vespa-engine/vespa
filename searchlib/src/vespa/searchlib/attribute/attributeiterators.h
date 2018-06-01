@@ -83,6 +83,8 @@ protected:
 public:
     AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData);
     bool seekFast(uint32_t docId) const { return _searchContext.matches(docId); }
+
+    const attribute::ISearchContext * getAttributeSearchContext() const override { return &_searchContext; }
 };
 
 template <typename SC>

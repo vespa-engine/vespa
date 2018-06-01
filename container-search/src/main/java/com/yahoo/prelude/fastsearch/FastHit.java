@@ -228,6 +228,13 @@ public class FastHit extends Hit {
     }
 
     @Override
+    public void forEachFieldAsRaw(RawUtf8Consumer consumer) {
+        super.forEachField(consumer);
+        for (SummaryData summaryData : summaries)
+            summaryData.forEachFieldAsRaw(consumer);
+    }
+
+    @Override
     public Map<String, Object> fields() {
         Map<String, Object> fields = new HashMap<>();
         for (Iterator<Map.Entry<String, Object>> i = fieldIterator(); i.hasNext(); ) {
@@ -534,9 +541,28 @@ public class FastHit extends Hit {
 
         void forEachField(BiConsumer<String, Object> consumer) {
             data.traverse((ObjectTraverser)(name, value) -> {
-                Object convertedValue = type.convert(name, value);
-                if ( convertedValue != null && !shadowed(name) && !removed(name)) {
-                    consumer.accept(name, convertedValue);
+                if (!shadowed(name) && !removed(name)) {
+                    Object convertedValue = type.convert(name, value);
+                    if (convertedValue != null)
+                        consumer.accept(name, convertedValue);
+                }
+            });
+        }
+
+        void forEachFieldAsRaw(RawUtf8Consumer consumer) {
+            data.traverse((ObjectTraverser)(name, value) -> {
+                if (!shadowed(name) && !removed(name)) {
+                    DocsumField fieldType = type.getField(name);
+                    if (fieldType != null) {
+                        if (fieldType.isString()) {
+                            byte[] utf8Value = value.asUtf8();
+                            consumer.accept(name, utf8Value, 0, utf8Value.length);
+                        } else {
+                            Object convertedValue = fieldType.convert(value);
+                            if (convertedValue != null)
+                                consumer.accept(name, convertedValue);
+                        }
+                    }
                 }
             });
         }

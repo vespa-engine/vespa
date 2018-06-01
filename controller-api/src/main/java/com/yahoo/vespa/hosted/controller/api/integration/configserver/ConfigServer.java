@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -37,8 +36,6 @@ public interface ConfigServer {
     void restart(DeploymentId applicationInstance, Optional<Hostname> hostname) throws NoInstanceException;
 
     void deactivate(DeploymentId applicationInstance) throws NoInstanceException;
-
-    JsonNode waitForConfigConverge(DeploymentId applicationInstance, long timeoutInSeconds);
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
 

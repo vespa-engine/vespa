@@ -41,15 +41,9 @@ class Document;
  * path updates was added, and a new serialization format was
  * introduced while keeping the old one.
  */
-class DocumentUpdate : public vespalib::Identifiable,
-                       public Printable,
-                       public XmlSerializable
+class DocumentUpdate final : public Printable, public XmlSerializable
 {
-public:
-    typedef std::unique_ptr<DocumentUpdate> UP;
-    typedef std::shared_ptr<DocumentUpdate> SP;
-    typedef std::vector<FieldUpdate> FieldUpdateV;
-    typedef std::vector<FieldPathUpdate::CP> FieldPathUpdateV;
+private:
     /**
      * Enum class containing the legal serialization version for
      * document updates. This version is not encoded in the serialized
@@ -59,6 +53,11 @@ public:
         SERIALIZE_42,  // old style format, before vespa 5.0
         SERIALIZE_HEAD // new style format, since vespa 5.0
     };
+public:
+    typedef std::unique_ptr<DocumentUpdate> UP;
+    typedef std::shared_ptr<DocumentUpdate> SP;
+    typedef std::vector<FieldUpdate> FieldUpdateV;
+    typedef std::vector<FieldPathUpdate::CP> FieldPathUpdateV;
 
     /**
      * Create old style document update, no support for field path updates.
@@ -69,7 +68,16 @@ public:
      * Create new style document update, possibly with field path updates.
      */
     static DocumentUpdate::UP createHEAD(const DocumentTypeRepo&, ByteBuffer&);
-	
+
+    /**
+     * Create a document update from a byte buffer containing a serialized
+     * document update. Public to allow useage in std::make_unique/shared.
+     *
+     * @param repo Document type repo used to find proper document type
+     * @param buffer The buffer containing the serialized document update
+     * @param serializeVersion Selector between serialization formats.
+     */
+    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer, SerializeVersion serializeVersion);
     /**
      * The document type is not strictly needed, as we know this at applyTo()
      * time, but search does not use applyTo() code to do the update, and don't
@@ -82,18 +90,9 @@ public:
      */
     DocumentUpdate(const DataType &type, const DocumentId& id);
 
-    /**
-     * Create a document update from a byte buffer containing a serialized
-     * document update.
-     *
-     * @param repo Document type repo used to find proper document type
-     * @param buffer The buffer containing the serialized document update
-     * @param serializeVersion Selector between serialization formats.
-     */
-    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer,
-                   SerializeVersion serializeVersion);
-
-    ~DocumentUpdate();
+    DocumentUpdate(const DocumentUpdate &) = delete;
+    DocumentUpdate & operator = (const DocumentUpdate &) = delete;
+    ~DocumentUpdate() override;
 
     bool operator==(const DocumentUpdate&) const;
     bool operator!=(const DocumentUpdate & rhs) const { return ! (*this == rhs); }
@@ -107,11 +106,6 @@ public:
      * type as this.
      */
     void applyTo(Document& doc) const;
-
-    void clear() { _updates.clear(); }
-    size_t size() const { return _updates.size(); }
-    const FieldUpdate& operator[](int index) const { return _updates[index]; }
-    FieldUpdate& operator[](int index) { return _updates[index]; }
 	
     /**
      * Add a field update to this document update.
@@ -131,25 +125,14 @@ public:
     /** @return The list of fieldpath updates. */
     const FieldPathUpdateV & getFieldPathUpdates() const { return _fieldPathUpdates; }
 
-    bool affectsDocumentBody() const;
-
     /** @return The type of document this update is for. */
     const DocumentType& getType() const;
 	
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
-    void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
-
-    // Deserializable implementation. Kept as search relies on it currently.
-    virtual void onDeserialize42(const DocumentTypeRepo &repo, ByteBuffer&);
-
-    void serialize42(vespalib::nbostream &stream) const;
     void serializeHEAD(vespalib::nbostream &stream) const;
 
     void printXml(XmlOutputStream&) const override;
-
-    virtual DocumentUpdate* clone() const;
 
     /**
      * Sets whether this update should create the document it updates if that document does not exist.
@@ -169,7 +152,6 @@ public:
     int serializeFlags(int size_) const;
     int16_t getVersion() const { return _version; }
 
-    DECLARE_IDENTIFIABLE(DocumentUpdate);
 private:
     DocumentId       _documentId; // The ID of the document to update.
     const DataType  *_type; // The type of document this update is for.
@@ -178,15 +160,9 @@ private:
     int16_t          _version; // Serialization version
     bool             _createIfNonExistent;
 
-    /**
-     * This function exist because search relies on deserialization through
-     * creating object through empty constructor and calling deserialize.
-     *
-     * It is hidden to prevent accidental other usage.
-     */
-    DocumentUpdate();
-
     int deserializeFlags(int sizeAndFlags);
+    void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
+    void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
 };
 
 } // document

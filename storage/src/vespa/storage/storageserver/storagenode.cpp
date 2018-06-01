@@ -206,10 +206,8 @@ StorageNode::initialize()
 
     _chain.reset(createChain().release());
 
-    if (_component->enableMultipleBucketSpaces()) {
-        assert(_communicationManager != nullptr);
-        _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
-    }
+    assert(_communicationManager != nullptr);
+    _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
 
     // Start the metric manager, such that it starts generating snapshots
     // and the like. Note that at this time, all metrics should hopefully
@@ -359,9 +357,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     if (_newBucketSpacesConfig) {
         _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
         _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
-        if (_component->enableMultipleBucketSpaces()) {
-            _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
-        }
+        _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
     }
 }
 

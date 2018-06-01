@@ -168,7 +168,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/converge")) return waitForConvergence(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
@@ -577,12 +576,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse waitForConvergence(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
-        return new JacksonJsonResponse(controller.waitForConfigConvergence(new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                                                            ZoneId.from(environment, region)),
-                                                                           asLong(request.getProperty("timeout"), 1000)));
     }
 
     private HttpResponse services(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {

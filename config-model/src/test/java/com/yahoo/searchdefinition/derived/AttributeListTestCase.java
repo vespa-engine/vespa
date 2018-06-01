@@ -79,6 +79,17 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         assertTrue(!attributes.hasNext());
     }
 
+    @Test
+    public void map_of_struct_field_is_derived_into_array_attributes() throws IOException, ParseException {
+        Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
+        Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
+
+        assertAttribute("elem_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("elem_map.value.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
+        assertTrue(!attributes.hasNext());
+    }
+
     private static void assertAttribute(String name, Attribute.Type type, Attribute.CollectionType collection, Attribute attr) {
         assertEquals(name, attr.getName());
         assertEquals(type, attr.getType());

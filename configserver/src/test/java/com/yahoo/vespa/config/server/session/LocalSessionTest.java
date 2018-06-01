@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.io.Files;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.*;
 import com.yahoo.path.Path;
@@ -29,8 +30,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class LocalSessionTest {
 
@@ -41,7 +41,7 @@ public class LocalSessionTest {
     private SuperModelGenerationCounter superModelGenerationCounter;
 
     @Before
-    public void setupTest() throws Exception {
+    public void setupTest() {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         superModelGenerationCounter = new SuperModelGenerationCounter(curator);

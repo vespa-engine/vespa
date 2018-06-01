@@ -96,4 +96,7 @@ public abstract class DocsumField {
      */
     public abstract Object convert(Inspector value);
 
+    /** Returns whether this is the string field type. */
+    boolean isString() { return false; }
+
 }

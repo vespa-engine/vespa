@@ -101,7 +101,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testDocumentId() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testDocumentId() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"

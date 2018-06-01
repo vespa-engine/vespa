@@ -100,7 +100,7 @@ void
 SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc,
                                     bool immediateCommit, OnOperationDoneType onWriteDone)
 {
-    Document::UP doc = std::move(futureDoc.get());
+    const auto &doc = futureDoc.get();
     if (doc) {
         performIndexPut(serialNum, lid, *doc, immediateCommit, onWriteDone);
     }
@@ -116,29 +116,6 @@ void
 SearchableFeedView::performIndexHeartBeat(SerialNum serialNum)
 {
     _indexWriter->heartBeat(serialNum);
-}
-
-SearchableFeedView::UpdateScope
-SearchableFeedView::getUpdateScope(const DocumentUpdate &upd)
-{
-    UpdateScope updateScope;
-    const Schema &schema = *_schema;
-    for(size_t i(0), m(upd.getUpdates().size());
-        !(updateScope._indexedFields && updateScope._nonAttributeFields) &&
-            (i < m); i++) {
-        const document::FieldUpdate & fu(upd.getUpdates()[i]);
-        const vespalib::string &name = fu.getField().getName();
-        if (schema.isIndexField(name)) {
-            updateScope._indexedFields = true;
-        }
-        if (!fastPartialUpdateAttribute(name)) {
-            updateScope._nonAttributeFields = true;
-        }
-    }
-    if (!upd.getFieldPathUpdates().empty()) {
-        updateScope._nonAttributeFields = true;
-    }
-    return updateScope;
 }
 
 void

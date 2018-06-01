@@ -4,6 +4,8 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.net.URI;
+import java.time.Instant;
+import java.util.Set;
 
 /**
  * A signed identity document which contains a {@link IdentityDocument}
@@ -22,6 +24,11 @@ public class SignedIdentityDocument {
     private final AthenzService providerService;
     private final URI ztsEndpoint;
     private final int documentVersion;
+    private final String configServerHostname;
+    private final String instanceHostname;
+    private final Instant createdAt;
+    private final Set<String> ipAddresses;
+    private final IdentityType identityType;
 
     public SignedIdentityDocument(IdentityDocument identityDocument,
                                   String signature,
@@ -30,7 +37,12 @@ public class SignedIdentityDocument {
                                   String dnsSuffix,
                                   AthenzService providerService,
                                   URI ztsEndpoint,
-                                  int documentVersion) {
+                                  int documentVersion,
+                                  String configServerHostname,
+                                  String instanceHostname,
+                                  Instant createdAt,
+                                  Set<String> ipAddresses,
+                                  IdentityType identityType) {
         this.identityDocument = identityDocument;
         this.signature = signature;
         this.signingKeyVersion = signingKeyVersion;
@@ -39,6 +51,11 @@ public class SignedIdentityDocument {
         this.providerService = providerService;
         this.ztsEndpoint = ztsEndpoint;
         this.documentVersion = documentVersion;
+        this.configServerHostname = configServerHostname;
+        this.instanceHostname = instanceHostname;
+        this.createdAt = createdAt;
+        this.ipAddresses = ipAddresses;
+        this.identityType = identityType;
     }
 
     public IdentityDocument identityDocument() {
@@ -71,5 +88,25 @@ public class SignedIdentityDocument {
 
     public int documentVersion() {
         return documentVersion;
+    }
+
+    public String configServerHostname() {
+        return configServerHostname;
+    }
+
+    public String instanceHostname() {
+        return instanceHostname;
+    }
+
+    public Instant createdAt() {
+        return createdAt;
+    }
+
+    public Set<String> ipAddresses() {
+        return ipAddresses;
+    }
+
+    public IdentityType identityType() {
+        return identityType;
     }
 }

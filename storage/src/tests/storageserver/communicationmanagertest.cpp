@@ -14,6 +14,8 @@
 #include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
 
 using document::test::makeDocumentBucket;
 
@@ -27,6 +29,7 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
     void testRepliesAreDequeuedInFifoOrder();
     void bucket_space_config_can_be_updated_live();
     void unmapped_bucket_space_documentapi_request_returns_error_reply();
+    void unmapped_bucket_space_for_get_documentapi_request_returns_empty_reply();
 
     static constexpr uint32_t MESSAGE_WAIT_TIME_SEC = 60;
 
@@ -51,6 +54,7 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testRepliesAreDequeuedInFifoOrder);
     CPPUNIT_TEST(bucket_space_config_can_be_updated_live);
     CPPUNIT_TEST(unmapped_bucket_space_documentapi_request_returns_error_reply);
+    CPPUNIT_TEST(unmapped_bucket_space_for_get_documentapi_request_returns_empty_reply);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -267,12 +271,20 @@ struct CommunicationManagerFixture {
     }
     ~CommunicationManagerFixture();
 
-    std::unique_ptr<documentapi::GetDocumentMessage> documentapi_message_for_space(const char* space) {
-        auto cmd = std::make_unique<documentapi::GetDocumentMessage>(
-                document::DocumentId(vespalib::make_string("id::%s::stuff", space)));
+    template <typename T>
+    std::unique_ptr<T> documentapi_message_for_space(const char *space) {
+        auto cmd = std::make_unique<T>(document::DocumentId(vespalib::make_string("id::%s::stuff", space)));
         // Bind reply handling to our own mock handler
         cmd->pushHandler(reply_handler);
         return cmd;
+    }
+
+    std::unique_ptr<documentapi::RemoveDocumentMessage> documentapi_remove_message_for_space(const char *space) {
+        return documentapi_message_for_space<documentapi::RemoveDocumentMessage>(space);
+    }
+
+    std::unique_ptr<documentapi::GetDocumentMessage> documentapi_get_message_for_space(const char *space) {
+        return documentapi_message_for_space<documentapi::GetDocumentMessage>(space);
     }
 };
 
@@ -298,8 +310,8 @@ void CommunicationManagerTest::bucket_space_config_can_be_updated_live() {
     config.documenttype.emplace_back(doc_type("bar", "global"));
     f.comm_mgr->updateBucketSpacesConfig(config);
 
-    f.comm_mgr->handleMessage(f.documentapi_message_for_space("bar"));
-    f.comm_mgr->handleMessage(f.documentapi_message_for_space("foo"));
+    f.comm_mgr->handleMessage(f.documentapi_remove_message_for_space("bar"));
+    f.comm_mgr->handleMessage(f.documentapi_remove_message_for_space("foo"));
     f.bottom_link->waitForMessages(2, MESSAGE_WAIT_TIME_SEC);
 
     auto cmd1 = f.bottom_link->getCommand(0);
@@ -310,7 +322,7 @@ void CommunicationManagerTest::bucket_space_config_can_be_updated_live() {
 
     config.documenttype[1] = doc_type("bar", "default");
     f.comm_mgr->updateBucketSpacesConfig(config);
-    f.comm_mgr->handleMessage(f.documentapi_message_for_space("bar"));
+    f.comm_mgr->handleMessage(f.documentapi_remove_message_for_space("bar"));
     f.bottom_link->waitForMessages(3, MESSAGE_WAIT_TIME_SEC);
 
     auto cmd3 = f.bottom_link->getCommand(2);
@@ -328,13 +340,32 @@ void CommunicationManagerTest::unmapped_bucket_space_documentapi_request_returns
 
     CPPUNIT_ASSERT_EQUAL(uint64_t(0), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 
-    f.comm_mgr->handleMessage(f.documentapi_message_for_space("fluff"));
+    f.comm_mgr->handleMessage(f.documentapi_remove_message_for_space("fluff"));
     CPPUNIT_ASSERT_EQUAL(size_t(1), f.reply_handler.replies.size());
     auto& reply = *f.reply_handler.replies[0];
     CPPUNIT_ASSERT(reply.hasErrors());
     CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
 
     CPPUNIT_ASSERT_EQUAL(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
+}
+
+// Legacy DocumentAPI routing protocols will send Gets to _all_ clusters even
+// if they do not contain a particular document type. By sending an empty reply
+// we signal a mergeable "not found" to the sender rather than a non-mergeable
+// fatal error.
+void CommunicationManagerTest::unmapped_bucket_space_for_get_documentapi_request_returns_empty_reply() {
+    CommunicationManagerFixture f;
+
+    BucketspacesConfigBuilder config;
+    config.documenttype.emplace_back(doc_type("foo", "default"));
+    f.comm_mgr->updateBucketSpacesConfig(config);
+
+    f.comm_mgr->handleMessage(f.documentapi_get_message_for_space("fluff"));
+    CPPUNIT_ASSERT_EQUAL(size_t(1), f.reply_handler.replies.size());
+    auto& reply = *f.reply_handler.replies[0];
+    CPPUNIT_ASSERT(!reply.hasErrors());
+    auto& get_reply = dynamic_cast<documentapi::GetDocumentReply&>(reply);
+    CPPUNIT_ASSERT(!get_reply.hasDocument());
 }
 
 } // storage

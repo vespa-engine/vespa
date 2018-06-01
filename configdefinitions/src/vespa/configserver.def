@@ -13,10 +13,13 @@ zookeeperserver[].port int default=2181
 zookeeper.barrierTimeout long default=120 # in seconds
 zookeeperLocalhostAffinity bool default=true
 
-# Misc
+# Directories
 configModelPluginDir[] string
 configServerDBDir string default="var/db/vespa/config_server/serverdb/"
 configDefinitionsDir string default="share/vespa/configdefinitions/"
+fileReferencesDir string default="var/db/vespa/filedistribution/"
+
+# Misc
 sessionLifetime long default=3600 # in seconds
 masterGeneration long default=0
 multitenant bool default=false

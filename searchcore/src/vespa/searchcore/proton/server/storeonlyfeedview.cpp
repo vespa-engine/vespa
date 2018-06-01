@@ -17,6 +17,8 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
+#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
+
 LOG_SETUP(".proton.server.storeonlyfeedview");
 
 using document::BucketId;
@@ -300,20 +302,19 @@ StoreOnlyFeedView::heartBeatIndexedFields(SerialNum ) {}
 void
 StoreOnlyFeedView::heartBeatAttributes(SerialNum ) {}
 
-
-StoreOnlyFeedView::UpdateScope
-StoreOnlyFeedView::getUpdateScope(const DocumentUpdate &upd)
+void
+StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate & upd, bool,
+                                    OnOperationDoneType, IFieldUpdateCallback & onUpdate)
 {
-    UpdateScope updateScope;
-    if (!upd.getUpdates().empty() || !upd.getFieldPathUpdates().empty()) {
-        updateScope._nonAttributeFields = true;
+    for (const auto & fieldUpdate : upd.getUpdates()) {
+        onUpdate.onUpdateField(fieldUpdate.getField().getName(), nullptr);
     }
-    return updateScope;
 }
 
-
 void
-StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate &, bool, OnOperationDoneType) {}
+StoreOnlyFeedView::updateAttributes(SerialNum, Lid, FutureDoc, bool, OnOperationDoneType)
+{
+}
 
 void
 StoreOnlyFeedView::updateIndexedFields(SerialNum, Lid, FutureDoc, bool, OnOperationDoneType)
@@ -385,6 +386,34 @@ void StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
             }));
 }
 
+StoreOnlyFeedView::UpdateScope::UpdateScope(const search::index::Schema & schema, const DocumentUpdate & upd)
+    : _schema(&schema),
+      _indexedFields(false),
+      _nonAttributeFields(!upd.getFieldPathUpdates().empty())
+{}
+
+namespace {
+
+bool isAttributeUpdateable(const search::AttributeVector *attribute) {
+    search::attribute::BasicType::Type attrType = attribute->getBasicType();
+    // Partial update to tensor, predicate or reference attribute
+    // must update document
+    return ((attrType != search::attribute::BasicType::Type::PREDICATE) &&
+            (attrType != search::attribute::BasicType::Type::TENSOR) &&
+            (attrType != search::attribute::BasicType::Type::REFERENCE));
+}
+}
+
+void
+StoreOnlyFeedView::UpdateScope::onUpdateField(vespalib::stringref fieldName, const search::AttributeVector * attr) {
+    if (!_nonAttributeFields && (attr == nullptr || !isAttributeUpdateable(attr))) {
+        _nonAttributeFields = true;
+    }
+    if (!_indexedFields && _schema->isIndexField(fieldName)) {
+        _indexedFields = true;
+    }
+}
+
 void
 StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp) {
     if ( ! updOp.getUpdate()) {
@@ -417,15 +446,15 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
 
     bool immediateCommit = _commitTimeTracker.needCommit();
     auto onWriteDone = createUpdateDoneContext(std::move(token), updOp.getUpdate());
-    updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
+    UpdateScope updateScope(*_schema, upd);
+    updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone, updateScope);
 
-    UpdateScope updateScope(getUpdateScope(upd));
     if (updateScope.hasIndexOrNonAttributeFields()) {
         PromisedDoc promisedDoc;
-        FutureDoc futureDoc = promisedDoc.get_future();
+        FutureDoc futureDoc = promisedDoc.get_future().share();
         _pendingLidTracker.waitForConsumedLid(lid);
         if (updateScope._indexedFields) {
-            updateIndexedFields(serialNum, lid, std::move(futureDoc), immediateCommit, onWriteDone);
+            updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }
         PromisedStream promisedStream;
         FutureStream futureStream = promisedStream.get_future();
@@ -444,6 +473,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
                                                  std::move(promisedDoc), std::move(promisedStream));
                          });
 #pragma GCC diagnostic pop
+        updateAttributes(serialNum, lid, std::move(futureDoc), immediateCommit, onWriteDone);
     }
 }
 

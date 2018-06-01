@@ -88,7 +88,7 @@ public:
         std::swap(_allocator, rhs._allocator);
     }
     Alloc create(size_t sz) const {
-        return Alloc(_allocator, sz);
+        return (sz == 0) ? Alloc(_allocator) : Alloc(_allocator, sz);
     }
 
     static Alloc allocAlignedHeap(size_t sz, size_t alignment);
@@ -98,9 +98,11 @@ public:
      * Optional alignment is assumed to be <= system page size, since mmap
      * is always used when size is above limit.
      */
-    static Alloc alloc(size_t sz=0, size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
+    static Alloc alloc(size_t sz, size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
+    static Alloc alloc();
 private:
     Alloc(const MemoryAllocator * allocator, size_t sz) : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
+    Alloc(const MemoryAllocator * allocator) : _alloc(nullptr, 0), _allocator(allocator) { }
     void clear() {
         _alloc.first = nullptr;
         _alloc.second = 0;

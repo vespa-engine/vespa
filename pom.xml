@@ -72,6 +72,7 @@
         <module>documentapi</module>
         <module>document</module>
         <module>documentgen-test</module>
+        <module>fat-model-dependencies</module>
         <module>fileacquirer</module>
         <module>filedistribution</module>
         <module>fsa</module>

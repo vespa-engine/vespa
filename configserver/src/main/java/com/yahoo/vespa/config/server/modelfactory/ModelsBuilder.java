@@ -27,6 +27,7 @@ import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -146,7 +147,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         List<MODELRESULT> allApplicationVersions = new ArrayList<>();
         allApplicationVersions.add(latestModelVersion);
 
-        if (zone().environment() == Environment.dev)
+        if (Arrays.asList(Environment.dev, Environment.test).contains(zone().environment()))
             versions = keepThoseUsedOn(allocatedHosts.get(), versions);
 
         // TODO: We use the allocated hosts from the newest version when building older model versions.

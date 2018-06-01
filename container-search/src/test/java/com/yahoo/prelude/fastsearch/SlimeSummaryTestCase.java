@@ -141,9 +141,9 @@ public class SlimeSummaryTestCase {
 
     @Test
     public void testFieldAccessAPI() {
-        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
         DocsumDefinitionSet partialDocsum1 = createDocsumDefinitionSet(partial_summary1_cf);
         DocsumDefinitionSet partialDocsum2 = createDocsumDefinitionSet(partial_summary2_cf);
+        DocsumDefinitionSet fullDocsum = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
         Map<String, Object> expected = new HashMap<>();
 
@@ -261,6 +261,18 @@ public class SlimeSummaryTestCase {
         fieldIterator.remove();
         expected.remove("integer_field");
         assertFields(expected, hit);
+
+        // --- Add full summary
+        assertNull(fullDocsum.lazyDecode("default", fullishSummary(), hit));
+        expected.put("integer_field", 4);
+        expected.put("short_field", (short)2);
+        expected.put("byte_field", (byte)1);
+        expected.put("float_field", 4.5f);
+        expected.put("double_field", 8.75d);
+        expected.put("int64_field", 8L);
+        expected.put("string_field", "string_value");
+        expected.put("longstring_field", "longstring_value");
+        assertFields(expected, hit);
     }
 
 
@@ -274,11 +286,16 @@ public class SlimeSummaryTestCase {
             traversed.put(name, value);
         });
         assertEquals(expected, traversed);
+        // raw utf8 field traverser
+        Map<String, Object> traversedUtf8 = new HashMap<>();
+        hit.forEachFieldAsRaw(new Utf8FieldTraverser(traversedUtf8));
+        assertEquals(expected, traversedUtf8);
         // fieldKeys
         int fieldNameIteratorFieldCount = 0;
         for (Iterator<String> i = hit.fieldKeys().iterator(); i.hasNext(); ) {
             fieldNameIteratorFieldCount++;
-            assertTrue(expected.containsKey(i.next()));
+            String name = i.next();
+            assertTrue("Expected field " + name, expected.containsKey(name));
         }
         assertEquals(expected.size(), fieldNameIteratorFieldCount);
         // fieldKeys
@@ -304,7 +321,7 @@ public class SlimeSummaryTestCase {
         return encode((slime));
     }
 
-    private byte [] timeoutSummary() {
+    private byte[] timeoutSummary() {
         Slime slime = new Slime();
         slime.setString("Timed out....");
         return encode((slime));
@@ -327,6 +344,22 @@ public class SlimeSummaryTestCase {
         return encode((slime));
     }
 
+    private byte[] fullishSummary() {
+        Slime slime = new Slime();
+        Cursor docsum = slime.setObject();
+        docsum.setLong("integer_field", 4);
+        docsum.setLong("short_field", 2);
+        docsum.setLong("byte_field", 1);
+        docsum.setDouble("float_field", 4.5);
+        docsum.setDouble("double_field", 8.75);
+        docsum.setLong("int64_field", 8);
+        docsum.setString("string_field", "string_value");
+        //docsum.setData("data_field", "data_value".getBytes(StandardCharsets.UTF_8));
+        docsum.setString("longstring_field", "longstring_value");
+        //docsum.setData("longdata_field", "longdata_value".getBytes(StandardCharsets.UTF_8));
+        return encode((slime));
+    }
+
     private byte[] fullSummary(Tensor tensor1, Tensor tensor2) {
         Slime slime = new Slime();
         Cursor docsum = slime.setObject();
@@ -346,8 +379,10 @@ public class SlimeSummaryTestCase {
             field.setLong("foo", 1);
             field.setLong("bar", 2);
         }
-        docsum.setData("tensor_field1", TypedBinaryFormat.encode(tensor1));
-        docsum.setData("tensor_field2", TypedBinaryFormat.encode(tensor2));
+        if (tensor1 != null)
+            docsum.setData("tensor_field1", TypedBinaryFormat.encode(tensor1));
+        if (tensor2 != null)
+            docsum.setData("tensor_field2", TypedBinaryFormat.encode(tensor2));
         return encode((slime));
     }
 
@@ -369,6 +404,28 @@ public class SlimeSummaryTestCase {
     private DocsumDefinitionSet createDocsumDefinitionSet(String configID, LegacyEmulationConfig legacyEmulationConfig) {
         DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
         return new DocsumDefinitionSet(config.documentdb(0), legacyEmulationConfig);
+    }
+
+    private static class Utf8FieldTraverser implements Hit.RawUtf8Consumer {
+
+        private Map<String, Object> traversed;
+
+        public Utf8FieldTraverser(Map<String, Object> traversed) {
+            this.traversed = traversed;
+        }
+
+        @Override
+        public void accept(String fieldName, byte[] utf8Data, int offset, int length) {
+            traversed.put(fieldName, new String(utf8Data, offset, length, StandardCharsets.UTF_8));
+        }
+
+        @Override
+        public void accept(String name, Object value) {
+            if (name.equals("string_value"))
+                fail("Expected string_value to be received as UTF-8");
+            traversed.put(name, value);
+        }
+
     }
 
 }

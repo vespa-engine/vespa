@@ -48,7 +48,7 @@ public class RpcServerTest extends TestWithRpc {
         testEmptyConfigHostedVespa();
     }
 
-    private void testEmptyConfigHostedVespa() throws InterruptedException {
+    private void testEmptyConfigHostedVespa() throws InterruptedException, IOException {
         rpcServer.onTenantDelete(TenantName.defaultName());
         rpcServer.onTenantsLoaded();
         JRTClientConfigRequest clientReq = createSimpleRequest();

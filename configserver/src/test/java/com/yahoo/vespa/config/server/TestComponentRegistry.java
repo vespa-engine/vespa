@@ -23,6 +23,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
 
+import java.io.File;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
@@ -37,7 +38,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Curator curator;
     private final ConfigCurator configCurator;
     private final Metrics metrics;
-    private final ConfigServerDB serverDB;
     private final SessionPreparer sessionPreparer;
     private final ConfigserverConfig configserverConfig;
     private final SuperModelGenerationCounter superModelGenerationCounter;
@@ -57,7 +57,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   PermanentApplicationPackage permanentApplicationPackage,
                                   FileDistributionFactory fileDistributionFactory,
                                   SuperModelGenerationCounter superModelGenerationCounter,
-                                  ConfigServerDB configServerDB,
                                   HostRegistries hostRegistries,
                                   ConfigserverConfig configserverConfig,
                                   SessionPreparer sessionPreparer,
@@ -71,7 +70,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.configCurator = configCurator;
         this.metrics = metrics;
         this.configserverConfig = configserverConfig;
-        this.serverDB = configServerDB;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
         this.superModelGenerationCounter = superModelGenerationCounter;
@@ -155,7 +153,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             final PermanentApplicationPackage permApp = this.permanentApplicationPackage
                     .orElse(new PermanentApplicationPackage(configserverConfig));
             FileDistributionFactory fileDistributionFactory = this.fileDistributionFactory
-                    .orElse(new MockFileDistributionFactory());
+                    .orElse(new MockFileDistributionFactory(new File(configserverConfig.fileReferencesDir())));
             HostProvisionerProvider hostProvisionerProvider = hostProvisioner.isPresent() ?
                     HostProvisionerProvider.withProvisioner(hostProvisioner.get()) :
                     HostProvisionerProvider.empty();
@@ -168,7 +166,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                              permApp,
                                              fileDistributionFactory,
                                              new SuperModelGenerationCounter(curator),
-                                             new ConfigServerDB(configserverConfig),
                                              hostRegistries, configserverConfig, sessionPreparer,
                                              hostProvisioner, defRepo, reloadListener,
                                              tenantListener, zone, clock);
@@ -181,8 +178,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public ConfigCurator getConfigCurator() { return configCurator; }
     @Override
     public Metrics getMetrics() { return metrics; }
-    @Override
-    public ConfigServerDB getServerDB() { return serverDB; }
     @Override
     public SessionPreparer getSessionPreparer() { return sessionPreparer; }
     @Override

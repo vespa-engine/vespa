@@ -221,12 +221,10 @@ ByteBuffer::UP serializeHEAD(const DocumentUpdate & update)
 
 void testSerialize(const DocumentTypeRepo& repo, const DocumentUpdate& a) {
     try{
-        bool affectsBody = a.affectsDocumentBody();
         ByteBuffer::UP bb(serializeHEAD(a));
         bb->flip();
         DocumentUpdate::UP b(DocumentUpdate::createHEAD(repo, *bb));
 
-        CPPUNIT_ASSERT_EQUAL(affectsBody, b->affectsDocumentBody());
         CPPUNIT_ASSERT_EQUAL(size_t(0), bb->getRemaining());
         CPPUNIT_ASSERT_EQUAL(a.getId().toString(), b->getId().toString());
         CPPUNIT_ASSERT_EQUAL(a.getUpdates().size(), b->getUpdates().size());
@@ -1021,13 +1019,11 @@ FieldPathUpdateTestCase::testAffectsDocumentBody()
     // structmap is body field
     {
         DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-        CPPUNIT_ASSERT(!docUp.affectsDocumentBody());
 
         FieldPathUpdate::CP update1(new AssignFieldPathUpdate(*doc->getDataType(),
                                                               "structmap{janitor}", std::string(), fv4));
         static_cast<AssignFieldPathUpdate&>(*update1).setCreateMissingPath(true);
         docUp.addFieldPathUpdate(update1);
-        CPPUNIT_ASSERT(docUp.affectsDocumentBody());
     }
 
     // strfoo is header field
@@ -1037,7 +1033,6 @@ FieldPathUpdateTestCase::testAffectsDocumentBody()
                                             "strfoo", std::string(), StringFieldValue("helloworld")));
         static_cast<AssignFieldPathUpdate&>(*update1).setCreateMissingPath(true);
         docUp.addFieldPathUpdate(update1);
-        CPPUNIT_ASSERT(!docUp.affectsDocumentBody());
     }
 
 }
@@ -1070,7 +1065,6 @@ FieldPathUpdateTestCase::testSerializeAssign()
     val.setValue("rating", IntFieldValue(100));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    CPPUNIT_ASSERT(!docUp.affectsDocumentBody());
 
     FieldPathUpdate::CP update1(new AssignFieldPathUpdate(*doc->getDataType(), "structmap{ribbit}", "true", val));
     static_cast<AssignFieldPathUpdate&>(*update1).setCreateMissingPath(true);
@@ -1091,7 +1085,6 @@ FieldPathUpdateTestCase::testSerializeAdd()
     adds.add(StringFieldValue("george is getting upset!"));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    CPPUNIT_ASSERT(!docUp.affectsDocumentBody());
 
     FieldPathUpdate::CP update1(new AddFieldPathUpdate(*doc->getDataType(), "strarray", std::string(), adds));
     docUp.addFieldPathUpdate(update1);
@@ -1106,7 +1099,6 @@ FieldPathUpdateTestCase::testSerializeRemove()
     MapFieldValue mfv(doc->getType().getField("structmap").getDataType());
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    CPPUNIT_ASSERT(!docUp.affectsDocumentBody());
 
     FieldPathUpdate::CP update1(new RemoveFieldPathUpdate("structmap{ribbit}", std::string()));
     docUp.addFieldPathUpdate(update1);

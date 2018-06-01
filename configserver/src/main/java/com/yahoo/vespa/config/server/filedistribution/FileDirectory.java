@@ -26,10 +26,6 @@ public class FileDirectory  {
     private static final Logger log = Logger.getLogger(FileDirectory.class.getName());
     private final File root;
 
-    public FileDirectory() {
-        this(FileDistribution.getDefaultFileDBPath());
-    }
-
     public FileDirectory(File rootDir) {
         root = rootDir;
         try {

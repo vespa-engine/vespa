@@ -1,0 +1,1983 @@
+/**
+ * This file is generated from a config definition file.
+ * ------------   D O   N O T   E D I T !   ------------
+ */
+
+package com.yahoo.configgen;
+
+import java.util.*;
+import java.nio.file.Path;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import com.yahoo.config.*;
+
+/**
+ * This class represents the root node of allfeatures
+ *
+ * Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+ *  
+ * This def file should test most aspects of def files that makes a difference
+ * for the generated config classes. The goal is to trigger all blocks of
+ * code in the code generators. This includes:
+ *  
+ * - Use all legal special characters in the def file name, to ensure that those
+ * that needs to be replaced in type names are actually replaced.
+ * - Use the same enum type twice to verify that we dont declare or define it
+ * twice.
+ * - Use the same struct type twice for the same reason.
+ * - Include arrays of primitives and structs.
+ * - Include enum primitives and array of enums. Arrays of enums must be handled
+ * specially by the C++ code.
+ * - Include enums both with and without default values.
+ * - Include primitive string, numbers & doubles both with and without default
+ * values.
+ * - Have an array within a struct, to verify that we correctly recurse.
+ * - Reuse type name further within to ensure that this works.
+ */
+public final class AllfeaturesConfig extends ConfigInstance {
+
+  public final static String CONFIG_DEF_MD5 = "eb2d24dbbcf054b21be729e2cfaafd93";
+  public final static String CONFIG_DEF_NAME = "allfeatures";
+  public final static String CONFIG_DEF_NAMESPACE = "configgen";
+  public final static String CONFIG_DEF_VERSION = "";
+  public final static String[] CONFIG_DEF_SCHEMA = {
+    "namespace=configgen",
+    "boolVal bool",
+    "bool_with_def bool default=false",
+    "intVal int",
+    "intWithDef int default=-545",
+    "longVal long",
+    "longWithDef long default=1234567890123",
+    "doubleVal double",
+    "double_with_def double default=-6.43",
+    "stringVal string",
+    "stringwithdef string default=\"foobar#notacomment\"",
+    "enumVal enum { FOO, BAR, FOOBAR }",
+    "enumwithdef enum { FOO2, BAR2, FOOBAR2 } default=BAR2",
+    "refVal reference",
+    "refwithdef reference default=\":parent:\"",
+    "fileVal file",
+    "pathVal path",
+    "boolarr[] bool",
+    "intarr[] int",
+    "longarr[] long",
+    "doublearr[] double",
+    "stringarr[] string",
+    "enumarr[] enum { ARRAY, VALUES }",
+    "refarr[] reference",
+    "filearr[] file",
+    "pathArr[] path",
+    "intMap{} int",
+    "pathMap{} file",
+    "basic_struct.foo string default=\"foo\"",
+    "basic_struct.bar int default=0",
+    "struct_of_struct.inner0.name string default=\"inner0\"",
+    "struct_of_struct.inner0.index int default=0",
+    "struct_of_struct.inner1.name string default=\"inner1\"",
+    "struct_of_struct.inner1.index int default=1",
+    "myArray[].intVal int default=14",
+    "myArray[].stringVal[] string",
+    "myArray[].enumVal enum { INNER, ENUM, TYPE } default=TYPE",
+    "myArray[].refVal reference",
+    "myArray[].anotherArray[].foo int default=-4",
+    "myMap{}.intVal int default=15",
+    "myMap{}.stringVal[] string",
+    "myMap{}.enumVal enum { INNER, ENUM, TYPE } default=ENUM",
+    "myMap{}.refVal reference",
+    "myMap{}.anotherArray[].foo int default=-5"
+  };
+
+  public static String getDefMd5()       { return CONFIG_DEF_MD5; }
+  public static String getDefName()      { return CONFIG_DEF_NAME; }
+  public static String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }
+  public static String getDefVersion()   { return CONFIG_DEF_VERSION; }
+
+  public interface Producer extends ConfigInstance.Producer {
+    void getConfig(Builder builder);
+  }
+
+  public static class Builder implements ConfigInstance.Builder {
+    private Set<String> __uninitialized = new HashSet<String>(Arrays.asList(
+      "boolVal",
+      "intVal",
+      "longVal",
+      "doubleVal",
+      "stringVal",
+      "enumVal",
+      "refVal",
+      "fileVal",
+      "pathVal"
+      ));
+
+    private Boolean boolVal = null;
+    private Boolean bool_with_def = null;
+    private Integer intVal = null;
+    private Integer intWithDef = null;
+    private Long longVal = null;
+    private Long longWithDef = null;
+    private Double doubleVal = null;
+    private Double double_with_def = null;
+    private String stringVal = null;
+    private String stringwithdef = null;
+    private EnumVal.Enum enumVal = null;
+    private Enumwithdef.Enum enumwithdef = null;
+    private String refVal = null;
+    private String refwithdef = null;
+    private String fileVal = null;
+    private FileReference pathVal = null;
+    public List<Boolean> boolarr = new ArrayList<>();
+    public List<Integer> intarr = new ArrayList<>();
+    public List<Long> longarr = new ArrayList<>();
+    public List<Double> doublearr = new ArrayList<>();
+    public List<String> stringarr = new ArrayList<>();
+    public List<Enumarr.Enum> enumarr = new ArrayList<>();
+    public List<String> refarr = new ArrayList<>();
+    public List<String> filearr = new ArrayList<>();
+    public List<FileReference> pathArr = new ArrayList<>();
+    public Map<String, Integer> intMap = new LinkedHashMap<>();
+    public Map<String, String> pathMap = new LinkedHashMap<>();
+    public Basic_struct.Builder basic_struct = new Basic_struct.Builder();
+    public Struct_of_struct.Builder struct_of_struct = new Struct_of_struct.Builder();
+    public List<MyArray.Builder> myArray = new ArrayList<>();
+    public Map<String, MyMap.Builder> myMap = new LinkedHashMap<>();
+
+    public Builder() { }
+
+    public Builder(AllfeaturesConfig config) {
+      boolVal(config.boolVal());
+      bool_with_def(config.bool_with_def());
+      intVal(config.intVal());
+      intWithDef(config.intWithDef());
+      longVal(config.longVal());
+      longWithDef(config.longWithDef());
+      doubleVal(config.doubleVal());
+      double_with_def(config.double_with_def());
+      stringVal(config.stringVal());
+      stringwithdef(config.stringwithdef());
+      enumVal(config.enumVal());
+      enumwithdef(config.enumwithdef());
+      refVal(config.refVal());
+      refwithdef(config.refwithdef());
+      fileVal(config.fileVal().value());
+      pathVal(config.pathVal.getFileReference());
+      boolarr(config.boolarr());
+      intarr(config.intarr());
+      longarr(config.longarr());
+      doublearr(config.doublearr());
+      stringarr(config.stringarr());
+      enumarr(config.enumarr());
+      refarr(config.refarr());
+      filearr(FileReference.toValues(config.filearr()));
+      pathArr(PathNode.toFileReferences(config.pathArr));
+      intMap(config.intMap());
+      pathMap(FileReference.toValueMap(config.pathMap()));
+      basic_struct(new Basic_struct.Builder(config.basic_struct()));
+      struct_of_struct(new Struct_of_struct.Builder(config.struct_of_struct()));
+      for (MyArray m : config.myArray()) {
+        myArray(new MyArray.Builder(m));
+      }
+      for (Map.Entry<String, MyMap> __entry : config.myMap().entrySet()) {
+        myMap(__entry.getKey(), new MyMap.Builder(__entry.getValue()));
+      }
+    }
+
+    private Builder override(Builder __superior) {
+      if (__superior.boolVal != null)
+        boolVal(__superior.boolVal);
+      if (__superior.bool_with_def != null)
+        bool_with_def(__superior.bool_with_def);
+      if (__superior.intVal != null)
+        intVal(__superior.intVal);
+      if (__superior.intWithDef != null)
+        intWithDef(__superior.intWithDef);
+      if (__superior.longVal != null)
+        longVal(__superior.longVal);
+      if (__superior.longWithDef != null)
+        longWithDef(__superior.longWithDef);
+      if (__superior.doubleVal != null)
+        doubleVal(__superior.doubleVal);
+      if (__superior.double_with_def != null)
+        double_with_def(__superior.double_with_def);
+      if (__superior.stringVal != null)
+        stringVal(__superior.stringVal);
+      if (__superior.stringwithdef != null)
+        stringwithdef(__superior.stringwithdef);
+      if (__superior.enumVal != null)
+        enumVal(__superior.enumVal);
+      if (__superior.enumwithdef != null)
+        enumwithdef(__superior.enumwithdef);
+      if (__superior.refVal != null)
+        refVal(__superior.refVal);
+      if (__superior.refwithdef != null)
+        refwithdef(__superior.refwithdef);
+      if (__superior.fileVal != null)
+        fileVal(__superior.fileVal);
+      if (__superior.pathVal != null)
+        pathVal(__superior.pathVal);
+      if (!__superior.boolarr.isEmpty())
+        boolarr.addAll(__superior.boolarr);
+      if (!__superior.intarr.isEmpty())
+        intarr.addAll(__superior.intarr);
+      if (!__superior.longarr.isEmpty())
+        longarr.addAll(__superior.longarr);
+      if (!__superior.doublearr.isEmpty())
+        doublearr.addAll(__superior.doublearr);
+      if (!__superior.stringarr.isEmpty())
+        stringarr.addAll(__superior.stringarr);
+      if (!__superior.enumarr.isEmpty())
+        enumarr.addAll(__superior.enumarr);
+      if (!__superior.refarr.isEmpty())
+        refarr.addAll(__superior.refarr);
+      if (!__superior.filearr.isEmpty())
+        filearr.addAll(__superior.filearr);
+      if (!__superior.pathArr.isEmpty())
+        pathArr.addAll(__superior.pathArr);
+      intMap(__superior.intMap);
+      pathMap(__superior.pathMap);
+      basic_struct(basic_struct.override(__superior.basic_struct));
+      struct_of_struct(struct_of_struct.override(__superior.struct_of_struct));
+      if (!__superior.myArray.isEmpty())
+        myArray.addAll(__superior.myArray);
+      myMap(__superior.myMap);
+      return this;
+    }
+
+    public Builder boolVal(boolean __value) {
+      boolVal = __value;
+      __uninitialized.remove("boolVal");
+      return this;
+    }
+
+    private Builder boolVal(String __value) {
+      return boolVal(Boolean.valueOf(__value));
+    }
+
+    public Builder bool_with_def(boolean __value) {
+      bool_with_def = __value;
+      return this;
+    }
+
+    private Builder bool_with_def(String __value) {
+      return bool_with_def(Boolean.valueOf(__value));
+    }
+
+    public Builder intVal(int __value) {
+      intVal = __value;
+      __uninitialized.remove("intVal");
+      return this;
+    }
+
+    private Builder intVal(String __value) {
+      return intVal(Integer.valueOf(__value));
+    }
+
+    public Builder intWithDef(int __value) {
+      intWithDef = __value;
+      return this;
+    }
+
+    private Builder intWithDef(String __value) {
+      return intWithDef(Integer.valueOf(__value));
+    }
+
+    public Builder longVal(long __value) {
+      longVal = __value;
+      __uninitialized.remove("longVal");
+      return this;
+    }
+
+    private Builder longVal(String __value) {
+      return longVal(Long.valueOf(__value));
+    }
+
+    public Builder longWithDef(long __value) {
+      longWithDef = __value;
+      return this;
+    }
+
+    private Builder longWithDef(String __value) {
+      return longWithDef(Long.valueOf(__value));
+    }
+
+    public Builder doubleVal(double __value) {
+      doubleVal = __value;
+      __uninitialized.remove("doubleVal");
+      return this;
+    }
+
+    private Builder doubleVal(String __value) {
+      return doubleVal(Double.valueOf(__value));
+    }
+
+    public Builder double_with_def(double __value) {
+      double_with_def = __value;
+      return this;
+    }
+
+    private Builder double_with_def(String __value) {
+      return double_with_def(Double.valueOf(__value));
+    }
+
+    public Builder stringVal(String __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      stringVal = __value;
+      __uninitialized.remove("stringVal");
+      return this;
+    }
+
+
+    public Builder stringwithdef(String __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      stringwithdef = __value;
+      return this;
+    }
+
+
+    public Builder enumVal(EnumVal.Enum __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      enumVal = __value;
+      __uninitialized.remove("enumVal");
+      return this;
+    }
+
+    private Builder enumVal(String __value) {
+      return enumVal(EnumVal.Enum.valueOf(__value));
+    }
+
+    public Builder enumwithdef(Enumwithdef.Enum __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      enumwithdef = __value;
+      return this;
+    }
+
+    private Builder enumwithdef(String __value) {
+      return enumwithdef(Enumwithdef.Enum.valueOf(__value));
+    }
+
+    public Builder refVal(String __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      refVal = __value;
+      __uninitialized.remove("refVal");
+      return this;
+    }
+
+
+    public Builder refwithdef(String __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      refwithdef = __value;
+      return this;
+    }
+
+
+    public Builder fileVal(String __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      fileVal = __value;
+      __uninitialized.remove("fileVal");
+      return this;
+    }
+
+
+    public Builder pathVal(FileReference __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      pathVal = __value;
+      __uninitialized.remove("pathVal");
+      return this;
+    }
+
+
+    public Builder boolarr(Boolean __value) {
+      boolarr.add(__value);
+      return this;
+    }
+
+    public Builder boolarr(Collection<Boolean> __values) {
+      boolarr.addAll(__values);
+      return this;
+    }
+
+    private Builder boolarr(String __value) {
+      return boolarr(Boolean.valueOf(__value));
+    }
+
+    public Builder intarr(Integer __value) {
+      intarr.add(__value);
+      return this;
+    }
+
+    public Builder intarr(Collection<Integer> __values) {
+      intarr.addAll(__values);
+      return this;
+    }
+
+    private Builder intarr(String __value) {
+      return intarr(Integer.valueOf(__value));
+    }
+
+    public Builder longarr(Long __value) {
+      longarr.add(__value);
+      return this;
+    }
+
+    public Builder longarr(Collection<Long> __values) {
+      longarr.addAll(__values);
+      return this;
+    }
+
+    private Builder longarr(String __value) {
+      return longarr(Long.valueOf(__value));
+    }
+
+    public Builder doublearr(Double __value) {
+      doublearr.add(__value);
+      return this;
+    }
+
+    public Builder doublearr(Collection<Double> __values) {
+      doublearr.addAll(__values);
+      return this;
+    }
+
+    private Builder doublearr(String __value) {
+      return doublearr(Double.valueOf(__value));
+    }
+
+    public Builder stringarr(String __value) {
+      stringarr.add(__value);
+      return this;
+    }
+
+    public Builder stringarr(Collection<String> __values) {
+      stringarr.addAll(__values);
+      return this;
+    }
+
+    public Builder enumarr(Enumarr.Enum __value) {
+      enumarr.add(__value);
+      return this;
+    }
+
+    public Builder enumarr(Collection<Enumarr.Enum> __values) {
+      enumarr.addAll(__values);
+      return this;
+    }
+
+    private Builder enumarr(String __value) {
+      return enumarr(Enumarr.Enum.valueOf(__value));
+    }
+
+    public Builder refarr(String __value) {
+      refarr.add(__value);
+      return this;
+    }
+
+    public Builder refarr(Collection<String> __values) {
+      refarr.addAll(__values);
+      return this;
+    }
+
+    public Builder filearr(String __value) {
+      filearr.add(__value);
+      return this;
+    }
+
+    public Builder filearr(Collection<String> __values) {
+      filearr.addAll(__values);
+      return this;
+    }
+
+    public Builder pathArr(FileReference __value) {
+      pathArr.add(__value);
+      return this;
+    }
+
+    public Builder pathArr(Collection<FileReference> __values) {
+      pathArr.addAll(__values);
+      return this;
+    }
+
+    public Builder intMap(String __key, Integer __value) {
+      intMap.put(__key, __value);
+      return this;
+    }
+
+    public Builder intMap(Map<String, Integer> __values) {
+      intMap.putAll(__values);
+      return this;
+    }
+
+    private Builder intMap(String __key, String __value) {
+      return intMap(__key, Integer.valueOf(__value));
+    }
+
+    public Builder pathMap(String __key, String __value) {
+      pathMap.put(__key, __value);
+      return this;
+    }
+
+    public Builder pathMap(Map<String, String> __values) {
+      pathMap.putAll(__values);
+      return this;
+    }
+
+    public Builder basic_struct(Basic_struct.Builder __builder) {
+      basic_struct = __builder;
+      return this;
+    }
+
+    public Builder struct_of_struct(Struct_of_struct.Builder __builder) {
+      struct_of_struct = __builder;
+      return this;
+    }
+
+    /**
+     * Add the given builder to this builder's list of MyArray builders
+     * @param __builder a builder
+     * @return this builder
+     */
+    public Builder myArray(MyArray.Builder __builder) {
+      myArray.add(__builder);
+      return this;
+    }
+
+    /**
+     * Set the given list as this builder's list of MyArray builders
+     * @param __builders a list of builders
+     * @return this builder
+     */
+    public Builder myArray(List<MyArray.Builder> __builders) {
+      myArray = __builders;
+      return this;
+    }
+
+    public Builder myMap(String __key, MyMap.Builder __value) {
+      myMap.put(__key, __value);
+      return this;
+    }
+
+    public Builder myMap(Map<String, MyMap.Builder> __values) {
+      myMap.putAll(__values);
+      return this;
+    }
+
+    @java.lang.Override
+    public final boolean dispatchGetConfig(ConfigInstance.Producer producer) {
+      if (producer instanceof Producer) {
+        ((Producer)producer).getConfig(this);
+        return true;
+      }
+      return false;
+    }
+
+    @java.lang.Override
+    public final String getDefMd5()       { return CONFIG_DEF_MD5; }
+    @java.lang.Override
+    public final String getDefName()      { return CONFIG_DEF_NAME; }
+    @java.lang.Override
+    public final String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }
+  }
+
+  // Some random bool without a default value. These comments exist to check
+  // that comment parsing works.e
+  private final BooleanNode boolVal;
+  // A bool with a default value set.
+  private final BooleanNode bool_with_def;
+  private final IntegerNode intVal;
+  private final IntegerNode intWithDef;
+  private final LongNode longVal;
+  private final LongNode longWithDef;
+  private final DoubleNode doubleVal;
+  private final DoubleNode double_with_def;
+  // Another comment
+  private final StringNode stringVal;
+  private final StringNode stringwithdef;
+  private final EnumVal enumVal;
+  private final Enumwithdef enumwithdef;
+  private final ReferenceNode refVal;
+  private final ReferenceNode refwithdef;
+  private final FileNode fileVal;
+  private final PathNode pathVal;
+  private final LeafNodeVector<Boolean, BooleanNode> boolarr;
+  private final LeafNodeVector<Integer, IntegerNode> intarr;
+  private final LeafNodeVector<Long, LongNode> longarr;
+  private final LeafNodeVector<Double, DoubleNode> doublearr;
+  private final LeafNodeVector<String, StringNode> stringarr;
+  private final LeafNodeVector<Enumarr.Enum, Enumarr> enumarr;
+  private final LeafNodeVector<String, ReferenceNode> refarr;
+  private final LeafNodeVector<FileReference, FileNode> filearr;
+  private final LeafNodeVector<Path, PathNode> pathArr;
+  private final Map<String, IntegerNode> intMap;
+  private final Map<String, FileNode> pathMap;
+  private final Basic_struct basic_struct;
+  private final Struct_of_struct struct_of_struct;
+  private final InnerNodeVector<MyArray> myArray;
+  private final Map<String, MyMap> myMap;
+
+  public AllfeaturesConfig(Builder builder) {
+    this(builder, true);
+  }
+
+  private AllfeaturesConfig(Builder builder, boolean throwIfUninitialized) {
+    if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+      throw new IllegalArgumentException("The following builder parameters for " +
+          "allfeatures must be initialized: " + builder.__uninitialized);
+
+    boolVal = (builder.boolVal == null) ?
+        new BooleanNode() : new BooleanNode(builder.boolVal);
+    bool_with_def = (builder.bool_with_def == null) ?
+        new BooleanNode(false) : new BooleanNode(builder.bool_with_def);
+    intVal = (builder.intVal == null) ?
+        new IntegerNode() : new IntegerNode(builder.intVal);
+    intWithDef = (builder.intWithDef == null) ?
+        new IntegerNode(-545) : new IntegerNode(builder.intWithDef);
+    longVal = (builder.longVal == null) ?
+        new LongNode() : new LongNode(builder.longVal);
+    longWithDef = (builder.longWithDef == null) ?
+        new LongNode(1234567890123L) : new LongNode(builder.longWithDef);
+    doubleVal = (builder.doubleVal == null) ?
+        new DoubleNode() : new DoubleNode(builder.doubleVal);
+    double_with_def = (builder.double_with_def == null) ?
+        new DoubleNode(-6.43D) : new DoubleNode(builder.double_with_def);
+    stringVal = (builder.stringVal == null) ?
+        new StringNode() : new StringNode(builder.stringVal);
+    stringwithdef = (builder.stringwithdef == null) ?
+        new StringNode("foobar#notacomment") : new StringNode(builder.stringwithdef);
+    enumVal = (builder.enumVal == null) ?
+        new EnumVal() : new EnumVal(builder.enumVal);
+    enumwithdef = (builder.enumwithdef == null) ?
+        new Enumwithdef(Enumwithdef.BAR2) : new Enumwithdef(builder.enumwithdef);
+    refVal = (builder.refVal == null) ?
+        new ReferenceNode() : new ReferenceNode(builder.refVal);
+    refwithdef = (builder.refwithdef == null) ?
+        new ReferenceNode(":parent:") : new ReferenceNode(builder.refwithdef);
+    fileVal = (builder.fileVal == null) ?
+        new FileNode() : new FileNode(builder.fileVal);
+    pathVal = (builder.pathVal == null) ?
+        new PathNode() : new PathNode(builder.pathVal);
+    boolarr = new LeafNodeVector<>(builder.boolarr, new BooleanNode());
+    intarr = new LeafNodeVector<>(builder.intarr, new IntegerNode());
+    longarr = new LeafNodeVector<>(builder.longarr, new LongNode());
+    doublearr = new LeafNodeVector<>(builder.doublearr, new DoubleNode());
+    stringarr = new LeafNodeVector<>(builder.stringarr, new StringNode());
+    enumarr = new LeafNodeVector<>(builder.enumarr, new Enumarr());
+    refarr = new LeafNodeVector<>(builder.refarr, new ReferenceNode());
+    filearr = LeafNodeVector.createFileNodeVector(builder.filearr);
+    pathArr = LeafNodeVector.createPathNodeVector(builder.pathArr);
+    intMap = LeafNodeMaps.asNodeMap(builder.intMap, new IntegerNode());
+    pathMap = LeafNodeMaps.asFileNodeMap(builder.pathMap);
+    basic_struct = new Basic_struct(builder.basic_struct, throwIfUninitialized);
+    struct_of_struct = new Struct_of_struct(builder.struct_of_struct, throwIfUninitialized);
+    myArray = MyArray.createVector(builder.myArray);
+    myMap = MyMap.createMap(builder.myMap);
+  }
+
+  /**
+   * @return allfeatures.boolVal
+   */
+  public boolean boolVal() {
+    return boolVal.value();
+  }
+
+  /**
+   * @return allfeatures.bool_with_def
+   */
+  public boolean bool_with_def() {
+    return bool_with_def.value();
+  }
+
+  /**
+   * @return allfeatures.intVal
+   */
+  public int intVal() {
+    return intVal.value();
+  }
+
+  /**
+   * @return allfeatures.intWithDef
+   */
+  public int intWithDef() {
+    return intWithDef.value();
+  }
+
+  /**
+   * @return allfeatures.longVal
+   */
+  public long longVal() {
+    return longVal.value();
+  }
+
+  /**
+   * @return allfeatures.longWithDef
+   */
+  public long longWithDef() {
+    return longWithDef.value();
+  }
+
+  /**
+   * @return allfeatures.doubleVal
+   */
+  public double doubleVal() {
+    return doubleVal.value();
+  }
+
+  /**
+   * @return allfeatures.double_with_def
+   */
+  public double double_with_def() {
+    return double_with_def.value();
+  }
+
+  /**
+   * @return allfeatures.stringVal
+   */
+  public String stringVal() {
+    return stringVal.value();
+  }
+
+  /**
+   * @return allfeatures.stringwithdef
+   */
+  public String stringwithdef() {
+    return stringwithdef.value();
+  }
+
+  /**
+   * @return allfeatures.enumVal
+   */
+  public EnumVal.Enum enumVal() {
+    return enumVal.value();
+  }
+
+  /**
+   * @return allfeatures.enumwithdef
+   */
+  public Enumwithdef.Enum enumwithdef() {
+    return enumwithdef.value();
+  }
+
+  /**
+   * @return allfeatures.refVal
+   */
+  public String refVal() {
+    return refVal.value();
+  }
+
+  /**
+   * @return allfeatures.refwithdef
+   */
+  public String refwithdef() {
+    return refwithdef.value();
+  }
+
+  /**
+   * @return allfeatures.fileVal
+   */
+  public FileReference fileVal() {
+    return fileVal.value();
+  }
+
+  /**
+   * @return allfeatures.pathVal
+   */
+  public Path pathVal() {
+    return pathVal.value();
+  }
+
+  /**
+   * @return allfeatures.boolarr[]
+   */
+  public List<Boolean> boolarr() {
+    return boolarr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.boolarr[]
+   */
+  public boolean boolarr(int i) {
+    return boolarr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.intarr[]
+   */
+  public List<Integer> intarr() {
+    return intarr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.intarr[]
+   */
+  public int intarr(int i) {
+    return intarr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.longarr[]
+   */
+  public List<Long> longarr() {
+    return longarr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.longarr[]
+   */
+  public long longarr(int i) {
+    return longarr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.doublearr[]
+   */
+  public List<Double> doublearr() {
+    return doublearr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.doublearr[]
+   */
+  public double doublearr(int i) {
+    return doublearr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.stringarr[]
+   */
+  public List<String> stringarr() {
+    return stringarr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.stringarr[]
+   */
+  public String stringarr(int i) {
+    return stringarr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.enumarr[]
+   */
+  public List<Enumarr.Enum> enumarr() {
+    return enumarr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.enumarr[]
+   */
+  public Enumarr.Enum enumarr(int i) {
+    return enumarr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.refarr[]
+   */
+  public List<String> refarr() {
+    return refarr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.refarr[]
+   */
+  public String refarr(int i) {
+    return refarr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.filearr[]
+   */
+  public List<FileReference> filearr() {
+    return filearr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.filearr[]
+   */
+  public FileReference filearr(int i) {
+    return filearr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.pathArr[]
+   */
+  public List<Path> pathArr() {
+    return pathArr.asList();
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.pathArr[]
+   */
+  public Path pathArr(int i) {
+    return pathArr.get(i).value();
+  }
+
+  /**
+   * @return allfeatures.intMap{}
+   */
+  public Map<String, Integer> intMap() {
+    return LeafNodeMaps.asValueMap(intMap);
+  }
+
+  /**
+   * @param key the key of the value to return
+   * @return allfeatures.intMap{}
+   */
+  public int intMap(String key) {
+    return intMap.get(key).value();
+  }
+
+  /**
+   * @return allfeatures.pathMap{}
+   */
+  public Map<String, FileReference> pathMap() {
+    return LeafNodeMaps.asValueMap(pathMap);
+  }
+
+  /**
+   * @param key the key of the value to return
+   * @return allfeatures.pathMap{}
+   */
+  public FileReference pathMap(String key) {
+    return pathMap.get(key).value();
+  }
+
+  /**
+   * @return allfeatures.basic_struct
+   */
+  public Basic_struct basic_struct() {
+    return basic_struct;
+  }
+
+  /**
+   * @return allfeatures.struct_of_struct
+   */
+  public Struct_of_struct struct_of_struct() {
+    return struct_of_struct;
+  }
+
+  /**
+   * @return allfeatures.myArray[]
+   */
+  public List<MyArray> myArray() {
+    return myArray;
+  }
+
+  /**
+   * @param i the index of the value to return
+   * @return allfeatures.myArray[]
+   */
+  public MyArray myArray(int i) {
+    return myArray.get(i);
+  }
+
+  /**
+   * @return allfeatures.myMap{}
+   */
+  public Map<String, MyMap> myMap() {
+    return Collections.unmodifiableMap(myMap);
+  }
+
+  /**
+   * @param key the key of the value to return
+   * @return allfeatures.myMap{}
+   */
+  public MyMap myMap(String key) {
+    return myMap.get(key);
+  }
+
+  private ChangesRequiringRestart getChangesRequiringRestart(AllfeaturesConfig newConfig) {
+    ChangesRequiringRestart changes = new ChangesRequiringRestart("allfeatures");
+    return changes;
+  }
+
+  private static boolean containsFieldsFlaggedWithRestart() {
+    return false;
+  }
+
+  /**
+   * This class represents allfeatures.enumVal
+   */
+  public final static class EnumVal extends EnumNode<EnumVal.Enum> {
+
+    public EnumVal(){
+      this.value = null;
+    }
+
+    public EnumVal(Enum enumValue) {
+      super(enumValue != null);
+      this.value = enumValue;
+    }
+
+    public enum Enum {FOO, BAR, FOOBAR}
+    public final static Enum FOO = Enum.FOO;
+    public final static Enum BAR = Enum.BAR;
+    public final static Enum FOOBAR = Enum.FOOBAR;
+
+    @Override
+    protected boolean doSetValue(@NonNull String name) {
+      try {
+        value = Enum.valueOf(name);
+        return true;
+      } catch (IllegalArgumentException e) {
+      }
+      return false;
+    }
+  }
+
+  /**
+   * This class represents allfeatures.enumwithdef
+   */
+  public final static class Enumwithdef extends EnumNode<Enumwithdef.Enum> {
+
+    public Enumwithdef(){
+      this.value = null;
+    }
+
+    public Enumwithdef(Enum enumValue) {
+      super(enumValue != null);
+      this.value = enumValue;
+    }
+
+    public enum Enum {FOO2, BAR2, FOOBAR2}
+    public final static Enum FOO2 = Enum.FOO2;
+    public final static Enum BAR2 = Enum.BAR2;
+    public final static Enum FOOBAR2 = Enum.FOOBAR2;
+
+    @Override
+    protected boolean doSetValue(@NonNull String name) {
+      try {
+        value = Enum.valueOf(name);
+        return true;
+      } catch (IllegalArgumentException e) {
+      }
+      return false;
+    }
+  }
+
+  /**
+   * This class represents allfeatures.enumarr[]
+   */
+  public final static class Enumarr extends EnumNode<Enumarr.Enum> {
+
+    public Enumarr(){
+      this.value = null;
+    }
+
+    public Enumarr(Enum enumValue) {
+      super(enumValue != null);
+      this.value = enumValue;
+    }
+
+    public enum Enum {ARRAY, VALUES}
+    public final static Enum ARRAY = Enum.ARRAY;
+    public final static Enum VALUES = Enum.VALUES;
+
+    @Override
+    protected boolean doSetValue(@NonNull String name) {
+      try {
+        value = Enum.valueOf(name);
+        return true;
+      } catch (IllegalArgumentException e) {
+      }
+      return false;
+    }
+  }
+
+  /**
+   * This class represents allfeatures.basic_struct
+   */
+  public final static class Basic_struct extends InnerNode { 
+
+    public static class Builder implements ConfigBuilder {
+      private Set<String> __uninitialized = new HashSet<String>();
+
+      private String foo = null;
+      private Integer bar = null;
+
+      public Builder() { }
+
+      public Builder(Basic_struct config) {
+        foo(config.foo());
+        bar(config.bar());
+      }
+
+      private Builder override(Builder __superior) {
+        if (__superior.foo != null)
+          foo(__superior.foo);
+        if (__superior.bar != null)
+          bar(__superior.bar);
+        return this;
+      }
+
+      public Builder foo(String __value) {
+      if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+        foo = __value;
+        return this;
+      }
+
+
+      public Builder bar(int __value) {
+        bar = __value;
+        return this;
+      }
+
+      private Builder bar(String __value) {
+        return bar(Integer.valueOf(__value));
+      }
+    }
+
+    // A basic struct
+    private final StringNode foo;
+    private final IntegerNode bar;
+
+    public Basic_struct(Builder builder) {
+      this(builder, true);
+    }
+
+    private Basic_struct(Builder builder, boolean throwIfUninitialized) {
+      if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+        throw new IllegalArgumentException("The following builder parameters for " +
+            "allfeatures.basic_struct must be initialized: " + builder.__uninitialized);
+
+      foo = (builder.foo == null) ?
+          new StringNode("foo") : new StringNode(builder.foo);
+      bar = (builder.bar == null) ?
+          new IntegerNode(0) : new IntegerNode(builder.bar);
+    }
+
+    /**
+     * @return allfeatures.basic_struct.foo
+     */
+    public String foo() {
+      return foo.value();
+    }
+
+    /**
+     * @return allfeatures.basic_struct.bar
+     */
+    public int bar() {
+      return bar.value();
+    }
+
+    private ChangesRequiringRestart getChangesRequiringRestart(Basic_struct newConfig) {
+      ChangesRequiringRestart changes = new ChangesRequiringRestart("basic_struct");
+      return changes;
+    }
+  }
+
+  /**
+   * This class represents allfeatures.struct_of_struct
+   */
+  public final static class Struct_of_struct extends InnerNode { 
+
+    public static class Builder implements ConfigBuilder {
+      private Set<String> __uninitialized = new HashSet<String>();
+
+      public Inner0.Builder inner0 = new Inner0.Builder();
+      public Inner1.Builder inner1 = new Inner1.Builder();
+
+      public Builder() { }
+
+      public Builder(Struct_of_struct config) {
+        inner0(new Inner0.Builder(config.inner0()));
+        inner1(new Inner1.Builder(config.inner1()));
+      }
+
+      private Builder override(Builder __superior) {
+        inner0(inner0.override(__superior.inner0));
+        inner1(inner1.override(__superior.inner1));
+        return this;
+      }
+
+      public Builder inner0(Inner0.Builder __builder) {
+        inner0 = __builder;
+        return this;
+      }
+
+      public Builder inner1(Inner1.Builder __builder) {
+        inner1 = __builder;
+        return this;
+      }
+    }
+
+    private final Inner0 inner0;
+    private final Inner1 inner1;
+
+    public Struct_of_struct(Builder builder) {
+      this(builder, true);
+    }
+
+    private Struct_of_struct(Builder builder, boolean throwIfUninitialized) {
+      if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+        throw new IllegalArgumentException("The following builder parameters for " +
+            "allfeatures.struct_of_struct must be initialized: " + builder.__uninitialized);
+
+      inner0 = new Inner0(builder.inner0, throwIfUninitialized);
+      inner1 = new Inner1(builder.inner1, throwIfUninitialized);
+    }
+
+    /**
+     * @return allfeatures.struct_of_struct.inner0
+     */
+    public Inner0 inner0() {
+      return inner0;
+    }
+
+    /**
+     * @return allfeatures.struct_of_struct.inner1
+     */
+    public Inner1 inner1() {
+      return inner1;
+    }
+
+    private ChangesRequiringRestart getChangesRequiringRestart(Struct_of_struct newConfig) {
+      ChangesRequiringRestart changes = new ChangesRequiringRestart("struct_of_struct");
+      return changes;
+    }
+
+    /**
+     * This class represents allfeatures.struct_of_struct.inner0
+     */
+    public final static class Inner0 extends InnerNode { 
+
+      public static class Builder implements ConfigBuilder {
+        private Set<String> __uninitialized = new HashSet<String>();
+
+        private String name = null;
+        private Integer index = null;
+
+        public Builder() { }
+
+        public Builder(Inner0 config) {
+          name(config.name());
+          index(config.index());
+        }
+
+        private Builder override(Builder __superior) {
+          if (__superior.name != null)
+            name(__superior.name);
+          if (__superior.index != null)
+            index(__superior.index);
+          return this;
+        }
+
+        public Builder name(String __value) {
+        if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+          name = __value;
+          return this;
+        }
+
+
+        public Builder index(int __value) {
+          index = __value;
+          return this;
+        }
+
+        private Builder index(String __value) {
+          return index(Integer.valueOf(__value));
+        }
+      }
+
+      // A struct of struct
+      private final StringNode name;
+      private final IntegerNode index;
+
+      public Inner0(Builder builder) {
+        this(builder, true);
+      }
+
+      private Inner0(Builder builder, boolean throwIfUninitialized) {
+        if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+          throw new IllegalArgumentException("The following builder parameters for " +
+              "allfeatures.struct_of_struct.inner0 must be initialized: " + builder.__uninitialized);
+
+        name = (builder.name == null) ?
+            new StringNode("inner0") : new StringNode(builder.name);
+        index = (builder.index == null) ?
+            new IntegerNode(0) : new IntegerNode(builder.index);
+      }
+
+      /**
+       * @return allfeatures.struct_of_struct.inner0.name
+       */
+      public String name() {
+        return name.value();
+      }
+
+      /**
+       * @return allfeatures.struct_of_struct.inner0.index
+       */
+      public int index() {
+        return index.value();
+      }
+
+      private ChangesRequiringRestart getChangesRequiringRestart(Inner0 newConfig) {
+        ChangesRequiringRestart changes = new ChangesRequiringRestart("inner0");
+        return changes;
+      }
+    }
+
+    /**
+     * This class represents allfeatures.struct_of_struct.inner1
+     */
+    public final static class Inner1 extends InnerNode { 
+
+      public static class Builder implements ConfigBuilder {
+        private Set<String> __uninitialized = new HashSet<String>();
+
+        private String name = null;
+        private Integer index = null;
+
+        public Builder() { }
+
+        public Builder(Inner1 config) {
+          name(config.name());
+          index(config.index());
+        }
+
+        private Builder override(Builder __superior) {
+          if (__superior.name != null)
+            name(__superior.name);
+          if (__superior.index != null)
+            index(__superior.index);
+          return this;
+        }
+
+        public Builder name(String __value) {
+        if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+          name = __value;
+          return this;
+        }
+
+
+        public Builder index(int __value) {
+          index = __value;
+          return this;
+        }
+
+        private Builder index(String __value) {
+          return index(Integer.valueOf(__value));
+        }
+      }
+
+      private final StringNode name;
+      private final IntegerNode index;
+
+      public Inner1(Builder builder) {
+        this(builder, true);
+      }
+
+      private Inner1(Builder builder, boolean throwIfUninitialized) {
+        if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+          throw new IllegalArgumentException("The following builder parameters for " +
+              "allfeatures.struct_of_struct.inner1 must be initialized: " + builder.__uninitialized);
+
+        name = (builder.name == null) ?
+            new StringNode("inner1") : new StringNode(builder.name);
+        index = (builder.index == null) ?
+            new IntegerNode(1) : new IntegerNode(builder.index);
+      }
+
+      /**
+       * @return allfeatures.struct_of_struct.inner1.name
+       */
+      public String name() {
+        return name.value();
+      }
+
+      /**
+       * @return allfeatures.struct_of_struct.inner1.index
+       */
+      public int index() {
+        return index.value();
+      }
+
+      private ChangesRequiringRestart getChangesRequiringRestart(Inner1 newConfig) {
+        ChangesRequiringRestart changes = new ChangesRequiringRestart("inner1");
+        return changes;
+      }
+    }
+  }
+
+  /**
+   * This class represents allfeatures.myArray[]
+   */
+  public final static class MyArray extends InnerNode { 
+
+    public static class Builder implements ConfigBuilder {
+      private Set<String> __uninitialized = new HashSet<String>(Arrays.asList(
+        "refVal"
+        ));
+
+      private Integer intVal = null;
+      public List<String> stringVal = new ArrayList<>();
+      private EnumVal.Enum enumVal = null;
+      private String refVal = null;
+      public List<AnotherArray.Builder> anotherArray = new ArrayList<>();
+
+      public Builder() { }
+
+      public Builder(MyArray config) {
+        intVal(config.intVal());
+        stringVal(config.stringVal());
+        enumVal(config.enumVal());
+        refVal(config.refVal());
+        for (AnotherArray a : config.anotherArray()) {
+          anotherArray(new AnotherArray.Builder(a));
+        }
+      }
+
+      private Builder override(Builder __superior) {
+        if (__superior.intVal != null)
+          intVal(__superior.intVal);
+        if (!__superior.stringVal.isEmpty())
+          stringVal.addAll(__superior.stringVal);
+        if (__superior.enumVal != null)
+          enumVal(__superior.enumVal);
+        if (__superior.refVal != null)
+          refVal(__superior.refVal);
+        if (!__superior.anotherArray.isEmpty())
+          anotherArray.addAll(__superior.anotherArray);
+        return this;
+      }
+
+      public Builder intVal(int __value) {
+        intVal = __value;
+        return this;
+      }
+
+      private Builder intVal(String __value) {
+        return intVal(Integer.valueOf(__value));
+      }
+
+      public Builder stringVal(String __value) {
+        stringVal.add(__value);
+        return this;
+      }
+
+      public Builder stringVal(Collection<String> __values) {
+        stringVal.addAll(__values);
+        return this;
+      }
+
+      public Builder enumVal(EnumVal.Enum __value) {
+      if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+        enumVal = __value;
+        return this;
+      }
+
+      private Builder enumVal(String __value) {
+        return enumVal(EnumVal.Enum.valueOf(__value));
+      }
+
+      public Builder refVal(String __value) {
+      if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+        refVal = __value;
+        __uninitialized.remove("refVal");
+        return this;
+      }
+
+
+      /**
+       * Add the given builder to this builder's list of AnotherArray builders
+       * @param __builder a builder
+       * @return this builder
+       */
+      public Builder anotherArray(AnotherArray.Builder __builder) {
+        anotherArray.add(__builder);
+        return this;
+      }
+
+      /**
+       * Set the given list as this builder's list of AnotherArray builders
+       * @param __builders a list of builders
+       * @return this builder
+       */
+      public Builder anotherArray(List<AnotherArray.Builder> __builders) {
+        anotherArray = __builders;
+        return this;
+      }
+    }
+
+    private final IntegerNode intVal;
+    private final LeafNodeVector<String, StringNode> stringVal;
+    private final EnumVal enumVal;
+    private final ReferenceNode refVal;
+    private final InnerNodeVector<AnotherArray> anotherArray;
+
+    public MyArray(Builder builder) {
+      this(builder, true);
+    }
+
+    private MyArray(Builder builder, boolean throwIfUninitialized) {
+      if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+        throw new IllegalArgumentException("The following builder parameters for " +
+            "allfeatures.myArray[] must be initialized: " + builder.__uninitialized);
+
+      intVal = (builder.intVal == null) ?
+          new IntegerNode(14) : new IntegerNode(builder.intVal);
+      stringVal = new LeafNodeVector<>(builder.stringVal, new StringNode());
+      enumVal = (builder.enumVal == null) ?
+          new EnumVal(EnumVal.TYPE) : new EnumVal(builder.enumVal);
+      refVal = (builder.refVal == null) ?
+          new ReferenceNode() : new ReferenceNode(builder.refVal);
+      anotherArray = AnotherArray.createVector(builder.anotherArray);
+    }
+
+    /**
+     * @return allfeatures.myArray[].intVal
+     */
+    public int intVal() {
+      return intVal.value();
+    }
+
+    /**
+     * @return allfeatures.myArray[].stringVal[]
+     */
+    public List<String> stringVal() {
+      return stringVal.asList();
+    }
+
+    /**
+     * @param i the index of the value to return
+     * @return allfeatures.myArray[].stringVal[]
+     */
+    public String stringVal(int i) {
+      return stringVal.get(i).value();
+    }
+
+    /**
+     * @return allfeatures.myArray[].enumVal
+     */
+    public EnumVal.Enum enumVal() {
+      return enumVal.value();
+    }
+
+    /**
+     * @return allfeatures.myArray[].refVal
+     */
+    public String refVal() {
+      return refVal.value();
+    }
+
+    /**
+     * @return allfeatures.myArray[].anotherArray[]
+     */
+    public List<AnotherArray> anotherArray() {
+      return anotherArray;
+    }
+
+    /**
+     * @param i the index of the value to return
+     * @return allfeatures.myArray[].anotherArray[]
+     */
+    public AnotherArray anotherArray(int i) {
+      return anotherArray.get(i);
+    }
+
+    private ChangesRequiringRestart getChangesRequiringRestart(MyArray newConfig) {
+      ChangesRequiringRestart changes = new ChangesRequiringRestart("myArray");
+      return changes;
+    }
+
+    private static InnerNodeVector<MyArray> createVector(List<Builder> builders) {
+        List<MyArray> elems = new ArrayList<>();
+        for (Builder b : builders) {
+            elems.add(new MyArray(b));
+        }
+        return new InnerNodeVector<MyArray>(elems);
+    }
+
+    /**
+     * This class represents allfeatures.myArray[].enumVal
+     */
+    public final static class EnumVal extends EnumNode<EnumVal.Enum> {
+
+      public EnumVal(){
+        this.value = null;
+      }
+
+      public EnumVal(Enum enumValue) {
+        super(enumValue != null);
+        this.value = enumValue;
+      }
+
+      public enum Enum {INNER, ENUM, TYPE}
+      public final static Enum INNER = Enum.INNER;
+      public final static Enum ENUM = Enum.ENUM;
+      public final static Enum TYPE = Enum.TYPE;
+
+      @Override
+      protected boolean doSetValue(@NonNull String name) {
+        try {
+          value = Enum.valueOf(name);
+          return true;
+        } catch (IllegalArgumentException e) {
+        }
+        return false;
+      }
+    }
+
+    /**
+     * This class represents allfeatures.myArray[].anotherArray[]
+     */
+    public final static class AnotherArray extends InnerNode { 
+
+      public static class Builder implements ConfigBuilder {
+        private Set<String> __uninitialized = new HashSet<String>();
+
+        private Integer foo = null;
+
+        public Builder() { }
+
+        public Builder(AnotherArray config) {
+          foo(config.foo());
+        }
+
+        private Builder override(Builder __superior) {
+          if (__superior.foo != null)
+            foo(__superior.foo);
+          return this;
+        }
+
+        public Builder foo(int __value) {
+          foo = __value;
+          return this;
+        }
+
+        private Builder foo(String __value) {
+          return foo(Integer.valueOf(__value));
+        }
+      }
+
+      private final IntegerNode foo;
+
+      public AnotherArray(Builder builder) {
+        this(builder, true);
+      }
+
+      private AnotherArray(Builder builder, boolean throwIfUninitialized) {
+        if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+          throw new IllegalArgumentException("The following builder parameters for " +
+              "allfeatures.myArray[].anotherArray[] must be initialized: " + builder.__uninitialized);
+
+        foo = (builder.foo == null) ?
+            new IntegerNode(-4) : new IntegerNode(builder.foo);
+      }
+
+      /**
+       * @return allfeatures.myArray[].anotherArray[].foo
+       */
+      public int foo() {
+        return foo.value();
+      }
+
+      private ChangesRequiringRestart getChangesRequiringRestart(AnotherArray newConfig) {
+        ChangesRequiringRestart changes = new ChangesRequiringRestart("anotherArray");
+        return changes;
+      }
+
+      private static InnerNodeVector<AnotherArray> createVector(List<Builder> builders) {
+          List<AnotherArray> elems = new ArrayList<>();
+          for (Builder b : builders) {
+              elems.add(new AnotherArray(b));
+          }
+          return new InnerNodeVector<AnotherArray>(elems);
+      }
+    }
+  }
+
+  /**
+   * This class represents allfeatures.myMap{}
+   */
+  public final static class MyMap extends InnerNode { 
+
+    public static class Builder implements ConfigBuilder {
+      private Set<String> __uninitialized = new HashSet<String>(Arrays.asList(
+        "refVal"
+        ));
+
+      private Integer intVal = null;
+      public List<String> stringVal = new ArrayList<>();
+      private EnumVal.Enum enumVal = null;
+      private String refVal = null;
+      public List<AnotherArray.Builder> anotherArray = new ArrayList<>();
+
+      public Builder() { }
+
+      public Builder(MyMap config) {
+        intVal(config.intVal());
+        stringVal(config.stringVal());
+        enumVal(config.enumVal());
+        refVal(config.refVal());
+        for (AnotherArray a : config.anotherArray()) {
+          anotherArray(new AnotherArray.Builder(a));
+        }
+      }
+
+      private Builder override(Builder __superior) {
+        if (__superior.intVal != null)
+          intVal(__superior.intVal);
+        if (!__superior.stringVal.isEmpty())
+          stringVal.addAll(__superior.stringVal);
+        if (__superior.enumVal != null)
+          enumVal(__superior.enumVal);
+        if (__superior.refVal != null)
+          refVal(__superior.refVal);
+        if (!__superior.anotherArray.isEmpty())
+          anotherArray.addAll(__superior.anotherArray);
+        return this;
+      }
+
+      public Builder intVal(int __value) {
+        intVal = __value;
+        return this;
+      }
+
+      private Builder intVal(String __value) {
+        return intVal(Integer.valueOf(__value));
+      }
+
+      public Builder stringVal(String __value) {
+        stringVal.add(__value);
+        return this;
+      }
+
+      public Builder stringVal(Collection<String> __values) {
+        stringVal.addAll(__values);
+        return this;
+      }
+
+      public Builder enumVal(EnumVal.Enum __value) {
+      if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+        enumVal = __value;
+        return this;
+      }
+
+      private Builder enumVal(String __value) {
+        return enumVal(EnumVal.Enum.valueOf(__value));
+      }
+
+      public Builder refVal(String __value) {
+      if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+        refVal = __value;
+        __uninitialized.remove("refVal");
+        return this;
+      }
+
+
+      /**
+       * Add the given builder to this builder's list of AnotherArray builders
+       * @param __builder a builder
+       * @return this builder
+       */
+      public Builder anotherArray(AnotherArray.Builder __builder) {
+        anotherArray.add(__builder);
+        return this;
+      }
+
+      /**
+       * Set the given list as this builder's list of AnotherArray builders
+       * @param __builders a list of builders
+       * @return this builder
+       */
+      public Builder anotherArray(List<AnotherArray.Builder> __builders) {
+        anotherArray = __builders;
+        return this;
+      }
+    }
+
+    private final IntegerNode intVal;
+    private final LeafNodeVector<String, StringNode> stringVal;
+    private final EnumVal enumVal;
+    private final ReferenceNode refVal;
+    private final InnerNodeVector<AnotherArray> anotherArray;
+
+    public MyMap(Builder builder) {
+      this(builder, true);
+    }
+
+    private MyMap(Builder builder, boolean throwIfUninitialized) {
+      if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+        throw new IllegalArgumentException("The following builder parameters for " +
+            "allfeatures.myMap{} must be initialized: " + builder.__uninitialized);
+
+      intVal = (builder.intVal == null) ?
+          new IntegerNode(15) : new IntegerNode(builder.intVal);
+      stringVal = new LeafNodeVector<>(builder.stringVal, new StringNode());
+      enumVal = (builder.enumVal == null) ?
+          new EnumVal(EnumVal.ENUM) : new EnumVal(builder.enumVal);
+      refVal = (builder.refVal == null) ?
+          new ReferenceNode() : new ReferenceNode(builder.refVal);
+      anotherArray = AnotherArray.createVector(builder.anotherArray);
+    }
+
+    /**
+     * @return allfeatures.myMap{}.intVal
+     */
+    public int intVal() {
+      return intVal.value();
+    }
+
+    /**
+     * @return allfeatures.myMap{}.stringVal[]
+     */
+    public List<String> stringVal() {
+      return stringVal.asList();
+    }
+
+    /**
+     * @param i the index of the value to return
+     * @return allfeatures.myMap{}.stringVal[]
+     */
+    public String stringVal(int i) {
+      return stringVal.get(i).value();
+    }
+
+    /**
+     * @return allfeatures.myMap{}.enumVal
+     */
+    public EnumVal.Enum enumVal() {
+      return enumVal.value();
+    }
+
+    /**
+     * @return allfeatures.myMap{}.refVal
+     */
+    public String refVal() {
+      return refVal.value();
+    }
+
+    /**
+     * @return allfeatures.myMap{}.anotherArray[]
+     */
+    public List<AnotherArray> anotherArray() {
+      return anotherArray;
+    }
+
+    /**
+     * @param i the index of the value to return
+     * @return allfeatures.myMap{}.anotherArray[]
+     */
+    public AnotherArray anotherArray(int i) {
+      return anotherArray.get(i);
+    }
+
+    private ChangesRequiringRestart getChangesRequiringRestart(MyMap newConfig) {
+      ChangesRequiringRestart changes = new ChangesRequiringRestart("myMap");
+      return changes;
+    }
+
+    private static Map<String, MyMap> createMap(Map<String, Builder> builders) {
+      Map<String, MyMap> ret = new LinkedHashMap<>();
+      for(String key : builders.keySet()) {
+        ret.put(key, new MyMap(builders.get(key)));
+      }
+      return Collections.unmodifiableMap(ret);
+    }
+
+    /**
+     * This class represents allfeatures.myMap{}.enumVal
+     */
+    public final static class EnumVal extends EnumNode<EnumVal.Enum> {
+
+      public EnumVal(){
+        this.value = null;
+      }
+
+      public EnumVal(Enum enumValue) {
+        super(enumValue != null);
+        this.value = enumValue;
+      }
+
+      public enum Enum {INNER, ENUM, TYPE}
+      public final static Enum INNER = Enum.INNER;
+      public final static Enum ENUM = Enum.ENUM;
+      public final static Enum TYPE = Enum.TYPE;
+
+      @Override
+      protected boolean doSetValue(@NonNull String name) {
+        try {
+          value = Enum.valueOf(name);
+          return true;
+        } catch (IllegalArgumentException e) {
+        }
+        return false;
+      }
+    }
+
+    /**
+     * This class represents allfeatures.myMap{}.anotherArray[]
+     */
+    public final static class AnotherArray extends InnerNode { 
+
+      public static class Builder implements ConfigBuilder {
+        private Set<String> __uninitialized = new HashSet<String>();
+
+        private Integer foo = null;
+
+        public Builder() { }
+
+        public Builder(AnotherArray config) {
+          foo(config.foo());
+        }
+
+        private Builder override(Builder __superior) {
+          if (__superior.foo != null)
+            foo(__superior.foo);
+          return this;
+        }
+
+        public Builder foo(int __value) {
+          foo = __value;
+          return this;
+        }
+
+        private Builder foo(String __value) {
+          return foo(Integer.valueOf(__value));
+        }
+      }
+
+      private final IntegerNode foo;
+
+      public AnotherArray(Builder builder) {
+        this(builder, true);
+      }
+
+      private AnotherArray(Builder builder, boolean throwIfUninitialized) {
+        if (throwIfUninitialized && ! builder.__uninitialized.isEmpty())
+          throw new IllegalArgumentException("The following builder parameters for " +
+              "allfeatures.myMap{}.anotherArray[] must be initialized: " + builder.__uninitialized);
+
+        foo = (builder.foo == null) ?
+            new IntegerNode(-5) : new IntegerNode(builder.foo);
+      }
+
+      /**
+       * @return allfeatures.myMap{}.anotherArray[].foo
+       */
+      public int foo() {
+        return foo.value();
+      }
+
+      private ChangesRequiringRestart getChangesRequiringRestart(AnotherArray newConfig) {
+        ChangesRequiringRestart changes = new ChangesRequiringRestart("anotherArray");
+        return changes;
+      }
+
+      private static InnerNodeVector<AnotherArray> createVector(List<Builder> builders) {
+          List<AnotherArray> elems = new ArrayList<>();
+          for (Builder b : builders) {
+              elems.add(new AnotherArray(b));
+          }
+          return new InnerNodeVector<AnotherArray>(elems);
+      }
+    }
+  }
+
+}
