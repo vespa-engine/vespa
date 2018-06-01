@@ -34,19 +34,6 @@ AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
 
 AttributeWriter::WriteField::~WriteField() = default;
 
-void
-AttributeWriter::WriteField::buildFieldPath(const DocumentType &docType)
-{
-    const vespalib::string &name = _attribute.getName();
-    FieldPath fp;
-    try {
-        docType.buildFieldPath(fp, name);
-    } catch (document::FieldNotFoundException & e) {
-        fp = FieldPath();
-    }
-    _fieldPath = std::move(fp);
-}
-
 AttributeWriter::WriteContext::WriteContext(uint32_t executorId)
     : _executorId(executorId),
       _fields(),
@@ -74,7 +61,14 @@ void
 AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
 {
     for (auto &field : _fields) {
-        field.buildFieldPath(docType);
+        const vespalib::string &name = field.getAttribute().getName();
+        FieldPath fp;
+        try {
+            docType.buildFieldPath(fp, name);
+        } catch (document::FieldNotFoundException & e) {
+            fp = FieldPath();
+        }
+        field.setFieldPath(std::move(fp));
     }
 }
 
