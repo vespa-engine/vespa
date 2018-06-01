@@ -140,8 +140,6 @@ public class HandlersConfigurerDi {
 
     /**
      * Wait for new config to arrive and produce the new graph
-     *
-     * @return true if this resulted in a new graph that should be applied to the currently running container
      */
     public void getNewComponentGraph(Injector discInjector, boolean restartOnRedeploy) throws InterruptedException {
         currentGraph = container.getNewComponentGraph(currentGraph, createFallbackInjector(vespaContainer, discInjector), restartOnRedeploy);
