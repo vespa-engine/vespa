@@ -264,6 +264,8 @@ public class YqlParserTestCase {
     public void testSameElement() {
         assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 contains \"b\");",
                 "baz:{f1:a f2:b}");
+        assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 = 10);",
+                "baz:{f1:a f2:10}");
     }
 
     @Test
