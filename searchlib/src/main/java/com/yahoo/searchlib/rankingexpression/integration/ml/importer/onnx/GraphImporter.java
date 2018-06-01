@@ -42,8 +42,6 @@ public class GraphImporter {
         importOperations(onnxGraph, intermediateGraph);
         verifyOutputTypes(onnxGraph, intermediateGraph);
 
-        // todo: change to import signatures here as well, to avoid in importoperation?
-
         return intermediateGraph;
     }
 

@@ -112,7 +112,7 @@ public class GraphImporter {
         IntermediateGraph intermediateGraph = new IntermediateGraph(modelName);
         importSignatures(tfGraph, intermediateGraph);
         importOperations(tfGraph, intermediateGraph, bundle);
-//        verifyOutputTypes(tfGraph, intermediateGraph);
+        verifyOutputTypes(tfGraph, intermediateGraph);
 
         return intermediateGraph;
     }
@@ -210,6 +210,19 @@ public class GraphImporter {
             throw new IllegalStateException("Expected 1 tensor from fetching " + name +
                                             ", but got " + importedTensors.size());
         return importedTensors.get(0);
+    }
+
+    private static void verifyOutputTypes(MetaGraphDef tfGraph, IntermediateGraph intermediateGraph) {
+        for (String signatureName : intermediateGraph.signatures()) {
+            for (String outputName : intermediateGraph.outputs(signatureName).values()) {
+                IntermediateOperation operation = intermediateGraph.get(outputName);
+                NodeDef node = getTensorFlowNodeFromGraph(IntermediateOperation.namePartOf(operation.name()), tfGraph.getGraphDef());
+                OrderedTensorType type = operation.type().orElseThrow(
+                        () -> new IllegalArgumentException("Output of '" + outputName + "' has no type."));
+                TypeConverter.verifyType(node, type);
+            }
+        }
+
     }
 
 }

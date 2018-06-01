@@ -12,22 +12,24 @@ import java.util.List;
 
 public class TypeConverter {
 
-//    public static void verifyType(Onnx.TypeProto typeProto, OrderedTensorType type) {
-//        Onnx.TensorShapeProto shape = typeProto.getTensorType().getShape();
-//        if (shape != null) {
-//            if (shape.getDimCount() != type.rank()) {
-//                throw new IllegalArgumentException("Onnx shape of does not match Vespa shape");
-//            }
-//            for (int onnxIndex = 0; onnxIndex < type.dimensions().size(); ++onnxIndex) {
-//                int vespaIndex = type.dimensionMap(onnxIndex);
-//                Onnx.TensorShapeProto.Dimension onnxDimension = shape.getDim(onnxIndex);
-//                TensorType.Dimension vespaDimension = type.type().dimensions().get(vespaIndex);
-//                if (onnxDimension.getDimValue() != vespaDimension.size().orElse(-1L)) {
-//                    throw new IllegalArgumentException("TensorFlow dimensions of does not match Vespa dimensions");
-//                }
-//            }
-//        }
-//    }
+    public static void verifyType(NodeDef node, OrderedTensorType type) {
+        TensorShapeProto shape = tensorFlowShape(node);
+        if (shape != null) {
+            if (shape.getDimCount() != type.rank()) {
+                throw new IllegalArgumentException("TensorFlow shape of '" + node.getName() + "' " +
+                        "does not match Vespa shape");
+            }
+            for (int tensorFlowIndex = 0; tensorFlowIndex < type.dimensions().size(); ++tensorFlowIndex) {
+                int vespaIndex = type.dimensionMap(tensorFlowIndex);
+                TensorShapeProto.Dim tensorFlowDimension = shape.getDim(tensorFlowIndex);
+                TensorType.Dimension vespaDimension = type.type().dimensions().get(vespaIndex);
+                if (tensorFlowDimension.getSize() != vespaDimension.size().orElse(-1L)) {
+                    throw new IllegalArgumentException("TensorFlow dimensions of '" + node.getName() + "' " +
+                            "does not match Vespa dimensions");
+                }
+            }
+        }
+    }
 
     private static TensorShapeProto tensorFlowShape(NodeDef node) {
         AttrValue attrValueList = node.getAttrMap().get("_output_shapes");
