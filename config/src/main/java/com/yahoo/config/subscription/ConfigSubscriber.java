@@ -221,6 +221,7 @@ public class ConfigSubscriber {
 
     /**
      * Acquire a snapshot of all configs with the same generation within a timeout.
+     *
      * @param timeoutInMillis timeout to wait in milliseconds
      * @param requireChange if set, at least one config have to change
      * @return true, if a new config generation has been found for all configs (additionally requires
@@ -250,6 +251,7 @@ public class ConfigSubscriber {
                 }
                 throwIfExceptionSet(subscription);
                 ConfigSubscription.ConfigState<? extends ConfigInstance> config = subscription.getConfigState();
+                System.out.println("Subscription " + subscription + " of class " + subscription.getClass());
                 if (currentGen == null) currentGen = config.getGeneration();
                 if ( ! currentGen.equals(config.getGeneration())) allGenerationsTheSame = false;
                 allGenerationsChanged = allGenerationsChanged && config.isGenerationChanged();

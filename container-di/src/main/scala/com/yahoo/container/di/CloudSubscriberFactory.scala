@@ -16,9 +16,8 @@ import scala.language.existentials
 /**
  * @author Tony Vaagenes
  */
+class CloudSubscriberFactory(configSource: ConfigSource) extends SubscriberFactory {
 
-class CloudSubscriberFactory(configSource: ConfigSource) extends SubscriberFactory
-{
   private var testGeneration: Option[Long] = None
 
   private val activeSubscribers = new java.util.WeakHashMap[CloudSubscriber, Int]()
@@ -82,7 +81,7 @@ object CloudSubscriberFactory {
           case e: IllegalArgumentException =>
             numExceptions += 1
             log.log(Level.WARNING, "Got exception from the config system (please ignore the exception if you just removed "
-                          + "a component from your application that used the mentioned config): ", e)
+                                   + "a component from your application that used the mentioned config): ", e)
             if (numExceptions >= 5)
               throw new IllegalArgumentException("Failed retrieving the next config generation.", e)
         }

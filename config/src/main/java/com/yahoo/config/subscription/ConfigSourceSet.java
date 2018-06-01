@@ -14,10 +14,10 @@ import java.util.logging.Logger;
  * Two sets are said to be equal if they contain the same sources, independent of order,
  * upper/lower-casing and whitespaces.
  *
- * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
+ * @author gjoranv
  */
-public class ConfigSourceSet implements ConfigSource
-{
+public class ConfigSourceSet implements ConfigSource {
+
     private static final Logger log = Logger.getLogger(ConfigSourceSet.class.getName());
     private final Set<String> sources = new LinkedHashSet<>();
 
@@ -124,4 +124,5 @@ public class ConfigSourceSet implements ConfigSource
         }
         return sourceSet;
     }
+
 }
