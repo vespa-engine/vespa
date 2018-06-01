@@ -7,6 +7,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.OnnxImporter;
+import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
@@ -14,6 +15,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Replaces instances of the onnx(model-path, output)
@@ -44,7 +46,8 @@ public class OnnxFeatureConverter extends MLImportFeatureConverter {
         if ( ! feature.getName().equals("onnx")) return feature;
 
         try {
-            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), feature.getArguments());
+            FeatureArguments arguments = new OnnxFeatureArguments(feature.getArguments());
+            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
             if ( ! store.hasStoredModel()) // not converted yet - access Onnx model files
                 return transformFromOnnxModel(store, context.rankProfile(), context.queryProfiles());
             else
@@ -62,6 +65,20 @@ public class OnnxFeatureConverter extends MLImportFeatureConverter {
                                                          k -> onnxImporter.importModel(store.arguments().modelName(),
                                                                                        store.modelDir()));
         return transformFromImportedModel(model, store, profile, queryProfiles);
+    }
+
+    static class OnnxFeatureArguments extends FeatureArguments {
+        public OnnxFeatureArguments(Arguments arguments) {
+            if (arguments.isEmpty())
+                throw new IllegalArgumentException("An onnx node must take an argument pointing to " +
+                        "the tensorflow model directory under [application]/models");
+            if (arguments.expressions().size() > 3)
+                throw new IllegalArgumentException("An onnx feature can have at most 2 arguments");
+
+            modelPath = Path.fromString(asString(arguments.expressions().get(0)));
+            output = optionalArgument(1, arguments);
+            signature = Optional.of("default");
+        }
     }
 
 }

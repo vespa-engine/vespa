@@ -67,7 +67,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         ImportedModel.Signature signature = chooseSignature(model, store.arguments().signature());
         String output = chooseOutput(signature, store.arguments().output());
         if (signature.skippedOutputs().containsKey(output)) {
-            String message = "Could not import TensorFlow model output '" + output + "'";
+            String message = "Could not import model output '" + output + "'";
             if (!signature.skippedOutputs().get(output).isEmpty()) {
                 message += ": " + signature.skippedOutputs().get(output);
             }
@@ -193,7 +193,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
 
     private void addGeneratedMacroToProfile(RankProfile profile, String macroName, RankingExpression expression) {
         if (profile.getMacros().containsKey(macroName)) {
-            throw new IllegalArgumentException("Generated TensorFlow macro '" + macroName + "' already exists.");
+            throw new IllegalArgumentException("Generated macro '" + macroName + "' already exists.");
         }
         profile.addMacro(macroName, false);  // todo: inline if only used once
         RankProfile.Macro macro = profile.getMacros().get(macroName);
@@ -425,9 +425,9 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         private final ApplicationPackage application;
         private final FeatureArguments arguments;
 
-        public ModelStore(ApplicationPackage application, Arguments arguments) {
+        public ModelStore(ApplicationPackage application, FeatureArguments arguments) {
             this.application = application;
-            this.arguments = new FeatureArguments(arguments);
+            this.arguments = arguments;
         }
 
         public FeatureArguments arguments() { return arguments; }
@@ -595,25 +595,13 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
 
     }
 
-    /** Encapsulates the 1, 2 or 3 arguments to a tensorflow feature */
-    static class FeatureArguments {
+    /** Encapsulates the arguments to the import feature */
+    static abstract class FeatureArguments {
 
-        private final Path modelPath;
+        Path modelPath;
 
         /** Optional arguments */
-        private final Optional<String> signature, output;
-
-        public FeatureArguments(Arguments arguments) {
-            if (arguments.isEmpty())
-                throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
-                        "the tensorflow model directory under [application]/models");
-            if (arguments.expressions().size() > 3)
-                throw new IllegalArgumentException("A tensorflow feature can have at most 3 arguments");
-
-            modelPath = Path.fromString(asString(arguments.expressions().get(0)));
-            signature = optionalArgument(1, arguments);
-            output = optionalArgument(2, arguments);
-        }
+        Optional<String> signature, output;
 
         /** Returns modelPath with slashes replaced by underscores */
         public String modelName() { return modelPath.toString().replace('/', '_').replace('.', '_'); }
@@ -653,22 +641,22 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
             return fileName.toString();
         }
 
-        private Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
+        Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
             if (argumentIndex >= arguments.expressions().size())
                 return Optional.empty();
             return Optional.of(asString(arguments.expressions().get(argumentIndex)));
         }
 
-        private String asString(ExpressionNode node) {
+        String asString(ExpressionNode node) {
             if ( ! (node instanceof ConstantNode))
-                throw new IllegalArgumentException("Expected a constant string as tensorflow argument, but got '" + node);
+                throw new IllegalArgumentException("Expected a constant string as argument, but got '" + node);
             return stripQuotes(((ConstantNode)node).sourceString());
         }
 
         private String stripQuotes(String s) {
             if ( ! isQuoteSign(s.codePointAt(0))) return s;
             if ( ! isQuoteSign(s.codePointAt(s.length() - 1 )))
-                throw new IllegalArgumentException("tensorflow argument [" + s + "] is missing endquote");
+                throw new IllegalArgumentException("argument [" + s + "] is missing endquote");
             return s.substring(1, s.length()-1);
         }
 

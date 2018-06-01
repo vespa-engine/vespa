@@ -6,6 +6,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.TensorFlowImporter;
+import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
@@ -42,7 +43,8 @@ public class TensorFlowFeatureConverter extends MLImportFeatureConverter {
         if ( ! feature.getName().equals("tensorflow")) return feature;
 
         try {
-            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), feature.getArguments());
+            FeatureArguments arguments = new TensorFlowFeatureArguments(feature.getArguments());
+            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
             if ( ! store.hasStoredModel()) // not converted yet - access TensorFlow model files
                 return transformFromTensorFlowModel(store, context.rankProfile(), context.queryProfiles());
             else
@@ -60,6 +62,20 @@ public class TensorFlowFeatureConverter extends MLImportFeatureConverter {
                 k -> tensorFlowImporter.importModel(store.arguments().modelName(),
                         store.modelDir()));
         return transformFromImportedModel(model, store, profile, queryProfiles);
+    }
+
+    static class TensorFlowFeatureArguments extends FeatureArguments {
+        public TensorFlowFeatureArguments(Arguments arguments) {
+            if (arguments.isEmpty())
+                throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
+                        "the tensorflow model directory under [application]/models");
+            if (arguments.expressions().size() > 3)
+                throw new IllegalArgumentException("A tensorflow feature can have at most 3 arguments");
+
+            modelPath = Path.fromString(asString(arguments.expressions().get(0)));
+            signature = optionalArgument(1, arguments);
+            output = optionalArgument(2, arguments);
+        }
     }
 
 }

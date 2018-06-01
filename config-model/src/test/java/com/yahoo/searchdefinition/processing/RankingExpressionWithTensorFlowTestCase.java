@@ -162,7 +162,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved'): " +
-                         "Model refers placeholder 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
+                         "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
                          "not present in rank profile 'my_profile'",
                          Exceptions.toMessageString(expected));
         }
@@ -179,7 +179,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved'): " +
-                         "Model refers placeholder 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
+                         "Model refers input 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
                          "but this macro returns tensor(d0[2],d5[10])",
                          Exceptions.toMessageString(expected));
         }
@@ -334,9 +334,9 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "input",
                 application);
         search.assertFirstPhaseExpression(expression, "my_profile");
-        assertSmallConstant("dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
-        search.assertMacro(macroExpression1, "imported_macro__dnn_hidden1_add", "my_profile");
-        search.assertMacro(macroExpression2, "imported_macro__dnn_hidden2_add", "my_profile");
+        assertSmallConstant("mnist_saved_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
+        search.assertMacro(macroExpression1, "imported_ml_macro__dnn_hidden1_add", "my_profile");
+        search.assertMacro(macroExpression2, "imported_ml_macro__dnn_hidden2_add", "my_profile");
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");

@@ -37,15 +37,6 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testOnnxReference() throws ParseException {
-        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
-                "onnx('mnist_softmax.onnx')");
-        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_onnx_Variable_1", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_onnx_Variable", search, Optional.of(7840L));
-    }
-
-    @Test
     public void testOnnxReferenceWithConstantFeature() {
         RankProfileSearchFixture search = fixtureWith("constant(mytensor)",
                 "onnx('mnist_softmax.onnx')",
@@ -122,13 +113,6 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testOnnxReferenceSpecifyingOutput() {
-        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
-                "onnx('mnist_softmax.onnx', 'add')");
-        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-    }
-
-    @Test
     public void testOnnxReferenceMissingMacro() throws ParseException {
         try {
             RankProfileSearchFixture search = new RankProfileSearchFixture(
@@ -180,7 +164,7 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx','y'): " +
-                            "Model does not have the output 'y'",
+                            "Model does not have the specified output 'y'",
                     Exceptions.toMessageString(expected));
         }
     }
