@@ -15,15 +15,15 @@ import java.util.*;
 
 /**
  * Test utility class
- * @author lulf
- * @since 5.25
+ *
+ * @author Ulf Lilleengen
  */
 public class MockRequestHandler implements RequestHandler, ReloadHandler, TenantHandlerProvider {
 
     volatile boolean throwException = false;
     private Set<ConfigKey<?>> allConfigs = new HashSet<>();
     public volatile ConfigResponse responseConfig = null; // for some v1 mocking
-    public Map<ApplicationId, ConfigResponse> responses = new LinkedHashMap<>(); // for v2 mocking
+    public Map<ApplicationId, ConfigResponse> responses = new LinkedHashMap<>(); // for v3 mocking
     private final boolean pretendToHaveLoadedAnyApplication;
 
     public MockRequestHandler() {

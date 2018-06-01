@@ -3,8 +3,10 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.SimpletypesConfig;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationName;
@@ -69,9 +71,13 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
+    private ApplicationId defaultApp() {
+        return new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build();
+    }
+
     @Before
-    public void setUp() throws IOException, SAXException {
-        feedApp(app1, 1);
+    public void setUp() throws IOException {
+        feedApp(app1, 1, defaultApp(), false);
         Metrics sh = Metrics.createTestMetrics();
         List<ReloadListener> listeners = new ArrayList<>();
         listeners.add(listener);
@@ -79,11 +85,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
         componentRegistry = new TestComponentRegistry.Builder().curator(curator).modelFactoryRegistry(createRegistry()).build();
     }
 
-    private void feedApp(File appDir, long sessionId) throws IOException {
-        feedApp(appDir, sessionId, new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build());
-    }
-
-    private void feedApp(File appDir, long sessionId, ApplicationId appId) throws IOException {
+    private void feedApp(File appDir, long sessionId, ApplicationId appId, boolean  internalRedeploy) throws IOException {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
                                                                 TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)),
                                                                 new TestConfigDefinitionRepo(),
@@ -92,7 +94,17 @@ public class TenantRequestHandlerTest extends TestWithCurator {
         File app = tempFolder.newFolder();
         IOUtils.copyDirectory(appDir, app);
         ZooKeeperDeployer deployer = zkc.createDeployer(new BaseDeployLogger());
-        deployer.deploy(FilesApplicationPackage.fromFile(appDir), Collections.singletonMap(vespaVersion, new MockFileRegistry()), AllocatedHosts.withHosts(Collections.emptySet()));
+        DeployData deployData = new DeployData("user",
+                                               appDir.toString(),
+                                               appId.application().toString(),
+                                               0L,
+                                               internalRedeploy,
+                                               0L,
+                                               0L);
+        ApplicationPackage appPackage = FilesApplicationPackage.fromFileWithDeployData(appDir, deployData);
+        deployer.deploy(appPackage,
+                        Collections.singletonMap(vespaVersion, new MockFileRegistry()),
+                        AllocatedHosts.withHosts(Collections.emptySet()));
     }
 
     private ApplicationSet reloadConfig(long id, Clock clock) {
@@ -114,12 +126,21 @@ public class TenantRequestHandlerTest extends TestWithCurator {
                 new TestModelFactory(Version.fromIntValues(3, 2, 1))));
     }
 
-    public <T extends ConfigInstance> T resolve(Class<T> clazz, TenantRequestHandler tenantRequestHandler, String configId) {
-        return resolve(clazz, tenantRequestHandler, new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build(), vespaVersion, configId);
+    public <T extends ConfigInstance> T resolve(Class<T> clazz,
+                                                TenantRequestHandler tenantRequestHandler,
+                                                ApplicationId appId,
+                                                Version vespaVersion,
+                                                String configId) {
+        ConfigResponse response = getConfigResponse(clazz, tenantRequestHandler, appId, vespaVersion, configId);
+        return ConfigPayload.fromUtf8Array(response.getPayload()).toInstance(clazz, configId);
     }
 
-    public <T extends ConfigInstance> T resolve(final Class<T> clazz, TenantRequestHandler tenantRequestHandler, ApplicationId appId, Version vespaVersion, final String configId) {
-        ConfigResponse response = tenantRequestHandler.resolveConfig(appId, new GetConfigRequest() {
+    public <T extends ConfigInstance> ConfigResponse getConfigResponse(Class<T> clazz,
+                                                                       TenantRequestHandler tenantRequestHandler,
+                                                                       ApplicationId appId,
+                                                                       Version vespaVersion,
+                                                                       String configId) {
+        return tenantRequestHandler.resolveConfig(appId, new GetConfigRequest() {
             @Override
             public ConfigKey<T> getConfigKey() {
                 return new ConfigKey<T>(clazz, configId);
@@ -140,23 +161,24 @@ public class TenantRequestHandlerTest extends TestWithCurator {
                 return false;
             }
         }, Optional.empty());
-        return ConfigPayload.fromUtf8Array(response.getPayload()).toInstance(clazz, configId);
     }
 
     @Test
-    public void testReloadConfig() throws IOException, SAXException {
+    public void testReloadConfig() throws IOException {
         Clock clock = Clock.systemUTC();
         ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build();
 
         server.reloadConfig(reloadConfig(1, clock));
         assertThat(listener.reloaded.get(), is(1));
         // Using only payload list for this simple test
-    	SimpletypesConfig config = resolve(SimpletypesConfig.class, server, "");
+    	SimpletypesConfig config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertThat(config.intval(), is(1337));
         assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(1l));
 
-        server.reloadConfig(reloadConfig(1l, clock));
-        config = resolve(SimpletypesConfig.class, server, "");
+        server.reloadConfig(reloadConfig(1L, clock));
+        ConfigResponse configResponse = getConfigResponse(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
+        assertFalse(configResponse.isInternalRedeploy());
+        config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertThat(config.intval(), is(1337));
         assertThat(listener.reloaded.get(), is(2));
         assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(1l));
@@ -164,9 +186,11 @@ public class TenantRequestHandlerTest extends TestWithCurator {
         assertThat(server.resolveApplicationId("mytesthost"), is(applicationId));
 
         listener.reloaded.set(0);
-        feedApp(app2, 2);
-        server.reloadConfig(reloadConfig(2l, clock));
-        config = resolve(SimpletypesConfig.class, server, "");
+        feedApp(app2, 2, defaultApp(), true);
+        server.reloadConfig(reloadConfig(2L, clock));
+        configResponse = getConfigResponse(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
+        assertTrue(configResponse.isInternalRedeploy());
+        config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion,"");
         assertThat(config.intval(), is(1330));
         assertThat(listener.reloaded.get(), is(1));
         assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(2l));
@@ -182,7 +206,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
 
     @Test
     public void testResolveForAppId() {
-        long id = 1l;
+        long id = 1L;
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
                                                                 TenantRepository.getSessionsPath(tenant).append(String.valueOf(id)),
                                                                 new TestConfigDefinitionRepo(),
@@ -198,7 +222,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     }
 
     @Test
-    public void testResolveMultipleApps() throws IOException, SAXException {
+    public void testResolveMultipleApps() throws IOException {
         ApplicationId appId1 = new ApplicationId.Builder()
                               .tenant(tenant)
                               .applicationName("myapp1").instanceName("myinst1").build();
@@ -227,7 +251,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     }
 
     private void feedAndReloadApp(File appDir, long sessionId, ApplicationId appId) throws IOException {
-        feedApp(appDir, sessionId, appId);
+        feedApp(appDir, sessionId, appId, false);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkc.writeApplicationId(appId);
         RemoteSession session = new RemoteSession(tenant, sessionId, componentRegistry, zkc, Clock.systemUTC());

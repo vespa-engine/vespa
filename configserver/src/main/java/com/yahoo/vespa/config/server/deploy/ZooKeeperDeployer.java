@@ -13,7 +13,7 @@ import java.util.Map;
  * Interface for initializing zookeeper and deploying an application package to zookeeper.
  * Initialize must be called before each deploy.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ZooKeeperDeployer {
 

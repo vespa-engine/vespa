@@ -7,8 +7,7 @@ import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 
 /**
- * @author lulf
- * @since 5.
+ * @author Ulf Lilleengen
  */
 public class MockTenantProvider implements TenantHandlerProvider {
 
