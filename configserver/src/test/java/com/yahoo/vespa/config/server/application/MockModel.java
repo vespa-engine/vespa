@@ -23,17 +23,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// Model with two services, one that does not have a state port
-class MockModel implements Model {
+/**
+ * Model with two services, one that does not have a state port
+ *
+ * @author hakonhall
+ */
+public class MockModel implements Model {
     private final Collection<HostInfo> hosts;
 
     static MockModel createContainer(String hostname, int statePort) {
+        return new MockModel(Collections.singleton(createContainerHost(hostname, statePort)));
+    }
+
+    static HostInfo createContainerHost(String hostname, int statePort) {
         ServiceInfo container = createServiceInfo(hostname, "container", "container",
-                ClusterSpec.Type.container, statePort, "state");
+                                                  ClusterSpec.Type.container, statePort, "state");
         ServiceInfo serviceNoStatePort = createServiceInfo(hostname, "logserver", "logserver",
-                ClusterSpec.Type.admin, 1234, "logtp");
-        HostInfo hostInfo = new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
-        return new MockModel(Collections.singleton(hostInfo));
+                                                           ClusterSpec.Type.admin, 1234, "logtp");
+        return new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
     }
 
     static MockModel createClusterController(String hostname, int statePort) {
@@ -49,10 +56,6 @@ class MockModel implements Model {
         HostInfo hostInfo = new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
 
         return new MockModel(Collections.singleton(hostInfo));
-    }
-
-    static MockModel createConfigProxy(String hostname, int rpcPort) {
-        return createConfigProxies(Collections.singletonList(hostname), rpcPort);
     }
 
     static MockModel createConfigProxies(List<String> hostnames, int rpcPort) {
