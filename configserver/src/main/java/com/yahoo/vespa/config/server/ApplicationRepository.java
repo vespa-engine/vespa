@@ -212,7 +212,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession activeSession = getActiveSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-        LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, false, timeoutBudget);
+        LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         tenant.getLocalSessionRepo().addSession(newSession);
 
         // Keep manually deployed tenant applications on the latest version, don't change version otherwise
