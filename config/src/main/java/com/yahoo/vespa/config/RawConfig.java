@@ -77,7 +77,7 @@ public class RawConfig extends ConfigInstance {
                              req.getNewPayload(),
                              req.getNewConfigMd5(),
                              req.getNewGeneration(),
-                             req.isInternalRedeploy(),
+                             req.responseIsInternalRedeploy(),
                              0,
                              req.getDefContent().asList(),
                              req.getVespaVersion());

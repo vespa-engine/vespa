@@ -23,12 +23,13 @@ public class SlimeConfigResponse implements ConfigResponse {
     private final CompressionInfo compressionInfo;
     private final InnerCNode targetDef;
     private final long generation;
-    private final boolean internalRedeployment;
+    private final boolean internalRedeploy;
     private final String configMd5;
 
-    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload, InnerCNode targetDef, long generation, String configMd5) {
+    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload, InnerCNode targetDef, long generation,
+                                                        boolean internalRedeploy, String configMd5) {
         Utf8Array data = payload.toUtf8Array(true);
-        return new SlimeConfigResponse(data, targetDef, generation, false,
+        return new SlimeConfigResponse(data, targetDef, generation, internalRedeploy,
                                        configMd5,
                                        CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
@@ -36,13 +37,13 @@ public class SlimeConfigResponse implements ConfigResponse {
     public SlimeConfigResponse(Utf8Array payload,
                                InnerCNode targetDef,
                                long generation,
-                               boolean internalRedeployment,
+                               boolean internalRedeploy,
                                String configMd5,
                                CompressionInfo compressionInfo) {
         this.payload = payload;
         this.targetDef = targetDef;
         this.generation = generation;
-        this.internalRedeployment = internalRedeployment;
+        this.internalRedeploy = internalRedeploy;
         this.configMd5 = configMd5;
         this.compressionInfo = compressionInfo;
     }
@@ -75,7 +76,7 @@ public class SlimeConfigResponse implements ConfigResponse {
      * not an application package change
      */
     @Override
-    public boolean isInternalRedeploy() { return internalRedeployment; }
+    public boolean isInternalRedeploy() { return internalRedeploy; }
 
     @Override
     public String getConfigMd5() {
@@ -96,4 +97,5 @@ public class SlimeConfigResponse implements ConfigResponse {
 
     @Override
     public CompressionInfo getCompressionInfo() { return compressionInfo; }
+
 }

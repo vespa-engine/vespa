@@ -53,8 +53,8 @@ public interface JRTClientConfigRequest extends JRTConfigRequest {
      */
     long getNewGeneration();
 
-    /** Returns whether this config changes is due to an internal change not an application package change */
-    boolean isInternalRedeploy();
+    /** Returns whether this config change is due to an internal change not an application package change */
+    boolean responseIsInternalRedeploy();
 
     /**
      * Get the config md5 of the config returned by the server. Return an empty string if no response has been returned.

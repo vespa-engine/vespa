@@ -55,7 +55,7 @@ public class HttpGetConfigHandlerTest {
         final long generation = 1L;
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         InnerCNode targetDef = getInnerCNode();
-        mockRequestHandler.responses.put(ApplicationId.defaultId(), SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, "mymd5"));
+        mockRequestHandler.responses.put(ApplicationId.defaultId(), SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5"));
         HttpResponse response = handler.handle(HttpRequest.createTestRequest(configUri, GET));
         assertThat(SessionHandlerTest.getRenderedString(response), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}"));
     }
@@ -82,7 +82,7 @@ public class HttpGetConfigHandlerTest {
         long generation = 1L;
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         InnerCNode targetDef = getInnerCNode();
-        mockRequestHandler.responses.put(ApplicationId.defaultId(), SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, "mymd5"));
+        mockRequestHandler.responses.put(ApplicationId.defaultId(), SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5"));
         final HttpRequest request = HttpRequest.createTestRequest(configUri, GET, null, Collections.singletonMap("nocache", "true"));
         HttpResponse response = handler.handle(request);
         assertThat(SessionHandlerTest.getRenderedString(response), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}"));

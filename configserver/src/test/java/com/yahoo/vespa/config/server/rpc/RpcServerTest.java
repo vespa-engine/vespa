@@ -32,8 +32,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class RpcServerTest extends TestWithRpc {
 
@@ -70,7 +69,6 @@ public class RpcServerTest extends TestWithRpc {
         return clientReq;
     }
 
-
     private void testEnabled() throws IOException, SAXException {
         generationCounter.increment();
         Application app = new Application(new VespaModel(MockApplicationPackage.createEmpty()),
@@ -101,12 +99,17 @@ public class RpcServerTest extends TestWithRpc {
     public void testGetConfig() {
         ((MockRequestHandler)tenantProvider.getRequestHandler()).throwException = false;
         ConfigKey<?> key = new ConfigKey<>(SimpletypesConfig.class, "brim");
-        ((MockRequestHandler)tenantProvider.getRequestHandler()).responses.put(ApplicationId.defaultId(), createResponse());
-        JRTClientConfigRequest req = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, SimpletypesConfig.CONFIG_DEF_MD5), 120_000, Trace.createDummy(), CompressionType.UNCOMPRESSED, Optional.empty());
+        ((MockRequestHandler)tenantProvider.getRequestHandler()).responses.put(ApplicationId.defaultId(), createResponse(true));
+        JRTClientConfigRequest req = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, SimpletypesConfig.CONFIG_DEF_MD5),
+                                                                            120_000,
+                                                                            Trace.createDummy(),
+                                                                            CompressionType.UNCOMPRESSED,
+                                                                            Optional.empty());
         assertTrue(req.validateParameters());
         performRequest(req.getRequest());
         assertThat(req.errorCode(), is(0));
         assertTrue(req.validateResponse());
+        assertTrue(req.responseIsInternalRedeploy());
         ConfigPayload payload = ConfigPayload.fromUtf8Array(req.getNewPayload().getData());
         assertNotNull(payload);
         SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
@@ -115,13 +118,19 @@ public class RpcServerTest extends TestWithRpc {
         assertThat(config.intval(), is(123));
     }
 
-    public ConfigResponse createResponse() {
+    public ConfigResponse createResponse(boolean internalRedeploy) {
         SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
         builder.intval(123);
         SimpletypesConfig responseConfig = new SimpletypesConfig(builder);
         ConfigPayload responsePayload = ConfigPayload.fromInstance(responseConfig);
-        InnerCNode targetDef = new DefParser(SimpletypesConfig.CONFIG_DEF_NAME, new StringReader(Joiner.on("\n").join(SimpletypesConfig.CONFIG_DEF_SCHEMA))).getTree();
-        return SlimeConfigResponse.fromConfigPayload(responsePayload, targetDef, 3l, ConfigUtils.getMd5(responsePayload));
+        InnerCNode targetDef = new DefParser(SimpletypesConfig.CONFIG_DEF_NAME,
+                                             new StringReader(Joiner.on("\n").join(SimpletypesConfig.CONFIG_DEF_SCHEMA)))
+                                       .getTree();
+        return SlimeConfigResponse.fromConfigPayload(responsePayload,
+                                                     targetDef,
+                                                     3L,
+                                                     internalRedeploy,
+                                                     ConfigUtils.getMd5(responsePayload));
     }
 
     public void testPrintStatistics() {

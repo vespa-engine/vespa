@@ -29,7 +29,7 @@ public class ConfigResponseTest {
         ConfigPayload configPayload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         DefParser dParser = new DefParser(SimpletypesConfig.getDefName(), new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
         InnerCNode targetDef = dParser.getTree();
-        ConfigResponse response = SlimeConfigResponse.fromConfigPayload(configPayload, targetDef, 3, "mymd5");
+        ConfigResponse response = SlimeConfigResponse.fromConfigPayload(configPayload, targetDef, 3, false, "mymd5");
         List<String> payload = response.getLegacyPayload();
         assertNotNull(payload);
         assertThat(payload.size(), is(6));

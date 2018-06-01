@@ -81,7 +81,7 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
                 .append(",").append(getVespaVersion()).append("'\n");
         sb.append("response='").append(getNewConfigMd5())
                 .append(",").append(getNewGeneration())
-                .append(",").append(isInternalRedeploy())
+                .append(",").append(responseIsInternalRedeploy())
                 .append("'\n");
         return sb.toString();
     }
@@ -203,7 +203,7 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
     }
 
     @Override
-    public boolean isInternalRedeploy() {
+    public boolean responseIsInternalRedeploy() {
         return responseData.getResponseInternalRedeployment();
     }
 

@@ -146,7 +146,7 @@ class GetConfigProcessor implements Runnable {
     private void returnEmpty(JRTServerConfigRequest request) {
         ConfigPayload emptyPayload = ConfigPayload.empty();
         String configMd5 = ConfigUtils.getMd5(emptyPayload);
-        ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, null, 0, configMd5);
+        ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, null, 0, false, configMd5);
         request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, config.getConfigMd5());
         respond(request);
     }

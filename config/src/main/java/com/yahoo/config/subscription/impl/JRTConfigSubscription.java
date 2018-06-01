@@ -89,7 +89,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             return false;
         }
         if (jrtReq.hasUpdatedGeneration()) {
-            setInternalRedeploy(jrtReq.isInternalRedeploy());
+            setInternalRedeploy(jrtReq.responseIsInternalRedeploy());
             if (jrtReq.hasUpdatedConfig()) {
                 setNewConfig(jrtReq);
             } else {
