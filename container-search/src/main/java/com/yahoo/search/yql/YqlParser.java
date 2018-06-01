@@ -102,6 +102,10 @@ public class YqlParser implements Parser {
         NEVER, POSSIBLY, ALWAYS;
     }
 
+    private static class IndexNameExpander {
+        public String expand(String leaf) { return leaf; }
+    }
+
     private static final Integer DEFAULT_HITS = 10;
     private static final Integer DEFAULT_OFFSET = 0;
     private static final Integer DEFAULT_TARGET_NUM_HITS = 10;
@@ -194,6 +198,7 @@ public class YqlParser implements Parser {
     private Query userQuery;
     private Parsable currentlyParsing;
     private IndexFacts.Session indexFactsSession;
+    private IndexNameExpander indexNameExpander = new IndexNameExpander();
     private Set<String> docTypes;
     private Sorting sorting;
     private String segmenterBackend;
@@ -534,14 +539,28 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, out);
     }
 
+    private static class PrefixExpander extends IndexNameExpander {
+        private final String prefix;
+        public PrefixExpander(String prefix) {
+            this.prefix = prefix + ".";
+        }
+
+        @Override
+        public String expand(String leaf) {
+            return prefix + leaf;
+        }
+    }
     @NonNull
     private Item instantiateSameElementItem(String field, OperatorNode<ExpressionOperator> ast) {
         assertHasFunctionName(ast, SAME_ELEMENT);
 
         SameElementItem sameElement = new SameElementItem(field);
-        for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            sameElement.addItem(buildTermSearch(word));
+        // All terms below sameElement are relative to this.
+        IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
+        for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+            sameElement.addItem(convertExpression(term));
         }
+        swapIndexCreator(prev);
         return sameElement;
     }
 
@@ -1619,21 +1638,25 @@ public class YqlParser implements Parser {
         }
     }
 
+    private IndexNameExpander swapIndexCreator(IndexNameExpander newExpander) {
+        IndexNameExpander old = indexNameExpander;
+        indexNameExpander = newExpander;
+        return old;
+    }
     @NonNull
     private String getIndex(OperatorNode<ExpressionOperator> operatorNode) {
         String index = fetchFieldRead(operatorNode);
-        Preconditions.checkArgument(indexFactsSession.isIndex(index), "Field '%s' does not exist.", index);
+        String expanded = indexNameExpander.expand(index);
+        Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(index);
     }
 
     private Substring getOrigin(OperatorNode<ExpressionOperator> ast) {
-        Map<?, ?> origin = getAnnotation(ast, ORIGIN, Map.class, null,
-                ORIGIN_DESCRIPTION);
+        Map<?, ?> origin = getAnnotation(ast, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION);
         if (origin == null) {
             return null;
         }
-        String original = getMapValue(ORIGIN, origin, ORIGIN_ORIGINAL,
-                String.class);
+        String original = getMapValue(ORIGIN, origin, ORIGIN_ORIGINAL, String.class);
         int offset = getMapValue(ORIGIN, origin, ORIGIN_OFFSET, Integer.class);
         int length = getMapValue(ORIGIN, origin, ORIGIN_LENGTH, Integer.class);
         return new Substring(offset, length + offset, original);
