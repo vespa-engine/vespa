@@ -219,7 +219,6 @@ public abstract class CompositeItem extends Item {
         copy.subitems = new java.util.ArrayList<>();
         for (Item subItem : subitems) {
             Item subItemCopy = subItem.clone();
-            copy.adding(subItemCopy);
             copy.subitems.add(subItemCopy);
         }
         fixConnexity(copy);
