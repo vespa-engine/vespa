@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <set>
 
 using vespalib::SocketAddress;
@@ -22,14 +23,17 @@ vespalib::string get_hostname() {
     return SocketAddress::normalize(&result[0]);
 }
 
-bool check(const vespalib::string &name, const std::set<vespalib::string> &ip_set) {
+bool check(const vespalib::string &name, const std::set<vespalib::string> &ip_set, vespalib::string &error_msg) {
     auto addr_list = SocketAddress::resolve(80, name.c_str());
     if (addr_list.empty()) {
+        error_msg = vespalib::make_string("hostname '%s' could not be resolved", name.c_str());
         return false;
     }
     for (const SocketAddress &addr: addr_list) {
         vespalib::string ip_addr = addr.ip_address();
         if (ip_set.count(ip_addr) == 0) {
+            error_msg = vespalib::make_string("hostname '%s' resolves to ip address not owned by this host (%s)",
+                                              name.c_str(), ip_addr.c_str());
             return false;
         }
     }
@@ -38,14 +42,21 @@ bool check(const vespalib::string &name, const std::set<vespalib::string> &ip_se
 
 int main(int, char **) {
     auto my_ip_set = make_ip_set();
-    std::vector<vespalib::string> list({get_hostname(), "localhost", "127.0.0.1", "::1"});
-    for (const vespalib::string &name: list) {
-        if (check(name, my_ip_set)) {
-            fprintf(stdout, "%s\n", name.c_str());
-            return 0;
-        }
+    vespalib::string my_hostname = get_hostname();
+    vespalib::string my_hostname_error;
+    vespalib::string localhost = "localhost";
+    vespalib::string localhost_error;
+    if (check(my_hostname, my_ip_set, my_hostname_error)) {
+        fprintf(stdout, "%s\n", my_hostname.c_str());
+    } else if (check(localhost, my_ip_set, localhost_error)) {
+        fprintf(stdout, "%s\n", localhost.c_str());
+    } else {
+        fprintf(stderr, "FATAL: hostname detection failed\n");
+        fprintf(stderr, "  INFO: canonical hostname (from gethostname/getaddrinfo): %s\n", my_hostname.c_str());
+        fprintf(stderr, "  ERROR: %s\n", my_hostname_error.c_str());
+        fprintf(stderr, "  INFO: falling back to local hostname: %s\n", localhost.c_str());
+        fprintf(stderr, "  ERROR: %s\n", localhost_error.c_str());
+        return 1;
     }
-    fprintf(stderr, "FATAL: hostname detection failed\n");
-    // XXX we should explain why it failed
-    return 1;
+    return 0;
 }
