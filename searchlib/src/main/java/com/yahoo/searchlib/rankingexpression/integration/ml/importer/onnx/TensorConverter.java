@@ -28,7 +28,6 @@ public class TensorConverter {
         return builder.build();
     }
 
-    /* todo: support more types */
     private static Values readValuesOf(Onnx.TensorProto tensorProto) {
         if (tensorProto.hasRawData()) {
             switch (tensorProto.getDataType()) {

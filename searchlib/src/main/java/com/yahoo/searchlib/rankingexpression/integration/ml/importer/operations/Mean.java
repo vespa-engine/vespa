@@ -55,7 +55,7 @@ public class Mean extends IntermediateOperation {
         return reducedType(inputType, shouldKeepDimensions());
     }
 
-    // todo: optimization: if keepDims and one reduce dimension that has size 1: same as identity.
+    // optimization: if keepDims and one reduce dimension that has size 1: same as identity.
 
     @Override
     protected TensorFunction lazyGetFunction() {

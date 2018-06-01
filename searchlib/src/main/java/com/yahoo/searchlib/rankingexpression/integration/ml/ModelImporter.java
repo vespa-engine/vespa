@@ -5,6 +5,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.integration.ml.importer.IntermediateGraph;
 import com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.Constant;
 import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.IntermediateOperation;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
@@ -16,8 +17,11 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public abstract class ModelImporter {
+
+    private static final Logger log = Logger.getLogger(ModelImporter.class.getName());
 
     /**
      * The main import function.
@@ -119,20 +123,6 @@ public abstract class ModelImporter {
             return operation.function();
         }
 
-//        Tensor tensor;
-//        if (operation.getConstantValue().isPresent()) {
-//            Value value = operation.getConstantValue().get();
-//            if ( ! (value instanceof TensorValue)) {
-//                return operation.function(); // scalar values are inserted directly into the expression
-//            }
-//            tensor = value.asTensor();
-//        } else {
-//            // Here we use the type from the operation, which will have correct dimension names after name resolving
-//            tensor = TensorConverter.toVespaTensor(readVariable(operation.node().getName(), bundle),
-//                                                   operation.type().get());
-//            operation.setConstantValue(new TensorValue(tensor));
-//        }
-
         Value value = operation.getConstantValue().orElseThrow(() ->
                 new IllegalArgumentException("Operation '" + operation.vespaName() + "' " +
                         "is constant but does not have a value."));
@@ -221,8 +211,20 @@ public abstract class ModelImporter {
         }
     }
 
+    /**
+     * Log all TensorFlow Variables (i.e file constants) imported as part of this with their ordered type.
+     * This allows users to learn the exact types (including dimension order after renaming) of the Variables
+     * such that these can be converted and fed to a parent document independently of the rest of the model
+     * for fast model weight updates.
+     */
     private static void logVariableTypes(IntermediateGraph graph, ImportedModel model) {
-        // todo
+        for (IntermediateOperation operation : graph.operations()) {
+            if ( ! (operation instanceof Constant)) continue;
+            if ( ! operation.type().isPresent()) continue; // will not happen
+
+            log.info("Importing TensorFlow variable " + operation.name() + " as " + operation.vespaName() +
+                    " of type " + operation.type().get());
+        }
     }
 
 }
