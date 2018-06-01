@@ -163,8 +163,8 @@ public class GraphImporter {
         }
 
         if (operation.isConstant()) {
-            org.tensorflow.Tensor<?> tensor = readVariable(nodeName, bundle);
-            operation.setConstantValueFunction(type -> new TensorValue(TensorConverter.toVespaTensor(tensor, type)));
+            operation.setConstantValueFunction(
+                    type -> new TensorValue(TensorConverter.toVespaTensor(readVariable(nodeName, bundle), type)));
         }
 
         return operation;
