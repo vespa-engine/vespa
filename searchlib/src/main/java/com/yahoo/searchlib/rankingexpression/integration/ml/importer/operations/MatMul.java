@@ -11,8 +11,8 @@ import java.util.Optional;
 
 public class MatMul extends IntermediateOperation {
 
-    public MatMul(String name, List<IntermediateOperation> inputs) {
-        super(name, inputs);
+    public MatMul(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, inputs);
     }
 
     @Override

@@ -15,8 +15,8 @@ public class Argument extends IntermediateOperation {
 
     private OrderedTensorType standardNamingType;  // using standard naming convention: d0, d1, ...
 
-    public Argument(String name, OrderedTensorType type) {
-        super(name, Collections.emptyList());
+    public Argument(String modelName, String nodeName, OrderedTensorType type) {
+        super(modelName, nodeName, Collections.emptyList());
         this.type = type.rename(vespaName() + "_");
         standardNamingType = OrderedTensorType.standardType(type);
     }

@@ -25,8 +25,8 @@ public class Mean extends IntermediateOperation {
     private final AttributeMap attributeMap;
     private List<String> reduceDimensions;
 
-    public Mean(String name, List<IntermediateOperation> inputs, AttributeMap attributeMap) {
-        super(name, inputs);
+    public Mean(String modelName, String nodeName, List<IntermediateOperation> inputs, AttributeMap attributeMap) {
+        super(modelName, nodeName, inputs);
         this.attributeMap = attributeMap;
     }
 

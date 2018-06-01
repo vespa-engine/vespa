@@ -18,8 +18,8 @@ public class Squeeze extends IntermediateOperation {
     private final AttributeMap attributeMap;
     private List<String> squeezeDimensions;
 
-    public Squeeze(String name, List<IntermediateOperation> inputs, AttributeMap attributeMap) {
-        super(name, inputs);
+    public Squeeze(String modelName, String nodeName, List<IntermediateOperation> inputs, AttributeMap attributeMap) {
+        super(modelName, nodeName, inputs);
         this.attributeMap = attributeMap;
     }
 

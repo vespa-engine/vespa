@@ -17,16 +17,14 @@ import java.util.Optional;
 
 public class Const extends IntermediateOperation {
 
-    private final String modelName;
     private final AttributeMap attributeMap;
 
-    public Const(String name,
+    public Const(String modelName,
+                 String nodeName,
                  List<IntermediateOperation> inputs,
                  AttributeMap attributeMap,
-                 OrderedTensorType type,
-                 String modelName) {
-        super(name, inputs);
-        this.modelName = modelName;
+                 OrderedTensorType type) {
+        super(modelName, nodeName, inputs);
         this.attributeMap = attributeMap;
         this.type = type.rename(vespaName() + "_");
         setConstantValue(value());

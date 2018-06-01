@@ -12,8 +12,8 @@ public class Map extends IntermediateOperation {
 
     private final DoubleUnaryOperator operator;
 
-    public Map(String name, List<IntermediateOperation> inputs, DoubleUnaryOperator operator) {
-        super(name, inputs);
+    public Map(String modelName, String nodeName, List<IntermediateOperation> inputs, DoubleUnaryOperator operator) {
+        super(modelName, nodeName, inputs);
         this.operator = operator;
     }
 

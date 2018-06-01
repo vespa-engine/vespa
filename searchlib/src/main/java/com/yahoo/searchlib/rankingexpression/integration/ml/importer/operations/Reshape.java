@@ -28,8 +28,8 @@ import static com.yahoo.searchlib.rankingexpression.integration.ml.importer.Orde
 
 public class Reshape extends IntermediateOperation {
 
-    public Reshape(String name, List<IntermediateOperation> inputs) {
-        super(name, inputs);
+    public Reshape(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, inputs);
     }
 
     @Override

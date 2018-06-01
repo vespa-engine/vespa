@@ -23,6 +23,7 @@ public abstract class IntermediateOperation {
     protected final static String MACRO_PREFIX = "imported_ml_macro_";
 
     protected final String name;
+    protected final String modelName;
     protected final List<IntermediateOperation> inputs;
     protected final List<IntermediateOperation> outputs = new ArrayList<>();
     protected final List<String> importWarnings = new ArrayList<>();
@@ -34,8 +35,9 @@ public abstract class IntermediateOperation {
     protected Function<OrderedTensorType, Value> constantValueFunction = null;
     protected List<IntermediateOperation> controlInputs = Collections.emptyList();
 
-    IntermediateOperation(String name, List<IntermediateOperation> inputs) {
+    IntermediateOperation(String modelName, String name, List<IntermediateOperation> inputs) {
         this.name = name;
+        this.modelName = modelName;
         this.inputs = Collections.unmodifiableList(inputs);
         this.inputs.forEach(i -> i.outputs.add(this));
     }
@@ -119,11 +121,7 @@ public abstract class IntermediateOperation {
     public String vespaName(String name) { return name != null ? namePartOf(name).replace('/', '_') : null; }
 
     /** Retrieve the valid Vespa name of this node if it is a macro */
-    public String macroName() {
-        return vespaName() != null ? MACRO_PREFIX + "_" + vespaName() : null;
-//        return vespaName() != null ? MACRO_PREFIX + modelName + "_" + vespaName() : null;
-        // todo: add model name
-    }
+    public String macroName() { return vespaName() != null ? MACRO_PREFIX + modelName + "_" + vespaName() : null; }
 
     /** Retrieve the list of warnings produced during its lifetime */
     public List<String> warnings() { return Collections.unmodifiableList(importWarnings); }

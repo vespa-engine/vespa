@@ -14,8 +14,8 @@ public class ConcatV2 extends IntermediateOperation {
 
     private String concatDimensionName;
 
-    public ConcatV2(String name, List<IntermediateOperation> inputs) {
-        super(name, inputs);
+    public ConcatV2(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, inputs);
     }
 
     @Override

@@ -21,8 +21,8 @@ public class ExpandDims extends IntermediateOperation {
 
     private List<String> expandDimensions;
 
-    public ExpandDims(String name, List<IntermediateOperation> inputs) {
-        super(name, inputs);
+    public ExpandDims(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, inputs);
     }
 
     @Override

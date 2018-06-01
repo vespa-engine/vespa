@@ -9,8 +9,8 @@ import java.util.Optional;
 
 public class PlaceholderWithDefault extends IntermediateOperation {
 
-    public PlaceholderWithDefault(String name, List<IntermediateOperation> inputs) {
-        super(name, inputs);
+    public PlaceholderWithDefault(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, inputs);
     }
 
     @Override

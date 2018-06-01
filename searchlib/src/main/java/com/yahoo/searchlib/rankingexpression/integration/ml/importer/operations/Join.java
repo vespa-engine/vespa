@@ -15,8 +15,8 @@ public class Join extends IntermediateOperation {
 
     private final DoubleBinaryOperator operator;
 
-    public Join(String name, List<IntermediateOperation> inputs, DoubleBinaryOperator operator) {
-        super(name, inputs);
+    public Join(String modelName, String nodeName, List<IntermediateOperation> inputs, DoubleBinaryOperator operator) {
+        super(modelName, nodeName, inputs);
         this.operator = operator;
     }
 

@@ -14,8 +14,8 @@ public class Constant extends IntermediateOperation {
 
     private final String modelName;
 
-    public Constant(String name, OrderedTensorType type, String modelName) {
-        super(name, Collections.emptyList());
+    public Constant(String modelName, String nodeName, OrderedTensorType type) {
+        super(modelName, nodeName, Collections.emptyList());
         this.modelName = modelName;
         this.type = type.rename(vespaName() + "_");
     }

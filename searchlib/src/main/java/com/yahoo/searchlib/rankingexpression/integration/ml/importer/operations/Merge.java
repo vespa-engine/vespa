@@ -8,8 +8,8 @@ import java.util.List;
 
 public class Merge extends IntermediateOperation {
 
-    public Merge(String name, List<IntermediateOperation> inputs) {
-        super(name, inputs);
+    public Merge(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, inputs);
     }
 
     @Override

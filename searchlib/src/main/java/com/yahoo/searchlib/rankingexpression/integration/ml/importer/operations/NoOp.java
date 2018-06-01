@@ -9,8 +9,8 @@ import java.util.List;
 
 public class NoOp extends IntermediateOperation {
 
-    public NoOp(String name, List<IntermediateOperation> inputs) {
-        super(name, Collections.emptyList());  // don't propagate inputs
+    public NoOp(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, Collections.emptyList());  // don't propagate inputs
     }
 
     @Override

@@ -12,8 +12,8 @@ import java.util.List;
 
 public class Shape extends IntermediateOperation {
 
-    public Shape(String name, List<IntermediateOperation> inputs) {
-        super(name, inputs);
+    public Shape(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, inputs);
         createConstantValue();
     }
 

@@ -11,8 +11,8 @@ public class Switch extends IntermediateOperation {
 
     private final int port;
 
-    public Switch(String name, List<IntermediateOperation> inputs, int port) {
-        super(name, inputs);
+    public Switch(String modelName, String nodeName, List<IntermediateOperation> inputs, int port) {
+        super(modelName, nodeName, inputs);
         this.port = port;
     }
 

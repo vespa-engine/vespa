@@ -19,15 +19,18 @@ import java.util.stream.Collectors;
 
 public class GraphImporter {
 
-    public static IntermediateOperation mapOperation(Onnx.NodeProto node, List<IntermediateOperation> inputs) {
+    public static IntermediateOperation mapOperation(Onnx.NodeProto node,
+                                                     List<IntermediateOperation> inputs,
+                                                     IntermediateGraph graph) {
         String nodeName = node.getName();
+        String modelName = graph.name();
 
         switch (node.getOpType().toLowerCase()) {
-            case "add":         return new Join(nodeName, inputs, ScalarFunctions.add());
-            case "matmul":      return new MatMul(nodeName, inputs);
+            case "add":         return new Join(modelName, nodeName, inputs, ScalarFunctions.add());
+            case "matmul":      return new MatMul(modelName, nodeName, inputs);
         }
 
-        IntermediateOperation op = new NoOp(node.getName(), inputs);
+        IntermediateOperation op = new NoOp(modelName, node.getName(), inputs);
         op.warning("Operation '" + node.getOpType() + "' is currently not implemented");
         return op;
     }
@@ -62,7 +65,7 @@ public class GraphImporter {
             if (valueInfoProto == null)
                 throw new IllegalArgumentException("Could not find argument tensor: " + name);
             OrderedTensorType type = TypeConverter.fromOnnxType(valueInfoProto.getType());
-            operation = new Argument(valueInfoProto.getName(), type);
+            operation = new Argument(intermediateGraph.name(), valueInfoProto.getName(), type);
 
             intermediateGraph.inputs(intermediateGraph.defaultSignature())
                     .put(IntermediateOperation.namePartOf(name), operation.vespaName());
@@ -70,14 +73,13 @@ public class GraphImporter {
         } else if (isConstantTensor(name, onnxGraph)) {
             Onnx.TensorProto tensorProto = getConstantTensor(name, onnxGraph);
             OrderedTensorType defaultType = OrderedTensorType.fromDimensionList(tensorProto.getDimsList());
-            operation = new Constant(name, defaultType, intermediateGraph.name());
+            operation = new Constant(intermediateGraph.name(), name, defaultType);
             operation.setConstantValueFunction(type -> new TensorValue(TensorConverter.toVespaTensor(tensorProto, type)));
 
         } else {
-
             Onnx.NodeProto node = getNodeFromGraph(name, onnxGraph);
             List<IntermediateOperation> inputs = importOperationInputs(node, onnxGraph, intermediateGraph);
-            operation = mapOperation(node, inputs);
+            operation = mapOperation(node, inputs, intermediateGraph);
 
             if (isOutputNode(name, onnxGraph)) {
                 intermediateGraph.outputs(intermediateGraph.defaultSignature())

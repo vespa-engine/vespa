@@ -8,11 +8,8 @@ import java.util.List;
 
 public class Identity extends IntermediateOperation {
 
-    private final String modelName;
-
-    public Identity(String name, List<IntermediateOperation> inputs, String modelName) {
-        super(name, inputs);
-        this.modelName = modelName;
+    public Identity(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+        super(modelName, nodeName, inputs);
     }
 
     /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
