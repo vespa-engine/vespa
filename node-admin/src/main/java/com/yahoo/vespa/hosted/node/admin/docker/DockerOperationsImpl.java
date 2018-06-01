@@ -91,7 +91,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withVolume("/var/lib/sia", "/var/lib/sia");
             }
 
-            // TODO Remove this once host-admin is available on-prem
+            // TODO When rolling out host-admin on-prem: Always map in /var/zpe from host + make sure zpu is configured on host
             if (environment.getCloud().equalsIgnoreCase("yahoo")) {
                 command.withVolume(environment.pathInHostFromPathInNode(containerName, Paths.get("var/zpe")).toString(),
                                    environment.pathInNodeUnderVespaHome("var/zpe").toString());
