@@ -18,11 +18,13 @@ import scala.collection.JavaConverters._
  * @author tonytv
  */
 class ConfigRetrieverTest {
+
   var dirConfigSource: DirConfigSource = null
 
   @Before def setup()  {
     dirConfigSource = new DirConfigSource("ConfigRetrieverTest-")
   }
+
   @After def cleanup() { dirConfigSource.cleanup() }
 
   @Test
@@ -46,6 +48,22 @@ class ConfigRetrieverTest {
     componentsConfigs match {
       case ComponentsConfigs(configs) => assertThat(configs.size, is(3))
       case _ => fail("ComponentsConfigs has unexpected type: " + componentsConfigs)
+    }
+  }
+
+  @Test
+  def require_no_reconfig_when_restart_on_redeploy() {
+    // TODO
+    writeConfigs()
+    val retriever = createConfigRetriever()
+    val bootstrapConfigs = retriever.getConfigs(Set(), 0)
+
+    val testConfigKey = new ConfigKey(classOf[TestConfig], dirConfigSource.configId)
+    val componentsConfigs = retriever.getConfigsOnce(Set(testConfigKey), 0, true)
+
+    componentsConfigs match {
+      case Some(snapshot) => fail("Expected no configs")
+      case _ => // ok
     }
   }
 

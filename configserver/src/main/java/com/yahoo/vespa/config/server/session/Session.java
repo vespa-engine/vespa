@@ -9,8 +9,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
  * class represents the common stuff between sessions working on the local file
  * system ({@link LocalSession}s) and sessions working on zookeeper {@link RemoteSession}s.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public abstract class Session {
 

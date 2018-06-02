@@ -39,7 +39,7 @@ public class ConfigGetterTest {
         assertThat(config, is(serviceConfig));
     }
 
-@Test
+    @Test
     public void testGetFromRawSource() {
         ConfigGetter<AppConfig> getter = new ConfigGetter<>(new RawSource("message \"one\""), AppConfig.class);
         AppConfig config = getter.getConfig("test");

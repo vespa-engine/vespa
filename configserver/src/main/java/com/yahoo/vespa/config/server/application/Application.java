@@ -32,23 +32,26 @@ import java.util.Set;
  * a Vespa application, i.e. generation, model and zookeeper data, as well as methods for resolving config
  * and other queries against the model.
  *
- * @author Harald Musum
+ * @author hmusum
  */
 public class Application implements ModelResult {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Application.class.getName());
     private final long appGeneration; // The generation of the set of configs belonging to an application
+    private final boolean internalRedeploy;
     private final Version vespaVersion;
     private final Model model;
     private final ServerCache cache;
     private final MetricUpdater metricUpdater;
     private final ApplicationId app;
 
-    public Application(Model model, ServerCache cache, long appGeneration, Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {
+    public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
+                       Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {
         Objects.requireNonNull(model, "The model cannot be null");
         this.model = model;
         this.cache = cache;
         this.appGeneration = appGeneration;
+        this.internalRedeploy = internalRedeploy;
         this.vespaVersion = vespaVersion;
         this.metricUpdater = metricUpdater;
         this.app = app;
@@ -106,7 +109,7 @@ public class Application implements ModelResult {
             debug("Resolving config " + cacheKey);
         }
 
-        if (!req.noCache()) {
+        if ( ! req.noCache()) {
             ConfigResponse config = cache.get(cacheKey);
             if (config != null) {
                 if (logDebug()) {
@@ -131,9 +134,9 @@ public class Application implements ModelResult {
             throw new ConfigurationRuntimeException("Unable to resolve config " + configKey);
         }
 
-        ConfigResponse configResponse = responseFactory.createResponse(payload, def.getCNode(), appGeneration);
+        ConfigResponse configResponse = responseFactory.createResponse(payload, def.getCNode(), appGeneration, internalRedeploy);
         metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
-        if (!req.noCache()) {
+        if ( ! req.noCache()) {
             cache.put(cacheKey, configResponse, configResponse.getConfigMd5());
             metricUpdater.setCacheConfigElems(cache.configElems());
             metricUpdater.setCacheChecksumElems(cache.checkSumElems());

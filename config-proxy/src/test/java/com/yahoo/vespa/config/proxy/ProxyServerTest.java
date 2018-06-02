@@ -18,7 +18,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author hmusum
- * @since 5.1.9
  */
 public class ProxyServerTest {
 
@@ -35,7 +34,7 @@ public class ProxyServerTest {
     private static final ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
     static final RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(),
             fooConfig.getPayload(), fooConfig.getConfigMd5(),
-            fooConfig.getGeneration(), ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
+            fooConfig.getGeneration(), false, ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -223,7 +222,8 @@ public class ProxyServerTest {
     private static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload) {
         return new RawConfig(config.getKey(), config.getDefMd5(),
                              payload, config.getConfigMd5(),
-                             config.getGeneration() + 1, errorCode, config.getDefContent(), Optional.empty());
+                             config.getGeneration() + 1, false,
+                             errorCode, config.getDefContent(), Optional.empty());
     }
 
 }

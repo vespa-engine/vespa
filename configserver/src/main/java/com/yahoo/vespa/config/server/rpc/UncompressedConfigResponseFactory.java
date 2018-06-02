@@ -13,17 +13,19 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 /**
  * Simply returns an uncompressed payload.
  *
- * @author lulf
- * @since 5.19
+ * @author Ulf Lilleengen
  */
 public class UncompressedConfigResponseFactory implements ConfigResponseFactory {
 
     @Override
-    public ConfigResponse createResponse(ConfigPayload payload, InnerCNode defFile, long generation) {
+    public ConfigResponse createResponse(ConfigPayload payload,
+                                         InnerCNode defFile,
+                                         long generation,
+                                         boolean internalRedeployment) {
         Utf8Array rawPayload = payload.toUtf8Array(true);
         String configMd5 = ConfigUtils.getMd5(rawPayload);
         CompressionInfo info = CompressionInfo.create(CompressionType.UNCOMPRESSED, rawPayload.getByteLength());
-        return new SlimeConfigResponse(rawPayload, defFile, generation, configMd5, info);
+        return new SlimeConfigResponse(rawPayload, defFile, generation, internalRedeployment, configMd5, info);
     }
 
 }

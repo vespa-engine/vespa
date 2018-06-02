@@ -12,12 +12,9 @@ import com.yahoo.container.di.Osgi;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import org.junit.Before;
 import org.osgi.framework.Bundle;
-import scala.collection.*;
-import scala.collection.immutable.*;
 import scala.collection.immutable.Set;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * @author tonytv
@@ -62,7 +59,7 @@ public class ContainerTestBase extends ContainerTest {
                             throw new UnsupportedOperationException("getBundle not supported.");
                         }
                     });
-            componentGraph = container.runOnce(componentGraph, Guice.createInjector());
+            componentGraph = container.getNewComponentGraph(componentGraph, Guice.createInjector(), false);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -60,14 +60,14 @@ public class RawConfigTest {
         assertThat(config.hashCode(), is(not(new RawConfig(key, "a").hashCode()))); // different def md5
 
         // different generation
-        config = new RawConfig(key, defMd5, payload, configMd5, generation, defContent, Optional.empty());
-        RawConfig config2 = new RawConfig(key, defMd5, payload, configMd5, 2L, defContent, Optional.empty());
+        config = new RawConfig(key, defMd5, payload, configMd5, generation, false, defContent, Optional.empty());
+        RawConfig config2 = new RawConfig(key, defMd5, payload, configMd5, 2L, false, defContent, Optional.empty());
         assertThat(config, is(not(config2)));
         assertThat(config.hashCode(), is(not(config2.hashCode())));
 
         // different config md5 and with vespa version
         final VespaVersion vespaVersion = VespaVersion.fromString("5.37.38");
-        RawConfig config3 = new RawConfig(key, defMd5, payload, "9999", generation, defContent, Optional.of(vespaVersion));
+        RawConfig config3 = new RawConfig(key, defMd5, payload, "9999", generation, false, defContent, Optional.of(vespaVersion));
         assertThat(config, is(not(config3)));
         assertThat(config.hashCode(), is(not(config3.hashCode())));
         // Check that vespa version is set correctly
@@ -81,19 +81,19 @@ public class RawConfigTest {
         assertFalse(config.equals(key));
 
         // errors
-        RawConfig errorConfig1 = new RawConfig(key, defMd5, payload, configMd5, generation, 1, defContent, Optional.empty());
+        RawConfig errorConfig1 = new RawConfig(key, defMd5, payload, configMd5, generation, false, 1, defContent, Optional.empty());
         assertThat(errorConfig1, is(errorConfig1));
         assertThat(config, is(not(errorConfig1)));
         assertThat(config.hashCode(), is(not(errorConfig1.hashCode())));
         assertThat(errorConfig1, is(errorConfig1));
-        RawConfig errorConfig2 = new RawConfig(key, defMd5, payload, configMd5, generation, 2, defContent, Optional.empty());
+        RawConfig errorConfig2 = new RawConfig(key, defMd5, payload, configMd5, generation, false, 2, defContent, Optional.empty());
         assertThat(errorConfig1, is(not(errorConfig2)));
         assertThat(errorConfig1.hashCode(), is(not(errorConfig2.hashCode())));
     }
 
     @Test
     public void payload() {
-        RawConfig config = new RawConfig(key, defMd5, payload, configMd5, generation, defContent, Optional.empty());
+        RawConfig config = new RawConfig(key, defMd5, payload, configMd5, generation, false, defContent, Optional.empty());
         assertThat(config.getPayload(), is(payload));
         assertThat(config.getConfigMd5(), is(configMd5));
         assertThat(config.getGeneration(), is(generation));
@@ -104,19 +104,19 @@ public class RawConfigTest {
     public void require_correct_defmd5() {
         final String defMd5ForEmptyDefContent = "d41d8cd98f00b204e9800998ecf8427e";
 
-        RawConfig config = new RawConfig(key, null, payload, configMd5, generation, defContent, Optional.empty());
+        RawConfig config = new RawConfig(key, null, payload, configMd5, generation, false, defContent, Optional.empty());
         assertThat(config.getDefMd5(), is(defMd5));
-        config = new RawConfig(key, "", payload, configMd5, generation, defContent, Optional.empty());
+        config = new RawConfig(key, "", payload, configMd5, generation, false, defContent, Optional.empty());
         assertThat(config.getDefMd5(), is(defMd5));
-        config = new RawConfig(key, defMd5, payload, configMd5, generation, defContent, Optional.empty());
+        config = new RawConfig(key, defMd5, payload, configMd5, generation, false, defContent, Optional.empty());
         assertThat(config.getDefMd5(), is(defMd5));
-        config = new RawConfig(key, null, payload, configMd5, generation, null, Optional.empty());
+        config = new RawConfig(key, null, payload, configMd5, generation, false, null, Optional.empty());
         assertNull(config.getDefMd5());
-        config = new RawConfig(key, null, payload, configMd5, generation, Arrays.asList(""), Optional.empty());
+        config = new RawConfig(key, null, payload, configMd5, generation, false, Arrays.asList(""), Optional.empty());
         assertThat(config.getDefMd5(), is(defMd5ForEmptyDefContent));
-        config = new RawConfig(key, "", payload, configMd5, generation, null, Optional.empty());
+        config = new RawConfig(key, "", payload, configMd5, generation, false, null, Optional.empty());
         assertThat(config.getDefMd5(), is(""));
-        config = new RawConfig(key, "", payload, configMd5, generation, Arrays.asList(""), Optional.empty());
+        config = new RawConfig(key, "", payload, configMd5, generation, false, Arrays.asList(""), Optional.empty());
         assertThat(config.getDefMd5(), is(defMd5ForEmptyDefContent));
     }
 

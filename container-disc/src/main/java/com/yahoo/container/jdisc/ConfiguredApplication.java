@@ -128,7 +128,7 @@ public final class ConfiguredApplication implements Application {
         configureComponents(builder.guiceModules().activate());
 
         intitializeAndActivateContainer(builder);
-        if (! qrConfig.restartOnDeploy()) startReconfigurerThread();
+        startReconfigurerThread();
         portWatcher = new Thread(this::watchPortChange);
         portWatcher.setDaemon(true);
         portWatcher.start();
@@ -199,7 +199,9 @@ public final class ConfiguredApplication implements Application {
             while ( ! Thread.interrupted()) {
                 try {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
-                    configurer.runOnceAndEnsureRegistryHackRun(builder.guiceModules().activate());
+
+                    // Block until new config arrives, and it should be applied
+                    configurer.getNewComponentGraph(builder.guiceModules().activate(), qrConfig.restartOnDeploy());
                     intitializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException | InterruptedException e) {
                     break;

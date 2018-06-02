@@ -43,7 +43,14 @@ public class ZooKeeperClientTest extends TestWithCurator {
     public void setupZK() throws IOException {
         this.zk = ConfigCurator.create(curator);
         ZooKeeperClient zkc = new ZooKeeperClient(zk, new BaseDeployLogger(), true, Path.fromString(appPath));
-        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"), new DeployData("foo", "/bar/baz", "appName", 1345l, 3l, 2l));
+        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
+                                                                                new DeployData("foo",
+                                                                                               "/bar/baz",
+                                                                                               "appName",
+                                                                                               1345L,
+                                                                                               true,
+                                                                                               3L,
+                                                                                               2L));
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
         app.writeMetaData();
         zkc.setupZooKeeper();
@@ -97,7 +104,7 @@ public class ZooKeeperClientTest extends TestWithCurator {
     // TODO: Evaluate if we want this or not
     @Test
     @Ignore
-    public void testFeedComponentsFileReferencesToZooKeeper() throws IOException {
+    public void testFeedComponentsFileReferencesToZooKeeper() {
         final String appDir = "src/test/apps/app_sdbundles";
         ConfigCurator zk = ConfigCurator.create(new MockCurator());
         BaseDeployLogger logger = new BaseDeployLogger();
@@ -120,6 +127,7 @@ public class ZooKeeperClientTest extends TestWithCurator {
         ApplicationMetaData metaData = ApplicationMetaData.fromJsonString(zk.getData(appPath, ConfigCurator.META_ZK_PATH));
         assertThat(metaData.getApplicationName(), is("appName"));
         assertTrue(metaData.getCheckSum().length() > 0);
+        assertTrue(metaData.isInternalRedeploy());
         assertThat(metaData.getDeployedByUser(), is("foo"));
         assertThat(metaData.getDeployPath(), is("/bar/baz"));
         assertThat(metaData.getDeployTimestamp(), is(1345l));

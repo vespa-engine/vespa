@@ -29,9 +29,9 @@ public class ApplicationSetTest {
         vespaVersions.add(Version.fromString("1.2.3"));
         vespaVersions.add(Version.fromString("1.2.4"));
         vespaVersions.add(Version.fromString("1.2.5"));
-        applications.add(new Application(new ModelStub(), null, 0, vespaVersions.get(0), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
-        applications.add(new Application(new ModelStub(), null, 0, vespaVersions.get(1), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
-        applications.add(new Application(new ModelStub(), null, 0, vespaVersions.get(2), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
+        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(0), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
+        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(1), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
+        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(2), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
     }
 
     @Test

@@ -7,8 +7,7 @@ import com.yahoo.vespa.config.server.RequestHandler;
 /**
  * Represents something that can provide request and reload handlers of a tenant.
  *
- * @author lulf
- * @since 5.3
+ * @author Ulf Lilleengen
  */
 public interface TenantHandlerProvider {
 

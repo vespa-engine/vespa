@@ -108,6 +108,9 @@ public class GetConfigProcessorTest {
         }
 
         @Override
+        public boolean isInternalRedeploy() { return false; }
+
+        @Override
         public String getConfigMd5() {
             return "mymd5";
         }

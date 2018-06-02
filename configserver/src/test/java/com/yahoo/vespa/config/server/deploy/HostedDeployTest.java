@@ -15,6 +15,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 
+import com.yahoo.vespa.config.server.session.LocalSession;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -50,12 +51,18 @@ public class HostedDeployTest {
     @Test
     public void testRedeploy() {
         DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
-        tester.deployApp("myApp", Instant.now());
+        ApplicationId appId = tester.deployApp("myApp", Instant.now());
+        LocalSession s1 = tester.applicationRepository().getActiveSession(appId);
+        System.out.println("First session: " + s1.getSessionId());
+        assertFalse(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
         assertTrue(deployment.isPresent());
         deployment.get().prepare();
         deployment.get().activate();
+        LocalSession s2 = tester.applicationRepository().getActiveSession(appId);
+        System.out.println("Second session: " + s2.getSessionId());
+        assertTrue(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
     }
 
     @Test

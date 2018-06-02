@@ -14,7 +14,6 @@ import com.yahoo.vespa.config.*;
 
 /**
  * @author gjoranv
- * @since 5.1.6
  */
 public class ConfigInstanceUtil {
 
@@ -34,8 +33,8 @@ public class ConfigInstanceUtil {
             setter.invoke(destination, source);
             setter.setAccessible(false);
         } catch (Exception e) {
-            throw new ConfigurationRuntimeException("Could not set values on config builder."
-                    + destination.getClass().getName(), e);
+            throw new ConfigurationRuntimeException("Could not set values on config builder." +
+                                                    destination.getClass().getName(), e);
         }
     }
 

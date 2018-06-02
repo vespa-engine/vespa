@@ -65,8 +65,13 @@ public class TenantRepositoryTest extends TestWithCurator {
     @Test
     public void testListenersAdded() throws IOException, SAXException {
         tenantRepository.getTenant(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(
-                new Application(new VespaModel(MockApplicationPackage.createEmpty()), new ServerCache(), 4l,
-                        Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), ApplicationId.defaultId())));
+                new Application(new VespaModel(MockApplicationPackage.createEmpty()),
+                                new ServerCache(),
+                                4L,
+                                false,
+                                Version.fromIntValues(1, 2, 3),
+                                MetricUpdater.createTestUpdater(),
+                                ApplicationId.defaultId())));
         assertThat(listener.reloaded.get(), is(1));
     }
 

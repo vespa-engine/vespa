@@ -7,14 +7,12 @@ import java.util.Random
 import org.junit.rules.TemporaryFolder
 import com.yahoo.config.subscription.{ConfigSource, ConfigSourceSet}
 
-// TODO: Make this a junit rule. Does not yet work. Look out for junit updates
-//       (@Rule def configSourceRule  = dirConfigSource)
-
 /**
  * @author tonytv
  * @author gjoranv
  */
 class DirConfigSource(val testSourcePrefix: String) {
+
   private val tempFolder = createTemporaryFolder()
 
   val configSource : ConfigSource = new ConfigSourceSet(testSourcePrefix + new Random().nextLong)
@@ -32,9 +30,11 @@ class DirConfigSource(val testSourcePrefix: String) {
   def cleanup() {
     tempFolder.delete()
   }
+
 }
 
 private object DirConfigSource {
+
   def printFile(f: File, content: String) {
     var out: OutputStream = new FileOutputStream(f)
     out.write(content.getBytes("UTF-8"))
@@ -46,4 +46,5 @@ private object DirConfigSource {
     folder.create()
     folder
   }
+
 }

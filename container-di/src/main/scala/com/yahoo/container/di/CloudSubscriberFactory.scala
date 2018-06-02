@@ -16,9 +16,8 @@ import scala.language.existentials
 /**
  * @author Tony Vaagenes
  */
+class CloudSubscriberFactory(configSource: ConfigSource) extends SubscriberFactory {
 
-class CloudSubscriberFactory(configSource: ConfigSource) extends SubscriberFactory
-{
   private var testGeneration: Option[Long] = None
 
   private val activeSubscribers = new java.util.WeakHashMap[CloudSubscriber, Int]()
@@ -50,8 +49,11 @@ object CloudSubscriberFactory {
     private val handles: Map[ConfigKeyT, ConfigHandle[_ <: ConfigInstance]] = keys.map(subscribe).toMap
 
 
-    //if waitNextGeneration has not yet been called, -1 should be returned
+    // if waitNextGeneration has not yet been called, -1 should be returned
     var generation: Long = -1
+
+    // True if this reconfiguration was caused by a system-internal redeploy, not an external application change
+    var internalRedeploy: Boolean = false
 
     private def subscribe(key: ConfigKeyT) = (key, subscriber.subscribe(key.getConfigClass, key.getConfigId))
 
@@ -79,13 +81,14 @@ object CloudSubscriberFactory {
           case e: IllegalArgumentException =>
             numExceptions += 1
             log.log(Level.WARNING, "Got exception from the config system (please ignore the exception if you just removed "
-                          + "a component from your application that used the mentioned config): ", e)
+                                   + "a component from your application that used the mentioned config): ", e)
             if (numExceptions >= 5)
               throw new IllegalArgumentException("Failed retrieving the next config generation.", e)
         }
       }
 
       generation = subscriber.getGeneration
+      internalRedeploy = subscriber.isInternalRedeploy
       generation
     }
 

@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 
 /**
 * @author hmusum
-* @since 5.1
 */
 class GetConfigProcessor implements Runnable {
 
@@ -30,8 +29,9 @@ class GetConfigProcessor implements Runnable {
     private static final String localHostName = HostName.getLocalhost();
 
     private final JRTServerConfigRequest request;
+
     /* True only when this request has expired its server timeout and we need to respond to the client */
-    private boolean forceResponse = false;
+    private final boolean forceResponse;
     private final RpcServer rpcServer;
     private String logPre = "";
 
@@ -64,7 +64,7 @@ class GetConfigProcessor implements Runnable {
     // TODO: Increment statistics (Metrics) failed counters when requests fail
     public void run() {
         //Request has already been detached
-        if (!request.validateParameters()) {
+        if ( ! request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
             log.log(LogLevel.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
             respond(request);
@@ -121,7 +121,7 @@ class GetConfigProcessor implements Runnable {
         // config == null is not an error, but indicates that the config will be returned later.
         if ((config != null) && (!config.hasEqualConfig(request) || config.hasNewerGeneration(request) || forceResponse)) {
             // debugLog(trace, "config response before encoding:" + config.toString());
-            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.getConfigMd5());
+            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.isInternalRedeploy(), config.getConfigMd5());
             if (logDebug(trace)) {
                 debugLog(trace, "return response: " + request.getShortDescription());
             }
@@ -146,8 +146,8 @@ class GetConfigProcessor implements Runnable {
     private void returnEmpty(JRTServerConfigRequest request) {
         ConfigPayload emptyPayload = ConfigPayload.empty();
         String configMd5 = ConfigUtils.getMd5(emptyPayload);
-        ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, null, 0, configMd5);
-        request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.getConfigMd5());
+        ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, null, 0, false, configMd5);
+        request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, config.getConfigMd5());
         respond(request);
     }
 
@@ -161,4 +161,5 @@ class GetConfigProcessor implements Runnable {
             trace.trace(RpcServer.TRACELEVEL_DEBUG, logPre + message);
         }
     }
+
 }

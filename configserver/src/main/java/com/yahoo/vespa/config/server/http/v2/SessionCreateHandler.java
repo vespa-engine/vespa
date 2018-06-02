@@ -58,7 +58,7 @@ public class SessionCreateHandler extends SessionHandler {
         long sessionId;
         if (request.hasProperty("from")) {
             ApplicationId applicationId = getFromApplicationId(request);
-            sessionId = applicationRepository.createSessionFromExisting(applicationId, logger, timeoutBudget);
+            sessionId = applicationRepository.createSessionFromExisting(applicationId, logger, false, timeoutBudget);
         } else {
             validateDataAndHeader(request);
             String name = getNameProperty(request, logger);

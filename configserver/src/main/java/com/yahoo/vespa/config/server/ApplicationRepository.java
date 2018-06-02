@@ -184,6 +184,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     /**
      * Creates a new deployment from the active application, if available.
+     * This is used for system internal redeployments, not on application package changes.
      *
      * @param application the active application to be redeployed
      * @return a new deployment from the local active, or empty if a local active application
@@ -196,6 +197,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     /**
      * Creates a new deployment from the active application, if available.
+     * This is used for system internal redeployments, not on application package changes.
      *
      * @param application the active application to be redeployed
      * @param timeout the timeout to use for each individual deployment operation
@@ -210,7 +212,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession activeSession = getActiveSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-        LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, timeoutBudget);
+        LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         tenant.getLocalSessionRepo().addSession(newSession);
 
         // Keep manually deployed tenant applications on the latest version, don't change version otherwise
@@ -400,12 +402,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             throw new IllegalStateException("Session not prepared: " + sessionId);
     }
 
-    public long createSessionFromExisting(ApplicationId applicationId, DeployLogger logger, TimeoutBudget timeoutBudget) {
+    public long createSessionFromExisting(ApplicationId applicationId,
+                                          DeployLogger logger,
+                                          boolean internalRedeploy,
+                                          TimeoutBudget timeoutBudget) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         SessionFactory sessionFactory = tenant.getSessionFactory();
         LocalSession fromSession = getExistingSession(tenant, applicationId);
-        LocalSession session = sessionFactory.createSessionFromExisting(fromSession, logger, timeoutBudget);
+        LocalSession session = sessionFactory.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
         localSessionRepo.addSession(session);
         return session.getSessionId();
     }

@@ -10,7 +10,7 @@ import java.io.File;
 /**
  * A session factory responsible for creating deploy sessions.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public interface SessionFactory {
 
@@ -31,9 +31,11 @@ public interface SessionFactory {
      *
      * @param existingSession The session to use as base
      * @param logger a deploy logger where the deploy log will be written.
+     * @param internalRedeploy if this session is for a system internal redeploy not an application package change
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger, TimeoutBudget timeoutBudget);
+    LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger,
+                                           boolean internalRedeploy, TimeoutBudget timeoutBudget);
 
 }

@@ -42,8 +42,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.1.14
+ * @author Ulf Lilleengen
  */
 public class ApplicationTest {
 
@@ -53,7 +52,7 @@ public class ApplicationTest {
                                               ApplicationName.from("foobar"), InstanceName.defaultName());
         ServerCache cache = new ServerCache();
         Version vespaVersion = Version.fromIntValues(1, 2, 3);
-        Application app = new Application(new ModelStub(), cache, 1337, vespaVersion, MetricUpdater.createTestUpdater(), appId);
+        Application app = new Application(new ModelStub(), cache, 1337L, false, vespaVersion, MetricUpdater.createTestUpdater(), appId);
         assertThat(app.getApplicationGeneration(), is(1337l));
         assertNotNull(app.getModel());
         assertThat(app.getCache(), is(cache));
@@ -71,24 +70,24 @@ public class ApplicationTest {
         File testApp = new File("src/test/apps/app");
         ServerCache cache = createCacheAndAddContent();
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(testApp));
-        final ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("foo").build();
-        handler = new Application(model, cache, 1, Version.fromIntValues(1, 2, 3),
+        ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("foo").build();
+        handler = new Application(model, cache, 1L, false, Version.fromIntValues(1, 2, 3),
                                   new MetricUpdater(Metrics.createTestMetrics(), Metrics.createDimensions(applicationId)), applicationId);
     }
 
     private static ServerCache createCacheAndAddContent() {
         ServerCache cache = new ServerCache();
 
-        final ConfigDefinitionKey key = new ConfigDefinitionKey(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE);
+        ConfigDefinitionKey key = new ConfigDefinitionKey(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE);
         com.yahoo.vespa.config.buildergen.ConfigDefinition def = getDef(key, SimpletypesConfig.CONFIG_DEF_SCHEMA);
         // TODO Why do we have to use empty def md5 here?
         cache.addDef(key, def);
 
-        final ConfigDefinitionKey key2 = new ConfigDefinitionKey(SlobroksConfig.CONFIG_DEF_NAME, SlobroksConfig.CONFIG_DEF_NAMESPACE);
+        ConfigDefinitionKey key2 = new ConfigDefinitionKey(SlobroksConfig.CONFIG_DEF_NAME, SlobroksConfig.CONFIG_DEF_NAMESPACE);
         com.yahoo.vespa.config.buildergen.ConfigDefinition def2 = getDef(key2, SlobroksConfig.CONFIG_DEF_SCHEMA);
         cache.addDef(key2, def2);
 
-        final ConfigDefinitionKey key3 = new ConfigDefinitionKey(LogdConfig.CONFIG_DEF_NAME, LogdConfig.CONFIG_DEF_NAMESPACE);
+        ConfigDefinitionKey key3 = new ConfigDefinitionKey(LogdConfig.CONFIG_DEF_NAME, LogdConfig.CONFIG_DEF_NAMESPACE);
         com.yahoo.vespa.config.buildergen.ConfigDefinition def3 = getDef(key3, LogdConfig.CONFIG_DEF_SCHEMA);
         cache.addDef(key3, def3);
 

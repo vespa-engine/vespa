@@ -31,8 +31,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SessionFactoryTest extends TestWithTenant {
     private SessionFactory factory;
@@ -64,10 +63,13 @@ public class SessionFactoryTest extends TestWithTenant {
     public void require_that_session_can_be_created_from_existing() throws IOException {
         LocalSession session = getLocalSession();
         assertNotNull(session);
-        assertThat(session.getSessionId(), is(2l));
-        LocalSession session2 = factory.createSessionFromExisting(session, new BaseDeployLogger(), TimeoutBudgetTest.day());
+        assertThat(session.getSessionId(), is(2L));
+        LocalSession session2 = factory.createSessionFromExisting(session,
+                                                                  new BaseDeployLogger(),
+                                                                  false,
+                                                                  TimeoutBudgetTest.day());
         assertNotNull(session2);
-        assertThat(session2.getSessionId(), is(3l));
+        assertThat(session2.getSessionId(), is(3L));
     }
 
     @Test(expected = RuntimeException.class)

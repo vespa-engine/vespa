@@ -44,7 +44,7 @@ class ContainerTest {
 
     val container = newContainer(dirConfigSource)
 
-    val component = createComponentTakingConfig(container.runOnce())
+    val component = createComponentTakingConfig(container.getNewComponentGraph())
     assertThat(component.config.stringVal(), is("myString"))
 
     container.shutdownConfigurer()
@@ -57,7 +57,7 @@ class ContainerTest {
 
     val container = newContainer(dirConfigSource)
 
-    val componentGraph = container.runOnce()
+    val componentGraph = container.getNewComponentGraph()
     val component = createComponentTakingConfig(componentGraph)
 
     assertThat(component.config.stringVal(), is("original"))
@@ -66,7 +66,7 @@ class ContainerTest {
     dirConfigSource.writeConfig("test", """stringVal "reconfigured" """)
     container.reloadConfig(2)
 
-    val newComponentGraph = container.runOnce(componentGraph)
+    val newComponentGraph = container.getNewComponentGraph(componentGraph)
     val component2 = createComponentTakingConfig(newComponentGraph)
     assertThat(component2.config.stringVal(), is("reconfigured"))
 
@@ -80,7 +80,7 @@ class ContainerTest {
 
     val container = newContainer(dirConfigSource)
 
-    val graph = container.runOnce()
+    val graph = container.getNewComponentGraph()
     val component = createComponentTakingConfig(graph)
     assertThat(component.getId.toString, is("id1"))
 
@@ -89,7 +89,7 @@ class ContainerTest {
       ("id2", classOf[ComponentTakingConfig])))
 
     container.reloadConfig(2)
-    val newGraph = container.runOnce(graph)
+    val newGraph = container.getNewComponentGraph(graph)
 
     assertThat(ComponentGraph.getNode(newGraph, "id1"), notNullValue(classOf[Node]))
     assertThat(ComponentGraph.getNode(newGraph, "id2"), notNullValue(classOf[Node]))
@@ -107,12 +107,12 @@ class ContainerTest {
 
     val container = newContainer(dirConfigSource)
 
-    val oldGraph = container.runOnce()
+    val oldGraph = container.getNewComponentGraph()
     val componentToDestruct = oldGraph.getInstance(classOf[DestructableComponent])
 
     writeBootstrapConfigs("id2", classOf[DestructableComponent])
     container.reloadConfig(2)
-    container.runOnce(oldGraph)
+    container.getNewComponentGraph(oldGraph)
     assertTrue(componentToDestruct.deconstructed)
   }
 
@@ -123,7 +123,7 @@ class ContainerTest {
     val container = newContainer(dirConfigSource)
     var currentGraph: ComponentGraph = null
     try {
-      currentGraph = container.runOnce()
+      currentGraph = container.getNewComponentGraph()
       fail("Expected to log and die.")
     } catch {
       case _: Throwable => fail("Expected to log and die")
@@ -136,14 +136,14 @@ class ContainerTest {
 
     writeBootstrapConfigs(Array(simpleComponentEntry))
     val container = newContainer(dirConfigSource)
-    var currentGraph = container.runOnce()
+    var currentGraph = container.getNewComponentGraph()
 
     val simpleComponent = currentGraph.getInstance(classOf[SimpleComponent])
 
     writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionInConstructor])
     container.reloadConfig(2)
     try {
-      currentGraph = container.runOnce(currentGraph)
+      currentGraph = container.getNewComponentGraph(currentGraph)
       fail("Expected exception")
     } catch {
       case _: ComponentConstructorException => // Expected, do nothing
@@ -156,7 +156,7 @@ class ContainerTest {
     dirConfigSource.writeConfig("test", """stringVal "myString" """)
     writeBootstrapConfigs(Array(simpleComponentEntry, componentTakingConfigEntry))
     container.reloadConfig(3)
-    currentGraph = container.runOnce(currentGraph)
+    currentGraph = container.getNewComponentGraph(currentGraph)
 
     assertEquals(3, currentGraph.generation)
     assertSame(simpleComponent, currentGraph.getInstance(classOf[SimpleComponent]))
@@ -169,7 +169,7 @@ class ContainerTest {
 
     writeBootstrapConfigs(Array(simpleComponentEntry))
     val container = newContainer(dirConfigSource)
-    var currentGraph = container.runOnce()
+    var currentGraph = container.getNewComponentGraph()
 
     val simpleComponent = currentGraph.getInstance(classOf[SimpleComponent])
 
@@ -177,7 +177,7 @@ class ContainerTest {
     dirConfigSource.writeConfig("test", """stringVal "myString" """)
     container.reloadConfig(2)
     try {
-      currentGraph = container.runOnce(currentGraph)
+      currentGraph = container.getNewComponentGraph(currentGraph)
       fail("Expected exception")
     } catch {
       case _: IllegalArgumentException => // Expected, do nothing
@@ -192,20 +192,20 @@ class ContainerTest {
     writeBootstrapConfigs("myId", classOf[ComponentTakingConfig])
 
     val container = newContainer(dirConfigSource)
-    var currentGraph = container.runOnce()
+    var currentGraph = container.getNewComponentGraph()
 
     writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionForMissingConfig])
     container.reloadConfig(2)
 
     try {
-      currentGraph = container.runOnce(currentGraph)
+      currentGraph = container.getNewComponentGraph(currentGraph)
       fail("expected exception")
     } catch {
       case e: Exception =>
     }
 
     val newGraph = Future {
-      currentGraph = container.runOnce(currentGraph)
+      currentGraph = container.getNewComponentGraph(currentGraph)
       currentGraph
     }
 
@@ -230,7 +230,7 @@ class ContainerTest {
     dirConfigSource.writeConfig("jersey-injection", """inject[0]" """)
 
     val container = newContainer(dirConfigSource)
-    val componentGraph = container.runOnce()
+    val componentGraph = container.getNewComponentGraph()
 
     val restApiContext = componentGraph.getInstance(clazz)
     assertNotNull(restApiContext)
@@ -278,7 +278,7 @@ class ContainerTest {
     dirConfigSource.writeConfig("jersey-injection", injectionConfig)
 
     val container = newContainer(dirConfigSource)
-    val componentGraph = container.runOnce()
+    val componentGraph = container.getNewComponentGraph()
 
     val restApiContext = componentGraph.getInstance(restApiClass)
   }
@@ -328,12 +328,12 @@ class ContainerTest {
 
     val container = newContainer(dirConfigSource, deconstructor)
 
-    val oldGraph = container.runOnce()
+    val oldGraph = container.getNewComponentGraph()
     val destructableEntity = oldGraph.getInstance(classOf[DestructableEntity])
 
     writeBootstrapConfigs("id2", classOf[DestructableProvider])
     container.reloadConfig(2)
-    container.runOnce(oldGraph)
+    container.getNewComponentGraph(oldGraph)
 
     assertTrue(destructableEntity.deconstructed)
   }

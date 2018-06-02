@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.test;
 
+import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationFile;
@@ -39,6 +40,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final Optional<String> validationOverrides;
     private final boolean failOnValidateXml;
     private final QueryProfileRegistry queryProfileRegistry;
+    private final ApplicationMetaData applicationMetaData;
 
     protected MockApplicationPackage(String hosts, String services, List<String> searchDefinitions, String searchDefinitionDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
@@ -52,6 +54,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
                                                                 asNamedReaderList(queryProfile));
+        applicationMetaData = new ApplicationMetaData("user", "dir", 0L, false, "application", "checksum", 0L, 0L);
     }
 
     @Override
@@ -132,6 +135,8 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     public QueryProfileRegistry getQueryProfiles() { return queryProfileRegistry; }
+
+    public ApplicationMetaData getMetaData() { return applicationMetaData; }
 
     @Override
     public Reader getRankingExpression(String name) {

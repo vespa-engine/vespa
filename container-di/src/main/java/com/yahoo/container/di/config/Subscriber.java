@@ -14,6 +14,7 @@ public interface Subscriber {
 
     long waitNextGeneration();
     long generation();
+    boolean internalRedeploy();
 
     boolean configChanged();
     Map<ConfigKey<ConfigInstance>, ConfigInstance> config();

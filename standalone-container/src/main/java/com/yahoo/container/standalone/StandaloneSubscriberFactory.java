@@ -27,12 +27,16 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
     }
 
     private class StandaloneSubscriber implements Subscriber {
+
         private final Set<ConfigKey<ConfigInstance>> configKeys;
         private long generation = -1L;
 
         StandaloneSubscriber(Set<ConfigKey<ConfigInstance>> configKeys) {
             this.configKeys = configKeys;
         }
+
+        @Override
+        public boolean internalRedeploy() { return false; }
 
         @Override
         public boolean configChanged() {
