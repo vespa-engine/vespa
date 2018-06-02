@@ -915,8 +915,16 @@ public class YqlParser implements Parser {
 
     @NonNull
     private static String fetchFieldRead(OperatorNode<ExpressionOperator> ast) {
-        assertHasOperator(ast, ExpressionOperator.READ_FIELD);
-        return ast.getArgument(1);
+        switch (ast.getOperator()) {
+            case READ_FIELD:
+                return ast.getArgument(1);
+            case PROPREF:
+                return new StringBuilder(fetchFieldRead(ast.getArgument(0)))
+                        .append('.').append(ast.getArgument(1).toString()).toString();
+            default:
+                throw newUnexpectedArgumentException(ast.getOperator(),
+                        ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+        }
     }
 
     @NonNull
@@ -986,14 +994,12 @@ public class YqlParser implements Parser {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
         if (lhs.getOperator() == ExpressionOperator.LITERAL || lhs.getOperator() == ExpressionOperator.NEGATE) {
-            assertHasOperator(rhs, ExpressionOperator.READ_FIELD);
             return getIndex(rhs);
         }
         if (rhs.getOperator() == ExpressionOperator.LITERAL || rhs.getOperator() == ExpressionOperator.NEGATE) {
-            assertHasOperator(lhs, ExpressionOperator.READ_FIELD);
             return getIndex(lhs);
         }
-        throw new IllegalArgumentException("Expected LITERAL and READ_FIELD, got " + lhs.getOperator() + 
+        throw new IllegalArgumentException("Expected LITERAL and READ_FIELD/PROPREF, got " + lhs.getOperator() +
                                            " and " + rhs.getOperator() + ".");
     }
 
@@ -1009,28 +1015,24 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private static String fetchConditionWord(
-            OperatorNode<ExpressionOperator> ast) {
+    private static String fetchConditionWord(OperatorNode<ExpressionOperator> ast) {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
-        if (lhs.getOperator() == ExpressionOperator.LITERAL
-                || lhs.getOperator() == ExpressionOperator.NEGATE) {
-            assertHasOperator(rhs, ExpressionOperator.READ_FIELD);
+        if (lhs.getOperator() == ExpressionOperator.LITERAL || lhs.getOperator() == ExpressionOperator.NEGATE) {
+            assertFieldName(rhs);
             return getNumberAsString(lhs);
         }
-        if (rhs.getOperator() == ExpressionOperator.LITERAL
-                || rhs.getOperator() == ExpressionOperator.NEGATE) {
-            assertHasOperator(lhs, ExpressionOperator.READ_FIELD);
+        if (rhs.getOperator() == ExpressionOperator.LITERAL || rhs.getOperator() == ExpressionOperator.NEGATE) {
+            assertFieldName(lhs);
             return getNumberAsString(rhs);
         }
-        throw new IllegalArgumentException(
-                "Expected LITERAL/NEGATE and READ_FIELD, got "
+        throw new IllegalArgumentException("Expected LITERAL/NEGATE and READ_FIELD/PROPREF, got "
                         + lhs.getOperator() + " and " + rhs.getOperator() + ".");
     }
 
-    private static boolean isIndexOnLeftHandSide(
-            OperatorNode<ExpressionOperator> ast) {
-        return ast.getArgument(0, OperatorNode.class).getOperator() == ExpressionOperator.READ_FIELD;
+    private static boolean isIndexOnLeftHandSide(OperatorNode<ExpressionOperator> ast) {
+        OperatorNode node =  ast.getArgument(0, OperatorNode.class);
+        return node.getOperator() == ExpressionOperator.READ_FIELD || node.getOperator() == ExpressionOperator.PROPREF;
     }
 
     @NonNull
@@ -1556,6 +1558,12 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(expectedFunctionName.equals(names.get(0)),
                                     "Expected function '%s', got '%s'.", 
                                     expectedFunctionName, names.get(0));
+    }
+
+    private static void assertFieldName(OperatorNode<?> ast) {
+        Preconditions.checkArgument(ast.getOperator() == ExpressionOperator.READ_FIELD ||
+                        ast.getOperator() == ExpressionOperator.PROPREF,
+                "Expected operator READ_FIELD or PRPPREF, got %s.", ast.getOperator());
     }
 
     private static void addItems(OperatorNode<ExpressionOperator> ast, WeightedSetItem out) {
