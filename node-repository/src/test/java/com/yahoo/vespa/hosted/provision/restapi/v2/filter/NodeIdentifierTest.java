@@ -29,7 +29,6 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
 
-import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.*;
 import static com.yahoo.vespa.athenz.tls.KeyAlgorithm.RSA;
 import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static java.util.Collections.emptySet;
@@ -162,7 +161,7 @@ public class NodeIdentifierTest {
         Pkcs10Csr csr = Pkcs10CsrBuilder
                 .fromKeypair(new X500Principal("CN=" + TENANT_NODE_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
                 .build();
-        VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(clusterIndex, clusterId, INSTANCE_ID, application, tenant, region, environment, NODE);
+        VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(clusterIndex, clusterId, INSTANCE_ID, application, tenant, region, environment);
         X509Certificate certificate = X509CertificateBuilder
                 .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
                 .addSubjectAlternativeName(vespaUniqueInstanceId.asDottedString() + ".instanceid.athenz.provider-name.vespa.yahoo.cloud")

@@ -37,7 +37,6 @@ public class SignedIdentityDocumentEntity {
     @JsonProperty("instance-hostname") public final String instanceHostname;
     @JsonProperty("created-at") public final Instant createdAt;
     @JsonProperty("ip-addresses") public final Set<String> ipAddresses;
-    @JsonProperty("identity-type") public final String identityType;
 
     @JsonCreator
     public SignedIdentityDocumentEntity(@JsonProperty("identity-document") String rawIdentityDocument,
@@ -51,8 +50,7 @@ public class SignedIdentityDocumentEntity {
                                         @JsonProperty("configserver-hostname") String configServerHostname,
                                         @JsonProperty("instance-hostname") String instanceHostname,
                                         @JsonProperty("created-at") Instant createdAt,
-                                        @JsonProperty("ip-addresses") Set<String> ipAddresses,
-                                        @JsonProperty("identity-type") String identityType) {
+                                        @JsonProperty("ip-addresses") Set<String> ipAddresses) {
         this.rawIdentityDocument = rawIdentityDocument;
         this.identityDocument = parseIdentityDocument(rawIdentityDocument);
         this.signature = signature;
@@ -66,7 +64,6 @@ public class SignedIdentityDocumentEntity {
         this.instanceHostname = instanceHostname;
         this.createdAt = createdAt;
         this.ipAddresses = ipAddresses;
-        this.identityType = identityType;
     }
 
     private static IdentityDocumentEntity parseIdentityDocument(String rawIdentityDocument) {
@@ -99,7 +96,6 @@ public class SignedIdentityDocumentEntity {
                 ", instanceHostname='" + instanceHostname + '\'' +
                 ", createdAt=" + createdAt +
                 ", ipAddresses=" + ipAddresses +
-                ", identityType=" + identityType +
                 '}';
     }
 
@@ -120,12 +116,14 @@ public class SignedIdentityDocumentEntity {
                 Objects.equals(configServerHostname, that.configServerHostname) &&
                 Objects.equals(instanceHostname, that.instanceHostname) &&
                 Objects.equals(createdAt, that.createdAt) &&
-                Objects.equals(ipAddresses, that.ipAddresses) &&
-                Objects.equals(identityType, identityType);
+                Objects.equals(ipAddresses, that.ipAddresses);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rawIdentityDocument, identityDocument, signature, signingKeyVersion, providerUniqueId, dnsSuffix, providerService, ztsEndpoint, documentVersion, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType);
+
+        return Objects.hash(rawIdentityDocument, identityDocument, signature, signingKeyVersion, providerUniqueId,
+                            dnsSuffix, providerService, ztsEndpoint, documentVersion, configServerHostname,
+                            instanceHostname, createdAt, ipAddresses);
     }
 }

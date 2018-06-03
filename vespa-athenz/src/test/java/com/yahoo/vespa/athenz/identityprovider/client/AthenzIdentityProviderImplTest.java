@@ -11,7 +11,6 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
@@ -133,7 +132,7 @@ public class AthenzIdentityProviderImplTest {
     }
 
     private static String getIdentityDocument() throws JsonProcessingException {
-        VespaUniqueInstanceId instanceId = new VespaUniqueInstanceId(0, "default", "default", "application", "tenant", "us-north-1", "dev", IdentityType.TENANT);
+        VespaUniqueInstanceId instanceId = new VespaUniqueInstanceId(0, "default", "default", "application", "tenant", "us-north-1", "dev");
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
                 new IdentityDocument(instanceId, "localhost", "x.y.com", Instant.EPOCH, Collections.emptySet()),
                 "dummysignature",
@@ -146,8 +145,7 @@ public class AthenzIdentityProviderImplTest {
                 "localhost",
                 "x.y.com",
                 Instant.EPOCH,
-                Collections.emptySet(),
-                IdentityType.TENANT);
+                Collections.emptySet());
 
         return new ObjectMapper().registerModule(new JavaTimeModule())
                 .writeValueAsString(EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument));
