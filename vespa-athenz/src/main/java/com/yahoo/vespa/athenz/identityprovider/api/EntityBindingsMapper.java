@@ -54,11 +54,7 @@ public class EntityBindingsMapper {
                 entity.dnsSuffix,
                 (AthenzService) AthenzIdentities.from(entity.providerService),
                 entity.ztsEndpoint,
-                entity.documentVersion,
-                entity.configServerHostname,
-                entity.instanceHostname,
-                entity.createdAt,
-                entity.ipAddresses);
+                entity.documentVersion);
     }
 
     public static VespaUniqueInstanceIdEntity toVespaUniqueInstanceIdEntity(VespaUniqueInstanceId model) {
@@ -88,11 +84,7 @@ public class EntityBindingsMapper {
                     model.dnsSuffix(),
                     model.providerService().getFullName(),
                     model.ztsEndpoint(),
-                    model.documentVersion(),
-                    model.configServerHostname(),
-                    model.instanceHostname(),
-                    model.createdAt(),
-                    model.ipAddresses());
+                    model.documentVersion());
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

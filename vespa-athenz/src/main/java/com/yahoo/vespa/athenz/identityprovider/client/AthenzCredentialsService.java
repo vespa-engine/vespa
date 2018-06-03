@@ -2,7 +2,6 @@
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
@@ -29,7 +28,7 @@ import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
  */
 class AthenzCredentialsService {
 
-    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final IdentityConfig identityConfig;
     private final IdentityDocumentClient identityDocumentClient;

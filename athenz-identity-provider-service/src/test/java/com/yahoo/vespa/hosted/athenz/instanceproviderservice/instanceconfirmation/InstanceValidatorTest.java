@@ -143,11 +143,7 @@ public class InstanceValidatorTest {
                                                      "dnssuffix",
                                                      "service",
                                                      URI.create("http://localhost/zts"),
-                                                     1,
-                                                     identityDocument.configServerHostname,
-                                                     identityDocument.instanceHostname,
-                                                     identityDocument.createdAt,
-                                                     identityDocument.ipAddresses));
+                                                     1));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
