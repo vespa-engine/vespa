@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/matching/resolveviewvisitor.h>
 #include <vespa/searchcore/proton/matching/termdataextractor.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
+#include <vespa/searchcore/proton/matching/sameelementmodifier.h>
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/matchdata.h>
@@ -25,9 +26,14 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/termasstring.h>
+#include <vespa/searchlib/parsequery/stackdumpiterator.h>
+
 #include <vespa/document/datatype/positiondatatype.h>
 
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/log/log.h>
+LOG_SETUP("query_test");
+#include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using document::PositionDataType;
 using search::fef::FieldInfo;
@@ -100,6 +106,7 @@ class Test : public vespalib::TestApp {
     void requireThatWeakAndBlueprintsAreCreatedCorrectly();
     void requireThatParallelWandBlueprintsAreCreatedCorrectly();
     void requireThatWhiteListBlueprintCanBeUsed();
+    void requireThatSameElementTermsAreProperlyPrefixed();
 
 public:
     ~Test();
@@ -860,6 +867,52 @@ Test::requireThatWhiteListBlueprintCanBeUsed()
     EXPECT_EQUAL(exp, act);
 }
 
+search::query::Node::UP
+make_same_element_stack_dump(const vespalib::string &prefix, const vespalib::string &term_prefix)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addSameElement(2, prefix);
+    builder.addStringTerm("xyz", term_prefix + "f1", 1, search::query::Weight(1));
+    builder.addStringTerm("abc", term_prefix + "f2", 2, search::query::Weight(1));
+    vespalib::string stack = StackDumpCreator::create(*builder.build());
+    search::SimpleQueryStackDumpIterator stack_dump_iterator(stack);
+    SameElementModifier sem;
+    search::query::Node::UP query = search::query::QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
+    query->accept(sem);
+    return query;
+}
+void
+Test::requireThatSameElementTermsAreProperlyPrefixed()
+{
+    search::query::Node::UP query = make_same_element_stack_dump("", "");
+    search::query::SameElement * root = dynamic_cast<search::query::SameElement *>(query.get());
+    EXPECT_EQUAL(root->getView(), "");
+    EXPECT_EQUAL(root->getChildren().size(), 2u);
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[0])->getView(), "f1");
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[1])->getView(), "f2");
+
+    query = make_same_element_stack_dump("abc", "");
+    root = dynamic_cast<search::query::SameElement *>(query.get());
+    EXPECT_EQUAL(root->getView(), "abc");
+    EXPECT_EQUAL(root->getChildren().size(), 2u);
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[0])->getView(), "abc.f1");
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[1])->getView(), "abc.f2");
+
+    query = make_same_element_stack_dump("abc", "xyz.");
+    root = dynamic_cast<search::query::SameElement *>(query.get());
+    EXPECT_EQUAL(root->getView(), "abc");
+    EXPECT_EQUAL(root->getChildren().size(), 2u);
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[0])->getView(), "abc.xyz.f1");
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[1])->getView(), "abc.xyz.f2");
+
+    query = make_same_element_stack_dump("abc", "abc.");
+    root = dynamic_cast<search::query::SameElement *>(query.get());
+    EXPECT_EQUAL(root->getView(), "abc");
+    EXPECT_EQUAL(root->getChildren().size(), 2u);
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[0])->getView(), "abc.f1");
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[1])->getView(), "abc.f2");
+}
+
 Test::~Test() = default;
 
 int
@@ -893,6 +946,8 @@ Test::Main()
     TEST_CALL(requireThatWeakAndBlueprintsAreCreatedCorrectly);
     TEST_CALL(requireThatParallelWandBlueprintsAreCreatedCorrectly);
     TEST_CALL(requireThatWhiteListBlueprintCanBeUsed);
+    TEST_CALL(requireThatSameElementTermsAreProperlyPrefixed);
+
 
     TEST_DONE();
 }
