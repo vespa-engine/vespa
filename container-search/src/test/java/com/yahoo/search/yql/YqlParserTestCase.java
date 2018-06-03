@@ -119,6 +119,11 @@ public class YqlParserTestCase {
 
     @Test
     public void testDottedFieldNames() {
+        assertParse("select foo from bar where my.nested.title contains \"madonna\";",
+                "my.nested.title:madonna");
+    }
+    @Test
+    public void testDottedNestedFieldNames() {
         assertParse("select foo from bar where my.title contains \"madonna\";",
                 "my.title:madonna");
     }
