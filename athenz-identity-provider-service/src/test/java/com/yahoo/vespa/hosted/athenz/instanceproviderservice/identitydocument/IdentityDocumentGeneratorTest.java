@@ -95,8 +95,8 @@ public class IdentityDocumentGeneratorTest {
                 new VespaUniqueInstanceId(0, "default", "default", "application", "tenant", region, environment);
         assertEquals(expectedProviderUniqueId, signedIdentityDocument.providerUniqueId());
 
-        // Validate that container ips are present
-        assertThat(signedIdentityDocument.identityDocument().ipAddresses(), Matchers.containsInAnyOrder("::1"));
+        // Validate that both parent and container ips are present
+        assertThat(signedIdentityDocument.identityDocument().ipAddresses(), Matchers.containsInAnyOrder("127.0.0.1", "::1"));
 
         SignedIdentityDocumentEntity signedIdentityDocumentEntity = EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument);
 
