@@ -118,6 +118,17 @@ public class YqlParserTestCase {
     }
 
     @Test
+    public void testDottedFieldNames() {
+        assertParse("select foo from bar where my.nested.title contains \"madonna\";",
+                "my.nested.title:madonna");
+    }
+    @Test
+    public void testDottedNestedFieldNames() {
+        assertParse("select foo from bar where my.title contains \"madonna\";",
+                "my.title:madonna");
+    }
+
+    @Test
     public void testOr() {
         assertParse("select foo from bar where title contains \"madonna\" or title contains \"saint\";",
                     "OR title:madonna title:saint");
@@ -266,6 +277,8 @@ public class YqlParserTestCase {
                 "baz:{f1:a f2:b}");
         assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 = 10);",
                 "baz:{f1:a f2:10}");
+        assertParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10);",
+                "baz:{key:a value.f2:10}");
     }
 
     @Test
