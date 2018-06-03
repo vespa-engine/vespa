@@ -729,9 +729,11 @@ Test::requireThatFakeFieldSearchDumpsDiffer()
     FakeSearchable b;
     a.tag("a");
     b.tag("b");
-    ProtonStringTerm n1("term1", "field1", string_id, string_weight);
-    ProtonStringTerm n2("term2", "field1", string_id, string_weight);
-    ProtonStringTerm n3("term1", "field2", string_id, string_weight);
+    vespalib::string term1="term1";
+    vespalib::string term2="term2";
+    ProtonStringTerm n1(term1, "field1", string_id, string_weight);
+    ProtonStringTerm n2(term2, "field1", string_id, string_weight);
+    ProtonStringTerm n3(term1, "field2", string_id, string_weight);
 
     FieldSpecList fields1;
     FieldSpecList fields2;

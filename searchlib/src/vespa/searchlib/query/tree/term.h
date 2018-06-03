@@ -55,11 +55,15 @@ public:
     const T &getTerm() const { return _term; }
 
 protected:
-    TermBase(T term, const vespalib::stringref &view, int32_t id, Weight weight)
-        : Term(view, id, weight),
-          _term(std::move(term)) {
-    }
+    TermBase(T term, vespalib::stringref view, int32_t id, Weight weight);
 };
+
+
+template <typename T>
+TermBase<T>::TermBase(T term, vespalib::stringref view, int32_t id, Weight weight)
+    : Term(view, id, weight),
+       _term(std::move(term))
+{}
 
 template <typename T>
 TermBase<T>::~TermBase() = default;

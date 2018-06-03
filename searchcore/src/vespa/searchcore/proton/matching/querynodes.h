@@ -84,8 +84,7 @@ struct ProtonTermBase : public Base,
 {
     using Base::Base;
 
-    void resolve(const ViewResolver &resolver,
-                 const search::fef::IIndexEnvironment &idxEnv)
+    void resolve(const ViewResolver &resolver, const search::fef::IIndexEnvironment &idxEnv)
     {
         bool forceFilter = !Base::usePositionData();
         ProtonTermData::resolve(resolver, idxEnv, Base::getView(), forceFilter);
@@ -101,8 +100,11 @@ struct ProtonTermBase : public Base,
 template <typename Base>
 struct ProtonTerm : public ProtonTermBase<Base> {
     using ProtonTermBase<Base>::ProtonTermBase;
-    ~ProtonTerm() {}
+    ~ProtonTerm();
 };
+
+template <typename Base>
+ProtonTerm<Base>::~ProtonTerm() = default;
 
 typedef search::query::SimpleAnd         ProtonAnd;
 typedef search::query::SimpleAndNot      ProtonAndNot;
