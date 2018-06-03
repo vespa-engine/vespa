@@ -148,7 +148,6 @@ public class AthenzCredentialsMaintainer {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private VespaUniqueInstanceId getVespaUniqueInstanceId(NodeSpec nodeSpec) {
         NodeSpec.Membership membership = nodeSpec.getMembership().get();
         NodeSpec.Owner owner = nodeSpec.getOwner().get();

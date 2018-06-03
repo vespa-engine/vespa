@@ -143,12 +143,7 @@ public class InstanceValidatorTest {
                                                      "dnssuffix",
                                                      "service",
                                                      URI.create("http://localhost/zts"),
-                                                     1,
-                                                     identityDocument.configServerHostname,
-                                                     identityDocument.instanceHostname,
-                                                     identityDocument.createdAt,
-                                                     identityDocument.ipAddresses,
-                                                     null)); // TODO Remove support for legacy representation without type
+                                                     1));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

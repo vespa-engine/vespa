@@ -8,9 +8,7 @@ import java.util.Set;
  * The identity document that contains the instance specific information
  *
  * @author bjorncs
- * @deprecated Will soon be inlined into {@link SignedIdentityDocument}
  */
-@Deprecated
 public class IdentityDocument {
     private final VespaUniqueInstanceId providerUniqueId;
     private final String configServerHostname;
