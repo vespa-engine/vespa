@@ -82,7 +82,6 @@ public class InstanceValidator {
     }
 
     // If/when we dont care about logging exactly whats wrong, this can be simplified
-    // TODO Use identity type to determine if this check should be performed
     boolean isSameIdentityAsInServicesXml(ApplicationId applicationId, String domain, String service) {
 
         Optional<ApplicationInfo> applicationInfo = superModelProvider.getSuperModel().getApplicationInfo(applicationId);
