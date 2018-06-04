@@ -5,15 +5,24 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 
 import java.time.Duration;
+import java.time.Instant;
 
 public class TenantsMaintainer extends Maintainer {
 
+    private final Duration ttlForUnusedTenant;
+
     TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
+        this(applicationRepository, curator, interval, Duration.ofDays(7));
+    }
+
+    private TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, Duration ttlForUnusedTenant) {
         super(applicationRepository, curator, interval);
+        this.ttlForUnusedTenant = ttlForUnusedTenant;
     }
 
     @Override
+    // Delete unused tenants that were created more than ttlForUnusedTenant ago
     protected void maintain() {
-        applicationRepository.removeUnusedTenants();
+        applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, Instant.now());
     }
 }

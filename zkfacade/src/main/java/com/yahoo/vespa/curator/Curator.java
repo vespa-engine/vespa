@@ -21,6 +21,7 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.zookeeper.data.Stat;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -292,6 +293,21 @@ public class Curator implements AutoCloseable {
 
         try {
             return Optional.of(framework().getData().forPath(path.getAbsolute()));
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Could not get data at " + path.getAbsolute(), e);
+        }
+    }
+
+    /**
+     * Returns the stat data at the given path.
+     * Empty is returned if the path does not exist.
+     */
+    public Optional<Stat> getStat(Path path) {
+        if ( ! exists(path)) return Optional.empty();
+
+        try {
+            return Optional.of(framework().checkExists().forPath(path.getAbsolute()));
         }
         catch (Exception e) {
             throw new RuntimeException("Could not get data at " + path.getAbsolute(), e);
