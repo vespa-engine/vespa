@@ -16,19 +16,7 @@ class SameElementModifier : public search::query::TemplateTermVisitor<SameElemen
 public:
     template <class TermNode>
     void visitTerm(TermNode &) {  }
-
-    void visit(ProtonNodeTypes::SameElement &n) override {
-        if (n.getView().empty()) return;
-
-        vespalib::string prefix = n.getView() + ".";
-        for (auto & child : n.getChildren()) {
-            search::query::TermNode * term  = dynamic_cast<search::query::TermNode *>(child);
-            const vespalib::string & index = term->getView();
-            if (index.find(prefix) != 0) { // This can be removed when qrs does not prefix the sameelemnt children
-                term->setView(prefix + index);
-            }
-        }
-    }
+    void visit(ProtonNodeTypes::SameElement &n) override;
 };
 
 }
