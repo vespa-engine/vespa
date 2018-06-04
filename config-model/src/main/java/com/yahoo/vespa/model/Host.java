@@ -42,16 +42,14 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
 
     private void checkName(HostSystem parent, String hostname) {
         // Give a warning if the host does not exist
-        // Host exists - warn if given hostname is not a fully qualified one.
-        String canonical = hostname;
         try {
-            canonical = parent.getCanonicalHostname(hostname);
+            Object address = java.net.InetAddress.getByName(hostname);
         } catch (UnknownHostException e) {
-            deployLogger().log(Level.WARNING, "Unable to find canonical hostname of host: " + hostname);
+            deployLogger().log(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
         }
-        if ((null != canonical) && (! hostname.equals(canonical))) {
+        if (! hostname.contains(".")) {
             deployLogger().log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                                              "since it does not match its canonical hostname: " + canonical);
+                                              "since it is not a canonical hostname");
         }
     }
 
