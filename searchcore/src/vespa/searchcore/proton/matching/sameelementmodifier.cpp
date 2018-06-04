@@ -15,10 +15,7 @@ SameElementModifier::visit(ProtonNodeTypes::SameElement &n) {
     for (search::query::Node * child : n.getChildren()) {
         search::query::TermNode * term  = dynamic_cast<search::query::TermNode *>(child);
         if (term != nullptr) {
-            const vespalib::string & index = term->getView();
-            if (index.find(prefix) != 0) { // This can be removed when qrs does not prefix the sameelemnt children
-                term->setView(prefix + index);
-            }
+            term->setView(prefix + term->getView());
         } else {
             LOG(error, "Required a search::query::TermNode. Got %s", vespalib::getClassName(*child).c_str());
         }
