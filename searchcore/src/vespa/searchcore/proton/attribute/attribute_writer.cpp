@@ -217,26 +217,29 @@ class PutTask : public vespalib::Executor::Task
     const bool           _immediateCommit;
     const bool           _allAttributes;
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
+    std::shared_ptr<DocumentFieldExtractor> _fieldExtractor;
     std::vector<FieldValue::UP> _fieldValues;
 public:
-    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, DocumentFieldExtractor &fieldExtractor, uint32_t lid, bool immediateCommit, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone);
+    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, std::shared_ptr<DocumentFieldExtractor> fieldExtractor, uint32_t lid, bool immediateCommit, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone);
     virtual ~PutTask() override;
     virtual void run() override;
 };
 
-PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, DocumentFieldExtractor  &fieldExtractor, uint32_t lid, bool immediateCommit, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone)
+PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, std::shared_ptr<DocumentFieldExtractor> fieldExtractor, uint32_t lid, bool immediateCommit, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone)
     : _wc(wc),
       _serialNum(serialNum),
       _lid(lid),
       _immediateCommit(immediateCommit),
       _allAttributes(allAttributes),
-      _onWriteDone(onWriteDone)
+      _onWriteDone(onWriteDone),
+      _fieldExtractor(std::move(fieldExtractor)),
+      _fieldValues()
 {
     const auto &fields = _wc.getFields();
     _fieldValues.reserve(fields.size());
     for (const auto &field : fields) {
         if (_allAttributes || field.getCompoundAttribute()) {
-            FieldValue::UP fv = fieldExtractor.getFieldValue(field.getFieldPath());
+            FieldValue::UP fv = _fieldExtractor->getFieldValue(field.getFieldPath());
             _fieldValues.emplace_back(std::move(fv));
         }
     }
@@ -413,7 +416,7 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
     if (_dataType != dataType) {
         buildFieldPaths(doc.getType(), dataType);
     }
-    DocumentFieldExtractor extractor(doc);
+    auto extractor = std::make_shared<DocumentFieldExtractor>(doc);
     for (const auto &wc : _writeContexts) {
         if (allAttributes || wc.getHasCompoundAttribute()) {
             auto putTask = std::make_unique<PutTask>(wc, serialNum, extractor, lid, immediateCommit, allAttributes, onWriteDone);
