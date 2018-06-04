@@ -8,8 +8,7 @@
 #include <string>
 #include <map>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A fake Searchable implementation.
@@ -62,6 +61,4 @@ public:
     ~FakeSearchable();
 };
 
-} // namespace search::queryeval
-} // namespace search
-
+}

@@ -12,8 +12,8 @@ class CustomTypeTermVisitor : public CustomTypeVisitor<NodeTypes>
 {
 protected:
     void visitChildren(Intermediate &n) {
-        for (size_t i = 0; i < n.getChildren().size(); ++i) {
-            n.getChildren()[i]->accept(*this);
+        for (auto & child : n.getChildren()) {
+            child->accept(*this);
         }
     }
 

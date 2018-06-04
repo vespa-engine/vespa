@@ -9,9 +9,7 @@
 
 namespace proton::matching {
 
-class ResolveViewVisitor
-    : public search::query::TemplateTermVisitor<ResolveViewVisitor,
-                                                ProtonNodeTypes>
+class ResolveViewVisitor : public search::query::TemplateTermVisitor<ResolveViewVisitor, ProtonNodeTypes>
 {
     const ViewResolver &_resolver;
     const search::fef::IIndexEnvironment &_indexEnv;
@@ -24,7 +22,7 @@ public:
     template <class TermNode>
     void visitTerm(TermNode &n) { n.resolve(_resolver, _indexEnv); }
 
-    virtual void visit(ProtonNodeTypes::Equiv &n) override {
+    void visit(ProtonNodeTypes::Equiv &n) override {
         visitChildren(n);
         n.resolveFromChildren(n.getChildren());
     }
