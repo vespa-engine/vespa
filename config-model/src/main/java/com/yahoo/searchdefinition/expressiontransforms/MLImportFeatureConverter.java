@@ -50,13 +50,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Base class for replacing instances of a pseudofeature for imported ML
+ * ranking models with native Vespa ranking expressions.
+ *
+ * @author bratseth
+ * @author lesters
+ */
 abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     ExpressionNode transformFromImportedModel(ImportedModel model,
                                                           ModelStore store,
                                                           RankProfile profile,
                                                           QueryProfileRegistry queryProfiles) {
-
         // Add constants
         Set<String> constantsReplacedByMacros = new HashSet<>();
         model.smallConstants().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
@@ -425,7 +431,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         private final ApplicationPackage application;
         private final FeatureArguments arguments;
 
-        public ModelStore(ApplicationPackage application, FeatureArguments arguments) {
+        ModelStore(ApplicationPackage application, FeatureArguments arguments) {
             this.application = application;
             this.arguments = arguments;
         }
@@ -451,13 +457,13 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         /**
          * Adds this expression to the application package, such that it can be read later.
          */
-        public void writeConverted(RankingExpression expression) {
+        void writeConverted(RankingExpression expression) {
             application.getFile(arguments.expressionPath())
                     .writeFile(new StringReader(expression.getRoot().toString()));
         }
 
         /** Reads the previously stored ranking expression for these arguments */
-        public RankingExpression readConverted() {
+        RankingExpression readConverted() {
             try {
                 return new RankingExpression(application.getFile(arguments.expressionPath()).createReader());
             }
@@ -470,13 +476,13 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         }
 
         /** Adds this macro expression to the application package to it can be read later. */
-        public void writeMacro(String name, RankingExpression expression) {
+        void writeMacro(String name, RankingExpression expression) {
             application.getFile(arguments.macrosPath()).appendFile(name + "\t" +
                     expression.getRoot().toString() + "\n");
         }
 
         /** Reads the previously stored macro expressions for these arguments */
-        public List<Pair<String, RankingExpression>> readMacros() {
+        List<Pair<String, RankingExpression>> readMacros() {
             try {
                 ApplicationFile file = application.getFile(arguments.macrosPath());
                 if (!file.exists()) return Collections.emptyList();
@@ -506,7 +512,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
          * Reads the information about all the large (aka ranking) constants stored in the application package
          * (the constant value itself is replicated with file distribution).
          */
-        public List<RankingConstant> readLargeConstants() {
+        List<RankingConstant> readLargeConstants() {
             try {
                 List<RankingConstant> constants = new ArrayList<>();
                 for (ApplicationFile constantFile : application.getFile(arguments.largeConstantsPath()).listFiles()) {
@@ -526,7 +532,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
          *
          * @return the path to the stored constant, relative to the application package root
          */
-        public Path writeLargeConstant(String name, Tensor constant) {
+        Path writeLargeConstant(String name, Tensor constant) {
             Path constantsPath = ApplicationPackage.MODELS_GENERATED_DIR.append(arguments.modelPath).append("constants");
 
             // "tbf" ending for "typed binary format" - recognized by the nodes receiving the file:

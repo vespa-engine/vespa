@@ -19,6 +19,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+/**
+ * Base class for importing ML models (ONNX/TensorFlow) as native Vespa
+ * ranking expressions. The general mechanism for import is for the
+ * specific ML platform import implementations to create an
+ * IntermediateGraph. This class offers common code to convert the
+ * IntermediateGraph to Vespa ranking expressions and macros.
+ *
+ * @author lesters
+ */
 public abstract class ModelImporter {
 
     private static final Logger log = Logger.getLogger(ModelImporter.class.getName());
@@ -32,6 +41,10 @@ public abstract class ModelImporter {
         return importModel(modelName, modelDir.toString());
     }
 
+    /**
+     * Takes an IntermediateGraph and converts it to a ImportedModel containing
+     * the actual Vespa ranking expressions.
+     */
     static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph) {
         ImportedModel model = new ImportedModel(graph.name());
 
@@ -40,7 +53,7 @@ public abstract class ModelImporter {
         importSignatures(graph, model);
         importExpressions(graph, model);
         reportWarnings(graph, model);
-        logVariableTypes(graph, model);
+        logVariableTypes(graph);
 
         return model;
     }
@@ -192,9 +205,9 @@ public abstract class ModelImporter {
     }
 
     /**
-     * Convert intermediate representation to Vespa ranking expressions.
+     * Add any import warnings to the signature in the ImportedModel.
      */
-    static void reportWarnings(IntermediateGraph graph, ImportedModel model) {
+    private static void reportWarnings(IntermediateGraph graph, ImportedModel model) {
         for (ImportedModel.Signature signature : model.signatures().values()) {
             for (String outputName : signature.outputs().values()) {
                 reportWarnings(graph.get(outputName), model);
@@ -217,11 +230,10 @@ public abstract class ModelImporter {
      * such that these can be converted and fed to a parent document independently of the rest of the model
      * for fast model weight updates.
      */
-    private static void logVariableTypes(IntermediateGraph graph, ImportedModel model) {
+    private static void logVariableTypes(IntermediateGraph graph) {
         for (IntermediateOperation operation : graph.operations()) {
             if ( ! (operation instanceof Constant)) continue;
             if ( ! operation.type().isPresent()) continue; // will not happen
-
             log.info("Importing TensorFlow variable " + operation.name() + " as " + operation.vespaName() +
                     " of type " + operation.type().get());
         }

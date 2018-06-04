@@ -465,7 +465,7 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     }
 
-    public static class StoringApplicationPackageFile extends ApplicationFile {
+    static class StoringApplicationPackageFile extends ApplicationFile {
 
         /** The path to the application package root */
         private final Path root;

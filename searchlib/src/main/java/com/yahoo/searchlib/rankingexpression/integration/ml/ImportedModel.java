@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
  * The result of importing a model (TensorFlow or ONNX) into Vespa.
  *
  * @author bratseth
- * @author lesters
  */
 public class ImportedModel {
 

@@ -37,6 +37,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Converts a TensorFlow graph to a Vespa IntermediateGraph which is the basis
+ * for generating Vespa ranking expressions.
+ *
+ * @author lesters
+ */
 public class GraphImporter {
 
     public static IntermediateOperation mapOperation(NodeDef node,

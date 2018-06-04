@@ -8,7 +8,6 @@ import onnx.Onnx;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * Converts a ONNX model into a ranking expression and set of constants.
@@ -16,8 +15,6 @@ import java.util.logging.Logger;
  * @author lesters
  */
 public class OnnxImporter extends ModelImporter {
-
-    private static final Logger log = Logger.getLogger(OnnxImporter.class.getName());
 
     @Override
     public ImportedModel importModel(String modelName, String modelPath) {

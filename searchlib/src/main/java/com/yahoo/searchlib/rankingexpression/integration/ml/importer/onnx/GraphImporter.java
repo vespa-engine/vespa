@@ -22,6 +22,12 @@ import onnx.Onnx;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Converts an ONNX graph to a Vespa IntermediateGraph which is the basis
+ * for generating Vespa ranking expressions.
+ *
+ * @author lesters
+ */
 public class GraphImporter {
 
     public static IntermediateOperation mapOperation(Onnx.NodeProto node,

@@ -14,6 +14,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Converts TensorFlow node attributes to Vespa attribute values.
+ *
+ * @author lesters
+ */
 public class AttributeConverter implements IntermediateOperation.AttributeMap {
 
     private final Map<String, AttrValue> attributeMap;

@@ -18,22 +18,33 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Wraps an imported operation node and produces the respective Vespa tensor
+ * operation. During import, a graph of these operations are constructed. Then,
+ * the types are used to deduce sensible dimension names using the
+ * DimensionRenamer. After the types have been renamed, the proper Vespa
+ * expressions can be extracted.
+ *
+ * @author lesters
+ */
 public abstract class IntermediateOperation {
 
-    protected final static String MACRO_PREFIX = "imported_ml_macro_";
+    private final static String MACRO_PREFIX = "imported_ml_macro_";
 
     protected final String name;
     protected final String modelName;
     protected final List<IntermediateOperation> inputs;
     protected final List<IntermediateOperation> outputs = new ArrayList<>();
-    protected final List<String> importWarnings = new ArrayList<>();
 
     protected OrderedTensorType type;
     protected TensorFunction function;
     protected TensorFunction macro = null;
-    protected Value constantValue = null;
+
+    private final List<String> importWarnings = new ArrayList<>();
+    private Value constantValue = null;
+    private List<IntermediateOperation> controlInputs = Collections.emptyList();
+
     protected Function<OrderedTensorType, Value> constantValueFunction = null;
-    protected List<IntermediateOperation> controlInputs = Collections.emptyList();
 
     IntermediateOperation(String modelName, String name, List<IntermediateOperation> inputs) {
         this.name = name;

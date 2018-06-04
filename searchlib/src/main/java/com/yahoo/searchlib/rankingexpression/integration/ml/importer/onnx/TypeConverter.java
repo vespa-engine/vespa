@@ -6,6 +6,11 @@ import com.yahoo.searchlib.rankingexpression.integration.ml.importer.OrderedTens
 import com.yahoo.tensor.TensorType;
 import onnx.Onnx;
 
+/**
+ * Converts and verifies ONNX tensor types into Vespa tensor types.
+ *
+ * @author lesters
+ */
 public class TypeConverter {
 
     public static void verifyType(Onnx.TypeProto typeProto, OrderedTensorType type) {

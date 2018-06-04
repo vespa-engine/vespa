@@ -10,6 +10,11 @@ import org.tensorflow.framework.TensorShapeProto;
 
 import java.util.List;
 
+/**
+ * Converts and verifies TensorFlow tensor types into Vespa tensor types.
+ *
+ * @author lesters
+ */
 public class TypeConverter {
 
     public static void verifyType(NodeDef node, OrderedTensorType type) {
