@@ -45,9 +45,10 @@ private:
 
 public:
     PutDoneContextForMove(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
+                          std::shared_ptr<const Document> doc,
                           const document::GlobalId &gid, uint32_t lid, search::SerialNum serialNum,
                           bool enableNotifyPut, IDestructorCallback::SP moveDoneCtx)
-        : PutDoneContext(std::move(token), gidToLidChangeHandler, gid, lid, serialNum, enableNotifyPut),
+        : PutDoneContext(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut),
           _moveDoneCtx(std::move(moveDoneCtx))
     {}
     ~PutDoneContextForMove() = default;
@@ -56,24 +57,26 @@ public:
 std::shared_ptr<PutDoneContext>
 createPutDoneContext(FeedToken token,
                      IGidToLidChangeHandler &gidToLidChangeHandler,
+                     std::shared_ptr<const Document> doc,
                      const document::GlobalId &gid, uint32_t lid,
                      SerialNum serialNum, bool enableNotifyPut,
                      IDestructorCallback::SP moveDoneCtx)
 {
     std::shared_ptr<PutDoneContext> result;
     if (moveDoneCtx) {
-        result = std::make_shared<PutDoneContextForMove>(std::move(token), gidToLidChangeHandler, gid, lid, serialNum, enableNotifyPut, std::move(moveDoneCtx));
+        result = std::make_shared<PutDoneContextForMove>(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut, std::move(moveDoneCtx));
     } else {
-        result = std::make_shared<PutDoneContext>(std::move(token), gidToLidChangeHandler, gid, lid, serialNum, enableNotifyPut);
+        result = std::make_shared<PutDoneContext>(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut);
     }
     return result;
 }
 
 std::shared_ptr<PutDoneContext>
 createPutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
+                     std::shared_ptr<const Document> doc,
                      const document::GlobalId &gid, uint32_t lid, SerialNum serialNum, bool enableNotifyPut)
 {
-    return createPutDoneContext(token, gidToLidChangeHandler, gid, lid, serialNum, enableNotifyPut, IDestructorCallback::SP());
+    return createPutDoneContext(token, gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut, IDestructorCallback::SP());
 }
 
 std::shared_ptr<UpdateDoneContext>
@@ -282,7 +285,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
         bool immediateCommit = _commitTimeTracker.needCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
-            createPutDoneContext(std::move(token), _gidToLidChangeHandler, gid, putOp.getLid(), serialNum,
+            createPutDoneContext(std::move(token), _gidToLidChangeHandler, doc, gid, putOp.getLid(), serialNum,
                                  putOp.changedDbdId() && useDocumentMetaStore(serialNum));
         putSummary(serialNum, putOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, putOp.getLid(), *doc, immediateCommit, onWriteDone);
@@ -451,6 +454,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
     if (updateScope.hasIndexOrNonAttributeFields()) {
         PromisedDoc promisedDoc;
         FutureDoc futureDoc = promisedDoc.get_future().share();
+        onWriteDone->setDocument(futureDoc);
         _pendingLidTracker.waitForConsumedLid(lid);
         if (updateScope._indexedFields) {
             updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
@@ -739,7 +743,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
         bool immediateCommit = _commitTimeTracker.needCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
-            createPutDoneContext(FeedToken(), _gidToLidChangeHandler, gid, moveOp.getLid(), serialNum,
+            createPutDoneContext(FeedToken(), _gidToLidChangeHandler, doc, gid, moveOp.getLid(), serialNum,
                                  moveOp.changedDbdId() && useDocumentMetaStore(serialNum), doneCtx);
         putSummary(serialNum, moveOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, moveOp.getLid(), *doc, immediateCommit, onWriteDone);
