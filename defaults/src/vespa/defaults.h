@@ -34,7 +34,10 @@ public:
     static const char *vespaUser();
 
     /**
-     * Compute the host name that identifies myself
+     * Compute the host name that identifies myself.
+     * Detection of the hostname is now done before starting any Vespa
+     * programs and provided in the environment variable VESPA_HOSTNAME;
+     * if that variable isn't set a default of "localhost" is always returned.
      * @return the vespa host name
      **/
     static const char *vespaHostname();
