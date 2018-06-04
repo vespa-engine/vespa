@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
@@ -8,6 +9,7 @@ import java.util.Objects;
 /**
  * @author bjorncs
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class VespaUniqueInstanceIdEntity {
 
     @JsonProperty("tenant")
