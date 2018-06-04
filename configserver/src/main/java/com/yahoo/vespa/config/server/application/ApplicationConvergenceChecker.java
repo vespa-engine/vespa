@@ -17,14 +17,9 @@ import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
+import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Checks for convergence of config generation for a given application.
@@ -33,9 +28,11 @@ import java.util.Set;
  * @author hmusum
  */
 public class ApplicationConvergenceChecker extends AbstractComponent {
-
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
+    private final StateApiFactory stateApiFactory;
+    private final Client client = ClientBuilder.newClient();
+
     private final static Set<String> serviceTypesToCheck = new HashSet<>(Arrays.asList(
             "container",
             "qrserver",
@@ -44,9 +41,6 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
             "storagenode",
             "distributor"
     ));
-
-    private final StateApiFactory stateApiFactory;
-    private final Client client = ClientBuilder.newClient();
 
     @Inject
     public ApplicationConvergenceChecker() {
@@ -63,15 +57,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
-
-        long currentGeneration = servicesToCheck.stream()
-                                                .map(s -> "http://" + s.getHostName() + ":" + getStatePort(s).get())
-                                                .map(URI::create)
-                                                .map(this::getServiceGeneration)
-                                                .min(Comparator.naturalOrder())
-                                                .orElse(0L);
-        return new ServiceListResponse(200, servicesToCheck, uri, application.getApplicationGeneration(),
-                                       currentGeneration);
+        return new ServiceListResponse(200, servicesToCheck, uri, application.getApplicationGeneration());
     }
 
     public ServiceResponse serviceConvergenceCheck(Application application, String hostAndPortToCheck, URI uri) {
@@ -127,7 +113,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         return generationFromContainerState(state.config());
     }
 
-    private boolean hostInApplication(Application application, String hostPort) {
+    private boolean hostInApplication(Application application, String hostPort) throws IOException {
         for (HostInfo host : application.getModel().getHosts()) {
             if (hostPort.startsWith(host.getHostname())) {
                 for (ServiceInfo service : host.getServices()) {
@@ -146,8 +132,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         final Cursor debug;
 
         // Pre-condition: servicesToCheck has a state port
-        private ServiceListResponse(int status, List<ServiceInfo> servicesToCheck, URI uri, long wantedGeneration,
-                                    long currentGeneration) {
+        private ServiceListResponse(int status, List<ServiceInfo> servicesToCheck, URI uri, Long wantedGeneration) {
             super(status);
             Cursor serviceArray = object.setArray("services");
             for (ServiceInfo s : servicesToCheck) {
@@ -160,9 +145,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
                 service.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
             }
             object.setString("url", uri.toString());
-            object.setLong("currentGeneration", currentGeneration);
             object.setLong("wantedGeneration", wantedGeneration);
-            object.setBool("converged", currentGeneration >= wantedGeneration);
             // TODO: Remove debug when clients are not using it anymore
             debug = object.setObject("debug");
             debug.setLong("wantedGeneration", wantedGeneration);
