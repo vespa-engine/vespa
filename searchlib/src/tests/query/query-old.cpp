@@ -368,7 +368,7 @@ TEST("testPhraseEvaluate") {
     terms[1]->add(1, 0, 0, 1);
     terms[2]->add(2, 0, 0, 1);
     terms[0]->add(7, 0, 0, 1);
-    terms[1]->add(8, 0, 0, 1);
+    terms[1]->add(8, 0, 1, 1);
     terms[2]->add(9, 0, 0, 1);
     // field 1
     terms[0]->add(4, 1, 0, 1);
@@ -392,23 +392,21 @@ TEST("testPhraseEvaluate") {
     HitList hits;
     PhraseQueryNode * p = static_cast<PhraseQueryNode *>(phrases[0]);
     p->evaluateHits(hits);
-    ASSERT_TRUE(hits.size() == 4);
+    ASSERT_EQUAL(3u, hits.size());
     EXPECT_EQUAL(hits[0].wordpos(), 2u);
     EXPECT_EQUAL(hits[0].context(), 0u);
-    EXPECT_EQUAL(hits[1].wordpos(), 9u);
-    EXPECT_EQUAL(hits[1].context(), 0u);
-    EXPECT_EQUAL(hits[2].wordpos(), 6u);
-    EXPECT_EQUAL(hits[2].context(), 1u);
-    EXPECT_EQUAL(hits[3].wordpos(), 2u);
-    EXPECT_EQUAL(hits[3].context(), 3u);
-    ASSERT_TRUE(p->getFieldInfoSize() == 4);
+    EXPECT_EQUAL(hits[1].wordpos(), 6u);
+    EXPECT_EQUAL(hits[1].context(), 1u);
+    EXPECT_EQUAL(hits[2].wordpos(), 2u);
+    EXPECT_EQUAL(hits[2].context(), 3u);
+    ASSERT_EQUAL(4u, p->getFieldInfoSize());
     EXPECT_EQUAL(p->getFieldInfo(0).getHitOffset(), 0u);
-    EXPECT_EQUAL(p->getFieldInfo(0).getHitCount(),  2u);
-    EXPECT_EQUAL(p->getFieldInfo(1).getHitOffset(), 2u);
+    EXPECT_EQUAL(p->getFieldInfo(0).getHitCount(),  1u);
+    EXPECT_EQUAL(p->getFieldInfo(1).getHitOffset(), 1u);
     EXPECT_EQUAL(p->getFieldInfo(1).getHitCount(),  1u);
     EXPECT_EQUAL(p->getFieldInfo(2).getHitOffset(), 0u); // invalid, but will never be used
     EXPECT_EQUAL(p->getFieldInfo(2).getHitCount(),  0u);
-    EXPECT_EQUAL(p->getFieldInfo(3).getHitOffset(), 3u);
+    EXPECT_EQUAL(p->getFieldInfo(3).getHitOffset(), 2u);
     EXPECT_EQUAL(p->getFieldInfo(3).getHitCount(),  1u);
 }
 

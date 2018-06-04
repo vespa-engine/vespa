@@ -165,7 +165,8 @@ bool PhraseQueryNode::evaluate() const
 void PhraseQueryNode::getPhrases(QueryNodeRefList & tl)            { tl.push_back(this); }
 void PhraseQueryNode::getPhrases(ConstQueryNodeRefList & tl) const { tl.push_back(this); }
 
-const HitList & PhraseQueryNode::evaluateHits(HitList & hl) const
+const HitList &
+PhraseQueryNode::evaluateHits(HitList & hl) const
 {
   hl.clear();
   _fieldInfo.clear();
@@ -181,14 +182,23 @@ const HitList & PhraseQueryNode::evaluateHits(HitList & hl) const
       const QueryTerm & next = static_cast<const QueryTerm &>(*(*this)[currPhraseLen+1]);
       unsigned int & currIndex = indexVector[currPhraseLen];
       unsigned int & nextIndex = indexVector[currPhraseLen+1];
-      const HitList & nextHL = next.evaluateHits(tmpHL);
 
       size_t firstPosition = curr->evaluateHits(tmpHL)[currIndex].pos();
+      uint32_t currElemId = curr->evaluateHits(tmpHL)[currIndex].elemId();
+      uint32_t curContext = curr->evaluateHits(tmpHL)[currIndex].context();
+
+      const HitList & nextHL = next.evaluateHits(tmpHL);
+
       int diff(0);
       size_t nextIndexMax = nextHL.size();
-      while ((nextIndex < nextIndexMax) && ((diff = nextHL[nextIndex].pos()-firstPosition) < 1))
+      while ((nextIndex < nextIndexMax) &&
+              ((nextHL[nextIndex].context() < curContext) ||
+               ((nextHL[nextIndex].context() == curContext) && (nextHL[nextIndex].elemId() <= currElemId))) &&
+             ((diff = nextHL[nextIndex].pos()-firstPosition) < 1))
+      {
         nextIndex++;
-      if (diff == 1) {
+      }
+      if ((diff == 1) && (nextHL[nextIndex].elemId() == currElemId)) {
         currPhraseLen++;
         bool ok = ((currPhraseLen+1)==fullPhraseLen);
         if (ok) {
