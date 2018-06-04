@@ -113,9 +113,13 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployedByUser(), deployData.getDeployedFromDir(),
-                                       deployData.getDeployTimestamp(), deployData.getApplicationName(),
-                                       computeCheckSum(appDir), deployData.getGeneration(),
+        return new ApplicationMetaData(deployData.getDeployedByUser(),
+                                       deployData.getDeployedFromDir(),
+                                       deployData.getDeployTimestamp(),
+                                       deployData.isInternalRedeploy(),
+                                       deployData.getApplicationName(),
+                                       computeCheckSum(appDir),
+                                       deployData.getGeneration(),
                                        deployData.getCurrentlyActiveGeneration());
     }
 
@@ -566,7 +570,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     public static ApplicationMetaData readMetaData(File appDir) {
-        ApplicationMetaData defaultMetaData = new ApplicationMetaData(appDir, "n/a", "n/a", 0l, "", 0l, 0l);
+        ApplicationMetaData defaultMetaData = new ApplicationMetaData(appDir, "n/a", "n/a", 0l, false, "", 0l, 0l);
         File metaFile = new File(appDir, META_FILE_NAME);
         if (!metaFile.exists()) {
             return defaultMetaData;

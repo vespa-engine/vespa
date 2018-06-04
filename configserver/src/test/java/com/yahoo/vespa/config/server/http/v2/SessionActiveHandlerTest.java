@@ -285,7 +285,13 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         ActivateRequest(long sessionId, long previousSessionId, Session.Status initialStatus, String subPath, Clock clock) {
             this.sessionId = sessionId;
             this.initialStatus = initialStatus;
-            this.deployData = new DeployData("foo", "bar", appName, 0l, sessionId, previousSessionId);
+            this.deployData = new DeployData("foo",
+                                             "bar",
+                                             appName,
+                                             0l,
+                                             false,
+                                             sessionId,
+                                             previousSessionId);
             this.subPath = subPath;
             this.clock = clock;
         }

@@ -43,7 +43,12 @@ public class ConfigConvergenceCheckerTest {
     @Before
     public void setup() {
         Model mockModel = MockModel.createContainer("localhost", 1337);
-        application = new Application(mockModel, new ServerCache(), 3, Version.fromIntValues(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
+        application = new Application(mockModel,
+                                      new ServerCache(),
+                                      3,
+                                      false,
+                                      Version.fromIntValues(0, 0, 0),
+                                      MetricUpdater.createTestUpdater(), appId);
         checker = new ConfigConvergenceChecker(
                 (client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
     }

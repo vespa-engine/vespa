@@ -85,7 +85,7 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder allow(ValidationId validationId) {
         validationOverridesBody.append("  <allow until='");
-        validationOverridesBody.append(asIso8601Date(Instant.now().plus(Duration.ofDays(29))));
+        validationOverridesBody.append(asIso8601Date(Instant.now().plus(Duration.ofDays(28))));
         validationOverridesBody.append("'>");
         validationOverridesBody.append(validationId.value());
         validationOverridesBody.append("</allow>\n");

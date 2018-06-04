@@ -24,16 +24,6 @@ namespace document {
 // Declare content bits.
 static const unsigned char CONTENT_HASTYPE = 0x01;
 
-DocumentUpdate::DocumentUpdate()
-    : _documentId("doc::"),
-      _type(DataType::DOCUMENT),
-      _updates(),
-      _fieldPathUpdates(),
-      _version(Document::getNewestSerializationVersion()),
-      _createIfNonExistent(false)
-{
-}
-
 DocumentUpdate::DocumentUpdate(const DataType &type, const DocumentId& id)
     : _documentId(id),
       _type(&type),
@@ -156,13 +146,6 @@ DocumentUpdate::applyTo(Document& doc) const
     for (const auto & update : _fieldPathUpdates) {
         update->applyTo(doc);
     }
-}
-
-void
-DocumentUpdate::serialize42(nbostream &stream) const
-{
-    VespaDocumentSerializer serializer(stream);
-    serializer.write42(*this);
 }
 
 void

@@ -63,9 +63,9 @@ public class MemoryCacheTest {
         slime.setString("bar \"value2\"");
         payloadDifferentMd5 = Payload.from(new ConfigPayload(slime));
 
-        config = new RawConfig(configKey, defMd5, payload, configMd5, generation, defContent, Optional.empty());
-        config2 = new RawConfig(configKey2, defMd52, payload2, configMd5, generation, defContent, Optional.empty());
-        configDifferentMd5 = new RawConfig(configKey, differentDefMd5, payloadDifferentMd5, configMd5, generation, defContent, Optional.empty());
+        config = new RawConfig(configKey, defMd5, payload, configMd5, generation, false, defContent, Optional.empty());
+        config2 = new RawConfig(configKey2, defMd52, payload2, configMd5, generation, false, defContent, Optional.empty());
+        configDifferentMd5 = new RawConfig(configKey, differentDefMd5, payloadDifferentMd5, configMd5, generation, false, defContent, Optional.empty());
 
         cacheKey = new ConfigCacheKey(configKey, config.getDefMd5());
         cacheKey2 = new ConfigCacheKey(configKey2, config2.getDefMd5());

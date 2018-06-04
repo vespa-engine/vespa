@@ -20,7 +20,6 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.SearchDefinition;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -290,7 +289,7 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    public void testConfigDefinitionsFromJars() throws IOException {
+    public void testConfigDefinitionsFromJars() {
         String appName = "src/test/cfg//application/app1";
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(new File(appName), false);
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = app.getAllExistingConfigDefs();
@@ -298,31 +297,31 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    public void testMetaData() throws IOException, JSONException {
+    public void testMetaData() throws IOException {
         File tmp = Files.createTempDir();
         String appPkg = TESTDIR + "app1";
         IOUtils.copyDirectory(new File(appPkg), tmp);
-        final DeployData deployData = new DeployData("foo", "bar", "baz", 13l, 1337l, 3l);
+        DeployData deployData = new DeployData("foo", "bar", "baz", 13l, false, 1337l, 3l);
         FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
         app.writeMetaData();
         FilesApplicationPackage newApp = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
         ApplicationMetaData meta = newApp.getMetaData();
         assertThat(meta.getDeployedByUser(), is("foo"));
         assertThat(meta.getDeployPath(), is("bar"));
-        assertThat(meta.getDeployTimestamp(), is(13l));
-        assertThat(meta.getGeneration(), is(1337l));
-        assertThat(meta.getPreviousActiveGeneration(), is(3l));
-        final String checkSum = meta.getCheckSum();
+        assertThat(meta.getDeployTimestamp(), is(13L));
+        assertThat(meta.getGeneration(), is(1337L));
+        assertThat(meta.getPreviousActiveGeneration(), is(3L));
+        String checkSum = meta.getCheckSum();
         assertNotNull(checkSum);
 
         assertTrue((new File(tmp, "hosts.xml")).delete());
         FilesApplicationPackage app2 = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
-        final String app2CheckSum = app2.getMetaData().getCheckSum();
+        String app2CheckSum = app2.getMetaData().getCheckSum();
         assertThat(app2CheckSum, is(not(checkSum)));
 
         assertTrue((new File(tmp, "files/foo.json")).delete());
         FilesApplicationPackage app3 = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
-        final String app3CheckSum = app3.getMetaData().getCheckSum();
+        String app3CheckSum = app3.getMetaData().getCheckSum();
         assertThat(app3CheckSum, is(not(app2CheckSum)));
     }
 

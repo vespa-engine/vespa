@@ -9,8 +9,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 /**
  * Contains the context for serving getconfig requests so that this information does not have to be looked up multiple times.
  *
- * @author lulf
- * @since 5.8
+ * @author Ulf Lilleengen
  */
 public class GetConfigContext {
 

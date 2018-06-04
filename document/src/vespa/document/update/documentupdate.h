@@ -43,11 +43,7 @@ class Document;
  */
 class DocumentUpdate final : public Printable, public XmlSerializable
 {
-public:
-    typedef std::unique_ptr<DocumentUpdate> UP;
-    typedef std::shared_ptr<DocumentUpdate> SP;
-    typedef std::vector<FieldUpdate> FieldUpdateV;
-    typedef std::vector<FieldPathUpdate::CP> FieldPathUpdateV;
+private:
     /**
      * Enum class containing the legal serialization version for
      * document updates. This version is not encoded in the serialized
@@ -57,6 +53,11 @@ public:
         SERIALIZE_42,  // old style format, before vespa 5.0
         SERIALIZE_HEAD // new style format, since vespa 5.0
     };
+public:
+    typedef std::unique_ptr<DocumentUpdate> UP;
+    typedef std::shared_ptr<DocumentUpdate> SP;
+    typedef std::vector<FieldUpdate> FieldUpdateV;
+    typedef std::vector<FieldPathUpdate::CP> FieldPathUpdateV;
 
     /**
      * Create old style document update, no support for field path updates.
@@ -67,7 +68,16 @@ public:
      * Create new style document update, possibly with field path updates.
      */
     static DocumentUpdate::UP createHEAD(const DocumentTypeRepo&, ByteBuffer&);
-	
+
+    /**
+     * Create a document update from a byte buffer containing a serialized
+     * document update. Public to allow useage in std::make_unique/shared.
+     *
+     * @param repo Document type repo used to find proper document type
+     * @param buffer The buffer containing the serialized document update
+     * @param serializeVersion Selector between serialization formats.
+     */
+    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer, SerializeVersion serializeVersion);
     /**
      * The document type is not strictly needed, as we know this at applyTo()
      * time, but search does not use applyTo() code to do the update, and don't
@@ -79,16 +89,6 @@ public:
      * @param id The identifier of the document that this update is created for.
      */
     DocumentUpdate(const DataType &type, const DocumentId& id);
-
-    /**
-     * Create a document update from a byte buffer containing a serialized
-     * document update.
-     *
-     * @param repo Document type repo used to find proper document type
-     * @param buffer The buffer containing the serialized document update
-     * @param serializeVersion Selector between serialization formats.
-     */
-    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer, SerializeVersion serializeVersion);
 
     DocumentUpdate(const DocumentUpdate &) = delete;
     DocumentUpdate & operator = (const DocumentUpdate &) = delete;
@@ -130,10 +130,6 @@ public:
 	
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
-    void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
-
-    void serialize42(vespalib::nbostream &stream) const;
     void serializeHEAD(vespalib::nbostream &stream) const;
 
     void printXml(XmlOutputStream&) const override;
@@ -164,15 +160,9 @@ private:
     int16_t          _version; // Serialization version
     bool             _createIfNonExistent;
 
-    /**
-     * This function exist because search relies on deserialization through
-     * creating object through empty constructor and calling deserialize.
-     *
-     * It is hidden to prevent accidental other usage.
-     */
-    DocumentUpdate();
-
     int deserializeFlags(int sizeAndFlags);
+    void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
+    void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
 };
 
 } // document

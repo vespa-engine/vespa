@@ -29,7 +29,7 @@ public class HttpConfigResponseTest {
         // TODO: Hope to be able to remove this mess soon.
         DefParser dParser = new DefParser(SimpletypesConfig.getDefName(), new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
         InnerCNode targetDef = dParser.getTree();
-        ConfigResponse configResponse = SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, "mymd5");
+        ConfigResponse configResponse = SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5");
         HttpConfigResponse response = HttpConfigResponse.createFromConfig(configResponse);
         assertThat(SessionHandlerTest.getRenderedString(response), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}"));
     }

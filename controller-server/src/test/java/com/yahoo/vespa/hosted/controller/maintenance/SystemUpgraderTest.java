@@ -121,7 +121,6 @@ public class SystemUpgraderTest {
     }
 
     @Test
-    @Ignore // TODO: Unignore once host applications support upgrade
     public void upgrade_system_containing_host_applications() {
         tester.controllerTester().zoneRegistry().setUpgradePolicy(
                 UpgradePolicy.create()

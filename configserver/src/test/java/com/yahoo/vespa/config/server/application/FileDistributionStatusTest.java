@@ -161,7 +161,13 @@ public class FileDistributionStatusTest {
 
     private Application createApplication(List<String> hostnames) {
         Model mockModel = MockModel.createConfigProxies(hostnames, 1337);
-        return new Application(mockModel, new ServerCache(), 3, Version.fromIntValues(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
+        return new Application(mockModel,
+                               new ServerCache(),
+                               3,
+                               false,
+                               Version.fromIntValues(0, 0, 0),
+                               MetricUpdater.createTestUpdater(),
+                               appId);
     }
 
     HttpResponse getStatus(FileDistributionStatus fileDistributionStatus, Application application) {

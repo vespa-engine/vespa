@@ -4,13 +4,11 @@
 #include <vespa/fastos/types.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class SerializationHelper
 {
@@ -60,8 +58,7 @@ public:
         return api::ReturnCode(result, message);
     }
 
-    static void putReturnCode(const api::ReturnCode& code,
-                              vespalib::GrowableByteBuffer& buf)
+    static void putReturnCode(const api::ReturnCode& code, vespalib::GrowableByteBuffer& buf)
     {
         buf.putInt(code.getResult());
         buf.putString(code.getMessage());
@@ -77,18 +74,14 @@ public:
         return document::GlobalId(&buffer[0]);
     }
 
-    static void putGlobalId(const document::GlobalId& gid,
-                            vespalib::GrowableByteBuffer& buf)
+    static void putGlobalId(const document::GlobalId& gid, vespalib::GrowableByteBuffer& buf)
     {
         buf.putShort(document::GlobalId::LENGTH);
         for (uint32_t i=0; i<document::GlobalId::LENGTH; ++i) {
             buf.putByte(gid.get()[i]);
         }
     }
-
-    static document::Document::UP getDocument(
-            document::ByteBuffer& buf,
-            const document::DocumentTypeRepo& repo)
+    static document::Document::UP getDocument(document::ByteBuffer& buf, const document::DocumentTypeRepo& repo)
     {
         uint32_t size = getInt(buf);
         if (size == 0) {
@@ -100,26 +93,7 @@ public:
         }
     }
 
-    static document::DocumentUpdate::UP getUpdate(
-            document::ByteBuffer& buf,
-            const document::DocumentTypeRepo& repo)
-    {
-        uint32_t size = getInt(buf);
-        if (size == 0) {
-            return document::DocumentUpdate::UP();
-        } else {
-            document::ByteBuffer bbuf(buf.getBufferAtPos(), size);
-            buf.incPos(size);
-            return document::DocumentUpdate::UP(
-                    new document::DocumentUpdate(repo, bbuf,
-                                                 document::DocumentUpdate::
-                                                 SerializeVersion::
-                                                 SERIALIZE_42));
-        }
-    }
-
-    static void putDocument(document::Document* doc,
-                            vespalib::GrowableByteBuffer& buf)
+    static void putDocument(document::Document* doc, vespalib::GrowableByteBuffer& buf)
     {
         if (doc) {
             vespalib::nbostream stream;
@@ -131,21 +105,6 @@ public:
         }
     }
 
-    static void putUpdate(document::DocumentUpdate* update,
-                          vespalib::GrowableByteBuffer& buf)
-    {
-        if (update) {
-            vespalib::nbostream stream;
-            update->serialize42(stream);
-            buf.putInt(stream.size());
-            buf.putBytes(stream.peek(), stream.size());
-        } else {
-            buf.putInt(0);
-        }
-    }
-
 };
 
-} // mbusprot
-} // storage
-
+}

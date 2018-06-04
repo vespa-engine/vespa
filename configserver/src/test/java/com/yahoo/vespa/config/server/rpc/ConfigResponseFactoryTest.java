@@ -13,38 +13,38 @@ import org.junit.Test;
 
 import java.io.StringReader;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
- * @author lulf
- * @since 5.19
+ * @author Ulf Lilleengen
  */
 public class ConfigResponseFactoryTest {
-    private InnerCNode def;
 
+    private InnerCNode def;
 
     @Before
     public void setup() {
-        DefParser dParser = new DefParser(SimpletypesConfig.getDefName(), new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
+        DefParser dParser = new DefParser(SimpletypesConfig.getDefName(),
+                                          new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
         def = dParser.getTree();
     }
 
     @Test
     public void testUncompressedFacory() {
         UncompressedConfigResponseFactory responseFactory = new UncompressedConfigResponseFactory();
-        ConfigResponse response = responseFactory.createResponse(ConfigPayload.empty(), def, 3);
-        assertThat(response.getCompressionInfo().getCompressionType(), is(CompressionType.UNCOMPRESSED));
-        assertThat(response.getGeneration(), is(3l));
-        assertThat(response.getPayload().getByteLength(), is(2));
+        ConfigResponse response = responseFactory.createResponse(ConfigPayload.empty(), def, 3, false);
+        assertEquals(CompressionType.UNCOMPRESSED, response.getCompressionInfo().getCompressionType());
+        assertEquals(3L,response.getGeneration());
+        assertEquals(2, response.getPayload().getByteLength());
     }
 
     @Test
     public void testLZ4CompressedFacory() {
         LZ4ConfigResponseFactory responseFactory = new LZ4ConfigResponseFactory();
-        ConfigResponse response = responseFactory.createResponse(ConfigPayload.empty(), def, 3);
-        assertThat(response.getCompressionInfo().getCompressionType(), is(CompressionType.LZ4));
-        assertThat(response.getGeneration(), is(3l));
-        assertThat(response.getPayload().getByteLength(), is(3));
+        ConfigResponse response = responseFactory.createResponse(ConfigPayload.empty(), def, 3, false);
+        assertEquals(CompressionType.LZ4, response.getCompressionInfo().getCompressionType());
+        assertEquals(3L, response.getGeneration());
+        assertEquals(3, response.getPayload().getByteLength());
     }
+
 }

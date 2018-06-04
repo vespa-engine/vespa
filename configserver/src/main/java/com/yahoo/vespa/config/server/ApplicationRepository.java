@@ -51,7 +51,9 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -70,6 +72,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static java.nio.file.Files.readAttributes;
 
 /**
  * The API for managing applications.
@@ -180,6 +184,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     /**
      * Creates a new deployment from the active application, if available.
+     * This is used for system internal redeployments, not on application package changes.
      *
      * @param application the active application to be redeployed
      * @return a new deployment from the local active, or empty if a local active application
@@ -192,6 +197,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     /**
      * Creates a new deployment from the active application, if available.
+     * This is used for system internal redeployments, not on application package changes.
      *
      * @param application the active application to be redeployed
      * @param timeout the timeout to use for each individual deployment operation
@@ -206,7 +212,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession activeSession = getActiveSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-        LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, timeoutBudget);
+        LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         tenant.getLocalSessionRepo().addSession(newSession);
 
         // Keep manually deployed tenant applications on the latest version, don't change version otherwise
@@ -313,10 +319,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
         log.log(LogLevel.INFO, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
 
-        // TODO: Only consider the ones modified more than some time (14 days?) ago
+        Instant instant = Instant.now().minus(Duration.ofDays(14));
         Set<String> fileReferencesToDelete = fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
+                .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .collect(Collectors.toSet());
         if (deleteFromDisk) {
             log.log(LogLevel.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
@@ -345,6 +352,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().listApplications().stream())
                 .collect(Collectors.toSet());
+    }
+
+    private boolean isFileLastModifiedBefore(File fileReference, Instant instant) {
+        BasicFileAttributes fileAttributes;
+        try {
+            fileAttributes = readAttributes(fileReference.toPath(), BasicFileAttributes.class);
+            return fileAttributes.lastModifiedTime().toInstant().isBefore(instant);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
@@ -385,12 +402,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             throw new IllegalStateException("Session not prepared: " + sessionId);
     }
 
-    public long createSessionFromExisting(ApplicationId applicationId, DeployLogger logger, TimeoutBudget timeoutBudget) {
+    public long createSessionFromExisting(ApplicationId applicationId,
+                                          DeployLogger logger,
+                                          boolean internalRedeploy,
+                                          TimeoutBudget timeoutBudget) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         SessionFactory sessionFactory = tenant.getSessionFactory();
         LocalSession fromSession = getExistingSession(tenant, applicationId);
-        LocalSession session = sessionFactory.createSessionFromExisting(fromSession, logger, timeoutBudget);
+        LocalSession session = sessionFactory.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
         localSessionRepo.addSession(session);
         return session.getSessionId();
     }

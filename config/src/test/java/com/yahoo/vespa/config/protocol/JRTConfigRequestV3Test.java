@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -70,10 +71,11 @@ public class JRTConfigRequestV3Test extends JRTConfigRequestBase {
     @Test
     public void emptypayload() {
         ConfigPayload payload = ConfigPayload.empty();
-        SlimeConfigResponse response = SlimeConfigResponse.fromConfigPayload(payload, null, 0, ConfigUtils.getMd5(payload));
-        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(), response.getConfigMd5());
+        SlimeConfigResponse response = SlimeConfigResponse.fromConfigPayload(payload, null, 0, false, ConfigUtils.getMd5(payload));
+        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(), false, response.getConfigMd5());
         assertTrue(clientReq.validateResponse());
         assertTrue(clientReq.hasUpdatedGeneration());
         assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is("{}"));
+        assertFalse(clientReq.responseIsInternalRedeploy());
     }
 }

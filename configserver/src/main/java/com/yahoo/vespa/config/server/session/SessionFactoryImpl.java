@@ -74,9 +74,12 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.clock = globalComponentRegistry.getClock();
     }
 
+    /** Create a session for a true application package change */
     @Override
-    public LocalSession createSession(File applicationFile, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
-        return create(applicationFile, applicationId, nonExistingActiveSession, timeoutBudget);
+    public LocalSession createSession(File applicationFile,
+                                      ApplicationId applicationId,
+                                      TimeoutBudget timeoutBudget) {
+        return create(applicationFile, applicationId, nonExistingActiveSession, false, timeoutBudget);
     }
 
     private void ensureZKPathDoesNotExist(Path sessionPath) {
@@ -89,13 +92,14 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                  File configApplicationDir,
                                                  String applicationName,
                                                  long sessionId,
-                                                 long currentlyActiveSession) {
+                                                 long currentlyActiveSession,
+                                                 boolean internalRedeploy) {
         long deployTimestamp = System.currentTimeMillis();
         String user = System.getenv("USER");
         if (user == null) {
             user = "unknown";
         }
-        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationName, deployTimestamp, sessionId, currentlyActiveSession);
+        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationName, deployTimestamp, internalRedeploy, sessionId, currentlyActiveSession);
         return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
     }
 
@@ -119,19 +123,21 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     @Override
     public LocalSession createSessionFromExisting(LocalSession existingSession,
                                                   DeployLogger logger,
+                                                  boolean internalRedeploy,
                                                   TimeoutBudget timeoutBudget) {
         File existingApp = getSessionAppDir(existingSession.getSessionId());
         ApplicationId existingApplicationId = existingSession.getApplicationId();
 
         long liveApp = getLiveApp(existingApplicationId);
         logger.log(LogLevel.DEBUG, "Create from existing application id " + existingApplicationId + ", live app for it is " + liveApp);
-        LocalSession session = create(existingApp, existingApplicationId, liveApp, timeoutBudget);
+        LocalSession session = create(existingApp, existingApplicationId, liveApp, internalRedeploy, timeoutBudget);
         session.setApplicationId(existingApplicationId);
         session.setVespaVersion(existingSession.getVespaVersion());
         return session;
     }
 
-    private LocalSession create(File applicationFile, ApplicationId applicationId, long currentlyActiveSession, TimeoutBudget timeoutBudget) {
+    private LocalSession create(File applicationFile, ApplicationId applicationId, long currentlyActiveSession,
+                                boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         long sessionId = sessionCounter.nextSessionId();
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
         log.log(LogLevel.DEBUG, TenantRepository.logPre(tenant) + "Next session id is " + sessionId + " , sessionIdPath=" + sessionIdPath.getAbsolute());
@@ -145,8 +151,12 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                                                        nodeFlavors);
             File userApplicationDir = tenantFileSystemDirs.getUserApplicationDir(sessionId);
             IOUtils.copyDirectory(applicationFile, userApplicationDir);
-            ApplicationPackage applicationPackage = createApplication(applicationFile, userApplicationDir,
-                                                                      applicationId.application().value(), sessionId, currentlyActiveSession);
+            ApplicationPackage applicationPackage = createApplication(applicationFile,
+                                                                      userApplicationDir,
+                                                                      applicationId.application().value(),
+                                                                      sessionId,
+                                                                      currentlyActiveSession,
+                                                                      internalRedeploy);
             applicationPackage.writeMetaData();
             return createSessionFromApplication(applicationPackage, sessionId, sessionZooKeeperClient, timeoutBudget, clock);
         } catch (Exception e) {

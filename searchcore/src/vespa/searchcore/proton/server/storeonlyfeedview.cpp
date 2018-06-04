@@ -319,7 +319,6 @@ StoreOnlyFeedView::updateAttributes(SerialNum, Lid, FutureDoc, bool, OnOperation
 void
 StoreOnlyFeedView::updateIndexedFields(SerialNum, Lid, FutureDoc, bool, OnOperationDoneType)
 {
-    abort(); // Should never be called.
 }
 
 void

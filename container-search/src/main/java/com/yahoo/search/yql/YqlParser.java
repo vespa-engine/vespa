@@ -102,6 +102,10 @@ public class YqlParser implements Parser {
         NEVER, POSSIBLY, ALWAYS;
     }
 
+    private static class IndexNameExpander {
+        public String expand(String leaf) { return leaf; }
+    }
+
     private static final Integer DEFAULT_HITS = 10;
     private static final Integer DEFAULT_OFFSET = 0;
     private static final Integer DEFAULT_TARGET_NUM_HITS = 10;
@@ -194,6 +198,7 @@ public class YqlParser implements Parser {
     private Query userQuery;
     private Parsable currentlyParsing;
     private IndexFacts.Session indexFactsSession;
+    private IndexNameExpander indexNameExpander = new IndexNameExpander();
     private Set<String> docTypes;
     private Sorting sorting;
     private String segmenterBackend;
@@ -534,14 +539,28 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, out);
     }
 
+    private static class PrefixExpander extends IndexNameExpander {
+        private final String prefix;
+        public PrefixExpander(String prefix) {
+            this.prefix = prefix + ".";
+        }
+
+        @Override
+        public String expand(String leaf) {
+            return prefix + leaf;
+        }
+    }
     @NonNull
     private Item instantiateSameElementItem(String field, OperatorNode<ExpressionOperator> ast) {
         assertHasFunctionName(ast, SAME_ELEMENT);
 
         SameElementItem sameElement = new SameElementItem(field);
-        for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            sameElement.addItem(buildTermSearch(word));
+        // All terms below sameElement are relative to this.
+        IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
+        for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+            sameElement.addItem(convertExpression(term));
         }
+        swapIndexCreator(prev);
         return sameElement;
     }
 
@@ -896,8 +915,16 @@ public class YqlParser implements Parser {
 
     @NonNull
     private static String fetchFieldRead(OperatorNode<ExpressionOperator> ast) {
-        assertHasOperator(ast, ExpressionOperator.READ_FIELD);
-        return ast.getArgument(1);
+        switch (ast.getOperator()) {
+            case READ_FIELD:
+                return ast.getArgument(1);
+            case PROPREF:
+                return new StringBuilder(fetchFieldRead(ast.getArgument(0)))
+                        .append('.').append(ast.getArgument(1).toString()).toString();
+            default:
+                throw newUnexpectedArgumentException(ast.getOperator(),
+                        ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+        }
     }
 
     @NonNull
@@ -967,14 +994,12 @@ public class YqlParser implements Parser {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
         if (lhs.getOperator() == ExpressionOperator.LITERAL || lhs.getOperator() == ExpressionOperator.NEGATE) {
-            assertHasOperator(rhs, ExpressionOperator.READ_FIELD);
             return getIndex(rhs);
         }
         if (rhs.getOperator() == ExpressionOperator.LITERAL || rhs.getOperator() == ExpressionOperator.NEGATE) {
-            assertHasOperator(lhs, ExpressionOperator.READ_FIELD);
             return getIndex(lhs);
         }
-        throw new IllegalArgumentException("Expected LITERAL and READ_FIELD, got " + lhs.getOperator() + 
+        throw new IllegalArgumentException("Expected LITERAL and READ_FIELD/PROPREF, got " + lhs.getOperator() +
                                            " and " + rhs.getOperator() + ".");
     }
 
@@ -990,28 +1015,24 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private static String fetchConditionWord(
-            OperatorNode<ExpressionOperator> ast) {
+    private static String fetchConditionWord(OperatorNode<ExpressionOperator> ast) {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
-        if (lhs.getOperator() == ExpressionOperator.LITERAL
-                || lhs.getOperator() == ExpressionOperator.NEGATE) {
-            assertHasOperator(rhs, ExpressionOperator.READ_FIELD);
+        if (lhs.getOperator() == ExpressionOperator.LITERAL || lhs.getOperator() == ExpressionOperator.NEGATE) {
+            assertFieldName(rhs);
             return getNumberAsString(lhs);
         }
-        if (rhs.getOperator() == ExpressionOperator.LITERAL
-                || rhs.getOperator() == ExpressionOperator.NEGATE) {
-            assertHasOperator(lhs, ExpressionOperator.READ_FIELD);
+        if (rhs.getOperator() == ExpressionOperator.LITERAL || rhs.getOperator() == ExpressionOperator.NEGATE) {
+            assertFieldName(lhs);
             return getNumberAsString(rhs);
         }
-        throw new IllegalArgumentException(
-                "Expected LITERAL/NEGATE and READ_FIELD, got "
+        throw new IllegalArgumentException("Expected LITERAL/NEGATE and READ_FIELD/PROPREF, got "
                         + lhs.getOperator() + " and " + rhs.getOperator() + ".");
     }
 
-    private static boolean isIndexOnLeftHandSide(
-            OperatorNode<ExpressionOperator> ast) {
-        return ast.getArgument(0, OperatorNode.class).getOperator() == ExpressionOperator.READ_FIELD;
+    private static boolean isIndexOnLeftHandSide(OperatorNode<ExpressionOperator> ast) {
+        OperatorNode node =  ast.getArgument(0, OperatorNode.class);
+        return node.getOperator() == ExpressionOperator.READ_FIELD || node.getOperator() == ExpressionOperator.PROPREF;
     }
 
     @NonNull
@@ -1539,6 +1560,12 @@ public class YqlParser implements Parser {
                                     expectedFunctionName, names.get(0));
     }
 
+    private static void assertFieldName(OperatorNode<?> ast) {
+        Preconditions.checkArgument(ast.getOperator() == ExpressionOperator.READ_FIELD ||
+                        ast.getOperator() == ExpressionOperator.PROPREF,
+                "Expected operator READ_FIELD or PRPPREF, got %s.", ast.getOperator());
+    }
+
     private static void addItems(OperatorNode<ExpressionOperator> ast, WeightedSetItem out) {
         switch (ast.getOperator()) {
             case MAP:
@@ -1619,21 +1646,25 @@ public class YqlParser implements Parser {
         }
     }
 
+    private IndexNameExpander swapIndexCreator(IndexNameExpander newExpander) {
+        IndexNameExpander old = indexNameExpander;
+        indexNameExpander = newExpander;
+        return old;
+    }
     @NonNull
     private String getIndex(OperatorNode<ExpressionOperator> operatorNode) {
         String index = fetchFieldRead(operatorNode);
-        Preconditions.checkArgument(indexFactsSession.isIndex(index), "Field '%s' does not exist.", index);
+        String expanded = indexNameExpander.expand(index);
+        Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(index);
     }
 
     private Substring getOrigin(OperatorNode<ExpressionOperator> ast) {
-        Map<?, ?> origin = getAnnotation(ast, ORIGIN, Map.class, null,
-                ORIGIN_DESCRIPTION);
+        Map<?, ?> origin = getAnnotation(ast, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION);
         if (origin == null) {
             return null;
         }
-        String original = getMapValue(ORIGIN, origin, ORIGIN_ORIGINAL,
-                String.class);
+        String original = getMapValue(ORIGIN, origin, ORIGIN_ORIGINAL, String.class);
         int offset = getMapValue(ORIGIN, origin, ORIGIN_OFFSET, Integer.class);
         int length = getMapValue(ORIGIN, origin, ORIGIN_LENGTH, Integer.class);
         return new Substring(offset, length + offset, original);

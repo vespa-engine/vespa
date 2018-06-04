@@ -27,26 +27,42 @@ final class ConfigRetriever(bootstrapKeys: Set[ConfigKeyT],
   private var componentSubscriber: Subscriber = subscribe(Set())
   private var componentSubscriberKeys: Set[ConfigKeyT] = Set()
 
-
+  /** Loop forever until we get config */
   @tailrec
-  final def getConfigs(componentConfigKeys: Set[ConfigKeyT], leastGeneration: Long): ConfigSnapshot = {
+  final def getConfigs(componentConfigKeys: Set[ConfigKeyT], leastGeneration: Long, restartOnRedeploy: Boolean = false): ConfigSnapshot = {
     require(componentConfigKeys intersect bootstrapKeys isEmpty)
     log.log(DEBUG, "getConfigs: " + componentConfigKeys)
 
     setupComponentSubscriber(componentConfigKeys ++ bootstrapKeys)
 
-    getConfigsOptional(leastGeneration) match {
+    getConfigsOptional(leastGeneration, restartOnRedeploy) match {
       case Some(snapshot) => resetComponentSubscriberIfBootstrap(snapshot); snapshot
-      case None => getConfigs(componentConfigKeys, leastGeneration)
+      case None => getConfigs(componentConfigKeys, leastGeneration, restartOnRedeploy)
     }
   }
 
-  private def getConfigsOptional(leastGeneration: Long): Option[ConfigSnapshot] = {
+
+  /** Try to get config just once */
+  final def getConfigsOnce(componentConfigKeys: Set[ConfigKeyT], leastGeneration: Long, restartOnRedeploy: Boolean = false): Option[ConfigSnapshot] = {
+    require(componentConfigKeys intersect bootstrapKeys isEmpty)
+    log.log(DEBUG, "getConfigsOnce: " + componentConfigKeys)
+
+    setupComponentSubscriber(componentConfigKeys ++ bootstrapKeys)
+
+    getConfigsOptional(leastGeneration, restartOnRedeploy) match {
+      case Some(snapshot) => resetComponentSubscriberIfBootstrap(snapshot); Some(snapshot)
+      case None => None;
+    }
+  }
+
+  private def getConfigsOptional(leastGeneration: Long, restartOnRedeploy: Boolean): Option[ConfigSnapshot] = {
     val newestComponentGeneration = componentSubscriber.waitNextGeneration()
     log.log(DEBUG, s"getConfigsOptional: new component generation: $newestComponentGeneration")
 
     // leastGeneration is only used to ensure newer generation when the previous generation was invalidated due to an exception
     if (newestComponentGeneration < leastGeneration) {
+      None
+    } else if (restartOnRedeploy && ! componentSubscriber.internalRedeploy()) { // Don't reconfig - wait for restart
       None
     } else if (bootstrapSubscriber.generation < newestComponentGeneration) {
       val newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration()

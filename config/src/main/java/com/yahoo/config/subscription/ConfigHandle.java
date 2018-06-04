@@ -11,7 +11,6 @@ import com.yahoo.config.subscription.impl.ConfigSubscription;
  *
  * @param <T> the type of the config
  * @author vegardh
- * @since 5.1
  */
 public class ConfigHandle<T extends ConfigInstance> {
 

@@ -3,9 +3,8 @@ package com.yahoo.config.subscription;
 
 /**
  * A type of source of config
- * @author vegardh
- * @since 5.1
  *
+ * @author vegardh
  */
 public interface ConfigSource {
 

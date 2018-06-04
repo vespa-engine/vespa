@@ -191,7 +191,8 @@ public class SessionHandlerTest {
         public String applicationName;
 
         @Override
-        public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+        public LocalSession createSession(File applicationDirectory, ApplicationId applicationId,
+                                          TimeoutBudget timeoutBudget) {
             createCalled = true;
             this.applicationName = applicationId.application().value();
             if (doThrow) {
@@ -208,7 +209,8 @@ public class SessionHandlerTest {
         }
 
         @Override
-        public LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger, TimeoutBudget timeoutBudget) {
+        public LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger,
+                                                      boolean internalRedeploy, TimeoutBudget timeoutBudget) {
             if (doThrow) {
                 throw new RuntimeException("foo");
             }

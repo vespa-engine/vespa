@@ -16,6 +16,16 @@ public class SameElementItemTestCase {
         s.addItem(new WordItem("d", "f3"));
         assertEquals("structa:{f1:b f2:c f3:d}", s.toString());
     }
+    @Test
+    public void testClone() {
+        SameElementItem s = new SameElementItem("structa");
+        s.addItem(new WordItem("b", "f1"));
+        s.addItem(new WordItem("c", "f2"));
+        s.addItem(new WordItem("d", "f3"));
+        assertEquals("structa:{f1:b f2:c f3:d}", s.toString());
+        SameElementItem c = (SameElementItem)s.clone();
+        assertEquals("structa:{f1:b f2:c f3:d}", c.toString());
+    }
     @Test(expected = IllegalArgumentException.class)
     public void requireAllChildrenHaveStructMemberNameSet() {
         SameElementItem s = new SameElementItem("structa");

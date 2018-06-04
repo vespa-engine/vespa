@@ -50,9 +50,9 @@ public class ServerCacheTest {
 
         cache.addDef(fooBimDefKey, new ConfigDefinition("mynode", new String[0]));
 
-        cache.put(fooBarCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), payload.getCNode(), 2, configMd5), configMd5);
-        cache.put(bazQuuxCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), payload.getCNode(), 2, configMd5), configMd5);
-        cache.put(fooBarCacheKeyDifferentMd5, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), payload_2.getCNode(), 2, configMd5_2), configMd5_2);
+        cache.put(fooBarCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), payload.getCNode(), 2, false, configMd5), configMd5);
+        cache.put(bazQuuxCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), payload.getCNode(), 2, false, configMd5), configMd5);
+        cache.put(fooBarCacheKeyDifferentMd5, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), payload_2.getCNode(), 2, false, configMd5_2), configMd5_2);
     }
 
     @Test

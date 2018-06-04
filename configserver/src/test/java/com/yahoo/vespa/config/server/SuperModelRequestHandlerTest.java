@@ -122,12 +122,11 @@ public class SuperModelRequestHandlerTest {
     }
 
     private static class TestApplication extends Application {
-        private long version = 0;
 
         public TestApplication(VespaModel vespaModel, ServerCache cache, long appGeneration, ApplicationId app, long version) {
-            super(vespaModel, cache, appGeneration, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), app);
-            this.version = version;
+            super(vespaModel, cache, appGeneration, false, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), app);
         }
+
     }
 
     public static NodeFlavors emptyNodeFlavors() {

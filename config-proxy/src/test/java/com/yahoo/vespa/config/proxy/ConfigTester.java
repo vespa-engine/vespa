@@ -44,11 +44,11 @@ public class ConfigTester {
         String defMd5 = ConfigUtils.getDefMd5(defContent);
         String configMd5 = ConfigUtils.getMd5(fooConfigPayload);
         fooConfig = new RawConfig(configKey, defMd5, fooPayload, configMd5,
-                                  generation, defContent, Optional.empty());
+                                  generation, false, defContent, Optional.empty());
 
         String defName2 = "bar";
         barConfig = new RawConfig(new ConfigKey<>(defName2, configId, namespace), defMd5, fooPayload, configMd5,
-                                  generation, defContent, Optional.empty());
+                                  generation, false, defContent, Optional.empty());
     }
 
     JRTServerConfigRequest createRequest(RawConfig config) {

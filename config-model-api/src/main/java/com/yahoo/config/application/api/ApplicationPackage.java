@@ -224,9 +224,10 @@ public interface ApplicationPackage {
 
     /**
      * Gets the ApplicationMetaData instance for this application package.
+     *
      * @return an ApplicationMetaData instance
      */
-    default ApplicationMetaData getMetaData() { return null; }
+    ApplicationMetaData getMetaData();
 
     default File getFileReference(Path pathRelativeToAppDir) {
         throw new UnsupportedOperationException("This application package cannot return file references");

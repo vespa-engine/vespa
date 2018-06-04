@@ -125,7 +125,7 @@ public abstract class JRTConfigRequestBase {
 
     @Test
     public void next_request_when_error_is_correct() {
-        serverReq.addOkResponse(createPayload(), 999999, "newmd5");
+        serverReq.addOkResponse(createPayload(), 999999, false, "newmd5");
         serverReq.addErrorResponse(ErrorCode.OUTDATED_CONFIG, "error message");
         System.out.println(serverReq);
         JRTClientConfigRequest next = clientReq.nextRequest(6);
@@ -141,7 +141,7 @@ public abstract class JRTConfigRequestBase {
         Payload payload = createPayload("vale");
         String md5 = ConfigUtils.getMd5(payload.getData());
         long generation = 4L;
-        serverReq.addOkResponse(payload, generation, md5);
+        serverReq.addOkResponse(payload, generation, false, md5);
         assertTrue(clientReq.validateResponse());
         assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is(payload.getData().toString()));
         assertThat(clientReq.getNewGeneration(), is(4L));
@@ -168,7 +168,7 @@ public abstract class JRTConfigRequestBase {
     @Test
     public void generation_only_is_updated() {
         Payload payload = createPayload();
-        serverReq.addOkResponse(payload, 4L, ConfigUtils.getMd5(payload.getData()));
+        serverReq.addOkResponse(payload, 4L, false, ConfigUtils.getMd5(payload.getData()));
         boolean value = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), value);
         assertFalse(clientReq.hasUpdatedConfig());
@@ -188,7 +188,7 @@ public abstract class JRTConfigRequestBase {
     @Test
     public void nothing_is_updated() {
         Payload payload = createPayload();
-        serverReq.addOkResponse(payload, currentGeneration, configMd5);
+        serverReq.addOkResponse(payload, currentGeneration, false, configMd5);
         assertTrue(clientReq.validateResponse());
         assertFalse(clientReq.hasUpdatedConfig());
         assertFalse(clientReq.hasUpdatedGeneration());
@@ -199,7 +199,7 @@ public abstract class JRTConfigRequestBase {
         Payload payload = Payload.from(ConfigPayload.empty());
         clientReq = createReq(payload);
         serverReq = createReq(clientReq.getRequest());
-        serverReq.addOkResponse(payload, currentGeneration, ConfigUtils.getMd5(payload.getData()));
+        serverReq.addOkResponse(payload, currentGeneration, false, ConfigUtils.getMd5(payload.getData()));
         boolean val = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), val);
         assertFalse(clientReq.hasUpdatedConfig());
@@ -238,7 +238,7 @@ public abstract class JRTConfigRequestBase {
             @Override
             protected void createResponse() {
                 JRTServerConfigRequest serverRequest = createReq(request);
-                serverRequest.addOkResponse(createPayload(), currentGeneration, configMd5);
+                serverRequest.addOkResponse(createPayload(), currentGeneration, false, configMd5);
             }
         });
 

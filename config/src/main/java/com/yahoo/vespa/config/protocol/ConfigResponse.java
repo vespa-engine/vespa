@@ -13,8 +13,7 @@ import java.util.List;
  * of this must be thread safe, because a response may be cached and, the methods below should be callable
  * from multiple request handler threads.
  *
- * @author lulf
- * @since 5.1.14
+ * @author Ulf Lilleengen
  */
 public interface ConfigResponse {
 
@@ -23,6 +22,8 @@ public interface ConfigResponse {
     List<String> getLegacyPayload();
 
     long getGeneration();
+
+    boolean isInternalRedeploy();
 
     String getConfigMd5();
 

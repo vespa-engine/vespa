@@ -22,13 +22,14 @@ import com.yahoo.vespa.config.protocol.Payload;
  * A JRT config subscription uses one {@link JRTConfigRequester} to fetch config using Vespa RPC from a config source, typically proxy or server
  *
  * @author vegardh
- * @since 5.1
  */
 public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
+
     private JRTConfigRequester requester;
     private TimingValues timingValues;
+
     // Last time we got an OK JRT callback for this
-    private long lastOK=0;
+    private long lastOK = 0;
 
     /**
      * The queue containing either nothing or the one (newest) request that has got callback from JRT,
@@ -67,8 +68,11 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     /**
-     * Polls the callback queue and <em>maybe</em> sets the following (caller must check): generation, generation changed, config, config changed
-     * Important: it never <em>resets</em> those flags, we must persist that state until the {@link ConfigSubscriber} clears it
+     * Polls the callback queue and <em>maybe</em> sets the following (caller must check):
+     * generation, generation changed, config, config changed
+     * Important: it never <em>resets</em> those flags, we must persist that state until the
+     * {@link ConfigSubscriber} clears it
+     *
      * @param timeoutMillis timeout when polling (returns after at most this time)
      * @return true if it got anything off the queue and <em>maybe</em> changed any state, false if timed out taking from queue
      */
@@ -85,6 +89,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             return false;
         }
         if (jrtReq.hasUpdatedGeneration()) {
+            setInternalRedeploy(jrtReq.responseIsInternalRedeploy());
             if (jrtReq.hasUpdatedConfig()) {
                 setNewConfig(jrtReq);
             } else {

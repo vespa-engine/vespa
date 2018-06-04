@@ -51,7 +51,7 @@ public class SuperModelController {
         ConfigKey<?> configKey = request.getConfigKey();
         InnerCNode targetDef = getConfigDefinition(request.getConfigKey(), request.getDefContent());
         ConfigPayload payload = model.getConfig(configKey);
-        return responseFactory.createResponse(payload, targetDef, generation);
+        return responseFactory.createResponse(payload, targetDef, generation, false);
     }
 
     private InnerCNode getConfigDefinition(ConfigKey<?> configKey, DefContent defContent) {

@@ -15,8 +15,7 @@ import java.util.List;
 /**
  * Class for serializing config responses based on {@link com.yahoo.slime.Slime} implementing the {@link ConfigResponse} interface.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SlimeConfigResponse implements ConfigResponse {
 
@@ -24,17 +23,27 @@ public class SlimeConfigResponse implements ConfigResponse {
     private final CompressionInfo compressionInfo;
     private final InnerCNode targetDef;
     private final long generation;
+    private final boolean internalRedeploy;
     private final String configMd5;
 
-    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload, InnerCNode targetDef, long generation, String configMd5) {
+    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload, InnerCNode targetDef, long generation,
+                                                        boolean internalRedeploy, String configMd5) {
         Utf8Array data = payload.toUtf8Array(true);
-        return new SlimeConfigResponse(data, targetDef, generation, configMd5, CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
+        return new SlimeConfigResponse(data, targetDef, generation, internalRedeploy,
+                                       configMd5,
+                                       CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
 
-    public SlimeConfigResponse(Utf8Array payload, InnerCNode targetDef, long generation, String configMd5, CompressionInfo compressionInfo) {
+    public SlimeConfigResponse(Utf8Array payload,
+                               InnerCNode targetDef,
+                               long generation,
+                               boolean internalRedeploy,
+                               String configMd5,
+                               CompressionInfo compressionInfo) {
         this.payload = payload;
         this.targetDef = targetDef;
         this.generation = generation;
+        this.internalRedeploy = internalRedeploy;
         this.configMd5 = configMd5;
         this.compressionInfo = compressionInfo;
     }
@@ -62,6 +71,13 @@ public class SlimeConfigResponse implements ConfigResponse {
         return generation;
     }
 
+    /**
+     * Returns whether this application instance was produced by an internal redeployment,
+     * not an application package change
+     */
+    @Override
+    public boolean isInternalRedeploy() { return internalRedeploy; }
+
     @Override
     public String getConfigMd5() {
         return configMd5;
@@ -81,4 +97,5 @@ public class SlimeConfigResponse implements ConfigResponse {
 
     @Override
     public CompressionInfo getCompressionInfo() { return compressionInfo; }
+
 }

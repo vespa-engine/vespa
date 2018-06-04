@@ -60,7 +60,7 @@ public class HttpGetConfigHandlerTest {
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         InnerCNode targetDef = getInnerCNode();
         mockRequestHandler.responses.put(new ApplicationId.Builder().tenant(tenant).applicationName("myapplication").build(),
-                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, "mymd5"));
+                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5"));
         HttpResponse response = handler.handle(HttpRequest.createTestRequest(configUri, GET));
         assertThat(SessionHandlerTest.getRenderedString(response), is(EXPECTED_RENDERED_STRING));
     }
@@ -75,7 +75,7 @@ public class HttpGetConfigHandlerTest {
         mockRequestHandler.responses.put(new ApplicationId.Builder()
                                          .tenant(tenant)
                                          .applicationName("myapplication").instanceName("myinstance").build(),
-                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, "mymd5"));
+                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5"));
         HttpResponse response = handler.handle(HttpRequest.createTestRequest(uriLongAppId, GET));
         assertThat(SessionHandlerTest.getRenderedString(response), is(EXPECTED_RENDERED_STRING));
     }
@@ -123,7 +123,7 @@ public class HttpGetConfigHandlerTest {
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         InnerCNode targetDef = getInnerCNode();
         mockRequestHandler.responses.put(new ApplicationId.Builder().tenant(tenant).applicationName("myapplication").build(),
-                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, "mymd5"));
+                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5"));
         final HttpRequest request = HttpRequest.createTestRequest(configUri, GET, null, Collections.singletonMap("nocache", "true"));
         HttpResponse response = handler.handle(request);
         assertThat(SessionHandlerTest.getRenderedString(response), is(EXPECTED_RENDERED_STRING));
