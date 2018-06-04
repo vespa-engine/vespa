@@ -16,22 +16,22 @@ QueryConnector::QueryConnector(const char * opName) :
 {
 }
 
-QueryConnector::~QueryConnector() { }
+QueryConnector::~QueryConnector() = default;
 
 const HitList & QueryConnector::evaluateHits(HitList & hl) const
 {
-  if (evaluate()) {
-    hl.push_back(Hit(1, 0, 1));
-  }
-  return hl;
+    if (evaluate()) {
+        hl.push_back(Hit(1, 0, 0, 1));
+    }
+    return hl;
 }
 
 void QueryConnector::reset()
 {
-  for(iterator it=begin(), mt=end(); it != mt; it++) {
-    QueryNode & qn = **it;
-    qn.reset();
-  }
+    for(iterator it=begin(), mt=end(); it != mt; it++) {
+        QueryNode & qn = **it;
+        qn.reset();
+    }
 }
 
 void QueryConnector::getLeafs(QueryTermList & tl)

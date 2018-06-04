@@ -301,9 +301,9 @@ void QueryTerm::resizeFieldId(size_t fieldNo)
     }
 }
 
-void QueryTerm::add(unsigned pos, unsigned context, int32_t weight_)
+void QueryTerm::add(unsigned pos, unsigned context, uint32_t elemId, int32_t weight_)
 {
-    _hitList.emplace_back(pos, context, weight_);
+    _hitList.emplace_back(pos, context, elemId, weight_);
 }
 
 template <int B>

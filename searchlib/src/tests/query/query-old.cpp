@@ -364,31 +364,31 @@ TEST("testPhraseEvaluate") {
     }
 
     // field 0
-    terms[0]->add(0, 0, 1);
-    terms[1]->add(1, 0, 1);
-    terms[2]->add(2, 0, 1);
-    terms[0]->add(7, 0, 1);
-    terms[1]->add(8, 0, 1);
-    terms[2]->add(9, 0, 1);
+    terms[0]->add(0, 0, 0, 1);
+    terms[1]->add(1, 0, 0, 1);
+    terms[2]->add(2, 0, 0, 1);
+    terms[0]->add(7, 0, 0, 1);
+    terms[1]->add(8, 0, 0, 1);
+    terms[2]->add(9, 0, 0, 1);
     // field 1
-    terms[0]->add(4, 1, 1);
-    terms[1]->add(5, 1, 1);
-    terms[2]->add(6, 1, 1);
+    terms[0]->add(4, 1, 0, 1);
+    terms[1]->add(5, 1, 0, 1);
+    terms[2]->add(6, 1, 0, 1);
     // field 2 (not complete match)
-    terms[0]->add(1, 2, 1);
-    terms[1]->add(2, 2, 1);
-    terms[2]->add(4, 2, 1);
+    terms[0]->add(1, 2, 0, 1);
+    terms[1]->add(2, 2, 0, 1);
+    terms[2]->add(4, 2, 0, 1);
     // field 3
-    terms[0]->add(0, 3, 1);
-    terms[1]->add(1, 3, 1);
-    terms[2]->add(2, 3, 1);
+    terms[0]->add(0, 3, 0, 1);
+    terms[1]->add(1, 3, 0, 1);
+    terms[2]->add(2, 3, 0, 1);
     // field 4 (not complete match)
-    terms[0]->add(1, 4, 1);
-    terms[1]->add(2, 4, 1);
+    terms[0]->add(1, 4, 0, 1);
+    terms[1]->add(2, 4, 0, 1);
     // field 5 (not complete match)
-    terms[0]->add(2, 5, 1);
-    terms[1]->add(1, 5, 1);
-    terms[2]->add(0, 5, 1);
+    terms[0]->add(2, 5, 0, 1);
+    terms[1]->add(1, 5, 0, 1);
+    terms[2]->add(0, 5, 0, 1);
     HitList hits;
     PhraseQueryNode * p = static_cast<PhraseQueryNode *>(phrases[0]);
     p->evaluateHits(hits);
@@ -414,15 +414,15 @@ TEST("testPhraseEvaluate") {
 
 TEST("testHit") {
     // positions (0 - (2^24-1))
-    assertHit(Hit(0,        0, 0),        0, 0, 0);
-    assertHit(Hit(256,      0, 1),      256, 0, 1);
-    assertHit(Hit(16777215, 0, -1), 16777215, 0, -1);
-    assertHit(Hit(16777216, 0, 1),        0, 1, 1); // overflow
+    assertHit(Hit(0,        0, 0, 0),        0, 0, 0);
+    assertHit(Hit(256,      0, 0, 1),      256, 0, 1);
+    assertHit(Hit(16777215, 0, 0, -1), 16777215, 0, -1);
+    assertHit(Hit(16777216, 0, 0, 1),        0, 1, 1); // overflow
 
     // contexts (0 - 255)
-    assertHit(Hit(0,   1, 1), 0,   1, 1);
-    assertHit(Hit(0, 255, 1), 0, 255, 1);
-    assertHit(Hit(0, 256, 1), 0,   0, 1); // overflow
+    assertHit(Hit(0,   1, 0, 1), 0,   1, 1);
+    assertHit(Hit(0, 255, 0, 1), 0, 255, 1);
+    assertHit(Hit(0, 256, 0, 1), 0,   0, 1); // overflow
 }
 
 void assertInt8Range(const std::string &term, bool expAdjusted, int64_t expLow, int64_t expHigh) {
