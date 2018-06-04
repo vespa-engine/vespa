@@ -35,7 +35,8 @@ Test::testFilePointer()
         FilePointer file(fopen("filept.txt", "r"));
         EXPECT_TRUE(file.valid());
         char tmp[128];
-        fgets(tmp, sizeof(tmp), file);
+        char *fgetsres = fgets(tmp, sizeof(tmp), file);
+        ASSERT_EQUAL(tmp, fgetsres);
         EXPECT_TRUE(strcmp(tmp, "Hello") == 0);
     }
     {
@@ -57,7 +58,8 @@ Test::testFilePointer()
         file.reset(fopen("filept.txt", "r"));
         EXPECT_TRUE(file.valid());
         char tmp[128];
-        fgets(tmp, sizeof(tmp), file.fp());
+        char *fgetsres = fgets(tmp, sizeof(tmp), file.fp());
+        ASSERT_EQUAL(tmp, fgetsres);
         EXPECT_TRUE(strcmp(tmp, "World") == 0);
 
         FILE *ref = file.fp();

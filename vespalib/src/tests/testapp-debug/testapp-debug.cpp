@@ -4,8 +4,12 @@
 using namespace vespalib;
 
 TEST_MAIN() {
-    system("./vespalib_debug_test_app");
-    system("diff lhs.out rhs.out > diff.out");
+    int status = system("./vespalib_debug_test_app");
+    ASSERT_FALSE(WIFSIGNALED(status));
+    EXPECT_NOT_EQUAL(0, WEXITSTATUS(status));
+    status = system("diff lhs.out rhs.out > diff.out");
+    ASSERT_FALSE(WIFSIGNALED(status));
+    EXPECT_NOT_EQUAL(0, WEXITSTATUS(status));
 
 
     std::string diff_cmd("diff diff.out ");

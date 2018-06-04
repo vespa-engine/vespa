@@ -11,6 +11,11 @@ import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.curator.Curator;
+import org.apache.zookeeper.Op;
+import org.apache.zookeeper.data.Stat;
+
+import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Contains all tenant-level components for a single tenant, dealing with editing sessions and
@@ -122,6 +127,14 @@ public class Tenant implements TenantHandlerProvider {
 
     public Curator getCurator() {
         return curator;
+    }
+
+    public Instant getCreatedTime() {
+        Optional<Stat> stat = curator.getStat(path);
+        if (stat.isPresent())
+            return Instant.ofEpochMilli(stat.get().getCtime());
+        else
+            return Instant.now();
     }
 
     @Override

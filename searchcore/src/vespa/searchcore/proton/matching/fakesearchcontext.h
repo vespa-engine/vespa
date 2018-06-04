@@ -10,8 +10,7 @@
 #include <map>
 #include <vector>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 using searchcorespi::FakeIndexSearchable;
 using searchcorespi::IndexSearchable;
@@ -67,5 +66,4 @@ public:
     virtual const vespalib::Doom & getDoom() const { return _doom; }
 };
 
-}  // namespace matching
-}  // namespace proton
+}

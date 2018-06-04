@@ -19,7 +19,11 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -31,11 +35,13 @@ import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker
  */
 public class ConfigConvergenceCheckerTest {
 
-    private TenantName tenant = TenantName.from("mytenant");
-    private ApplicationId appId = ApplicationId.from(tenant, ApplicationName.from("myapp"), InstanceName.from("myinstance"));
-    private ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    private final TenantName tenant = TenantName.from("mytenant");
+    private final ApplicationId appId = ApplicationId.from(tenant, ApplicationName.from("myapp"), InstanceName.from("myinstance"));
     private Application application;
     private ConfigConvergenceChecker checker;
+    private Map<URI, Long> currentGeneration;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -49,54 +55,105 @@ public class ConfigConvergenceCheckerTest {
                                       false,
                                       Version.fromIntValues(0, 0, 0),
                                       MetricUpdater.createTestUpdater(), appId);
+        currentGeneration = new HashMap<>();
         checker = new ConfigConvergenceChecker(
-                (client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
+                (client, serviceUri) -> () -> asJson("{\"config\":{\"generation\":"
+                                                     + currentGeneration.getOrDefault(serviceUri, 3L)
+                                                     + "}}"));
     }
 
     @Test
-    public void converge() throws IOException {
-        HttpResponse serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"));
-        assertThat(serviceListResponse.getStatus(), is(200));
-        assertEquals("{" +
-                             "\"services\":[" +
-                             "{" +
-                             "\"host\":\"localhost\"," +
-                             "\"port\":1337," +
-                             "\"type\":\"container\"," +
-                             "\"url\":\"http://foo:234/serviceconverge/localhost:1337\"}]," +
-                             "\"url\":\"http://foo:234/serviceconverge\"," +
-                             "\"wantedGeneration\":3}",
-                SessionHandlerTest.getRenderedString(serviceListResponse));
-
-        ServiceResponse response = checker.checkService(application,
-                                                        "localhost:1337",
-                                                        URI.create("http://foo:234/serviceconverge/localhost:1337"));
-        assertThat(response.getStatus(), is(200));
-        assertEquals("{" +
-                             "\"url\":\"http://foo:234/serviceconverge/localhost:1337\"," +
-                             "\"host\":\"localhost:1337\"," +
-                             "\"wantedGeneration\":3," +
-                             "\"converged\":true," +
-                             "\"currentGeneration\":3}",
-                             SessionHandlerTest.getRenderedString(response));
+    public void service_convergence() throws Exception {
+        ServiceResponse serviceResponse = checker.checkService(application,
+                                                               "localhost:1337",
+                                                               URI.create("http://foo:234/serviceconverge/localhost:1337"));
+        assertEquals(200, serviceResponse.getStatus());
+        assertJsonEquals("{\n" +
+                         "  \"url\": \"http://foo:234/serviceconverge/localhost:1337\",\n" +
+                         "  \"host\": \"localhost:1337\",\n" +
+                         "  \"wantedGeneration\": 3,\n" +
+                         "  \"converged\": true,\n" +
+                         "  \"currentGeneration\": 3\n" +
+                         "}",
+                         SessionHandlerTest.getRenderedString(serviceResponse));
 
         ServiceResponse hostMissingResponse = checker.checkService(application,
                                                                    "notPresent:1337",
                                                                    URI.create("http://foo:234/serviceconverge/notPresent:1337"));
-        assertThat(hostMissingResponse.getStatus(), is(410));
-        assertEquals("{" +
-                             "\"url\":\"http://foo:234/serviceconverge/notPresent:1337\"," +
-                             "\"host\":\"notPresent:1337\"," +
-                             "\"wantedGeneration\":3," +
-                             "\"problem\":\"Host:port (service) no longer part of application, refetch list of services.\"}",
+        assertEquals(410, hostMissingResponse.getStatus());
+        assertJsonEquals("{\n" +
+                         "  \"url\": \"http://foo:234/serviceconverge/notPresent:1337\",\n" +
+                         "  \"host\": \"notPresent:1337\",\n" +
+                         "  \"wantedGeneration\": 3,\n" +
+                         "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
+                         "}",
                      SessionHandlerTest.getRenderedString(hostMissingResponse));
     }
 
-    private JsonNode string2json(String data) {
+    @Test
+    public void service_list_convergence() throws Exception {
+        HttpResponse serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"));
+        assertEquals(200, serviceListResponse.getStatus());
+        assertJsonEquals("{\n" +
+                         "  \"services\": [\n" +
+                         "    {\n" +
+                         "      \"host\": \"localhost\",\n" +
+                         "      \"port\": 1337,\n" +
+                         "      \"type\": \"container\",\n" +
+                         "      \"url\": \"http://foo:234/serviceconverge/localhost:1337\"\n" +
+                         "    }\n" +
+                         "  ],\n" +
+                         "  \"url\": \"http://foo:234/serviceconverge\",\n" +
+                         "  \"currentGeneration\": 3,\n" +
+                         "  \"wantedGeneration\": 3,\n" +
+                         "  \"converged\": true\n" +
+                         "}",
+                         SessionHandlerTest.getRenderedString(serviceListResponse));
+
+        // Model with two hosts on different generations
+        MockModel model = new MockModel(Arrays.asList(
+                MockModel.createContainerHost("host1", 1234),
+                MockModel.createContainerHost("host2", 1234))
+        );
+        Application application = new Application(model, new ServerCache(), 4,
+                                                  false,
+                                                  Version.fromIntValues(0, 0, 0),
+                                                  MetricUpdater.createTestUpdater(), appId);
+        currentGeneration.put(URI.create("http://host2:1234"), 4L);
+        serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"));
+        assertEquals(200, serviceListResponse.getStatus());
+        assertJsonEquals("{\n" +
+                         "  \"services\": [\n" +
+                         "    {\n" +
+                         "      \"host\": \"host1\",\n" +
+                         "      \"port\": 1234,\n" +
+                         "      \"type\": \"container\",\n" +
+                         "      \"url\": \"http://foo:234/serviceconverge/host1:1234\"\n" +
+                         "    },\n" +
+                         "    {\n" +
+                         "      \"host\": \"host2\",\n" +
+                         "      \"port\": 1234,\n" +
+                         "      \"type\": \"container\",\n" +
+                         "      \"url\": \"http://foo:234/serviceconverge/host2:1234\"\n" +
+                         "    }\n" +
+                         "  ],\n" +
+                         "  \"url\": \"http://foo:234/serviceconverge\",\n" +
+                         "  \"currentGeneration\": 3,\n" +
+                         "  \"wantedGeneration\": 4,\n" +
+                         "  \"converged\": false\n" +
+                         "}",
+                     SessionHandlerTest.getRenderedString(serviceListResponse));
+    }
+
+    private static void assertJsonEquals(String expected, String actual) {
+        assertEquals(asJson(expected), asJson(actual));
+    }
+
+    private static JsonNode asJson(String data) {
         try {
             return mapper.readTree(data);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 

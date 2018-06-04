@@ -11,11 +11,11 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
+import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -45,10 +45,11 @@ public class ApplicationRepositoryTest {
     private final static File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
     private final static File testAppJdiscOnlyRestart = new File("src/test/apps/app-jdisc-only-restart");
 
-    private final static TenantName tenantName = TenantName.from("test");
+    private final static TenantName tenant1 = TenantName.from("test1");
+    private final static TenantName tenant2 = TenantName.from("test2");
+    private final static TenantName tenant3 = TenantName.from("test3");
     private final static Clock clock = Clock.systemUTC();
 
-    private Tenant tenant;
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
     private TimeoutBudget timeoutBudget;
@@ -62,8 +63,9 @@ public class ApplicationRepositoryTest {
         tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
                                                                 .curator(curator)
                                                                 .build());
-        tenantRepository.addTenant(tenantName);
-        tenant = tenantRepository.getTenant(tenantName);
+        tenantRepository.addTenant(tenant1);
+        tenantRepository.addTenant(tenant2);
+        tenantRepository.addTenant(tenant3);
         Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
         applicationRepository = new ApplicationRepository(tenantRepository, provisioner, clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
@@ -93,10 +95,25 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void deleteUnusedTenants() {
+        // Set clock to epoch plus hour, as mock curator will always return epoch as creation time
+        Instant now = ManualClock.at("1970-01-01T01:00:00");
+
+        // 3 tenants exist, tenant1 and tenant2 has applications deployed:
         deployApp(testApp);
-        assertTrue(applicationRepository.removeUnusedTenants().isEmpty());
+        deployApp(testApp, new PrepareParams.Builder().applicationId(applicationId(tenant2)).build());
+
+        // Should not be deleted, not old enough
+        Duration ttlForUnusedTenant = Duration.ofHours(1);
+        assertTrue(applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, now).isEmpty());
+        // Should be deleted
+        ttlForUnusedTenant = Duration.ofMillis(1);
+        assertEquals(tenant3, applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, now).iterator().next());
+
+        // Delete app used by tenant1, tenant2 still has an application
         applicationRepository.remove(applicationId());
-        assertEquals(tenantName, applicationRepository.removeUnusedTenants().iterator().next());
+        Set<TenantName> tenantsDeleted = applicationRepository.deleteUnusedTenants(Duration.ofMillis(1), now);
+        assertTrue(tenantsDeleted.contains(tenant1));
+        assertFalse(tenantsDeleted.contains(tenant2));
     }
 
     @Test
@@ -125,8 +142,7 @@ public class ApplicationRepositoryTest {
         // Add file reference that is not in use, but should not be deleted (not older than 14 days)
         File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), Instant.now());
 
-        tenantRepository.addTenant(tenantName);
-        tenant = tenantRepository.getTenant(tenantName);
+        tenantRepository.addTenant(tenant1);
         Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
         applicationRepository = new ApplicationRepository(tenantRepository, provisioner, clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
@@ -158,8 +174,10 @@ public class ApplicationRepositoryTest {
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
         FilesApplicationPackage appDir = FilesApplicationPackage.fromFile(application);
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, appDir.getAppDir());
-        return applicationRepository.prepareAndActivate(tenant, sessionId, prepareParams(), false, false, Instant.now());
+        ApplicationId applicationId = applicationId();
+        long sessionId = applicationRepository.createSession(applicationId, timeoutBudget, appDir.getAppDir());
+        return applicationRepository.prepareAndActivate(tenantRepository.getTenant(applicationId.tenant()),
+                                                        sessionId, prepareParams(), false, false, Instant.now());
     }
 
     private PrepareResult deployApp(File applicationPackage) {
@@ -175,6 +193,10 @@ public class ApplicationRepositoryTest {
     }
 
     private ApplicationId applicationId() {
+        return ApplicationId.from(tenant1, ApplicationName.from("testapp"), InstanceName.defaultName());
+    }
+
+    private ApplicationId applicationId(TenantName tenantName) {
         return ApplicationId.from(tenantName, ApplicationName.from("testapp"), InstanceName.defaultName());
     }
 

@@ -5,6 +5,9 @@ import java.util.Optional;
 
 /**
  * Utilities for getting the hostname of the system running the JVM.
+ * Detection of the hostname is now done before starting any Vespa
+ * programs and provided in the environment variable VESPA_HOSTNAME;
+ * if that variable isn't set a default of "localhost" is always returned.
  *
  * @author arnej
  */

@@ -110,8 +110,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
                                  Clock clock) {
+        this(tenantRepository, new ConfigConvergenceChecker(), hostProvisioner, clock);
+    }
+
+    public ApplicationRepository(TenantRepository tenantRepository,
+                                 ConfigConvergenceChecker convergenceChecker,
+                                 Provisioner hostProvisioner,
+                                 Clock clock) {
         this(tenantRepository, Optional.of(hostProvisioner),
-             new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
+             convergenceChecker, new HttpProxy(new SimpleHttpFetcher()),
              new ConfigserverConfig(new ConfigserverConfig.Builder()), clock, new FileDistributionStatus());
     }
 
@@ -438,14 +445,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Tenant operations ----------------------------------------------------------------
 
-    public Set<TenantName> removeUnusedTenants() {
-        Set<TenantName> tenantsToBeDeleted = tenantRepository.getAllTenantNames().stream()
+    public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
+        return tenantRepository.getAllTenantNames().stream()
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())
                 .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
                 .filter(tenantName -> !tenantName.equals(TenantRepository.HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
+                .filter(tenantName -> tenantRepository.getTenant(tenantName).getCreatedTime().isBefore(now.minus(ttlForUnusedTenant)))
+                .peek(tenantRepository::deleteTenant)
                 .collect(Collectors.toSet());
-        tenantsToBeDeleted.forEach(tenantRepository::deleteTenant);
-        return tenantsToBeDeleted;
     }
 
     public void deleteTenant(TenantName tenantName) {

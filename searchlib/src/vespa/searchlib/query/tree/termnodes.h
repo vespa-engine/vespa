@@ -49,15 +49,13 @@ public:
 class StringTerm : public QueryNodeMixin<StringTerm, StringBase >
 {
 public:
-    StringTerm(const Type &term, const vespalib::stringref &view,
-               int32_t id, Weight weight);
+    StringTerm(const Type &term, vespalib::stringref view, int32_t id, Weight weight);
     virtual ~StringTerm() = 0;
 };
 
 //-----------------------------------------------------------------------------
 
-class SubstringTerm :
-        public QueryNodeMixin<SubstringTerm, StringBase >
+class SubstringTerm : public QueryNodeMixin<SubstringTerm, StringBase >
 {
  public:
     SubstringTerm(const Type &term, const vespalib::stringref &view,

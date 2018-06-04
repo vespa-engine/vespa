@@ -68,7 +68,9 @@ public class ApplicationHandlerTest {
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, mytenantName));
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
         provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, Clock.systemUTC());
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          new ConfigConvergenceChecker(stateApiFactory),
+                                                          provisioner, Clock.systemUTC());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                               tenantRepository,
                                                               Zone.defaultZone());

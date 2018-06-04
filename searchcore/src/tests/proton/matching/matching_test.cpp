@@ -85,7 +85,7 @@ vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term,
                                               const vespalib::string &f1_term)
 {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addSameElement(2, "ignored field name");
+    builder.addSameElement(2, "");
     builder.addStringTerm(a1_term, "a1", 1, search::query::Weight(1));
     builder.addStringTerm(f1_term, "f1", 2, search::query::Weight(1));
     return StackDumpCreator::create(*builder.build());
