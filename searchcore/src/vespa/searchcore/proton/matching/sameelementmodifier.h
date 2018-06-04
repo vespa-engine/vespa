@@ -22,7 +22,7 @@ public:
 
         vespalib::string prefix = n.getView() + ".";
         for (auto & child : n.getChildren()) {
-            search::query::StringBase * term  = static_cast<search::query::StringBase *>(child);
+            search::query::StringBase * term  = dynamic_cast<search::query::StringBase *>(child);
             const vespalib::string & index = term->getView();
             if (index.find(prefix) != 0) { // This can be removed when qrs does not prefix the sameelemnt children
                 term->setView(prefix + index);
