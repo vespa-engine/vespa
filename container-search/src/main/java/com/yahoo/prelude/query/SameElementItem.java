@@ -37,7 +37,7 @@ public class SameElementItem extends CompositeItem {
         buffer.append('{');
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             TermItem term = (TermItem) i.next();
-            buffer.append(extractSubFieldName(term)).append(':').append(term.getIndexedString());
+            buffer.append(term.getIndexName()).append(':').append(term.getIndexedString());
             if (i.hasNext()) {
                 buffer.append(' ');
             }
@@ -47,36 +47,13 @@ public class SameElementItem extends CompositeItem {
 
     @Override
     protected void adding(Item item) {
+        super.adding(item);
         Validator.ensureInstanceOf("Child item", item, TermItem.class);
         TermItem asTerm = (TermItem) item;
         Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
         Validator.ensureNonEmpty("Query term", asTerm.getIndexedString());
-        Validator.ensure("Struct fieldname starts with '" + getFieldName() + ".'",
-                !asTerm.getIndexName().startsWith(fieldName+".") || (item.getParent() != null));
-        super.adding(item);
     }
 
-    private void expandChild(Item item) {
-        item.setIndexName(fieldName + '.' + ((TermItem)item).getIndexName());
-    }
-    @Override
-    public void addItem(int index, Item item) {
-        super.addItem(index, item);
-        expandChild(item);
-    }
-
-    @Override
-    public void addItem(Item item) {
-        super.addItem(item);
-        expandChild(item);
-    }
-
-    @Override
-    public Item setItem(int index, Item item) {
-        Item prev = super.setItem(index, item);
-        expandChild(item);
-        return prev;
-    }
 
     @Override
     public ItemType getItemType() {
@@ -88,7 +65,4 @@ public class SameElementItem extends CompositeItem {
         return getItemType().toString();
     }
     public String getFieldName() { return fieldName; }
-    public String extractSubFieldName(TermItem full) {
-        return full.getIndexName().substring(getFieldName().length()+1);
-    }
 }
