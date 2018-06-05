@@ -651,7 +651,13 @@ TEST("require that we do not break the stack on bad query") {
     EXPECT_FALSE(term.isValid());
 }
 
-TEST("testPhraseEvaluate") {
+namespace {
+    void verifyQueryTermNode(const vespalib::string & index, const QueryNode *node) {
+        EXPECT_TRUE(dynamic_cast<const QueryTerm *>(node) != nullptr);
+        EXPECT_EQUAL(index, node->getIndex());
+    }
+}
+TEST("testSameElementEvaluate") {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addSameElement(3, "field");
     {
@@ -663,16 +669,14 @@ TEST("testPhraseEvaluate") {
     vespalib::string stackDump = StackDumpCreator::create(*node);
     QueryNodeResultFactory empty;
     Query q(empty, stackDump);
-    SameElementQueryNode * p = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
-    EXPECT_TRUE(p != nullptr);
-    EXPECT_EQUAL("field", p->getIndex());
-    EXPECT_EQUAL(3u, p->size());
-    EXPECT_TRUE(dynamic_cast<const QueryTerm *>((*p)[0].get()) != nullptr);
-    EXPECT_EQUAL("field.f1", (*p)[0]->getIndex());
-    EXPECT_TRUE(dynamic_cast<const QueryTerm *>((*p)[1].get()) != nullptr);
-    EXPECT_EQUAL("field.f2", (*p)[1]->getIndex());
-    EXPECT_TRUE(dynamic_cast<const QueryTerm *>((*p)[2].get()) != nullptr);
-    EXPECT_EQUAL("field.f3", (*p)[2]->getIndex());
+    SameElementQueryNode * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
+    EXPECT_TRUE(sameElem != nullptr);
+    EXPECT_EQUAL("field", sameElem->getIndex());
+    EXPECT_EQUAL(3u, sameElem->size());
+    verifyQueryTermNode("field.f1", (*sameElem)[0].get());
+    verifyQueryTermNode("field.f2", (*sameElem)[1].get());
+    verifyQueryTermNode("field.f3", (*sameElem)[2].get());
+
     QueryTermList terms;
     q.getLeafs(terms);
     EXPECT_EQUAL(3u, terms.size());
@@ -681,48 +685,48 @@ TEST("testPhraseEvaluate") {
     }
 
     // field 0
-    terms[0]->add(0, 0, 0, 1);
-    terms[0]->add(0, 0, 1, 1);
-    terms[0]->add(0, 0, 2, 1);
-    terms[0]->add(0, 0, 3, 1);
-    terms[0]->add(0, 0, 4, 1);
-    terms[0]->add(0, 0, 5, 1);
+    terms[0]->add(1, 0, 0, 10);
+    terms[0]->add(2, 0, 1, 20);
+    terms[0]->add(3, 0, 2, 30);
+    terms[0]->add(4, 0, 3, 40);
+    terms[0]->add(5, 0, 4, 50);
+    terms[0]->add(6, 0, 5, 60);
 
-    terms[1]->add(0, 1, 0, 1);
-    terms[1]->add(0, 1, 1, 1);
-    terms[1]->add(0, 1, 2, 1);
-    terms[1]->add(0, 1, 4, 1);
-    terms[1]->add(0, 1, 5, 1);
-    terms[1]->add(0, 1, 6, 1);
+    terms[1]->add(7, 1, 0, 70);
+    terms[1]->add(8, 1, 1, 80);
+    terms[1]->add(9, 1, 2, 90);
+    terms[1]->add(10, 1, 4, 100);
+    terms[1]->add(11, 1, 5, 110);
+    terms[1]->add(12, 1, 6, 120);
 
-    terms[2]->add(0, 2, 0, 1);
-    terms[2]->add(0, 2, 2, 1);
-    terms[2]->add(0, 2, 4, 1);
-    terms[2]->add(0, 2, 5, 1);
-    terms[2]->add(0, 2, 6, 1);
+    terms[2]->add(13, 2, 0, 130);
+    terms[2]->add(14, 2, 2, 140);
+    terms[2]->add(15, 2, 4, 150);
+    terms[2]->add(16, 2, 5, 160);
+    terms[2]->add(17, 2, 6, 170);
     HitList hits;
 
-    p->evaluateHits(hits);
+    sameElem->evaluateHits(hits);
     EXPECT_EQUAL(4u, hits.size());
     EXPECT_EQUAL(0u, hits[0].wordpos());
     EXPECT_EQUAL(2u, hits[0].context());
     EXPECT_EQUAL(0u, hits[0].elemId());
-    EXPECT_EQUAL(1,  hits[0].weight());
+    EXPECT_EQUAL(130,  hits[0].weight());
 
     EXPECT_EQUAL(0u, hits[1].wordpos());
     EXPECT_EQUAL(2u, hits[1].context());
     EXPECT_EQUAL(2u, hits[1].elemId());
-    EXPECT_EQUAL(1,  hits[1].weight());
+    EXPECT_EQUAL(140,  hits[1].weight());
 
     EXPECT_EQUAL(0u, hits[2].wordpos());
     EXPECT_EQUAL(2u, hits[2].context());
     EXPECT_EQUAL(4u, hits[2].elemId());
-    EXPECT_EQUAL(1,  hits[2].weight());
+    EXPECT_EQUAL(150,  hits[2].weight());
 
     EXPECT_EQUAL(0u, hits[3].wordpos());
     EXPECT_EQUAL(2u, hits[3].context());
     EXPECT_EQUAL(5u, hits[3].elemId());
-    EXPECT_EQUAL(1,  hits[3].weight());
+    EXPECT_EQUAL(160,  hits[3].weight());
 
 }
 

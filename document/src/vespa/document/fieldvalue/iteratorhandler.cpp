@@ -31,7 +31,7 @@ IteratorHandler::handleCollectionStart(const FieldValue & fv) {
 void
 IteratorHandler::handleCollectionEnd(const FieldValue & fv) {
     onCollectionEnd(Content(fv, getWeight()));
-    _arrayIndexStack.resize(_arrayIndexStack.size() - 1);
+    _arrayIndexStack.pop_back();
 }
 void
 IteratorHandler::handleStructStart(const FieldValue & fv) {

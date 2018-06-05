@@ -66,8 +66,9 @@ size_t QueryConnector::depth() const
     size_t d(0);
     for(const auto & node : *this) {
         size_t t = node->depth();
-        if (t > d)
+        if (t > d) {
             d = t;
+        }
     }
     return d+1;
 }
@@ -224,20 +225,20 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
         const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
         size_t firstPosition = currHit.pos();
         uint32_t currElemId = currHit.elemId();
-        uint32_t curContext = currHit.context();
+        uint32_t currContext = currHit.context();
 
         const HitList & nextHL = next->evaluateHits(tmpHL);
 
         int diff(0);
         size_t nextIndexMax = nextHL.size();
         while ((nextIndex < nextIndexMax) &&
-              ((nextHL[nextIndex].context() < curContext) ||
-               ((nextHL[nextIndex].context() == curContext) && (nextHL[nextIndex].elemId() <= currElemId))) &&
+              ((nextHL[nextIndex].context() < currContext) ||
+               ((nextHL[nextIndex].context() == currContext) && (nextHL[nextIndex].elemId() <= currElemId))) &&
              ((diff = nextHL[nextIndex].pos()-firstPosition) < 1))
         {
             nextIndex++;
         }
-        if ((diff == 1) && (nextHL[nextIndex].context() == curContext) && (nextHL[nextIndex].elemId() == currElemId)) {
+        if ((diff == 1) && (nextHL[nextIndex].context() == currContext) && (nextHL[nextIndex].elemId() == currElemId)) {
             currPhraseLen++;
             if ((currPhraseLen+1) == fullPhraseLen) {
                 Hit h = nextHL[indexVector[currPhraseLen]];
