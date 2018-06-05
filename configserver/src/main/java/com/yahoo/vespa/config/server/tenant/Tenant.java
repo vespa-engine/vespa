@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.curator.Curator;
-import org.apache.zookeeper.Op;
 import org.apache.zookeeper.data.Stat;
 
 import java.time.Instant;
