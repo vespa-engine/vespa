@@ -110,8 +110,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
                                  Clock clock) {
+        this(tenantRepository, new ApplicationConvergenceChecker(), hostProvisioner, clock);
+    }
+
+    public ApplicationRepository(TenantRepository tenantRepository,
+                                 ApplicationConvergenceChecker convergenceChecker,
+                                 Provisioner hostProvisioner,
+                                 Clock clock) {
         this(tenantRepository, Optional.of(hostProvisioner),
-             new ApplicationConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
+             convergenceChecker, new HttpProxy(new SimpleHttpFetcher()),
              new ConfigserverConfig(new ConfigserverConfig.Builder()), clock, new FileDistributionStatus());
     }
 
