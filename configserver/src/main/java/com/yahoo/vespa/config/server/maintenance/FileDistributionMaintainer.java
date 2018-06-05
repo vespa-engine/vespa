@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
@@ -31,7 +32,8 @@ public class FileDistributionMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         // TODO: For now only deletes files in CD system
-        boolean deleteFiles = SystemName.from(configserverConfig.system()) == SystemName.cd;
+        boolean deleteFiles = (SystemName.from(configserverConfig.system()) == SystemName.cd)
+                || Environment.from(configserverConfig.environment()).isTest();
         applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
     }
 }
