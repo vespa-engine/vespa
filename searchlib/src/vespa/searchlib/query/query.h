@@ -28,7 +28,7 @@ public:
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     void setIndex(const vespalib::string & index) override { _index = index; }
     const vespalib::string & getIndex() const override { return _index; }
-    static QueryConnector * create(ParseItem::ItemType type);
+    static std::unique_ptr<QueryConnector> create(ParseItem::ItemType type);
     virtual bool isFlattenable(ParseItem::ItemType type) const { (void) type; return false; }
 private:
     vespalib::string _opName;
@@ -121,6 +121,15 @@ private:
     HitList _cachedHitList;
     bool    _evaluated;
 #endif
+};
+
+class SameElementQueryNode : public AndQueryNode
+{
+public:
+    SameElementQueryNode() : AndQueryNode("SAME_ELEMENT") { }
+    bool evaluate() const override;
+    const HitList & evaluateHits(HitList & hl) const override;
+    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
 };
 
 /**

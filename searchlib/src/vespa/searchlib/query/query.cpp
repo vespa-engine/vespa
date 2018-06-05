@@ -28,85 +28,77 @@ const HitList & QueryConnector::evaluateHits(HitList & hl) const
 
 void QueryConnector::reset()
 {
-    for(iterator it=begin(), mt=end(); it != mt; it++) {
-        QueryNode & qn = **it;
-        qn.reset();
+    for(const auto & node : *this) {
+        node->reset();
     }
 }
 
 void QueryConnector::getLeafs(QueryTermList & tl)
 {
-  for(iterator it=begin(), mt=end(); it != mt; it++) {
-    QueryNode & qn = **it;
-    qn.getLeafs(tl);
-  }
+    for(const auto & node : *this) {
+        node->getLeafs(tl);
+    }
 }
 
 void QueryConnector::getLeafs(ConstQueryTermList & tl) const
 {
-  for(const_iterator it=begin(), mt=end(); it != mt; it++) {
-    const QueryNode & qn = **it;
-    qn.getLeafs(tl);
-  }
+    for(const auto & node : *this) {
+        node->getLeafs(tl);
+    }
 }
 
 void QueryConnector::getPhrases(QueryNodeRefList & tl)
 {
-  for(iterator it=begin(), mt=end(); it != mt; it++) {
-    QueryNode & qn = **it;
-    qn.getPhrases(tl);
-  }
+    for(const auto & node : *this) {
+        node->getPhrases(tl);
+    }
 }
 
 void QueryConnector::getPhrases(ConstQueryNodeRefList & tl) const
 {
-  for(const_iterator it=begin(), mt=end(); it != mt; it++) {
-    const QueryNode & qn = **it;
-    qn.getPhrases(tl);
-  }
+    for(const auto & node : *this) {
+        node->getPhrases(tl);
+    }
 }
 
 size_t QueryConnector::depth() const
 {
-  size_t d(0);
-  for(const_iterator it=begin(), mt=end(); (it!=mt); it++) {
-    const QueryNode & qn = **it;
-    size_t t = qn.depth();
-    if (t > d)
-      d = t;
-  }
-  return d+1;
+    size_t d(0);
+    for(const auto & node : *this) {
+        size_t t = node->depth();
+        if (t > d)
+            d = t;
+    }
+    return d+1;
 }
 
 size_t QueryConnector::width() const
 {
   size_t w(0);
-  for(const_iterator it=begin(), mt=end(); (it!=mt); it++) {
-    const QueryNode & qn = **it;
-    w += qn.width();
+  for(const auto & node : *this) {
+    w += node->width();
   }
 
   return w;
 }
 
-QueryConnector *
+std::unique_ptr<QueryConnector>
 QueryConnector::create(ParseItem::ItemType type)
 {
     switch (type) {
-        case search::ParseItem::ITEM_AND:          return new AndQueryNode();
-        case search::ParseItem::ITEM_OR:           return new OrQueryNode();
-        case search::ParseItem::ITEM_WEAK_AND:     return new OrQueryNode();
-        case search::ParseItem::ITEM_EQUIV:        return new EquivQueryNode();
-        case search::ParseItem::ITEM_WEIGHTED_SET: return new EquivQueryNode();
-        case search::ParseItem::ITEM_DOT_PRODUCT:  return new OrQueryNode();
-        case search::ParseItem::ITEM_WAND:         return new OrQueryNode();
-        case search::ParseItem::ITEM_NOT:          return new AndNotQueryNode();
-        case search::ParseItem::ITEM_PHRASE:       return new PhraseQueryNode();
-        case search::ParseItem::ITEM_SAME_ELEMENT: return new AndQueryNode(); // TODO: This needs a same element operation to work for streaming search too.
-        case search::ParseItem::ITEM_NEAR:         return new NearQueryNode();
-        case search::ParseItem::ITEM_ONEAR:        return new ONearQueryNode();
-        default:
-            return nullptr;
+        case search::ParseItem::ITEM_AND:          return std::make_unique<AndQueryNode>();
+        case search::ParseItem::ITEM_OR:           return std::make_unique<OrQueryNode>();
+        case search::ParseItem::ITEM_WEAK_AND:     return std::make_unique<OrQueryNode>();
+        case search::ParseItem::ITEM_EQUIV:        return std::make_unique<EquivQueryNode>();
+        case search::ParseItem::ITEM_WEIGHTED_SET: return std::make_unique<EquivQueryNode>();
+        case search::ParseItem::ITEM_DOT_PRODUCT:  return std::make_unique<OrQueryNode>();
+        case search::ParseItem::ITEM_WAND:         return std::make_unique<OrQueryNode>();
+        case search::ParseItem::ITEM_NOT:          return std::make_unique<AndNotQueryNode>();
+        case search::ParseItem::ITEM_PHRASE:       return std::make_unique<PhraseQueryNode>();
+        case search::ParseItem::ITEM_SAME_ELEMENT: return std::make_unique<SameElementQueryNode>();
+        case search::ParseItem::ITEM_NEAR:         return std::make_unique<NearQueryNode>();
+        case search::ParseItem::ITEM_ONEAR:        return std::make_unique<ONearQueryNode>();
+        default: return nullptr;
     }
 }
 
@@ -153,13 +145,63 @@ bool EquivQueryNode::evaluate() const
     return OrQueryNode::evaluate();
 }
 
+bool SameElementQueryNode::evaluate() const {
+    HitList hl;
+    return evaluateHits(hl).empty();
+}
+
+const HitList &
+SameElementQueryNode::evaluateHits(HitList & hl) const
+{
+    hl.clear();
+    if ( !AndQueryNode::evaluate()) return hl;
+
+    HitList tmpHL;
+    unsigned int numFields = size();
+    unsigned int currMatchCount = 0;
+    std::vector<unsigned int> indexVector(numFields, 0);
+    auto curr = static_cast<const QueryTerm *> (&(*(*this)[currMatchCount]));
+    bool exhausted( curr->evaluateHits(tmpHL).empty());
+    for (; !exhausted; ) {
+        auto next = static_cast<const QueryTerm &>(*(*this)[currMatchCount+1]);
+        unsigned int & currIndex = indexVector[currMatchCount];
+        unsigned int & nextIndex = indexVector[currMatchCount+1];
+
+        const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
+        uint32_t currElemId = currHit.elemId();
+        uint32_t curContext = currHit.context();
+
+        const HitList & nextHL = next.evaluateHits(tmpHL);
+
+        size_t nextIndexMax = nextHL.size();
+        while ((nextIndex < nextIndexMax) &&
+               ((nextHL[nextIndex].context() < curContext) ||
+                ((nextHL[nextIndex].context() == curContext) && (nextHL[nextIndex].elemId() <= currElemId))))
+        {
+            nextIndex++;
+        }
+        if ((nextHL[nextIndex].context() < curContext) && (nextHL[nextIndex].elemId() == currElemId)) {
+            currMatchCount++;
+            if ((currMatchCount+1) == numFields) {
+                Hit h = nextHL[indexVector[currMatchCount]];
+                hl.emplace_back(0, h.context(), h.elemId(), h.weight());
+                currMatchCount = 0;
+                indexVector[0]++;
+            }
+        } else {
+            currMatchCount = 0;
+            indexVector[currMatchCount]++;
+        }
+        curr = static_cast<const QueryTerm *>(&*(*this)[currMatchCount]);
+        exhausted = (nextIndex >= nextIndexMax) || (indexVector[currMatchCount] >= curr->evaluateHits(tmpHL).size());
+    }
+    return hl;
+}
 
 bool PhraseQueryNode::evaluate() const
 {
-  bool ok(false);
   HitList hl;
-  ok = ! evaluateHits(hl).empty();
-  return ok;
+  return evaluateHits(hl).empty();
 }
 
 void PhraseQueryNode::getPhrases(QueryNodeRefList & tl)            { tl.push_back(this); }
@@ -168,56 +210,55 @@ void PhraseQueryNode::getPhrases(ConstQueryNodeRefList & tl) const { tl.push_bac
 const HitList &
 PhraseQueryNode::evaluateHits(HitList & hl) const
 {
-  hl.clear();
-  _fieldInfo.clear();
-  bool andResult(AndQueryNode::evaluate());
-  if (andResult) {
+    hl.clear();
+    _fieldInfo.clear();
+    if ( ! AndQueryNode::evaluate()) return hl;
+
     HitList tmpHL;
     unsigned int fullPhraseLen = size();
     unsigned int currPhraseLen = 0;
     std::vector<unsigned int> indexVector(fullPhraseLen, 0);
-    const QueryTerm * curr = static_cast<const QueryTerm *> (&(*(*this)[currPhraseLen]));
+    auto curr = static_cast<const QueryTerm *> (&(*(*this)[currPhraseLen]));
     bool exhausted( curr->evaluateHits(tmpHL).empty());
     for (; !exhausted; ) {
-      const QueryTerm & next = static_cast<const QueryTerm &>(*(*this)[currPhraseLen+1]);
-      unsigned int & currIndex = indexVector[currPhraseLen];
-      unsigned int & nextIndex = indexVector[currPhraseLen+1];
+        auto next = static_cast<const QueryTerm &>(*(*this)[currPhraseLen+1]);
+        unsigned int & currIndex = indexVector[currPhraseLen];
+        unsigned int & nextIndex = indexVector[currPhraseLen+1];
 
-      size_t firstPosition = curr->evaluateHits(tmpHL)[currIndex].pos();
-      uint32_t currElemId = curr->evaluateHits(tmpHL)[currIndex].elemId();
-      uint32_t curContext = curr->evaluateHits(tmpHL)[currIndex].context();
+        const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
+        size_t firstPosition = currHit.pos();
+        uint32_t currElemId = currHit.elemId();
+        uint32_t curContext = currHit.context();
 
-      const HitList & nextHL = next.evaluateHits(tmpHL);
+        const HitList & nextHL = next.evaluateHits(tmpHL);
 
-      int diff(0);
-      size_t nextIndexMax = nextHL.size();
-      while ((nextIndex < nextIndexMax) &&
+        int diff(0);
+        size_t nextIndexMax = nextHL.size();
+        while ((nextIndex < nextIndexMax) &&
               ((nextHL[nextIndex].context() < curContext) ||
                ((nextHL[nextIndex].context() == curContext) && (nextHL[nextIndex].elemId() <= currElemId))) &&
              ((diff = nextHL[nextIndex].pos()-firstPosition) < 1))
-      {
-        nextIndex++;
-      }
-      if ((diff == 1) && (nextHL[nextIndex].elemId() == currElemId)) {
-        currPhraseLen++;
-        bool ok = ((currPhraseLen+1)==fullPhraseLen);
-        if (ok) {
-          Hit h = nextHL[indexVector[currPhraseLen]];
-          hl.push_back(h);
-          const QueryTerm::FieldInfo & fi = next.getFieldInfo(h.context());
-          updateFieldInfo(h.context(), hl.size() - 1, fi.getFieldLength());
-          currPhraseLen = 0;
-          indexVector[0]++;
+        {
+            nextIndex++;
         }
-      } else {
-        currPhraseLen = 0;
-        indexVector[currPhraseLen]++;
-      }
-      curr = static_cast<const QueryTerm *>(&*(*this)[currPhraseLen]);
-      exhausted = (nextIndex >= nextIndexMax) || (indexVector[currPhraseLen] >= curr->evaluateHits(tmpHL).size());
+        if ((diff == 1) && (nextHL[nextIndex].context() == curContext) && (nextHL[nextIndex].elemId() == currElemId)) {
+            currPhraseLen++;
+            if ((currPhraseLen+1) == fullPhraseLen) {
+                Hit h = nextHL[indexVector[currPhraseLen]];
+                hl.push_back(h);
+                const QueryTerm::FieldInfo & fi = next.getFieldInfo(h.context());
+                updateFieldInfo(h.context(), hl.size() - 1, fi.getFieldLength());
+                currPhraseLen = 0;
+                indexVector[0]++;
+            }
+        } else {
+            currPhraseLen = 0;
+            indexVector[currPhraseLen]++;
+        }
+        curr = static_cast<const QueryTerm *>(&*(*this)[currPhraseLen]);
+        exhausted = (nextIndex >= nextIndexMax) || (indexVector[currPhraseLen] >= curr->evaluateHits(tmpHL).size());
     }
-  }
-  return hl;
+    return hl;
 }
 
 void
@@ -237,9 +278,8 @@ PhraseQueryNode::updateFieldInfo(size_t fid, size_t offset, size_t fieldLength) 
 bool NotQueryNode::evaluate() const
 {
   bool ok(false);
-  for (const_iterator it=begin(), mt=end(); it!=mt; it++) {
-    const QueryNode & qn = **it;
-    ok |= ! qn.evaluate();
+  for (const auto & node : *this) {
+    ok |= ! node->evaluate();
   }
   return ok;
 }
@@ -263,9 +303,7 @@ bool ONearQueryNode::evaluate() const
   return ok;
 }
 
-Query::Query() :
-  _root()
-{ }
+Query::Query() = default;
 
 Query::Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep) :
   _root()
@@ -283,7 +321,7 @@ bool Query::build(const QueryNodeResultFactory & factory, const QueryPacketT & q
 {
     search::SimpleQueryStackDumpIterator stack(queryRep);
     if (stack.next()) {
-        _root.reset(QueryNode::Build(NULL, factory, stack, true).release());
+        _root = QueryNode::Build(nullptr, factory, stack, true);
     }
     return valid();
 }
