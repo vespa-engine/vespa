@@ -265,7 +265,7 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
     public synchronized TenantRepository deleteTenant(TenantName name) {
         if (name.equals(DEFAULT_TENANT))
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
-        log.log(LogLevel.DEBUG, "Deleting tenant '" + name + "'");
+        log.log(LogLevel.INFO, "Deleting tenant '" + name + "'");
         Tenant tenant = tenants.remove(name);
         if (tenant == null) {
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");

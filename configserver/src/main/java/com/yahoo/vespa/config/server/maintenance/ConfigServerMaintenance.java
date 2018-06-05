@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.config.model.api.FileDistribution;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.FileDistributionFactory;
@@ -46,10 +46,14 @@ public class ConfigServerMaintenance extends AbstractComponent {
 
         DefaultTimes(ConfigserverConfig configserverConfig) {
             boolean isCd = configserverConfig.system().equals(SystemName.cd.name());
+            boolean isTest = Environment.from(configserverConfig.environment()).isTest();
 
             this.defaultInterval = Duration.ofMinutes(configserverConfig.maintainerIntervalMinutes());
-            // TODO: Want job control or feature flag to control when to run this, for now use a very long interval unless in CD
-            this.tenantsMaintainerInterval = isCd ? defaultInterval : Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes());
+            // TODO: Want job control or feature flag to control when to run this, for now use a very
+            // long interval to avoid running the maintainer
+            this.tenantsMaintainerInterval = isCd || isTest
+                    ? defaultInterval
+                    : Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes());
         }
     }
 
