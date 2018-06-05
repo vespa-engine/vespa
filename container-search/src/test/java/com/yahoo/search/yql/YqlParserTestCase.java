@@ -12,6 +12,7 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.Substring;
@@ -279,6 +280,10 @@ public class YqlParserTestCase {
                 "baz:{f1:a f2:10}");
         assertParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10);",
                 "baz:{key:a value.f2:10}");
+        assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10);",
+                "baz:{key:a value.f2:10}");
+        assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\");",
+                "baz:{key:a}");
     }
 
     @Test
@@ -934,6 +939,12 @@ public class YqlParserTestCase {
 
     private void assertParse(String yqlQuery, String expectedQueryTree) {
         assertEquals(expectedQueryTree, parse(yqlQuery).toString());
+    }
+
+    private void assertCanonicalParse(String yqlQuery, String expectedQueryTree) {
+        QueryTree q = parse(yqlQuery);
+        assertNull(QueryCanonicalizer.canonicalize(q));
+        assertEquals(q.toString(), expectedQueryTree);
     }
 
     private void assertParseFail(String yqlQuery, Throwable expectedException) {
