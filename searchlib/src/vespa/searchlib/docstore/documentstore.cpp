@@ -447,8 +447,8 @@ DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid,
         value.set(std::move(buf), len);
     }
     if (! value.empty()) {
-        document::Document::UP doc(value.deserializeDocument(_repo)); 
-        _visitor.visit(lid, *doc);
+        std::shared_ptr<document::Document> doc(value.deserializeDocument(_repo));
+        _visitor.visit(lid, doc);
         rewrite(lid, *doc);
     } else {
         visitRemove(lid);
