@@ -607,9 +607,7 @@ public class VespaSerializer {
                 }
                 Item current = sameElement.getItem(i);
                 if (current instanceof WordItem) {
-                    WordItem modified = (WordItem)current.clone();
-                    modified.setIndexName(sameElement.extractSubFieldName(modified));
-                    new WordSerializer().serialize(destination, modified);
+                    new WordSerializer().serialize(destination, current);
                 } else {
                     throw new IllegalArgumentException(
                             "Serializing of " + current.getClass().getSimpleName()
