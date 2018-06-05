@@ -10,6 +10,10 @@
       <initialStatus>initializing</initialStatus>
     </config>
 
+    <config name="container.core.vip-status">
+      <initiallyInRotation>false</initiallyInRotation>
+    </config>
+
     <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" rotationScheme="date" compressOnRotation="true" symlinkName="access.log" />
     <preprocess:include file='access-logging.xml' required='false' />
 

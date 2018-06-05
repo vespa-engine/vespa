@@ -6,9 +6,12 @@ namespace=container.core
 ## rotation, ignoring any status file.
 noSearchBackendsImpliesOutOfService bool default=true
 
-## Whether to return hard coded reply or serve "status.html" from disk
+## Whether to return hard-coded reply or serve "status.html" from disk
 accessdisk bool default=false
 
 ## The file to serve as the status file.
-## If the paht is relative vespa home is prepended
+## If the path is relative vespa home is prepended
 statusfile string default="share/qrsdocs/status.html"
+
+## The initial rotation state when no information is known about backend clusters
+initiallyInRotation bool default=true
