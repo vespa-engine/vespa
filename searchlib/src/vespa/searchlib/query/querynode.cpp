@@ -72,13 +72,16 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_PURE_WEIGHTED_STRING:
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
     {
-        vespalib::stringref index = queryRep.getIndexName();
+        vespalib::string index = queryRep.getIndexName();
         if (index.empty()) {
             if ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
                 index = parent->getIndex();
             } else {
                 index = DEFAULT;
             }
+        }
+        if (dynamic_cast<const SameElementQueryNode *>(parent) != nullptr) {
+            index = parent->getIndex() + "." + index;
         }
         vespalib::stringref term = queryRep.getTerm();
         QueryTerm::SearchTerm sTerm(QueryTerm::WORD);

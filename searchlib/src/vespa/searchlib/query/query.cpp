@@ -160,27 +160,23 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
     unsigned int numFields = size();
     unsigned int currMatchCount = 0;
     std::vector<unsigned int> indexVector(numFields, 0);
-    auto curr = static_cast<const QueryTerm *> (&(*(*this)[currMatchCount]));
+    auto curr = static_cast<const QueryTerm *> ((*this)[currMatchCount].get());
     bool exhausted( curr->evaluateHits(tmpHL).empty());
     for (; !exhausted; ) {
-        auto next = static_cast<const QueryTerm &>(*(*this)[currMatchCount+1]);
+        auto next = static_cast<const QueryTerm *>((*this)[currMatchCount+1].get());
         unsigned int & currIndex = indexVector[currMatchCount];
         unsigned int & nextIndex = indexVector[currMatchCount+1];
 
         const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
         uint32_t currElemId = currHit.elemId();
-        uint32_t curContext = currHit.context();
 
-        const HitList & nextHL = next.evaluateHits(tmpHL);
+        const HitList & nextHL = next->evaluateHits(tmpHL);
 
         size_t nextIndexMax = nextHL.size();
-        while ((nextIndex < nextIndexMax) &&
-               ((nextHL[nextIndex].context() < curContext) ||
-                ((nextHL[nextIndex].context() == curContext) && (nextHL[nextIndex].elemId() <= currElemId))))
-        {
+        while ((nextIndex < nextIndexMax) && (nextHL[nextIndex].elemId() < currElemId)) {
             nextIndex++;
         }
-        if ((nextHL[nextIndex].context() < curContext) && (nextHL[nextIndex].elemId() == currElemId)) {
+        if (nextHL[nextIndex].elemId() == currElemId) {
             currMatchCount++;
             if ((currMatchCount+1) == numFields) {
                 Hit h = nextHL[indexVector[currMatchCount]];
@@ -192,7 +188,7 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
             currMatchCount = 0;
             indexVector[currMatchCount]++;
         }
-        curr = static_cast<const QueryTerm *>(&*(*this)[currMatchCount]);
+        curr = static_cast<const QueryTerm *>((*this)[currMatchCount].get());
         exhausted = (nextIndex >= nextIndexMax) || (indexVector[currMatchCount] >= curr->evaluateHits(tmpHL).size());
     }
     return hl;
@@ -218,10 +214,10 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
     unsigned int fullPhraseLen = size();
     unsigned int currPhraseLen = 0;
     std::vector<unsigned int> indexVector(fullPhraseLen, 0);
-    auto curr = static_cast<const QueryTerm *> (&(*(*this)[currPhraseLen]));
+    auto curr = static_cast<const QueryTerm *> ((*this)[currPhraseLen].get());
     bool exhausted( curr->evaluateHits(tmpHL).empty());
     for (; !exhausted; ) {
-        auto next = static_cast<const QueryTerm &>(*(*this)[currPhraseLen+1]);
+        auto next = static_cast<const QueryTerm *>((*this)[currPhraseLen+1].get());
         unsigned int & currIndex = indexVector[currPhraseLen];
         unsigned int & nextIndex = indexVector[currPhraseLen+1];
 
@@ -230,7 +226,7 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
         uint32_t currElemId = currHit.elemId();
         uint32_t curContext = currHit.context();
 
-        const HitList & nextHL = next.evaluateHits(tmpHL);
+        const HitList & nextHL = next->evaluateHits(tmpHL);
 
         int diff(0);
         size_t nextIndexMax = nextHL.size();
@@ -246,7 +242,7 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
             if ((currPhraseLen+1) == fullPhraseLen) {
                 Hit h = nextHL[indexVector[currPhraseLen]];
                 hl.push_back(h);
-                const QueryTerm::FieldInfo & fi = next.getFieldInfo(h.context());
+                const QueryTerm::FieldInfo & fi = next->getFieldInfo(h.context());
                 updateFieldInfo(h.context(), hl.size() - 1, fi.getFieldLength());
                 currPhraseLen = 0;
                 indexVector[0]++;
@@ -255,7 +251,7 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
             currPhraseLen = 0;
             indexVector[currPhraseLen]++;
         }
-        curr = static_cast<const QueryTerm *>(&*(*this)[currPhraseLen]);
+        curr = static_cast<const QueryTerm *>((*this)[currPhraseLen].get());
         exhausted = (nextIndex >= nextIndexMax) || (indexVector[currPhraseLen] >= curr->evaluateHits(tmpHL).size());
     }
     return hl;

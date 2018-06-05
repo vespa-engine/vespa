@@ -216,7 +216,7 @@ DocsumFilter::DocsumFilter(const DocsumToolsPtr &tools, const IDocSumCache & doc
     _emptyFieldPath()
 { }
 
-DocsumFilter::~DocsumFilter() { }
+DocsumFilter::~DocsumFilter() =default;
 
 void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPathMap)
 {

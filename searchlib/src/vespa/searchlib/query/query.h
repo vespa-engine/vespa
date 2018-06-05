@@ -199,6 +199,7 @@ public:
     size_t width() const;
     bool valid() const { return _root.get() != NULL; }
     const QueryNode & getRoot() const { return *_root; }
+    QueryNode & getRoot() { return *_root; }
     static QueryNode::UP steal(Query && query) { return std::move(query._root); }
 private:
     QueryNode::UP _root;

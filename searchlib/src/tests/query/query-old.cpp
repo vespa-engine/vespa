@@ -651,4 +651,80 @@ TEST("require that we do not break the stack on bad query") {
     EXPECT_FALSE(term.isValid());
 }
 
+TEST("testPhraseEvaluate") {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    builder.addSameElement(3, "field");
+    {
+        builder.addStringTerm("a", "f1", 0, Weight(0));
+        builder.addStringTerm("b", "f2", 1, Weight(0));
+        builder.addStringTerm("c", "f3", 2, Weight(0));
+    }
+    Node::UP node = builder.build();
+    vespalib::string stackDump = StackDumpCreator::create(*node);
+    QueryNodeResultFactory empty;
+    Query q(empty, stackDump);
+    SameElementQueryNode * p = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
+    EXPECT_TRUE(p != nullptr);
+    EXPECT_EQUAL("field", p->getIndex());
+    EXPECT_EQUAL(3u, p->size());
+    EXPECT_TRUE(dynamic_cast<const QueryTerm *>((*p)[0].get()) != nullptr);
+    EXPECT_EQUAL("field.f1", (*p)[0]->getIndex());
+    EXPECT_TRUE(dynamic_cast<const QueryTerm *>((*p)[1].get()) != nullptr);
+    EXPECT_EQUAL("field.f2", (*p)[1]->getIndex());
+    EXPECT_TRUE(dynamic_cast<const QueryTerm *>((*p)[2].get()) != nullptr);
+    EXPECT_EQUAL("field.f3", (*p)[2]->getIndex());
+    QueryTermList terms;
+    q.getLeafs(terms);
+    EXPECT_EQUAL(3u, terms.size());
+    for (QueryTerm * qt : terms) {
+        qt->resizeFieldId(3);
+    }
+
+    // field 0
+    terms[0]->add(0, 0, 0, 1);
+    terms[0]->add(0, 0, 1, 1);
+    terms[0]->add(0, 0, 2, 1);
+    terms[0]->add(0, 0, 3, 1);
+    terms[0]->add(0, 0, 4, 1);
+    terms[0]->add(0, 0, 5, 1);
+
+    terms[1]->add(0, 1, 0, 1);
+    terms[1]->add(0, 1, 1, 1);
+    terms[1]->add(0, 1, 2, 1);
+    terms[1]->add(0, 1, 4, 1);
+    terms[1]->add(0, 1, 5, 1);
+    terms[1]->add(0, 1, 6, 1);
+
+    terms[2]->add(0, 2, 0, 1);
+    terms[2]->add(0, 2, 2, 1);
+    terms[2]->add(0, 2, 4, 1);
+    terms[2]->add(0, 2, 5, 1);
+    terms[2]->add(0, 2, 6, 1);
+    HitList hits;
+
+    p->evaluateHits(hits);
+    EXPECT_EQUAL(4u, hits.size());
+    EXPECT_EQUAL(0u, hits[0].wordpos());
+    EXPECT_EQUAL(2u, hits[0].context());
+    EXPECT_EQUAL(0u, hits[0].elemId());
+    EXPECT_EQUAL(1,  hits[0].weight());
+
+    EXPECT_EQUAL(0u, hits[1].wordpos());
+    EXPECT_EQUAL(2u, hits[1].context());
+    EXPECT_EQUAL(2u, hits[1].elemId());
+    EXPECT_EQUAL(1,  hits[1].weight());
+
+    EXPECT_EQUAL(0u, hits[2].wordpos());
+    EXPECT_EQUAL(2u, hits[2].context());
+    EXPECT_EQUAL(4u, hits[2].elemId());
+    EXPECT_EQUAL(1,  hits[2].weight());
+
+    EXPECT_EQUAL(0u, hits[3].wordpos());
+    EXPECT_EQUAL(2u, hits[3].context());
+    EXPECT_EQUAL(5u, hits[3].elemId());
+    EXPECT_EQUAL(1,  hits[3].weight());
+
+}
+
+
 TEST_MAIN() { TEST_RUN_ALL(); }

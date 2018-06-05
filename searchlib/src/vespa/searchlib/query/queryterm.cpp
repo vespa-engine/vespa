@@ -73,7 +73,7 @@ QueryTermBase::QueryTermBase() :
     _termUCS4.push_back(0);
 }
 
-QueryTermBase::~QueryTermBase() { }
+QueryTermBase::~QueryTermBase() = default;
 
 QueryTermBase::QueryTermBase(const string & termS, SearchTerm type) :
     QueryTermSimple(termS, type),
@@ -104,7 +104,7 @@ QueryTerm & QueryTerm::operator = (const QueryTerm &) = default;
 QueryTerm::QueryTerm(QueryTerm &&) = default;
 QueryTerm & QueryTerm::operator = (QueryTerm &&) = default;
 
-QueryTerm::~QueryTerm() { }
+QueryTerm::~QueryTerm() = default;
 
 void
 QueryTermSimple::visitMembers(vespalib::ObjectVisitor & visitor) const
@@ -344,7 +344,7 @@ QueryTermSimple::QueryTermSimple() :
     _diversityAttribute()
 { }
 
-QueryTermSimple::~QueryTermSimple() { }
+QueryTermSimple::~QueryTermSimple() = default;
 
 namespace {
 
