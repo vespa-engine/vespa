@@ -139,6 +139,7 @@ Test::Main()
     TEST_CALL(requireThatNodeIsVisited<MyONear>);
     TEST_CALL(requireThatNodeIsVisited<MyOr>);
     TEST_CALL(requireThatNodeIsVisited<MyPhrase>);
+    TEST_CALL(requireThatNodeIsVisited<MySameElement>);
     TEST_CALL(requireThatNodeIsVisited<MyRangeTerm>);
     TEST_CALL(requireThatNodeIsVisited<MyRank>);
     TEST_CALL(requireThatNodeIsVisited<MyNumberTerm>);
