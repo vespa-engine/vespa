@@ -23,7 +23,7 @@ DocStoreValidator::DocStoreValidator(IDocumentMetaStore &dms)
 
 
 void
-DocStoreValidator::visit(uint32_t lid, const document::Document &doc)
+DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Document> &doc)
 {
     if (lid == 0 || lid >= _docIdLimit)
         return;
@@ -32,7 +32,7 @@ DocStoreValidator::visit(uint32_t lid, const document::Document &doc)
         _orphans->setBit(lid);
         return;
     }
-    const document::DocumentId &docId(doc.getId());
+    const document::DocumentId &docId(doc->getId());
     const document::GlobalId &gid = docId.getGlobalId();
     const RawDocumentMetaData &meta = _dms.getRawMetaData(lid);
     const document::GlobalId &dmsGid = meta.getGid();

@@ -31,7 +31,7 @@ public:
     }
 
     // Implements IReprocessingRewriter
-    virtual void handleExisting(uint32_t lid, document::Document &doc) override;
+    virtual void handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
 };
 
 } // namespace proton

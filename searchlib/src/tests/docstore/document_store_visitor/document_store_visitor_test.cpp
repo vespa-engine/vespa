@@ -114,18 +114,18 @@ class MyVisitor : public MyVisitorBase,
 public:
     using MyVisitorBase::MyVisitorBase;
 
-    void visit(uint32_t lid, const Document &doc) override;
+    void visit(uint32_t lid, const std::shared_ptr<Document> &doc) override;
     void visit(uint32_t lid) override;
 };
 
 
 void
-MyVisitor::visit(uint32_t lid, const Document &doc)
+MyVisitor::visit(uint32_t lid, const std::shared_ptr<Document> &doc)
 {
     ++_visitCount;
     assert(lid < _docIdLimit);
     Document::UP expDoc(makeDoc(_repo, lid, _before));
-    EXPECT_TRUE(*expDoc == doc);
+    EXPECT_TRUE(*expDoc == *doc);
     _valid->slowSetBit(lid);
 }
 
@@ -146,19 +146,19 @@ public:
     using MyVisitorBase::MyVisitorBase;
 
     virtual void
-    visit(uint32_t lid, Document &doc) override;
+    visit(uint32_t lid, const std::shared_ptr<Document> &doc) override;
 };
 
 
 void
-MyRewriteVisitor::visit(uint32_t lid, Document &doc)
+MyRewriteVisitor::visit(uint32_t lid, const std::shared_ptr<Document> &doc)
 {
     ++_visitCount;
     assert(lid < _docIdLimit);
     Document::UP expDoc(makeDoc(_repo, lid, _before));
-    EXPECT_TRUE(*expDoc == doc);
+    EXPECT_TRUE(*expDoc == *doc);
     _valid->slowSetBit(lid);
-    doc.set("extra", "foo");
+    doc->set("extra", "foo");
 }
 
 

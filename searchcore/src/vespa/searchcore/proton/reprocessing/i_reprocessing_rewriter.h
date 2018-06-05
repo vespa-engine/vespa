@@ -19,7 +19,7 @@ struct IReprocessingRewriter
     /**
      * Handle and rewrite the given existing document.
      */
-    virtual void handleExisting(uint32_t lid, document::Document &doc) = 0;
+    virtual void handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc) = 0;
 };
 
 } // namespace proton

@@ -21,7 +21,7 @@ class DocStoreValidator : public search::IDocumentStoreReadVisitor
 public:
     DocStoreValidator(IDocumentMetaStore &dms);
 
-    virtual void visit(uint32_t lid, const document::Document &doc) override;
+    virtual void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
     virtual void visit(uint32_t lid) override;
 
     void visitDone();
