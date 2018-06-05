@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -42,7 +41,6 @@ import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
 import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
@@ -56,7 +54,6 @@ public class ApplicationSerializerTest {
 
     @Test
     public void testSerialization() {
-        ControllerTester tester = new ControllerTester();
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("<deployment version='1.0'>" +
                                                                "   <staging/>" +
                                                                "</deployment>");
@@ -207,15 +204,6 @@ public class ApplicationSerializerTest {
                     util.getDiskBusy() + agg));
         }
         return result;
-    }
-
-    @Test
-    public void testLegacySerialization() {
-        Application applicationWithSuccessfulJob = applicationSerializer.fromSlime(applicationSlime(false));
-        assertFalse("No job error for successful job", applicationWithSuccessfulJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().isPresent());
-
-        Application applicationWithFailingJob = applicationSerializer.fromSlime(applicationSlime(true));
-        assertEquals(JobError.unknown, applicationWithFailingJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().get());
     }
 
     @Test
