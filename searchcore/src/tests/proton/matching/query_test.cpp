@@ -107,6 +107,8 @@ class Test : public vespalib::TestApp {
     void requireThatParallelWandBlueprintsAreCreatedCorrectly();
     void requireThatWhiteListBlueprintCanBeUsed();
     void requireThatSameElementTermsAreProperlyPrefixed();
+    void requireThatSameElementDoesNotAllocateMatchData();
+    void requireThatSameElementIteratorsCanBeBuilt();
 
 public:
     ~Test();
@@ -181,14 +183,22 @@ Node::UP buildQueryTree(const ViewResolver &resolver,
     query_builder.addPhrase(2, field, 7, Weight(0));
     query_builder.addStringTerm(phrase_term, field, 8, Weight(0));
     query_builder.addStringTerm(phrase_term, field, 9, Weight(0));
-#if 0
-    //Todo add testing when SameElement blueprints are ready
-    query_builder.addSameElement(2, field);
-    query_builder.addStringTerm(string_term, field, 10, Weight(0));
-    query_builder.addStringTerm(prefix_term, field, 11, Weight(0));
-#endif
+
     Node::UP node = query_builder.build();
 
+    ResolveViewVisitor visitor(resolver, idxEnv);
+    node->accept(visitor);
+    return node;
+}
+
+Node::UP buildSameElementQueryTree(const ViewResolver &resolver,
+                                   const search::fef::IIndexEnvironment &idxEnv)
+{
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    query_builder.addSameElement(2, field);
+    query_builder.addStringTerm(string_term, field, 0, Weight(0));
+    query_builder.addStringTerm(prefix_term, field, 1, Weight(0));
+    Node::UP node = query_builder.build();
     ResolveViewVisitor visitor(resolver, idxEnv);
     node->accept(visitor);
     return node;
@@ -883,6 +893,7 @@ make_same_element_stack_dump(const vespalib::string &prefix, const vespalib::str
     query->accept(sem);
     return query;
 }
+
 void
 Test::requireThatSameElementTermsAreProperlyPrefixed()
 {
@@ -915,6 +926,32 @@ Test::requireThatSameElementTermsAreProperlyPrefixed()
     EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[1])->getView(), "abc.abc.f2");
 }
 
+void
+Test::requireThatSameElementDoesNotAllocateMatchData()
+{
+    Node::UP node = buildSameElementQueryTree(ViewResolver(), plain_index_env);
+    MatchDataLayout mdl;
+    MatchDataReserveVisitor visitor(mdl);
+    node->accept(visitor);
+    MatchData::UP match_data = mdl.createMatchData();
+    EXPECT_EQUAL(0u, match_data->getNumTermFields());
+}
+
+void
+Test::requireThatSameElementIteratorsCanBeBuilt() {
+    Node::UP node = buildSameElementQueryTree(ViewResolver(), plain_index_env);
+    FakeSearchContext context(10);
+    context.addIdx(0).idx(0).getFake()
+        .addResult(field, string_term, FakeResult()
+                   .doc(4).elem(1).pos(0).doc(8).elem(1).pos(0))
+        .addResult(field, prefix_term, FakeResult()
+                   .doc(4).elem(2).pos(0).doc(8).elem(1).pos(1));
+    SearchIterator::UP iterator = getIterator(*node, context);
+    ASSERT_TRUE(iterator.get());
+    EXPECT_TRUE(!iterator->seek(4));
+    EXPECT_TRUE(iterator->seek(8));
+}
+
 Test::~Test() = default;
 
 int
@@ -937,7 +974,6 @@ Test::Main()
     TEST_CALL(requireThatNearIteratorsCanBeBuilt);
     TEST_CALL(requireThatONearIteratorsCanBeBuilt);
     TEST_CALL(requireThatPhraseIteratorsCanBeBuilt);
-    //TODO Add SameElement testing
     TEST_CALL(requireThatUnknownFieldActsEmpty);
     TEST_CALL(requireThatIllegalFieldsAreIgnored);
     TEST_CALL(requireThatQueryGluesEverythingTogether);
@@ -949,7 +985,8 @@ Test::Main()
     TEST_CALL(requireThatParallelWandBlueprintsAreCreatedCorrectly);
     TEST_CALL(requireThatWhiteListBlueprintCanBeUsed);
     TEST_CALL(requireThatSameElementTermsAreProperlyPrefixed);
-
+    TEST_CALL(requireThatSameElementDoesNotAllocateMatchData);
+    TEST_CALL(requireThatSameElementIteratorsCanBeBuilt);
 
     TEST_DONE();
 }
