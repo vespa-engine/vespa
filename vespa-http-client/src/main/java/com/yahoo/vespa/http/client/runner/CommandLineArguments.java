@@ -15,6 +15,8 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -180,6 +182,10 @@ public class CommandLineArguments {
             description = "Skip hostname verification when using TLS")
     private boolean insecure = false;
 
+    @Option(name = {"--header"},
+            description = "Add http header to every request. Header must have the format '<Name>: <Value>'. Use this parameter multiple times for multiple headers")
+    private List<String> headers = new ArrayList<>();
+
     int getWhenVerboseEnabledPrintMessageForEveryXDocuments() {
         return whenVerboseEnabledPrintMessageForEveryXDocuments;
     }
@@ -192,6 +198,11 @@ public class CommandLineArguments {
 
     SessionParams createSessionParams(boolean useJson) {
         final int minThrottleValue = useDynamicThrottlingArg ? 10 : 0;
+        ConnectionParams.Builder connectionParamsBuilder = new ConnectionParams.Builder();
+        for (String header : headers) {
+            String[] nameAndValue = header.split(":");
+            connectionParamsBuilder.addHeader(nameAndValue[0].trim(), nameAndValue[1].trim());
+        }
         SessionParams.Builder builder = new SessionParams.Builder()
                 .setFeedParams(
                         new FeedParams.Builder()
@@ -208,7 +219,7 @@ public class CommandLineArguments {
                                 .build()
                 )
                 .setConnectionParams(
-                        new ConnectionParams.Builder()
+                        connectionParamsBuilder
                                 .setHostnameVerifier(insecure ? NoopHostnameVerifier.INSTANCE :
                                         SSLConnectionSocketFactory.getDefaultHostnameVerifier())
                                 .setNumPersistentConnectionsPerEndpoint(16)
