@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -93,10 +94,10 @@ public class VersionStatus {
         infrastructureVersions.addAll(systemApplicationVersions.keySet());
 
         // The controller version is the lowest controller version of all controllers
-        Version controllerVersion = controllerVersions.keySet().stream().sorted().findFirst().get();
+        Version controllerVersion = controllerVersions.keySet().stream().min(Comparator.naturalOrder()).get();
 
         // The system version is the oldest infrastructure version
-        Version systemVersion = infrastructureVersions.stream().sorted().findFirst().get();
+        Version systemVersion = infrastructureVersions.stream().min(Comparator.naturalOrder()).get();
 
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
                                                                                             controller.applications().asList());
@@ -171,24 +172,30 @@ public class VersionStatus {
 
             // Failing versions
             JobList.from(application)
-                    .failing()
-                    .not().failingApplicationChange()
-                    .not().failingBecause(outOfCapacity)
-                    .mapToList(job -> job.lastCompleted().get().platform())
-                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withFailing(application.id())));
+                   .failing()
+                   .not().failingApplicationChange()
+                   .not().failingBecause(outOfCapacity)
+                   .mapToList(job -> job.lastCompleted().get().platform())
+                   .forEach(version -> versionMap
+                           .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
+                                                   .withFailing(application.id())));
 
             // Succeeding versions
             JobList.from(application)
-                    .lastSuccess().present()
-                    .production()
-                    .mapToList(job -> job.lastSuccess().get().platform())
-                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withProduction(application.id())));
+                   .lastSuccess().present()
+                   .production()
+                   .mapToList(job -> job.lastSuccess().get().platform())
+                   .forEach(version -> versionMap
+                           .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
+                                                   .withProduction(application.id())));
 
             // Deploying versions
             JobList.from(application)
-                    .upgrading()
-                    .mapToList(job -> job.lastTriggered().get().platform())
-                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withDeploying(application.id())));
+                   .upgrading()
+                   .mapToList(job -> job.lastTriggered().get().platform())
+                   .forEach(version -> versionMap
+                           .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
+                                                   .withDeploying(application.id())));
         }
         return versionMap.values();
     }
@@ -205,9 +212,9 @@ public class VersionStatus {
         if (confidence == null) {
             if (isSystemVersion || isControllerVersion) { // Always compute confidence for system and controller
                 confidence = VespaVersion.confidenceFrom(statistics, controller);
-            } else { // Keep existing confidence for non-system versions if already computed
+            } else { // This is an older version so we keep the existing confidence, if any
                 confidence = confidenceFor(statistics.version(), controller)
-                        .orElse(VespaVersion.confidenceFrom(statistics, controller));
+                        .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller));
             }
         }
         return new VespaVersion(statistics,
