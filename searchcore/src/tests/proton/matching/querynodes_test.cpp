@@ -25,6 +25,7 @@
 #include <vespa/searchlib/queryeval/ranksearch.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simple_phrase_search.h>
+#include <vespa/searchlib/queryeval/same_element_search.h>
 #include <vespa/searchlib/queryeval/sourceblendersearch.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
@@ -39,28 +40,30 @@ using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
-using search::fef::TermFieldMatchData;
 using search::fef::TermFieldHandle;
+using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
 using search::fef::test::IndexEnvironment;
 using search::query::Node;
 using search::query::QueryBuilder;
+using search::queryeval::AndNotSearch;
+using search::queryeval::AndSearch;
+using search::queryeval::Blueprint;
+using search::queryeval::EmptySearch;
+using search::queryeval::FakeRequestContext;
+using search::queryeval::FakeResult;
+using search::queryeval::FakeSearch;
+using search::queryeval::FieldSpec;
 using search::queryeval::ISourceSelector;
 using search::queryeval::NearSearch;
 using search::queryeval::ONearSearch;
 using search::queryeval::OrSearch;
-using search::queryeval::AndSearch;
-using search::queryeval::AndNotSearch;
 using search::queryeval::RankSearch;
-using search::queryeval::Blueprint;
+using search::queryeval::SameElementSearch;
 using search::queryeval::SearchIterator;
-using search::queryeval::SourceBlenderSearch;
-using search::queryeval::FieldSpec;
 using search::queryeval::Searchable;
-using search::queryeval::FakeSearch;
-using search::queryeval::FakeResult;
-using search::queryeval::FakeRequestContext;
 using search::queryeval::SimplePhraseSearch;
+using search::queryeval::SourceBlenderSearch;
 using std::string;
 using std::vector;
 using namespace proton::matching;
@@ -287,6 +290,20 @@ SearchIterator *getParent<ONear>(SearchIterator *a, SearchIterator *b) {
 }
 
 template <>
+SearchIterator *getParent<SameElement>(SearchIterator *a, SearchIterator *b) {
+    std::vector<SearchIterator::UP> children;
+    children.emplace_back(a);
+    children.emplace_back(b);
+    TermFieldMatchDataArray data;
+    static TermFieldMatchData tmd;
+    // we only check how many term/field combinations
+    // are below the SameElement parent:
+    // two terms searching in one index field
+    data.add(&tmd).add(&tmd);
+    return new SameElementSearch(nullptr, std::move(children), data, true);
+}
+
+template <>
 SearchIterator *getParent<Or>(SearchIterator *a, SearchIterator *b) {
     return getSimpleParent<OrSearch>(a, b);
 }
@@ -422,6 +439,7 @@ void checkProperBlending() {
     TEST_DO(checkOneFieldNoAttributesOneIndex<T>());
 }
 
+
 template <typename T>
 void checkProperBlendingWithParent() {
     IteratorStructureTest structure_test;
@@ -454,6 +472,24 @@ void checkProperBlendingWithParent() {
     EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
 }
 
+template <>
+void checkProperBlendingWithParent<SameElement>() {
+    using T = SameElement;
+    IteratorStructureTest structure_test;
+    structure_test.setFieldCount(1);
+    structure_test.setAttributeCount(0);
+    structure_test.setIndexCount(2);
+
+    SearchIterator::UP expected(
+            getParent<T>(Blender()
+                         .add(SourceId(0), getTerm(phrase_term1, field[0], source_tag[0]))
+                         .add(SourceId(1), getTerm(phrase_term1, field[0], source_tag[1])),
+                         Blender(bothStrict<T>())
+                         .add(SourceId(0), getTerm(phrase_term2, field[0], source_tag[0]))
+                         .add(SourceId(1), getTerm(phrase_term2, field[0], source_tag[1]))));
+    EXPECT_EQUAL(expected->asString(), structure_test.getIteratorAsString<T>());
+}
+
 TEST("requireThatTermNodeSearchIteratorsGetProperBlending") {
     TEST_DO(checkProperBlending<Term>());
 }
@@ -463,8 +499,7 @@ TEST("requireThatPhrasesGetProperBlending") {
 }
 
 TEST("requireThatSameElementGetProperBlending") {
-    //TODO SameEelement needs proper testing/implementation
-    //TEST_DO(checkProperBlending<SameElement>());
+    TEST_DO(checkProperBlendingWithParent<SameElement>());
 }
 
 TEST("requireThatNearGetProperBlending") {
