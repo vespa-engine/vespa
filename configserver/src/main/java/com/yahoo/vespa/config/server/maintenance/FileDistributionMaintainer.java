@@ -2,7 +2,8 @@
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.api.FileDistribution;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
@@ -10,24 +11,29 @@ import com.yahoo.vespa.defaults.Defaults;
 import java.io.File;
 import java.time.Duration;
 
+// Note: Unit test is in ApplicationRepositoryTest
 public class FileDistributionMaintainer extends Maintainer {
 
     private final ApplicationRepository applicationRepository;
     private final File fileReferencesDir;
+    private final ConfigserverConfig configserverConfig;
 
-    public FileDistributionMaintainer(ApplicationRepository applicationRepository,
-                                      Curator curator,
-                                      Duration interval,
-                                      ConfigserverConfig configserverConfig) {
+    FileDistributionMaintainer(ApplicationRepository applicationRepository,
+                               Curator curator,
+                               Duration interval,
+                               ConfigserverConfig configserverConfig) {
         super(applicationRepository, curator, interval);
         this.applicationRepository = applicationRepository;
+        this.configserverConfig = configserverConfig;
         this.fileReferencesDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));;
     }
 
 
     @Override
     protected void maintain() {
-        // TODO: Does not delete, for now just outputs what should be deleted
-        applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, false);
+        // TODO: For now only deletes files in CD system
+        boolean deleteFiles = (SystemName.from(configserverConfig.system()) == SystemName.cd)
+                || Environment.from(configserverConfig.environment()).isTest();
+        applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
     }
 }

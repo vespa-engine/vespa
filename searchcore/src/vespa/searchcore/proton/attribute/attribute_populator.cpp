@@ -12,6 +12,21 @@ using search::IDestructorCallback;
 
 namespace proton {
 
+namespace {
+
+class PopulateDoneContext : public IDestructorCallback
+{
+    std::shared_ptr<document::Document> _doc;
+public:
+    PopulateDoneContext(const std::shared_ptr<document::Document> &doc)
+        : _doc(doc)
+    {
+    }
+    ~PopulateDoneContext() override = default;
+};
+
+}
+
 search::SerialNum
 AttributePopulator::nextSerialNum()
 {
@@ -55,10 +70,11 @@ AttributePopulator::~AttributePopulator()
 }
 
 void
-AttributePopulator::handleExisting(uint32_t lid, const document::Document &doc)
+AttributePopulator::handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc)
 {
     search::SerialNum serialNum(nextSerialNum());
-    _writer.put(serialNum, doc, lid, true, std::shared_ptr<IDestructorCallback>());
+    auto populateDoneContext = std::make_shared<PopulateDoneContext>(doc);
+    _writer.put(serialNum, *doc, lid, true, populateDoneContext);
 }
 
 void

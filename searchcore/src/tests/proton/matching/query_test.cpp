@@ -911,8 +911,8 @@ Test::requireThatSameElementTermsAreProperlyPrefixed()
     root = dynamic_cast<search::query::SameElement *>(query.get());
     EXPECT_EQUAL(root->getView(), "abc");
     EXPECT_EQUAL(root->getChildren().size(), 2u);
-    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[0])->getView(), "abc.f1");
-    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[1])->getView(), "abc.f2");
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[0])->getView(), "abc.abc.f1");
+    EXPECT_EQUAL(dynamic_cast<ProtonStringTerm *>(root->getChildren()[1])->getView(), "abc.abc.f2");
 }
 
 Test::~Test() = default;

@@ -10,22 +10,22 @@ using namespace document;
 using namespace proton;
 using namespace search::index;
 
-template <typename ReprocessingType, typename DocumentType>
+template <typename ReprocessingType>
 struct MyProcessor : public ReprocessingType
 {
-    typedef std::shared_ptr<MyProcessor<ReprocessingType, DocumentType> > SP;
+    typedef std::shared_ptr<MyProcessor<ReprocessingType> > SP;
     uint32_t _lid;
     DocumentId _docId;
 
     MyProcessor() : _lid(0), _docId() {}
-    virtual void handleExisting(uint32_t lid, DocumentType doc) override {
+    virtual void handleExisting(uint32_t lid, const std::shared_ptr<Document> &doc) override {
         _lid = lid;
-        _docId = doc.getId();
+        _docId = doc->getId();
     }
 };
 
-typedef MyProcessor<IReprocessingReader, const Document &> MyReader;
-typedef MyProcessor<IReprocessingRewriter, Document &> MyRewriter;
+typedef MyProcessor<IReprocessingReader> MyReader;
+typedef MyProcessor<IReprocessingRewriter> MyRewriter;
 
 const vespalib::string DOC_ID = "id:test:searchdocument::0";
 
@@ -35,7 +35,7 @@ struct FixtureBase
     DocBuilder _docBuilder;
     FixtureBase(uint32_t docIdLimit);
     ~FixtureBase();
-    Document::UP createDoc() {
+    std::shared_ptr<Document> createDoc() {
         return _docBuilder.startDocument(DOC_ID).endDocument();
     }
 };
@@ -84,7 +84,7 @@ struct RewriterFixture : public FixtureBase
 
 TEST_F("require that handler propagates visit of existing document to readers", ReaderFixture)
 {
-    f._handler.visit(23u, *f.createDoc());
+    f._handler.visit(23u, f.createDoc());
     EXPECT_EQUAL(23u, f._reader1->_lid);
     EXPECT_EQUAL(DOC_ID, f._reader1->_docId.toString());
     EXPECT_EQUAL(23u, f._reader2->_lid);
@@ -93,7 +93,7 @@ TEST_F("require that handler propagates visit of existing document to readers", 
 
 TEST_F("require that handler propagates visit of existing document to rewriters", RewriterFixture)
 {
-    f._handler.getRewriteVisitor().visit(23u, *f.createDoc());
+    f._handler.getRewriteVisitor().visit(23u, f.createDoc());
     EXPECT_EQUAL(23u, f._rewriter1->_lid);
     EXPECT_EQUAL(DOC_ID, f._rewriter1->_docId.toString());
     EXPECT_EQUAL(23u, f._rewriter2->_lid);
@@ -103,7 +103,7 @@ TEST_F("require that handler propagates visit of existing document to rewriters"
 TEST_F("require that handler skips out of range visit to readers",
        ReaderFixture(10))
 {
-    f._handler.visit(23u, *f.createDoc());
+    f._handler.visit(23u, f.createDoc());
     EXPECT_EQUAL(0u, f._reader1->_lid);
     EXPECT_EQUAL(DocumentId().toString(), f._reader1->_docId.toString());
     EXPECT_EQUAL(0u, f._reader2->_lid);
@@ -113,7 +113,7 @@ TEST_F("require that handler skips out of range visit to readers",
 TEST_F("require that handler skips out of range visit to rewriters",
        RewriterFixture(10))
 {
-    f._handler.getRewriteVisitor().visit(23u, *f.createDoc());
+    f._handler.getRewriteVisitor().visit(23u, f.createDoc());
     EXPECT_EQUAL(0u, f._rewriter1->_lid);
     EXPECT_EQUAL(DocumentId().toString(), f._rewriter1->_docId.toString());
     EXPECT_EQUAL(0u, f._rewriter2->_lid);

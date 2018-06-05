@@ -39,11 +39,12 @@ public class SameElementItemTestCase {
         s.addItem(new WordItem("c", "structaf2"));
         assertEquals("structa:{f1:b structaf2:c}", s.toString());
     }
-    @Test(expected = IllegalArgumentException.class)
-    public void requireNoChildrenHasCommonPrefixWithDot() {
+    @Test
+    public void requireChildrenCanHavePrefixCommonWithParent() {
         SameElementItem s = new SameElementItem("structa");
         s.addItem(new WordItem("b", "f1"));
         s.addItem(new WordItem("c", "structa.f2"));
+        assertEquals("structa:{f1:b structa.f2:c}", s.toString());
     }
     @Test(expected = IllegalArgumentException.class)
     public void requireAllChildrenHaveNonEmptyTerm() {

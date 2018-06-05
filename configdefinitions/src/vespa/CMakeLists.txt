@@ -6,6 +6,8 @@ vespa_add_library(configdefinitions
 )
 vespa_generate_config(configdefinitions application-id.def)
 install_config_definition(application-id.def cloud.config.application-id.def)
+vespa_generate_config(configdefinitions athenz-provider-service.def)
+install_config_definition(athenz-provider-service.def vespa.hosted.athenz.instanceproviderservice.config.athenz-provider-service.def)
 vespa_generate_config(configdefinitions attributes.def)
 install_config_definition(attributes.def vespa.config.search.attributes.def)
 vespa_generate_config(configdefinitions cluster-info.def)

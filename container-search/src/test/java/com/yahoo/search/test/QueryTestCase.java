@@ -14,6 +14,7 @@ import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
@@ -724,6 +725,46 @@ public class QueryTestCase {
         assertDetectionText("foo bar fuz ", "foo a:bar --() fuz","text:a", "text:default");
         assertDetectionText(" 彭 博士 觀 風向  彭 博士 觀 風向  彭 博士 觀 風向 ","headline:\"彭 博士 觀 風向\" content:\"彭 博士 觀 風向\" description:\"彭 博士 觀 風向\" sddocname:contentindexing!0 embargo:<1484665288753!0 expires:>1484665288753!0",
                             "text:headline", "text:content", "text:description", "text:default", "nontext:tags", "nontext:sddocname", "nontext:embargo", "nontext:expires");
+    }
+
+    @Test
+    public void testCompositeChildVerification() {
+        CompositeItem root = new AndItem();
+        try {
+            root.addItem(null);
+            fail("Expected exception");
+        }
+        catch (NullPointerException e) {
+            assertEquals("A composite item child can not be null", e.getMessage());
+        }
+
+        try {
+            root.addItem(root);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Attempted to add a composite to itself", e.getMessage());
+        }
+
+        try {
+            OrItem child = new OrItem();
+            child.addItem(root);
+            root.addItem(child);
+            fail("Expected exception");
+        }
+        catch (QueryException e) {
+            assertEquals("Cannot add OR (AND ) to (AND ) as it would create a cycle", e.getMessage());
+        }
+
+        try {
+            OrItem child = new OrItem();
+            root.addItem(child);
+            child.addItem(root);
+            fail("Expected exception");
+        }
+        catch (QueryException e) {
+            assertEquals("Cannot add (AND (OR )) to (OR ) as it would create a cycle", e.getMessage());
+        }
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {

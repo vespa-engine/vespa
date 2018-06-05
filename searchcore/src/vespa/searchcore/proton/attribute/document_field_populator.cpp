@@ -45,9 +45,9 @@ DocumentFieldPopulator::~DocumentFieldPopulator()
 }
 
 void
-DocumentFieldPopulator::handleExisting(uint32_t lid, Document &doc)
+DocumentFieldPopulator::handleExisting(uint32_t lid, const std::shared_ptr<Document> &doc)
 {
-    DocumentFieldRetriever::populate(lid, doc, _fieldName, *_attr, false);
+    DocumentFieldRetriever::populate(lid, *doc, _fieldName, *_attr, false);
     ++_documentsPopulated;
 }
 

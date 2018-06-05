@@ -61,8 +61,8 @@ public:
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
     using FeedTokenUP = std::unique_ptr<FeedToken>;
-    using FutureDoc = std::shared_future<std::unique_ptr<Document>>;
-    using PromisedDoc = std::promise<std::unique_ptr<Document>>;
+    using FutureDoc = std::shared_future<std::unique_ptr<const Document>>;
+    using PromisedDoc = std::promise<std::unique_ptr<const Document>>;
     using FutureStream = std::future<vespalib::nbostream>;
     using PromisedStream = std::promise<vespalib::nbostream>;
     using DocumentSP = std::shared_ptr<Document>;

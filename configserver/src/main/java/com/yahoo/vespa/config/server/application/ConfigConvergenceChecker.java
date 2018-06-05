@@ -20,11 +20,11 @@ import javax.ws.rs.client.WebTarget;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Checks for convergence of config generation for a given application.
@@ -63,12 +63,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
-        long currentGeneration = servicesToCheck.stream()
-                                                .map(s -> "http://" + s.getHostName() + ":" + getStatePort(s).get())
-                                                .map(URI::create)
-                                                .map(this::getServiceGeneration)
-                                                .min(Comparator.naturalOrder())
-                                                .orElse(0L);
+        long currentGeneration = getServiceGeneration(servicesToCheck);
         return new ServiceListResponse(200, servicesToCheck, uri, application.getApplicationGeneration(),
                                        currentGeneration);
     }
@@ -112,13 +107,33 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                 .findFirst();
     }
 
-    private long generationFromContainerState(JsonNode state) {
+    private static long generationFromContainerState(JsonNode state) {
         return state.get("config").get("generation").asLong();
     }
 
     private static StateApi createStateApi(Client client, URI uri) {
         WebTarget target = client.target(uri);
         return WebResourceFactory.newResource(StateApi.class, target);
+    }
+
+    /** Get service generation for a list of services. Returns the minimum generation of all services */
+    private long getServiceGeneration(List<ServiceInfo> services) {
+        List<URI> serviceUris = services.stream()
+                                        .map(s -> "http://" + s.getHostName() + ":" + getStatePort(s).get())
+                                        .map(URI::create)
+                                        .collect(Collectors.toList());
+        long generation = -1;
+        for (URI uri : serviceUris) {
+            try {
+                long serviceGeneration = getServiceGeneration(uri);
+                if (generation == -1 || serviceGeneration < generation) {
+                    generation = serviceGeneration;
+                }
+            } catch (ProcessingException e) { // Cannot connect to service to determine service generation
+                return -1;
+            }
+        }
+        return generation;
     }
 
     private long getServiceGeneration(URI serviceUri) {

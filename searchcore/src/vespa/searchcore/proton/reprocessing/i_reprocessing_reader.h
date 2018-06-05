@@ -19,7 +19,7 @@ struct IReprocessingReader
     /**
      * Handle the given existing document.
      */
-    virtual void handleExisting(uint32_t lid, const document::Document &doc) = 0;
+    virtual void handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc) = 0;
 
     // signals that there are no more documents
     virtual void done() {}

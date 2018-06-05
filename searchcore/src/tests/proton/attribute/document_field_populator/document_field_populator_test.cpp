@@ -71,8 +71,8 @@ TEST_F("require that document field is populated based on attribute content", Fi
     // NOTE: DocumentFieldRetriever (used by DocumentFieldPopulator) is fully tested
     // with all data types in searchcore/src/tests/proton/server/documentretriever_test.cpp.
     {
-        Document::UP doc = f._ctx.create(1);
-        f._pop.handleExisting(1, *doc);
+        std::shared_ptr<Document> doc = f._ctx.create(1);
+        f._pop.handleExisting(1, doc);
         EXPECT_EQUAL(100, doc->getValue("a1")->getAsInt());
     }
 }

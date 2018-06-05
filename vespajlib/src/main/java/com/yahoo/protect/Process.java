@@ -81,7 +81,7 @@ public final class Process {
                     Thread t = e.getKey();
                     StackTraceElement[] stack = e.getValue();
                     StringBuilder forOneThread = new StringBuilder();
-                    forOneThread.append("Stack for thread: ").append(t.getName()).append(": ");
+                    forOneThread.append("Stack for thread: ").append(t.getName()).append(" ").append(t.isDaemon() ? "DAEMON" : "NON-DAEMON").append(": ");
                     for (StackTraceElement s : stack) {
                         forOneThread.append('\n').append(s.toString());
                     }

@@ -16,7 +16,7 @@ class IDocumentStoreReadVisitor
 {
 public:
     virtual ~IDocumentStoreReadVisitor() { }
-    virtual void visit(uint32_t lid, const document::Document &doc) = 0;
+    virtual void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) = 0;
     virtual void visit(uint32_t lid) = 0;
 };
 
@@ -24,7 +24,7 @@ class IDocumentStoreRewriteVisitor
 {
 public:
     virtual ~IDocumentStoreRewriteVisitor() { }
-    virtual void visit(uint32_t lid, document::Document &doc) = 0;
+    virtual void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) = 0;
 };
 
 class IDocumentStoreVisitorProgress

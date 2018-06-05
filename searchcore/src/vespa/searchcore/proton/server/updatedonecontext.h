@@ -4,6 +4,9 @@
 
 #include "operationdonecontext.h"
 #include <vespa/document/update/documentupdate.h>
+#include <future>
+
+namespace document { class Document; }
 
 namespace proton {
 
@@ -17,11 +20,13 @@ namespace proton {
 class UpdateDoneContext : public OperationDoneContext
 {
     document::DocumentUpdate::SP _upd;
+    std::shared_future<std::unique_ptr<const document::Document>> _doc;
 public:
     UpdateDoneContext(FeedToken token, const document::DocumentUpdate::SP &upd);
     ~UpdateDoneContext() override;
 
     const document::DocumentUpdate &getUpdate() { return *_upd; }
+    void setDocument(std::shared_future<std::unique_ptr<const document::Document>> doc);
 };
 
 

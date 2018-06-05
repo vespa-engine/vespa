@@ -25,7 +25,7 @@ private:
     public:
         RewriteVisitor(DocumentReprocessingHandler &handler) : _handler(handler) {}
         // Implements search::IDocumentStoreRewriteVisitor
-        virtual void visit(uint32_t lid, document::Document &doc) override {
+        virtual void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) override {
             _handler.rewriteVisit(lid, doc);
         }
     };
@@ -35,7 +35,7 @@ private:
     RewriteVisitor _rewriteVisitor;
     uint32_t       _docIdLimit;
 
-    void rewriteVisit(uint32_t lid, document::Document &doc);
+    void rewriteVisit(uint32_t lid, const std::shared_ptr<document::Document> &doc);
 
 public:
     DocumentReprocessingHandler(uint32_t docIdLimit);
@@ -67,7 +67,7 @@ public:
     }
 
     // Implements search::IDocumentStoreReadVisitor
-    virtual void visit(uint32_t lid, const document::Document &doc) override;
+    virtual void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
 
     virtual void visit(uint32_t lid) override;
 

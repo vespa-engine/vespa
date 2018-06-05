@@ -44,7 +44,7 @@ public abstract class CompositeItem extends Item {
             Item possibleCycle = i.next();
 
             if (this == possibleCycle) {
-                throw new QueryException("Tried to create a cycle in a tree.");
+                throw new QueryException("Cannot add " + item + " to " + this + " as it would create a cycle");
             } else if (possibleCycle instanceof CompositeItem) {
                 ensureNotInSubtree((CompositeItem) possibleCycle);
             }
@@ -57,7 +57,7 @@ public abstract class CompositeItem extends Item {
     }
 
     protected void adding(Item item) {
-        Validator.ensureNotNull("Composite item", item);
+        Validator.ensureNotNull("A composite item child", item);
         Validator.ensure("Attempted to add a composite to itself", item != this);
         if (item instanceof CompositeItem) {
             ensureNotInSubtree((CompositeItem) item);
