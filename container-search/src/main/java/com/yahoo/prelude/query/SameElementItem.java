@@ -14,7 +14,7 @@ import java.util.Iterator;
  * @author baldersheim
  */
 @Beta
-public class SameElementItem extends CompositeItem {
+public class SameElementItem extends NonReducibleCompositeItem {
 
     private final String fieldName;
 
@@ -53,8 +53,7 @@ public class SameElementItem extends CompositeItem {
         Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
         Validator.ensureNonEmpty("Query term", asTerm.getIndexedString());
     }
-
-
+    
     @Override
     public ItemType getItemType() {
         return ItemType.SAME_ELEMENT;
