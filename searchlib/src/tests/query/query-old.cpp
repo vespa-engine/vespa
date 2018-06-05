@@ -364,65 +364,63 @@ TEST("testPhraseEvaluate") {
     }
 
     // field 0
-    terms[0]->add(0, 0, 1);
-    terms[1]->add(1, 0, 1);
-    terms[2]->add(2, 0, 1);
-    terms[0]->add(7, 0, 1);
-    terms[1]->add(8, 0, 1);
-    terms[2]->add(9, 0, 1);
+    terms[0]->add(0, 0, 0, 1);
+    terms[1]->add(1, 0, 0, 1);
+    terms[2]->add(2, 0, 0, 1);
+    terms[0]->add(7, 0, 0, 1);
+    terms[1]->add(8, 0, 1, 1);
+    terms[2]->add(9, 0, 0, 1);
     // field 1
-    terms[0]->add(4, 1, 1);
-    terms[1]->add(5, 1, 1);
-    terms[2]->add(6, 1, 1);
+    terms[0]->add(4, 1, 0, 1);
+    terms[1]->add(5, 1, 0, 1);
+    terms[2]->add(6, 1, 0, 1);
     // field 2 (not complete match)
-    terms[0]->add(1, 2, 1);
-    terms[1]->add(2, 2, 1);
-    terms[2]->add(4, 2, 1);
+    terms[0]->add(1, 2, 0, 1);
+    terms[1]->add(2, 2, 0, 1);
+    terms[2]->add(4, 2, 0, 1);
     // field 3
-    terms[0]->add(0, 3, 1);
-    terms[1]->add(1, 3, 1);
-    terms[2]->add(2, 3, 1);
+    terms[0]->add(0, 3, 0, 1);
+    terms[1]->add(1, 3, 0, 1);
+    terms[2]->add(2, 3, 0, 1);
     // field 4 (not complete match)
-    terms[0]->add(1, 4, 1);
-    terms[1]->add(2, 4, 1);
+    terms[0]->add(1, 4, 0, 1);
+    terms[1]->add(2, 4, 0, 1);
     // field 5 (not complete match)
-    terms[0]->add(2, 5, 1);
-    terms[1]->add(1, 5, 1);
-    terms[2]->add(0, 5, 1);
+    terms[0]->add(2, 5, 0, 1);
+    terms[1]->add(1, 5, 0, 1);
+    terms[2]->add(0, 5, 0, 1);
     HitList hits;
     PhraseQueryNode * p = static_cast<PhraseQueryNode *>(phrases[0]);
     p->evaluateHits(hits);
-    ASSERT_TRUE(hits.size() == 4);
+    ASSERT_EQUAL(3u, hits.size());
     EXPECT_EQUAL(hits[0].wordpos(), 2u);
     EXPECT_EQUAL(hits[0].context(), 0u);
-    EXPECT_EQUAL(hits[1].wordpos(), 9u);
-    EXPECT_EQUAL(hits[1].context(), 0u);
-    EXPECT_EQUAL(hits[2].wordpos(), 6u);
-    EXPECT_EQUAL(hits[2].context(), 1u);
-    EXPECT_EQUAL(hits[3].wordpos(), 2u);
-    EXPECT_EQUAL(hits[3].context(), 3u);
-    ASSERT_TRUE(p->getFieldInfoSize() == 4);
+    EXPECT_EQUAL(hits[1].wordpos(), 6u);
+    EXPECT_EQUAL(hits[1].context(), 1u);
+    EXPECT_EQUAL(hits[2].wordpos(), 2u);
+    EXPECT_EQUAL(hits[2].context(), 3u);
+    ASSERT_EQUAL(4u, p->getFieldInfoSize());
     EXPECT_EQUAL(p->getFieldInfo(0).getHitOffset(), 0u);
-    EXPECT_EQUAL(p->getFieldInfo(0).getHitCount(),  2u);
-    EXPECT_EQUAL(p->getFieldInfo(1).getHitOffset(), 2u);
+    EXPECT_EQUAL(p->getFieldInfo(0).getHitCount(),  1u);
+    EXPECT_EQUAL(p->getFieldInfo(1).getHitOffset(), 1u);
     EXPECT_EQUAL(p->getFieldInfo(1).getHitCount(),  1u);
     EXPECT_EQUAL(p->getFieldInfo(2).getHitOffset(), 0u); // invalid, but will never be used
     EXPECT_EQUAL(p->getFieldInfo(2).getHitCount(),  0u);
-    EXPECT_EQUAL(p->getFieldInfo(3).getHitOffset(), 3u);
+    EXPECT_EQUAL(p->getFieldInfo(3).getHitOffset(), 2u);
     EXPECT_EQUAL(p->getFieldInfo(3).getHitCount(),  1u);
 }
 
 TEST("testHit") {
     // positions (0 - (2^24-1))
-    assertHit(Hit(0,        0, 0),        0, 0, 0);
-    assertHit(Hit(256,      0, 1),      256, 0, 1);
-    assertHit(Hit(16777215, 0, -1), 16777215, 0, -1);
-    assertHit(Hit(16777216, 0, 1),        0, 1, 1); // overflow
+    assertHit(Hit(0,        0, 0, 0),        0, 0, 0);
+    assertHit(Hit(256,      0, 0, 1),      256, 0, 1);
+    assertHit(Hit(16777215, 0, 0, -1), 16777215, 0, -1);
+    assertHit(Hit(16777216, 0, 0, 1),        0, 1, 1); // overflow
 
     // contexts (0 - 255)
-    assertHit(Hit(0,   1, 1), 0,   1, 1);
-    assertHit(Hit(0, 255, 1), 0, 255, 1);
-    assertHit(Hit(0, 256, 1), 0,   0, 1); // overflow
+    assertHit(Hit(0,   1, 0, 1), 0,   1, 1);
+    assertHit(Hit(0, 255, 0, 1), 0, 255, 1);
+    assertHit(Hit(0, 256, 0, 1), 0,   0, 1); // overflow
 }
 
 void assertInt8Range(const std::string &term, bool expAdjusted, int64_t expLow, int64_t expHigh) {
@@ -652,5 +650,85 @@ TEST("require that we do not break the stack on bad query") {
     QueryTermSimple term("<form><iframe+&#09;&#10;&#11;+src=\\\"javascript&#58;alert(1)\\\"&#11;&#10;&#09;;>", QueryTerm::WORD);
     EXPECT_FALSE(term.isValid());
 }
+
+namespace {
+    void verifyQueryTermNode(const vespalib::string & index, const QueryNode *node) {
+        EXPECT_TRUE(dynamic_cast<const QueryTerm *>(node) != nullptr);
+        EXPECT_EQUAL(index, node->getIndex());
+    }
+}
+TEST("testSameElementEvaluate") {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    builder.addSameElement(3, "field");
+    {
+        builder.addStringTerm("a", "f1", 0, Weight(0));
+        builder.addStringTerm("b", "f2", 1, Weight(0));
+        builder.addStringTerm("c", "f3", 2, Weight(0));
+    }
+    Node::UP node = builder.build();
+    vespalib::string stackDump = StackDumpCreator::create(*node);
+    QueryNodeResultFactory empty;
+    Query q(empty, stackDump);
+    SameElementQueryNode * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
+    EXPECT_TRUE(sameElem != nullptr);
+    EXPECT_EQUAL("field", sameElem->getIndex());
+    EXPECT_EQUAL(3u, sameElem->size());
+    verifyQueryTermNode("field.f1", (*sameElem)[0].get());
+    verifyQueryTermNode("field.f2", (*sameElem)[1].get());
+    verifyQueryTermNode("field.f3", (*sameElem)[2].get());
+
+    QueryTermList terms;
+    q.getLeafs(terms);
+    EXPECT_EQUAL(3u, terms.size());
+    for (QueryTerm * qt : terms) {
+        qt->resizeFieldId(3);
+    }
+
+    // field 0
+    terms[0]->add(1, 0, 0, 10);
+    terms[0]->add(2, 0, 1, 20);
+    terms[0]->add(3, 0, 2, 30);
+    terms[0]->add(4, 0, 3, 40);
+    terms[0]->add(5, 0, 4, 50);
+    terms[0]->add(6, 0, 5, 60);
+
+    terms[1]->add(7, 1, 0, 70);
+    terms[1]->add(8, 1, 1, 80);
+    terms[1]->add(9, 1, 2, 90);
+    terms[1]->add(10, 1, 4, 100);
+    terms[1]->add(11, 1, 5, 110);
+    terms[1]->add(12, 1, 6, 120);
+
+    terms[2]->add(13, 2, 0, 130);
+    terms[2]->add(14, 2, 2, 140);
+    terms[2]->add(15, 2, 4, 150);
+    terms[2]->add(16, 2, 5, 160);
+    terms[2]->add(17, 2, 6, 170);
+    HitList hits;
+
+    sameElem->evaluateHits(hits);
+    EXPECT_EQUAL(4u, hits.size());
+    EXPECT_EQUAL(0u, hits[0].wordpos());
+    EXPECT_EQUAL(2u, hits[0].context());
+    EXPECT_EQUAL(0u, hits[0].elemId());
+    EXPECT_EQUAL(130,  hits[0].weight());
+
+    EXPECT_EQUAL(0u, hits[1].wordpos());
+    EXPECT_EQUAL(2u, hits[1].context());
+    EXPECT_EQUAL(2u, hits[1].elemId());
+    EXPECT_EQUAL(140,  hits[1].weight());
+
+    EXPECT_EQUAL(0u, hits[2].wordpos());
+    EXPECT_EQUAL(2u, hits[2].context());
+    EXPECT_EQUAL(4u, hits[2].elemId());
+    EXPECT_EQUAL(150,  hits[2].weight());
+
+    EXPECT_EQUAL(0u, hits[3].wordpos());
+    EXPECT_EQUAL(2u, hits[3].context());
+    EXPECT_EQUAL(5u, hits[3].elemId());
+    EXPECT_EQUAL(160,  hits[3].weight());
+
+}
+
 
 TEST_MAIN() { TEST_RUN_ALL(); }
