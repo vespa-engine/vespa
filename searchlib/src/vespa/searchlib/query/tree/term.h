@@ -41,11 +41,15 @@ protected:
     Term(const vespalib::stringref &view, int32_t id, Weight weight);
 };
 
+class TermNode : public Node, public Term {
+protected:
+    TermNode(vespalib::stringref view, int32_t id, Weight weight) : Term(view, id, weight) {}
+};
 /**
  * Generic functionality for most of Term's derived classes.
  */
 template <typename T>
-class TermBase : public Node, public Term {
+class TermBase : public TermNode {
     T _term;
 
 public:
@@ -61,7 +65,7 @@ protected:
 
 template <typename T>
 TermBase<T>::TermBase(T term, vespalib::stringref view, int32_t id, Weight weight)
-    : Term(view, id, weight),
+    : TermNode(view, id, weight),
        _term(std::move(term))
 {}
 
