@@ -9,11 +9,9 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
