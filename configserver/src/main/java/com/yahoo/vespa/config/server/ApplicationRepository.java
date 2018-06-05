@@ -310,14 +310,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                            .stream()
                                            .map(FileReference::value)
                                            .collect(Collectors.toSet())));
-        log.log(LogLevel.INFO, "File references in use : " + fileReferencesInUse);
+        log.log(LogLevel.DEBUG, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
         Set<String> fileReferencesOnDisk = new HashSet<>();
         File[] filesOnDisk = fileReferencesPath.listFiles();
         if (filesOnDisk != null)
             fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
-        log.log(LogLevel.INFO, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+        log.log(LogLevel.DEBUG, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
 
         Instant instant = Instant.now().minus(Duration.ofDays(14));
         Set<String> fileReferencesToDelete = fileReferencesOnDisk
