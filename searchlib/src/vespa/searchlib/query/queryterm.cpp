@@ -73,7 +73,7 @@ QueryTermBase::QueryTermBase() :
     _termUCS4.push_back(0);
 }
 
-QueryTermBase::~QueryTermBase() = default;
+QueryTermBase::~QueryTermBase() { }
 
 QueryTermBase::QueryTermBase(const string & termS, SearchTerm type) :
     QueryTermSimple(termS, type),
@@ -104,7 +104,7 @@ QueryTerm & QueryTerm::operator = (const QueryTerm &) = default;
 QueryTerm::QueryTerm(QueryTerm &&) = default;
 QueryTerm & QueryTerm::operator = (QueryTerm &&) = default;
 
-QueryTerm::~QueryTerm() = default;
+QueryTerm::~QueryTerm() { }
 
 void
 QueryTermSimple::visitMembers(vespalib::ObjectVisitor & visitor) const
@@ -301,9 +301,9 @@ void QueryTerm::resizeFieldId(size_t fieldNo)
     }
 }
 
-void QueryTerm::add(unsigned pos, unsigned context, uint32_t elemId, int32_t weight_)
+void QueryTerm::add(unsigned pos, unsigned context, int32_t weight_)
 {
-    _hitList.emplace_back(pos, context, elemId, weight_);
+    _hitList.emplace_back(pos, context, weight_);
 }
 
 template <int B>
@@ -344,7 +344,7 @@ QueryTermSimple::QueryTermSimple() :
     _diversityAttribute()
 { }
 
-QueryTermSimple::~QueryTermSimple() = default;
+QueryTermSimple::~QueryTermSimple() { }
 
 namespace {
 
