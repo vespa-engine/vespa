@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
 import java.util.HashMap;
@@ -10,16 +11,28 @@ import java.util.Map;
 /**
  * @author bratseth
  */
-public class MockMetricsService implements com.yahoo.vespa.hosted.controller.api.integration.MetricsService {
+public class MockMetricsService implements MetricsService {
+
+    private final Map<String, Double> metrics = new HashMap<>();
+
+    public MockMetricsService setMetric(String key, Double value) {
+        metrics.put(key, value);
+        return this;
+    }
 
     @Override
     public ApplicationMetrics getApplicationMetrics(ApplicationId application) {
-        return new ApplicationMetrics(0.5, 0.7);
+        return new ApplicationMetrics(metrics.getOrDefault("queryServiceQuality", 0.5),
+                                      metrics.getOrDefault("writeServiceQuality", 0.7));
     }
 
     @Override
     public DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone) {
-        return new DeploymentMetrics(1, 2, 3, 4, 5);
+        return new DeploymentMetrics(metrics.getOrDefault("queriesPerSecond", 1D),
+                                     metrics.getOrDefault("writesPerSecond", 2D),
+                                     metrics.getOrDefault("docoumentCount", 3D).longValue(),
+                                     metrics.getOrDefault("queryLatencyMillis", 4D),
+                                     metrics.getOrDefault("writeLatencyMillis", 5D));
     }
 
     @Override

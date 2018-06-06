@@ -79,7 +79,8 @@ public class LockedApplication extends Application {
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
                                                   previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
-                                                  previousDeployment.metrics());
+                                                  previousDeployment.metrics(),
+                                                  previousDeployment.activity());
         return with(newDeployment);
     }
 
@@ -94,6 +95,12 @@ public class LockedApplication extends Application {
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withClusterInfo(clusterInfo));
 
+    }
+
+    public LockedApplication recordActivityAt(Instant instant, ZoneId zone) {
+        Deployment deployment = deployments().get(zone);
+        if (deployment == null) return this;
+        return with(deployment.recordActivityAt(instant));
     }
 
     public LockedApplication with(ZoneId zone, DeploymentMetrics deploymentMetrics) {

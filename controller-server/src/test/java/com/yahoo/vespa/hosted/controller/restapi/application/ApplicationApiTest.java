@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1123,7 +1124,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     lockedApplication = lockedApplication
                             .withClusterInfo(deployment.zone(), clusterInfo)
                             .withClusterUtilization(deployment.zone(), clusterUtils)
-                            .with(deployment.zone(), metrics);
+                            .with(deployment.zone(), metrics)
+                            .recordActivityAt(Instant.parse("2018-06-01T10:15:30.00Z"), deployment.zone());
                 }
                 controllerTester.controller().applications().store(lockedApplication);
             });

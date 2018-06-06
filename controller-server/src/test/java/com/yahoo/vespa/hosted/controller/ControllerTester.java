@@ -13,7 +13,6 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -41,6 +40,7 @@ import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertNotNull;
@@ -64,25 +64,28 @@ public final class ControllerTester {
     private final ArtifactRepositoryMock artifactRepository;
     private final EntityService entityService;
     private final MockBuildService buildService;
+    private final MockMetricsService metricsService;
 
     private Controller controller;
 
-    public ControllerTester(ManualClock clock, RotationsConfig rotationsConfig, MockCuratorDb curatorDb) {
+    public ControllerTester(ManualClock clock, RotationsConfig rotationsConfig, MockCuratorDb curatorDb,
+                            MockMetricsService metricsService) {
         this(new AthenzDbMock(), clock, new ConfigServerMock(new ZoneRegistryMock()),
              new ZoneRegistryMock(), new GitHubMock(), curatorDb, rotationsConfig,
-             new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
+             new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService(),
+             metricsService);
     }
 
     public ControllerTester(ManualClock clock) {
-        this(clock, defaultRotationsConfig(), new MockCuratorDb());
+        this(clock, defaultRotationsConfig(), new MockCuratorDb(), new MockMetricsService());
     }
 
     public ControllerTester(RotationsConfig rotationsConfig) {
-        this(new ManualClock(), rotationsConfig, new MockCuratorDb());
+        this(new ManualClock(), rotationsConfig, new MockCuratorDb(), new MockMetricsService());
     }
 
     public ControllerTester(MockCuratorDb curatorDb) {
-        this(new ManualClock(), defaultRotationsConfig(), curatorDb);
+        this(new ManualClock(), defaultRotationsConfig(), curatorDb, new MockMetricsService());
     }
 
     public ControllerTester() {
@@ -93,7 +96,8 @@ public final class ControllerTester {
                              ConfigServerMock configServer, ZoneRegistryMock zoneRegistry,
                              GitHubMock gitHub, CuratorDb curator, RotationsConfig rotationsConfig,
                              MemoryNameService nameService, ArtifactRepositoryMock artifactRepository,
-                             EntityService entityService, MockBuildService buildService) {
+                             EntityService entityService, MockBuildService buildService,
+                             MockMetricsService metricsService) {
         this.athenzDb = athenzDb;
         this.clock = clock;
         this.configServer = configServer;
@@ -105,8 +109,10 @@ public final class ControllerTester {
         this.artifactRepository = artifactRepository;
         this.entityService = entityService;
         this.buildService = buildService;
+        this.metricsService = metricsService;
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
-                                           athenzDb, nameService, artifactRepository, entityService, buildService);
+                                           athenzDb, nameService, artifactRepository, entityService, buildService,
+                                           metricsService);
 
         // Make root logger use time from manual clock
         Logger.getLogger("").getHandlers()[0].setFilter(
@@ -138,10 +144,12 @@ public final class ControllerTester {
 
     public MockBuildService buildService() { return buildService; }
 
+    public MockMetricsService metricsService() { return metricsService; }
+
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
         controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
-                                      nameService, artifactRepository, entityService, buildService);
+                                      nameService, artifactRepository, entityService, buildService, metricsService);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -241,6 +249,10 @@ public final class ControllerTester {
                                            new DeployOptions(false, Optional.empty(), false, deployCurrentVersion));
     }
 
+    public Supplier<Application> application(ApplicationId application) {
+        return () -> controller().applications().require(application);
+    }
+
     /** Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else */
     public static LockedApplication writable(Application application) {
         return new LockedApplication(application, new Lock("/test", new MockCurator()));
@@ -251,7 +263,7 @@ public final class ControllerTester {
                                                GitHubMock gitHub, ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb, MemoryNameService nameService,
                                                ArtifactRepository artifactRepository, EntityService entityService,
-                                               BuildService buildService) {
+                                               BuildService buildService, MockMetricsService metricsService) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                gitHub,
@@ -260,7 +272,7 @@ public final class ControllerTester {
                                                new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
                                                configServer,
-                                               new MockMetricsService(),
+                                               metricsService,
                                                nameService,
                                                new MockRoutingGenerator(),
                                                new ChefMock(),
