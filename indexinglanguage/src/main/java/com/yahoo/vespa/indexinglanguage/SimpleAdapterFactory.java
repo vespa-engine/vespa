@@ -48,12 +48,7 @@ public class SimpleAdapterFactory implements AdapterFactory {
         DocumentId docId = upd.getId();
         Document complete = new Document(docType, upd.getId());
         for (FieldPathUpdate fieldUpd : upd) {
-            if (FieldPathUpdateHelper.isComplete(fieldUpd)) {
-                FieldPathUpdateHelper.applyUpdate(fieldUpd, complete);
-            } else {
-                Document partial = FieldPathUpdateHelper.newPartialDocument(docId, fieldUpd);
-                ret.add(new FieldPathUpdateAdapter(newDocumentAdapter(partial, true), fieldUpd));
-            }
+            ret.add(new IdentityFieldPathUpdateAdapter(fieldUpd, newDocumentAdapter(complete, true)));
         }
         for (FieldUpdate fieldUpd : upd.getFieldUpdates()) {
             Field field = fieldUpd.getField();
