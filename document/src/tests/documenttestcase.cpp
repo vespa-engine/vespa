@@ -115,22 +115,16 @@ public:
     ~Handler();
     const std::string & getResult() const { return _result; }
 private:
-    void onPrimitive(uint32_t, const Content&) override {
-        std::ostringstream os; os << "P-" << getArrayIndex();
-        _result += os.str();
-    }
+    void onPrimitive(uint32_t, const Content&) override { _result += 'P'; }
     void onCollectionStart(const Content&)     override { _result += '['; }
     void onCollectionEnd(const Content&)       override { _result += ']'; }
-    void onStructStart(const Content&)         override {
-        std::ostringstream os; os << "<" << getArrayIndex() << ":";
-        _result += os.str();
-    }
+    void onStructStart(const Content&)         override { _result += '<'; }
     void onStructEnd(const Content&)           override { _result += '>'; }
     std::string _result;
 };
 
-Handler::Handler() = default;
-Handler::~Handler() = default;
+Handler::Handler() { }
+Handler::~Handler() { }
 
 
 void DocumentTest::testTraversing()
@@ -192,7 +186,7 @@ void DocumentTest::testTraversing()
     FieldPath empty;
     doc.iterateNested(empty.getFullRange(), fullTraverser);
     CPPUNIT_ASSERT_EQUAL(fullTraverser.getResult(),
-                         std::string("<0:P-0<0:P-0<0:P-0P-0[P-0P-1P-2][<0:P-0P-0><1:P-1P-1>]>>>"));
+                         std::string("<P<P<PP[PPP][<PP><PP>]>>>"));
 }
 
 class VariableIteratorHandler : public IteratorHandler {

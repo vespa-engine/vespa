@@ -54,7 +54,7 @@ private:
 
 public:
     DocsumFilter(const DocsumToolsPtr & tools, const IDocSumCache & docsumCache);
-    ~DocsumFilter() override;
+    virtual ~DocsumFilter();
     const DocsumToolsPtr & getTools() const { return _tools; }
 
     /**

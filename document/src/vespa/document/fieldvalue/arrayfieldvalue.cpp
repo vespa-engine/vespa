@@ -37,7 +37,9 @@ ArrayFieldValue::ArrayFieldValue(const ArrayFieldValue& other)
 {
 }
 
-ArrayFieldValue::~ArrayFieldValue() = default;
+ArrayFieldValue::~ArrayFieldValue()
+{
+}
 
 ArrayFieldValue&
 ArrayFieldValue::operator=(const ArrayFieldValue& other)
@@ -192,7 +194,6 @@ ArrayFieldValue::iterateSubset(int startPos, int endPos,
     std::vector<int> indicesToRemove;
 
     for (int i = startPos; i <= endPos && i < static_cast<int>(_array->size()); ++i) {
-        handler.setArrayIndex(i);
         if (!variable.empty()) {
             handler.getVariables()[variable] = IndexValue(i);
         }
@@ -211,7 +212,9 @@ ArrayFieldValue::iterateSubset(int startPos, int endPos,
         handler.getVariables().erase(variable);
     }
 
-    for (auto i = indicesToRemove.rbegin(); i != indicesToRemove.rend(); ++i) {
+    for (std::vector<int>::reverse_iterator i = indicesToRemove.rbegin();
+         i != indicesToRemove.rend(); ++i)
+    {
         const_cast<ArrayFieldValue&>(*this).remove(*i);
     }
 

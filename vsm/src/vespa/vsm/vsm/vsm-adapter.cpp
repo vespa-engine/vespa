@@ -46,7 +46,7 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
 }
 
 
-GetDocsumsStateCallback::~GetDocsumsStateCallback() = default;
+GetDocsumsStateCallback::~GetDocsumsStateCallback() { }
 
 DocsumTools::FieldSpec::FieldSpec() :
     _outputName(),
@@ -54,7 +54,7 @@ DocsumTools::FieldSpec::FieldSpec() :
     _command(VsmsummaryConfig::Fieldmap::NONE)
 { }
 
-DocsumTools::FieldSpec::~FieldSpec() = default;
+DocsumTools::FieldSpec::~FieldSpec() {}
 
 DocsumTools::DocsumTools(std::unique_ptr<DynamicDocsumWriter> writer) :
     _writer(std::move(writer)),
@@ -64,7 +64,7 @@ DocsumTools::DocsumTools(std::unique_ptr<DynamicDocsumWriter> writer) :
 { }
 
 
-DocsumTools::~DocsumTools() = default;
+DocsumTools::~DocsumTools() { }
 
 bool
 DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
@@ -174,6 +174,8 @@ VSMAdapter::VSMAdapter(const vespalib::string & highlightindexes, const vespalib
 }
 
 
-VSMAdapter::~VSMAdapter() = default;
-
+VSMAdapter::~VSMAdapter()
+{
 }
+
+} // namespace vsm

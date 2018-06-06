@@ -5,14 +5,7 @@
 
 namespace document::fieldvalue {
 
-IteratorHandler::IteratorHandler()
-    : _weight(1),
-      _arrayIndexStack(1, 0),
-      _variables()
-{
-}
-
-IteratorHandler::~IteratorHandler() = default;
+IteratorHandler::~IteratorHandler() { }
 
 
 void
@@ -25,13 +18,11 @@ IteratorHandler::handleComplex(const FieldValue & fv) {
 }
 void
 IteratorHandler::handleCollectionStart(const FieldValue & fv) {
-    _arrayIndexStack.push_back(0);
     onCollectionStart(Content(fv, getWeight()));
 }
 void
 IteratorHandler::handleCollectionEnd(const FieldValue & fv) {
     onCollectionEnd(Content(fv, getWeight()));
-    _arrayIndexStack.pop_back();
 }
 void
 IteratorHandler::handleStructStart(const FieldValue & fv) {

@@ -95,13 +95,11 @@ private:
 
     void prepareFieldId();
     void setCurrentWeight(int32_t weight) { _currentElementWeight = weight; }
-    void setCurrentElementId(int32_t weight) { _currentElementId = weight; }
     bool onSearch(const StorageDocument & doc);
     virtual void onValue(const document::FieldValue & fv) = 0;
     FieldIdT      _field;
     MatchType     _matchType;
     unsigned      _maxFieldLength;
-    uint32_t      _currentElementId;
     int32_t       _currentElementWeight; // Contains the weight of the current item being evaluated.
     /// Number of bytes in blocks containing pure us-ascii
     unsigned _pureUsAsciiCount;
@@ -126,7 +124,7 @@ protected:
      * For each call to onValue() a batch of words are processed, and the position is local to this batch.
      **/
     void addHit(search::QueryTerm & qt, uint32_t pos) const {
-        qt.add(_words + pos, field(), _currentElementId, getCurrentWeight());
+        qt.add(_words + pos, field(), getCurrentWeight());
     }
 public:
     static search::byte _foldLowCase[256];

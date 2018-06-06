@@ -78,7 +78,9 @@ MapFieldValue::MapFieldValue(const DataType &mapType)
 {
 }
 
-MapFieldValue::~MapFieldValue() = default;
+MapFieldValue::~MapFieldValue()
+{
+}
 
 MapFieldValue::MapFieldValue(const MapFieldValue & rhs) :
     FieldValue(rhs),
@@ -423,7 +425,6 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
     bool wasModified = false;
     const bool isWSet(complexFieldValue.inherits(WeightedSetFieldValue::classId));
 
-    uint32_t index(0);
     if ( ! nested.atEnd() ) {
         LOG(spam, "not yet at end of field path");
         const FieldPathEntry & fpe = nested.cur();
@@ -450,7 +451,6 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
         case FieldPathEntry::MAP_ALL_KEYS:
             LOG(spam, "MAP_ALL_KEYS");
             for (const auto & entry : *this) {
-                handler.setArrayIndex(index++);
                 if (isWSet) {
                     handler.setWeight(static_cast<const IntFieldValue &>(*entry.second).getValue());
                 }
@@ -462,7 +462,6 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
         case FieldPathEntry::MAP_ALL_VALUES:
             LOG(spam, "MAP_ALL_VALUES");
             for (const auto & entry : *this) {
-                handler.setArrayIndex(index++);
                 wasModified = checkAndRemove(*entry.second,
                                              entry.second->iterateNested(nested.next(), handler),
                                              wasModified, keysToRemove);
@@ -483,7 +482,6 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
             } else {
                 PathRange next = nested.next();
                 for (const auto & entry : *this) {
-                    handler.setArrayIndex(index++);
                     LOG(spam, "key is '%s'", entry.first->toString().c_str());
                     handler.getVariables()[fpe.getVariableName()] = IndexValue(*entry.first);
                     LOG(spam, "vars at this time = %s", handler.getVariables().toString().c_str());
@@ -497,7 +495,6 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
         default:
             LOG(spam, "default");
             for (const auto & entry : *this) {
-                handler.setArrayIndex(index++);
                 if (isWSet) {
                     handler.setWeight(static_cast<const IntFieldValue &>(*entry.second).getValue());
                 }
@@ -525,7 +522,6 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
         if (handler.handleComplex(complexFieldValue)) {
             LOG(spam, "calling handler.handleComplex for all map keys");
             for (const auto & entry : *this) {
-                handler.setArrayIndex(index++);
                 if (isWSet) {
                     handler.setWeight(static_cast<const IntFieldValue &>(*entry.second).getValue());
                 }

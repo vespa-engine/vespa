@@ -4,7 +4,6 @@
 
 #include "variablemap.h"
 #include "modificationstatus.h"
-#include <vector>
 
 namespace document::fieldvalue {
 
@@ -56,7 +55,7 @@ protected:
         int _weight;
     };
 
-    IteratorHandler();
+    IteratorHandler() : _weight(1) {}
 
 public:
     virtual ~IteratorHandler();
@@ -73,8 +72,6 @@ public:
     void handleStructStart(const FieldValue &fv);
     void handleStructEnd(const FieldValue &fv);
     void setWeight(int weight) { _weight = weight; }
-    uint32_t getArrayIndex() const { return _arrayIndexStack.back(); }
-    void setArrayIndex(uint32_t index) { _arrayIndexStack.back() = index; }
     ModificationStatus modify(FieldValue &fv) { return doModify(fv); }
     fieldvalue::VariableMap &getVariables() { return _variables; }
     void setVariables(const fieldvalue::VariableMap &vars) { _variables = vars; }
@@ -96,7 +93,6 @@ private:
     int getWeight() const { return _weight; }
 
     int _weight;
-    std::vector<uint32_t>   _arrayIndexStack;
     fieldvalue::VariableMap _variables;
 };
 

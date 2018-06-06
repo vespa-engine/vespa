@@ -9,44 +9,38 @@ namespace search {
 
 namespace {
     vespalib::stringref DEFAULT("default");
-    bool isPhraseOrNear(const QueryNode * qn) {
-        return dynamic_cast<const NearQueryNode *> (qn) || dynamic_cast<const PhraseQueryNode *> (qn);
-    }
 }
 
-QueryNode::UP
-QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factory,
-                 SimpleQueryStackDumpIterator & queryRep, bool allowRewrite)
+QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factory, search::SimpleQueryStackDumpIterator & queryRep, bool allowRewrite)
 {
     unsigned int arity = queryRep.getArity();
-    ParseItem::ItemType type = queryRep.getType();
+    search::ParseItem::ItemType type = queryRep.getType();
     UP qn;
     switch (type) {
-    case ParseItem::ITEM_AND:
-    case ParseItem::ITEM_OR:
-    case ParseItem::ITEM_WEAK_AND:
-    case ParseItem::ITEM_EQUIV:
-    case ParseItem::ITEM_WEIGHTED_SET:
-    case ParseItem::ITEM_DOT_PRODUCT:
-    case ParseItem::ITEM_WAND:
-    case ParseItem::ITEM_NOT:
-    case ParseItem::ITEM_PHRASE:
-    case ParseItem::ITEM_SAME_ELEMENT:
-    case ParseItem::ITEM_NEAR:
-    case ParseItem::ITEM_ONEAR:
+    case search::ParseItem::ITEM_AND:
+    case search::ParseItem::ITEM_OR:
+    case search::ParseItem::ITEM_WEAK_AND:
+    case search::ParseItem::ITEM_EQUIV:
+    case search::ParseItem::ITEM_WEIGHTED_SET:
+    case search::ParseItem::ITEM_DOT_PRODUCT:
+    case search::ParseItem::ITEM_WAND:
+    case search::ParseItem::ITEM_NOT:
+    case search::ParseItem::ITEM_PHRASE:
+    case search::ParseItem::ITEM_SAME_ELEMENT:
+    case search::ParseItem::ITEM_NEAR:
+    case search::ParseItem::ITEM_ONEAR:
     {
-        qn = QueryConnector::create(type);
-        if (qn) {
+        qn.reset(QueryConnector::create(type));
+        if (qn.get()) {
             QueryConnector * qc = dynamic_cast<QueryConnector *> (qn.get());
             NearQueryNode * nqn = dynamic_cast<NearQueryNode *> (qc);
             if (nqn) {
                 nqn->distance(queryRep.getArg1());
             }
-            if ((type == ParseItem::ITEM_WEAK_AND) ||
-                (type == ParseItem::ITEM_WEIGHTED_SET) ||
-                (type == ParseItem::ITEM_DOT_PRODUCT) ||
-                (type == ParseItem::ITEM_SAME_ELEMENT) ||
-                (type == ParseItem::ITEM_WAND))
+            if ((type == search::ParseItem::ITEM_WEAK_AND) ||
+                (type == search::ParseItem::ITEM_WEIGHTED_SET) ||
+                (type == search::ParseItem::ITEM_DOT_PRODUCT) ||
+                (type == search::ParseItem::ITEM_WAND))
             {
                 qn->setIndex(queryRep.getIndexName());
             }
@@ -55,50 +49,48 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 if (qc->isFlattenable(queryRep.getType())) {
                     arity += queryRep.getArity();
                 } else {
-                    UP child = Build(qc, factory, queryRep, allowRewrite && !isPhraseOrNear(qn.get()));
+                    UP child(Build(qc, factory, queryRep,
+                                   allowRewrite && ((dynamic_cast<NearQueryNode *> (qn.get()) == NULL) && (dynamic_cast<PhraseQueryNode *> (qn.get()) == NULL))));
                     qc->push_back(std::move(child));
                 }
             }
         }
     }
     break;
-    case ParseItem::ITEM_NUMTERM:
-    case ParseItem::ITEM_TERM:
-    case ParseItem::ITEM_PREFIXTERM:
-    case ParseItem::ITEM_REGEXP:
-    case ParseItem::ITEM_SUBSTRINGTERM:
-    case ParseItem::ITEM_EXACTSTRINGTERM:
-    case ParseItem::ITEM_SUFFIXTERM:
-    case ParseItem::ITEM_PURE_WEIGHTED_STRING:
-    case ParseItem::ITEM_PURE_WEIGHTED_LONG:
+    case search::ParseItem::ITEM_NUMTERM:
+    case search::ParseItem::ITEM_TERM:
+    case search::ParseItem::ITEM_PREFIXTERM:
+    case search::ParseItem::ITEM_REGEXP:
+    case search::ParseItem::ITEM_SUBSTRINGTERM:
+    case search::ParseItem::ITEM_EXACTSTRINGTERM:
+    case search::ParseItem::ITEM_SUFFIXTERM:
+    case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
+    case search::ParseItem::ITEM_PURE_WEIGHTED_LONG:
     {
-        vespalib::string index = queryRep.getIndexName();
+        vespalib::stringref index = queryRep.getIndexName();
         if (index.empty()) {
-            if ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
+            if ((type == search::ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == search::ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
                 index = parent->getIndex();
             } else {
                 index = DEFAULT;
             }
         }
-        if (dynamic_cast<const SameElementQueryNode *>(parent) != nullptr) {
-            index = parent->getIndex() + "." + index;
-        }
         vespalib::stringref term = queryRep.getTerm();
         QueryTerm::SearchTerm sTerm(QueryTerm::WORD);
         switch (type) {
-        case ParseItem::ITEM_REGEXP:
+        case search::ParseItem::ITEM_REGEXP:
             sTerm = QueryTerm::REGEXP;
             break;
-        case ParseItem::ITEM_PREFIXTERM:
+        case search::ParseItem::ITEM_PREFIXTERM:
             sTerm = QueryTerm::PREFIXTERM;
             break;
-        case ParseItem::ITEM_SUBSTRINGTERM:
+        case search::ParseItem::ITEM_SUBSTRINGTERM:
             sTerm = QueryTerm::SUBSTRINGTERM;
             break;
-        case ParseItem::ITEM_EXACTSTRINGTERM:
+        case search::ParseItem::ITEM_EXACTSTRINGTERM:
             sTerm = QueryTerm::EXACTSTRINGTERM;
             break;
-        case ParseItem::ITEM_SUFFIXTERM:
+        case search::ParseItem::ITEM_SUFFIXTERM:
             sTerm = QueryTerm::SUFFIXTERM;
             break;
         default:
@@ -115,9 +107,10 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
             if ( qt->encoding().isBase10Integer() || ! qt->encoding().isFloat() || ! factory.getRewriteFloatTerms() || !allowRewrite || (ssTerm.find('.') == vespalib::string::npos)) {
-                qn = std::move(qt);
+                qn.reset(qt.release());
             } else {
                 std::unique_ptr<PhraseQueryNode> phrase(new PhraseQueryNode());
+
                 phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
                 phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
                 std::unique_ptr<EquivQueryNode> orqn(new EquivQueryNode());
@@ -128,7 +121,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         }
     }
     break;
-    case ParseItem::ITEM_RANK:
+    case search::ParseItem::ITEM_RANK:
     {
         if (arity >= 1) {
             queryRep.next();
