@@ -256,7 +256,7 @@ public class ApplicationController {
             LockedApplication application = new LockedApplication(new Application(id), lock);
             store(application);
             log.info("Created " + application);
-            return application;
+            return application.get();
         }
     }
 
@@ -285,7 +285,7 @@ public class ApplicationController {
             } else {
                 JobType jobType = JobType.from(controller.system(), zone)
                                          .orElseThrow(() -> new IllegalArgumentException("No job found for zone " + zone));
-                Optional<JobStatus> job = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType));
+                Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
                 if (    ! job.isPresent()
                      || ! job.get().lastTriggered().isPresent()
                      ||   job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
@@ -297,8 +297,8 @@ public class ApplicationController {
                 applicationVersion = preferOldestVersion
                         ? triggered.sourceApplication().orElse(triggered.application())
                         : triggered.application();
-                applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), applicationVersion.id()));
-                validateRun(application, zone, platformVersion, applicationVersion);
+                applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
+                validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
 
             validate(applicationPackage.deploymentSpec());
@@ -323,7 +323,7 @@ public class ApplicationController {
             application = withRotation(application, zone);
             Set<String> rotationNames = new HashSet<>();
             Set<String> cnames = new HashSet<>();
-            application.rotation().ifPresent(applicationRotation -> {
+            application.get().rotation().ifPresent(applicationRotation -> {
                 rotationNames.add(applicationRotation.id().asString());
                 cnames.add(applicationRotation.dnsName());
                 cnames.add(applicationRotation.secureDnsName());
@@ -366,15 +366,15 @@ public class ApplicationController {
 
     /** Makes sure the application has a global rotation, if eligible. */
     private LockedApplication withRotation(LockedApplication application, ZoneId zone) {
-        if (zone.environment() == Environment.prod && application.deploymentSpec().globalServiceId().isPresent()) {
+        if (zone.environment() == Environment.prod && application.get().deploymentSpec().globalServiceId().isPresent()) {
             try (RotationLock rotationLock = rotationRepository.lock()) {
-                Rotation rotation = rotationRepository.getOrAssignRotation(application, rotationLock);
+                Rotation rotation = rotationRepository.getOrAssignRotation(application.get(), rotationLock);
                 application = application.with(rotation.id());
                 store(application); // store assigned rotation even if deployment fails
 
-                registerRotationInDns(rotation, application.rotation().get().dnsName());
-                registerRotationInDns(rotation, application.rotation().get().secureDnsName());
-                registerRotationInDns(rotation, application.rotation().get().oathDnsName());
+                registerRotationInDns(rotation, application.get().rotation().get().dnsName());
+                registerRotationInDns(rotation, application.get().rotation().get().secureDnsName());
+                registerRotationInDns(rotation, application.get().rotation().get().oathDnsName());
             }
         }
         return application;
@@ -394,15 +394,15 @@ public class ApplicationController {
     }
 
     private LockedApplication deleteRemovedDeployments(LockedApplication application) {
-        List<Deployment> deploymentsToRemove = application.productionDeployments().values().stream()
-                .filter(deployment -> ! application.deploymentSpec().includes(deployment.zone().environment(),
-                                                                              Optional.of(deployment.zone().region())))
+        List<Deployment> deploymentsToRemove = application.get().productionDeployments().values().stream()
+                .filter(deployment -> ! application.get().deploymentSpec().includes(deployment.zone().environment(),
+                                                                                    Optional.of(deployment.zone().region())))
                 .collect(Collectors.toList());
 
         if (deploymentsToRemove.isEmpty()) return application;
 
-        if ( ! application.validationOverrides().allows(ValidationId.deploymentRemoval, clock.instant()))
-            throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + application +
+        if ( ! application.get().validationOverrides().allows(ValidationId.deploymentRemoval, clock.instant()))
+            throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + application.get() +
                                                " is deployed in " +
                                                deploymentsToRemove.stream()
                                                                    .map(deployment -> deployment.zone().region().value())
@@ -418,10 +418,11 @@ public class ApplicationController {
     }
 
     private LockedApplication deleteUnreferencedDeploymentJobs(LockedApplication application) {
-        for (JobType job : application.deploymentJobs().jobStatus().keySet()) {
+        for (JobType job : application.get().deploymentJobs().jobStatus().keySet()) {
             Optional<ZoneId> zone = job.zone(controller.system());
 
-            if ( ! job.isProduction() || (zone.isPresent() && application.deploymentSpec().includes(zone.get().environment(), zone.map(ZoneId::region))))
+            if ( ! job.isProduction() || (zone.isPresent() && application.get().deploymentSpec().includes(
+                    zone.get().environment(), zone.map(ZoneId::region))))
                 continue;
             application = application.withoutDeploymentJob(job);
         }
@@ -493,7 +494,7 @@ public class ApplicationController {
 
         // TODO: Make this one transaction when database is moved to ZooKeeper
         instances.forEach(id -> lockOrThrow(id, application -> {
-            if ( ! application.deployments().isEmpty())
+            if ( ! application.get().deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
 
             Tenant tenant = controller.tenants().tenant(id.tenant()).get();
@@ -518,7 +519,7 @@ public class ApplicationController {
      * @param application a locked application to store
      */
     public void store(LockedApplication application) {
-        curator.writeApplication(application);
+        curator.writeApplication(application.get());
     }
 
     /**
@@ -572,7 +573,7 @@ public class ApplicationController {
      */
     private LockedApplication deactivate(LockedApplication application, ZoneId zone) {
         try {
-            configServer.deactivate(new DeploymentId(application.id(), zone));
+            configServer.deactivate(new DeploymentId(application.get().id(), zone));
         }
         catch (NoInstanceException ignored) {
             // ok; already gone

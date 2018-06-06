@@ -116,15 +116,15 @@ public class DeploymentTrigger {
                 triggering = JobRun.triggering(controller.systemVersion(), applicationVersion, Optional
                         .empty(), Optional.empty(), "Application commit", clock.instant());
                 if (report.success()) {
-                    if (acceptNewApplicationVersion(application))
-                        application = application.withChange(application.change().with(applicationVersion))
+                    if (acceptNewApplicationVersion(application.get()))
+                        application = application.withChange(application.get().change().with(applicationVersion))
                                                  .withOutstandingChange(Change.empty());
                     else
                         application = application.withOutstandingChange(Change.of(applicationVersion));
                 }
             }
             else {
-                triggering = application.deploymentJobs().statusOf(report.jobType()).flatMap(JobStatus::lastTriggered)
+                triggering = application.get().deploymentJobs().statusOf(report.jobType()).flatMap(JobStatus::lastTriggered)
                                         .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
                                                                                      report.applicationId() + ", but that has neither been triggered nor deployed"));
             }
@@ -132,7 +132,7 @@ public class DeploymentTrigger {
                                                         report.jobType(),
                                                         triggering.completion(report.buildNumber(), clock.instant()),
                                                         report.jobError());
-            application = application.withChange(remainingChange(application));
+            application = application.withChange(remainingChange(application.get()));
             applications().store(application);
         });
     }
@@ -216,9 +216,9 @@ public class DeploymentTrigger {
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if (application.changeAt(controller.clock().instant()).isPresent() && ! application.deploymentJobs().hasFailures())
+            if (application.get().changeAt(controller.clock().instant()).isPresent() && ! application.get().deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
-                                                   application.change() + " is already in progress");
+                                                   application.get().change() + " is already in progress");
             application = application.withChange(change);
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
@@ -230,7 +230,7 @@ public class DeploymentTrigger {
     /** Cancels a platform upgrade of the given application, and an application upgrade as well if {@code keepApplicationChange}. */
     public void cancelChange(ApplicationId applicationId, boolean keepApplicationChange) {
         applications().lockOrThrow(applicationId, application -> {
-            applications().store(application.withChange(application.change().application()
+            applications().store(application.withChange(application.get().change().application()
                                                                    .filter(__ -> keepApplicationChange)
                                                                    .map(Change::of)
                                                                    .orElse(Change.empty())));
