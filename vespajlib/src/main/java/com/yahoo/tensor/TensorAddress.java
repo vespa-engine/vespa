@@ -4,6 +4,7 @@ package com.yahoo.tensor;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
@@ -158,6 +159,8 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     /** Supports building of a tensor address */
     public static class Builder {
 
+        private Pattern identifierPattern = Pattern.compile("[A-Za-z0-9_]+");
+
         private final TensorType type;
         private final String[] labels;
 
@@ -176,8 +179,8 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
          * @return this for convenience
          */
         public Builder add(String dimension, String label) {
-            Objects.requireNonNull(dimension, "Dimension cannot be null");
-            Objects.requireNonNull(label, "Label cannot be null");
+            requireIdentifier(dimension, "dimension");
+            requireIdentifier(label, "label");
             Optional<Integer> labelIndex = type.indexOfDimension(dimension);
             if ( ! labelIndex.isPresent())
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
@@ -196,6 +199,13 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
                     throw new IllegalArgumentException("Missing a value for dimension " +
                                                        type.dimensions().get(i).name() + " for " + type);
             return TensorAddress.of(labels);
+        }
+
+        private void requireIdentifier(String s, String parameterName) {
+            if (s == null)
+                throw new IllegalArgumentException(parameterName + " can not be null");
+            if ( ! identifierPattern.matcher(s).matches())
+                throw new IllegalArgumentException(parameterName + " must be an identifier or integer, not '" + s + "'");
         }
 
     }

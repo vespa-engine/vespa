@@ -7,6 +7,7 @@ package com.yahoo.text;
  * @author baldersheim
  */
 public class Identifier extends Utf8Array {
+
     public Identifier(String s) {
         this(Utf8.toBytes(s));
     }
