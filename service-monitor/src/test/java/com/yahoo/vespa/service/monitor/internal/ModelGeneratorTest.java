@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.monitor.internal;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -16,9 +15,13 @@ import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
@@ -32,13 +35,13 @@ public class ModelGeneratorTest {
     private final int PORT = 2;
 
     @Test
-    public void toApplicationModel() throws Exception {
-        SuperModel superModel = ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
+    public void toApplicationModelWithConfigServerApplication() throws Exception {
+        SuperModel superModel =
+                ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
 
-        ConfigserverConfig config = ConfigserverUtil.create(
-                true, "cfg1", "cfg2", "cfg3");
-        DuperModel duperModel = new DuperModel(config);
-        ModelGenerator modelGenerator = new ModelGenerator();
+        List<String> configServerHosts = Stream.of("cfg1", "cfg2", "cfg3")
+                .collect(Collectors.toList());
+        ModelGenerator modelGenerator = new ModelGenerator(configServerHosts);
 
         Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
 
@@ -48,7 +51,7 @@ public class ModelGeneratorTest {
 
         ServiceModel serviceModel =
                 modelGenerator.toServiceModel(
-                        duperModel.getApplicationInfos(superModel),
+                        superModel,
                         zone,
                         slobrokMonitorManager);
 
@@ -73,6 +76,32 @@ public class ModelGeneratorTest {
             verifyConfigServerApplication(applicationInstance2);
             verifyOtherApplication(applicationInstance1);
         }
+    }
+
+    @Test
+    public void toApplicationModel() throws Exception {
+        SuperModel superModel =
+                ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
+        ModelGenerator modelGenerator = new ModelGenerator(Collections.emptyList());
+
+        Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
+
+        SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
+        when(slobrokMonitorManager.getStatus(any(), any(), any(), any()))
+                .thenReturn(ServiceStatus.UP);
+
+        ServiceModel serviceModel =
+                modelGenerator.toServiceModel(
+                        superModel,
+                        zone,
+                        slobrokMonitorManager);
+
+        Map<ApplicationInstanceReference,
+                ApplicationInstance> applicationInstances =
+                serviceModel.getAllApplicationInstances();
+
+        assertEquals(1, applicationInstances.size());
+        verifyOtherApplication(applicationInstances.values().iterator().next());
     }
 
     private void verifyOtherApplication(ApplicationInstance applicationInstance) {
