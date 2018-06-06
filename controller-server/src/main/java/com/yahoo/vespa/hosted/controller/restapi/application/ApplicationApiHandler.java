@@ -468,6 +468,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                   .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
+        Cursor activity = response.setObject("activity");
+        deployment.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried",
+                                                                                  instant.toEpochMilli()));
+        deployment.activity().lastWritten().ifPresent(instant -> activity.setLong("lastWritten",
+                                                                                  instant.toEpochMilli()));
+
         // Cost
         DeploymentCost appCost = deployment.calculateCost();
         Cursor costObject = response.setObject("cost");
