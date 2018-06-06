@@ -408,6 +408,7 @@ TEST("testPhraseEvaluate") {
     EXPECT_EQUAL(p->getFieldInfo(2).getHitCount(),  0u);
     EXPECT_EQUAL(p->getFieldInfo(3).getHitOffset(), 2u);
     EXPECT_EQUAL(p->getFieldInfo(3).getHitCount(),  1u);
+    EXPECT_TRUE(p->evaluate());
 }
 
 TEST("testHit") {
@@ -705,7 +706,6 @@ TEST("testSameElementEvaluate") {
     terms[2]->add(16, 2, 5, 160);
     terms[2]->add(17, 2, 6, 170);
     HitList hits;
-
     sameElem->evaluateHits(hits);
     EXPECT_EQUAL(4u, hits.size());
     EXPECT_EQUAL(0u, hits[0].wordpos());
@@ -727,7 +727,7 @@ TEST("testSameElementEvaluate") {
     EXPECT_EQUAL(2u, hits[3].context());
     EXPECT_EQUAL(5u, hits[3].elemId());
     EXPECT_EQUAL(160,  hits[3].weight());
-
+    EXPECT_TRUE(sameElem->evaluate());
 }
 
 

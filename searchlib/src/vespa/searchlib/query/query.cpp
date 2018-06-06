@@ -148,7 +148,7 @@ bool EquivQueryNode::evaluate() const
 
 bool SameElementQueryNode::evaluate() const {
     HitList hl;
-    return evaluateHits(hl).empty();
+    return ! evaluateHits(hl).empty();
 }
 
 const HitList &
@@ -198,7 +198,7 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
 bool PhraseQueryNode::evaluate() const
 {
   HitList hl;
-  return evaluateHits(hl).empty();
+  return ! evaluateHits(hl).empty();
 }
 
 void PhraseQueryNode::getPhrases(QueryNodeRefList & tl)            { tl.push_back(this); }
