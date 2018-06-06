@@ -11,14 +11,12 @@ import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 public class ConfigserverUtil {
     /** Create a ConfigserverConfig with the given settings. */
     public static ConfigserverConfig create(
-            boolean hostedVespa,
             boolean nodeAdminInContainer,
             String configServerHostname1,
             String configServerHostname2,
             String configServerHostname3) {
         return new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
-                        .hostedVespa(hostedVespa)
                         .nodeAdminInContainer(nodeAdminInContainer)
                         .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServerHostname1).port(1))
                         .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServerHostname2).port(2))
@@ -26,16 +24,14 @@ public class ConfigserverUtil {
     }
 
     public static ConfigserverConfig createExampleConfigserverConfig(boolean nodeAdminInContainer) {
-        return create(true, nodeAdminInContainer, "cfg1", "cfg2", "cfg3");
+        return create(nodeAdminInContainer, "cfg1", "cfg2", "cfg3");
     }
 
     public static ApplicationInfo makeConfigServerApplicationInfo(
-            boolean hostedVespa,
             String configServerHostname1,
             String configServerHostname2,
             String configServerHostname3) {
         return ConfigServerApplication.CONFIG_SERVER_APPLICATION.makeApplicationInfo(create(
-                hostedVespa,
                 true,
                 configServerHostname1,
                 configServerHostname2,
@@ -43,6 +39,6 @@ public class ConfigserverUtil {
     }
 
     public static ApplicationInfo makeExampleConfigServer() {
-        return makeConfigServerApplicationInfo(true, "cfg1", "cfg2", "cfg3");
+        return makeConfigServerApplicationInfo("cfg1", "cfg2", "cfg3");
     }
 }

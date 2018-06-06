@@ -3,10 +3,7 @@ package com.yahoo.vespa.service.monitor.internal.health;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 
-import javax.net.ssl.HostnameVerifier;
-import java.net.URL;
 import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -29,10 +26,8 @@ public class HealthMonitor implements AutoCloseable {
 
     private volatile HealthInfo lastHealthInfo = HealthInfo.empty();
 
-    public HealthMonitor(URL stateV1HealthEndpoint,
-                         ServiceIdentityProvider identityProvider,
-                         HostnameVerifier hostnameVerifier) {
-        this.healthClient = new HealthClient(stateV1HealthEndpoint, identityProvider, hostnameVerifier);
+    public HealthMonitor(HealthEndpoint stateV1HealthEndpoint) {
+        this.healthClient = new HealthClient(stateV1HealthEndpoint);
     }
 
     /** For testing. */
@@ -41,6 +36,7 @@ public class HealthMonitor implements AutoCloseable {
     }
 
     public void startMonitoring() {
+        healthClient.start();
         executor.scheduleWithFixedDelay(
                 this::updateSynchronously,
                 initialDelayInSeconds(DELAY.getSeconds()),

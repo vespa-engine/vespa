@@ -14,9 +14,9 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.service.monitor.internal.ModelGenerator;
+import com.yahoo.vespa.service.monitor.internal.health.ApplicationHealthMonitor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +49,7 @@ public class ConfigServerApplication extends HostedVespaApplication {
         List<ConfigserverConfig.Zookeeperserver> zooKeeperServers = config.zookeeperserver();
         for (int index = 0; index < zooKeeperServers.size(); ++index) {
             String hostname = zooKeeperServers.get(index).hostname();
-            hostInfos.add(makeHostInfo(hostname, index));
+            hostInfos.add(makeHostInfo(hostname, config.httpport(), index));
         }
 
         return new ApplicationInfo(
@@ -58,9 +58,8 @@ public class ConfigServerApplication extends HostedVespaApplication {
                 new HostsModel(hostInfos));
     }
 
-    private static HostInfo makeHostInfo(String hostname, int configIndex) {
-        // /state/v1/health API is available with STATE and either HTTP or HTTPS.
-        PortInfo portInfo = new PortInfo(4443, Arrays.asList("HTTPS", "STATE"));
+    private static HostInfo makeHostInfo(String hostname, int port, int configIndex) {
+        PortInfo portInfo = new PortInfo(port, ApplicationHealthMonitor.PORT_TAGS_HEALTH);
 
         Map<String, String> properties = new HashMap<>();
         properties.put(ModelGenerator.CLUSTER_ID_PROPERTY_NAME, CLUSTER_ID.s());

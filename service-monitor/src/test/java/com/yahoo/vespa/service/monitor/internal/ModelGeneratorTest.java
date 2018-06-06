@@ -32,12 +32,11 @@ public class ModelGeneratorTest {
     private final int PORT = 2;
 
     @Test
-    public void toApplicationModelWithConfigServerApplication() throws Exception {
-        SuperModel superModel =
-                ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
+    public void toApplicationModel() throws Exception {
+        SuperModel superModel = ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
 
         ConfigserverConfig config = ConfigserverUtil.create(
-                true, true, "cfg1", "cfg2", "cfg3");
+                true, "cfg1", "cfg2", "cfg3");
         DuperModel duperModel = new DuperModel(config);
         ModelGenerator modelGenerator = new ModelGenerator();
 
@@ -74,32 +73,6 @@ public class ModelGeneratorTest {
             verifyConfigServerApplication(applicationInstance2);
             verifyOtherApplication(applicationInstance1);
         }
-    }
-
-    @Test
-    public void toApplicationModel() throws Exception {
-        SuperModel superModel = ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
-        ConfigserverConfig config = ConfigserverUtil.create(
-                false, true, "cfg1", "cfg2", "cfg3");
-        DuperModel duperModel = new DuperModel(config);
-        ModelGenerator modelGenerator = new ModelGenerator();
-
-        Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
-
-        SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
-        when(slobrokMonitorManager.getStatus(any(), any(), any(), any()))
-                .thenReturn(ServiceStatus.UP);
-
-        ServiceModel serviceModel = modelGenerator.toServiceModel(
-                duperModel.getApplicationInfos(superModel),
-                zone,
-                slobrokMonitorManager);
-
-        Map<ApplicationInstanceReference, ApplicationInstance> applicationInstances =
-                serviceModel.getAllApplicationInstances();
-
-        assertEquals(1, applicationInstances.size());
-        verifyOtherApplication(applicationInstances.values().iterator().next());
     }
 
     private void verifyOtherApplication(ApplicationInstance applicationInstance) {

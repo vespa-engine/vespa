@@ -6,22 +6,20 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 import com.yahoo.vespa.service.monitor.application.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.monitor.internal.ServiceId;
 
-import java.net.URL;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Responsible for monitoring a whole application using /state/v1/health.
@@ -29,12 +27,15 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author hakon
  */
 public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoCloseable {
+    public static final String PORT_TAG_STATE = "STATE";
+    public static final String PORT_TAG_HTTP = "HTTP";
+    /** Port tags implying /state/v1/health is served */
+    public static final List<String> PORT_TAGS_HEALTH = Arrays.asList(PORT_TAG_HTTP, PORT_TAG_STATE);
+
     private final Map<ServiceId, HealthMonitor> healthMonitors;
 
-    public static ApplicationHealthMonitor startMonitoring(
-            ApplicationInfo application,
-            ServiceIdentityProvider identityProvider) {
-        return new ApplicationHealthMonitor(makeHealthMonitors(application, identityProvider));
+    public static ApplicationHealthMonitor startMonitoring(ApplicationInfo application) {
+        return new ApplicationHealthMonitor(makeHealthMonitors(application));
     }
 
     private ApplicationHealthMonitor(Map<ServiceId, HealthMonitor> healthMonitors) {
@@ -61,9 +62,7 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
         healthMonitors.clear();
     }
 
-    private static Map<ServiceId, HealthMonitor> makeHealthMonitors(
-            ApplicationInfo application,
-            ServiceIdentityProvider identityProvider) {
+    private static Map<ServiceId, HealthMonitor> makeHealthMonitors(ApplicationInfo application) {
         Map<ServiceId, HealthMonitor> healthMonitors = new HashMap<>();
         for (HostInfo hostInfo : application.getModel().getHosts()) {
             for (ServiceInfo serviceInfo : hostInfo.getServices()) {
@@ -72,8 +71,7 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
                             application,
                             hostInfo,
                             serviceInfo,
-                            portInfo,
-                            identityProvider)
+                            portInfo)
                             .ifPresent(healthMonitor -> healthMonitors.put(
                                     ApplicationInstanceGenerator.getServiceId(application, serviceInfo),
                                     healthMonitor));
@@ -87,24 +85,14 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
             ApplicationInfo applicationInfo,
             HostInfo hostInfo,
             ServiceInfo serviceInfo,
-            PortInfo portInfo,
-            ServiceIdentityProvider identityProvider) {
-        Collection<String> portTags = portInfo.getTags();
-        if (portTags.contains("STATE")) {
-            if (portTags.contains("HTTPS")) {
-                URL url = uncheck(() -> new URL(
-                        "https",
-                        hostInfo.getHostname(),
-                        portInfo.getPort(),
-                        "/state/v1/health"));
-                // todo: get hostname verifier
-                // "vespa.vespa[.cd].provider_%s_%s" from AthenzProviderServiceConfig
-                // new AthenzIdentityVerifier(Collections.singleton("vespa.vespa[.cd].provider_%s_%s"));
-                // HealthEndpoint healthEndpoint = HealthEndpoint.forHttps(...);
-                // HealthMonitor healthMonitor = new HealthMonitor(url, identityProvider, hostnameVerifier);
-                // healthMonitor.startMonitoring()
-                return Optional.empty();
-            }
+            PortInfo portInfo) {
+        if (portInfo.getTags().containsAll(PORT_TAGS_HEALTH)) {
+            HostName hostname = HostName.from(hostInfo.getHostname());
+            HealthEndpoint endpoint = HealthEndpoint.forHttp(hostname, portInfo.getPort());
+            // todo: make HealthMonitor
+            // HealthMonitor healthMonitor = new HealthMonitor(endpoint);
+            // healthMonitor.startMonitoring();
+            return Optional.empty();
         }
 
         return Optional.empty();

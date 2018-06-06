@@ -9,7 +9,6 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.service.monitor.application.ZoneApplication;
 import com.yahoo.vespa.service.monitor.internal.MonitorManager;
 
@@ -22,20 +21,17 @@ import java.util.Map;
 public class HealthMonitorManager implements MonitorManager {
     private final Map<ApplicationId, ApplicationHealthMonitor> healthMonitors = new HashMap<>();
     private final ConfigserverConfig configserverConfig;
-    private final ServiceIdentityProvider serviceIdentityProvider;
 
     @Inject
-    public HealthMonitorManager(ConfigserverConfig configserverConfig,
-                                ServiceIdentityProvider serviceIdentityProvider) {
+    public HealthMonitorManager(ConfigserverConfig configserverConfig) {
         this.configserverConfig = configserverConfig;
-        this.serviceIdentityProvider = serviceIdentityProvider;
     }
 
     @Override
     public void applicationActivated(ApplicationInfo application) {
         if (applicationMonitored(application.getApplicationId())) {
             ApplicationHealthMonitor monitor =
-                    ApplicationHealthMonitor.startMonitoring(application, serviceIdentityProvider);
+                    ApplicationHealthMonitor.startMonitoring(application);
             healthMonitors.put(application.getApplicationId(), monitor);
         }
     }

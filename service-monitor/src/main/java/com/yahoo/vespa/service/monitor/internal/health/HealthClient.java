@@ -2,7 +2,6 @@
 package com.yahoo.vespa.service.monitor.internal.health;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import org.apache.http.HttpEntity;
@@ -23,11 +22,7 @@ import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import java.net.URL;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author hakon
@@ -51,35 +46,25 @@ public class HealthClient implements AutoCloseable, ServiceIdentityProvider.List
                 }
             };
 
-    private final URL url;
-    private final ServiceIdentityProvider serviceIdentityProvider;
-    private final HostnameVerifier hostnameVerifier;
+    private final HealthEndpoint endpoint;
 
     private volatile CloseableHttpClient httpClient;
 
-    public HealthClient(HostName hostname,
-                        int port,
-                        ServiceIdentityProvider identityProvider,
-                        HostnameVerifier hostnameVerifier) {
-        this(uncheck(() -> new URL("https", hostname.value(), port, "/state/v1/health")),
-                identityProvider,
-                hostnameVerifier);
+    public HealthClient(HealthEndpoint endpoint) {
+        this.endpoint = endpoint;
     }
 
-    public HealthClient(URL stateV1HealthEndpoint,
-                        ServiceIdentityProvider serviceIdentityProvider,
-                        HostnameVerifier hostnameVerifier) {
-        this.url = stateV1HealthEndpoint;
-        this.serviceIdentityProvider = serviceIdentityProvider;
-        this.hostnameVerifier = hostnameVerifier;
-
-        onCredentialsUpdate(serviceIdentityProvider.getIdentitySslContext(), null);
-        serviceIdentityProvider.addIdentityListener(this);
+    public void start() {
+        endpoint.getServiceIdentityProvider().ifPresent(provider -> {
+            onCredentialsUpdate(provider.getIdentitySslContext(), null);
+            provider.addIdentityListener(this);
+        });
     }
 
     @Override
     public void onCredentialsUpdate(SSLContext sslContext, AthenzService ignored) {
-        SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
+        SSLConnectionSocketFactory socketFactory =
+                new SSLConnectionSocketFactory(sslContext, endpoint.getHostnameVerifier().orElse(null));
 
         Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("https", socketFactory)
@@ -111,7 +96,7 @@ public class HealthClient implements AutoCloseable, ServiceIdentityProvider.List
 
     @Override
     public void close() {
-        serviceIdentityProvider.removeIdentityListener(this);
+        endpoint.getServiceIdentityProvider().ifPresent(provider -> provider.removeIdentityListener(this));
 
         try {
             httpClient.close();
@@ -122,7 +107,7 @@ public class HealthClient implements AutoCloseable, ServiceIdentityProvider.List
     }
 
     private HealthInfo probeHealth() throws Exception {
-        HttpGet httpget = new HttpGet(url.toString());
+        HttpGet httpget = new HttpGet(endpoint.getStateV1HealthUrl().toString());
         CloseableHttpResponse httpResponse;
 
         CloseableHttpClient httpClient = this.httpClient;
