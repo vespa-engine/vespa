@@ -66,7 +66,7 @@ public:
 
     virtual void onReplayDone(uint32_t docIdLimit) = 0;
 
-    virtual bool getHasStructFieldAttribute() const = 0;
+    virtual bool hasStructFieldAttribute() const = 0;
 };
 
 } // namespace proton

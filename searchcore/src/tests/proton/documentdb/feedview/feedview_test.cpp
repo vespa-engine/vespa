@@ -389,7 +389,7 @@ struct MyAttributeWriter : public IAttributeWriter
     }
 
     void onReplayDone(uint32_t ) override { }
-    bool getHasStructFieldAttribute() const override { return false; }
+    bool hasStructFieldAttribute() const override { return false; }
 };
 
 MyAttributeWriter::MyAttributeWriter(MyTracer &tracer)

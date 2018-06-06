@@ -34,7 +34,7 @@ public:
         AttributeVector &getAttribute() const { return _attribute; }
         const FieldPath &getFieldPath() const { return _fieldPath; }
         void buildFieldPath(const DocumentType &docType);
-        bool getStructFieldAttribute() const { return _structFieldAttribute; }
+        bool isStructFieldAttribute() const { return _structFieldAttribute; }
     };
     class WriteContext
     {
@@ -50,7 +50,7 @@ public:
         void add(AttributeVector &attr);
         uint32_t getExecutorId() const { return _executorId; }
         const std::vector<WriteField> &getFields() const { return _fields; }
-        bool getHasStructFieldAttribute() const { return _hasStructFieldAttribute; }
+        bool hasStructFieldAttribute() const { return _hasStructFieldAttribute; }
     };
 private:
     std::vector<WriteContext> _writeContexts;
@@ -93,7 +93,7 @@ public:
     void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
 
     void onReplayDone(uint32_t docIdLimit) override;
-    bool getHasStructFieldAttribute() const override;
+    bool hasStructFieldAttribute() const override;
 };
 
 } // namespace proton
