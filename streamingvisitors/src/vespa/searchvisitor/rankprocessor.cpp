@@ -281,11 +281,11 @@ RankProcessor::unpackMatchData(MatchData &matchData)
                     }
                     if (tmd != 0) {
                         // adjust so that the position for phrase terms equals the match for the first term
-                        TermFieldMatchDataPosition pos(0, hit.wordpos() - terms[i].getPosAdjust(),
+                        TermFieldMatchDataPosition pos(hit.elemId(), hit.wordpos() - terms[i].getPosAdjust(),
                                                        hit.weight(), fieldLen);
                         tmd->appendPosition(pos);
-                        LOG(debug, "Append position(%u), weight(%d), tfmd.weight(%d)",
-                                   pos.getPosition(), pos.getElementWeight(), tmd->getWeight());
+                        LOG(debug, "Append elemId(%u),position(%u), weight(%d), tfmd.weight(%d)",
+                                   pos.getElementId(), pos.getPosition(), pos.getElementWeight(), tmd->getWeight());
                     }
                 }
             }
