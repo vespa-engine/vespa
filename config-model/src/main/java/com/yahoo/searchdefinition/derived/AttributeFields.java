@@ -2,12 +2,8 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.subscription.ConfigInstanceUtil;
-import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.document.Field;
-import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.document.StructDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
@@ -22,6 +18,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
+import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
 
 /**
  * The set of all attribute fields defined by a search definition
@@ -65,51 +64,6 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
                 !isMapOfSimpleStruct(field) &&
                 !field.getDataType().equals(PositionDataType.INSTANCE) &&
                 !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)));
-    }
-
-    private static boolean isArrayOfSimpleStruct(ImmutableSDField field) {
-        DataType fieldType = field.getDataType();
-        if (fieldType instanceof ArrayDataType) {
-            ArrayDataType arrayType = (ArrayDataType)fieldType;
-            return isSimpleStruct(arrayType.getNestedType());
-        } else {
-            return false;
-        }
-    }
-
-    private static boolean isMapOfSimpleStruct(ImmutableSDField field) {
-        DataType fieldType = field.getDataType();
-        if (fieldType instanceof MapDataType) {
-            MapDataType mapType = (MapDataType)fieldType;
-            return isPrimitiveType(mapType.getKeyType()) &&
-                    isSimpleStruct(mapType.getValueType());
-        } else {
-            return false;
-        }
-    }
-
-    private static boolean isSimpleStruct(DataType type) {
-        if (type instanceof StructDataType &&
-                !(type.equals(PositionDataType.INSTANCE))) {
-            StructDataType structType = (StructDataType) type;
-            for (Field innerField : structType.getFields()) {
-                if (!isPrimitiveType(innerField.getDataType())) {
-                    return false;
-                }
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private static boolean isPrimitiveType(DataType dataType) {
-        return dataType.equals(DataType.BYTE) ||
-                dataType.equals(DataType.INT) ||
-                dataType.equals(DataType.LONG) ||
-                dataType.equals(DataType.FLOAT) ||
-                dataType.equals(DataType.DOUBLE) ||
-                dataType.equals(DataType.STRING);
     }
 
     /** Returns an attribute by name, or null if it doesn't exist */
