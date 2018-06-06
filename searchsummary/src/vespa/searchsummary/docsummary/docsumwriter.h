@@ -54,6 +54,7 @@ private:
     uint32_t             _defaultOutputClass;
     uint32_t             _numClasses;
     uint32_t             _numEnumValues;
+    uint32_t             _numFieldWriterStates;
     ResultClass::DynamicInfo *_classInfoTable;
     IDocsumFieldWriter **_overrideTable;
 

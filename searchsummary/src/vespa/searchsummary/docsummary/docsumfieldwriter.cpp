@@ -21,6 +21,12 @@ using search::common::Location;
 
 const vespalib::string IDocsumFieldWriter::_empty("");
 
+bool
+IDocsumFieldWriter::setFieldWriterStateIndex(uint32_t)
+{
+    return false; // Don't need any field writer state by default
+}
+
 //--------------------------------------------------------------------------
 
 EmptyDFW::EmptyDFW() { }
