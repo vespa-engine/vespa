@@ -11,8 +11,11 @@ import io.airlift.command.Command;
 import io.airlift.command.HelpOption;
 import io.airlift.command.Option;
 import io.airlift.command.SingleCommand;
+import org.apache.http.Header;
+import org.apache.http.ParseException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.message.BasicLineParser;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -53,6 +56,15 @@ public class CommandLineArguments {
         }
         if (cmdArgs.priorityArg != null && ! checkPriorityFlag(cmdArgs.priorityArg)) {
             return null;
+        }
+
+        for (String header : cmdArgs.headers) {
+            try {
+                cmdArgs.parsedHeaders.add(BasicLineParser.parseHeader(header, null));
+            } catch (ParseException e) {
+                System.err.printf("Invalid header: '%s' (%s)%n", header, e.getMessage());
+                return null;
+            }
         }
 
         return cmdArgs;
@@ -186,6 +198,8 @@ public class CommandLineArguments {
             description = "Add http header to every request. Header must have the format '<Name>: <Value>'. Use this parameter multiple times for multiple headers")
     private List<String> headers = new ArrayList<>();
 
+    private final List<Header> parsedHeaders = new ArrayList<>();
+
     int getWhenVerboseEnabledPrintMessageForEveryXDocuments() {
         return whenVerboseEnabledPrintMessageForEveryXDocuments;
     }
@@ -199,10 +213,7 @@ public class CommandLineArguments {
     SessionParams createSessionParams(boolean useJson) {
         final int minThrottleValue = useDynamicThrottlingArg ? 10 : 0;
         ConnectionParams.Builder connectionParamsBuilder = new ConnectionParams.Builder();
-        for (String header : headers) {
-            String[] nameAndValue = header.split(":");
-            connectionParamsBuilder.addHeader(nameAndValue[0].trim(), nameAndValue[1].trim());
-        }
+        parsedHeaders.forEach(header -> connectionParamsBuilder.addHeader(header.getName(), header.getValue()));
         SessionParams.Builder builder = new SessionParams.Builder()
                 .setFeedParams(
                         new FeedParams.Builder()
