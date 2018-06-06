@@ -118,6 +118,7 @@ vespa_define_module(
     src/tests/proton/matching/match_loop_communicator
     src/tests/proton/matching/match_phase_limiter
     src/tests/proton/matching/partial_result
+    src/tests/proton/matching/same_element_builder
     src/tests/proton/metrics/documentdb_job_trackers
     src/tests/proton/metrics/job_load_sampler
     src/tests/proton/metrics/job_tracked_flush

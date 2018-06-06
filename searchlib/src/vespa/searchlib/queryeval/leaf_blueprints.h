@@ -64,6 +64,7 @@ public:
         _tag = t;
         return *this;
     }
+    const vespalib::string &tag() const { return _tag; }
 
     FakeBlueprint &term(const vespalib::string &t) {
         _term = t;
