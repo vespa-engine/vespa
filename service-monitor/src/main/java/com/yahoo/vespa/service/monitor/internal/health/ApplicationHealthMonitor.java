@@ -16,6 +16,7 @@ import com.yahoo.vespa.service.monitor.application.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.monitor.internal.ServiceId;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,8 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
     public static final String PORT_TAG_STATE = "STATE";
     public static final String PORT_TAG_HTTP = "HTTP";
     /** Port tags implying /state/v1/health is served */
-    public static final List<String> PORT_TAGS_HEALTH = Arrays.asList(PORT_TAG_HTTP, PORT_TAG_STATE);
+    public static final List<String> PORT_TAGS_HEALTH =
+            Collections.unmodifiableList(Arrays.asList(PORT_TAG_HTTP, PORT_TAG_STATE));
 
     private final Map<ServiceId, HealthMonitor> healthMonitors;
 
