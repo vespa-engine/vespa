@@ -4,8 +4,10 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.path.Path;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -15,10 +17,18 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
-public class SessionZooKeeperClientTest extends TestWithCurator {
+public class SessionZooKeeperClientTest {
+
+    private Curator curator;
+    private ConfigCurator configCurator;
+
+    @Before
+    public void setup() {
+        curator = new MockCurator();
+        configCurator = ConfigCurator.create(curator);
+    }
 
     @Test
     public void require_that_status_can_be_updated() {

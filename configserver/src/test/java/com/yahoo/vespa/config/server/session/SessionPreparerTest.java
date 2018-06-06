@@ -32,11 +32,11 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
+import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,13 +52,15 @@ import static org.junit.Assert.*;
  * @author lulf
  * @since 5.1
  */
-public class SessionPreparerTest extends TestWithCurator {
+public class SessionPreparerTest {
 
     private static final Path tenantPath = Path.createRoot();
     private static final Path sessionsPath = tenantPath.append("sessions").append("testapp");
     private static final File testApp = new File("src/test/apps/app");
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
 
+    private MockCurator curator;
+    private ConfigCurator configCurator;
     private SessionPreparer preparer;
     private TestComponentRegistry componentRegistry;
     private MockFileDistributionFactory fileDistributionFactory;
@@ -69,6 +71,8 @@ public class SessionPreparerTest extends TestWithCurator {
 
     @Before
     public void setUp() {
+        curator = new MockCurator();
+        configCurator = ConfigCurator.create(curator);
         componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         fileDistributionFactory = (MockFileDistributionFactory)componentRegistry.getFileDistributionFactory();
         preparer = createPreparer();
@@ -99,13 +103,13 @@ public class SessionPreparerTest extends TestWithCurator {
     }
 
     @Test(expected = InvalidApplicationException.class)
-    public void require_that_application_validation_exception_is_not_caught() throws IOException, SAXException {
+    public void require_that_application_validation_exception_is_not_caught() throws IOException {
         FilesApplicationPackage app = getApplicationPackage(invalidTestApp);
         preparer.prepare(getContext(app), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
     }
 
     @Test
-    public void require_that_application_validation_exception_is_ignored_if_forced() throws IOException, SAXException {
+    public void require_that_application_validation_exception_is_ignored_if_forced() throws IOException {
         FilesApplicationPackage app = getApplicationPackage(invalidTestApp);
         preparer.prepare(getContext(app), getLogger(),
                          new PrepareParams.Builder().ignoreValidationErrors(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
@@ -250,18 +254,18 @@ public class SessionPreparerTest extends TestWithCurator {
         return FilesApplicationPackage.fromFile(appDir);
     }
 
-    DeployHandlerLogger getLogger() {
+    private DeployHandlerLogger getLogger() {
         return getLogger(false);
     }
 
-    DeployHandlerLogger getLogger(boolean verbose) {
+    private DeployHandlerLogger getLogger(boolean verbose) {
         return new DeployHandlerLogger(new Slime().get(), verbose,
                                        new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build());
     }
 
     private static class FailingModelFactory extends TestModelFactory {
         private final RuntimeException exception;
-        public FailingModelFactory(Version vespaVersion, RuntimeException exception) {
+        FailingModelFactory(Version vespaVersion, RuntimeException exception) {
             super(vespaVersion);
             this.exception = exception;
         }
@@ -279,7 +283,7 @@ public class SessionPreparerTest extends TestWithCurator {
 
     private static class ConfigChangeActionsModelFactory extends TestModelFactory {
         private final ConfigChangeAction action;
-        public ConfigChangeActionsModelFactory(Version vespaVersion, ConfigChangeAction action) {
+        ConfigChangeActionsModelFactory(Version vespaVersion, ConfigChangeAction action) {
             super(vespaVersion);
             this.action = action;
         }

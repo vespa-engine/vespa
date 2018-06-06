@@ -8,7 +8,6 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.provision.*;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -25,13 +24,12 @@ import java.util.*;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
-
 /**
  * Unit tests for ZooKeeperClient.
  *
  * @author hmusum
  */
-public class ZooKeeperClientTest extends TestWithCurator {
+public class ZooKeeperClientTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -41,7 +39,7 @@ public class ZooKeeperClientTest extends TestWithCurator {
 
     @Before
     public void setupZK() throws IOException {
-        this.zk = ConfigCurator.create(curator);
+        zk = ConfigCurator.create(new MockCurator());
         ZooKeeperClient zkc = new ZooKeeperClient(zk, new BaseDeployLogger(), true, Path.fromString(appPath));
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
                                                                                 new DeployData("foo",

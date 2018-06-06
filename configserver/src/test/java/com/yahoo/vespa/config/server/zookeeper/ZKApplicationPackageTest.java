@@ -21,14 +21,15 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.TestWithCurator;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.yahoo.io.IOUtils;
 
-public class ZKApplicationPackageTest extends TestWithCurator {
+public class ZKApplicationPackageTest {
 
     private static final String APP = "src/test/apps/zkapp";
     private static final String TEST_FLAVOR_NAME = "test-flavor";
@@ -37,8 +38,15 @@ public class ZKApplicationPackageTest extends TestWithCurator {
             Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty(),
                                                Optional.of(com.yahoo.component.Version.fromString("6.0.1")))));
 
+    private ConfigCurator configCurator;
+
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
+
+    @Before
+    public void setup() {
+        configCurator = ConfigCurator.create(new MockCurator());
+    }
 
     @Test
     public void testBasicZKFeed() throws IOException {

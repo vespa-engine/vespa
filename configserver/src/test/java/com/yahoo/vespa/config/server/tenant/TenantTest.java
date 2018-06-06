@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.tenant;
 import com.google.common.testing.EqualsTester;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,10 +13,9 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 /**
- * @author lulf
- * @since 5.3
+ * @author Ulf Lilleengen
  */
-public class TenantTest extends TestWithCurator {
+public class TenantTest {
     private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
 
     private Tenant t1;

@@ -22,9 +22,7 @@ import com.yahoo.vespa.model.VespaModelFactory;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -42,8 +40,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class RemoteSessionTest {
 
@@ -52,7 +49,7 @@ public class RemoteSessionTest {
     private Curator curator;
 
     @Before
-    public void setupTest() throws Exception {
+    public void setupTest() {
         curator = new MockCurator();
     }
 
@@ -66,7 +63,7 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_applications_are_loaded() throws IOException, SAXException {
+    public void require_that_applications_are_loaded() {
         RemoteSession session = createSession(3, Arrays.asList(new MockModelFactory(), new VespaModelFactory(new NullConfigModelRegistry())), Clock.systemUTC());
         session.loadPrepared();
         ApplicationSet applicationSet = session.ensureApplicationLoaded();
@@ -84,7 +81,7 @@ public class RemoteSessionTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void require_that_new_invalid_application_throws_exception() throws IOException, SAXException {
+    public void require_that_new_invalid_application_throws_exception() {
         MockModelFactory failingFactory = new MockModelFactory();
         failingFactory.vespaVersion = Version.fromIntValues(1, 2, 0);
         failingFactory.throwOnLoad = true;
@@ -98,7 +95,7 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_application_incompatible_with_latestmajor_is_loaded_on_earlier_major() throws IOException, SAXException {
+    public void require_that_application_incompatible_with_latestmajor_is_loaded_on_earlier_major() {
         MockModelFactory okFactory1 = new MockModelFactory();
         okFactory1.vespaVersion = Version.fromIntValues(1, 1, 0);
         okFactory1.throwOnLoad = false;
@@ -116,7 +113,7 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_old_invalid_application_does_not_throw_exception_if_skipped() throws IOException, SAXException {
+    public void require_that_old_invalid_application_does_not_throw_exception_if_skipped() {
         MockModelFactory failingFactory = new MockModelFactory();
         failingFactory.vespaVersion = Version.fromIntValues(1, 1, 0);
         failingFactory.throwOnLoad = true;
@@ -131,7 +128,7 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_old_invalid_application_does_not_throw_exception_if_skipped_also_across_major_versions() throws IOException, SAXException {
+    public void require_that_old_invalid_application_does_not_throw_exception_if_skipped_also_across_major_versions() {
         MockModelFactory failingFactory = new MockModelFactory();
         failingFactory.vespaVersion = Version.fromIntValues(1, 0, 0);
         failingFactory.throwOnLoad = true;
@@ -146,7 +143,7 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_old_invalid_application_does_not_throw_exception_if_skipped_also_when_new_major_is_incompatible() throws IOException, SAXException {
+    public void require_that_old_invalid_application_does_not_throw_exception_if_skipped_also_when_new_major_is_incompatible() {
         MockModelFactory failingFactory = new MockModelFactory();
         failingFactory.vespaVersion = Version.fromIntValues(1, 0, 0);
         failingFactory.throwOnLoad = true;
@@ -166,7 +163,7 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_an_application_package_can_limit_to_one_major_version() throws IOException, SAXException {
+    public void require_that_an_application_package_can_limit_to_one_major_version() {
         ApplicationPackage application =
                 new MockApplicationPackage.Builder().withServices("<services major-version='2' version=\"1.0\"></services>").build();
 
@@ -186,7 +183,7 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_session_status_is_updated() throws IOException, SAXException {
+    public void require_that_session_status_is_updated() {
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3);
         RemoteSession session = createSession(3, zkc, Clock.systemUTC());
         assertThat(session.getStatus(), is(Session.Status.NEW));
