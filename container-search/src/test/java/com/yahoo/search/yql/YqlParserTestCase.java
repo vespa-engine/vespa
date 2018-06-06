@@ -21,6 +21,8 @@ import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.prelude.querytransform.QueryRewrite;
+import com.yahoo.search.Query;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig.Indexinfo;
 import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Alias;
@@ -942,9 +944,12 @@ public class YqlParserTestCase {
     }
 
     private void assertCanonicalParse(String yqlQuery, String expectedQueryTree) {
-        QueryTree q = parse(yqlQuery);
-        assertNull(QueryCanonicalizer.canonicalize(q));
-        assertEquals(q.toString(), expectedQueryTree);
+        QueryTree qt  = parse(yqlQuery);
+        assertNull(QueryCanonicalizer.canonicalize(qt));
+        Query q = new Query();
+        q.getModel().getQueryTree().setRoot(qt.getRoot());
+        QueryRewrite.collapseSingleComposites(q);
+        assertEquals(q.getModel().getQueryTree().toString(), expectedQueryTree);
     }
 
     private void assertParseFail(String yqlQuery, Throwable expectedException) {

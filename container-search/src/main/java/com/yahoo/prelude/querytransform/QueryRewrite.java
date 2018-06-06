@@ -6,6 +6,7 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.NonReducibleCompositeItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.OrItem;
@@ -214,7 +215,7 @@ public class QueryRewrite {
                 parent.setItem(i, newChild);
             }
         }
-        return numChildren == 1 ? parent.getItem(0) : item;
+        return ((numChildren == 1) && !(parent instanceof NonReducibleCompositeItem)) ? parent.getItem(0) : item;
     }
 
     private static Item rewriteSddocname(Item item) {
