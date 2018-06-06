@@ -868,7 +868,7 @@ struct StructArrayFixture : public StructFixtureBase
 
 StructArrayFixture::~StructArrayFixture() = default;
 
-TEST_F("require that update with doc argument updates compound attributes (array)", StructArrayFixture)
+TEST_F("require that update with doc argument updates struct field attributes (array)", StructArrayFixture)
 {
     auto doc = f.makeDoc(10,  {11, 12});
     f.put(10, *doc, 1);
@@ -926,7 +926,7 @@ struct StructMapFixture : public StructFixtureBase
     }
 };
 
-TEST_F("require that update with doc argument updates compound attributes (map)", StructMapFixture)
+TEST_F("require that update with doc argument updates struct field attributes (map)", StructMapFixture)
 {
     auto doc = f.makeDoc(10,  {{1, 11}, {2, 12}});
     f.put(10, *doc, 1);
