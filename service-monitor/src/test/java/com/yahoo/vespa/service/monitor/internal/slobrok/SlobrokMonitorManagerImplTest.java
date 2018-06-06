@@ -2,7 +2,7 @@
 package com.yahoo.vespa.service.monitor.internal.slobrok;
 
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.model.api.SuperModel;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -28,18 +28,19 @@ public class SlobrokMonitorManagerImplTest {
     private final SlobrokMonitorManagerImpl slobrokMonitorManager =
             new SlobrokMonitorManagerImpl(slobrokMonitorFactory);
     private final SlobrokMonitor slobrokMonitor = mock(SlobrokMonitor.class);
-    private final SuperModel superModel = mock(SuperModel.class);
+    private final ApplicationId applicationId = ApplicationId.from("tenant", "app", "instance");
     private final ApplicationInfo application = mock(ApplicationInfo.class);
     private final ClusterId clusterId = new ClusterId("cluster-id");
 
     @Before
     public void setup() {
         when(slobrokMonitorFactory.get()).thenReturn(slobrokMonitor);
+        when(application.getApplicationId()).thenReturn(applicationId);
     }
 
     @Test
     public void testActivationOfApplication() {
-        slobrokMonitorManager.applicationActivated(superModel, application);
+        slobrokMonitorManager.applicationActivated(application);
         verify(slobrokMonitorFactory, times(1)).get();
     }
 
@@ -51,14 +52,14 @@ public class SlobrokMonitorManagerImplTest {
 
     @Test
     public void testGetStatus_ApplicationInSlobrok() {
-        slobrokMonitorManager.applicationActivated(superModel, application);
+        slobrokMonitorManager.applicationActivated(application);
         when(slobrokMonitor.registeredInSlobrok("config.id")).thenReturn(true);
         assertEquals(ServiceStatus.UP, getStatus("topleveldispatch"));
     }
 
     @Test
     public void testGetStatus_ServiceNotInSlobrok() {
-        slobrokMonitorManager.applicationActivated(superModel, application);
+        slobrokMonitorManager.applicationActivated(application);
         when(slobrokMonitor.registeredInSlobrok("config.id")).thenReturn(false);
         assertEquals(ServiceStatus.DOWN, getStatus("topleveldispatch"));
     }
