@@ -34,9 +34,8 @@ public class ApplicationPackage {
      * it must not be further changed by the caller.
      */
     public ApplicationPackage(byte[] zippedContent) {
-        Objects.requireNonNull(zippedContent, "The application package content cannot be null");
+        this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
         this.contentHash = DigestUtils.shaHex(zippedContent);
-        this.zippedContent = zippedContent;
         this.deploymentSpec = extractFile("deployment.xml", zippedContent).map(DeploymentSpec::fromXml).orElse(DeploymentSpec.empty);
         this.validationOverrides = extractFile("validation-overrides.xml", zippedContent).map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
     }

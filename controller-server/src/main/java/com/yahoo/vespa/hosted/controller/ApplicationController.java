@@ -109,7 +109,7 @@ public class ApplicationController {
 
         this.artifactRepository = artifactRepository;
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
-        this.deploymentTrigger = new DeploymentTrigger(controller, curator, buildService, clock);
+        this.deploymentTrigger = new DeploymentTrigger(controller, buildService, clock);
 
         for (Application application : curator.readApplications()) {
             lockIfPresent(application.id(), this::store);

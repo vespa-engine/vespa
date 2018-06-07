@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -78,14 +77,11 @@ public class DeploymentTrigger {
     private final DeploymentOrder order;
     private final BuildService buildService;
 
-    public DeploymentTrigger(Controller controller, CuratorDb curator, BuildService buildService, Clock clock) {
-        Objects.requireNonNull(controller, "controller cannot be null");
-        Objects.requireNonNull(curator, "curator cannot be null");
-        Objects.requireNonNull(clock, "clock cannot be null");
-        this.controller = controller;
-        this.clock = clock;
+    public DeploymentTrigger(Controller controller, BuildService buildService, Clock clock) {
+        this.controller = Objects.requireNonNull(controller, "controller cannot be null");
+        this.buildService = Objects.requireNonNull(buildService, "buildService cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
         this.order = new DeploymentOrder(controller::system);
-        this.buildService = buildService;
     }
 
     public DeploymentOrder deploymentOrder() {
