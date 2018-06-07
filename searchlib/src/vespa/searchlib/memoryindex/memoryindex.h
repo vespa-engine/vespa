@@ -2,20 +2,22 @@
 
 #pragma once
 
-#include "dictionary.h"
-#include "documentinverter.h"
-#include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/queryeval/searchable.h>
-#include <vector>
+#include <vespa/searchlib/util/memoryusage.h>
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
-namespace search {
+namespace search::index { class IndexBuilder; }
 
-namespace index { class IndexBuilder; }
+namespace search { class ISequencedTaskExecutor; }
 
-class ISequencedTaskExecutor;
+namespace document { class Document; }
 
-namespace memoryindex {
+namespace search::memoryindex {
+
+class DocumentInverter;
+class Dictionary;
 
 /**
  * Lock-free implementation of a memory-based index
@@ -27,10 +29,10 @@ private:
     index::Schema     _schema;
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;
-    DocumentInverter  _inverter0;
-    DocumentInverter  _inverter1;
-    DocumentInverter *_inverter;
-    Dictionary        _dictionary;
+    std::unique_ptr<DocumentInverter>  _inverter0;
+    std::unique_ptr<DocumentInverter>  _inverter1;
+    DocumentInverter                  *_inverter;
+    std::unique_ptr<Dictionary>        _dictionary;
     bool              _frozen;
     uint32_t          _maxDocId;
     uint32_t          _numDocs;
@@ -158,9 +160,7 @@ public:
         return _numDocs;
     }
 
-    virtual uint64_t getNumWords() const {
-        return _dictionary.getNumUniqueWords();
-    }
+    virtual uint64_t getNumWords() const;
 
     void pruneRemovedFields(const index::Schema &schema);
 
@@ -176,5 +176,4 @@ public:
     uint64_t getStaticMemoryFootprint() const { return _staticMemoryFootprint; }
 };
 
-} // namespace memoryindex
-} // namespace search
+}
