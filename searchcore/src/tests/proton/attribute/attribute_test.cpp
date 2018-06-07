@@ -5,6 +5,7 @@
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/tensor_factory.h>

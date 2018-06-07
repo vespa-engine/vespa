@@ -4,10 +4,10 @@
 #include "document_iterator.h"
 #include "i_resource_write_filter.h"
 #include "persistence_handler_map.h"
+#include "ipersistencehandler.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
-#include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
@@ -47,13 +47,8 @@ private:
         DocumentIterator it;
         bool in_use;
         std::vector<BucketGuard::UP> bucket_guards;
-        IteratorEntry(storage::spi::ReadConsistency readConsistency,
-                      const Bucket &b,
-                      const document::FieldSet& f,
-                      const Selection &s,
-                      IncludedVersions v,
-                      ssize_t defaultSerializedSize,
-                      bool ignoreMaxBytes)
+        IteratorEntry(storage::spi::ReadConsistency readConsistency, const Bucket &b, const document::FieldSet& f,
+                      const Selection &s, IncludedVersions v, ssize_t defaultSerializedSize, bool ignoreMaxBytes)
             : handler_sequence(),
               it(b, f, s, v, defaultSerializedSize, ignoreMaxBytes, readConsistency),
               in_use(false),
@@ -80,8 +75,7 @@ private:
     mutable ExtraModifiedBuckets            _extraModifiedBuckets;
     mutable std::shared_timed_mutex         _rwMutex;
 
-    IPersistenceHandler::SP getHandler(document::BucketSpace bucketSpace,
-                                       const DocTypeName &docType) const;
+    IPersistenceHandler::SP getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const;
     HandlerSnapshot::UP getHandlerSnapshot() const;
     HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
 
@@ -91,16 +85,13 @@ private:
 public:
     typedef std::unique_ptr<PersistenceEngine> UP;
 
-    PersistenceEngine(IPersistenceEngineOwner &owner,
-                      const IResourceWriteFilter &writeFilter,
+    PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter,
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);
     ~PersistenceEngine();
 
-    IPersistenceHandler::SP putHandler(document::BucketSpace bucketSpace,
-                                       const DocTypeName &docType,
+    IPersistenceHandler::SP putHandler(document::BucketSpace bucketSpace, const DocTypeName &docType,
                                        const IPersistenceHandler::SP &handler);
-    IPersistenceHandler::SP removeHandler(document::BucketSpace bucketSpace,
-                                          const DocTypeName &docType);
+    IPersistenceHandler::SP removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType);
 
     // Implements PersistenceProvider
     virtual Result initialize() override;
@@ -109,10 +100,12 @@ public:
     virtual Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
     virtual Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     virtual BucketInfoResult getBucketInfo(const Bucket&) const override;
-    virtual Result put(const Bucket&, Timestamp, const document::Document::SP&, Context&) override;
+    virtual Result put(const Bucket&, Timestamp, const std::shared_ptr<document::Document>&, Context&) override;
     virtual RemoveResult remove(const Bucket&, Timestamp, const document::DocumentId&, Context&) override;
-    virtual UpdateResult update(const Bucket&, Timestamp, const document::DocumentUpdate::SP&, Context&) override;
-    virtual GetResult get(const Bucket&, const document::FieldSet&, const document::DocumentId&, Context&) const override;
+    virtual UpdateResult update(const Bucket&, Timestamp,
+                                const std::shared_ptr<document::DocumentUpdate>&, Context&) override;
+    virtual GetResult get(const Bucket&, const document::FieldSet&,
+                          const document::DocumentId&, Context&) const override;
     virtual CreateIteratorResult createIterator(const Bucket&, const document::FieldSet&, const Selection&,
                                                 IncludedVersions, Context&) override;
     virtual IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;

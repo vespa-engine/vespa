@@ -6,21 +6,22 @@
  */
 #pragma once
 
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/documentupdate.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/storageapi/defs.h>
+#include <vespa/document/base/documentid.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 
-namespace storage {
-namespace api {
+namespace document {
+    class DocumentUpdate;
+    class Document;
+}
+namespace storage::api {
 
 using documentapi::TestAndSetCondition;
+using DocumentSP = std::shared_ptr<document::Document>;
 
 class TestAndSetCommand : public BucketInfoCommand {
     TestAndSetCondition _condition;
-
 public:
     TestAndSetCommand(const MessageType & messageType, const document::Bucket &bucket);
     ~TestAndSetCommand();
@@ -42,12 +43,12 @@ public:
  * @brief Command for adding a document to the storage system.
  */
 class PutCommand : public TestAndSetCommand {
-    document::Document::SP _doc;
-    Timestamp _timestamp;
-    Timestamp _updateTimestamp;
+    DocumentSP _doc;
+    Timestamp  _timestamp;
+    Timestamp  _updateTimestamp;
 
 public:
-    PutCommand(const document::Bucket &bucket, const document::Document::SP&, Timestamp);
+    PutCommand(const document::Bucket &bucket, const DocumentSP&, Timestamp);
     ~PutCommand();
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
@@ -60,8 +61,8 @@ public:
     void setUpdateTimestamp(Timestamp ts) { _updateTimestamp = ts; }
     Timestamp getUpdateTimestamp() const { return _updateTimestamp; }
 
-    const document::Document::SP& getDocument() const { return _doc; }
-    const document::DocumentId& getDocumentId() const override { return _doc->getId(); }
+    const DocumentSP& getDocument() const { return _doc; }
+    const document::DocumentId& getDocumentId() const override;
     Timestamp getTimestamp() const { return _timestamp; }
 
     vespalib::string getSummary() const override;
@@ -78,7 +79,7 @@ public:
  */
 class PutReply : public BucketInfoReply {
     document::DocumentId _docId;
-    document::Document::SP _document; // Not serialized
+    DocumentSP _document; // Not serialized
     Timestamp _timestamp;
     Timestamp _updateTimestamp;
     bool _wasFound;
@@ -89,7 +90,7 @@ public:
 
     const document::DocumentId& getDocumentId() const { return _docId; }
     bool hasDocument() const { return _document.get(); }
-    const document::Document::SP& getDocument() const { return _document; }
+    const DocumentSP& getDocument() const { return _document; }
     Timestamp getTimestamp() const { return _timestamp; };
     Timestamp getUpdateTimestamp() const { return _updateTimestamp; }
 
@@ -108,21 +109,20 @@ public:
  * @brief Command for updating a document to the storage system.
  */
 class UpdateCommand : public TestAndSetCommand {
-    document::DocumentUpdate::SP _update;
+    std::shared_ptr<document::DocumentUpdate> _update;
     Timestamp _timestamp;
     Timestamp _oldTimestamp;
 
 public:
     UpdateCommand(const document::Bucket &bucket,
-                  const document::DocumentUpdate::SP&, Timestamp);
+                  const std::shared_ptr<document::DocumentUpdate>&, Timestamp);
     ~UpdateCommand();
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
     void setOldTimestamp(Timestamp ts) { _oldTimestamp = ts; }
 
-    const document::DocumentUpdate::SP& getUpdate() const { return _update; }
-    const document::DocumentId& getDocumentId() const override
-        { return _update->getId(); }
+    const std::shared_ptr<document::DocumentUpdate>& getUpdate() const { return _update; }
+    const document::DocumentId& getDocumentId() const override;
     Timestamp getTimestamp() const { return _timestamp; }
     Timestamp getOldTimestamp() const { return _oldTimestamp; }
 
@@ -211,17 +211,17 @@ public:
 class GetReply : public BucketInfoReply {
     document::DocumentId _docId; // In case of not found, we want id still
     vespalib::string _fieldSet;
-    document::Document::SP _doc; // Null pointer if not found
+    DocumentSP _doc; // Null pointer if not found
     Timestamp _beforeTimestamp;
     Timestamp _lastModifiedTime;
 
 public:
     GetReply(const GetCommand& cmd,
-             const document::Document::SP& doc = document::Document::SP(),
+             const DocumentSP& doc = DocumentSP(),
              Timestamp lastModified = 0);
     ~GetReply();
 
-    const document::Document::SP& getDocument() const { return _doc; }
+    const DocumentSP& getDocument() const { return _doc; }
     const document::DocumentId& getDocumentId() const { return _docId; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
 
@@ -311,5 +311,4 @@ public:
     DECLARE_STORAGEREPLY(RevertReply, onRevertReply)
 };
 
-} // api
-} // storage
+}

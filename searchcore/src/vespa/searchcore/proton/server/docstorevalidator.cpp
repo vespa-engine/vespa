@@ -2,9 +2,9 @@
 
 #include "docstorevalidator.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/document/fieldvalue/document.h>
 
-namespace proton
-{
+namespace proton {
 
 DocStoreValidator::DocStoreValidator(IDocumentMetaStore &dms)
     : _dms(dms),

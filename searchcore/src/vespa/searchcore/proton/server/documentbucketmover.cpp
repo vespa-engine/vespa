@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
+#include <vespa/document/fieldvalue/document.h>
 
 using document::BucketId;
 using document::Document;

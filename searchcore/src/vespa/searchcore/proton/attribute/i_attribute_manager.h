@@ -9,12 +9,9 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/serialnum.h>
 
-namespace search
-{
-
+namespace search {
 class IDestructorCallback;
 class ISequencedTaskExecutor;
-
 }
 
 namespace proton {

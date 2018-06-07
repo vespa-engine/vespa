@@ -4,6 +4,9 @@
 #include "i_attribute_manager.h"
 #include "i_attribute_writer.h"
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
+#include <vespa/document/base/fieldpath.h>
+
+namespace document { class DocumentType; }
 
 namespace proton {
 

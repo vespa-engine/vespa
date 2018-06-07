@@ -8,6 +8,8 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/memory.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bytebuffer.h>
 
