@@ -6,6 +6,7 @@ import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -15,21 +16,22 @@ import java.util.Map;
  * @author ollivir
  */
 public class GarbageCollectionMetrics {
-    private static final String GC_COUNT = "jdisc.gc.count";
-    private static final String GC_TIME = "jdisc.gc.ms";
+    private static final String GC_PREFIX = "jdisc.gc.";
+    private static final String GC_COUNT = GC_PREFIX + ".count";
+    private static final String GC_TIME = GC_PREFIX + ".ms";
     private static final String DIMENSION_KEY = "gcName";
 
-    public static final long REPORTING_INTERVAL = Duration.ofSeconds(62).toMillis();
+    public static final Duration REPORTING_INTERVAL = Duration.ofSeconds(62);
 
     static class GcStats {
-        private final long when;
+        private final Instant when;
         private final long count;
-        private final long ms;
+        private final Duration totalRuntime;
 
-        private GcStats(long when, long count, long ms) {
+        private GcStats(Instant when, long count, Duration totalRuntime) {
             this.when = when;
             this.count = count;
-            this.ms = ms;
+            this.totalRuntime = totalRuntime;
         }
     }
 
@@ -40,26 +42,26 @@ public class GarbageCollectionMetrics {
     public GarbageCollectionMetrics(Clock clock) {
         this.clock = clock;
         this.gcStatistics = new HashMap<>();
-        collectGcStatistics(clock.millis());
+        collectGcStatistics(clock.instant());
     }
 
-    private void collectGcStatistics(long now) {
+    private void collectGcStatistics(Instant now) {
         for (GarbageCollectorMXBean gcBean : ManagementFactory.getGarbageCollectorMXBeans()) {
             String gcName = gcBean.getName().replace(" ", "");
-            GcStats stats = new GcStats(now, gcBean.getCollectionCount(), gcBean.getCollectionTime());
+            GcStats stats = new GcStats(now, gcBean.getCollectionCount(), Duration.ofMillis(gcBean.getCollectionTime()));
 
             LinkedList<GcStats> window = gcStatistics.computeIfAbsent(gcName, anyName -> new LinkedList<>());
             window.addLast(stats);
         }
     }
 
-    private void cleanStatistics(long now) {
-        long oldestToKeep = now - REPORTING_INTERVAL;
+    private void cleanStatistics(Instant now) {
+        Instant oldestToKeep = now.minus(REPORTING_INTERVAL);
 
         for(Iterator<Map.Entry<String, LinkedList<GcStats>>> it = gcStatistics.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, LinkedList<GcStats>> entry = it.next();
             LinkedList<GcStats> history = entry.getValue();
-            while(history.isEmpty() == false && history.getFirst().when < oldestToKeep) {
+            while(history.isEmpty() == false && oldestToKeep.isAfter(history.getFirst().when)) {
                 history.removeFirst();
             }
             if(history.isEmpty()) {
@@ -69,7 +71,7 @@ public class GarbageCollectionMetrics {
     }
 
     public void emitMetrics(Metric metric) {
-        long now = clock.millis();
+        Instant now = clock.instant();
 
         collectGcStatistics(now);
         cleanStatistics(now);
@@ -82,7 +84,7 @@ public class GarbageCollectionMetrics {
             Metric.Context gcContext = metric.createContext(contextData);
 
             metric.set(GC_COUNT, latest.count - reference.count, gcContext);
-            metric.set(GC_TIME, latest.ms - reference.ms, gcContext);
+            metric.set(GC_TIME, latest.totalRuntime.minus(reference.totalRuntime).toMillis(), gcContext);
         }
     }
 
