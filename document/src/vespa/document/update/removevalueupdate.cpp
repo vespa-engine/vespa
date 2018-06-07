@@ -7,6 +7,7 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
 
 using vespalib::IllegalArgumentException;
@@ -23,7 +24,7 @@ RemoveValueUpdate::RemoveValueUpdate(const FieldValue& key)
       _key(key.clone())
 {}
 
-RemoveValueUpdate::~RemoveValueUpdate() {}
+RemoveValueUpdate::~RemoveValueUpdate() = default;
 
 bool
 RemoveValueUpdate::operator==(const ValueUpdate& other) const
@@ -39,8 +40,7 @@ void
 RemoveValueUpdate::checkCompatibility(const Field& field) const
 {
     if (field.getDataType().inherits(CollectionDataType::classId)) {
-        const CollectionDataType& type =
-            static_cast<const CollectionDataType&>(field.getDataType());
+        const CollectionDataType& type = static_cast<const CollectionDataType&>(field.getDataType());
         if (!type.getNestedType().isValueType(*_key)) {
             throw IllegalArgumentException(
                     "Cannot remove value of type "
@@ -49,9 +49,7 @@ RemoveValueUpdate::checkCompatibility(const Field& field) const
                     + field.getDataType().toString(), VESPA_STRLOC);
         }
     } else {
-        throw IllegalArgumentException(
-                "Can not remove a value from field of type "
-                + field.getDataType().toString(), VESPA_STRLOC);
+        throw IllegalArgumentException("Can not remove a value from field of type " + field.getDataType().toString(), VESPA_STRLOC);
     }
 }
 
@@ -66,9 +64,7 @@ RemoveValueUpdate::applyTo(FieldValue& value) const
         WeightedSetFieldValue& doc(static_cast<WeightedSetFieldValue&>(value));
         doc.remove(*_key);
     } else {
-        std::string err = vespalib::make_string(
-                "Unable to remove a value from a \"%s\" field value.",
-                value.getClass().name());
+        std::string err = vespalib::make_string("Unable to remove a value from a \"%s\" field value.", value.getClass().name());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;
@@ -89,16 +85,13 @@ RemoveValueUpdate::print(std::ostream& out, bool, const std::string&) const
 
 // Deserialize this update from the given buffer.
 void
-RemoveValueUpdate::deserialize(
-        const DocumentTypeRepo& repo, const DataType& type,
-        ByteBuffer& buffer, uint16_t version)
+RemoveValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer, uint16_t version)
 {
     switch(type.getClass().id()) {
         case ArrayDataType::classId:
         case WeightedSetDataType::classId:
         {
-            const CollectionDataType& c(
-                    static_cast<const CollectionDataType&>(type));
+            const CollectionDataType& c(static_cast<const CollectionDataType&>(type));
             _key.reset(c.getNestedType().createFieldValue().release());
             nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
             VespaDocumentDeserializer deserializer(repo, stream, version);
@@ -107,9 +100,7 @@ RemoveValueUpdate::deserialize(
             break;
         }
         default:
-            throw DeserializeException(
-                    "Can not perform remove operation on type "
-                    + type.toString() + ".", VESPA_STRLOC);
+            throw DeserializeException("Can not perform remove operation on type " + type.toString() + ".", VESPA_STRLOC);
     }
 }
 

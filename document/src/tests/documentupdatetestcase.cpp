@@ -14,6 +14,7 @@
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
+#include <vespa/document/util/bytebuffer.h>
 
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>

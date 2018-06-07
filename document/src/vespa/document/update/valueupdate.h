@@ -19,11 +19,8 @@
 #pragma once
 
 #include "updatevisitor.h"
-
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/document/util/serializable.h>
 #include <vespa/document/util/xmlserializable.h>
-#include <vespa/vespalib/objects/cloneable.h>
 
 namespace document {
 
