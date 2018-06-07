@@ -160,13 +160,13 @@ public class DockerProvisioningTest {
         assertEquals(setOf("host1", "host2"), hostsOf(tester.getNodes(application1, Node.State.active)));
 
         try {
-            ApplicationId application2 = tester.makeApplicationId();
+            ApplicationId application2 = ApplicationId.from("tenant1", "app1", "default");
             prepareAndActivate(application2, 3, false, tester);
             fail("Expected allocation failure");
         }
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
-                         "Could not satisfy request for 3 nodes of flavor 'dockerSmall' for container cluster 'myContainer' group 0 6.39: Not enough nodes available due to host exclusivity constraints.",
+                         "Could not satisfy request for 3 nodes of flavor 'dockerSmall' for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
                          e.getMessage());
         }
 
