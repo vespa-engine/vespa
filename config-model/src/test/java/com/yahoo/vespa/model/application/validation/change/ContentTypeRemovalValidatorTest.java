@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
@@ -28,7 +30,8 @@ public class ContentTypeRemovalValidatorTest {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("content-type-removal: Type 'music' is removed  in content cluster 'test'. " +
-                         "This will cause loss of all data of this type",
+                         "This will cause loss of all data of this type. " +
+                         ValidationOverrides.toAllowMessage(ValidationId.contentTypeRemoval),
                          Exceptions.toMessageString(expected));
         }
     }

@@ -30,10 +30,10 @@ import com.yahoo.vespa.config.protocol.Trace;
  * as context, and puts the requests objects on a queue on the subscription,
  * for handling by the user thread.
  *
- * @author vegardh
- * @since 5.1
+ * @author Vegard Havdal
  */
 public class JRTConfigRequester implements RequestWaiter {
+
     private static final Logger log = Logger.getLogger(JRTConfigRequester.class.getName());
     public static final ConfigSourceSet defaultSourceSet = ConfigSourceSet.createDefault();
     private static final int TRACELEVEL = 6;

@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.vespa.model.VespaModel;
@@ -33,7 +35,8 @@ public class ClusterSizeReductionValidatorTest {
             fail("Expected exception due to cluster size reduction");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("cluster-size-reduction: Size reduction in 'default' is too large. Current size: 30, new size: 14. New size must be at least 50% of the current size",
+            assertEquals("cluster-size-reduction: Size reduction in 'default' is too large. Current size: 30, new size: 14. New size must be at least 50% of the current size. " +
+                         ValidationOverrides.toAllowMessage(ValidationId.clusterSizeReduction),
                          Exceptions.toMessageString(expected));
         }
     }

@@ -409,7 +409,8 @@ public class ApplicationController {
                                                                    .collect(Collectors.joining(", ")) +
                                                ", but does not include " +
                                                (deploymentsToRemove.size() > 1 ? "these zones" : "this zone") +
-                                               " in deployment.xml");
+                                               " in deployment.xml. " +
+                                               application.get().validationOverrides().toAllowMessage(ValidationId.deploymentRemoval));
 
         LockedApplication applicationWithRemoval = application;
         for (Deployment deployment : deploymentsToRemove)
