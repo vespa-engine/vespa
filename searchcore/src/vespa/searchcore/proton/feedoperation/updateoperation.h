@@ -19,7 +19,7 @@ private:
                     const storage::spi::Timestamp &timestamp,
                     const DocumentUpdateSP &upd);
     void serializeUpdate(vespalib::nbostream &os) const;
-    void deserializeUpdate(vespalib::nbostream &is, const document::DocumentTypeRepo &repo);
+    void deserializeUpdate(vespalib::nbostream && is, const document::DocumentTypeRepo &repo);
 public:
     UpdateOperation();
     UpdateOperation(Type type);

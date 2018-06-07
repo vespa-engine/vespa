@@ -157,6 +157,7 @@ public:
 private:
     DocumentId          _documentId; // The ID of the document to update.
     const DataType     *_type; // The type of document this update is for.
+    DocumentTypeRepo   *_repo;
     vespalib::nbostream _backing;
     FieldUpdateV        _updates; // The list of field updates.
     FieldPathUpdateV    _fieldPathUpdates;
@@ -164,8 +165,11 @@ private:
     bool                _createIfNonExistent;
 
     int deserializeFlags(int sizeAndFlags);
-    void deserialize42(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
-    void deserializeHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    void init42(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void deserialize42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void deserializeHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
 };
 
 } // document

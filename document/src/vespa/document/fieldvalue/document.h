@@ -41,23 +41,13 @@ public:
     Document(const Document&);
     Document(const DataType &, const DocumentId&);
     Document(const DataType &, DocumentId &, bool iWillAllowSwap);
-    Document(const DocumentTypeRepo& repo,
-             ByteBuffer& buffer,
-             const DataType *anticipatedType = 0);
-    Document(const DocumentTypeRepo& repo,
-             vespalib::nbostream& stream,
-             const DataType *anticipatedType = 0);
+    Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, const DataType *anticipatedType = 0);
+    Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream, const DataType *anticipatedType = 0);
     /**
        Constructor to deserialize only document and type from a buffer. Only relevant if includeContent is false.
     */
-    Document(const DocumentTypeRepo& repo,
-             ByteBuffer& buffer,
-             bool includeContent,
-             const DataType *anticipatedType);
-    Document(const DocumentTypeRepo& repo,
-             ByteBuffer& header,
-             ByteBuffer& body,
-             const DataType *anticipatedType = 0);
+    Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, bool includeContent, const DataType *anticipatedType);
+    Document(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer& body, const DataType *anticipatedType = 0);
     ~Document();
 
     void setRepo(const DocumentTypeRepo & repo);
