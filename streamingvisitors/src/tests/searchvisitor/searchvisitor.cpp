@@ -46,7 +46,7 @@ SearchVisitorTest::SearchVisitorTest() :
     _component.reset(new StorageComponent(_componentRegister, "storage"));
 }
 
-SearchVisitorTest::~SearchVisitorTest() {}
+SearchVisitorTest::~SearchVisitorTest() = default;
 
 std::vector<spi::DocEntry::UP>
 createDocuments(const vespalib::string & dir)
@@ -105,8 +105,7 @@ SearchVisitorTest::testOnlyRequireWeakReadConsistency()
     SearchVisitorFactory factory("dir:" + TEST_PATH("cfg"));
     VisitorFactory& factoryBase(factory);
     vdslib::Parameters params;
-    std::unique_ptr<Visitor> sv(
-            factoryBase.makeVisitor(*_component, _env, params));
+    std::unique_ptr<Visitor> sv(factoryBase.makeVisitor(*_component, _env, params));
     EXPECT_TRUE(sv->getRequiredReadConsistency() == spi::ReadConsistency::WEAK);
 }
 

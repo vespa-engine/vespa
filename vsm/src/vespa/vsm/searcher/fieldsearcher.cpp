@@ -73,6 +73,7 @@ FieldSearcher::FieldSearcher(const FieldIdT & fId, bool defaultPrefix) :
     _field(fId),
     _matchType(defaultPrefix ? PREFIX : REGULAR),
     _maxFieldLength(0x100000),
+    _currentElementId(0),
     _currentElementWeight(1),
     _pureUsAsciiCount(0),
     _pureUsAsciiFieldCount(0),
@@ -85,9 +86,7 @@ FieldSearcher::FieldSearcher(const FieldIdT & fId, bool defaultPrefix) :
     zeroStat();
 }
 
-FieldSearcher::~FieldSearcher()
-{
-}
+FieldSearcher::~FieldSearcher() = default;
 
 bool FieldSearcher::search(const StorageDocument & doc)
 {
@@ -275,6 +274,7 @@ FieldSearcher::IteratorHandler::onPrimitive(uint32_t, const Content & c)
 {
     LOG(spam, "onPrimitive: field value '%s'", c.getValue().toString().c_str());
     _searcher.setCurrentWeight(c.getWeight());
+    _searcher.setCurrentElementId(getArrayIndex());
     _searcher.onValue(c.getValue());
 }
 

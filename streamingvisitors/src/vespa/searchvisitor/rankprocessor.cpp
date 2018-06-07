@@ -188,7 +188,7 @@ private:
 
 public:
     RankProgramWrapper(MatchData &match_data) : _match_data(match_data) {}
-    virtual void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) override {
+    void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) override {
         // Prepare the match data object used by the rank program with earlier unpacked match data.
         copyTermFieldMatchData(matchData, _match_data);
         (void) docid;
@@ -226,38 +226,36 @@ RankProcessor::unpackMatchData(uint32_t docId)
 void
 RankProcessor::unpackMatchData(MatchData &matchData)
 {
-    QueryWrapper::TermList & terms = _query.getTermList();
-    for (uint32_t i = 0; i < terms.size(); ++i) {
-        if (!terms[i].isPhraseTerm() || terms[i].isFirstPhraseTerm()) { // consider 1 term data per phrase
-            bool isPhrase = terms[i].isFirstPhraseTerm();
-            QueryTermData & qtd = static_cast<QueryTermData &>(terms[i].getTerm()->getQueryItem());
+    for (QueryWrapper::Term & term: _query.getTermList()) {
+        if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
+            bool isPhrase = term.isFirstPhraseTerm();
+            QueryTermData & qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
             const ITermData &td = qtd.getTermData();
 
             HitList list;
-            const HitList & hitList = isPhrase ?
-                terms[i].getParent()->evaluateHits(list) : terms[i].getTerm()->evaluateHits(list);
+            const HitList & hitList = isPhrase
+                                      ? term.getParent()->evaluateHits(list)
+                                      : term.getTerm()->evaluateHits(list);
 
             if (hitList.size() > 0) { // only unpack if we have a hit
                 LOG(debug, "Unpack match data for query term '%s:%s' (%s)",
-                    terms[i].getTerm()->index().c_str(), terms[i].getTerm()->getTerm(),
-                    isPhrase ? "phrase" : "term");
+                    term.getTerm()->index().c_str(), term.getTerm()->getTerm(), isPhrase ? "phrase" : "term");
 
                 uint32_t lastFieldId = -1;
-                TermFieldMatchData *tmd = 0;
+                TermFieldMatchData *tmd = nullptr;
                 uint32_t fieldLen = search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
 
                 // optimize for hitlist giving all hits for a single field in one chunk
                 for (const search::Hit & hit : hitList) {
                     uint32_t fieldId = hit.context();
-
                     if (fieldId != lastFieldId) {
                         // reset to notfound/unknown values
-                        tmd = 0;
+                        tmd = nullptr;
                         fieldLen = search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
 
                         // setup for new field that had a hit
                         const ITermFieldData *tfd = td.lookupField(fieldId);
-                        if (tfd != 0) {
+                        if (tfd != nullptr) {
                             tmd = matchData.resolveTermField(tfd->getHandle());
                             tmd->setFieldId(fieldId);
                             // reset field match data, but only once per docId
@@ -267,25 +265,23 @@ RankProcessor::unpackMatchData(MatchData &matchData)
                         }
                         // find fieldLen for new field
                         if (isPhrase) {
-                            if (fieldId < terms[i].getParent()->getFieldInfoSize()) {
-                                const QueryTerm::FieldInfo & fi = terms[i].getParent()->getFieldInfo(fieldId);
-                                fieldLen = fi.getFieldLength();
+                            if (fieldId < term.getParent()->getFieldInfoSize()) {
+                                fieldLen = term.getParent()->getFieldInfo(fieldId).getFieldLength();
                             }
                         } else {
-                            if (fieldId < terms[i].getTerm()->getFieldInfoSize()) {
-                                const QueryTerm::FieldInfo & fi = terms[i].getTerm()->getFieldInfo(fieldId);
-                                fieldLen = fi.getFieldLength();
+                            if (fieldId < term.getTerm()->getFieldInfoSize()) {
+                                fieldLen = term.getTerm()->getFieldInfo(fieldId).getFieldLength();
                             }
                         }
                         lastFieldId = fieldId;
                     }
-                    if (tmd != 0) {
+                    if (tmd != nullptr) {
                         // adjust so that the position for phrase terms equals the match for the first term
-                        TermFieldMatchDataPosition pos(0, hit.wordpos() - terms[i].getPosAdjust(),
+                        TermFieldMatchDataPosition pos(hit.elemId(), hit.wordpos() - term.getPosAdjust(),
                                                        hit.weight(), fieldLen);
                         tmd->appendPosition(pos);
-                        LOG(debug, "Append position(%u), weight(%d), tfmd.weight(%d)",
-                                   pos.getPosition(), pos.getElementWeight(), tmd->getWeight());
+                        LOG(debug, "Append elemId(%u),position(%u), weight(%d), tfmd.weight(%d)",
+                                   pos.getElementId(), pos.getPosition(), pos.getElementWeight(), tmd->getWeight());
                     }
                 }
             }
