@@ -28,4 +28,9 @@ public class AttributesTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("map_of_struct_attribute");
     }
 
+    @Test
+    public void testMapOfPrimitiveAttribute() throws IOException, ParseException {
+        assertCorrectDeriving("map_attribute");
+    }
+
 }

@@ -114,4 +114,15 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         assertTrue(!attributes.hasNext());
     }
 
+    @Test
+    public void map_of_primitive_fields_are_derived_into_array_attributes() throws IOException, ParseException {
+        Search search = SearchBuilder.buildFromFile("src/test/derived/map_attribute/test.sd");
+        Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
+
+        assertAttribute("str_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("str_map.value", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("int_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
+        assertTrue(!attributes.hasNext());
+    }
+
 }
