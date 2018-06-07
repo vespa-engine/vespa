@@ -23,11 +23,11 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +45,6 @@ import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.g
 @SuppressWarnings("unused") // Component injected into Jetty connector factory
 public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements SslKeyStoreConfigurator {
     private static final Logger log = Logger.getLogger(AthenzSslKeyStoreConfigurator.class.getName());
-    private static final SecureRandom secureRandom = new SecureRandom();
     private static final String CERTIFICATE_ALIAS = "athenz";
     private static final Duration EXPIRATION_MARGIN = Duration.ofHours(6);
 
@@ -172,12 +171,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
     }
 
     private static char[] generateKeystorePassword() {
-        int length = 128;
-        char[] pwd = new char[length];
-        for (int i = 0; i < length; i++) {
-            pwd[i] = (char) secureRandom.nextInt();
-        }
-        return pwd;
+        return UUID.randomUUID().toString().toCharArray();
     }
 
     private class AthenzCertificateUpdater implements Runnable {
