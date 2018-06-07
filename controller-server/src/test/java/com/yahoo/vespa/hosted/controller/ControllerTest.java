@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
@@ -179,7 +180,9 @@ public class ControllerTest {
             fail("Expected exception due to illegal production deployment removal");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("deployment-removal: application 'tenant1.app1' is deployed in corp-us-east-1, but does not include this zone in deployment.xml", e.getMessage());
+            assertEquals("deployment-removal: application 'tenant1.app1' is deployed in corp-us-east-1, but does not include this zone in deployment.xml. " +
+                         ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval),
+                         e.getMessage());
         }
         assertNotNull("Zone was not removed",
                       applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(main).get()));

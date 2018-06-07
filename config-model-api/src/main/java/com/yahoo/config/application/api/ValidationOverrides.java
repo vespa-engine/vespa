@@ -66,6 +66,11 @@ public class ValidationOverrides {
         return false;
     }
 
+    public static String toAllowMessage(ValidationId id) {
+        return "To allow this add <allow until='yyyy-mm-dd'>" + id + "</allow> to validation-overrides.xml" +
+               ", see https://docs.vespa.ai/documentation/reference/validation-overrides.html";
+    }
+
     /** Returns the XML form of this, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
@@ -155,7 +160,9 @@ public class ValidationOverrides {
 
         /** Returns "validationId: message" */
         @Override
-        public String getMessage() { return validationId + ": " + super.getMessage(); }
+        public String getMessage() {
+            return validationId + ": " + super.getMessage() + ". " + toAllowMessage(validationId);
+        }
 
     }
 

@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
@@ -24,7 +26,8 @@ public class ContentClusterRemovalValidatorTest {
             fail("Expected exception due to content cluster id change");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("content-cluster-removal: Content cluster 'contentClusterId' is removed. This will cause loss of all data in this cluster",
+            assertEquals("content-cluster-removal: Content cluster 'contentClusterId' is removed. This will cause loss of all data in this cluster. " +
+                         ValidationOverrides.toAllowMessage(ValidationId.contentClusterRemoval),
                          Exceptions.toMessageString(expected));
         }
     }
