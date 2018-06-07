@@ -16,8 +16,7 @@
 #include <iosfwd>
 #include <string>
 
-namespace document
-{
+namespace document {
 
 class Printable {
 public:
@@ -48,9 +47,7 @@ public:
      * @param indent This indentation should be printed AFTER each newline
      *               printed. (Not before output in first line)
      */
-    virtual void print(std::ostream& out,
-                       bool verbose,
-                       const std::string& indent) const = 0;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
 
     /**
      * Utility function, since default arguments used in virtual functions is
@@ -61,8 +58,7 @@ public:
     void print(std::ostream& out, const std::string& indent) const;
 
     /** Utility function to get this output as a string.  */
-    std::string toString(bool verbose=false,
-                         const std::string& indent="") const;
+    std::string toString(bool verbose=false, const std::string& indent="") const;
 };
 
 std::ostream& operator<<(std::ostream& out, const Printable& p);

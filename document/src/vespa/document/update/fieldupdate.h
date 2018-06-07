@@ -15,7 +15,6 @@
 
 #include "valueupdate.h"
 #include <vespa/document/base/field.h>
-#include <vespa/document/util/serializable.h>
 
 namespace document {
 

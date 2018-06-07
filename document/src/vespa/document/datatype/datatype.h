@@ -12,9 +12,6 @@
 
 #include <vespa/document/util/identifiableid.h>
 #include <vespa/document/util/printable.h>
-#include <memory>
-#include <vector>
-#include <vespa/document/base/fieldpath.h>
 
 namespace document {
 
@@ -24,6 +21,7 @@ class NumericDataType;
 class PrimitiveDataType;
 class DocumentType;
 class WeightedSetDataType;
+class FieldPath;
 
 class DataType : public vespalib::Cloneable,
                  public Printable,

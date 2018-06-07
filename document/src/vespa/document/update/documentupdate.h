@@ -28,9 +28,6 @@
 #include "fieldupdate.h"
 #include "fieldpathupdate.h"
 #include <vespa/document/base/documentid.h>
-#include <vespa/document/base/field.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 namespace document {
@@ -173,4 +170,3 @@ private:
 };
 
 } // document
-
