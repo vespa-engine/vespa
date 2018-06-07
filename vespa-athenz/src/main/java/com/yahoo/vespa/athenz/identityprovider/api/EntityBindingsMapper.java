@@ -10,9 +10,12 @@ import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocume
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.VespaUniqueInstanceIdEntity;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.Base64;
 
-import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.*;
+import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.fromDottedString;
 
 /**
  * Utility class for mapping objects model types and their Jackson binding versions.
@@ -99,6 +102,24 @@ public class EntityBindingsMapper {
                     model.identityType() != null ? model.identityType().id() : null); // TODO Remove support for legacy representation without type
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static SignedIdentityDocument readSignedIdentityDocumentFromFile(Path file) {
+        try {
+            SignedIdentityDocumentEntity entity = mapper.readValue(file.toFile(), SignedIdentityDocumentEntity.class);
+            return EntityBindingsMapper.toSignedIdentityDocument(entity);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static void writeSignedIdentityDocumentToFile(Path file, SignedIdentityDocument document) {
+        try {
+            SignedIdentityDocumentEntity entity = EntityBindingsMapper.toSignedIdentityDocumentEntity(document);
+            mapper.writeValue(file.toFile(), entity);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
