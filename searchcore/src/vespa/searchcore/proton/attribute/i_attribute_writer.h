@@ -6,10 +6,12 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/documentupdate.h>
 
 namespace search { class IDestructorCallback; }
+namespace document {
+    class DocumentUpdate;
+    class Document;
+}
 
 namespace proton {
 

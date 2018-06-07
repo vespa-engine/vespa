@@ -3,6 +3,7 @@
 #include "document_iterator.h"
 #include <vespa/document/select/gid_filter.h>
 #include <vespa/document/select/node.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <algorithm>
@@ -15,7 +16,6 @@ using storage::spi::DocEntry;
 using storage::spi::Timestamp;
 using document::Document;
 using document::DocumentId;
-
 
 namespace proton {
 
@@ -92,7 +92,7 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
 {
 }
 
-DocumentIterator::~DocumentIterator() {}
+DocumentIterator::~DocumentIterator() = default;
 
 void
 DocumentIterator::add(const IDocumentRetriever::SP &retriever)

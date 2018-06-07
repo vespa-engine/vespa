@@ -10,8 +10,7 @@
 
 #include "storagereply.h"
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 class BucketCommand;
 
@@ -20,23 +19,20 @@ class BucketReply : public StorageReply {
     document::BucketId _originalBucket;
 
 protected:
-    BucketReply(const BucketCommand& cmd,
-                const ReturnCode& code = ReturnCode(ReturnCode::OK));
+    BucketReply(const BucketCommand& cmd, const ReturnCode& code = ReturnCode(ReturnCode::OK));
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketReply);
 
     document::Bucket getBucket() const override { return _bucket; }
-    virtual bool hasSingleBucketId() const override { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
-    const document::BucketId& getOriginalBucketId() const
-        { return _originalBucket; }
+    const document::BucketId& getOriginalBucketId() const { return _originalBucket; }
 
     /** The deserialization code need access to set the remapping. */
     void remapBucketId(const document::BucketId& bucket);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-} // api
-} // storage
+}

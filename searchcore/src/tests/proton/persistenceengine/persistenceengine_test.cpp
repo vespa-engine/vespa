@@ -5,6 +5,8 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/persistence/spi/documentselection.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/test.h>

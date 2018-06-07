@@ -16,15 +16,13 @@
 #include "bucketinfocommand.h"
 #include <vespa/storageapi/buckets/bucketinfo.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 class BucketInfoReply : public BucketReply {
     BucketInfo _result;
 
 protected:
-    BucketInfoReply(const BucketInfoCommand& cmd,
-                    const ReturnCode& code = ReturnCode(ReturnCode::OK));
+    BucketInfoReply(const BucketInfoCommand& cmd, const ReturnCode& code = ReturnCode(ReturnCode::OK));
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketInfoReply);
@@ -34,5 +32,4 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-} // api
-} // storage
+}
