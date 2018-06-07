@@ -478,11 +478,11 @@ struct DocumentContext
 
 DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder)
     : doc(builder.startDocument(docId).startSummaryField("s1").addStr(docId).endField().endDocument().release()),
-      upd(new DocumentUpdate(builder.getDocumentType(), doc->getId())),
+      upd(new DocumentUpdate(*builder.getDocumentTypeRepo(), builder.getDocumentType(), doc->getId())),
       bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
       ts(timestamp)
 {}
-DocumentContext::~DocumentContext() {}
+DocumentContext::~DocumentContext() = default;
 
 struct FeedTokenContext
 {

@@ -91,7 +91,7 @@ Messages52Test::testUpdateDocumentMessage()
     const DocumentTypeRepo & repo = getTypeRepo();
     const document::DocumentType & docType = *repo.getDocumentType("testdoc");
 
-    auto docUpdate = std::make_shared<document::DocumentUpdate>(docType, document::DocumentId("doc:scheme:"));
+    auto docUpdate = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("doc:scheme:"));
 
     docUpdate->addFieldPathUpdate(document::FieldPathUpdate::CP(
         new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));

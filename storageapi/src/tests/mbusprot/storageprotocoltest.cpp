@@ -294,7 +294,7 @@ void
 StorageProtocolTest::testUpdate51()
 {
     ScopedName test("testUpdate51");
-    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_testDoc->getDataType(), _testDoc->getId()));
+    document::DocumentUpdate::SP update(new document::DocumentUpdate(_docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId()));
     std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(document::IntFieldValue(17)));
     document::FieldUpdate fieldUpdate(_testDoc->getField("headerval"));
     fieldUpdate.addUpdate(*assignUpdate);
@@ -912,7 +912,7 @@ StorageProtocolTest::testUpdateCommand52()
 {
     ScopedName test("testUpdateCommand52");
 
-    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_testDoc->getDataType(), _testDoc->getId()));
+    document::DocumentUpdate::SP update(new document::DocumentUpdate(_docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId()));
     UpdateCommand::SP cmd(new UpdateCommand(_bucket, update, 14));
     cmd->setCondition(TestAndSetCondition(CONDITION_STRING));
 

@@ -51,12 +51,11 @@ UpdateOperation::serializeUpdate(vespalib::nbostream &os) const
 }
 
 void
-UpdateOperation::deserializeUpdate(vespalib::nbostream &is, const document::DocumentTypeRepo &repo)
+UpdateOperation::deserializeUpdate(vespalib::nbostream && is, const document::DocumentTypeRepo &repo)
 {
-    document::ByteBuffer buf(is.peek(), is.size());
-    DocumentUpdate::UP update = (getType() == UPDATE_42) ? DocumentUpdate::create42(repo, buf) : DocumentUpdate::createHEAD(repo, buf);
-    is.adjustReadPos(buf.getPos());
-    _upd = std::move(update);
+    _upd = (getType() == UPDATE_42)
+           ? DocumentUpdate::create42(repo, is)
+           : DocumentUpdate::createHEAD(repo, std::move(is));
 }
 
 void
@@ -73,7 +72,7 @@ UpdateOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &re
 {
     DocumentOperation::deserialize(is, repo);
     try {
-        deserializeUpdate(is, repo);
+        deserializeUpdate(std::move(is), repo);
     } catch (document::DocumentTypeNotFoundException &e) {
         LOG(warning, "Failed deserialize update operation using unknown document type '%s'",
             e.getDocumentTypeName().c_str());
@@ -87,14 +86,14 @@ UpdateOperation::deserializeUpdate(const DocumentTypeRepo &repo)
 {
     vespalib::nbostream stream;
     serializeUpdate(stream);
-    deserializeUpdate(stream, repo);
+    deserializeUpdate(std::move(stream), repo);
 }
 
-vespalib::string UpdateOperation::toString() const {
+vespalib::string
+UpdateOperation::toString() const {
     return make_string("%s(%s, %s)",
                        ((getType() == FeedOperation::UPDATE_42) ? "Update42" : "Update"),
-                       _upd.get() ?
-                       _upd->getId().getScheme().toString().c_str() : "NULL",
+                       _upd.get() ? _upd->getId().getScheme().toString().c_str() : "NULL",
                        docArgsToString().c_str());
 }
 

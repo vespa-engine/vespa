@@ -181,7 +181,7 @@ void DocumentApiConverterTest::testForwardedPut()
 
 void DocumentApiConverterTest::testUpdate()
 {
-    auto update = std::make_shared<document::DocumentUpdate>(_html_type, defaultDocId);
+    auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, defaultDocId);
     documentapi::UpdateDocumentMessage updateMsg(update);
     updateMsg.setOldTimestamp(1234);
     updateMsg.setNewTimestamp(5678);
@@ -327,19 +327,19 @@ DocumentApiConverterTest::testBatchDocumentUpdate()
 
     {
         document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test1"));
-        auto update = std::make_shared<document::DocumentUpdate>(_html_type, docId);
+        auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, docId);
         updates.push_back(update);
     }
 
     {
         document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test2"));
-        auto update = std::make_shared<document::DocumentUpdate>(_html_type, docId);
+        auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, docId);
         updates.push_back(update);
     }
 
     {
         document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test3"));
-        auto update = std::make_shared<document::DocumentUpdate>(_html_type, docId);
+        auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, docId);
         updates.push_back(update);
     }
 

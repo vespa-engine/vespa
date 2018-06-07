@@ -294,7 +294,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     document::DocumentUpdate::SP update;
     if (!options._withError) {
         update = std::make_shared<document::DocumentUpdate>(
-                *_doc_type,
+                *_repo, *_doc_type,
                 document::DocumentId(document::DocIdString("test", "test")));
         document::FieldUpdate fup(_doc_type->getField("headerval"));
         fup.addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
@@ -304,7 +304,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
         // part of the Get. Just a sneaky way to force an eval error.
         auto* badDocType = _repo->getDocumentType("testdoctype2");
         update = std::make_shared<document::DocumentUpdate>(
-                *badDocType,
+                *_repo, *badDocType,
                 document::DocumentId(document::DocIdString("test", "test")));
         document::FieldUpdate fup(badDocType->getField("onlyinchild"));
         fup.addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));

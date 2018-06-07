@@ -73,7 +73,7 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
     const DocumentType* type(repo.getDocumentType("testdoc"));
     DocumentId id("doc:crawler/http://www.ntnu.no/");
 
-    DocumentUpdate::UP up(new DocumentUpdate(*type, id));
+    DocumentUpdate::UP up(new DocumentUpdate(repo, *type, id));
     up->addUpdate(FieldUpdate(type->getField("intattr"))
 		  .addUpdate(AssignValueUpdate(IntFieldValue(7))));
     up->addUpdate(FieldUpdate(type->getField("stringattr"))

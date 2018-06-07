@@ -228,9 +228,8 @@ ProtocolSerialization5_0::onDecodeUpdateCommand(BBuf& buf) const
 
     uint32_t size = SH::getInt(buf);
     if (size != 0) {
-        document::ByteBuffer bbuf(buf.getBufferAtPos(), size);
+        update = document::DocumentUpdate::createHEAD(getTypeRepo(), vespalib::nbostream(buf.getBufferAtPos(), size));
         buf.incPos(size);
-        update = document::DocumentUpdate::createHEAD(getTypeRepo(), bbuf);
     }
 
     document::Bucket bucket = getBucket(buf);
