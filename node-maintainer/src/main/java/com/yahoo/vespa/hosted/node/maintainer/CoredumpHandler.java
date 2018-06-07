@@ -72,7 +72,7 @@ class CoredumpHandler {
         FileHelper.deleteDirectories(doneCoredumpsPath, Duration.ofDays(10), Optional.empty());
     }
 
-    private void handleNewCoredumps() throws IOException {
+    private void handleNewCoredumps() {
         Path processingCoredumps = enqueueCoredumps();
         processAndReportCoredumps(processingCoredumps);
     }
@@ -82,12 +82,12 @@ class CoredumpHandler {
      * Moves a coredump to a new directory under the processing/ directory. Limit to only processing
      * one coredump at the time, starting with the oldest.
      */
-    Path enqueueCoredumps() throws IOException {
+    Path enqueueCoredumps() {
         Path processingCoredumpsPath = coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
         processingCoredumpsPath.toFile().mkdirs();
-        if (Files.list(processingCoredumpsPath).count() > 0) return processingCoredumpsPath;
+        if (!FileHelper.listContentsOfDirectory(processingCoredumpsPath).isEmpty()) return processingCoredumpsPath;
 
-        Files.list(coredumpsPath)
+        FileHelper.listContentsOfDirectory(coredumpsPath).stream()
                 .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
                 .min((Comparator.comparingLong(o -> o.toFile().lastModified())))
                 .ifPresent(coredumpPath -> {
@@ -101,10 +101,10 @@ class CoredumpHandler {
         return processingCoredumpsPath;
     }
 
-    void processAndReportCoredumps(Path processingCoredumpsPath) throws IOException {
+    void processAndReportCoredumps(Path processingCoredumpsPath) {
         doneCoredumpsPath.toFile().mkdirs();
 
-        Files.list(processingCoredumpsPath)
+        FileHelper.listContentsOfDirectory(processingCoredumpsPath).stream()
                 .filter(path -> path.toFile().isDirectory())
                 .forEach(coredumpDirectory -> {
                     try {
@@ -130,7 +130,7 @@ class CoredumpHandler {
     String collectMetadata(Path coredumpDirectory, Map<String, Object> nodeAttributes) throws IOException {
         Path metadataPath = coredumpDirectory.resolve(METADATA_FILE_NAME);
         if (!Files.exists(metadataPath)) {
-            Path coredumpPath = Files.list(coredumpDirectory).findFirst()
+            Path coredumpPath = FileHelper.listContentsOfDirectory(coredumpDirectory).stream().findFirst()
                     .orElseThrow(() -> new RuntimeException("No coredump file found in processing directory " + coredumpDirectory));
             Map<String, Object> metadata = coreCollector.collect(coredumpPath, installStatePath);
             metadata.putAll(nodeAttributes);

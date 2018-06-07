@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.maintainer;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
@@ -63,7 +64,7 @@ public class FileHelper {
             throw new IllegalArgumentException("Number of files to keep must be a positive number");
         }
 
-        List<Path> pathsInDeleteDir = Files.list(basePath)
+        List<Path> pathsInDeleteDir = listContentsOfDirectory(basePath).stream()
                 .filter(Files::isRegularFile)
                 .sorted(Comparator.comparing(FileHelper::getLastModifiedTime))
                 .skip(nMostRecentToKeep)
@@ -153,13 +154,16 @@ public class FileHelper {
         return pattern == null || pattern.matcher(path.getFileName().toString()).find();
     }
 
-    static List<Path> listContentsOfDirectory(Path basePath) {
+    /**
+     * @return list all files in a directory, returns empty list if directory does not exist
+     */
+    public static List<Path> listContentsOfDirectory(Path basePath) {
         try (Stream<Path> directoryStream = Files.list(basePath)) {
             return directoryStream.collect(Collectors.toList());
         } catch (NoSuchFileException ignored) {
             return Collections.emptyList();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to list contents of directory " + basePath.toAbsolutePath(), e);
+            throw new UncheckedIOException("Failed to list contents of directory " + basePath.toAbsolutePath(), e);
         }
     }
 
@@ -167,7 +171,7 @@ public class FileHelper {
         try {
             return Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to get last modified time of " + path.toAbsolutePath(), e);
+            throw new UncheckedIOException("Failed to get last modified time of " + path.toAbsolutePath(), e);
         }
     }
 }
