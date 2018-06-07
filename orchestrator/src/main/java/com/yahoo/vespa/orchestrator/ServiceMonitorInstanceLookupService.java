@@ -46,7 +46,7 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
             return Optional.empty();
         }
         if (applicationInstancesUsingHost.size() > 1) {
-            throw new AssertionError(
+            throw new IllegalStateException(
                     "Major assumption broken: Multiple application instances contain host " + hostName.s()
                             + ": " + applicationInstancesUsingHost);
         }
