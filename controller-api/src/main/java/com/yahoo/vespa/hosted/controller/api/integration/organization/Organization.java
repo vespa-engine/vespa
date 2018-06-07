@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -87,8 +86,9 @@ public interface Organization {
      *
      * @param issueId ID of the issue to escalate.
      * @param propertyId PropertyId of the tenant owning the application for which the issue was filed.
+     * @return User that was assigned issue as a result of the escalation, if any
      */
-    default boolean escalate(IssueId issueId, PropertyId propertyId) {
+    default Optional<User> escalate(IssueId issueId, PropertyId propertyId) {
         List<? extends List<? extends User>> contacts = contactsFor(propertyId);
 
         Optional<User> assignee = assigneeOf(issueId);
@@ -101,9 +101,9 @@ public interface Organization {
         for (int level = assigneeLevel + 1; level < contacts.size(); level++)
             for (User target : contacts.get(level))
                 if (reassign(issueId, target))
-                    return true;
+                    return Optional.of(target);
 
-        return false;
+        return Optional.empty();
     }
 
     /**
