@@ -290,7 +290,8 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         if (pos < fieldPath.size()) {
             switch (fieldPath.get(pos).getType()) {
                 case ARRAY_INDEX:
-                    return iterateSubset(fieldPath.get(pos).getLookupIndex(), fieldPath.get(pos).getLookupIndex(), fieldPath, null, pos + 1, handler);
+                    final int elemIndex = fieldPath.get(pos).getLookupIndex();
+                    return iterateSubset(elemIndex, elemIndex, fieldPath, null, pos + 1, handler);
                 case VARIABLE: {
                     FieldPathIteratorHandler.IndexValue val = handler.getVariables().get(fieldPath.get(pos).getVariableName());
                     if (val != null) {

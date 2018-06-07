@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docprocs.indexing;
 
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.annotation.SpanTrees;
@@ -16,6 +18,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
@@ -30,6 +33,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -157,6 +161,82 @@ public class DocumentScriptTestCase {
         assertSpanTrees(str, "mySpanTree");
     }
 
+    private class FieldPathFixture {
+        final DocumentType type;
+        final StructDataType structType;
+        final DataType structMap;
+        final DataType structArray;
+
+        FieldPathFixture() {
+            type = newDocumentType();
+            structType = new StructDataType("mystruct");
+            structType.addField(new Field("title", DataType.STRING));
+            structType.addField(new Field("rating", DataType.INT));
+            structArray = new ArrayDataType(structType);
+            type.addField(new Field("structarray", structArray));
+            structMap = new MapDataType(DataType.STRING, structType);
+            type.addField(new Field("structmap", structMap));
+            type.addField(new Field("structfield", structType));
+        }
+
+        DocumentUpdate executeWithUpdate(String fieldName, FieldPathUpdate updateIn) {
+            DocumentUpdate update = new DocumentUpdate(type, "doc:scheme:");
+            update.addFieldPathUpdate(updateIn);
+            return newScript(type, fieldName).execute(ADAPTER_FACTORY, update);
+        }
+
+        FieldPathUpdate executeWithUpdateAndExpectFieldPath(String fieldName, FieldPathUpdate updateIn) {
+            DocumentUpdate update = executeWithUpdate(fieldName, updateIn);
+            assertEquals(1, update.getFieldPathUpdates().size());
+            return update.getFieldPathUpdates().get(0);
+        }
+    }
+
+    @Test
+    public void array_field_path_updates_survive_indexing_scripts() {
+        FieldPathFixture f = new FieldPathFixture();
+
+        Struct newElemValue = new Struct(f.structType);
+        newElemValue.setFieldValue("title", "iron moose 2, the moosening");
+
+        FieldPathUpdate updated = f.executeWithUpdateAndExpectFieldPath("structarray", new AssignFieldPathUpdate(f.type, "structarray[10]", newElemValue));
+
+        assertTrue(updated instanceof AssignFieldPathUpdate);
+        AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)updated;
+        assertEquals("structarray[10]", assignUpdate.getOriginalFieldPath());
+        assertEquals(newElemValue, assignUpdate.getFieldValue());
+    }
+
+    @Test
+    public void map_field_path_updates_survive_indexing_scripts() {
+        FieldPathFixture f = new FieldPathFixture();
+
+        Struct newElemValue = new Struct(f.structType);
+        newElemValue.setFieldValue("title", "iron moose 3, moose in new york");
+
+        FieldPathUpdate updated = f.executeWithUpdateAndExpectFieldPath("structmap", new AssignFieldPathUpdate(f.type, "structmap{foo}", newElemValue));
+
+        assertTrue(updated instanceof AssignFieldPathUpdate);
+        AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)updated;
+        assertEquals("structmap{foo}", assignUpdate.getOriginalFieldPath());
+        assertEquals(newElemValue, assignUpdate.getFieldValue());
+    }
+
+    @Test
+    public void nested_struct_fieldpath_update_is_not_converted_to_regular_field_value_update() {
+        FieldPathFixture f = new FieldPathFixture();
+
+        StringFieldValue newTitleValue = new StringFieldValue("iron moose 4, moose with a vengeance");
+        DocumentUpdate update = f.executeWithUpdate("structfield", new AssignFieldPathUpdate(f.type, "structfield.title", newTitleValue));
+
+        assertEquals(1, update.getFieldPathUpdates().size());
+        assertEquals(0, update.getFieldUpdates().size());
+        assertTrue(update.getFieldPathUpdates().get(0) instanceof AssignFieldPathUpdate);
+        AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)update.getFieldPathUpdates().get(0);
+        assertEquals("structfield.title", assignUpdate.getOriginalFieldPath());
+        assertEquals(newTitleValue, assignUpdate.getFieldValue());
+    }
+
     private static FieldValue processDocument(FieldValue fieldValue) {
         DocumentType docType = new DocumentType("myDocumentType");
         docType.addField("myField", fieldValue.getDataType());
@@ -184,11 +264,15 @@ public class DocumentScriptTestCase {
         return update.getFieldUpdate("myField").getValueUpdate(0);
     }
 
+    private static DocumentScript newScript(DocumentType docType, String fieldName) {
+        return new DocumentScript(docType.getName(), Collections.singletonList(fieldName),
+                new StatementExpression(new InputExpression(fieldName),
+                        new IndexExpression(fieldName)));
+    }
+
     private static DocumentScript newScript(DocumentType docType) {
         String fieldName = docType.getFields().iterator().next().getName();
-        return new DocumentScript(docType.getName(), Arrays.asList(fieldName),
-                                  new StatementExpression(new InputExpression(fieldName),
-                                                          new IndexExpression(fieldName)));
+        return newScript(docType, fieldName);
     }
 
     private static StringFieldValue newString(String... spanTrees) {
@@ -210,6 +294,7 @@ public class DocumentScriptTestCase {
         DocumentType type = new DocumentType("documentType");
         type.addField("documentField", DataType.STRING);
         type.addField("extraField", DataType.STRING);
+
         return type;
     }
 
