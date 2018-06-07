@@ -48,7 +48,14 @@ public class SimpleAdapterFactory implements AdapterFactory {
         DocumentId docId = upd.getId();
         Document complete = new Document(docType, upd.getId());
         for (FieldPathUpdate fieldUpd : upd) {
-            ret.add(new IdentityFieldPathUpdateAdapter(fieldUpd, newDocumentAdapter(complete, true)));
+            if (FieldPathUpdateHelper.isComplete(fieldUpd)) {
+                // A 'complete' field path update is basically a regular top-level field update
+                // in wolf's clothing. Convert it to a regular field update to be friendlier
+                // towards the search core backend.
+                FieldPathUpdateHelper.applyUpdate(fieldUpd, complete);
+            } else {
+                ret.add(new IdentityFieldPathUpdateAdapter(fieldUpd, newDocumentAdapter(complete, true)));
+            }
         }
         for (FieldUpdate fieldUpd : upd.getFieldUpdates()) {
             Field field = fieldUpd.getField();

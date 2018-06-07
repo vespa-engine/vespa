@@ -80,7 +80,7 @@ public class DocumentScriptTestCase {
         out = (StringFieldValue)processFieldUpdate(in).getValue();
         assertSpanTrees(out, "mySpanTree");
 
-        out = (StringFieldValue)processPathUpdate(in);
+        out = (StringFieldValue)processPathUpdate(in).getValue();
         assertSpanTrees(out, "mySpanTree");
     }
 
@@ -97,7 +97,7 @@ public class DocumentScriptTestCase {
         assertEquals(1, out.size());
         assertSpanTrees(out.get(0), "mySpanTree");
 
-        out = (Array<StringFieldValue>)processPathUpdate(in);
+        out = (Array<StringFieldValue>)processPathUpdate(in).getValue();
         assertEquals(1, out.size());
         assertSpanTrees(out.get(0), "mySpanTree");
     }
@@ -115,7 +115,7 @@ public class DocumentScriptTestCase {
         assertEquals(1, out.size());
         assertSpanTrees(out.keySet().iterator().next(), "mySpanTree");
 
-        out = (WeightedSet<StringFieldValue>)processPathUpdate(in);
+        out = (WeightedSet<StringFieldValue>)processPathUpdate(in).getValue();
         assertEquals(1, out.size());
         assertSpanTrees(out.keySet().iterator().next(), "mySpanTree");
     }
@@ -138,7 +138,7 @@ public class DocumentScriptTestCase {
         assertSpanTrees(out.keySet().iterator().next(), "myKeySpanTree");
         assertSpanTrees(out.values().iterator().next(), "myValueSpanTree");
 
-        out = (MapFieldValue<StringFieldValue, StringFieldValue>)processPathUpdate(in);
+        out = (MapFieldValue<StringFieldValue, StringFieldValue>)processPathUpdate(in).getValue();
         assertEquals(1, out.size());
         assertSpanTrees(out.keySet().iterator().next(), "myKeySpanTree");
         assertSpanTrees(out.values().iterator().next(), "myValueSpanTree");
@@ -235,13 +235,13 @@ public class DocumentScriptTestCase {
         return update.getFieldUpdate("myField").getValueUpdate(0);
     }
 
-    private static FieldValue processPathUpdate(FieldValue fieldValue) {
+    private static ValueUpdate<?> processPathUpdate(FieldValue fieldValue) {
         DocumentType docType = new DocumentType("myDocumentType");
         docType.addField("myField", fieldValue.getDataType());
         DocumentUpdate update = new DocumentUpdate(docType, "doc:scheme:");
         update.addFieldPathUpdate(new AssignFieldPathUpdate(docType, "myField", fieldValue));
         update = newScript(docType).execute(ADAPTER_FACTORY, update);
-        return ((AssignFieldPathUpdate)update.getFieldPathUpdates().get(0)).getFieldValue();
+        return update.getFieldUpdate("myField").getValueUpdate(0);
     }
 
     private static DocumentScript newScript(DocumentType docType, String fieldName) {
