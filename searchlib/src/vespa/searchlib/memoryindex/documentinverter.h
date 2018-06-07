@@ -2,21 +2,16 @@
 
 #pragma once
 
-#include <map>
-#include <set>
-#include <vespa/document/document.h>
-#include <vespa/searchlib/index/doctypebuilder.h>
-#include <limits>
 #include "i_document_remove_listener.h"
+#include <vespa/searchlib/index/doctypebuilder.h>
 
-namespace search
-{
 
-class ISequencedTaskExecutor;
-class IDestructorCallback;
+namespace search {
+    class ISequencedTaskExecutor;
+    class IDestructorCallback;
+}
 
-namespace memoryindex
-{
+namespace search::memoryindex {
 
 class FieldInverter;
 class UrlFieldInverter;
@@ -34,21 +29,10 @@ private:
     typedef DocTypeBuilder::UriField UriField;
     typedef DocTypeBuilder::SchemaIndexFields SchemaIndexFields;
 
-    void
-    addFieldPath(const document::DocumentType &docType,
-                 uint32_t fieldId);
-
-    void
-    buildFieldPath(const document::DocumentType & docType,
-                   const document::DataType *dataType);
-
-    void
-    invertNormalDocTextField(size_t fieldId,
-                             const document::FieldValue &field);
-
-    void
-    invertNormalDocUriField(const UriField &handle,
-                            const document::FieldValue &field);
+    void addFieldPath(const document::DocumentType &docType, uint32_t fieldId);
+    void buildFieldPath(const document::DocumentType & docType, const document::DataType *dataType);
+    void invertNormalDocTextField(size_t fieldId, const document::FieldValue &field);
+    void invertNormalDocUriField(const UriField &handle, const document::FieldValue &field);
 
     //typedef document::FieldPath FieldPath;
     typedef document::Field FieldPath;
@@ -68,11 +52,7 @@ private:
      *
      * @return schema used by this index
      */
-    const index::Schema &
-    getSchema() const
-    {
-        return _schema;
-    }
+    const index::Schema &getSchema() const { return _schema; }
 
 public:
     /**
@@ -91,9 +71,7 @@ public:
      *
      * @param dict             dictionary
      */
-    void
-    pushDocuments(Dictionary &dict,
-                  const std::shared_ptr<IDestructorCallback> &onWriteDone);
+    void pushDocuments(Dictionary &dict, const std::shared_ptr<IDestructorCallback> &onWriteDone);
 
     /**
      * Invert a document.
@@ -102,8 +80,7 @@ public:
      * @param doc              the document
      *
      **/
-    void
-    invertDocument(uint32_t docId, const document::Document &doc);
+    void invertDocument(uint32_t docId, const document::Document &doc);
 
     /**
      * Remove a document.
@@ -116,13 +93,9 @@ public:
         return _inverters[fieldId].get();
     }
 
-    const std::vector<std::unique_ptr<FieldInverter> > &
-    getInverters() const { return _inverters; }
+    const std::vector<std::unique_ptr<FieldInverter> > & getInverters() const { return _inverters; }
 
     uint32_t getNumFields() const { return _inverters.size(); }
 };
 
-} // namespace memoryindex
-
-} // namespace search
-
+}

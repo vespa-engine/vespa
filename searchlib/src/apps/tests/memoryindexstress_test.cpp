@@ -4,7 +4,6 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
@@ -15,6 +14,10 @@
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
@@ -144,7 +147,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i,
     idstr << "id:test:test:: " << i;
     DocumentId id(idstr.str());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
-    Document::UP doc(new Document(*docType, id));
+    auto doc(std::make_unique<Document>(*docType, id));
     doc->setRepo(repo);
     if (!titleString.empty()) {
         setFieldValue(*doc, title, titleString);
