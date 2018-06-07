@@ -18,37 +18,19 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 public class SummaryField extends Field implements Cloneable, TypedKey {
 
     /**
-     * This class represents a source (field name) and the type of the source (only used for smart summary)
+     * This class represents a source (field name).
      */
     public static class Source implements Serializable {
-        public enum Type {
-            CONTEXTUAL("contextual"),
-            TITLE("title"),
-            STATIC("static"),
-            URL("url");
-            private final String name;
-            Type(String name) {
-                this.name = name;
-            }
-            public String getName() { return name; }
-        }
         private String name;
-        private Type type;
         private boolean override = false;
         public Source(String name) {
             this.name = name;
-            this.type = Type.CONTEXTUAL;
-        }
-        public Source(String name, Type type) {
-            this.name = name;
-            this.type = type;
         }
         public String getName() { return name; }
-        public Type getType() { return type; }
         public void setOverride(boolean override) { this.override = override; }
         public boolean getOverride() { return override; }
         public int hashCode() {
-            return name.hashCode() + type.getName().hashCode() + Boolean.valueOf(override).hashCode();
+            return name.hashCode() + Boolean.valueOf(override).hashCode();
         }
         public boolean equals(Object obj) {
             if (!(obj instanceof Source)) {
@@ -56,7 +38,6 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
             }
             Source other = (Source)obj;
             return name.equals(other.name) &&
-                    type.getName().equals(other.type.getName()) &&
                     override == other.override;
         }
         public String toString() {

@@ -14,6 +14,8 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
+
 /**
  * Makes implicitly defined summaries into explicit summaries
  *
@@ -79,6 +81,10 @@ public class ImplicitSummaries extends Processor {
                     addPrefetchAttribute(attribute, field, search);
                 }
             }
+        }
+
+        if (addedSummaryField != null && isComplexFieldWithOnlyStructFieldAttributes(field)) {
+            addedSummaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
         }
 
         // Position attributes

@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.vespa.documentmodel.SummaryTransform;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -54,5 +56,17 @@ public class ImplicitSummariesTestCase {
         public void close() throws SecurityException {
 
         }
+    }
+
+    @Test
+    public void attribute_combiner_transform_is_set_on_array_of_struct_with_only_struct_field_attributes() throws IOException, ParseException {
+        Search search = SearchBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
+        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, search.getSummaryField("elem_array").getTransform());
+    }
+
+    @Test
+    public void attribute_combiner_transform_is_set_on_map_of_struct_with_only_struct_field_attributes() throws IOException, ParseException {
+        Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
+        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, search.getSummaryField("elem_map").getTransform());
     }
 }
