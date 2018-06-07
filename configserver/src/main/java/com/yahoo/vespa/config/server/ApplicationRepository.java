@@ -23,7 +23,7 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -88,7 +88,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
-    private final ApplicationConvergenceChecker convergeChecker;
+    private final ConfigConvergenceChecker convergeChecker;
     private final HttpProxy httpProxy;
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
@@ -99,22 +99,22 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
                                  HostProvisionerProvider hostProvisionerProvider,
-                                 ApplicationConvergenceChecker applicationConvergenceChecker,
+                                 ConfigConvergenceChecker configConvergenceChecker,
                                  HttpProxy httpProxy, 
                                  ConfigserverConfig configserverConfig) {
         this(tenantRepository, hostProvisionerProvider.getHostProvisioner(),
-             applicationConvergenceChecker, httpProxy, configserverConfig, Clock.systemUTC(), new FileDistributionStatus());
+             configConvergenceChecker, httpProxy, configserverConfig, Clock.systemUTC(), new FileDistributionStatus());
     }
 
     // For testing
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
                                  Clock clock) {
-        this(tenantRepository, new ApplicationConvergenceChecker(), hostProvisioner, clock);
+        this(tenantRepository, new ConfigConvergenceChecker(), hostProvisioner, clock);
     }
 
     public ApplicationRepository(TenantRepository tenantRepository,
-                                 ApplicationConvergenceChecker convergenceChecker,
+                                 ConfigConvergenceChecker convergenceChecker,
                                  Provisioner hostProvisioner,
                                  Clock clock) {
         this(tenantRepository, Optional.of(hostProvisioner),
@@ -124,14 +124,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private ApplicationRepository(TenantRepository tenantRepository,
                                   Optional<Provisioner> hostProvisioner,
-                                  ApplicationConvergenceChecker applicationConvergenceChecker,
+                                  ConfigConvergenceChecker configConvergenceChecker,
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
                                   Clock clock,
                                   FileDistributionStatus fileDistributionStatus) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
-        this.convergeChecker = applicationConvergenceChecker;
+        this.convergeChecker = configConvergenceChecker;
         this.httpProxy = httpProxy;
         this.clock = clock;
         this.configserverConfig = configserverConfig;
@@ -373,12 +373,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Convergence ----------------------------------------------------------------
 
-    public HttpResponse serviceConvergenceCheck(ApplicationId applicationId, String hostname, URI uri) {
-        return convergeChecker.serviceConvergenceCheck(getApplication(applicationId), hostname, uri);
+    public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri) {
+        return convergeChecker.checkService(getApplication(applicationId), hostAndPort, uri);
     }
 
-    public HttpResponse serviceListToCheckForConfigConvergence(ApplicationId applicationId, URI uri) {
-        return convergeChecker.serviceListToCheckForConfigConvergence(getApplication(applicationId), uri);
+    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri) {
+        return convergeChecker.servicesToCheck(getApplication(applicationId), uri);
     }
 
     // ---------------- Session operations ----------------------------------------------------------------

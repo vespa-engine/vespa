@@ -25,21 +25,23 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker.ServiceResponse;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 
 /**
  * @author Ulf Lilleengen
  */
-public class ApplicationConvergenceCheckerTest {
+public class ConfigConvergenceCheckerTest {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final TenantName tenant = TenantName.from("mytenant");
     private final ApplicationId appId = ApplicationId.from(tenant, ApplicationName.from("myapp"), InstanceName.from("myinstance"));
     private Application application;
+    private ConfigConvergenceChecker checker;
     private Map<URI, Long> currentGeneration;
-    private ApplicationConvergenceChecker checker;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -54,7 +56,7 @@ public class ApplicationConvergenceCheckerTest {
                                       Version.fromIntValues(0, 0, 0),
                                       MetricUpdater.createTestUpdater(), appId);
         currentGeneration = new HashMap<>();
-        checker = new ApplicationConvergenceChecker(
+        checker = new ConfigConvergenceChecker(
                 (client, serviceUri) -> () -> asJson("{\"config\":{\"generation\":"
                                                      + currentGeneration.getOrDefault(serviceUri, 3L)
                                                      + "}}"));
@@ -62,37 +64,27 @@ public class ApplicationConvergenceCheckerTest {
 
     @Test
     public void service_convergence() throws Exception {
-        ServiceResponse serviceResponse = checker.serviceConvergenceCheck(application,
-                                                                          "localhost:1337",
-                                                                          URI.create("http://foo:234/serviceconverge/localhost:1337"));
+        ServiceResponse serviceResponse = checker.checkService(application,
+                                                               "localhost:1337",
+                                                               URI.create("http://foo:234/serviceconverge/localhost:1337"));
         assertEquals(200, serviceResponse.getStatus());
         assertJsonEquals("{\n" +
                          "  \"url\": \"http://foo:234/serviceconverge/localhost:1337\",\n" +
                          "  \"host\": \"localhost:1337\",\n" +
                          "  \"wantedGeneration\": 3,\n" +
-                         "  \"debug\": {\n" +
-                         "    \"host\": \"localhost:1337\",\n" +
-                         "    \"wantedGeneration\": 3,\n" +
-                         "    \"currentGeneration\": 3\n" +
-                         "  },\n" +
                          "  \"converged\": true,\n" +
                          "  \"currentGeneration\": 3\n" +
                          "}",
                          SessionHandlerTest.getRenderedString(serviceResponse));
 
-        ServiceResponse hostMissingResponse = checker.serviceConvergenceCheck(application,
-                                                                              "notPresent:1337",
-                                                                              URI.create("http://foo:234/serviceconverge/notPresent:1337"));
+        ServiceResponse hostMissingResponse = checker.checkService(application,
+                                                                   "notPresent:1337",
+                                                                   URI.create("http://foo:234/serviceconverge/notPresent:1337"));
         assertEquals(410, hostMissingResponse.getStatus());
         assertJsonEquals("{\n" +
                          "  \"url\": \"http://foo:234/serviceconverge/notPresent:1337\",\n" +
                          "  \"host\": \"notPresent:1337\",\n" +
                          "  \"wantedGeneration\": 3,\n" +
-                         "  \"debug\": {\n" +
-                         "    \"host\": \"notPresent:1337\",\n" +
-                         "    \"wantedGeneration\": 3,\n" +
-                         "    \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
-                         "  },\n" +
                          "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
                          "}",
                      SessionHandlerTest.getRenderedString(hostMissingResponse));
@@ -100,8 +92,7 @@ public class ApplicationConvergenceCheckerTest {
 
     @Test
     public void service_list_convergence() throws Exception {
-        HttpResponse serviceListResponse = checker.serviceListToCheckForConfigConvergence(application,
-                                                                                          URI.create("http://foo:234/serviceconverge"));
+        HttpResponse serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"));
         assertEquals(200, serviceListResponse.getStatus());
         assertJsonEquals("{\n" +
                          "  \"services\": [\n" +
@@ -115,10 +106,7 @@ public class ApplicationConvergenceCheckerTest {
                          "  \"url\": \"http://foo:234/serviceconverge\",\n" +
                          "  \"currentGeneration\": 3,\n" +
                          "  \"wantedGeneration\": 3,\n" +
-                         "  \"converged\": true,\n" +
-                         "  \"debug\": {\n" +
-                         "    \"wantedGeneration\": 3\n" +
-                         "  }\n" +
+                         "  \"converged\": true\n" +
                          "}",
                          SessionHandlerTest.getRenderedString(serviceListResponse));
 
@@ -132,7 +120,7 @@ public class ApplicationConvergenceCheckerTest {
                                                   Version.fromIntValues(0, 0, 0),
                                                   MetricUpdater.createTestUpdater(), appId);
         currentGeneration.put(URI.create("http://host2:1234"), 4L);
-        serviceListResponse = checker.serviceListToCheckForConfigConvergence(application, URI.create("http://foo:234/serviceconverge"));
+        serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"));
         assertEquals(200, serviceListResponse.getStatus());
         assertJsonEquals("{\n" +
                          "  \"services\": [\n" +
@@ -152,10 +140,7 @@ public class ApplicationConvergenceCheckerTest {
                          "  \"url\": \"http://foo:234/serviceconverge\",\n" +
                          "  \"currentGeneration\": 3,\n" +
                          "  \"wantedGeneration\": 4,\n" +
-                         "  \"converged\": false,\n" +
-                         "  \"debug\": {\n" +
-                         "    \"wantedGeneration\": 4\n" +
-                         "  }\n" +
+                         "  \"converged\": false\n" +
                          "}",
                      SessionHandlerTest.getRenderedString(serviceListResponse));
     }

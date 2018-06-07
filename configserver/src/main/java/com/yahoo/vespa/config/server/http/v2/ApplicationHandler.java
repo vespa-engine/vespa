@@ -59,7 +59,9 @@ public class ApplicationHandler extends HttpHandler {
         Tenant tenant = verifyTenantAndApplication(applicationId);
 
         if (isServiceConvergeRequest(request)) {
-            return applicationRepository.serviceConvergenceCheck(applicationId, getHostNameFromRequest(request), request.getUri());
+            // Expects both hostname and port in the request (hostname:port)
+            String hostAndPort = getHostNameFromRequest(request);
+            return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri());
         }
 
         if (isClusterControllerStatusRequest(request)) {
@@ -86,7 +88,7 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isServiceConvergeListRequest(request)) {
-            return applicationRepository.serviceListToCheckForConfigConvergence(applicationId, request.getUri());
+            return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri());
         }
 
         if (isFiledistributionStatusRequest(request)) {
