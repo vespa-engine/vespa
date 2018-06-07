@@ -106,7 +106,10 @@ DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cf
     }
     for (size_t i = 0; i < cfg.override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = cfg.override[i];
-        // DYNAMIC TEASER
+        if (o.command == "attributecombiner") {
+            // TODO: Remove this when support has been added
+            continue;
+        }
         bool rc(false);
         IDocsumFieldWriter::UP fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc);
         if (rc && fieldWriter.get() != NULL) {
