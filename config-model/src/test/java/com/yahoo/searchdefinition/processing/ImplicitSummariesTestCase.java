@@ -67,6 +67,12 @@ public class ImplicitSummariesTestCase {
     @Test
     public void attribute_combiner_transform_is_set_on_map_of_struct_with_only_struct_field_attributes() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
-        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, search.getSummaryField("elem_map").getTransform());
+        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, search.getSummaryField("str_elem_map").getTransform());
+    }
+
+    @Test
+    public void attribute_combiner_transform_is_not_set_when_map_of_struct_has_some_struct_field_attributes() throws IOException, ParseException {
+        Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
+        assertEquals(SummaryTransform.NONE, search.getSummaryField("int_elem_map").getTransform());
     }
 }

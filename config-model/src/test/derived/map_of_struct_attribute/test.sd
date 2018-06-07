@@ -4,7 +4,7 @@ search test {
       field name type string {}
       field weight type int {}
     }
-    field elem_map type map<string,elem> {
+    field str_elem_map type map<string,elem> {
       indexing: summary
       struct-field key {
         indexing: attribute
@@ -13,6 +13,15 @@ search test {
         indexing: attribute
       }
       struct-field value.weight {
+        indexing: attribute
+      }
+    }
+    field int_elem_map type map<int,elem> {
+      indexing: summary
+      struct-field key {
+        indexing: attribute
+      }
+      struct-field value.name {
         indexing: attribute
       }
     }
