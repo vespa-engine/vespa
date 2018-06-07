@@ -6,6 +6,7 @@ import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentApi;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodePrincipal;
@@ -18,7 +19,6 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.logging.Logger;
@@ -41,15 +41,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
         this.request = request;
     }
 
-    /**
-     * @deprecated Use {@link #getNodeIdentityDocument(String)} and {@link #getTenantIdentityDocument(String)} instead.
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Deprecated
-    @Override
-    // TODO Make this method private when the rest api is not longer in use
-    public SignedIdentityDocumentEntity getIdentityDocument(@QueryParam("hostname") String hostname) {
+    private SignedIdentityDocumentEntity getIdentityDocument(String hostname, IdentityType identityType) {
         if (hostname == null) {
             throw new BadRequestException("The 'hostname' query parameter is missing");
         }
@@ -67,7 +59,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
             throw new ForbiddenException();
         }
         try {
-            return EntityBindingsMapper.toSignedIdentityDocumentEntity(identityDocumentGenerator.generateSignedIdentityDocument(hostname));
+            return EntityBindingsMapper.toSignedIdentityDocumentEntity(identityDocumentGenerator.generateSignedIdentityDocument(hostname, identityType));
         } catch (Exception e) {
             String message = String.format("Unable to generate identity doument for '%s': %s", hostname, e.getMessage());
             log.log(LogLevel.ERROR, message, e);
@@ -80,7 +72,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
     @Path("/node/{host}")
     @Override
     public SignedIdentityDocumentEntity getNodeIdentityDocument(@PathParam("host") String host) {
-        return getIdentityDocument(host);
+        return getIdentityDocument(host, IdentityType.NODE);
     }
 
     @GET
@@ -88,7 +80,7 @@ public class IdentityDocumentResource implements IdentityDocumentApi {
     @Path("/tenant/{host}")
     @Override
     public SignedIdentityDocumentEntity getTenantIdentityDocument(@PathParam("host") String host) {
-        return getIdentityDocument(host);
+        return getIdentityDocument(host, IdentityType.TENANT);
     }
 
 }

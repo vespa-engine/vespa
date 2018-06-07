@@ -10,8 +10,10 @@ import java.util.Set;
 
 /**
  * @author bjorncs
+ * @deprecated Will soon be inlined into {@link SignedIdentityDocumentEntity}
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Deprecated
 public class IdentityDocumentEntity {
 
     @JsonProperty("provider-unique-id")
