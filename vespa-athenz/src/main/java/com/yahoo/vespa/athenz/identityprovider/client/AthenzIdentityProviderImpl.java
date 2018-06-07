@@ -24,6 +24,7 @@ import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.net.URI;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
@@ -57,11 +58,12 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final Clock clock;
     private final AthenzService identity;
     private final ServiceIdentityProviderListenerHelper listenerHelper;
+    private final String dnsSuffix;
+    private final URI ztsEndpoint;
 
     private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
     private final static Duration roleSslContextExpiry = Duration.ofHours(24);
 
-    // TODO IdentityConfig should contain ZTS uri and dns suffix
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
         this(config,
@@ -87,6 +89,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.clock = clock;
         this.identity = new AthenzService(config.domain(), config.service());
         this.listenerHelper = new ServiceIdentityProviderListenerHelper(this.identity);
+        this.dnsSuffix = config.athenzDnsSuffix();
+        this.ztsEndpoint = URI.create(config.ztsUrl());
         registerInstance();
         roleSslContextCache = CacheBuilder.newBuilder()
                 .refreshAfterWrite(roleSslContextExpiry.dividedBy(2).toMinutes(), TimeUnit.MINUTES)
@@ -153,8 +157,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         PrivateKey privateKey = credentials.getKeyPair().getPrivate();
         X509Certificate roleCertificate = ztsClient.getRoleCertificate(
                 role,
-                credentials.getIdentityDocument().dnsSuffix(),
-                credentials.getIdentityDocument().ztsEndpoint(),
+                dnsSuffix,
+                ztsEndpoint,
                 identity,
                 privateKey,
                 credentials.getIdentitySslContext());
@@ -169,7 +173,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         return ztsClient
                 .getRoleToken(
                         new AthenzDomain(domain),
-                        credentials.getIdentityDocument().ztsEndpoint(),
+                        ztsEndpoint,
                         credentials.getIdentitySslContext())
                 .getRawToken();
     }
@@ -180,7 +184,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 .getRoleToken(
                         new AthenzDomain(domain),
                         role,
-                        credentials.getIdentityDocument().ztsEndpoint(),
+                        ztsEndpoint,
                         credentials.getIdentitySslContext())
                 .getRawToken();
     }
