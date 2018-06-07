@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.jdisc.core.SystemTimer;
@@ -43,13 +44,17 @@ public class ConfigServerBootstrapTest {
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState, createStateMonitor());
+        VipStatus vipStatus = new VipStatus();
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState, createStateMonitor(), vipStatus);
+        assertFalse(vipStatus.isInRotation());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
+        assertTrue(vipStatus.isInRotation());
 
         bootstrap.deconstruct();
         assertEquals(StateMonitor.Status.down, bootstrap.status());
         assertFalse(rpcServer.isRunning());
+        assertFalse(vipStatus.isInRotation());
     }
 
     @Test
@@ -69,13 +74,17 @@ public class ConfigServerBootstrapTest {
                                            .resolve("sessions/2/services.xml"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
+        VipStatus vipStatus = new VipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    createStateMonitor(), false /* do not call run method */);
+                                                                    createStateMonitor(), vipStatus, false /* do not call run method */);
+        assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.run();
-        // App is invalid, so bootstrapping was unsuccessful. Status should be 'initializing' and rpc server should not be running
+        // App is invalid, bootstrapping was unsuccessful. Status should be 'initializing',
+        // rpc server should not be running and it should be out of rotation
         assertEquals(StateMonitor.Status.initializing, bootstrap.status());
         assertFalse(rpcServer.isRunning());
+        assertFalse(vipStatus.isInRotation());
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {
