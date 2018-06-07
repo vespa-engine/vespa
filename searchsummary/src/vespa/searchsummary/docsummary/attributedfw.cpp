@@ -24,44 +24,6 @@ using search::attribute::BasicType;
 
 namespace search::docsummary {
 
-ResType inferType(const IAttributeVector & vec) {
-    ResType retval;
-    if (vec.hasMultiValue()) {
-        retval = RES_STRING;
-    } else {
-        if (vec.isStringType()) {
-            retval = RES_STRING;
-        } else {
-            size_t fw = vec.getFixedWidth();
-            if (vec.isIntegerType()) {
-                if (fw == sizeof(uint8_t)) {
-                    retval = RES_BYTE;
-                } else if (fw == sizeof(uint16_t)) {
-                    retval = RES_SHORT;
-                } else if (fw == sizeof(uint32_t)) {
-                    retval = RES_INT;
-                } else {
-                    retval = RES_INT64;
-                }
-            } else if (vec.isFloatingPointType()) {
-                retval = (fw == sizeof(float)) ? RES_FLOAT : RES_DOUBLE;
-            } else {
-                BasicType::Type t = vec.getBasicType();
-                switch (t) {
-                case BasicType::TENSOR:
-                    retval = RES_TENSOR;
-                    break;
-                default:
-                    retval = RES_STRING;
-                }
-            }
-        }
-    }
-    return retval;
-}
-
-//-----------------------------------------------------------------------------
-
 AttrDFW::AttrDFW(const vespalib::string & attrName) :
     _attrName(attrName)
 {

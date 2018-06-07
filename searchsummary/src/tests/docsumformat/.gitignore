@@ -8,14 +8,4 @@
 Makefile
 core
 core.*
-datapart.*
-docsum-index
-docsum-pack
-docsum-parse
-index.cf
-merged
-meta-info.txt
-schema.txt
-summary.cf
-version.txt
 searchsummary_docsum-pack_app
