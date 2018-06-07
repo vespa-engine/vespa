@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -18,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -42,7 +42,6 @@ import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
 import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
@@ -56,7 +55,6 @@ public class ApplicationSerializerTest {
 
     @Test
     public void testSerialization() {
-        ControllerTester tester = new ControllerTester();
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("<deployment version='1.0'>" +
                                                                "   <staging/>" +
                                                                "</deployment>");
@@ -68,9 +66,12 @@ public class ApplicationSerializerTest {
         ApplicationVersion applicationVersion1 = ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 31);
         ApplicationVersion applicationVersion2 = ApplicationVersion
                 .from(new SourceRevision("repo1", "branch1", "commit1"), 32);
+        Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
-                createClusterUtils(3, 0.2), createClusterInfo(3, 4),new DeploymentMetrics(2,3,4,5,6)));
+                                       createClusterUtils(3, 0.2), createClusterInfo(3, 4),
+                                       new DeploymentMetrics(2,3,4,5,6),
+                                       DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt))));
 
         OptionalLong projectId = OptionalLong.of(123L);
         List<JobStatus> statusList = new ArrayList<>();
@@ -111,6 +112,8 @@ public class ApplicationSerializerTest {
         assertEquals(original.deployments().get(zone2).version(), serialized.deployments().get(zone2).version());
         assertEquals(original.deployments().get(zone1).at(), serialized.deployments().get(zone1).at());
         assertEquals(original.deployments().get(zone2).at(), serialized.deployments().get(zone2).at());
+        assertEquals(original.deployments().get(zone2).activity().lastQueried().get(), serialized.deployments().get(zone2).activity().lastQueried().get());
+        assertEquals(original.deployments().get(zone2).activity().lastWritten().get(), serialized.deployments().get(zone2).activity().lastWritten().get());
 
         assertEquals(original.deploymentJobs().projectId(), serialized.deploymentJobs().projectId());
         assertEquals(original.deploymentJobs().jobStatus().size(), serialized.deploymentJobs().jobStatus().size());
@@ -146,12 +149,11 @@ public class ApplicationSerializerTest {
         // Test metrics
         assertEquals(original.metrics().queryServiceQuality(), serialized.metrics().queryServiceQuality(), Double.MIN_VALUE);
         assertEquals(original.metrics().writeServiceQuality(), serialized.metrics().writeServiceQuality(), Double.MIN_VALUE);
-
-        assertEquals(2, serialized.deployments().get(zone2).metrics().queriesPerSecond(), Double.MIN_VALUE);
-        assertEquals(3, serialized.deployments().get(zone2).metrics().writesPerSecond(), Double.MIN_VALUE);
-        assertEquals(4, serialized.deployments().get(zone2).metrics().documentCount(), Double.MIN_VALUE);
-        assertEquals(5, serialized.deployments().get(zone2).metrics().queryLatencyMillis(), Double.MIN_VALUE);
-        assertEquals(6, serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
+        assertEquals(original.deployments().get(zone2).metrics().queriesPerSecond(), serialized.deployments().get(zone2).metrics().queriesPerSecond(), Double.MIN_VALUE);
+        assertEquals(original.deployments().get(zone2).metrics().writesPerSecond(), serialized.deployments().get(zone2).metrics().writesPerSecond(), Double.MIN_VALUE);
+        assertEquals(original.deployments().get(zone2).metrics().documentCount(), serialized.deployments().get(zone2).metrics().documentCount(), Double.MIN_VALUE);
+        assertEquals(original.deployments().get(zone2).metrics().queryLatencyMillis(), serialized.deployments().get(zone2).metrics().queryLatencyMillis(), Double.MIN_VALUE);
+        assertEquals(original.deployments().get(zone2).metrics().writeLatencyMillis(), serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
 
         { // test more deployment serialization cases
             Application original2 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 42)));
@@ -207,15 +209,6 @@ public class ApplicationSerializerTest {
                     util.getDiskBusy() + agg));
         }
         return result;
-    }
-
-    @Test
-    public void testLegacySerialization() {
-        Application applicationWithSuccessfulJob = applicationSerializer.fromSlime(applicationSlime(false));
-        assertFalse("No job error for successful job", applicationWithSuccessfulJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().isPresent());
-
-        Application applicationWithFailingJob = applicationSerializer.fromSlime(applicationSlime(true));
-        assertEquals(JobError.unknown, applicationWithFailingJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().get());
     }
 
     @Test

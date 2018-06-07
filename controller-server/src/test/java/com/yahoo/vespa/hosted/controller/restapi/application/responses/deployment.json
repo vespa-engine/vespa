@@ -16,6 +16,10 @@
   "gitRepository": "repository1",
   "gitBranch": "master",
   "gitCommit": "commit1",
+  "activity": {
+    "lastQueried": 1527848130000,
+    "lastWritten": 1527848130000
+  },
   "cost": {
     "tco": 74,
     "waste": 0,

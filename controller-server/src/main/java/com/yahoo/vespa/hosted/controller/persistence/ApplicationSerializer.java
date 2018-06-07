@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -68,6 +69,8 @@ public class ApplicationSerializer {
     private final String repositoryField = "repositoryField";
     private final String branchField = "branchField";
     private final String commitField = "commitField";
+    private final String lastQueriedField = "lastQueried";
+    private final String lastWrittenField = "lastWritten";
 
     // DeploymentJobs fields
     private final String projectIdField = "projectId";
@@ -148,10 +151,12 @@ public class ApplicationSerializer {
         toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
         clusterInfoToSlime(deployment.clusterInfo(), object);
         clusterUtilsToSlime(deployment.clusterUtils(), object);
-        metricsToSlime(deployment.metrics(), object);
+        deploymentMetricsToSlime(deployment.metrics(), object);
+        deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
+        deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
     }
 
-    private void metricsToSlime(DeploymentMetrics metrics, Cursor object) {
+    private void deploymentMetricsToSlime(DeploymentMetrics metrics, Cursor object) {
         Cursor root = object.setObject(deploymentMetricsField);
         root.setDouble(deploymentMetricsQPSField, metrics.queriesPerSecond());
         root.setDouble(deploymentMetricsWPSField, metrics.writesPerSecond());
@@ -289,19 +294,17 @@ public class ApplicationSerializer {
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
                               clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
                               clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
-                              deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)));
+                              deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
+                              DeploymentActivity.create(optionalInstant(deploymentObject.field(lastQueriedField)),
+                                                        optionalInstant(deploymentObject.field(lastWrittenField))));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
-
-        double queriesPerSecond = object.field(deploymentMetricsQPSField).asDouble();
-        double writesPerSecond = object.field(deploymentMetricsWPSField).asDouble();
-        double documentCount = object.field(deploymentMetricsDocsField).asDouble();
-        double queryLatencyMillis = object.field(deploymentMetricsQueryLatencyField).asDouble();
-        double writeLatencyMills = object.field(deploymentMetricsWriteLatencyField).asDouble();
-
-        return new DeploymentMetrics(queriesPerSecond, writesPerSecond,
-                documentCount, queryLatencyMillis, writeLatencyMills);
+        return new DeploymentMetrics(object.field(deploymentMetricsQPSField).asDouble(),
+                                     object.field(deploymentMetricsWPSField).asDouble(),
+                                     object.field(deploymentMetricsDocsField).asDouble(),
+                                     object.field(deploymentMetricsQueryLatencyField).asDouble(),
+                                     object.field(deploymentMetricsWriteLatencyField).asDouble());
     }
 
     private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime(Inspector object) {
@@ -424,6 +427,11 @@ public class ApplicationSerializer {
 
     private Optional<String> optionalString(Inspector field) {
         return SlimeUtils.optionalString(field);
+    }
+
+    private Optional<Instant> optionalInstant(Inspector field) {
+        OptionalLong value = optionalLong(field);
+        return value.isPresent() ? Optional.of(Instant.ofEpochMilli(value.getAsLong())) : Optional.empty();
     }
 
 }

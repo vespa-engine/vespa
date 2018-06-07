@@ -15,8 +15,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Retrieve deployment metrics like qps and document count from the metric service and
- * update the applications with this info.
+ * Retrieve deployment metrics such as QPS and document count from the metric service and
+ * update applications with this info.
  *
  * @author smorgrav
  */
@@ -39,19 +39,19 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                 for (Deployment deployment : application.deployments().values()) {
                     MetricsService.DeploymentMetrics deploymentMetrics = controller().metricsService()
                             .getDeploymentMetrics(application.id(), deployment.zone());
-                    DeploymentMetrics appMetrics = new DeploymentMetrics(deploymentMetrics.queriesPerSecond(),
+                    DeploymentMetrics newMetrics = new DeploymentMetrics(deploymentMetrics.queriesPerSecond(),
                                                                          deploymentMetrics.writesPerSecond(),
                                                                          deploymentMetrics.documentCount(),
                                                                          deploymentMetrics.queryLatencyMillis(),
                                                                          deploymentMetrics.writeLatencyMillis());
 
                     controller().applications().lockIfPresent(application.id(), lockedApplication ->
-                            controller().applications().store(lockedApplication.with(deployment.zone(), appMetrics)));
+                            controller().applications().store(lockedApplication.with(deployment.zone(), newMetrics)
+                                                                               .recordActivityAt(controller().clock().instant(), deployment.zone())));
                 }
-            }
-            catch (UncheckedIOException e) {
+            } catch (UncheckedIOException e) {
                 if (!hasWarned) // produce only one warning per maintenance interval
-                    log.log(Level.WARNING, "Failed talking to YAMAS: " + Exceptions.toMessageString(e) +
+                    log.log(Level.WARNING, "Failed to query metrics service: " + Exceptions.toMessageString(e) +
                                            ". Retrying in " + maintenanceInterval());
                 hasWarned = true;
             }

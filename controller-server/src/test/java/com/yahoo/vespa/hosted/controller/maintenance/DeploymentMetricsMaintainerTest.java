@@ -12,37 +12,69 @@ import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author smorgrav
+ * @author mpolden
  */
 public class DeploymentMetricsMaintainerTest {
 
     @Test
     public void maintain() {
         ControllerTester tester = new ControllerTester();
-        ApplicationId app = tester.createAndDeploy("tenant1", "domain1", "app1", Environment.dev, 123).id();
+        ApplicationId appId = tester.createAndDeploy("tenant1", "domain1", "app1",
+                                                  Environment.dev, 123).id();
+        DeploymentMetricsMaintainer maintainer = new DeploymentMetricsMaintainer(tester.controller(),
+                                                                                 Duration.ofDays(1),
+                                                                                 new JobControl(new MockCuratorDb()));
+        Supplier<Application> app = tester.application(appId);
+        Supplier<Deployment> deployment = () -> app.get().deployments().values().stream().findFirst().get();
 
-        // Pre condition: no metric info on neither application nor deployment
-        assertEquals(0, tester.controller().applications().require(app).metrics().queryServiceQuality(), 0);
-        Deployment deployment = tester.controller().applications().get(app).get().deployments().values().stream().findAny().get();
-        assertEquals(0, deployment.metrics().documentCount(), 0);
+        // No metrics gathered yet
+        assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
+        assertEquals(0, deployment.get().metrics().documentCount(), 0);
+        assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
+        assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
-        DeploymentMetricsMaintainer maintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofMinutes(10), new JobControl(new MockCuratorDb()));
+        // Metrics are gathered and saved to application
         maintainer.maintain();
+        assertEquals(0.5, app.get().metrics().queryServiceQuality(), Double.MIN_VALUE);
+        assertEquals(0.7, app.get().metrics().writeServiceQuality(), Double.MIN_VALUE);
+        assertEquals(1, deployment.get().metrics().queriesPerSecond(), Double.MIN_VALUE);
+        assertEquals(2, deployment.get().metrics().writesPerSecond(), Double.MIN_VALUE);
+        assertEquals(3, deployment.get().metrics().documentCount(), Double.MIN_VALUE);
+        assertEquals(4, deployment.get().metrics().queryLatencyMillis(), Double.MIN_VALUE);
+        assertEquals(5, deployment.get().metrics().writeLatencyMillis(), Double.MIN_VALUE);
+        Instant t1 = tester.clock().instant();
+        assertEquals(t1, deployment.get().activity().lastQueried().get());
+        assertEquals(t1, deployment.get().activity().lastWritten().get());
 
-        // Post condition:
-        Application application = tester.controller().applications().require(app);
-        assertEquals(0.5, application.metrics().queryServiceQuality(), Double.MIN_VALUE);
-        assertEquals(0.7, application.metrics().writeServiceQuality(), Double.MIN_VALUE);
-        deployment = application.deployments().values().stream().findAny().get();
-        assertEquals(1, deployment.metrics().queriesPerSecond(), Double.MIN_VALUE);
-        assertEquals(2, deployment.metrics().writesPerSecond(), Double.MIN_VALUE);
-        assertEquals(3, deployment.metrics().documentCount(), Double.MIN_VALUE);
-        assertEquals(4, deployment.metrics().queryLatencyMillis(), Double.MIN_VALUE);
-        assertEquals(5, deployment.metrics().writeLatencyMillis(), Double.MIN_VALUE);
+        // Time passes. Activity is updated as app is still receiving traffic
+        tester.clock().advance(Duration.ofHours(1));
+        Instant t2 = tester.clock().instant();
+        maintainer.maintain();
+        assertEquals(t2, deployment.get().activity().lastQueried().get());
+        assertEquals(t2, deployment.get().activity().lastWritten().get());
+
+        // Query traffic disappears. Query activity time is no longer updated
+        tester.clock().advance(Duration.ofHours(1));
+        Instant t3 = tester.clock().instant();
+        tester.metricsService().setMetric("queriesPerSecond", 0D);
+        maintainer.maintain();
+        assertEquals(t2, deployment.get().activity().lastQueried().get());
+        assertEquals(t3, deployment.get().activity().lastWritten().get());
+
+        // Feed traffic disappears. Feed activity time is no longer updated
+        tester.clock().advance(Duration.ofHours(1));
+        tester.metricsService().setMetric("writesPerSecond", 0D);
+        maintainer.maintain();
+        assertEquals(t2, deployment.get().activity().lastQueried().get());
+        assertEquals(t3, deployment.get().activity().lastWritten().get());
     }
 
 }
