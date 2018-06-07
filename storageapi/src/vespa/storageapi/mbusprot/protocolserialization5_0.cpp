@@ -6,6 +6,7 @@
 #include "storagereply.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <sstream>
 

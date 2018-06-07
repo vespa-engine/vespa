@@ -4,6 +4,7 @@
 
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchcore/proton/server/icommitable.h>
+#include <vespa/document/fieldvalue/document.h>
 
 namespace proton {
 

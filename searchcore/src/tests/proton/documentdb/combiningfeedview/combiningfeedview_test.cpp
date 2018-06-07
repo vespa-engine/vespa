@@ -7,6 +7,7 @@ LOG_SETUP("combiningfeedview_test");
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using document::DocumentTypeRepo;

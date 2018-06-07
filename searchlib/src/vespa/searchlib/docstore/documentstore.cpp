@@ -4,6 +4,7 @@
 #include "documentstore.h"
 #include "visitcache.h"
 #include "ibucketizer.h"
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>

@@ -1,20 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/fieldvalue/document.h>
+#include "indexsearchable.h"
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcorespi/flush/flushstats.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/closure.h>
-#include "indexsearchable.h"
 
-namespace search
-{
-
-class IDestructorCallback;
-
-}
+namespace search { class IDestructorCallback; }
+namespace document { class Document; }
 
 namespace searchcorespi {
 

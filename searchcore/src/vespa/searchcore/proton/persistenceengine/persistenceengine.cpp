@@ -5,6 +5,9 @@
 #include "transport_latch.h"
 #include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.persistenceengine");
@@ -138,11 +141,9 @@ public:
             BucketInfo b1 = _result.getBucketInfo();
             BucketInfo b2 = result.getBucketInfo();
             BucketInfo::ReadyState ready =
-                    (b1.getReady() == b2.getReady() ? b1.getReady() :
-                            BucketInfo::NOT_READY);
+                    (b1.getReady() == b2.getReady() ? b1.getReady() : BucketInfo::NOT_READY);
             BucketInfo::ActiveState active =
-                    (b1.getActive() == b2.getActive() ? b1.getActive() :
-                            BucketInfo::NOT_ACTIVE);
+                    (b1.getActive() == b2.getActive() ? b1.getActive() : BucketInfo::NOT_ACTIVE);
             _result = BucketInfoResult(
                     BucketInfo(BucketChecksum(b1.getChecksum() + b2.getChecksum()),
                             b1.getDocumentCount() + b2.getDocumentCount(),

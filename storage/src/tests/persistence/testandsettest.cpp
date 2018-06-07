@@ -6,6 +6,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/persistence/spi/test.h>
 #include <functional>
