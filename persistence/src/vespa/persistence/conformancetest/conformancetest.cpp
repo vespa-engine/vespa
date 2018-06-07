@@ -9,6 +9,7 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/metrics/loadmetric.h>
 #include <vespa/vdslib/state/state.h>
 #include <vespa/vdslib/state/node.h>

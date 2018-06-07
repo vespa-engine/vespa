@@ -23,6 +23,7 @@
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/databuffer.h>

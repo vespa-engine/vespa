@@ -15,7 +15,7 @@ DocumentId::DocumentId()
 {
 }
 
-DocumentId::DocumentId(const vespalib::stringref & id)
+DocumentId::DocumentId(vespalib::stringref id)
     : Printable(),
       _globalId(),
       _id(IdString::createIdString(id.c_str(), id.size()).release())
@@ -42,6 +42,11 @@ DocumentId::toString() const {
     return _id->toString();
 }
 
+void DocumentId::set(vespalib::stringref id) {
+    _id.reset(IdString::createIdString(id).release());
+    _globalId.first = false;
+}
+
 void
 DocumentId::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
@@ -59,6 +64,11 @@ size_t
 DocumentId::getSerializedSize() const
 {
     return _id->toString().size() + 1;
+}
+
+void DocumentId::swap(DocumentId & rhs) {
+    _id.swap(rhs._id);
+    std::swap(_globalId, rhs._globalId);
 }
 
 void

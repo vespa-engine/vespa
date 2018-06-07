@@ -43,20 +43,16 @@ public:
      *
      * @throws IdParseException If the identifier given is invalid.
      */
-    explicit DocumentId(const vespalib::stringref & id);
+    explicit DocumentId(vespalib::stringref id);
 
-    void set(const vespalib::stringref & id) {
-        _id.reset(IdString::createIdString(id).release());
-        _globalId.first = false;
-    }
+    void set(vespalib::stringref id);
 
     /**
        Hides the printable toString() for effiency reasons.
     */
     vespalib::string toString() const;
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     bool operator==(const DocumentId& other) const { return *_id == *other._id; }
     bool operator!=(const DocumentId& other) const { return ! (*_id == *other._id); }
@@ -71,16 +67,11 @@ public:
     }
 
     DocumentId* clone() const { return new DocumentId(*this); }
-
     virtual size_t getSerializedSize() const;
-    void swap(DocumentId & rhs) {
-        _id.swap(rhs._id);
-        std::swap(_globalId, rhs._globalId);
-    }
-
+    void swap(DocumentId & rhs);
 private:
     mutable std::pair<bool, GlobalId> _globalId;
-    IdString::CP _id;
+    vespalib::CloneablePtr<IdString> _id;
 
     void calculateGlobalId() const;
 };

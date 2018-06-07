@@ -2,6 +2,7 @@
 #include "updateoperation.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/update/documentupdate.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.feedoperation.updateoperation");
