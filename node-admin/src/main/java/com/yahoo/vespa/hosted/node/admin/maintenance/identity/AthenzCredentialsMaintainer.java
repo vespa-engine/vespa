@@ -19,6 +19,7 @@ import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -82,8 +83,8 @@ public class AthenzCredentialsMaintainer {
         this.configserverIdentity = environment.getConfigserverAthenzIdentity();
         this.csrGenerator = new InstanceCsrGenerator(environment.getCertificateDnsSuffix());
         this.trustStorePath = environment.getTrustStorePath();
-        this.privateKeyFile = getPrivateKeyFile(containerSiaDirectory, containerIdentity);
-        this.certificateFile = getCertificateFile(containerSiaDirectory, containerIdentity);
+        this.privateKeyFile = SiaUtils.getPrivateKeyFile(containerSiaDirectory, containerIdentity);
+        this.certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, containerIdentity);
         this.hostIdentityProvider = hostIdentityProvider;
         this.identityDocumentClient =
                 new DefaultIdentityDocumentClient(
@@ -192,9 +193,6 @@ public class AthenzCredentialsMaintainer {
             log.info("Instance successfully registered and credentials written to file");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (Exception e) {
-            // TODO Change close() in ZtsClient to not throw checked exception
-            throw new RuntimeException(e);
         }
     }
 
@@ -218,9 +216,6 @@ public class AthenzCredentialsMaintainer {
             log.info("Instance successfully refreshed and credentials written to file");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (Exception e) {
-            // TODO Change close() in ZtsClient to not throw checked exception
-            throw new RuntimeException(e);
         }
     }
 
@@ -236,20 +231,6 @@ public class AthenzCredentialsMaintainer {
 
     private static Path toTempPath(Path file) {
         return Paths.get(file.toAbsolutePath().toString() + ".tmp");
-    }
-
-    // TODO Move to vespa-athenz
-    private static Path getPrivateKeyFile(Path root, AthenzService service) {
-        return root
-                .resolve("keys")
-                .resolve(String.format("%s.%s.key.pem", service.getDomain().getName(), service.getName()));
-    }
-
-    // TODO Move to vespa-athenz
-    private static Path getCertificateFile(Path root, AthenzService service) {
-        return root
-                .resolve("certs")
-                .resolve(String.format("%s.%s.cert.pem", service.getDomain().getName(), service.getName()));
     }
 
 }
