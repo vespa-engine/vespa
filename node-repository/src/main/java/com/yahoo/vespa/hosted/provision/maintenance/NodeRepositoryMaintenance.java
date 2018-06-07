@@ -165,14 +165,12 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
-            Environment environment = zone.environment();
-            if (environment.isTest())
+            if (zone.environment().isTest())
                 retiredExpiry = Duration.ofMinutes(1); // fast turnaround as test envs don't have persistent data
             else
                 retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
 
-
-            if (environment.equals(Environment.prod) && zone.system() == SystemName.main) {
+            if (zone.environment().equals(Environment.prod) && zone.system() == SystemName.main) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(29);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
