@@ -31,6 +31,7 @@
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace document {
 
@@ -62,12 +63,13 @@ public:
     /**
      * Create old style document update, no support for field path updates.
      */
-    static DocumentUpdate::UP create42(const DocumentTypeRepo&, ByteBuffer&);
+    static DocumentUpdate::UP create42(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
 
     /**
      * Create new style document update, possibly with field path updates.
      */
-    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo&, ByteBuffer&);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, ByteBuffer & buffer);
 
     /**
      * Create a document update from a byte buffer containing a serialized
@@ -77,7 +79,7 @@ public:
      * @param buffer The buffer containing the serialized document update
      * @param serializeVersion Selector between serialization formats.
      */
-    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer, SerializeVersion serializeVersion);
+    DocumentUpdate();
     /**
      * The document type is not strictly needed, as we know this at applyTo()
      * time, but search does not use applyTo() code to do the update, and don't
@@ -153,16 +155,17 @@ public:
     int16_t getVersion() const { return _version; }
 
 private:
-    DocumentId       _documentId; // The ID of the document to update.
-    const DataType  *_type; // The type of document this update is for.
-    FieldUpdateV     _updates; // The list of field updates.
-    FieldPathUpdateV _fieldPathUpdates;
-    int16_t          _version; // Serialization version
-    bool             _createIfNonExistent;
+    DocumentId          _documentId; // The ID of the document to update.
+    const DataType     *_type; // The type of document this update is for.
+    vespalib::nbostream _backing;
+    FieldUpdateV        _updates; // The list of field updates.
+    FieldPathUpdateV    _fieldPathUpdates;
+    int16_t             _version; // Serialization version
+    bool                _createIfNonExistent;
 
     int deserializeFlags(int sizeAndFlags);
-    void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
-    void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
+    void deserialize42(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    void deserializeHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
 };
 
 } // document

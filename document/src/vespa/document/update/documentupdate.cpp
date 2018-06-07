@@ -38,25 +38,13 @@ DocumentUpdate::DocumentUpdate(const DataType &type, const DocumentId& id)
     }
 }
 
-DocumentUpdate::DocumentUpdate(const DocumentTypeRepo& repo,
-                               ByteBuffer& buffer,
-                               SerializeVersion serializeVersion)
-    : _documentId("doc::"),
+DocumentUpdate::DocumentUpdate()
+    : _documentId(),
       _type(DataType::DOCUMENT),
       _updates(),
       _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false)
 {
-    switch (serializeVersion) {
-    case SerializeVersion::SERIALIZE_HEAD:
-        deserializeHEAD(repo, buffer);
-        break;
-    case SerializeVersion::SERIALIZE_42:
-        deserialize42(repo, buffer);
-        break;
-    default:
-        throw IllegalArgumentException("bad serializeVersion provided.", VESPA_STRLOC);
-    }
 }
 
 DocumentUpdate::~DocumentUpdate() = default;
@@ -97,8 +85,7 @@ DocumentUpdate::addFieldPathUpdate(const FieldPathUpdate::CP& update) {
 }
 
 void
-DocumentUpdate::print(std::ostream& out, bool verbose,
-                      const std::string& indent) const
+DocumentUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "DocumentUpdate(";
     if (_type) {
@@ -196,19 +183,28 @@ namespace {
 
 // Deserialize the content of the given buffer into this document update.
 DocumentUpdate::UP
-DocumentUpdate::create42(const DocumentTypeRepo& repo, ByteBuffer& buffer)
+DocumentUpdate::create42(const DocumentTypeRepo& repo, vespalib::nbostream && stream)
 {
-    return std::make_unique<DocumentUpdate>(repo, buffer, SerializeVersion::SERIALIZE_42);
+    auto update = std::make_unique<DocumentUpdate>();
+    update->deserialize42(repo, std::move(stream));
+    return update;
 }
 
 DocumentUpdate::UP
 DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, ByteBuffer& buffer)
 {
-    return std::make_unique<DocumentUpdate>(repo, buffer, SerializeVersion::SERIALIZE_HEAD);
+    return createHEAD(repo, vespalib::nbostream(buffer.getBufferAtPos(), buffer.getRemaining()));
 }
 
+DocumentUpdate::UP
+DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream && stream)
+{
+    auto update = std::make_unique<DocumentUpdate>();
+    update->deserializeHEAD(repo, std::move(stream));
+    return update;
+}
 void
-DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, ByteBuffer& buffer)
+DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, vespalib::nbostream && stream)
 {
     int pos = buffer.getPos();
     try{
@@ -237,7 +233,7 @@ DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, ByteBuffer& buffer)
 }
 
 void
-DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, ByteBuffer &buffer)
+DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostream && stream)
 {
     int pos = buffer.getPos();
     try {
