@@ -7,7 +7,13 @@ import com.yahoo.vespa.http.client.config.SessionParams;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -109,6 +115,7 @@ public class CommandLineArgumentsTest {
         add("debugport", "7890");
         args.add("--verbose");
         args.add("--useTls");
+        add("header", "Header-Name: Header-Value");
         CommandLineArguments arguments = CommandLineArguments.build(asArray());
         SessionParams params = arguments.createSessionParams(true /* use json */);
         assertThat(params.getClientQueueSize(), is(3456));
@@ -116,11 +123,37 @@ public class CommandLineArgumentsTest {
         assertThat(params.getClusters().get(0).getEndpoints().get(0).getPort(), is(1234));
         assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(true));
         assertThat(params.getConnectionParams().getUseCompression(), is(true));
+        assertThat(params.getConnectionParams().getHeaders().size(), is(1));
         assertThat(params.getFeedParams().getRoute(), is("routeValue"));
         assertThat(params.getFeedParams().getDataFormat(), is(FeedParams.DataFormat.JSON_UTF8));
         assertThat(params.getFeedParams().getLocalQueueTimeOut(), is(2345000L));
         assertThat(params.getFeedParams().getMaxInFlightRequests(), is(3456));
         assertThat(params.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS), is(2345000L));
+    }
+
+    @Test
+    public void testAddingMultipleHttpHeaders() {
+        add("host", "hostValue");
+        String header1Name = "Header-Name-1";
+        String header1Value = "Header-Value";
+        add("header", header1Name + ": " + header1Value);
+        String header2Name = "Header-Name-2";
+        String header2Value = "Another-Header-Value";
+        add("header", header2Name + ": " + header2Value);
+
+        CommandLineArguments arguments = CommandLineArguments.build(asArray());
+        SessionParams params = arguments.createSessionParams(true /* use json */);
+
+        List<Map.Entry<String, String>> headers = new ArrayList<>(params.getConnectionParams().getHeaders());
+        headers.sort(Comparator.comparing(Map.Entry::getKey));
+
+        assertThat(headers.size(), is(2));
+        Map.Entry<String, String> actualHeader1 = headers.get(0);
+        assertThat(actualHeader1.getKey(), is(header1Name));
+        assertThat(actualHeader1.getValue(), is(header1Value));
+        Map.Entry<String, String> actualHeader2 = headers.get(1);
+        assertThat(actualHeader2.getKey(), is(header2Name));
+        assertThat(actualHeader2.getValue(), is(header2Value));
     }
 
     @Test
