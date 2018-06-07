@@ -16,13 +16,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-model</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <!-- Large, and installed separately as part of Vespa -->
-          <groupId>org.tensorflow</groupId>
-          <artifactId>libtensorflow_jni</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
