@@ -15,7 +15,8 @@ import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
 
 import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;
-import com.yahoo.vespa.config.server.tenant.TestWithTenant;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -33,12 +34,13 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Ulf Lilleengen
  */
-public class SessionFactoryTest extends TestWithTenant {
+public class SessionFactoryTest {
     private SessionFactory factory;
 
     @Before
     public void setup_test() {
-        factory = tenant.getSessionFactory();
+        TenantRepository tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().curator(new MockCurator()).build());
+        factory = tenantRepository.defaultTenant().getSessionFactory();
     }
 
     @Test

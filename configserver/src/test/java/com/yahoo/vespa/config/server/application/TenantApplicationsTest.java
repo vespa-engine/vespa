@@ -5,9 +5,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.MockReloadHandler;
-import com.yahoo.vespa.config.server.TestWithCurator;
 
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import org.apache.curator.framework.CuratorFramework;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -19,11 +22,19 @@ import static org.junit.Assert.*;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
-public class TenantApplicationsTest extends TestWithCurator {
+public class TenantApplicationsTest {
 
     private static final TenantName tenantName = TenantName.from("tenant");
+
+    private Curator curator;
+    private CuratorFramework curatorFramework;
+
+    @Before
+    public void setup() {
+        curator = new MockCurator();
+        curatorFramework = curator.framework();
+    }
 
     @Test
     public void require_that_applications_are_read_from_zookeeper() throws Exception {

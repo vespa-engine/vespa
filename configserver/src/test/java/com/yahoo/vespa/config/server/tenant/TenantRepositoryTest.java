@@ -8,9 +8,10 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.After;
 import org.junit.Before;
@@ -30,17 +31,20 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class TenantRepositoryTest extends TestWithCurator {
+public class TenantRepositoryTest {
+    private static final TenantName tenant1 = TenantName.from("tenant1");
+    private static final TenantName tenant2 = TenantName.from("tenant2");
+    private static final TenantName tenant3 = TenantName.from("tenant3");
+
     private TenantRepository tenantRepository;
     private TestComponentRegistry globalComponentRegistry;
     private TenantRequestHandlerTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
-    private final TenantName tenant1 = TenantName.from("tenant1");
-    private final TenantName tenant2 = TenantName.from("tenant2");
-    private final TenantName tenant3 = TenantName.from("tenant3");
+    private Curator curator;
 
     @Before
     public void setupSessions() {
+        curator = new MockCurator();
         globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();

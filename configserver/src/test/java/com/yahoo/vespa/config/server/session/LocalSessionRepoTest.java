@@ -6,13 +6,13 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 
+import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Ulf Lilleengen
  */
-public class LocalSessionRepoTest extends TestWithCurator {
+public class LocalSessionRepoTest {
 
     private File testApp = new File("src/test/apps/app");
     private LocalSessionRepo repo;
@@ -45,7 +45,7 @@ public class LocalSessionRepoTest extends TestWithCurator {
     }
 
     private void setupSessions(TenantName tenantName, boolean createInitialSessions) throws Exception {
-        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
+        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(new MockCurator()).build();
         TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
         if (createInitialSessions) {
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "1"));

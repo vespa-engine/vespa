@@ -13,12 +13,12 @@ import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,16 +32,17 @@ import java.util.function.LongPredicate;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
-public class RemoteSessionRepoTest extends TestWithCurator {
+public class RemoteSessionRepoTest {
 
     private static final TenantName tenantName = TenantName.defaultName();
 
     private RemoteSessionRepo remoteSessionRepo;
+    private Curator curator;
 
     @Before
-    public void setupFacade() throws Exception {
+    public void setupFacade() {
+        curator = new MockCurator();
         Tenant tenant = TenantBuilder.create(new TestComponentRegistry.Builder()
                                                      .curator(curator)
                                                      .build(),
@@ -75,7 +76,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
     }
 
     @Test
-    public void testCreateSession() throws Exception {
+    public void testCreateSession() {
         createSession(3l, true);
         assertSessionExists(3l);
     }
@@ -99,7 +100,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
     // repo even if it had bad data (by making getSessionIdForApplication() in FailingTenantApplications
     // throw an exception).
     @Test
-    public void testBadApplicationRepoOnActivate() throws Exception {
+    public void testBadApplicationRepoOnActivate() {
         long sessionId = 3L;
         TenantApplications applicationRepo = new FailingTenantApplications();
         TenantName mytenant = TenantName.from("mytenant");
@@ -116,7 +117,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
     private void assertStatusChange(long sessionId, Session.Status status) throws Exception {
         Path statePath = TenantRepository.getSessionsPath(tenantName).append("" + sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
         curator.create(statePath);
-        curatorFramework.setData().forPath(statePath.getAbsolute(), Utf8.toBytes(status.toString()));
+        curator.framework().setData().forPath(statePath.getAbsolute(), Utf8.toBytes(status.toString()));
         System.out.println("Setting status " + status + " for " + sessionId);
         assertSessionStatus(sessionId, status);
     }

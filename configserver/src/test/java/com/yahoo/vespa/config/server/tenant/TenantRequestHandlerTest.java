@@ -24,8 +24,6 @@ import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
-import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.provision.ApplicationId;
@@ -37,6 +35,8 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 
@@ -58,7 +58,7 @@ import static org.junit.Assert.*;
 /**
  * @author Ulf Lilleengen
  */
-public class TenantRequestHandlerTest extends TestWithCurator {
+public class TenantRequestHandlerTest {
 
     private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).getVersion();
     private TenantRequestHandler server;
@@ -67,6 +67,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     private File app2 = new File("src/test/apps/cs2");
     private TenantName tenant = TenantName.from("mytenant");
     private TestComponentRegistry componentRegistry;
+    private Curator curator;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -77,6 +78,8 @@ public class TenantRequestHandlerTest extends TestWithCurator {
 
     @Before
     public void setUp() throws IOException {
+        curator = new MockCurator();
+
         feedApp(app1, 1, defaultApp(), false);
         Metrics sh = Metrics.createTestMetrics();
         List<ReloadListener> listeners = new ArrayList<>();
@@ -86,10 +89,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     }
 
     private void feedApp(File appDir, long sessionId, ApplicationId appId, boolean  internalRedeploy) throws IOException {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
-                                                                TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)),
-                                                                new TestConfigDefinitionRepo(),
-                                                                "", Optional.empty());
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkc.writeApplicationId(appId);
         File app = tempFolder.newFolder();
         IOUtils.copyDirectory(appDir, app);
@@ -107,17 +107,14 @@ public class TenantRequestHandlerTest extends TestWithCurator {
                         AllocatedHosts.withHosts(Collections.emptySet()));
     }
 
-    private ApplicationSet reloadConfig(long id, Clock clock) {
-        return reloadConfig(id, "default", clock);
+    private ApplicationSet reloadConfig(long sessionId, Clock clock) {
+        return reloadConfig(sessionId, "default", clock);
     }
 
-    private ApplicationSet reloadConfig(long id, String application, Clock clock) {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
-                                                                TenantRepository.getSessionsPath(tenant).append(String.valueOf(id)),
-                                                                new TestConfigDefinitionRepo(),
-                                                                "", Optional.empty());
+    private ApplicationSet reloadConfig(long sessionId, String application, Clock clock) {
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkc.writeApplicationId(new ApplicationId.Builder().tenant(tenant).applicationName(application).build());
-        RemoteSession session = new RemoteSession(tenant, id, componentRegistry, zkc, clock);
+        RemoteSession session = new RemoteSession(tenant, sessionId, componentRegistry, zkc, clock);
         return session.ensureApplicationLoaded();
     }
 
@@ -207,10 +204,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     @Test
     public void testResolveForAppId() {
         long id = 1L;
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
-                                                                TenantRepository.getSessionsPath(tenant).append(String.valueOf(id)),
-                                                                new TestConfigDefinitionRepo(),
-                                                                "", Optional.empty());
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(id)));
         ApplicationId appId = new ApplicationId.Builder()
                               .tenant(tenant)
                               .applicationName("myapp").instanceName("myinst").build();
