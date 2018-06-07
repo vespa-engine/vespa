@@ -176,12 +176,17 @@ public class DocumentScriptTestCase {
             type.addField(new Field("structarray", structArray));
             structMap = new MapDataType(DataType.STRING, structType);
             type.addField(new Field("structmap", structMap));
+            type.addField(new Field("structfield", structType));
         }
 
-        FieldPathUpdate executeWithUpdate(String fieldName, FieldPathUpdate updateIn) {
+        DocumentUpdate executeWithUpdate(String fieldName, FieldPathUpdate updateIn) {
             DocumentUpdate update = new DocumentUpdate(type, "doc:scheme:");
             update.addFieldPathUpdate(updateIn);
-            update = newScript(type, fieldName).execute(ADAPTER_FACTORY, update);
+            return newScript(type, fieldName).execute(ADAPTER_FACTORY, update);
+        }
+
+        FieldPathUpdate executeWithUpdateAndExpectFieldPath(String fieldName, FieldPathUpdate updateIn) {
+            DocumentUpdate update = executeWithUpdate(fieldName, updateIn);
             assertEquals(1, update.getFieldPathUpdates().size());
             return update.getFieldPathUpdates().get(0);
         }
@@ -194,7 +199,7 @@ public class DocumentScriptTestCase {
         Struct newElemValue = new Struct(f.structType);
         newElemValue.setFieldValue("title", "iron moose 2, the moosening");
 
-        FieldPathUpdate updated = f.executeWithUpdate("structarray", new AssignFieldPathUpdate(f.type, "structarray[10]", newElemValue));
+        FieldPathUpdate updated = f.executeWithUpdateAndExpectFieldPath("structarray", new AssignFieldPathUpdate(f.type, "structarray[10]", newElemValue));
 
         assertTrue(updated instanceof AssignFieldPathUpdate);
         AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)updated;
@@ -209,12 +214,34 @@ public class DocumentScriptTestCase {
         Struct newElemValue = new Struct(f.structType);
         newElemValue.setFieldValue("title", "iron moose 3, moose in new york");
 
-        FieldPathUpdate updated = f.executeWithUpdate("structmap", new AssignFieldPathUpdate(f.type, "structmap{foo}", newElemValue));
+        FieldPathUpdate updated = f.executeWithUpdateAndExpectFieldPath("structmap", new AssignFieldPathUpdate(f.type, "structmap{foo}", newElemValue));
 
         assertTrue(updated instanceof AssignFieldPathUpdate);
         AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)updated;
         assertEquals("structmap{foo}", assignUpdate.getOriginalFieldPath());
         assertEquals(newElemValue, assignUpdate.getFieldValue());
+    }
+
+    @Test
+    public void nested_struct_fieldpath_update_is_not_converted_to_regular_field_value_update() {
+        FieldPathFixture f = new FieldPathFixture();
+
+        StringFieldValue newTitleValue = new StringFieldValue("iron moose 4, moose with a vengeance");
+        DocumentUpdate update = f.executeWithUpdate("structfield", new AssignFieldPathUpdate(f.type, "structfield.title", newTitleValue));
+
+        Document doc = new Document(f.type, "id:test:documentType::balle");
+        Struct s = new Struct(f.structType);
+        s.setFieldValue("title", new StringFieldValue("banan"));
+        doc.setFieldValue("structfield", s);
+
+        update.applyTo(doc);
+
+        assertEquals(1, update.getFieldPathUpdates().size());
+        assertEquals(0, update.getFieldUpdates().size());
+        assertTrue(update.getFieldPathUpdates().get(0) instanceof AssignFieldPathUpdate);
+        AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)update.getFieldPathUpdates().get(0);
+        assertEquals("structfield.title", assignUpdate.getOriginalFieldPath());
+        assertEquals(newTitleValue, assignUpdate.getFieldValue());
     }
 
     private static FieldValue processDocument(FieldValue fieldValue) {

@@ -20,19 +20,10 @@ public abstract class FieldPathUpdateHelper {
         if (!(update instanceof AssignFieldPathUpdate)) {
             return false;
         }
-        for (FieldPathEntry entry : update.getFieldPath()) {
-            switch (entry.getType()) {
-            case STRUCT_FIELD:
-            case MAP_ALL_KEYS:
-            case MAP_ALL_VALUES:
-                continue;
-            case ARRAY_INDEX:
-            case MAP_KEY:
-            case VARIABLE:
-                return false;
-            }
-        }
-        return true;
+        // Only consider field path updates that touch a top-level field as 'complete',
+        // as these may be converted to regular field value updates.
+        return ((update.getFieldPath().size() == 1)
+                && update.getFieldPath().get(0).getType() == FieldPathEntry.Type.STRUCT_FIELD);
     }
 
     public static void applyUpdate(FieldPathUpdate update, Document doc) {
