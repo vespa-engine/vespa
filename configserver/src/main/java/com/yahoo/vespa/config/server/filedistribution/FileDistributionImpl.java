@@ -10,7 +10,6 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -24,11 +23,12 @@ import java.util.logging.Logger;
 public class FileDistributionImpl implements FileDistribution {
     private final static Logger log = Logger.getLogger(FileDistributionImpl.class.getName());
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
     private final File fileReferencesDir;
 
-    public FileDistributionImpl(ConfigserverConfig configserverConfig) {
+    public FileDistributionImpl(ConfigserverConfig configserverConfig, Supervisor supervisor) {
         this.fileReferencesDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
+        this.supervisor = supervisor;
     }
 
     @Override

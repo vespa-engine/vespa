@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionImpl;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 
@@ -17,6 +19,7 @@ import java.io.File;
 public class FileDistributionFactory {
 
     private final ConfigserverConfig configserverConfig;
+    private final Supervisor supervisor = new Supervisor(new Transport());
 
     @Inject
     public FileDistributionFactory(ConfigserverConfig configserverConfig) {
@@ -24,7 +27,7 @@ public class FileDistributionFactory {
     }
 
     public FileDistributionProvider createProvider(File applicationPackage) {
-        return new FileDistributionProvider(applicationPackage, new FileDistributionImpl(configserverConfig));
+        return new FileDistributionProvider(applicationPackage, new FileDistributionImpl(configserverConfig, supervisor));
     }
 
 }
