@@ -597,25 +597,19 @@ ChangedBucketOwnershipHandlerTest::testAbortOutdatedPutOperation()
 void
 ChangedBucketOwnershipHandlerTest::testAbortOutdatedUpdateCommand()
 {
-    const document::DocumentType* docType(_testDocRepo.getTypeRepo()
-                                          .getDocumentType("testdoctype1"));
+    const document::DocumentType* docType(_testDocRepo.getTypeRepo().getDocumentType("testdoctype1"));
     document::DocumentId docId("id:foo:testdoctype1::bar");
-    document::DocumentUpdate::SP update(
-            std::make_shared<document::DocumentUpdate>(*docType, docId));
-    CPPUNIT_ASSERT(changeAbortsMessage<api::UpdateCommand>(
-            getBucketToAbort(), update, api::Timestamp(1234)));
-    CPPUNIT_ASSERT(!changeAbortsMessage<api::UpdateCommand>(
-            getBucketToAllow(), update, api::Timestamp(1234)));
+    auto update(std::make_shared<document::DocumentUpdate>(_testDocRepo.getTypeRepo(), *docType, docId));
+    CPPUNIT_ASSERT(changeAbortsMessage<api::UpdateCommand>(getBucketToAbort(), update, api::Timestamp(1234)));
+    CPPUNIT_ASSERT(!changeAbortsMessage<api::UpdateCommand>(getBucketToAllow(), update, api::Timestamp(1234)));
 }
 
 void
 ChangedBucketOwnershipHandlerTest::testAbortOutdatedRemoveCommand()
 {
     document::DocumentId docId("id:foo:testdoctype1::bar");
-    CPPUNIT_ASSERT(changeAbortsMessage<api::RemoveCommand>(
-            getBucketToAbort(), docId, api::Timestamp(1234)));
-    CPPUNIT_ASSERT(!changeAbortsMessage<api::RemoveCommand>(
-            getBucketToAllow(), docId, api::Timestamp(1234)));
+    CPPUNIT_ASSERT(changeAbortsMessage<api::RemoveCommand>(getBucketToAbort(), docId, api::Timestamp(1234)));
+    CPPUNIT_ASSERT(!changeAbortsMessage<api::RemoveCommand>(getBucketToAllow(), docId, api::Timestamp(1234)));
 }
 
 void

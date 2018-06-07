@@ -723,6 +723,7 @@ public:
 
     auto createUpdateCommand(const document::BucketId& bucket) const {
         auto update = std::make_shared<document::DocumentUpdate>(
+                _self._node->getTestDocMan().getTypeRepo(),
                 *_self._node->getTestDocMan().getTypeRepo()
                     .getDocumentType("testdoctype1"),
                 document::DocumentId("id:foo:testdoctype1::bar2"));

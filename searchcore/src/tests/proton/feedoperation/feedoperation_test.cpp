@@ -124,7 +124,7 @@ public:
     }
 
     auto makeUpdate() {
-        auto upd(std::make_shared<DocumentUpdate>(_docType, docId));
+        auto upd(std::make_shared<DocumentUpdate>(*_repo, _docType, docId));
         upd->addUpdate(FieldUpdate(upd->getType().getField("string")).
                        addUpdate(AssignValueUpdate(StringFieldValue("newval"))));
         return upd;
@@ -138,6 +138,7 @@ public:
 
 TEST("require that toString() on derived classes are meaningful")
 {
+    DocumentTypeRepo repo;
     BucketId bucket_id1(42);
     BucketId bucket_id2(43);
     BucketId bucket_id3(44);
@@ -148,7 +149,7 @@ TEST("require that toString() on derived classes are meaningful")
     MyStreamHandler stream_handler;
     DocumentIdT doc_id_limit = 15;
     DocumentId doc_id("doc:foo:bar");
-    DocumentUpdate::SP update(new DocumentUpdate(*DataType::DOCUMENT, doc_id));
+    DocumentUpdate::SP update(new DocumentUpdate(repo, *DataType::DOCUMENT, doc_id));
 
     EXPECT_EQUAL("DeleteBucket(BucketId(0x0000000000000000), serialNum=0)",
                  DeleteBucketOperation().toString());

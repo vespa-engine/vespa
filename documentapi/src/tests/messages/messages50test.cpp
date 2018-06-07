@@ -673,7 +673,7 @@ Messages50Test::testUpdateDocumentMessage()
     const DocumentTypeRepo &repo = getTypeRepo();
     const document::DocumentType &docType = *repo.getDocumentType("testdoc");
     document::DocumentUpdate::SP
-        upd(new document::DocumentUpdate(docType, document::DocumentId("doc:scheme:")));
+        upd(new document::DocumentUpdate(repo, docType, document::DocumentId("doc:scheme:")));
     upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
             new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
     UpdateDocumentMessage msg(upd);
@@ -703,21 +703,21 @@ Messages50Test::testBatchDocumentUpdateMessage()
 
     {
         document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(docType, document::DocumentId("userdoc:footype:1234:foo")));
+        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("userdoc:footype:1234:foo")));
         upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
                         new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
         msg.addUpdate(upd);
     }
     {
         document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(docType, document::DocumentId("orderdoc(32,17):footype:1234:123456789:foo")));
+        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("orderdoc(32,17):footype:1234:123456789:foo")));
         upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
                         new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
         msg.addUpdate(upd);
     }
     try {
         document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(docType, document::DocumentId("userdoc:footype:5678:foo")));
+        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("userdoc:footype:5678:foo")));
         upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
                         new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
         msg.addUpdate(upd);
@@ -726,7 +726,7 @@ Messages50Test::testBatchDocumentUpdateMessage()
     }
     try {
         document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(docType, document::DocumentId("groupdoc:footype:hable:foo")));
+        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("groupdoc:footype:hable:foo")));
         upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
                         new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
         msg.addUpdate(upd);

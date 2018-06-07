@@ -22,27 +22,45 @@ using namespace vespalib::xml;
 
 namespace document {
 
+namespace {
+
+nbostream
+reserialize(const DocumentUpdate & update)
+{
+    nbostream stream;
+    VespaDocumentSerializer serializer(stream);
+    serializer.writeHEAD(update);
+    return stream;
+}
+
+}
+
 // Declare content bits.
 static const unsigned char CONTENT_HASTYPE = 0x01;
 
-DocumentUpdate::DocumentUpdate(const DataType &type, const DocumentId& id)
+DocumentUpdate::DocumentUpdate(const DocumentTypeRepo & repo, const DataType &type, const DocumentId& id)
     : _documentId(id),
       _type(&type),
+      _repo(&repo),
+      _backing(),
       _updates(),
       _fieldPathUpdates(),
       _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false)
 {
     if (!type.getClass().inherits(DocumentType::classId)) {
-        throw IllegalArgumentException("Cannot generate a document with non-document type " + type.toString() + ".",
-                                       VESPA_STRLOC);
+        throw IllegalArgumentException("Cannot generate a document with non-document type " + type.toString() + ".", VESPA_STRLOC);
     }
+    serializeHeader();
 }
 
 DocumentUpdate::DocumentUpdate()
     : _documentId(),
       _type(DataType::DOCUMENT),
+      _repo(nullptr),
+      _backing(),
       _updates(),
+      _fieldPathUpdates(),
       _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false)
 {
@@ -50,10 +68,10 @@ DocumentUpdate::DocumentUpdate()
 
 DocumentUpdate::~DocumentUpdate() = default;
 
-
 bool
 DocumentUpdate::operator==(const DocumentUpdate& other) const
 {
+    ensureDeserialized();
     if (_documentId != other._documentId) return false;
     if (*_type != *other._type) return false;
     if (_updates.size() != other._updates.size()) return false;
@@ -73,21 +91,49 @@ DocumentUpdate::getType() const {
     return static_cast<const DocumentType &> (*_type);
 }
 
+const DocumentUpdate::FieldUpdateV &
+DocumentUpdate::getUpdates() const {
+    ensureDeserialized();
+    return _updates;
+}
+
+const DocumentUpdate::FieldPathUpdateV &
+DocumentUpdate::getFieldPathUpdates() const {
+    ensureDeserialized();
+    return _fieldPathUpdates;
+}
+
+void DocumentUpdate::lazyDeserialize(const DocumentTypeRepo & repo, nbostream & stream) {
+    size_t start(stream.rp());
+    deserializeHEAD(repo, stream);
+    stream.rp(start);
+}
+void DocumentUpdate::ensureDeserialized() const {
+    if (_updates.empty() && _fieldPathUpdates.empty()) {
+        const_cast<DocumentUpdate &>(*this).lazyDeserialize(*_repo, const_cast<nbostream &>(_backing));
+    }
+}
+
 DocumentUpdate&
 DocumentUpdate::addUpdate(const FieldUpdate& update) {
+    ensureDeserialized();
     _updates.push_back(update);
+    _backing = reserialize(*this);
     return *this;
 }
 
 DocumentUpdate&
 DocumentUpdate::addFieldPathUpdate(const FieldPathUpdate::CP& update) {
+    ensureDeserialized();
     _fieldPathUpdates.push_back(update);
+    _backing = reserialize(*this);
     return *this;
 }
 
 void
 DocumentUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
+    ensureDeserialized();
     out << "DocumentUpdate(";
     if (_type) {
         _type->print(out, verbose, indent + "    ");
@@ -118,6 +164,7 @@ DocumentUpdate::print(std::ostream& out, bool verbose, const std::string& indent
 void
 DocumentUpdate::applyTo(Document& doc) const
 {
+    ensureDeserialized();
     const DocumentType& type = doc.getType();
     if (_type->getName() != type.getName()) {
         string err = make_string("Can not apply a \"%s\" document update to a \"%s\" document.",
@@ -134,6 +181,17 @@ DocumentUpdate::applyTo(Document& doc) const
     for (const auto & update : _fieldPathUpdates) {
         update->applyTo(doc);
     }
+}
+
+void
+DocumentUpdate::serializeHeader() {
+    string id_string = _documentId.getScheme().toString();
+    _backing.write(id_string.data(), id_string.size());
+    _backing << static_cast<uint8_t>(0);
+    _backing.write(getType().getName().c_str(), getType().getName().size() + 1);
+    _backing << static_cast<uint16_t>(0);
+    _backing << static_cast<uint32_t>(0);
+    _backing << static_cast<uint32_t>(0);
 }
 
 void
@@ -265,6 +323,8 @@ DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, vespalib::nbostream 
 void
 DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostream & stream)
 {
+    _updates.clear();
+    _fieldPathUpdates.clear();
     size_t pos = stream.rp();
     try {
         _documentId = DocumentId(stream);
@@ -320,6 +380,7 @@ DocumentUpdate::deserializeFlags(int sizeAndFlags)
 void
 DocumentUpdate::printXml(XmlOutputStream& xos) const
 {
+    ensureDeserialized();
     xos << XmlTag("document")
         << XmlAttribute("type", _type->getName())
         << XmlAttribute("id", getId().toString());

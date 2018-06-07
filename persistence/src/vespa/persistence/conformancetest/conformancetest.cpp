@@ -897,10 +897,8 @@ void ConformanceTest::testUpdate() {
 
     const document::DocumentType *docType(
             testDocMan.getTypeRepo().getDocumentType("testdoctype1"));
-    document::DocumentUpdate::SP
-        update(new DocumentUpdate(*docType, doc1->getId()));
-    std::shared_ptr<document::AssignValueUpdate> assignUpdate(
-            new document::AssignValueUpdate(document::IntFieldValue(42)));
+    document::DocumentUpdate::SP update(new DocumentUpdate(testDocMan.getTypeRepo(), *docType, doc1->getId()));
+    std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(document::IntFieldValue(42)));
     document::FieldUpdate fieldUpdate(docType->getField("headerval"));
     fieldUpdate.addUpdate(*assignUpdate);
     update->addUpdate(fieldUpdate);

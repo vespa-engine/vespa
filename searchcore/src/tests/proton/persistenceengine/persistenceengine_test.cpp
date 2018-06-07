@@ -67,7 +67,8 @@ createDoc(const DocumentType &docType, const DocumentId &docId)
 document::DocumentUpdate::SP
 createUpd(const DocumentType& docType, const DocumentId &docId)
 {
-    return document::DocumentUpdate::SP(new document::DocumentUpdate(docType, docId));
+    static document::DocumentTypeRepo repo;
+    return document::DocumentUpdate::SP(new document::DocumentUpdate(repo, docType, docId));
 }
 
 storage::spi::ClusterState

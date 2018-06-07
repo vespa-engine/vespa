@@ -223,16 +223,11 @@ PersistenceTestUtils::doGetOnDisk(
 }
 
 document::DocumentUpdate::SP
-PersistenceTestUtils::createBodyUpdate(
-        const document::DocumentId& docId,
-        const document::FieldValue& updateValue)
+PersistenceTestUtils::createBodyUpdate(const document::DocumentId& docId, const document::FieldValue& updateValue)
 {
-    const DocumentType* docType(_env->_component.getTypeRepo()
-            ->getDocumentType("testdoctype1"));
-    document::DocumentUpdate::SP update(
-            new document::DocumentUpdate(*docType, docId));
-    std::shared_ptr<document::AssignValueUpdate> assignUpdate(
-            new document::AssignValueUpdate(updateValue));
+    const DocumentType* docType(_env->_component.getTypeRepo()->getDocumentType("testdoctype1"));
+    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_env->_component.getTypeRepo(), *docType, docId));
+    std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(updateValue));
     document::FieldUpdate fieldUpdate(docType->getField("content"));
     fieldUpdate.addUpdate(*assignUpdate);
     update->addUpdate(fieldUpdate);
@@ -240,16 +235,11 @@ PersistenceTestUtils::createBodyUpdate(
 }
 
 document::DocumentUpdate::SP
-PersistenceTestUtils::createHeaderUpdate(
-        const document::DocumentId& docId,
-        const document::FieldValue& updateValue)
+PersistenceTestUtils::createHeaderUpdate(const document::DocumentId& docId, const document::FieldValue& updateValue)
 {
-    const DocumentType* docType(_env->_component.getTypeRepo()
-            ->getDocumentType("testdoctype1"));
-    document::DocumentUpdate::SP update(
-            new document::DocumentUpdate(*docType, docId));
-    std::shared_ptr<document::AssignValueUpdate> assignUpdate(
-            new document::AssignValueUpdate(updateValue));
+    const DocumentType* docType(_env->_component.getTypeRepo()->getDocumentType("testdoctype1"));
+    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_env->_component.getTypeRepo(), *docType, docId));
+    std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(updateValue));
     document::FieldUpdate fieldUpdate(docType->getField("headerval"));
     fieldUpdate.addUpdate(*assignUpdate);
     update->addUpdate(fieldUpdate);

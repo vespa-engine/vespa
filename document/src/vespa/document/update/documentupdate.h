@@ -41,16 +41,6 @@ class Document;
  */
 class DocumentUpdate final : public Printable, public XmlSerializable
 {
-private:
-    /**
-     * Enum class containing the legal serialization version for
-     * document updates. This version is not encoded in the serialized
-     * document update.
-     */
-    enum class SerializeVersion {
-        SERIALIZE_42,  // old style format, before vespa 5.0
-        SERIALIZE_HEAD // new style format, since vespa 5.0
-    };
 public:
     typedef std::unique_ptr<DocumentUpdate> UP;
     typedef std::shared_ptr<DocumentUpdate> SP;
@@ -87,7 +77,7 @@ public:
      * @param type The document type that this update is applicable for.
      * @param id The identifier of the document that this update is created for.
      */
-    DocumentUpdate(const DataType &type, const DocumentId& id);
+    DocumentUpdate(const DocumentTypeRepo & repo, const DataType &type, const DocumentId& id);
 
     DocumentUpdate(const DocumentUpdate &) = delete;
     DocumentUpdate & operator = (const DocumentUpdate &) = delete;
@@ -119,10 +109,10 @@ public:
     DocumentUpdate& addFieldPathUpdate(const FieldPathUpdate::CP& update);
 
     /** @return The list of updates. */
-    const FieldUpdateV & getUpdates() const { return _updates; }
+    const FieldUpdateV & getUpdates() const;
 
     /** @return The list of fieldpath updates. */
-    const FieldPathUpdateV & getFieldPathUpdates() const { return _fieldPathUpdates; }
+    const FieldPathUpdateV & getFieldPathUpdates() const;
 
     /** @return The type of document this update is for. */
     const DocumentType& getType() const;
@@ -152,14 +142,14 @@ public:
     int16_t getVersion() const { return _version; }
 
 private:
-    DocumentId          _documentId; // The ID of the document to update.
-    const DataType     *_type; // The type of document this update is for.
-    DocumentTypeRepo   *_repo;
-    vespalib::nbostream _backing;
-    FieldUpdateV        _updates; // The list of field updates.
-    FieldPathUpdateV    _fieldPathUpdates;
-    int16_t             _version; // Serialization version
-    bool                _createIfNonExistent;
+    DocumentId              _documentId; // The ID of the document to update.
+    const DataType         *_type; // The type of document this update is for.
+    const DocumentTypeRepo *_repo;
+    vespalib::nbostream     _backing;
+    FieldUpdateV            _updates; // The list of field updates.
+    FieldPathUpdateV        _fieldPathUpdates;
+    int16_t                 _version; // Serialization version
+    bool                    _createIfNonExistent;
 
     int deserializeFlags(int sizeAndFlags);
     void init42(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
@@ -167,6 +157,9 @@ private:
     void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void deserialize42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void deserializeHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void lazyDeserialize(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void ensureDeserialized() const;
+    void serializeHeader();
 };
 
 } // document
