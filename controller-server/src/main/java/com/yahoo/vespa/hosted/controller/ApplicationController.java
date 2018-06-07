@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
@@ -410,7 +411,7 @@ public class ApplicationController {
                                                ", but does not include " +
                                                (deploymentsToRemove.size() > 1 ? "these zones" : "this zone") +
                                                " in deployment.xml. " +
-                                               application.get().validationOverrides().toAllowMessage(ValidationId.deploymentRemoval));
+                                               ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval));
 
         LockedApplication applicationWithRemoval = application;
         for (Deployment deployment : deploymentsToRemove)
