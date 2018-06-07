@@ -39,7 +39,7 @@ void
 FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone)
 {
-    if (_attributeWriter->getHasCompoundAttribute()) {
+    if (_attributeWriter->hasStructFieldAttribute()) {
         _attributeWriter->update(serialNum, *doc.get(), lid, immediateCommit, onWriteDone);
     }
 }

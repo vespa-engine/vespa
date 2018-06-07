@@ -26,10 +26,10 @@ using LidVector = LidVectorContext::LidVector;
 AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
     : _fieldPath(),
       _attribute(attribute),
-      _compoundAttribute(false)
+      _structFieldAttribute(false)
 {
     const vespalib::string &name = attribute.getName();
-    _compoundAttribute = name.find('.') != vespalib::string::npos;
+    _structFieldAttribute = name.find('.') != vespalib::string::npos;
 }
 
 AttributeWriter::WriteField::~WriteField() = default;
@@ -50,7 +50,7 @@ AttributeWriter::WriteField::buildFieldPath(const DocumentType &docType)
 AttributeWriter::WriteContext::WriteContext(uint32_t executorId)
     : _executorId(executorId),
       _fields(),
-      _hasCompoundAttribute(false)
+      _hasStructFieldAttribute(false)
 {
 }
 
@@ -65,8 +65,8 @@ void
 AttributeWriter::WriteContext::add(AttributeVector &attr)
 {
     _fields.emplace_back(attr);
-    if (_fields.back().getCompoundAttribute()) {
-        _hasCompoundAttribute = true;
+    if (_fields.back().isStructFieldAttribute()) {
+        _hasStructFieldAttribute = true;
     }
 }
 
@@ -238,7 +238,7 @@ PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, s
     const auto &fields = _wc.getFields();
     _fieldValues.reserve(fields.size());
     for (const auto &field : fields) {
-        if (_allAttributes || field.getCompoundAttribute()) {
+        if (_allAttributes || field.isStructFieldAttribute()) {
             FieldValue::UP fv = _fieldExtractor->getFieldValue(field.getFieldPath());
             _fieldValues.emplace_back(std::move(fv));
         }
@@ -255,7 +255,7 @@ PutTask::run()
     uint32_t fieldId = 0;
     const auto &fields = _wc.getFields();
     for (auto field : fields) {
-        if (_allAttributes || field.getCompoundAttribute()) {
+        if (_allAttributes || field.isStructFieldAttribute()) {
             AttributeVector &attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
                 applyPutToAttribute(_serialNum, _fieldValues[fieldId], _lid, _immediateCommit, attr, _onWriteDone);
@@ -393,8 +393,8 @@ AttributeWriter::setupWriteContexts()
         _writeContexts.back().add(*fc.getAttribute());
     }
     for (const auto &wc : _writeContexts) {
-        if (wc.getHasCompoundAttribute()) {
-            _hasCompoundAttribute = true;
+        if (wc.hasStructFieldAttribute()) {
+            _hasStructFieldAttribute = true;
         }
     }
 }
@@ -418,7 +418,7 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
     }
     auto extractor = std::make_shared<DocumentFieldExtractor>(doc);
     for (const auto &wc : _writeContexts) {
-        if (allAttributes || wc.getHasCompoundAttribute()) {
+        if (allAttributes || wc.hasStructFieldAttribute()) {
             auto putTask = std::make_unique<PutTask>(wc, serialNum, extractor, lid, immediateCommit, allAttributes, onWriteDone);
             _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(putTask));
         }
@@ -442,7 +442,7 @@ AttributeWriter::AttributeWriter(const proton::IAttributeManager::SP &mgr)
       _writableAttributes(mgr->getWritableAttributes()),
       _writeContexts(),
       _dataType(nullptr),
-      _hasCompoundAttribute(false)
+      _hasStructFieldAttribute(false)
 {
     setupWriteContexts();
 }
@@ -593,9 +593,9 @@ AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum)
 }
 
 bool
-AttributeWriter::getHasCompoundAttribute() const
+AttributeWriter::hasStructFieldAttribute() const
 {
-    return _hasCompoundAttribute;
+    return _hasStructFieldAttribute;
 }
 
 

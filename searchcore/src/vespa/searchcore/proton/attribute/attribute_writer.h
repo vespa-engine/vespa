@@ -27,20 +27,20 @@ public:
     {
         FieldPath        _fieldPath;
         AttributeVector &_attribute;
-        bool             _compoundAttribute; // in array/map of struct
+        bool             _structFieldAttribute; // in array/map of struct
     public:
         WriteField(AttributeVector &attribute);
         ~WriteField();
         AttributeVector &getAttribute() const { return _attribute; }
         const FieldPath &getFieldPath() const { return _fieldPath; }
         void buildFieldPath(const DocumentType &docType);
-        bool getCompoundAttribute() const { return _compoundAttribute; }
+        bool isStructFieldAttribute() const { return _structFieldAttribute; }
     };
     class WriteContext
     {
         uint32_t _executorId;
         std::vector<WriteField> _fields;
-        bool _hasCompoundAttribute;
+        bool _hasStructFieldAttribute;
     public:
         WriteContext(uint32_t executorId);
         WriteContext(WriteContext &&rhs);
@@ -50,12 +50,12 @@ public:
         void add(AttributeVector &attr);
         uint32_t getExecutorId() const { return _executorId; }
         const std::vector<WriteField> &getFields() const { return _fields; }
-        bool getHasCompoundAttribute() const { return _hasCompoundAttribute; }
+        bool hasStructFieldAttribute() const { return _hasStructFieldAttribute; }
     };
 private:
     std::vector<WriteContext> _writeContexts;
     const DataType           *_dataType;
-    bool                      _hasCompoundAttribute;
+    bool                      _hasStructFieldAttribute;
 
     void setupWriteContexts();
     void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
@@ -93,7 +93,7 @@ public:
     void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
 
     void onReplayDone(uint32_t docIdLimit) override;
-    bool getHasCompoundAttribute() const override;
+    bool hasStructFieldAttribute() const override;
 };
 
 } // namespace proton

@@ -48,7 +48,7 @@ public:
     virtual void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
                         bool immediateCommit, OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate) = 0;
     /*
-     * Update the underlying compound attributes based on updated document.
+     * Update the underlying struct field attributes based on updated document.
      */
     virtual void update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                         bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
@@ -66,7 +66,7 @@ public:
 
     virtual void onReplayDone(uint32_t docIdLimit) = 0;
 
-    virtual bool getHasCompoundAttribute() const = 0;
+    virtual bool hasStructFieldAttribute() const = 0;
 };
 
 } // namespace proton
