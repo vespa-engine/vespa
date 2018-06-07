@@ -229,13 +229,6 @@ public class DocumentScriptTestCase {
         StringFieldValue newTitleValue = new StringFieldValue("iron moose 4, moose with a vengeance");
         DocumentUpdate update = f.executeWithUpdate("structfield", new AssignFieldPathUpdate(f.type, "structfield.title", newTitleValue));
 
-        Document doc = new Document(f.type, "id:test:documentType::balle");
-        Struct s = new Struct(f.structType);
-        s.setFieldValue("title", new StringFieldValue("banan"));
-        doc.setFieldValue("structfield", s);
-
-        update.applyTo(doc);
-
         assertEquals(1, update.getFieldPathUpdates().size());
         assertEquals(0, update.getFieldUpdates().size());
         assertTrue(update.getFieldPathUpdates().get(0) instanceof AssignFieldPathUpdate);
