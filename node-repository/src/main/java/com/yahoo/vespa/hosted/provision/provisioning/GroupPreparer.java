@@ -9,7 +9,6 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.time.Clock;
 import java.util.List;
 
 /**
@@ -67,6 +66,7 @@ public class GroupPreparer {
                 allocation.offer(prioritizer.prioritize());
                 if (! allocation.fullfilled())
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
+                                                     " in " + application.toShortString() +
                                                      outOfCapacityDetails(allocation));
 
                 // Extend reservation for already reserved nodes
