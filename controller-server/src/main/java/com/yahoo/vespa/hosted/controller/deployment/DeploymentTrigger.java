@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -78,14 +77,11 @@ public class DeploymentTrigger {
     private final DeploymentOrder order;
     private final BuildService buildService;
 
-    public DeploymentTrigger(Controller controller, CuratorDb curator, BuildService buildService, Clock clock) {
-        Objects.requireNonNull(controller, "controller cannot be null");
-        Objects.requireNonNull(curator, "curator cannot be null");
-        Objects.requireNonNull(clock, "clock cannot be null");
-        this.controller = controller;
-        this.clock = clock;
+    public DeploymentTrigger(Controller controller, BuildService buildService, Clock clock) {
+        this.controller = Objects.requireNonNull(controller, "controller cannot be null");
+        this.buildService = Objects.requireNonNull(buildService, "buildService cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
         this.order = new DeploymentOrder(controller::system);
-        this.buildService = buildService;
     }
 
     public DeploymentOrder deploymentOrder() {
@@ -116,15 +112,15 @@ public class DeploymentTrigger {
                 triggering = JobRun.triggering(controller.systemVersion(), applicationVersion, Optional
                         .empty(), Optional.empty(), "Application commit", clock.instant());
                 if (report.success()) {
-                    if (acceptNewApplicationVersion(application))
-                        application = application.withChange(application.change().with(applicationVersion))
+                    if (acceptNewApplicationVersion(application.get()))
+                        application = application.withChange(application.get().change().with(applicationVersion))
                                                  .withOutstandingChange(Change.empty());
                     else
                         application = application.withOutstandingChange(Change.of(applicationVersion));
                 }
             }
             else {
-                triggering = application.deploymentJobs().statusOf(report.jobType()).flatMap(JobStatus::lastTriggered)
+                triggering = application.get().deploymentJobs().statusOf(report.jobType()).flatMap(JobStatus::lastTriggered)
                                         .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
                                                                                      report.applicationId() + ", but that has neither been triggered nor deployed"));
             }
@@ -132,7 +128,7 @@ public class DeploymentTrigger {
                                                         report.jobType(),
                                                         triggering.completion(report.buildNumber(), clock.instant()),
                                                         report.jobError());
-            application = application.withChange(remainingChange(application));
+            application = application.withChange(remainingChange(application.get()));
             applications().store(application);
         });
     }
@@ -216,9 +212,9 @@ public class DeploymentTrigger {
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if (application.changeAt(controller.clock().instant()).isPresent() && ! application.deploymentJobs().hasFailures())
+            if (application.get().changeAt(controller.clock().instant()).isPresent() && ! application.get().deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
-                                                   application.change() + " is already in progress");
+                                                   application.get().change() + " is already in progress");
             application = application.withChange(change);
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
@@ -230,7 +226,7 @@ public class DeploymentTrigger {
     /** Cancels a platform upgrade of the given application, and an application upgrade as well if {@code keepApplicationChange}. */
     public void cancelChange(ApplicationId applicationId, boolean keepApplicationChange) {
         applications().lockOrThrow(applicationId, application -> {
-            applications().store(application.withChange(application.change().application()
+            applications().store(application.withChange(application.get().change().application()
                                                                    .filter(__ -> keepApplicationChange)
                                                                    .map(Change::of)
                                                                    .orElse(Change.empty())));

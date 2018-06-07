@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -30,8 +29,7 @@ public class DeploymentOrder {
     private final Supplier<SystemName> system;
 
     public DeploymentOrder(Supplier<SystemName> system) {
-        Objects.requireNonNull(system, "system may not be null");
-        this.system = system;
+        this.system = Objects.requireNonNull(system, "system may not be null");
     }
 
     /** Returns jobs for given deployment spec, in the order they are declared */
@@ -46,25 +44,25 @@ public class DeploymentOrder {
     public List<JobStatus> sortBy(DeploymentSpec deploymentSpec, Collection<JobStatus> jobStatus) {
         List<DeploymentJobs.JobType> sortedJobs = jobsFrom(deploymentSpec);
         return jobStatus.stream()
-                .sorted(comparingInt(job -> sortedJobs.indexOf(job.type())))
-                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                        .sorted(comparingInt(job -> sortedJobs.indexOf(job.type())))
+                        .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
     /** Returns deployments sorted according to declared zones */
     public List<Deployment> sortBy(List<DeploymentSpec.DeclaredZone> zones, Collection<Deployment> deployments) {
         List<ZoneId> productionZones = zones.stream()
-                .filter(z -> z.region().isPresent())
-                .map(z -> ZoneId.from(z.environment(), z.region().get()))
-                .collect(toList());
+                                            .filter(z -> z.region().isPresent())
+                                            .map(z -> ZoneId.from(z.environment(), z.region().get()))
+                                            .collect(toList());
         return deployments.stream()
-                .sorted(comparingInt(deployment -> productionZones.indexOf(deployment.zone())))
-                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                          .sorted(comparingInt(deployment -> productionZones.indexOf(deployment.zone())))
+                          .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
     /** Resolve job from deployment step */
     public JobType toJob(DeploymentSpec.DeclaredZone zone) {
         return JobType.from(system.get(), zone.environment(), zone.region().orElse(null))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid zone " + zone));
+                      .orElseThrow(() -> new IllegalArgumentException("Invalid zone " + zone));
     }
 
 }

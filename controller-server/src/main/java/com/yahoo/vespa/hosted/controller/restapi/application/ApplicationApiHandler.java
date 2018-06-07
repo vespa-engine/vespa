@@ -678,7 +678,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         controller.applications().lockOrThrow(id, application -> {
-            controller.applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
+            controller.applications().deploymentTrigger().triggerChange(application.get().id(), Change.of(version));
         });
         return new MessageResponse("Triggered deployment of application '" + id + "' on version " + version);
     }

@@ -156,26 +156,26 @@ public class ApplicationSerializerTest {
         assertEquals(original.deployments().get(zone2).metrics().writeLatencyMillis(), serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
 
         { // test more deployment serialization cases
-            Application original2 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 42)));
+            Application original2 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 42))).get();
             Application serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
             assertEquals(original2.change(), serialized2.change());
             assertEquals(serialized2.change().application().get().source(),
                          original2.change().application().get().source());
 
-            Application original3 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42)));
+            Application original3 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
             Application serialized3 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original3));
             assertEquals(original3.change(), serialized3.change());
             assertEquals(serialized3.change().application().get().source(),
                          original3.change().application().get().source());
-            Application original4 = writable(original).withChange(Change.empty());
+            Application original4 = writable(original).withChange(Change.empty()).get();
             Application serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
             assertEquals(original4.change(), serialized4.change());
 
-            Application original5 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42)));
+            Application original5 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
             Application serialized5 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original5));
             assertEquals(original5.change(), serialized5.change());
 
-            Application original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42)));
+            Application original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
             Application serialized6 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original6));
             assertEquals(original6.outstandingChange(), serialized6.outstandingChange());
         }

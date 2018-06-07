@@ -26,17 +26,29 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
- * A combination of an application instance and a lock for that application. Provides methods for updating application
- * fields.
+ * An application that has been locked for modification. Provides methods for modifying an application's fields.
  *
  * @author mpolden
  * @author jvenstad
  */
-public class LockedApplication extends Application {
+public class LockedApplication {
+
+    private final Lock lock;
+    private final ApplicationId id;
+    private final DeploymentSpec deploymentSpec;
+    private final ValidationOverrides validationOverrides;
+    private final Map<ZoneId, Deployment> deployments;
+    private final DeploymentJobs deploymentJobs;
+    private final Change change;
+    private final Change outstandingChange;
+    private final Optional<IssueId> ownershipIssueId;
+    private final ApplicationMetrics metrics;
+    private final Optional<RotationId> rotation;
 
     /**
      * Used to create a locked application
@@ -44,38 +56,69 @@ public class LockedApplication extends Application {
      * @param application The application to lock.
      * @param lock The lock for the application.
      */
-    LockedApplication(Application application, @SuppressWarnings("unused") Lock lock) {
-        this(new Builder(application));
+    LockedApplication(Application application, Lock lock) {
+        this(Objects.requireNonNull(lock, "lock cannot be null"), application.id(),
+             application.deploymentSpec(), application.validationOverrides(),
+             application.deployments(),
+             application.deploymentJobs(), application.change(), application.outstandingChange(),
+             application.ownershipIssueId(), application.metrics(),
+             application.rotation().map(ApplicationRotation::id));
     }
 
-    private LockedApplication(Builder builder) {
-        super(builder.applicationId, builder.deploymentSpec, builder.validationOverrides,
-              builder.deployments, builder.deploymentJobs, builder.deploying,
-              builder.outstandingChange, builder.ownershipIssueId, builder.metrics, builder.rotation);
+    private LockedApplication(Lock lock, ApplicationId id,
+                              DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
+                              Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
+                              Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
+                              Optional<RotationId> rotation) {
+        this.lock = lock;
+        this.id = id;
+        this.deploymentSpec = deploymentSpec;
+        this.validationOverrides = validationOverrides;
+        this.deployments = deployments;
+        this.deploymentJobs = deploymentJobs;
+        this.change = change;
+        this.outstandingChange = outstandingChange;
+        this.ownershipIssueId = ownershipIssueId;
+        this.metrics = metrics;
+        this.rotation = rotation;
+    }
+
+    /** Returns a read-only copy of this */
+    public Application get() {
+        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs, change,
+                               outstandingChange, ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication withProjectId(OptionalLong projectId) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withProjectId(projectId)));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs.withProjectId(projectId), change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication withDeploymentIssueId(IssueId issueId) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().with(issueId)));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs.with(issueId), change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
-    public LockedApplication withJobCompletion(long projectId, JobType jobType, JobStatus.JobRun completion, Optional<DeploymentJobs.JobError> jobError) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(projectId, jobType, completion, jobError))
-        );
+    public LockedApplication withJobCompletion(long projectId, JobType jobType, JobStatus.JobRun completion,
+                                               Optional<DeploymentJobs.JobError> jobError) {
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs.withCompletion(projectId, jobType, completion, jobError),
+                                     change, outstandingChange, ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication withJobTriggering(JobType jobType, JobStatus.JobRun job) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(jobType, job)));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs.withTriggering(jobType, job), change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
                                                Instant instant) {
         // Use info from previous deployment if available, otherwise create a new one.
-        Deployment previousDeployment = deployments().getOrDefault(zone, new Deployment(zone, applicationVersion,
-                                                                                        version, instant));
+        Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
+                                                                                      version, instant));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
                                                   previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
@@ -85,146 +128,100 @@ public class LockedApplication extends Application {
     }
 
     public LockedApplication withClusterUtilization(ZoneId zone, Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization) {
-        Deployment deployment = deployments().get(zone);
+        Deployment deployment = deployments.get(zone);
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withClusterUtils(clusterUtilization));
     }
 
     public LockedApplication withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
-        Deployment deployment = deployments().get(zone);
+        Deployment deployment = deployments.get(zone);
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withClusterInfo(clusterInfo));
 
     }
 
     public LockedApplication recordActivityAt(Instant instant, ZoneId zone) {
-        Deployment deployment = deployments().get(zone);
+        Deployment deployment = deployments.get(zone);
         if (deployment == null) return this;
         return with(deployment.recordActivityAt(instant));
     }
 
     public LockedApplication with(ZoneId zone, DeploymentMetrics deploymentMetrics) {
-        Deployment deployment = deployments().get(zone);
+        Deployment deployment = deployments.get(zone);
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withMetrics(deploymentMetrics));
     }
 
     public LockedApplication withoutDeploymentIn(ZoneId zone) {
-        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(deployments());
+        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(this.deployments);
         deployments.remove(zone);
-        return new LockedApplication(new Builder(this).with(deployments));
+        return with(deployments);
     }
 
     public LockedApplication withoutDeploymentJob(DeploymentJobs.JobType jobType) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().without(jobType)));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs.without(jobType), change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication with(DeploymentSpec deploymentSpec) {
-        return new LockedApplication(new Builder(this).with(deploymentSpec));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication with(ValidationOverrides validationOverrides) {
-        return new LockedApplication(new Builder(this).with(validationOverrides));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication withChange(Change change) {
-        return new LockedApplication(new Builder(this).withChange(change));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication withOutstandingChange(Change outstandingChange) {
-        return new LockedApplication(new Builder(this).withOutstandingChange(outstandingChange));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication withOwnershipIssueId(IssueId issueId) {
-        return new LockedApplication(new Builder(this).withOwnershipIssueId(Optional.ofNullable(issueId)));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange,
+                                     Optional.ofNullable(issueId), metrics, rotation);
     }
 
     public LockedApplication with(MetricsService.ApplicationMetrics metrics) {
-        return new LockedApplication(new Builder(this).with(metrics));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
     }
 
     public LockedApplication with(RotationId rotation) {
-        return new LockedApplication(new Builder(this).with(rotation));
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange,
+                                     ownershipIssueId, metrics, Optional.of(rotation));
     }
 
     /** Don't expose non-leaf sub-objects. */
     private LockedApplication with(Deployment deployment) {
-        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(deployments());
+        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(this.deployments);
         deployments.put(deployment.zone(), deployment);
-        return new LockedApplication(new Builder(this).with(deployments));
+        return with(deployments);
     }
 
-    private static class Builder {
+    private LockedApplication with(Map<ZoneId, Deployment> deployments) {
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
+    }
 
-        private final ApplicationId applicationId;
-        private DeploymentSpec deploymentSpec;
-        private ValidationOverrides validationOverrides;
-        private Map<ZoneId, Deployment> deployments;
-        private DeploymentJobs deploymentJobs;
-        private Change deploying;
-        private Change outstandingChange;
-        private Optional<IssueId> ownershipIssueId;
-        private ApplicationMetrics metrics;
-        private Optional<RotationId> rotation;
-
-        private Builder(Application application) {
-            this.applicationId = application.id();
-            this.deploymentSpec = application.deploymentSpec();
-            this.validationOverrides = application.validationOverrides();
-            this.deployments = application.deployments();
-            this.deploymentJobs = application.deploymentJobs();
-            this.deploying = application.change();
-            this.outstandingChange = application.outstandingChange();
-            this.ownershipIssueId = application.ownershipIssueId();
-            this.metrics = application.metrics();
-            this.rotation = application.rotation().map(ApplicationRotation::id);
-        }
-
-        private Builder with(DeploymentSpec deploymentSpec) {
-            this.deploymentSpec = deploymentSpec;
-            return this;
-        }
-
-        private Builder with(ValidationOverrides validationOverrides) {
-            this.validationOverrides = validationOverrides;
-            return this;
-        }
-
-        private Builder with(Map<ZoneId, Deployment> deployments) {
-            this.deployments = deployments;
-            return this;
-        }
-
-        private Builder with(DeploymentJobs deploymentJobs) {
-            this.deploymentJobs = deploymentJobs;
-            return this;
-        }
-
-        private Builder withChange(Change deploying) {
-            this.deploying = deploying;
-            return this;
-        }
-
-        private Builder withOutstandingChange(Change outstandingChange) {
-            this.outstandingChange = outstandingChange;
-            return this;
-        }
-
-        private Builder withOwnershipIssueId(Optional<IssueId> ownershipIssueId) {
-            this.ownershipIssueId = ownershipIssueId;
-            return this;
-        }
-
-        private Builder with(ApplicationMetrics metrics) {
-            this.metrics = metrics;
-            return this;
-        }
-
-        private Builder with(RotationId rotation) {
-            this.rotation = Optional.of(rotation);
-            return this;
-        }
-
+    @Override
+    public String toString() {
+        return "application '" + id + "'";
     }
 
 }
