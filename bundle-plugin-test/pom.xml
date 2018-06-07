@@ -48,6 +48,14 @@
       <artifactId>scala-library</artifactId>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <!-- Added to verify that module-info.class can be handled by bundle-plugin without throwing an exception. -->
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+      <version>2.3.0</version>
+    </dependency>
+
   </dependencies>
   <build>
     <plugins>

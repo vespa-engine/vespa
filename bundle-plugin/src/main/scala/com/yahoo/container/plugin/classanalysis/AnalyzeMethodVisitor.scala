@@ -8,7 +8,7 @@ import org.objectweb.asm._
  * @author  tonytv
  */
 private class AnalyzeMethodVisitor(val analyzeClassVisitor : AnalyzeClassVisitor)
-  extends MethodVisitor(Opcodes.ASM5) with AnnotationVisitorTrait with AttributeVisitorTrait with SubVisitorTrait {
+  extends MethodVisitor(Opcodes.ASM6) with AnnotationVisitorTrait with AttributeVisitorTrait with SubVisitorTrait {
 
 
   override def visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean): AnnotationVisitor = super.visitParameterAnnotation(parameter, desc, visible)

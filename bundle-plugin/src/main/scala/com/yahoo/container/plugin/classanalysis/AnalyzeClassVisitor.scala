@@ -9,7 +9,7 @@ import collection.mutable
  * Picks up classes used in class files.
  * @author  tonytv
  */
-private class AnalyzeClassVisitor extends ClassVisitor(Opcodes.ASM5) with AnnotationVisitorTrait with AttributeVisitorTrait {
+private class AnalyzeClassVisitor extends ClassVisitor(Opcodes.ASM6) with AnnotationVisitorTrait with AttributeVisitorTrait {
   private var name : String = null
   protected val imports : ImportsSet = mutable.Set()
   protected var exportPackageAnnotation: Option[ExportPackageAnnotation] = None
@@ -32,7 +32,7 @@ private class AnalyzeClassVisitor extends ClassVisitor(Opcodes.ASM5) with Annota
     imports ++= getClassName(Type.getType(desc)).toList
 
     AnalyzeSignatureVisitor.analyzeField(signature, this)
-    new FieldVisitor(Opcodes.ASM5) with SubVisitorTrait with AttributeVisitorTrait with AnnotationVisitorTrait {
+    new FieldVisitor(Opcodes.ASM6) with SubVisitorTrait with AttributeVisitorTrait with AnnotationVisitorTrait {
       val analyzeClassVisitor = AnalyzeClassVisitor.this
 
       override def visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor = super.visitAnnotation(desc, visible)
@@ -68,7 +68,7 @@ private class AnalyzeClassVisitor extends ClassVisitor(Opcodes.ASM5) with Annota
   def visitExportPackage(): AnnotationVisitor = {
     def defaultVersionValue[T](name: String) = classOf[Version].getMethod(name).getDefaultValue().asInstanceOf[T]
 
-    new AnnotationVisitor(Opcodes.ASM5) {
+    new AnnotationVisitor(Opcodes.ASM6) {
       var major: Int = defaultVersionValue("major")
       var minor: Int = defaultVersionValue("minor")
       var micro: Int = defaultVersionValue("micro")

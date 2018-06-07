@@ -8,7 +8,10 @@ package object classanalysis {
   type ImportsSet = mutable.Set[String]
 
   def internalNameToClassName(internalClassName: String) : Option[String] = {
-    getClassName(Type.getObjectType(internalClassName))
+    internalClassName match {
+      case null => None
+      case _ => getClassName(Type.getObjectType(internalClassName))
+    }
   }
 
   def getClassName(aType: Type): Option[String] = {
