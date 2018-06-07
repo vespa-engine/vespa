@@ -276,8 +276,8 @@ public class StorageMaintainer {
      */
     public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node, boolean force) {
         // Sample number of coredumps on the host
-        try {
-            numberOfCoredumpsOnHost.sample(Files.list(environment.pathInNodeAdminToDoneCoredumps()).count());
+        try (Stream<Path> files = Files.list(environment.pathInNodeAdminToDoneCoredumps())) {
+            numberOfCoredumpsOnHost.sample(files.count());
         } catch (IOException e) {
             // Ignore for now - this is either test or a misconfiguration
         }
