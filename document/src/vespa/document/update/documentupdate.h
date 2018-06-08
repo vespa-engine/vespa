@@ -55,7 +55,7 @@ public:
     /**
      * Create new style document update, possibly with field path updates.
      */
-    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream stream);
     static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, ByteBuffer & buffer);
 
     /**

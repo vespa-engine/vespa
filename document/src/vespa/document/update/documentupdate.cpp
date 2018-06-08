@@ -249,7 +249,7 @@ DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, ByteBuffer& buffer)
 }
 
 DocumentUpdate::UP
-DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream && stream)
+DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream stream)
 {
     auto update = std::make_unique<DocumentUpdate>();
     update->initHEAD(repo, std::move(stream));
