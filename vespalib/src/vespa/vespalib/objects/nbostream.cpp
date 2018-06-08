@@ -74,6 +74,8 @@ nbostream::nbostream(nbostream && rhs) noexcept
     if (!_longLivedBuffer && (_wbuf.capacity() == 0)) {
         _wbuf.resize(roundUp2inN(_rbuf.size()));
         memcpy(&_wbuf[0], &_rbuf[_rp], size());
+        _wp = size();
+        _rp = 0;
         _rbuf = ConstBufferRef(&_wbuf[0], _wbuf.capacity());
     }
 }
