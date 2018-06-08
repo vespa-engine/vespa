@@ -168,7 +168,7 @@ namespace {
 
 template <typename ExtractorFunc>
 std::unique_ptr<FieldValue>
-getMapFieldValue(const FieldValue *outerFieldValue, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
+extractFieldFromMap(const FieldValue *outerFieldValue, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
 {
     if (outerFieldValue != nullptr && checkInherits(*outerFieldValue, MapFieldValue::classId)) {
         const auto outerMap = static_cast<const MapFieldValue *>(outerFieldValue);
@@ -184,7 +184,7 @@ getMapFieldValue(const FieldValue *outerFieldValue, const FieldPathEntry &innerE
 
 template <typename CollectionFieldValueT, typename ExtractorFunc>
 std::unique_ptr<FieldValue>
-extractArrayFromStructCollection(const FieldValue *outerFieldValue, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
+extractFieldFromStructCollection(const FieldValue *outerFieldValue, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
 {
     if (outerFieldValue != nullptr && checkInherits(*outerFieldValue, CollectionFieldValueT::classId)) {
         const auto *outerCollection = static_cast<const CollectionFieldValueT *>(outerFieldValue);
@@ -205,30 +205,30 @@ extractArrayFromStructCollection(const FieldValue *outerFieldValue, const FieldP
 }
 
 std::unique_ptr<FieldValue>
-DocumentFieldExtractor::getStructArrayFieldValue(const FieldPath &fieldPath)
+DocumentFieldExtractor::extractFieldFromStructArray(const FieldPath &fieldPath)
 {
-    return extractArrayFromStructCollection<ArrayFieldValue>(getCachedFieldValue(fieldPath[0]), fieldPath[1],
+    return extractFieldFromStructCollection<ArrayFieldValue>(getCachedFieldValue(fieldPath[0]), fieldPath[1],
                                                              [](const auto *elem){ return elem; });
 }
 
 std::unique_ptr<FieldValue>
-DocumentFieldExtractor::getMapKeyFieldValue(const FieldPath &fieldPath)
+DocumentFieldExtractor::extractKeyFieldFromMap(const FieldPath &fieldPath)
 {
-    return getMapFieldValue(getCachedFieldValue(fieldPath[0]), fieldPath[1],
-                            [](const auto &elem){ return elem.first; });
+    return extractFieldFromMap(getCachedFieldValue(fieldPath[0]), fieldPath[1],
+                               [](const auto &elem){ return elem.first; });
 }
 
 std::unique_ptr<document::FieldValue>
-DocumentFieldExtractor::getPrimitiveMapFieldValue(const FieldPath &fieldPath)
+DocumentFieldExtractor::extractValueFieldFromPrimitiveMap(const FieldPath &fieldPath)
 {
-    return getMapFieldValue(getCachedFieldValue(fieldPath[0]), fieldPath[1],
-                            [](const auto &elem){ return elem.second; });
+    return extractFieldFromMap(getCachedFieldValue(fieldPath[0]), fieldPath[1],
+                               [](const auto &elem){ return elem.second; });
 }
 
 std::unique_ptr<document::FieldValue>
-DocumentFieldExtractor::getStructMapFieldValue(const FieldPath &fieldPath)
+DocumentFieldExtractor::extractValueFieldFromStructMap(const FieldPath &fieldPath)
 {
-    return extractArrayFromStructCollection<MapFieldValue>(getCachedFieldValue(fieldPath[0]), fieldPath[2],
+    return extractFieldFromStructCollection<MapFieldValue>(getCachedFieldValue(fieldPath[0]), fieldPath[2],
                                                            [](const auto *elem){ return elem->second; });
 }
 
@@ -240,14 +240,14 @@ DocumentFieldExtractor::getFieldValue(const FieldPath &fieldPath)
     } else if (fieldPath.size() == 2) {
         auto lastElemType = fieldPath[1].getType();
         if (lastElemType == FieldPathEntry::Type::STRUCT_FIELD) {
-            return getStructArrayFieldValue(fieldPath);
+            return extractFieldFromStructArray(fieldPath);
         } else if (lastElemType == FieldPathEntry::Type::MAP_ALL_KEYS) {
-            return getMapKeyFieldValue(fieldPath);
+            return extractKeyFieldFromMap(fieldPath);
         } else {
-            return getPrimitiveMapFieldValue(fieldPath);
+            return extractValueFieldFromPrimitiveMap(fieldPath);
         }
     } else if (fieldPath.size() == 3) {
-        return getStructMapFieldValue(fieldPath);
+        return extractValueFieldFromStructMap(fieldPath);
     }
     return std::unique_ptr<FieldValue>();
 }
