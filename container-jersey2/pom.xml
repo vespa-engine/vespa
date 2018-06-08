@@ -53,10 +53,6 @@
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
