@@ -94,9 +94,9 @@ struct AttributeManagerFixture
 AttributeManagerFixture::AttributeManagerFixture()
     : mgr()
 {
-    buildStringAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}});
-    buildIntegerAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}});
-    buildFloatAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }});
+    buildStringAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
+    buildIntegerAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
+    buildFloatAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
 }
 
 AttributeManagerFixture::~AttributeManagerFixture() = default;
@@ -210,6 +210,7 @@ TEST_F("require that attributes combiner dfw generates correct slime output for 
     f.assertWritten("[ { fval: 120.0, name: \"n2\", val: 20}, { fval: 121.0, val: 21 }]", 2);
     f.assertWritten("[ { fval: 130.0, name: \"n3.1\", val: 30}, { fval: 131.0, name: \"n3.2\"} ]", 3);
     f.assertWritten("[ { }, { fval: 141.0, name: \"n4.2\", val:  41} ]", 4);
+    f.assertWritten("null", 5);
 }
 
 }

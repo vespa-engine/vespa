@@ -54,6 +54,9 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
             elems = writer->size();
         }
     }
+    if (elems == 0) {
+        return;
+    }
     Cursor &arr = target.insertArray();
     for (uint32_t idx = 0; idx < elems; ++idx) {
         Cursor &obj = arr.addObject();
