@@ -28,7 +28,8 @@ class DocumentFieldExtractor
     const document::FieldValue *getCachedFieldValue(const document::FieldPathEntry &fieldPathEntry);
     std::unique_ptr<document::FieldValue> getSimpleFieldValue(const document::FieldPath &fieldPath);
     std::unique_ptr<document::FieldValue> getStructArrayFieldValue(const document::FieldPath &fieldPath);
-    std::unique_ptr<document::FieldValue> getStructMapKeyFieldValue(const document::FieldPath &fieldPath);
+    std::unique_ptr<document::FieldValue> getMapKeyFieldValue(const document::FieldPath &fieldPath);
+    std::unique_ptr<document::FieldValue> getPrimitiveMapFieldValue(const document::FieldPath &fieldPath);
     std::unique_ptr<document::FieldValue> getStructMapFieldValue(const document::FieldPath &fieldPath);
 
 public:

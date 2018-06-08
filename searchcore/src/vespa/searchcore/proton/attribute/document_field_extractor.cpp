@@ -11,12 +11,10 @@
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/fieldvalue/shortfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/mapfieldvalue.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
 
 using document::FieldValue;
 using document::ByteFieldValue;
@@ -132,7 +130,8 @@ DocumentFieldExtractor::isSupported(const FieldPath &fieldPath)
     }
     if (fieldPath.size() == 2) {
         if (fieldPath[1].getType() != FieldPathEntry::Type::STRUCT_FIELD &&
-            fieldPath[1].getType() != FieldPathEntry::Type::MAP_ALL_KEYS) {
+            fieldPath[1].getType() != FieldPathEntry::Type::MAP_ALL_KEYS &&
+            fieldPath[1].getType() != FieldPathEntry::Type::MAP_ALL_VALUES) {
             return false;
         }
     } else if (fieldPath.size() == 3) {
@@ -186,20 +185,38 @@ DocumentFieldExtractor::getStructArrayFieldValue(const FieldPath &fieldPath)
     return std::unique_ptr<FieldValue>();
 }
 
+namespace {
+
+template <typename ExtractorFunc>
 std::unique_ptr<FieldValue>
-DocumentFieldExtractor::getStructMapKeyFieldValue(const FieldPath &fieldPath)
+getMapFieldValue(const FieldValue *outerFieldValue, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
 {
-    const auto outerFieldValue = getCachedFieldValue(fieldPath[0]);
     if (outerFieldValue != nullptr && checkInherits(*outerFieldValue, MapFieldValue::classId)) {
         const auto outerMap = static_cast<const MapFieldValue *>(outerFieldValue);
-        auto array = makeArray(fieldPath[1], outerMap->size());
+        auto array = makeArray(innerEntry, outerMap->size());
         uint32_t arrayIndex = 0;
         for (const auto &mapElem : *outerMap) {
-            (*array)[arrayIndex++].assign(*mapElem.first);
+            (*array)[arrayIndex++].assign(*extractor(mapElem));
         }
         return array;
     }
     return std::unique_ptr<FieldValue>();
+}
+
+}
+
+std::unique_ptr<FieldValue>
+DocumentFieldExtractor::getMapKeyFieldValue(const FieldPath &fieldPath)
+{
+    return getMapFieldValue(getCachedFieldValue(fieldPath[0]), fieldPath[1],
+                            [](const auto &elem){ return elem.first; });
+}
+
+std::unique_ptr<document::FieldValue>
+DocumentFieldExtractor::getPrimitiveMapFieldValue(const FieldPath &fieldPath)
+{
+    return getMapFieldValue(getCachedFieldValue(fieldPath[0]), fieldPath[1],
+                            [](const auto &elem){ return elem.second; });
 }
 
 std::unique_ptr<document::FieldValue>
@@ -229,10 +246,13 @@ DocumentFieldExtractor::getFieldValue(const FieldPath &fieldPath)
     if (fieldPath.size() == 1) {
         return getSimpleFieldValue(fieldPath);
     } else if (fieldPath.size() == 2) {
-        if (fieldPath[1].getType() == FieldPathEntry::Type::STRUCT_FIELD) {
+        auto lastElemType = fieldPath[1].getType();
+        if (lastElemType == FieldPathEntry::Type::STRUCT_FIELD) {
             return getStructArrayFieldValue(fieldPath);
+        } else if (lastElemType == FieldPathEntry::Type::MAP_ALL_KEYS) {
+            return getMapKeyFieldValue(fieldPath);
         } else {
-            return getStructMapKeyFieldValue(fieldPath);
+            return getPrimitiveMapFieldValue(fieldPath);
         }
     } else if (fieldPath.size() == 3) {
         return getStructMapFieldValue(fieldPath);
