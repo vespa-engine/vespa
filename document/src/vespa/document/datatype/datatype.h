@@ -129,6 +129,9 @@ public:
      */
     void buildFieldPath(FieldPath & fieldPath, const vespalib::stringref & remainFieldName) const;
 
+    /** @throws FieldNotFoundException if field does not exist. */
+    virtual const Field& getField(int fieldId) const;
+
     DECLARE_IDENTIFIABLE_ABSTRACT(DataType);
 private:
     virtual void onBuildFieldPath(FieldPath & fieldPath, const vespalib::stringref & remainFieldName) const = 0;
