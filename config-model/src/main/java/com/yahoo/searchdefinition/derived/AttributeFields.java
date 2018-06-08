@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
+import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfPrimitiveType;
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
 
 /**
@@ -45,7 +46,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     @Override
     protected void derive(ImmutableSDField field, Search search) {
         if (unsupportedFieldType(field)) {
-            return; // Ignore majority of struct fields for indexed search (only implemented for streaming search)
+            return; // Ignore complex struct and map fields for indexed search (only supported for streaming search)
         }
         if (field.isImportedField()) {
             deriveImportedAttributes(field);
@@ -53,6 +54,8 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             deriveArrayOfSimpleStruct(field);
         } else if (isMapOfSimpleStruct(field)) {
             deriveMapOfSimpleStruct(field);
+        } else if (isMapOfPrimitiveType(field)) {
+            deriveMapOfPrimitiveType(field);
         } else {
             deriveAttributes(field);
         }
@@ -62,6 +65,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return (field.usesStructOrMap() &&
                 !isArrayOfSimpleStruct(field) &&
                 !isMapOfSimpleStruct(field) &&
+                !isMapOfPrimitiveType(field) &&
                 !field.getDataType().equals(PositionDataType.INSTANCE) &&
                 !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)));
     }
@@ -113,31 +117,31 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     private void deriveArrayOfSimpleStruct(ImmutableSDField field) {
         for (ImmutableSDField structField : field.getStructFields()) {
-            deriveAttributesAsArrayType(structField);
+            deriveAttributeAsArrayType(structField);
         }
     }
 
-    private void deriveAttributesAsArrayType(ImmutableSDField field) {
-        for (Attribute attribute : field.getAttributes().values()) {
-            if (field.getName().equals(attribute.getName())) {
-                attributes.put(attribute.getName(), attribute.convertToArray());
-            }
+    private void deriveAttributeAsArrayType(ImmutableSDField field) {
+        Attribute attribute = field.getAttributes().get(field.getName());
+        if (attribute != null) {
+            attributes.put(attribute.getName(), attribute.convertToArray());
         }
     }
 
     private void deriveMapOfSimpleStruct(ImmutableSDField field) {
-        deriveMapKeyField(field.getStructField("key"));
+        deriveAttributeAsArrayType(field.getStructField("key"));
         deriveMapValueField(field.getStructField("value"));
-    }
-
-    private void deriveMapKeyField(ImmutableSDField keyField) {
-        deriveAttributesAsArrayType(keyField);
     }
 
     private void deriveMapValueField(ImmutableSDField valueField) {
         for (ImmutableSDField structField : valueField.getStructFields()) {
-            deriveAttributesAsArrayType(structField);
+            deriveAttributeAsArrayType(structField);
         }
+    }
+
+    private void deriveMapOfPrimitiveType(ImmutableSDField field) {
+        deriveAttributeAsArrayType(field.getStructField("key"));
+        deriveAttributeAsArrayType(field.getStructField("value"));
     }
 
     /** Returns a read only attribute iterator */

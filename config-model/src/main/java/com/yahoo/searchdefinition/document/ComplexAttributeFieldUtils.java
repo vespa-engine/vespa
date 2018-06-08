@@ -39,6 +39,17 @@ public class ComplexAttributeFieldUtils {
         }
     }
 
+    public static boolean isMapOfPrimitiveType(ImmutableSDField field) {
+        DataType fieldType = field.getDataType();
+        if (fieldType instanceof MapDataType) {
+            MapDataType mapType = (MapDataType)fieldType;
+            return isPrimitiveType(mapType.getKeyType()) &&
+                    isPrimitiveType(mapType.getValueType());
+        } else {
+            return false;
+        }
+    }
+
     private static boolean isSimpleStruct(DataType type) {
         if (type instanceof StructDataType &&
                 !(type.equals(PositionDataType.INSTANCE))) {
@@ -69,6 +80,9 @@ public class ComplexAttributeFieldUtils {
         } else if (isMapOfSimpleStruct(field)) {
             return hasSingleAttribute(field.getStructField("key")) &&
                     hasOnlyStructFieldAttributes(field.getStructField("value"));
+        } else if (isMapOfPrimitiveType(field)) {
+            return hasSingleAttribute(field.getStructField("key")) &&
+                    hasSingleAttribute(field.getStructField("value"));
         }
         return false;
     }

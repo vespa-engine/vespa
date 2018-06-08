@@ -36,8 +36,7 @@ using document::FieldValue;
 using document::FieldNotFoundException;
 using proton::DocumentFieldExtractor;
 
-namespace
-{
+namespace {
 
 const ArrayDataType arrayTypeInt(*DataType::INT);
 const ArrayDataType arrayTypeString(*DataType::STRING);
@@ -333,6 +332,41 @@ TEST_F("require that struct map field gives array values", StructMapFixture)
     TEST_DO(f.assertExtracted("s.key", makeStringArray({ "m0", "m1", "m2", "m3" })));
     TEST_DO(f.assertExtracted("s.value.weight", makeIntArray({ 10, 11, noInt, noInt })));
     TEST_DO(f.assertExtracted("s.value.name", makeStringArray({ "name10", noString, "name12", noString })));
+}
+
+struct PrimitiveMapFixture : public FixtureBase
+{
+    MapDataType mapFieldType;
+    Field mapField;
+    using MapVector = std::vector<std::pair<vespalib::string, int>>;
+
+    PrimitiveMapFixture()
+        : FixtureBase(false),
+          mapFieldType(nameField.getDataType(), weightField.getDataType()),
+          mapField("map", mapFieldType, true)
+    {
+        type.addField(mapField);
+    }
+
+    std::unique_ptr<MapFieldValue> makeMap(const MapVector &input) {
+        auto result = std::make_unique<MapFieldValue>(mapFieldType);
+        for (const auto &elem : input) {
+            result->put(StringFieldValue(elem.first), IntFieldValue(elem.second));
+        }
+        return result;
+    }
+
+    void makeDoc(const MapVector &input) {
+        FixtureBase::makeDoc()->setValue(mapField, *makeMap(input));
+    }
+
+};
+
+TEST_F("require that primitive map field gives array values", PrimitiveMapFixture)
+{
+    f.makeDoc({ {"foo", 10}, {"", 20}, {"bar", noInt} });
+    TEST_DO(f.assertExtracted("map.key", makeStringArray({ "foo", "", "bar" })));
+    TEST_DO(f.assertExtracted("map.value", makeIntArray({ 10, 20, noInt })));
 }
 
 TEST_F("require that unknown field gives null value", FixtureBase(false))

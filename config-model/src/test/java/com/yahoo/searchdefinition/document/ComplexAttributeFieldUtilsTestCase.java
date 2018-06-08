@@ -8,6 +8,7 @@ import org.junit.Test;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
+import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfPrimitiveType;
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -61,6 +62,7 @@ public class ComplexAttributeFieldUtilsTestCase {
                         "  struct-field value.weight { indexing: attribute }",
                         "}"));
         assertTrue(isMapOfSimpleStruct(field));
+        assertFalse(isMapOfPrimitiveType(field));
         assertTrue(isComplexFieldWithOnlyStructFieldAttributes(field));
     }
 
@@ -68,22 +70,61 @@ public class ComplexAttributeFieldUtilsTestCase {
     public void map_of_struct_with_some_struct_field_attributes_is_tagged_as_such() throws ParseException {
         {
             ImmutableSDField field = createField("elem_map",
-                    joinLines("field elem_map type map<string, elem> {",
+                    joinLines("field elem_map type map<int, elem> {",
                             "  indexing: summary",
                             "  struct-field value.name { indexing: attribute }",
                             "  struct-field value.weight { indexing: attribute }",
                             "}"));
             assertTrue(isMapOfSimpleStruct(field));
+            assertFalse(isMapOfPrimitiveType(field));
             assertFalse(isComplexFieldWithOnlyStructFieldAttributes(field));
         }
         {
             ImmutableSDField field = createField("elem_map",
-                    joinLines("field elem_map type map<string, elem> {",
+                    joinLines("field elem_map type map<int, elem> {",
                             "  indexing: summary",
                             "  struct-field key { indexing: attribute }",
                             "  struct-field value.weight { indexing: attribute }",
                             "}"));
             assertTrue(isMapOfSimpleStruct(field));
+            assertFalse(isMapOfPrimitiveType(field));
+            assertFalse(isComplexFieldWithOnlyStructFieldAttributes(field));
+        }
+    }
+
+    @Test
+    public void map_of_primitive_type_with_only_struct_field_attributes_is_tagged_as_such() throws ParseException {
+         ImmutableSDField field = createField("str_map",
+                 joinLines("field str_map type map<string, string> {",
+                         "  indexing: summary",
+                         "  struct-field key { indexing: attribute }",
+                         "  struct-field value { indexing: attribute }",
+                         "}"));
+         assertTrue(isMapOfPrimitiveType(field));
+         assertFalse(isMapOfSimpleStruct(field));
+         assertTrue(isComplexFieldWithOnlyStructFieldAttributes(field));
+    }
+
+    @Test
+    public void map_of_primitive_type_with_some_struct_field_attributes_is_tagged_as_such() throws ParseException {
+        {
+            ImmutableSDField field = createField("int_map",
+                    joinLines("field int_map type map<int, int> {",
+                            "  indexing: summary",
+                            "  struct-field key { indexing: attribute }",
+                            "}"));
+            assertTrue(isMapOfPrimitiveType(field));
+            assertFalse(isMapOfSimpleStruct(field));
+            assertFalse(isComplexFieldWithOnlyStructFieldAttributes(field));
+        }
+        {
+            ImmutableSDField field = createField("int_map",
+                    joinLines("field int_map type map<int, int> {",
+                            "  indexing: summary",
+                            "  struct-field value { indexing: attribute }",
+                            "}"));
+            assertTrue(isMapOfPrimitiveType(field));
+            assertFalse(isMapOfSimpleStruct(field));
             assertFalse(isComplexFieldWithOnlyStructFieldAttributes(field));
         }
     }

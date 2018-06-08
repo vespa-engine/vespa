@@ -70,7 +70,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void array_of_struct_field_is_derived_into_array_attributes() throws IOException, ParseException {
+    public void fields_in_array_of_struct_are_derived_into_array_attributes() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
@@ -80,13 +80,15 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void map_of_struct_field_is_derived_into_array_attributes() throws IOException, ParseException {
+    public void fields_in_map_of_struct_are_derived_into_array_attributes() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
-        assertAttribute("elem_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("elem_map.value.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("str_elem_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("str_elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("str_elem_map.value.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("int_elem_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("int_elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
         assertTrue(!attributes.hasNext());
     }
 
@@ -109,6 +111,17 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
         assertAttribute("pos_array_zcurve", Attribute.Type.LONG, Attribute.CollectionType.ARRAY, attributes.next());
+        assertTrue(!attributes.hasNext());
+    }
+
+    @Test
+    public void fields_in_map_of_primitive_are_derived_into_array_attributes() throws IOException, ParseException {
+        Search search = SearchBuilder.buildFromFile("src/test/derived/map_attribute/test.sd");
+        Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
+
+        assertAttribute("str_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("str_map.value", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("int_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
         assertTrue(!attributes.hasNext());
     }
 

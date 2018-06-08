@@ -1,0 +1,19 @@
+search test {
+  document test {
+    field str_map type map<string, string> {
+      indexing: summary 
+      struct-field key {
+        indexing: attribute
+      }
+      struct-field value {
+        indexing: attribute
+      }
+    }  
+    field int_map type map<int, int> {
+      indexing: summary 
+      struct-field key {
+        indexing: attribute
+      }
+    }  
+  }
+}
