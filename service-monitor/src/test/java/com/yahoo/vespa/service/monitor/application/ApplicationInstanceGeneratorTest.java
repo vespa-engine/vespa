@@ -37,6 +37,7 @@ public class ApplicationInstanceGeneratorTest {
         when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.NOT_CHECKED);
         ConfigserverConfig config = ConfigserverUtil.create(
                 true,
+                true,
                 configServer1,
                 configServer2,
                 configServer3);

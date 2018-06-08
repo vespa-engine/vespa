@@ -21,7 +21,11 @@ public class DuperModel {
     private final List<ApplicationInfo> staticApplicationInfos = new ArrayList<>();
 
     public DuperModel(ConfigserverConfig configServerConfig) {
-        staticApplicationInfos.add(CONFIG_SERVER_APPLICATION.makeApplicationInfo(configServerConfig));
+        // Single-tenant applications have the config server as part of the application model.
+        // TODO: Add health monitoring for config server when part of application model.
+        if (configServerConfig.multitenant()) {
+            staticApplicationInfos.add(CONFIG_SERVER_APPLICATION.makeApplicationInfo(configServerConfig));
+        }
     }
 
     /** For testing. */

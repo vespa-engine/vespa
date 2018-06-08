@@ -12,19 +12,26 @@ public class ConfigserverUtil {
     /** Create a ConfigserverConfig with the given settings. */
     public static ConfigserverConfig create(
             boolean nodeAdminInContainer,
+            boolean multitenant,
             String configServerHostname1,
             String configServerHostname2,
             String configServerHostname3) {
         return new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
                         .nodeAdminInContainer(nodeAdminInContainer)
+                        .multitenant(multitenant)
                         .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServerHostname1).port(1))
                         .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServerHostname2).port(2))
                         .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServerHostname3).port(3)));
     }
 
-    public static ConfigserverConfig createExampleConfigserverConfig(boolean nodeAdminInContainer) {
-        return create(nodeAdminInContainer, "cfg1", "cfg2", "cfg3");
+    public static ConfigserverConfig createExampleConfigserverConfig() {
+        return create(true, true, "cfg1", "cfg2", "cfg3");
+    }
+
+    public static ConfigserverConfig createExampleConfigserverConfig(boolean nodeAdminInContainer,
+                                                                     boolean multitenant) {
+        return create(nodeAdminInContainer, multitenant, "cfg1", "cfg2", "cfg3");
     }
 
     public static ApplicationInfo makeConfigServerApplicationInfo(
@@ -32,6 +39,7 @@ public class ConfigserverUtil {
             String configServerHostname2,
             String configServerHostname3) {
         return ConfigServerApplication.CONFIG_SERVER_APPLICATION.makeApplicationInfo(create(
+                true,
                 true,
                 configServerHostname1,
                 configServerHostname2,

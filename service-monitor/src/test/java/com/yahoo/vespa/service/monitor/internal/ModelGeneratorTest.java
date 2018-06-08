@@ -35,8 +35,7 @@ public class ModelGeneratorTest {
     public void toApplicationModel() throws Exception {
         SuperModel superModel = ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
 
-        ConfigserverConfig config = ConfigserverUtil.create(
-                true, "cfg1", "cfg2", "cfg3");
+        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
         DuperModel duperModel = new DuperModel(config);
         ModelGenerator modelGenerator = new ModelGenerator();
 

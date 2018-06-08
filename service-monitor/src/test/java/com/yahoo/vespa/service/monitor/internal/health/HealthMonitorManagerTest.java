@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class HealthMonitorManagerTest {
     @Test
     public void addRemove() {
-        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig(true);
+        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
         HealthMonitorManager manager = new HealthMonitorManager(config);
         ApplicationInfo applicationInfo = ConfigserverUtil.makeExampleConfigServer();
         manager.applicationActivated(applicationInfo);
@@ -25,7 +25,7 @@ public class HealthMonitorManagerTest {
 
     @Test
     public void withNodeAdmin() {
-        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig(true);
+        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
         HealthMonitorManager manager = new HealthMonitorManager(config);
         ServiceStatus status = manager.getStatus(
                 ZoneApplication.ZONE_APPLICATION_ID,
@@ -37,7 +37,7 @@ public class HealthMonitorManagerTest {
 
     @Test
     public void withHostAdmin() {
-        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig(false);
+        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig(false, true);
         HealthMonitorManager manager = new HealthMonitorManager(config);
         ServiceStatus status = manager.getStatus(
                 ZoneApplication.ZONE_APPLICATION_ID,

@@ -27,7 +27,7 @@ public class DuperModelTest {
     @Test
     public void toApplicationInstance() {
         when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.NOT_CHECKED);
-        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig(true);
+        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
         DuperModel duperModel = new DuperModel(config);
         SuperModel superModel = mock(SuperModel.class);
         ApplicationInfo superModelApplicationInfo = mock(ApplicationInfo.class);
@@ -36,5 +36,18 @@ public class DuperModelTest {
         assertEquals(2, applicationInfos.size());
         assertEquals(ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId(), applicationInfos.get(0).getApplicationId());
         assertSame(superModelApplicationInfo, applicationInfos.get(1));
+    }
+
+    @Test
+    public void toApplicationInstanceInSingleTenantMode() {
+        when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.NOT_CHECKED);
+        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
+        DuperModel duperModel = new DuperModel(config);
+        SuperModel superModel = mock(SuperModel.class);
+        ApplicationInfo superModelApplicationInfo = mock(ApplicationInfo.class);
+        when(superModel.getAllApplicationInfos()).thenReturn(Collections.singletonList(superModelApplicationInfo));
+        List<ApplicationInfo> applicationInfos = duperModel.getApplicationInfos(superModel);
+        assertEquals(1, applicationInfos.size());
+        assertSame(superModelApplicationInfo, applicationInfos.get(0));
     }
 }
