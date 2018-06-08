@@ -70,7 +70,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void array_of_struct_field_is_derived_into_array_attributes() throws IOException, ParseException {
+    public void fields_in_array_of_struct_are_derived_into_array_attributes() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
@@ -80,7 +80,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void map_of_struct_fields_are_derived_into_array_attributes() throws IOException, ParseException {
+    public void fields_in_map_of_struct_are_derived_into_array_attributes() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
@@ -115,7 +115,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void map_of_primitive_fields_are_derived_into_array_attributes() throws IOException, ParseException {
+    public void fields_in_map_of_primitive_are_derived_into_array_attributes() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/derived/map_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
