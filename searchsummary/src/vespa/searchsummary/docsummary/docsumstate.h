@@ -23,6 +23,7 @@ namespace search::docsummary {
 class GetDocsumsState;
 class IDocsumEnvironment;
 class KeywordExtractor;
+class DocsumFieldWriterState;
 
 class GetDocsumsStateCallback
 {
@@ -70,6 +71,7 @@ public:
     char                         _docSumFieldSpaceStore[2048];
     std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;
     std::vector<const search::attribute::IAttributeVector *> _attributes;
+    std::vector<std::unique_ptr<DocsumFieldWriterState>> _fieldWriterStates;
     vespalib::JSONStringer        _jsonStringer;
 
     // used by AbsDistanceDFW

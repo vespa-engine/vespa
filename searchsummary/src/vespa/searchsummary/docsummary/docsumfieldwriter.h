@@ -40,6 +40,7 @@ public:
     }
     void setIndex(size_t v) { _index = v; }
     size_t getIndex() const { return _index; }
+    virtual bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex);
 private:
     size_t _index;
     static const vespalib::string _empty;

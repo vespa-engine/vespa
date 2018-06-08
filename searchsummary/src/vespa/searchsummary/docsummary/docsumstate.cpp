@@ -4,6 +4,7 @@
 #include <vespa/juniper/rpinterface.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/location.h>
+#include "docsum_field_writer_state.h"
 
 namespace search {
 namespace docsummary {
@@ -19,6 +20,7 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _docSumFieldSpace(_docSumFieldSpaceStore, sizeof(_docSumFieldSpaceStore)), // only alloc buffer if needed
       _attrCtx(),
       _attributes(),
+      _fieldWriterStates(),
       _jsonStringer(),
       _parsedLocation(),
       _summaryFeatures(NULL),

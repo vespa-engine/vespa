@@ -2,6 +2,7 @@
 
 #include "docsumwriter.h"
 #include "docsumstate.h"
+#include "docsum_field_writer_state.h"
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
@@ -76,7 +77,6 @@ DynamicDocsumWriter::resolveInputClass(ResolveClassInfo &rci, uint32_t id) const
         rci.outputClassInfo = rci.inputClass->getDynamicInfo();
     }
 }
-
 
 static void convertEntry(GetDocsumsState *state,
                          const ResConfigEntry *resCfg,
@@ -194,6 +194,7 @@ DynamicDocsumWriter::DynamicDocsumWriter( ResultConfig *config, KeywordExtractor
       _defaultOutputClass(ResultConfig::NoClassID()),
       _numClasses(config->GetNumResultClasses()),
       _numEnumValues(config->GetFieldNameEnum().GetNumEntries()),
+      _numFieldWriterStates(0),
       _classInfoTable(nullptr),
       _overrideTable(nullptr)
 {
@@ -267,6 +268,9 @@ DynamicDocsumWriter::Override(const char *fieldName, IDocsumFieldWriter *writer)
 
     writer->setIndex(fieldEnumValue);
     _overrideTable[fieldEnumValue] = writer;
+    if (writer->setFieldWriterStateIndex(_numFieldWriterStates)) {
+        ++_numFieldWriterStates;
+    }
 
     for (ResultConfig::iterator it(_resultConfig->begin()), mt(_resultConfig->end()); it != mt; it++) {
 
@@ -288,6 +292,7 @@ DynamicDocsumWriter::InitState(IAttributeManager & attrMan, GetDocsumsState *sta
     state->_kwExtractor = _keywordExtractor;
     state->_attrCtx = attrMan.createContext();
     state->_attributes.resize(_numEnumValues);
+    state->_fieldWriterStates.resize(_numFieldWriterStates);
     for (size_t i(0); i < state->_attributes.size(); i++) {
         const IDocsumFieldWriter *fw = _overrideTable[i];
         if (fw) {
