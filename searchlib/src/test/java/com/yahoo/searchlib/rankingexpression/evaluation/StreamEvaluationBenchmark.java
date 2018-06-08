@@ -147,11 +147,6 @@ public class StreamEvaluationBenchmark {
         new StreamEvaluationBenchmark().run();
     }
 
-    private void assertEqualish(double a,double b) {
-        if (Math.abs(a-b) >= Math.abs((a+b)/100000000) )
-            throw new RuntimeException("Expected value " + a + " but optimized evaluation produced " + b);
-    }
-    
     private void bindStreamingFeatures(Map<String, Double> featureItem, Context context) {
         for (Map.Entry<String, Double> feature : featureItem.entrySet())
             context.put(feature.getKey(), feature.getValue());

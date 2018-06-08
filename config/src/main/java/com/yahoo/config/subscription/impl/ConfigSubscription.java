@@ -204,7 +204,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
 
     void setInternalRedeploy(boolean internalRedeploy) {
         ConfigState<T> prev = config.get();
-        this.config.set(new ConfigState<>(prev.isGenerationChanged(), prev.getGeneration(), prev.isConfigChanged(), internalRedeploy, prev.getConfig()));
+        this.config.set(new ConfigState<>(prev.isGenerationChanged(), prev.getGeneration(), internalRedeploy, prev.isConfigChanged(), prev.getConfig()));
     }
 
     /**
