@@ -30,7 +30,8 @@ public:
 ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector<vespalib::string> &fieldNames,
                                                                const std::vector<vespalib::string> &attributeNames,
                                                                IAttributeContext &context)
-    : DocsumFieldWriterState()
+    : DocsumFieldWriterState(),
+      _writers()
 {
     size_t fields = fieldNames.size();
     _writers.reserve(fields);
