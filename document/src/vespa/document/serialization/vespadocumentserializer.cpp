@@ -439,6 +439,10 @@ void VespaDocumentSerializer::write42(const DocumentUpdate &value)
 
 void VespaDocumentSerializer::writeHEAD(const DocumentUpdate &value)
 {
+    if (!value._needHardReserialize) {
+        _stream.write(value._backing.peek(), value._backing.size());
+        return;
+    }
     write(value.getId());
     _stream.write(value.getType().getName().c_str(), value.getType().getName().size() + 1);
     _stream << static_cast<uint16_t>(0);

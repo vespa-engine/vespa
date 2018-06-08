@@ -134,6 +134,7 @@ private:
     FieldPathUpdateV        _fieldPathUpdates;
     const int16_t           _version; // Serialization version
     bool                    _createIfNonExistent;
+    bool                    _needHardReserialize;
 
     int deserializeFlags(int sizeAndFlags);
     void init42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
@@ -144,6 +145,7 @@ private:
     void lazyDeserialize(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void ensureDeserialized() const;
     void serializeHeader();
+    void reserialize();
     void deserializeHeader(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     friend VespaDocumentSerializer;
 };

@@ -22,19 +22,6 @@ using namespace vespalib::xml;
 
 namespace document {
 
-namespace {
-
-nbostream
-reserialize(const DocumentUpdate & update)
-{
-    nbostream stream;
-    VespaDocumentSerializer serializer(stream);
-    serializer.writeHEAD(update);
-    return stream;
-}
-
-}
-
 // Declare content bits.
 static const unsigned char CONTENT_HASTYPE = 0x01;
 
@@ -46,7 +33,8 @@ DocumentUpdate::DocumentUpdate(const DocumentTypeRepo & repo, const DataType &ty
       _updates(),
       _fieldPathUpdates(),
       _version(Document::getNewestSerializationVersion()),
-      _createIfNonExistent(false)
+      _createIfNonExistent(false),
+      _needHardReserialize(false)
 {
     if (!type.getClass().inherits(DocumentType::classId)) {
         throw IllegalArgumentException("Cannot generate a document with non-document type " + type.toString() + ".", VESPA_STRLOC);
@@ -62,7 +50,8 @@ DocumentUpdate::DocumentUpdate()
       _updates(),
       _fieldPathUpdates(),
       _version(Document::getNewestSerializationVersion()),
-      _createIfNonExistent(false)
+      _createIfNonExistent(false),
+      _needHardReserialize(false)
 {
 }
 
@@ -107,7 +96,7 @@ DocumentUpdate&
 DocumentUpdate::addUpdate(const FieldUpdate& update) {
     ensureDeserialized();
     _updates.push_back(update);
-    _backing = reserialize(*this);
+    reserialize();
     return *this;
 }
 
@@ -115,7 +104,7 @@ DocumentUpdate&
 DocumentUpdate::addFieldPathUpdate(const FieldPathUpdate::CP& update) {
     ensureDeserialized();
     _fieldPathUpdates.push_back(update);
-    _backing = reserialize(*this);
+    reserialize();
     return *this;
 }
 
@@ -123,7 +112,7 @@ void
 DocumentUpdate::setCreateIfNonExistent(bool value) {
     ensureDeserialized();
     _createIfNonExistent = value;
-    _backing = reserialize(*this);
+    reserialize();
 }
 
 bool
@@ -272,7 +261,7 @@ DocumentUpdate::init42(const DocumentTypeRepo & repo, vespalib::nbostream & stre
 {
     _repo = &repo;
     deserialize42(repo, stream);
-    _backing = reserialize(*this);
+    reserialize();
 }
 void
 DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream)
@@ -409,6 +398,17 @@ DocumentUpdate::printXml(XmlOutputStream& xos) const
         xos << XmlEndTag();
     }
     xos << XmlEndTag();
+}
+
+void
+DocumentUpdate::reserialize()
+{
+    nbostream stream;
+    VespaDocumentSerializer serializer(stream);
+    _needHardReserialize = true;
+    serializer.writeHEAD(*this);
+    _backing = std::move(stream);
+    _needHardReserialize = false;
 }
 
 }
