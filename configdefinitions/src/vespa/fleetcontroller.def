@@ -153,7 +153,7 @@ min_node_ratio_per_group double default=0.0
 ## This config specifies the maximum time a task can be held in this queue
 ## before being automatically failed out, if a version has not been ACKed
 ## within this duration.
-max_deferred_task_version_wait_time_sec double default=30.0
+max_deferred_task_version_wait_time_sec double default=5.0
 
 ## Switch to enable multiple bucket spaces in cluster controller.
 enable_multiple_bucket_spaces bool default=false
