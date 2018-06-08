@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
@@ -9,7 +11,7 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.client.InstanceCsrGenerator;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
@@ -19,9 +21,9 @@ import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import javax.net.ssl.SSLContext;
@@ -38,7 +40,6 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Set;
 
 import static java.util.Collections.singleton;
 
@@ -53,12 +54,15 @@ public class AthenzCredentialsMaintainer {
     private static final Duration REFRESH_PERIOD = Duration.ofDays(1);
     private static final Path CONTAINER_SIA_DIRECTORY = Paths.get("/var/lib/sia");
 
+    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
     private final boolean enabled;
     private final PrefixLogger log;
     private final String hostname;
     private final Path trustStorePath;
     private final Path privateKeyFile;
     private final Path certificateFile;
+    private final Path identityDocumentFile;
     private final AthenzService containerIdentity;
     private final URI ztsEndpoint;
     private final Clock clock;
@@ -66,8 +70,6 @@ public class AthenzCredentialsMaintainer {
     private final IdentityDocumentClient identityDocumentClient;
     private final InstanceCsrGenerator csrGenerator;
     private final AthenzService configserverIdentity;
-    private final String zoneRegion;
-    private final String zoneEnvironment;
 
     public AthenzCredentialsMaintainer(String hostname,
                                        Environment environment,
@@ -82,8 +84,9 @@ public class AthenzCredentialsMaintainer {
         this.configserverIdentity = environment.getConfigserverAthenzIdentity();
         this.csrGenerator = new InstanceCsrGenerator(environment.getCertificateDnsSuffix());
         this.trustStorePath = environment.getTrustStorePath();
-        this.privateKeyFile = getPrivateKeyFile(containerSiaDirectory, containerIdentity);
-        this.certificateFile = getCertificateFile(containerSiaDirectory, containerIdentity);
+        this.privateKeyFile = SiaUtils.getPrivateKeyFile(containerSiaDirectory, containerIdentity);
+        this.certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, containerIdentity);
+        this.identityDocumentFile = containerSiaDirectory.resolve("vespa-node-identity-document.json");
         this.hostIdentityProvider = hostIdentityProvider;
         this.identityDocumentClient =
                 new DefaultIdentityDocumentClient(
@@ -91,15 +94,12 @@ public class AthenzCredentialsMaintainer {
                         hostIdentityProvider,
                         new AthenzIdentityVerifier(singleton(configserverIdentity)));
         this.clock = Clock.systemUTC();
-        this.zoneRegion = environment.getRegion();
-        this.zoneEnvironment = environment.getEnvironment();
     }
 
     /**
-     * @param nodeSpec Node specification
      * @return Returns true if credentials were updated
      */
-    public boolean converge(NodeSpec nodeSpec) {
+    public boolean converge() {
         try {
             if (!enabled) {
                 log.debug("Feature disabled on this host - not fetching certificate");
@@ -107,26 +107,25 @@ public class AthenzCredentialsMaintainer {
             }
             log.debug("Checking certificate");
             Instant now = clock.instant();
-            VespaUniqueInstanceId instanceId = getVespaUniqueInstanceId(nodeSpec);
-            Set<String> ipAddresses = nodeSpec.getIpAddresses();
-            if (!Files.exists(privateKeyFile) || !Files.exists(certificateFile)) {
-                log.info("Certificate and/or private key file does not exist");
+            if (!Files.exists(privateKeyFile) || !Files.exists(certificateFile) || !Files.exists(identityDocumentFile)) {
+                log.info("Certificate/private key/identity document file does not exist");
                 Files.createDirectories(privateKeyFile.getParent());
                 Files.createDirectories(certificateFile.getParent());
-                registerIdentity(instanceId, ipAddresses);
+                Files.createDirectories(identityDocumentFile.getParent());
+                registerIdentity();
                 return true;
             }
             X509Certificate certificate = readCertificateFromFile();
             Instant expiry = certificate.getNotAfter().toInstant();
             if (isCertificateExpired(expiry, now)) {
                 log.info(String.format("Certificate has expired (expiry=%s)", expiry.toString()));
-                registerIdentity(instanceId, ipAddresses);
+                registerIdentity();
                 return true;
             }
             Duration age = Duration.between(certificate.getNotBefore().toInstant(), now);
             if (shouldRefreshCredentials(age)) {
                 log.info(String.format("Certificate is ready to be refreshed (age=%s)", age.toString()));
-                refreshIdentity(instanceId, ipAddresses);
+                refreshIdentity();
                 return true;
             }
             log.debug("Certificate is still valid");
@@ -148,20 +147,6 @@ public class AthenzCredentialsMaintainer {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private VespaUniqueInstanceId getVespaUniqueInstanceId(NodeSpec nodeSpec) {
-        NodeSpec.Membership membership = nodeSpec.getMembership().get();
-        NodeSpec.Owner owner = nodeSpec.getOwner().get();
-        return new VespaUniqueInstanceId(
-                membership.getIndex(),
-                membership.getClusterId(),
-                owner.getInstance(),
-                owner.getApplication(),
-                owner.getTenant(),
-                zoneRegion,
-                zoneEnvironment);
-    }
-
     private boolean shouldRefreshCredentials(Duration age) {
         return age.compareTo(REFRESH_PERIOD) >= 0;
     }
@@ -175,32 +160,32 @@ public class AthenzCredentialsMaintainer {
         return now.isAfter(expiry.minus(EXPIRY_MARGIN));
     }
 
-    private void registerIdentity(VespaUniqueInstanceId instanceId, Set<String> ipAddresses) {
+    private void registerIdentity() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        Pkcs10Csr csr = csrGenerator.generateCsr(containerIdentity, instanceId, ipAddresses, keyPair);
         SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(hostname);
+        Pkcs10Csr csr = csrGenerator.generateCsr(
+                containerIdentity, signedIdentityDocument.providerUniqueId(), signedIdentityDocument.ipAddresses(), keyPair);
         try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider)) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             configserverIdentity,
                             containerIdentity,
-                            instanceId.asDottedString(),
+                            signedIdentityDocument.providerUniqueId().asDottedString(),
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             false,
                             csr);
+            writeIdentityDocument(signedIdentityDocument);
             writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
             log.info("Instance successfully registered and credentials written to file");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (Exception e) {
-            // TODO Change close() in ZtsClient to not throw checked exception
-            throw new RuntimeException(e);
         }
     }
 
-    private void refreshIdentity(VespaUniqueInstanceId instanceId, Set<String> ipAddresses) {
+    private void refreshIdentity() {
+        SignedIdentityDocument identityDocument = readIdentityDocument();
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        Pkcs10Csr csr = csrGenerator.generateCsr(containerIdentity, instanceId, ipAddresses, keyPair);
+        Pkcs10Csr csr = csrGenerator.generateCsr(containerIdentity, identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
         SSLContext containerIdentitySslContext =
                 new SslContextBuilder()
                         .withKeyStore(privateKeyFile.toFile(), certificateFile.toFile())
@@ -211,16 +196,34 @@ public class AthenzCredentialsMaintainer {
                     ztsClient.refreshInstance(
                             configserverIdentity,
                             containerIdentity,
-                            instanceId.asDottedString(),
+                            identityDocument.providerUniqueId().asDottedString(),
                             false,
                             csr);
             writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
             log.info("Instance successfully refreshed and credentials written to file");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (Exception e) {
-            // TODO Change close() in ZtsClient to not throw checked exception
-            throw new RuntimeException(e);
+        }
+    }
+
+    private SignedIdentityDocument readIdentityDocument() {
+        try {
+            SignedIdentityDocumentEntity entity = mapper.readValue(identityDocumentFile.toFile(), SignedIdentityDocumentEntity.class);
+            return EntityBindingsMapper.toSignedIdentityDocument(entity);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void writeIdentityDocument(SignedIdentityDocument signedIdentityDocument) {
+        try {
+            SignedIdentityDocumentEntity entity =
+                    EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument);
+            Path tempIdentityDocumentFile = toTempPath(identityDocumentFile);
+            mapper.writeValue(tempIdentityDocumentFile.toFile(), entity);
+            Files.move(tempIdentityDocumentFile, identityDocumentFile, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -236,20 +239,6 @@ public class AthenzCredentialsMaintainer {
 
     private static Path toTempPath(Path file) {
         return Paths.get(file.toAbsolutePath().toString() + ".tmp");
-    }
-
-    // TODO Move to vespa-athenz
-    private static Path getPrivateKeyFile(Path root, AthenzService service) {
-        return root
-                .resolve("keys")
-                .resolve(String.format("%s.%s.key.pem", service.getDomain().getName(), service.getName()));
-    }
-
-    // TODO Move to vespa-athenz
-    private static Path getCertificateFile(Path root, AthenzService service) {
-        return root
-                .resolve("certs")
-                .resolve(String.format("%s.%s.cert.pem", service.getDomain().getName(), service.getName()));
     }
 
 }

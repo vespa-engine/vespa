@@ -498,7 +498,7 @@ public class NodeAgentImpl implements NodeAgent {
 
                 runLocalResumeScriptIfNeeded(node);
 
-                athenzCredentialsMaintainer.converge(node);
+                athenzCredentialsMaintainer.converge();
 
                 doBeforeConverge(node);
 
