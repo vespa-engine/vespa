@@ -41,7 +41,7 @@ public class DuperModelTest {
     @Test
     public void toApplicationInstanceInSingleTenantMode() {
         when(statusProvider.getStatus(any(), any(), any(), any())).thenReturn(ServiceStatus.NOT_CHECKED);
-        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig();
+        ConfigserverConfig config = ConfigserverUtil.createExampleConfigserverConfig(true, false);
         DuperModel duperModel = new DuperModel(config);
         SuperModel superModel = mock(SuperModel.class);
         ApplicationInfo superModelApplicationInfo = mock(ApplicationInfo.class);
