@@ -25,10 +25,10 @@ import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
  */
 class NodeIdentifier {
 
-    private static final String TENANT_DOCKER_HOST_IDENTITY = "vespa.vespa.tenant-host";
-    private static final String PROXY_HOST_IDENTITY = "vespa.vespa.proxy";
-    private static final String CONFIGSERVER_HOST_IDENTITY = "vespa.vespa.configserver";
-    private static final String TENANT_DOCKER_CONTAINER_IDENTITY = "vespa.vespa.tenant";
+    static final String TENANT_DOCKER_HOST_IDENTITY = "vespa.vespa.tenant-host";
+    static final String PROXY_HOST_IDENTITY = "vespa.vespa.proxy";
+    static final String CONFIGSERVER_HOST_IDENTITY = "vespa.vespa.configserver";
+    static final String TENANT_DOCKER_CONTAINER_IDENTITY = "vespa.vespa.tenant";
     private static final String INSTANCE_ID_DELIMITER = ".instanceid.athenz.";
 
     private final Zone zone;
