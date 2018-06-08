@@ -193,9 +193,9 @@ DocumentUpdateTest::testSimpleUsage() {
         // Test that a document update can be serialized
     DocumentUpdate docUpdate(repo, *docType, DocumentId("doc::testdoc"));
     docUpdate.addUpdate(fieldUpdateCopy);
-    ByteBuffer::UP docBuf = serialize42(docUpdate);
+    ByteBuffer::UP docBuf = serializeHEAD(docUpdate);
     docBuf->flip();
-    auto docUpdateCopy(DocumentUpdate::create42(repo, nbostream(docBuf->getBufferAtPos(), docBuf->getRemaining())));
+    auto docUpdateCopy(DocumentUpdate::createHEAD(repo, nbostream(docBuf->getBufferAtPos(), docBuf->getRemaining())));
 
         // Create a test document
     Document doc(*docType, DocumentId("doc::testdoc"));
@@ -547,7 +547,8 @@ void DocumentUpdateTest::testReadSerializedFile()
     }
     close(fd);
 
-    DocumentUpdate::UP updp(DocumentUpdate::create42(repo, nbostream(buf.getBufferAtPos(), buf.getRemaining())));
+    nbostream is(buf.getBufferAtPos(), buf.getRemaining());
+    DocumentUpdate::UP updp(DocumentUpdate::create42(repo, is));
     DocumentUpdate& upd(*updp);
 
     const DocumentType *type = repo.getDocumentType("serializetest");
@@ -998,8 +999,8 @@ DocumentUpdateTest::testThatCreateIfNonExistentFlagIsSerializedAndDeserialized()
     ByteBuffer::UP buf(serialize42(*f.update));
     buf->flip();
 
-    auto deserialized = DocumentUpdate::create42(f.docMan.getTypeRepo(),
-                                                 nbostream(buf->getBufferAtPos(), buf->getRemaining()));
+    nbostream is(buf->getBufferAtPos(), buf->getRemaining());
+    auto deserialized = DocumentUpdate::create42(f.docMan.getTypeRepo(), is);
     CPPUNIT_ASSERT_EQUAL(*f.update, *deserialized);
     CPPUNIT_ASSERT(deserialized->getCreateIfNonExistent());
 }

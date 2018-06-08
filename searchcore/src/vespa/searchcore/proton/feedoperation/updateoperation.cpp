@@ -53,7 +53,7 @@ void
 UpdateOperation::deserializeUpdate(vespalib::nbostream && is, const document::DocumentTypeRepo &repo)
 {
     _upd = (getType() == UPDATE_42)
-           ? DocumentUpdate::create42(repo, std::move(is))
+           ? DocumentUpdate::create42(repo, is)
            : DocumentUpdate::createHEAD(repo, std::move(is));
 }
 

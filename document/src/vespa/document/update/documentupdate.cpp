@@ -71,19 +71,8 @@ DocumentUpdate::~DocumentUpdate() = default;
 bool
 DocumentUpdate::operator==(const DocumentUpdate& other) const
 {
-    ensureDeserialized();
-    if (_documentId != other._documentId) return false;
-    if (*_type != *other._type) return false;
-    if (_updates.size() != other._updates.size()) return false;
-    for (std::size_t i = 0, n = _updates.size(); i < n; ++i) {
-        if (_updates[i] != other._updates[i]) return false;
-    }
-    if (_fieldPathUpdates.size() != other._fieldPathUpdates.size()) return false;
-    for (std::size_t i = 0, n = _fieldPathUpdates.size(); i < n; ++i) {
-        if (*_fieldPathUpdates[i] != *other._fieldPathUpdates[i]) return false;
-    }
-    if (_createIfNonExistent != other._createIfNonExistent) return false;
-    return true;
+    return (_backing.size() == other._backing.size()) &&
+           (memcmp(_backing.peek(), other._backing.peek(), _backing.size()) == 0);
 }
 
 const DocumentType&
@@ -128,6 +117,19 @@ DocumentUpdate::addFieldPathUpdate(const FieldPathUpdate::CP& update) {
     _fieldPathUpdates.push_back(update);
     _backing = reserialize(*this);
     return *this;
+}
+
+void
+DocumentUpdate::setCreateIfNonExistent(bool value) {
+    ensureDeserialized();
+    _createIfNonExistent = value;
+    _backing = reserialize(*this);
+}
+
+bool
+DocumentUpdate::getCreateIfNonExistent() const {
+    ensureDeserialized();
+    return _createIfNonExistent;
 }
 
 void
@@ -210,40 +212,40 @@ DocumentUpdate::serializeFlags(int size_) const
 }
 
 namespace {
-    std::pair<const DocumentType *, DocumentId>
-    deserializeTypeAndId(const DocumentTypeRepo& repo, vespalib::nbostream & stream) {
-        DocumentId docId(stream);
+std::pair<const DocumentType *, DocumentId>
+deserializeTypeAndId(const DocumentTypeRepo& repo, vespalib::nbostream & stream) {
+    DocumentId docId(stream);
 
-        // Read content bit vector.
-        unsigned char content = 0x00;
-        stream >> content;
+    // Read content bit vector.
+    unsigned char content = 0x00;
+    stream >> content;
 
-        // Why on earth do we have this whether we have type part?
-        // We need type for object to work, so just throwing exception if it's
-        // not there.
-        if((content & CONTENT_HASTYPE) == 0) {
-            throw IllegalStateException("Missing document type", VESPA_STRLOC);
-        }
-
-        vespalib::stringref typestr = stream.peek();
-        stream.adjustReadPos(typestr.length() + 1);
-
-        int16_t version = 0;
-        stream >> version;
-        const DocumentType *type = repo.getDocumentType(typestr);
-        if (!type) {
-            throw DocumentTypeNotFoundException(typestr, VESPA_STRLOC);
-        }
-        return std::make_pair(type, docId);
+    // Why on earth do we have this whether we have type part?
+    // We need type for object to work, so just throwing exception if it's
+    // not there.
+    if((content & CONTENT_HASTYPE) == 0) {
+        throw IllegalStateException("Missing document type", VESPA_STRLOC);
     }
+
+    vespalib::stringref typestr = stream.peek();
+    stream.adjustReadPos(typestr.length() + 1);
+
+    int16_t version = 0;
+    stream >> version;
+    const DocumentType *type = repo.getDocumentType(typestr);
+    if (!type) {
+        throw DocumentTypeNotFoundException(typestr, VESPA_STRLOC);
+    }
+    return std::make_pair(type, docId);
+}
 }
 
 // Deserialize the content of the given buffer into this document update.
 DocumentUpdate::UP
-DocumentUpdate::create42(const DocumentTypeRepo& repo, vespalib::nbostream && stream)
+DocumentUpdate::create42(const DocumentTypeRepo& repo, vespalib::nbostream & stream)
 {
     auto update = std::make_unique<DocumentUpdate>();
-    update->init42(repo, std::move(stream));
+    update->init42(repo, stream);
     return update;
 }
 
@@ -266,27 +268,29 @@ DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream && 
 }
 
 void
-DocumentUpdate::init42(const DocumentTypeRepo & repo, vespalib::nbostream && stream)
+DocumentUpdate::init42(const DocumentTypeRepo & repo, vespalib::nbostream & stream)
 {
-    _backing = std::move(stream);
-    size_t startPos = _backing.rp();
-    deserialize42(repo, _backing);
-    _backing.rp(startPos);
+    _repo = &repo;
+    deserialize42(repo, stream);
+    _backing = reserialize(*this);
 }
 void
 DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream)
 {
+    _repo = &repo;
     _backing = std::move(stream);
     size_t startPos = _backing.rp();
-    deserializeHEAD(repo, _backing);
+    deserializeHeader(repo, _backing);
     _backing.rp(startPos);
 }
 
 void
 DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream)
 {
-    _backing = stream;
+    size_t startPos = stream.rp();
     deserializeHEAD(repo, stream);
+    size_t sz = stream.rp() - startPos;
+    _backing = nbostream(stream.peek() - sz, sz);
 }
 
 void
@@ -294,8 +298,8 @@ DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, vespalib::nbostream 
 {
     size_t pos = stream.rp();
     try{
-        stream >> _version;
-
+        int16_t version(0);
+        stream >> version;
         std::pair<const DocumentType *, DocumentId> typeAndId(deserializeTypeAndId(repo, stream));
         _type = typeAndId.first;
         _documentId = typeAndId.second;
@@ -318,6 +322,21 @@ DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, vespalib::nbostream 
         stream.rp(pos);
         throw;
     }
+}
+
+void
+DocumentUpdate::deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream)
+{
+    assert(_updates.empty());
+    assert(_fieldPathUpdates.empty());
+    _documentId = DocumentId(stream);
+
+    vespalib::stringref typestr = stream.peek();
+    stream.adjustReadPos(typestr.length() + 1);
+    int16_t version = 0;
+    stream >> version;
+    const DocumentType *docType = repo.getDocumentType(typestr);
+    _type = docType;
 }
 
 void
@@ -347,7 +366,7 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
             _updates.reserve(numUpdates);
             ByteBuffer buffer(stream.peek(), stream.size());
             for (int i = 0; i < numUpdates; i++) {
-                _updates.emplace_back(repo, *docType, buffer, 8);
+                _updates.emplace_back(repo, *docType, buffer, _version);
             }
             stream.adjustReadPos(buffer.getPos());
         }
@@ -358,7 +377,7 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
         _fieldPathUpdates.reserve(numUpdates);
         ByteBuffer buffer(stream.peek(), stream.size());
         for (int i = 0; i < numUpdates; ++i) {
-            _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, buffer, 8).release());
+            _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, buffer, _version).release());
         }
         stream.adjustReadPos(buffer.getPos());
     } catch (const DeserializeException &) {

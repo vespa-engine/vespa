@@ -33,7 +33,7 @@
 namespace document {
 
 class Document;
-
+class VespaDocumentSerializer;
 /**
  * Class containing a document update.  In vespa 5.0, support for field
  * path updates was added, and a new serialization format was
@@ -50,7 +50,7 @@ public:
     /**
      * Create old style document update, no support for field path updates.
      */
-    static DocumentUpdate::UP create42(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    static DocumentUpdate::UP create42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
 
     /**
      * Create new style document update, possibly with field path updates.
@@ -95,17 +95,8 @@ public:
      * type as this.
      */
     void applyTo(Document& doc) const;
-	
-    /**
-     * Add a field update to this document update.
-     * @return A reference to this.
-     */
-    DocumentUpdate& addUpdate(const FieldUpdate& update);
 
-    /**
-     * Add a fieldpath update to this document update.
-     * @return A reference to this.
-     */
+    DocumentUpdate& addUpdate(const FieldUpdate& update);
     DocumentUpdate& addFieldPathUpdate(const FieldPathUpdate::CP& update);
 
     /** @return The list of updates. */
@@ -116,27 +107,20 @@ public:
 
     /** @return The type of document this update is for. */
     const DocumentType& getType() const;
-	
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
     void serializeHEAD(vespalib::nbostream &stream) const;
-
     void printXml(XmlOutputStream&) const override;
 
     /**
      * Sets whether this update should create the document it updates if that document does not exist.
      * In this case an empty document is created before the update is applied.
      */
-    void setCreateIfNonExistent(bool value) {
-        _createIfNonExistent = value;
-    }
+    void setCreateIfNonExistent(bool value);
 
     /**
      * Gets whether this update should create the document it updates if that document does not exist.
      */
-    bool getCreateIfNonExistent() const {
-        return _createIfNonExistent;
-    }
+    bool getCreateIfNonExistent() const;
 
     int serializeFlags(int size_) const;
     int16_t getVersion() const { return _version; }
@@ -148,11 +132,11 @@ private:
     vespalib::nbostream     _backing;
     FieldUpdateV            _updates; // The list of field updates.
     FieldPathUpdateV        _fieldPathUpdates;
-    int16_t                 _version; // Serialization version
+    const int16_t           _version; // Serialization version
     bool                    _createIfNonExistent;
 
     int deserializeFlags(int sizeAndFlags);
-    void init42(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    void init42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
     void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void deserialize42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
@@ -160,6 +144,8 @@ private:
     void lazyDeserialize(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void ensureDeserialized() const;
     void serializeHeader();
+    void deserializeHeader(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    friend VespaDocumentSerializer;
 };
 
 } // document

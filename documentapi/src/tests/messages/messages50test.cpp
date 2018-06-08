@@ -672,8 +672,7 @@ Messages50Test::testUpdateDocumentMessage()
 {
     const DocumentTypeRepo &repo = getTypeRepo();
     const document::DocumentType &docType = *repo.getDocumentType("testdoc");
-    document::DocumentUpdate::SP
-        upd(new document::DocumentUpdate(repo, docType, document::DocumentId("doc:scheme:")));
+    auto upd(std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("doc:scheme:")));
     upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
             new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
     UpdateDocumentMessage msg(upd);
@@ -682,7 +681,7 @@ Messages50Test::testUpdateDocumentMessage()
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 89u, serialize("UpdateDocumentMessage", msg));
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("UpdateDocumentMessage", DocumentProtocol::MESSAGE_UPDATEDOCUMENT, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj.get() != nullptr)) {
             UpdateDocumentMessage &ref = static_cast<UpdateDocumentMessage&>(*obj);
             EXPECT_EQUAL(*upd, ref.getDocumentUpdate());
             EXPECT_EQUAL(666u, ref.getOldTimestamp());

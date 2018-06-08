@@ -42,12 +42,8 @@ DocumentMessage::UP
 decodeMessage(const FactoryType * self, document::ByteBuffer & buf) {
     auto msg = std::make_unique<MessageType>();
     ScopedApproxSizeSetter sizeSetter(*msg, buf);
-
     self->decodeInto(*msg, buf);
-
-    // Doing an explicit move here to force converting result to an rvalue.
-    // This is done automatically in GCC >= 5.
-    return std::move(msg);
+    return msg;
 }
 
 /**
