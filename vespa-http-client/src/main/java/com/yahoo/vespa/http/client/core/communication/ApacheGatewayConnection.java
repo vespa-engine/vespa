@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -36,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -48,6 +51,7 @@ import java.util.zip.GZIPOutputStream;
 class ApacheGatewayConnection implements GatewayConnection {
 
     private static Logger log = Logger.getLogger(ApacheGatewayConnection.class.getName());
+    private static final ObjectMapper mapper = new ObjectMapper();
     private static final String PATH = "/reserved-for-internal-use/feedapi?";
     private final List<Integer> SUPPORTED_VERSIONS = new ArrayList<>();
     private static final byte[] START_OF_FEED_XML = "<vespafeed>\n".getBytes(StandardCharsets.UTF_8);
@@ -253,7 +257,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             throw e;
         }
         try {
-            verifyServerResponseCode(response.getStatusLine());
+            verifyServerResponseCode(response);
             verifyServerVersion(response.getFirstHeader(Headers.VERSION));
             verifySessionHeader(response.getFirstHeader(Headers.SESSION_ID));
         } catch (ServerResponseException e) {
@@ -263,7 +267,8 @@ class ApacheGatewayConnection implements GatewayConnection {
         return response.getEntity().getContent();
     }
 
-    private void verifyServerResponseCode(StatusLine statusLine) throws ServerResponseException {
+    private void verifyServerResponseCode(HttpResponse response) throws ServerResponseException {
+        StatusLine statusLine = response.getStatusLine();
         // We use code 261-299 to report errors related to internal transitive errors that the tenants should not care
         // about to avoid masking more serious errors.
         int statusCode = statusLine.getStatusCode();
@@ -273,7 +278,22 @@ class ApacheGatewayConnection implements GatewayConnection {
         if (statusCode == 299) {
             throw new ServerResponseException(429, "Too  many requests.");
         }
-        throw new ServerResponseException(statusLine.getStatusCode(), statusLine.getReasonPhrase());
+        String message = tryGetDetailedErrorMessage(response)
+                .orElseGet(statusLine::getReasonPhrase);
+        throw new ServerResponseException(statusLine.getStatusCode(), message);
+    }
+
+    private static Optional<String> tryGetDetailedErrorMessage(HttpResponse response) {
+        Header contentType = response.getEntity().getContentType();
+        if (contentType == null || !contentType.getValue().equalsIgnoreCase("application/json")) return Optional.empty();
+        try (InputStream in = response.getEntity().getContent()) {
+            JsonNode jsonNode = mapper.readTree(in);
+            JsonNode message = jsonNode.get("message");
+            if (message == null || message.textValue() == null) return Optional.empty();
+            return Optional.of(response.getStatusLine().getReasonPhrase() + " - " + message.textValue());
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 
     private void verifySessionHeader(Header serverHeader) throws ServerResponseException {

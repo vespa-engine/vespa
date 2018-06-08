@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.vespa.http.client.TestUtils;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -17,7 +20,10 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.message.BasicHeader;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
@@ -25,6 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +52,9 @@ import static org.mockito.Mockito.when;
 
 
 public class ApacheGatewayConnectionTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testProtocolV3() throws Exception {
@@ -292,6 +303,35 @@ public class ApacheGatewayConnectionTest {
         verify(headerProvider, times(3)).getHeaderValue(); // 1x connect(), 2x writeOperations()
     }
 
+    @Test
+    public void detailed_error_message_is_extracted_from_error_responses_with_json() throws IOException, ServerResponseException, InterruptedException {
+        String reasonPhrase = "Unauthorized";
+        String errorMessage = "Invalid credentials";
+        expectedException.expect(ServerResponseException.class);
+        expectedException.expectMessage(reasonPhrase + " - " + errorMessage);
+
+        CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
+
+        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post  -> {
+            verifyContentSentLatch.countDown();
+            return createErrorHttpResponse(401, reasonPhrase, errorMessage);
+        });
+
+        ApacheGatewayConnection apacheGatewayConnection =
+            new ApacheGatewayConnection(
+                    Endpoint.create("hostname", 666, false),
+                    new FeedParams.Builder().build(),
+                    "",
+                    new ConnectionParams.Builder().build(),
+                    mockFactory,
+                    "clientId");
+        apacheGatewayConnection.connect();
+        apacheGatewayConnection.handshake();
+
+        apacheGatewayConnection.writeOperations(Collections.singletonList(createDoc("42", "content", true)));
+        assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
+    }
+
     private static ApacheGatewayConnection.HttpClientFactory mockHttpClientFactory(HttpExecuteMock httpExecuteMock) throws IOException {
         ApacheGatewayConnection.HttpClientFactory mockFactory =
                 mock(ApacheGatewayConnection.HttpClientFactory.class);
@@ -354,5 +394,21 @@ public class ApacheGatewayConnectionTest {
 
         when(httpEntityMock.getContent()).thenReturn(inputs);
         return httpResponseMock;
+    }
+
+    private static HttpResponse createErrorHttpResponse(int statusCode, String reasonPhrase, String message) throws IOException {
+        HttpResponse response = mock(HttpResponse.class);
+
+        StatusLine statusLine = mock(StatusLine.class);
+        when(statusLine.getStatusCode()).thenReturn(statusCode);
+        when(statusLine.getReasonPhrase()).thenReturn(reasonPhrase);
+        when(response.getStatusLine()).thenReturn(statusLine);
+
+        HttpEntity httpEntity = mock(HttpEntity.class);
+        when(httpEntity.getContentType()).thenReturn(new BasicHeader("Content-Type", "application/json"));
+        String json = String.format("{\"message\": \"%s\"}", message);
+        when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(json.getBytes()));
+        when(response.getEntity()).thenReturn(httpEntity);
+        return response;
     }
 }
