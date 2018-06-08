@@ -36,6 +36,7 @@ import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.PROXY_HOST_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.TENANT_DOCKER_CONTAINER_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.TENANT_DOCKER_HOST_IDENTITY;
+import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.ZTS_AWS_IDENTITY;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -146,6 +147,17 @@ public class NodeIdentifierTest {
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertEquals(CONFIGSERVER_HOST_IDENTITY, identity.getHostIdentityName());
+    }
+
+    @Test
+    public void accepts_zts_certificate() {
+        X509Certificate certificate = X509CertificateBuilder
+                .fromKeypair(KEYPAIR, new X500Principal("CN=" + ZTS_AWS_IDENTITY), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
+                .build();
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, new NodeRepositoryTester().nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
+        assertEquals(ZTS_AWS_IDENTITY, identity.getHostIdentityName());
+        assertEquals(NodePrincipal.Type.LEGACY, identity.getType());
     }
 
     @Test
