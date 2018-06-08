@@ -323,7 +323,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestContentWriteExceptionAfterResponseWriteWithSyncCompletion() throws Throwable {
-        new TestRunner().expect(success())
+        new TestRunner().expect(anyOf(success(), successNoContent()))
                         .execute();
     }
 
