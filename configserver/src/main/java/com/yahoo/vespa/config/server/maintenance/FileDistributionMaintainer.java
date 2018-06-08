@@ -31,9 +31,10 @@ public class FileDistributionMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        // TODO: For now only deletes files in CD system
+        // TODO: Delete files in all zones
         boolean deleteFiles = (SystemName.from(configserverConfig.system()) == SystemName.cd)
-                || Environment.from(configserverConfig.environment()).isTest();
+                || Environment.from(configserverConfig.environment()).isTest()
+                || configserverConfig.region().equals("us-central-1");
         applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
     }
 }

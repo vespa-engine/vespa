@@ -51,7 +51,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
             this.defaultInterval = Duration.ofMinutes(configserverConfig.maintainerIntervalMinutes());
             // TODO: Want job control or feature flag to control when to run this, for now use a very
             // long interval to avoid running the maintainer
-            this.tenantsMaintainerInterval = isCd || isTest
+            this.tenantsMaintainerInterval = isCd || isTest || configserverConfig.region().equals("us-central-1")
                     ? defaultInterval
                     : Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes());
         }
