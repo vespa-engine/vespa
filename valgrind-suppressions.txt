@@ -339,3 +339,20 @@
    fun:__static_initialization_and_destruction_0
    ...
 }
+{
+   Apparent memory leak on Fedora 28.
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:tsearch
+   fun:__add_to_environ
+   fun:setenv
+}
+{
+   Apparent memory leak on Fedora 28.
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:__add_to_environ
+   fun:setenv
+}
