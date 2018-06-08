@@ -141,7 +141,7 @@ private:
     void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
     void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void deserialize42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
-    void deserializeHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void deserializeHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream, bool onlyUpdates);
     void lazyDeserialize(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void ensureDeserialized() const;
     void serializeHeader();

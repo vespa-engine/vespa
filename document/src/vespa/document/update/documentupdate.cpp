@@ -83,7 +83,7 @@ DocumentUpdate::getFieldPathUpdates() const {
 
 void DocumentUpdate::lazyDeserialize(const DocumentTypeRepo & repo, nbostream & stream) {
     size_t start(stream.rp());
-    deserializeHEAD(repo, stream);
+    deserializeHEAD(repo, stream, true);
     stream.rp(start);
 }
 void DocumentUpdate::ensureDeserialized() const {
@@ -277,11 +277,18 @@ void
 DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream)
 {
     size_t startPos = stream.rp();
-    deserializeHEAD(repo, stream);
+    deserializeHEAD(repo, stream, false);
     size_t sz = stream.rp() - startPos;
     _backing = nbostream(stream.peek() - sz, sz);
 }
 
+namespace {
+    void skipHeader(vespalib::nbostream & stream) {
+        stream.adjustReadPos(strlen(stream.peek()) + 1);
+        vespalib::stringref typestr = stream.peek();
+        stream.adjustReadPos(typestr.length() + 1 + 2);
+    }
+}
 void
 DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, vespalib::nbostream & stream)
 {
@@ -325,28 +332,24 @@ DocumentUpdate::deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostr
     int16_t version = 0;
     stream >> version;
     const DocumentType *docType = repo.getDocumentType(typestr);
+    if (!docType) {
+        throw DocumentTypeNotFoundException(typestr, VESPA_STRLOC);
+    }
     _type = docType;
 }
 
 void
-DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostream & stream)
+DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostream & stream, bool onlyUpdates)
 {
     _updates.clear();
     _fieldPathUpdates.clear();
     size_t pos = stream.rp();
     try {
-        _documentId = DocumentId(stream);
-
-        vespalib::stringref typestr = stream.peek();
-        stream.adjustReadPos(typestr.length() + 1);
-
-        int16_t version = 0;
-        stream >> version;
-        const DocumentType *docType = repo.getDocumentType(typestr);
-        if (!docType) {
-            throw DocumentTypeNotFoundException(typestr, VESPA_STRLOC);
+        if (onlyUpdates) {
+            skipHeader(stream);
+        } else {
+            deserializeHeader(repo, stream);
         }
-        _type = docType;
 
         // Read field updates, if any.
         if ( ! stream.empty() ) {
@@ -355,7 +358,7 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
             _updates.reserve(numUpdates);
             ByteBuffer buffer(stream.peek(), stream.size());
             for (int i = 0; i < numUpdates; i++) {
-                _updates.emplace_back(repo, *docType, buffer, _version);
+                _updates.emplace_back(repo, *_type, buffer, _version);
             }
             stream.adjustReadPos(buffer.getPos());
         }
