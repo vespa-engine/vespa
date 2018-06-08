@@ -425,6 +425,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         metricsObject.setDouble("queryServiceQuality", application.metrics().queryServiceQuality());
         metricsObject.setDouble("writeServiceQuality", application.metrics().writeServiceQuality());
 
+        // Activity
+        Cursor activity = object.setObject("activity");
+        application.activity().lastQueried().ifPresent(lastQueried -> activity.setLong("queriedAt", lastQueried.toEpochMilli()));
+        application.activity().lastWritten().ifPresent(lastQueried -> activity.setLong("writtenAt", lastQueried.toEpochMilli()));
+
         application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
         application.deploymentJobs().issueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }

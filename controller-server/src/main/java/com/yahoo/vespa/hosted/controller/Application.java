@@ -10,6 +10,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -142,12 +143,19 @@ public class Application {
      */
     public Change outstandingChange() { return outstandingChange; }
 
+    /** Returns ID of the last ownership issue filed for this */
     public Optional<IssueId> ownershipIssueId() {
         return ownershipIssueId;
     }
 
+    /** Returns metrics for this */
     public ApplicationMetrics metrics() {
         return metrics;
+    }
+
+    /** Returns activity for this */
+    public ApplicationActivity activity() {
+        return ApplicationActivity.from(deployments.values());
     }
 
     /**
