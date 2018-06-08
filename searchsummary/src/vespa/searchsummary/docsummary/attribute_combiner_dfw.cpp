@@ -2,6 +2,7 @@
 
 #include "attribute_combiner_dfw.h"
 #include "array_attribute_combiner_dfw.h"
+#include "struct_map_attribute_combiner_dfw.h"
 #include "docsum_field_writer_state.h"
 #include "docsumstate.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -117,8 +118,7 @@ AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeManage
     if (structFields.getError()) {
         return std::unique_ptr<IDocsumFieldWriter>();
     } else if (!structFields.getMapFields().empty()) {
-        LOG(warning, "map of struct is not yet supported for field '%s'", fieldName.c_str());
-        return std::unique_ptr<IDocsumFieldWriter>();
+        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields.getMapFields());
     }
     return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields.getArrayFields());
 }
