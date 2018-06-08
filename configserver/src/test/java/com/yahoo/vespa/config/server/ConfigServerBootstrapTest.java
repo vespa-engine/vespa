@@ -47,9 +47,9 @@ public class ConfigServerBootstrapTest {
         VipStatus vipStatus = new VipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState, createStateMonitor(), vipStatus);
         assertFalse(vipStatus.isInRotation());
-        waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
-        assertTrue(vipStatus.isInRotation());
+        waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
+        waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
 
         bootstrap.deconstruct();
         assertEquals(StateMonitor.Status.down, bootstrap.status());
