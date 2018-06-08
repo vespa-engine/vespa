@@ -37,6 +37,14 @@ using search::docsummary::IDocsumFieldWriter;
 
 namespace {
 
+vespalib::string
+toCompactJsonString(const vespalib::Slime &slime)
+{
+    vespalib::SimpleBuffer buf;
+    vespalib::slime::JsonFormat::encode(slime, buf, true);
+    return buf.get().make_string();
+}
+
 struct FieldBlock {
     vespalib::string input;
     vespalib::Slime slime;
@@ -48,12 +56,7 @@ struct FieldBlock {
     {
         size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
         EXPECT_TRUE(used > 0);
-        {
-            search::SlimeOutputRawBufAdapter adapter(binary);
-            vespalib::slime::JsonFormat::encode(slime, adapter, true);
-            json.assign(binary.GetDrainPos(), binary.GetUsedLen());
-            binary.reset();
-        }
+        json = toCompactJsonString(slime);
         search::SlimeOutputRawBufAdapter adapter(binary);
         vespalib::slime::BinaryFormat::encode(slime, adapter);
     }
@@ -183,25 +186,19 @@ Fixture::~Fixture()
 }
 
 void
-Fixture::assertWritten(const vespalib::string &expected, uint32_t docId)
+Fixture::assertWritten(const vespalib::string &expectedJson, uint32_t docId)
 {
     vespalib::Slime target;
     vespalib::slime::SlimeInserter inserter(target);
     writer->insertField(docId, nullptr, &state, search::docsummary::RES_JSONSTRING, inserter);
     search::RawBuf binary(1024);
-    vespalib::string json;
-    {
-        search::SlimeOutputRawBufAdapter adapter(binary);
-        vespalib::slime::JsonFormat::encode(target, adapter, true);
-        json.assign(binary.GetDrainPos(), binary.GetUsedLen());
-        binary.reset();
-    }
+    vespalib::string json = toCompactJsonString(target);
     search::SlimeOutputRawBufAdapter adapter(binary);
     vespalib::slime::BinaryFormat::encode(target, adapter);
-    FieldBlock block(expected);
+    FieldBlock block(expectedJson);
     if (!EXPECT_EQUAL(block.dataLen(), binary.GetUsedLen()) ||
         !EXPECT_EQUAL(0, memcmp(block.data(), binary.GetDrainPos(), block.dataLen()))) {
-        LOG(error, "Expected '%s'", expected.c_str());
+        LOG(error, "Expected '%s'", expectedJson.c_str());
         LOG(error, "Expected normalized '%s'", block.json.c_str());
         LOG(error, "Got '%s'", json.c_str());
     }
