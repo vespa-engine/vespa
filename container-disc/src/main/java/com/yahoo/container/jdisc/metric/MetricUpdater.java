@@ -10,6 +10,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -89,10 +90,12 @@ public class MetricUpdater extends AbstractComponent {
         private final Runtime runtime = Runtime.getRuntime();
         private final Metric metric;
         private final ContainerWatchdogMetrics containerWatchdogMetrics;
+        private final GarbageCollectionMetrics garbageCollectionMetrics;
 
         public UpdaterTask(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
             this.metric = metric;
             this.containerWatchdogMetrics = containerWatchdogMetrics;
+            this.garbageCollectionMetrics = new GarbageCollectionMetrics(Clock.systemUTC());
         }
 
         @SuppressWarnings("deprecation")
@@ -109,9 +112,10 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
-            containerWatchdogMetrics.emitMetrics(metric);
-        }
 
+            containerWatchdogMetrics.emitMetrics(metric);
+            garbageCollectionMetrics.emitMetrics(metric);
+        }
     }
 
     private static class TimerScheduler implements Scheduler {
