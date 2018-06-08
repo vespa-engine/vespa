@@ -4,6 +4,7 @@
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <cassert>
 
 using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
@@ -16,7 +17,7 @@ AttributeFieldWriter::AttributeFieldWriter(const vespalib::string &fieldName,
                                            const IAttributeVector &attr)
     : _fieldName(fieldName),
       _attr(attr),
-      _len(0)
+      _size(0)
 {
 }
 
@@ -81,7 +82,7 @@ void
 WriteField<Content>::fetch(uint32_t docId)
 {
     _content.fill(_attr, docId);
-    _len = _content.size();
+    _size = _content.size();
 }
 
 WriteStringField::WriteStringField(const vespalib::string &fieldName,
@@ -95,7 +96,7 @@ WriteStringField::~WriteStringField() = default;
 void
 WriteStringField::print(uint32_t idx, Cursor &cursor)
 {
-    if (idx < _len) {
+    if (idx < _size) {
         const char *s = _content[idx];
         if (s[0] != '\0') {
             cursor.setString(_fieldName, vespalib::Memory(s));
@@ -114,7 +115,7 @@ WriteFloatField::~WriteFloatField() = default;
 void
 WriteFloatField::print(uint32_t idx, Cursor &cursor)
 {
-    if (idx < _len) {
+    if (idx < _size) {
         double val = _content[idx];
         if (!search::attribute::isUndefined(val)) {
             cursor.setDouble(_fieldName, val);
@@ -135,7 +136,7 @@ WriteIntField::~WriteIntField() = default;
 void
 WriteIntField::print(uint32_t idx, Cursor &cursor)
 {
-    if (idx < _len) {
+    if (idx < _size) {
         auto val = _content[idx];
         if (val != _undefined) {
             cursor.setLong(_fieldName, _content[idx]);
@@ -163,6 +164,7 @@ AttributeFieldWriter::create(const vespalib::string &fieldName, const IAttribute
     case BasicType::STRING:
         return std::make_unique<WriteStringField>(fieldName, attr);
     default:
+        assert(false);
         abort();
     }
 }

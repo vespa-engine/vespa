@@ -20,7 +20,7 @@ class AttributeFieldWriter
 protected:
     const vespalib::Memory                     _fieldName;
     const search::attribute::IAttributeVector &_attr;
-    size_t                                     _len;
+    size_t                                     _size;
 public:
     AttributeFieldWriter(const vespalib::string &fieldName,
                          const search::attribute::IAttributeVector &attr);
@@ -28,7 +28,7 @@ public:
     virtual void fetch(uint32_t docId) = 0;
     virtual void print(uint32_t idx, vespalib::slime::Cursor &cursor) = 0;
     static std::unique_ptr<AttributeFieldWriter> create(const vespalib::string &fieldName, const search::attribute::IAttributeVector &attr);
-    uint32_t size() const { return _len; }
+    uint32_t size() const { return _size; }
 };
 
 }
