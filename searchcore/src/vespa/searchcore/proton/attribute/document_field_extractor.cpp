@@ -164,27 +164,6 @@ DocumentFieldExtractor::getSimpleFieldValue(const FieldPath &fieldPath)
     return _doc.getNestedFieldValue(fieldPath.getFullRange());
 }
 
-std::unique_ptr<FieldValue>
-DocumentFieldExtractor::getStructArrayFieldValue(const FieldPath &fieldPath)
-{
-    const auto outerFieldValue = getCachedFieldValue(fieldPath[0]);
-    if (outerFieldValue != nullptr && checkInherits(*outerFieldValue, ArrayFieldValue::classId)) {
-        const auto outerArray = static_cast<const ArrayFieldValue *>(outerFieldValue);
-        const auto &innerFieldPathEntry = fieldPath[1];
-        auto array = makeArray(innerFieldPathEntry, outerArray->size());
-        uint32_t arrayIndex = 0;
-        for (const auto &outerElemBase : *outerArray) {
-            auto &arrayElem = (*array)[arrayIndex++];
-            const auto &structElem = static_cast<const StructFieldValue &>(outerElemBase);
-            if (!structElem.getValue(innerFieldPathEntry.getFieldRef(), arrayElem)) {
-                arrayElem.accept(setUndefinedValueVisitor);
-            }
-        }
-        return array;
-    }
-    return std::unique_ptr<FieldValue>();
-}
-
 namespace {
 
 template <typename ExtractorFunc>
@@ -203,6 +182,33 @@ getMapFieldValue(const FieldValue *outerFieldValue, const FieldPathEntry &innerE
     return std::unique_ptr<FieldValue>();
 }
 
+template <typename CollectionFieldValueT, typename ExtractorFunc>
+std::unique_ptr<FieldValue>
+extractArrayFromStructCollection(const FieldValue *outerFieldValue, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
+{
+    if (outerFieldValue != nullptr && checkInherits(*outerFieldValue, CollectionFieldValueT::classId)) {
+        const auto *outerCollection = static_cast<const CollectionFieldValueT *>(outerFieldValue);
+        auto array = makeArray(innerEntry, outerCollection->size());
+        uint32_t arrayIndex = 0;
+        for (const auto &outerElem : *outerCollection) {
+            auto &arrayElem = (*array)[arrayIndex++];
+            const auto &structElem = static_cast<const StructFieldValue &>(*extractor(&outerElem));
+            if (!structElem.getValue(innerEntry.getFieldRef(), arrayElem)) {
+                arrayElem.accept(setUndefinedValueVisitor);
+            }
+        }
+        return array;
+    }
+    return std::unique_ptr<FieldValue>();
+}
+
+}
+
+std::unique_ptr<FieldValue>
+DocumentFieldExtractor::getStructArrayFieldValue(const FieldPath &fieldPath)
+{
+    return extractArrayFromStructCollection<ArrayFieldValue>(getCachedFieldValue(fieldPath[0]), fieldPath[1],
+                                                             [](const auto *elem){ return elem; });
 }
 
 std::unique_ptr<FieldValue>
@@ -222,22 +228,8 @@ DocumentFieldExtractor::getPrimitiveMapFieldValue(const FieldPath &fieldPath)
 std::unique_ptr<document::FieldValue>
 DocumentFieldExtractor::getStructMapFieldValue(const FieldPath &fieldPath)
 {
-    const auto outerFieldValue = getCachedFieldValue(fieldPath[0]);
-    if (outerFieldValue != nullptr && checkInherits(*outerFieldValue, MapFieldValue::classId)) {
-        const auto outerMap = static_cast<const MapFieldValue *>(outerFieldValue);
-        const auto &innerFieldPathEntry = fieldPath[2];
-        auto array = makeArray(innerFieldPathEntry, outerMap->size());
-        uint32_t arrayIndex = 0;
-        for (const auto &mapElem : *outerMap) {
-            auto &arrayElem = (*array)[arrayIndex++];
-            const auto &structElem = static_cast<const StructFieldValue &>(*mapElem.second);
-            if (!structElem.getValue(innerFieldPathEntry.getFieldRef(), arrayElem)) {
-                arrayElem.accept(setUndefinedValueVisitor);
-            }
-        }
-        return array;
-    }
-    return std::unique_ptr<FieldValue>();
+    return extractArrayFromStructCollection<MapFieldValue>(getCachedFieldValue(fieldPath[0]), fieldPath[2],
+                                                           [](const auto *elem){ return elem->second; });
 }
 
 std::unique_ptr<FieldValue>
