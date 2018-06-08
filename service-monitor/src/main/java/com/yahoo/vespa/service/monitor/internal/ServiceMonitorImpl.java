@@ -14,10 +14,7 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.internal.health.HealthMonitorManager;
 import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitorManagerImpl;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ServiceMonitorImpl implements ServiceMonitor {
     private final ServiceModelCache serviceModelCache;
@@ -32,28 +29,18 @@ public class ServiceMonitorImpl implements ServiceMonitor {
         Zone zone = superModelProvider.getZone();
         ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
 
-        UnionMonitorManager monitorManager = new UnionMonitorManager(
-                slobrokMonitorManager,
-                healthMonitorManager,
-                configserverConfig);
+        DuperModel duperModel = new DuperModel(configserverConfig);
+        UnionMonitorManager monitorManager =
+                new UnionMonitorManager(slobrokMonitorManager, healthMonitorManager);
 
         SuperModelListenerImpl superModelListener = new SuperModelListenerImpl(
                 monitorManager,
                 metrics,
-                new ModelGenerator(toConfigServerList(configserverConfig)),
+                duperModel,
+                new ModelGenerator(),
                 zone);
         superModelListener.start(superModelProvider);
         serviceModelCache = new ServiceModelCache(superModelListener, timer);
-    }
-
-    private List<String> toConfigServerList(ConfigserverConfig configserverConfig) {
-        if (configserverConfig.multitenant()) {
-            return configserverConfig.zookeeperserver().stream()
-                    .map(ConfigserverConfig.Zookeeperserver::hostname)
-                    .collect(Collectors.toList());
-        }
-
-        return Collections.emptyList();
     }
 
     @Override

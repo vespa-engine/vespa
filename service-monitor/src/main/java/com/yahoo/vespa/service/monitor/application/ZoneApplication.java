@@ -21,8 +21,8 @@ public class ZoneApplication {
             .createHostedVespaApplicationId("routing");
 
     public static boolean isNodeAdminService(ApplicationId applicationId,
-                                      ClusterId clusterId,
-                                      ServiceType serviceType) {
+                                             ClusterId clusterId,
+                                             ServiceType serviceType) {
         return Objects.equals(applicationId, ZONE_APPLICATION_ID) &&
                 Objects.equals(serviceType, ServiceType.CONTAINER) &&
                 Objects.equals(clusterId, ClusterId.NODE_ADMIN);
