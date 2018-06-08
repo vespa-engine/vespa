@@ -249,5 +249,9 @@
   "metrics": {
     "queryServiceQuality": 0.5,
     "writeServiceQuality": 0.7
+  },
+  "activity": {
+    "queriedAt": 1527848130000,
+    "writtenAt": 1527848130000
   }
 }
