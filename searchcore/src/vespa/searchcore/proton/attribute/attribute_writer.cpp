@@ -97,7 +97,7 @@ struct UpdateArgs : public AttrUpdates {
     SerialNum                        _serialNum;
     DocumentIdT                      _lid;
     bool                             _immediateCommit;
-    AttributeWriter::OnWriteDoneType _onWriteDone;
+    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
 };
 
 void
