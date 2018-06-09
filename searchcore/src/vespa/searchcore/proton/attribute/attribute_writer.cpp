@@ -368,8 +368,8 @@ class CommitTask : public vespalib::Executor::Task
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
 public:
     CommitTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, AttributeWriter::OnWriteDoneType onWriteDone);
-    virtual ~CommitTask() override;
-    virtual void run() override;
+    ~CommitTask() override;
+    void run() override;
 };
 
 
@@ -526,7 +526,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
     uint32_t numExecutors = _attributeFieldWriter.getNumExecutors();
     args.reserve(numExecutors);
     for (uint32_t i(0); i < numExecutors; i++) {
-        args.emplace_back(serialNum, lid, immediateCommit, std::move(onWriteDone));
+        args.emplace_back(serialNum, lid, immediateCommit, onWriteDone);
         args.back().reserve((2*upd.getUpdates().size())/numExecutors);
     }
 
