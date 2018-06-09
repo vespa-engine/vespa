@@ -182,8 +182,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         return !prev.getGeneration().equals(requiredGen) || prev.isConfigChanged();
     }
 
-    void setConfig(Long generation, T config) {
-        this.config.set(new ConfigState<>(true, generation, false, true, config));
+    void setConfig(Long generation, boolean internalRedeploy, T config) {
+        this.config.set(new ConfigState<>(true, generation, internalRedeploy, true, config));
     }
 
     // Only used by {@link FileConfigSubscription}
