@@ -24,9 +24,8 @@ public:
     size_t size() const override { return _array.size(); }
     iterator erase(iterator it) override  { _array.erase(_array.begin() + (it - this->begin())); return it; }
     void push_back(const B & v) override {
-        size_t sz(_array.size());
-        _array.resize(sz + 1);
-        _array[sz].assign(v);
+        _array.emplace_back();
+        _array.back().assign(v);
     }
 private:
     std::vector<T> _array;
