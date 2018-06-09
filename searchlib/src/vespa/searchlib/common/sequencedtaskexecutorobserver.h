@@ -6,8 +6,7 @@
 #include <vector>
 #include <mutex>
 
-namespace search
-{
+namespace search {
 
 /**
  * Observer class to observe class to run multiple tasks in parallel,
@@ -25,11 +24,9 @@ public:
 
     SequencedTaskExecutorObserver(ISequencedTaskExecutor &executor);
 
-    virtual ~SequencedTaskExecutorObserver() override;
-    virtual uint32_t getExecutorId(uint64_t componentId) override;
-    virtual void executeTask(uint32_t executorId,
-                             vespalib::Executor::Task::UP task) override;
-    virtual void sync() override;
+    ~SequencedTaskExecutorObserver() override;
+    void executeTask(uint32_t executorId, vespalib::Executor::Task::UP task) override;
+    void sync() override;
 
     uint32_t getExecuteCnt() const { return _executeCnt; }
     uint32_t getSyncCnt() const { return _syncCnt; }

@@ -14,9 +14,9 @@ constexpr uint32_t stackSize = 128 * 1024;
 
 }
 
-
 SequencedTaskExecutor::SequencedTaskExecutor(uint32_t threads, uint32_t taskLimit)
-    : _executors()
+    : ISequencedTaskExecutor(threads),
+      _executors()
 {
     for (uint32_t id = 0; id < threads; ++id) {
         auto executor = std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit);
@@ -37,18 +37,6 @@ SequencedTaskExecutor::setTaskLimit(uint32_t taskLimit)
     }
 }
 
-uint32_t
-SequencedTaskExecutor::getExecutorId(uint64_t componentId)
-{
-    auto itr = _ids.find(componentId);
-    if (itr == _ids.end()) {
-        auto insarg = std::make_pair(componentId, _ids.size() % _executors.size());
-        auto insres = _ids.insert(insarg);
-        assert(insres.second);
-        itr = insres.first;
-    }
-    return itr->second;
-}
 
 void
 SequencedTaskExecutor::executeTask(uint32_t executorId, vespalib::Executor::Task::UP task)
