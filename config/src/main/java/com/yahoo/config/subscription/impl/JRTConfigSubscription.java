@@ -107,7 +107,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         } catch (IllegalArgumentException e) {
             badConfigE = e;
         }
-        setConfig(jrtReq.getNewGeneration(), configInstance);
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsInternalRedeploy(), configInstance);
         if (badConfigE != null) {
             throw new IllegalArgumentException("Bad config from jrt", badConfigE);
         }

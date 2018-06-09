@@ -8,8 +8,7 @@ import java.util.Optional;
 
 /**
  * Common interface for jrt config requests available both at server and client.
- * @author lulf
- * @since 5.3
+ * @author Ulf Lilleengen
  */
 public interface JRTConfigRequest {
     /**

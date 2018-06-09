@@ -61,7 +61,7 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             } catch (IOException e) {
                 throw new ConfigurationRuntimeException(e);
             }
-            setConfig(0L, config);
+            setConfig(0L, false, config);
             try {
                 jarFile.close();
             } catch (IOException e) {
