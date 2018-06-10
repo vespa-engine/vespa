@@ -216,7 +216,7 @@ GetConfig::Main()
     FRTConfigRequestFactory requestFactory(protocolVersion, traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
     FRTConnection connection(spec, *_supervisor, TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
-    ConfigState state(configMD5, 0);
+    ConfigState state(configMD5, 0, false);
     FRTConfigRequest::UP request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout * 1000);
 
     _target->InvokeSync(request->getRequest(), clientTimeout); // seconds
@@ -240,6 +240,7 @@ GetConfig::Main()
             printf("configMD5  %s\n", rState.md5.c_str());
 
             printf("generation  %ld\n", rState.generation);
+            printf("internalRedeploy %s\n", rState.internalRedeploy == 0 ? "false" : "true");
             printf("trace       %s\n", response->getTrace().toString().c_str());
         } else if (traceLevel > 0) {
             printf("trace       %s\n", response->getTrace().toString().c_str());

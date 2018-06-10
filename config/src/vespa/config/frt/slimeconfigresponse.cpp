@@ -64,7 +64,7 @@ const ConfigState
 SlimeConfigResponse::readState() const
 {
     const Slime & data(*_data);
-    return ConfigState(data.get()[RESPONSE_CONFIG_MD5].asString().make_string(),  data.get()[RESPONSE_CONFIG_GENERATION].asLong());
+    return ConfigState(data.get()[RESPONSE_CONFIG_MD5].asString().make_string(),  data.get()[RESPONSE_CONFIG_GENERATION].asLong(), data.get()[RESPONSE_INTERNAL_REDEPLOY].asBool());
 }
 
 vespalib::string
