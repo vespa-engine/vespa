@@ -277,10 +277,10 @@ TEST("require that v3 request is correctly initialized") {
     traceIn.trace(2, "Hei");
     FRTConfigRequestV3 v3req(&conn, key, md5, currentGeneration, wantedGeneration, hostName,
                              timeout, traceIn, VespaVersion::fromString("1.2.3"), CompressionType::LZ4);
-    ASSERT_TRUE(v3req.verifyState(ConfigState(md5, 3)));
-    ASSERT_FALSE(v3req.verifyState(ConfigState(md5, 2)));
-    ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 3)));
-    ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 2)));
+    ASSERT_TRUE(v3req.verifyState(ConfigState(md5, 3, false)));
+    ASSERT_FALSE(v3req.verifyState(ConfigState(md5, 2, false)));
+    ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 3, false)));
+    ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 2, false)));
 
     ConfigDefinition origDef(MyConfig::CONFIG_DEF_SCHEMA);
 
