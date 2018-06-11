@@ -3,6 +3,9 @@ package com.yahoo.vespa.clustercontroller.core.rpc;
 
 import com.yahoo.jrt.*;
 import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.*;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -87,6 +90,8 @@ public class RPCCommunicatorTest {
 
         when(target.isValid()).thenReturn(true);
         when(nodeInfo.getConnection()).thenReturn(target);
+        when(nodeInfo.getVersion()).thenReturn(3);
+        when(nodeInfo.getReportedState()).thenReturn(new NodeState(NodeType.DISTRIBUTOR, State.UP));
         communicator.getNodeState(nodeInfo, null);
         Mockito.verify(target).invokeAsync(
                 (Request)any(),

@@ -79,43 +79,6 @@ public class RPCCommunicator implements Communicator {
         return t;
     }
 
-    public void doVersion0HandShake(Target connection, final NodeInfo node) {
-        log.log(LogLevel.DEBUG, "Sending version 0 handshake request as version has been set down to 0 for " + node);
-        Request req = new Request("vespa.storage.connect");
-        req.parameters().add(new StringValue("storage/cluster." + node.getCluster().getName() + (node.isDistributor() ? "/distributor/" : "/storage/") + node.getNodeIndex()));
-        connection.invokeAsync(req, 10.0, new RequestWaiter(){
-            public void handleRequestDone(Request req) {
-                if (req.isError()) {
-                    log.log(LogLevel.WARNING, "Failed to do version 0 handshake towards " + node + ", " + req.errorCode() + ": " + req.errorMessage());
-                } else if (!req.checkReturnTypes("i")) {
-                    log.log(LogLevel.WARNING, "Wrong arguments returned from version 0 handshake attempt towards " + node);
-                } else if (req.returnValues().get(0).asInt32() == 1) {
-                    log.log(LogLevel.DEBUG, "Session already opened when handshaking towards " + node + ".");
-                } else if (req.returnValues().get(0).asInt32() > 1) {
-                    log.log(LogLevel.WARNING, "Handshaking attempt towards " + node + " failed with code " + req.returnValues().get(0).asInt32());
-                }
-            }
-        });
-        node.setConnectionVersion(0);
-    }
-
-    public void clearOldStoredNodeState(Target connection, final NodeInfo node) {
-        log.log(LogLevel.DEBUG, "In case old node had stored a wanted state it is reporting, send a command to clear any unwanted stored state.");
-        Request req = new Request("setnodestate");
-        req.parameters().add(new StringValue(""));
-        connection.invokeAsync(req, 10.0, new RequestWaiter() {
-            public void handleRequestDone(Request req) {
-                if (req.isError()) {
-                    if (node.getReportedState().getState() != State.DOWN) {
-                        log.log(LogLevel.WARNING, "Failed to clear nodestate on old node " + node + ", " + req.errorCode() + ": " + req.errorMessage());
-                    }
-                } else if (!req.checkReturnTypes("is")) {
-                    log.log(LogLevel.WARNING, "Wrong arguments returned from version 0 setnodestate attempt to clear any unwanted state on " + node);
-                }
-            }
-        });
-    }
-
     @Override
     public void propagateOptions(final FleetControllerOptions options) {
         checkArgument(options.nodeStateRequestTimeoutMS > 0);
@@ -137,25 +100,13 @@ public class RPCCommunicator implements Communicator {
         if ( ! connection.isValid()) {
             log.log(LogLevel.DEBUG, "Connection to " + node.getRpcAddress() + " could not be created.");
         }
-        // TODO remove this deprecated legacy stuff
-        if (node.getVersion() == 0 && node.getConnectionVersion() > 0) {
-            doVersion0HandShake(connection, node);
-            clearOldStoredNodeState(connection, node);
-        }
         NodeState currentState = node.getReportedState();
-        Request req;
-        if (node.getVersion() == 0) {
-            req = new Request("getnodestate");
-        } else {
-            req = new Request(node.getVersion() == 1 ? "getnodestate2" : "getnodestate3");
-            req.parameters().add(new StringValue(
-                    currentState.getState().equals(State.DOWN) || node.getConnectionAttemptCount() > 0
-                       ? "unknown" : currentState.serialize()));
-            req.parameters().add(new Int32Value(generateNodeStateRequestTimeoutMs()));
-            if (node.getVersion() > 1) {
-                req.parameters().add(new Int32Value(fleetControllerIndex));
-            }
-        }
+        Request req = new Request("getnodestate3");
+        req.parameters().add(new StringValue(
+                currentState.getState().equals(State.DOWN) || node.getConnectionAttemptCount() > 0
+                   ? "unknown" : currentState.serialize()));
+        req.parameters().add(new Int32Value(generateNodeStateRequestTimeoutMs()));
+        req.parameters().add(new Int32Value(fleetControllerIndex));
 
         RPCGetNodeStateRequest stateRequest = new RPCGetNodeStateRequest(node, req);
         RPCGetNodeStateWaiter waiter = new RPCGetNodeStateWaiter(stateRequest, externalWaiter, timer);
@@ -179,16 +130,8 @@ public class RPCCommunicator implements Communicator {
             return;
         }
         final int nodeVersion = node.getVersion();
-        // TODO remove this deprecated legacy stuff
-        if (nodeVersion == 0 && node.getConnectionVersion() > 0) {
-            doVersion0HandShake(connection, node);
-            clearOldStoredNodeState(connection, node);
-        }
         Request req;
-        if (nodeVersion == 0) {
-            req = new Request("setsystemstate");
-            req.parameters().add(new StringValue(baselineState.toString(true)));
-        } else if (nodeVersion <= 2) {
+        if (nodeVersion <= 2) {
             req = new Request(LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME);
             req.parameters().add(new StringValue(baselineState.toString(false)));
         } else {
