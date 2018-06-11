@@ -6,19 +6,18 @@
 #include "isequencedtaskexecutor.h"
 #include <future>
 
-namespace search {
-namespace common {
+namespace search::common {
 
-ThreadedCompactableLidSpace::ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target, ISequencedTaskExecutor &executor, uint32_t executorId)
+ThreadedCompactableLidSpace::ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target,
+                                                         ISequencedTaskExecutor &executor,
+                                                         ISequencedTaskExecutor::ExecutorId id)
     : _target(target),
       _executor(executor),
-      _executorId(executorId)
+      _executorId(id)
 {
 }
 
-ThreadedCompactableLidSpace::~ThreadedCompactableLidSpace()
-{
-}
+ThreadedCompactableLidSpace::~ThreadedCompactableLidSpace() = default;
 
 void
 ThreadedCompactableLidSpace::compactLidSpace(uint32_t wantedDocLidLimit)
@@ -50,5 +49,4 @@ ThreadedCompactableLidSpace::shrinkLidSpace()
     future.wait();
 }
 
-}
 }

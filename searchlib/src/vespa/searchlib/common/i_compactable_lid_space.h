@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace search {
-namespace common {
+namespace search::common {
 
 /**
  * Interface for a component that has a lid space that can be compacted and shrunk.
@@ -34,5 +33,3 @@ struct ICompactableLidSpace {
 };
 
 }
-}
-
