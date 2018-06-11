@@ -8,6 +8,7 @@
 #include "geoposdfw.h"
 #include "positionsdfw.h"
 #include "juniperdfw.h"
+#include "attribute_combiner_dfw.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -91,6 +92,11 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
             fieldWriter.reset(fw);
             rc = fw != NULL;
         }
+    } else if (overrideName == "attributecombiner") {
+        if (getEnvironment() && getEnvironment()->getAttributeManager()) {
+            fieldWriter = AttributeCombinerDFW::create(fieldName, *getEnvironment()->getAttributeManager());
+            rc = static_cast<bool>(fieldWriter);
+        }
     } else {
         throw IllegalArgumentException("unknown override operation '" + overrideName + "' for field '" + fieldName + "'.");
     }
@@ -106,10 +112,6 @@ DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cf
     }
     for (size_t i = 0; i < cfg.override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = cfg.override[i];
-        if (o.command == "attributecombiner") {
-            // TODO: Remove this when support has been added
-            continue;
-        }
         bool rc(false);
         IDocsumFieldWriter::UP fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc);
         if (rc && fieldWriter.get() != NULL) {
