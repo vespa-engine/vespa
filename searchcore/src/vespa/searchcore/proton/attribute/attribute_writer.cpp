@@ -6,6 +6,7 @@
 #include "document_field_extractor.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
@@ -80,6 +81,25 @@ AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
 
 namespace {
 
+using AttrUpdates = std::vector<std::pair<AttributeVector *, const FieldUpdate *>>;
+
+struct UpdateArgs : public AttrUpdates {
+
+    UpdateArgs(SerialNum serialNum, DocumentIdT lid, bool immediateCommit,
+               AttributeWriter::OnWriteDoneType onWriteDone)
+        : AttrUpdates(),
+          _serialNum(serialNum),
+          _lid(lid),
+          _immediateCommit(immediateCommit),
+          _onWriteDone(onWriteDone)
+    { }
+
+    SerialNum                        _serialNum;
+    DocumentIdT                      _lid;
+    bool                             _immediateCommit;
+    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
+};
+
 void
 ensureLidSpace(SerialNum serialNum, DocumentIdT lid, AttributeVector &attr)
 {
@@ -118,16 +138,20 @@ applyRemoveToAttribute(SerialNum serialNum, DocumentIdT lid, bool immediateCommi
 
 void
 applyUpdateToAttribute(SerialNum serialNum, const FieldUpdate &fieldUpd,
-                       DocumentIdT lid, bool immediateCommit, AttributeVector &attr,
-                       AttributeWriter::OnWriteDoneType)
+                       DocumentIdT lid, AttributeVector &attr)
 {
     ensureLidSpace(serialNum, lid, attr);
     AttrUpdate::handleUpdate(attr, lid, fieldUpd);
-    if (immediateCommit) {
-        attr.commit(serialNum, serialNum);
-    }
 }
 
+void
+applyUpdateToAttributeAndCommit(SerialNum serialNum, const FieldUpdate &fieldUpd,
+                                DocumentIdT lid, AttributeVector &attr)
+{
+    ensureLidSpace(serialNum, lid, attr);
+    AttrUpdate::handleUpdate(attr, lid, fieldUpd);
+    attr.commit(serialNum, serialNum);
+}
 
 void
 applyReplayDone(uint32_t docIdLimit, AttributeVector &attr)
@@ -221,8 +245,8 @@ class PutTask : public vespalib::Executor::Task
     std::vector<FieldValue::UP> _fieldValues;
 public:
     PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, std::shared_ptr<DocumentFieldExtractor> fieldExtractor, uint32_t lid, bool immediateCommit, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone);
-    virtual ~PutTask() override;
-    virtual void run() override;
+    ~PutTask() override;
+    void run() override;
 };
 
 PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, std::shared_ptr<DocumentFieldExtractor> fieldExtractor, uint32_t lid, bool immediateCommit, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone)
@@ -245,9 +269,7 @@ PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, s
     }
 }
 
-PutTask::~PutTask()
-{
-}
+PutTask::~PutTask() = default;
 
 void
 PutTask::run()
@@ -274,8 +296,8 @@ class RemoveTask : public vespalib::Executor::Task
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
 public:
     RemoveTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, uint32_t lid, bool immediateCommit, AttributeWriter::OnWriteDoneType onWriteDone);
-    virtual ~RemoveTask() override;
-    virtual void run() override;
+    ~RemoveTask() override;
+    void run() override;
 };
 
 
@@ -288,9 +310,7 @@ RemoveTask::RemoveTask(const AttributeWriter::WriteContext &wc, SerialNum serial
 {
 }
 
-RemoveTask::~RemoveTask()
-{
-}
+RemoveTask::~RemoveTask() = default;
 
 void
 RemoveTask::run()
@@ -325,8 +345,8 @@ public:
           _immediateCommit(immediateCommit),
           _onWriteDone(onWriteDone)
     {}
-    virtual ~BatchRemoveTask() override {}
-    virtual void run() override {
+    ~BatchRemoveTask() override {}
+    void run() override {
         for (auto field : _writeCtx.getFields()) {
             auto &attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
@@ -348,8 +368,8 @@ class CommitTask : public vespalib::Executor::Task
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
 public:
     CommitTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, AttributeWriter::OnWriteDoneType onWriteDone);
-    virtual ~CommitTask() override;
-    virtual void run() override;
+    ~CommitTask() override;
+    void run() override;
 };
 
 
@@ -360,9 +380,7 @@ CommitTask::CommitTask(const AttributeWriter::WriteContext &wc, SerialNum serial
 {
 }
 
-CommitTask::~CommitTask()
-{
-}
+CommitTask::~CommitTask() = default;
 
 void
 CommitTask::run()
@@ -426,8 +444,7 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
 }
 
 void
-AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid,
-                                bool immediateCommit,
+AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit,
                                 OnWriteDoneType onWriteDone)
 {
     for (const auto &wc : _writeContexts) {
@@ -469,12 +486,8 @@ void
 AttributeWriter::put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                      bool immediateCommit, OnWriteDoneType onWriteDone)
 {
-    LOG(spam,
-        "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
-        serialNum,
-        doc.getId().toString().c_str(),
-        lid,
-        doc.toString(true).c_str());
+    LOG(spam, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
+        serialNum, doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
     internalPut(serialNum, doc, lid, immediateCommit, true, onWriteDone);
 }
 
@@ -482,12 +495,8 @@ void
 AttributeWriter::update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                         bool immediateCommit, OnWriteDoneType onWriteDone)
 {
-    LOG(spam,
-        "Handle update: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
-        serialNum,
-        doc.getId().toString().c_str(),
-        lid,
-        doc.toString(true).c_str());
+    LOG(spam, "Handle update: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
+        serialNum, doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
     internalPut(serialNum, doc, lid, immediateCommit, false, onWriteDone);
 }
 
@@ -513,6 +522,14 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
                         bool immediateCommit, OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate)
 {
     LOG(debug, "Inspecting update for document %d.", lid);
+    std::vector<UpdateArgs> args;
+    uint32_t numExecutors = _attributeFieldWriter.getNumExecutors();
+    args.reserve(numExecutors);
+    for (uint32_t i(0); i < numExecutors; i++) {
+        args.emplace_back(serialNum, lid, immediateCommit, onWriteDone);
+        args.back().reserve((2*upd.getUpdates().size())/numExecutors);
+    }
+
     for (const auto &fupd : upd.getUpdates()) {
         LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().c_str());
         AttributeVector *attrp = _mgr->getWritableAttribute(fupd.getField().getName());
@@ -521,20 +538,29 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
             LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().c_str());
             continue;
         }
-        AttributeVector &attr = *attrp;
         // TODO: Check if we must use > due to multiple entries for same
         // document and attribute.
-        if (attr.getStatus().getLastSyncToken() >= serialNum)
+        if (attrp->getStatus().getLastSyncToken() >= serialNum)
             continue;
-
-        LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attr.getName().c_str());
-
-        // NOTE: The lifetime of the field update will be ensured by keeping the document update alive
-        // in a operation done context object.
-        _attributeFieldWriter.execute(attr.getName(),
-                [serialNum, &fupd, lid, immediateCommit, &attr, onWriteDone]()
-                { applyUpdateToAttribute(serialNum, fupd, lid, immediateCommit, attr, onWriteDone); });
+        args[_attributeFieldWriter.getExecutorId(attrp->getName())].emplace_back(attrp, &fupd);
+        LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attrp->getName().c_str());
     }
+    // NOTE: The lifetime of the field update will be ensured by keeping the document update alive
+    // in a operation done context object.
+    for (uint32_t id(0); id < args.size(); id++) {
+        _attributeFieldWriter.execute(id, [batch = std::move(args[id])]() {
+            if (batch._immediateCommit) {
+                for (const auto & update : batch) {
+                    applyUpdateToAttributeAndCommit(batch._serialNum, *update.second, batch._lid, *update.first);
+                }
+            } else {
+                for (const auto & update : batch) {
+                    applyUpdateToAttribute(batch._serialNum, *update.second, batch._lid, *update.first);
+                }
+            }
+        });
+    }
+
 }
 
 void
