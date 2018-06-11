@@ -23,6 +23,7 @@
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -438,17 +439,19 @@ void VespaDocumentSerializer::write42(const DocumentUpdate &value)
 
 void VespaDocumentSerializer::writeHEAD(const DocumentUpdate &value)
 {
+    if (!value._needHardReserialize) {
+        _stream.write(value._backing.peek(), value._backing.size());
+        return;
+    }
     write(value.getId());
     _stream.write(value.getType().getName().c_str(), value.getType().getName().size() + 1);
     _stream << static_cast<uint16_t>(0);
-    const DocumentUpdate::FieldUpdateV & updates(value.getUpdates());
-    _stream << static_cast<uint32_t>(updates.size());
-    for (const auto & update : updates) {
+    _stream << static_cast<uint32_t>(value._updates.size());
+    for (const auto & update : value._updates) {
         write(update);
     }
-    const DocumentUpdate::FieldPathUpdateV & fieldPathUpdates(value.getFieldPathUpdates());
-    _stream << static_cast<uint32_t>(value.serializeFlags(fieldPathUpdates.size()));
-    for (const auto & update : fieldPathUpdates) {
+    _stream << static_cast<uint32_t>(value.serializeFlags(value._fieldPathUpdates.size()));
+    for (const auto & update : value._fieldPathUpdates) {
         _stream << update->getSerializedType();
         write(*update);
     }

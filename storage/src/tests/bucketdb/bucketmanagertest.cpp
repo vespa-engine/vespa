@@ -5,6 +5,7 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
@@ -722,6 +723,7 @@ public:
 
     auto createUpdateCommand(const document::BucketId& bucket) const {
         auto update = std::make_shared<document::DocumentUpdate>(
+                _self._node->getTestDocMan().getTypeRepo(),
                 *_self._node->getTestDocMan().getTypeRepo()
                     .getDocumentType("testdoctype1"),
                 document::DocumentId("id:foo:testdoctype1::bar2"));

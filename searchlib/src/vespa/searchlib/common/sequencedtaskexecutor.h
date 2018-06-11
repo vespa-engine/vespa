@@ -5,16 +5,12 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 
-namespace vespalib
-{
-
-class ExecutorStats;
-class BlockingThreadStackExecutor;
-
+namespace vespalib {
+    class ExecutorStats;
+    class BlockingThreadStackExecutor;
 }
 
-namespace search
-{
+namespace search {
 
 /**
  * Class to run multiple tasks in parallel, but tasks with same
@@ -29,17 +25,13 @@ public:
     using ISequencedTaskExecutor::getExecutorId;
 
     SequencedTaskExecutor(uint32_t threads, uint32_t taskLimit = 1000);
-
     ~SequencedTaskExecutor();
 
     void setTaskLimit(uint32_t taskLimit);
-
-    virtual uint32_t getExecutorId(uint64_t componentId) override;
-
-    virtual void executeTask(uint32_t executorId, vespalib::Executor::Task::UP task) override;
-
-    virtual void sync() override;
-
+    uint32_t getNumExecutors() const override { return _executors.size(); }
+    uint32_t getExecutorId(uint64_t componentId) override;
+    void executeTask(uint32_t executorId, vespalib::Executor::Task::UP task) override;
+    void sync() override;
     Stats getStats();
 };
 

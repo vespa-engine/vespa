@@ -24,6 +24,7 @@ public:
      * @return              executor id
      */
     virtual uint32_t getExecutorId(uint64_t componentId) = 0;
+    virtual uint32_t getNumExecutors() const = 0;
 
     uint32_t getExecutorId(vespalib::stringref componentId) {
         vespalib::hash<vespalib::stringref> hashfun;

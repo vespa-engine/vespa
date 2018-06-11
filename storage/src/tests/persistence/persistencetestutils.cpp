@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "persistencetestutils.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -222,16 +223,11 @@ PersistenceTestUtils::doGetOnDisk(
 }
 
 document::DocumentUpdate::SP
-PersistenceTestUtils::createBodyUpdate(
-        const document::DocumentId& docId,
-        const document::FieldValue& updateValue)
+PersistenceTestUtils::createBodyUpdate(const document::DocumentId& docId, const document::FieldValue& updateValue)
 {
-    const DocumentType* docType(_env->_component.getTypeRepo()
-            ->getDocumentType("testdoctype1"));
-    document::DocumentUpdate::SP update(
-            new document::DocumentUpdate(*docType, docId));
-    std::shared_ptr<document::AssignValueUpdate> assignUpdate(
-            new document::AssignValueUpdate(updateValue));
+    const DocumentType* docType(_env->_component.getTypeRepo()->getDocumentType("testdoctype1"));
+    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_env->_component.getTypeRepo(), *docType, docId));
+    std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(updateValue));
     document::FieldUpdate fieldUpdate(docType->getField("content"));
     fieldUpdate.addUpdate(*assignUpdate);
     update->addUpdate(fieldUpdate);
@@ -239,16 +235,11 @@ PersistenceTestUtils::createBodyUpdate(
 }
 
 document::DocumentUpdate::SP
-PersistenceTestUtils::createHeaderUpdate(
-        const document::DocumentId& docId,
-        const document::FieldValue& updateValue)
+PersistenceTestUtils::createHeaderUpdate(const document::DocumentId& docId, const document::FieldValue& updateValue)
 {
-    const DocumentType* docType(_env->_component.getTypeRepo()
-            ->getDocumentType("testdoctype1"));
-    document::DocumentUpdate::SP update(
-            new document::DocumentUpdate(*docType, docId));
-    std::shared_ptr<document::AssignValueUpdate> assignUpdate(
-            new document::AssignValueUpdate(updateValue));
+    const DocumentType* docType(_env->_component.getTypeRepo()->getDocumentType("testdoctype1"));
+    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_env->_component.getTypeRepo(), *docType, docId));
+    std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(updateValue));
     document::FieldUpdate fieldUpdate(docType->getField("headerval"));
     fieldUpdate.addUpdate(*assignUpdate);
     update->addUpdate(fieldUpdate);

@@ -12,9 +12,6 @@
 
 #include <vespa/document/util/identifiableid.h>
 #include <vespa/document/util/printable.h>
-#include <memory>
-#include <vector>
-#include <vespa/document/base/fieldpath.h>
 
 namespace document {
 
@@ -24,6 +21,7 @@ class NumericDataType;
 class PrimitiveDataType;
 class DocumentType;
 class WeightedSetDataType;
+class FieldPath;
 
 class DataType : public vespalib::Cloneable,
                  public Printable,
@@ -130,6 +128,9 @@ public:
      * @return pointer to field path or null if an error occured
      */
     void buildFieldPath(FieldPath & fieldPath, const vespalib::stringref & remainFieldName) const;
+
+    /** @throws FieldNotFoundException if field does not exist. */
+    virtual const Field& getField(int fieldId) const;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(DataType);
 private:

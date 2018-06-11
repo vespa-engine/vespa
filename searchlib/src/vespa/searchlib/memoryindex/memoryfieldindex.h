@@ -14,8 +14,7 @@
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 class OrderedDocumentInserter;
 /*
@@ -183,9 +182,9 @@ public:
     }
 };
 
-} // namespace search::memoryindex
+}
 
-namespace btree {
+namespace search::btree {
 
 extern template
 class BTreeNodeDataWrap<memoryindex::MemoryFieldIndex::WordKey,
@@ -266,6 +265,4 @@ class BTreeNodeAllocator<memoryindex::MemoryFieldIndex::WordKey,
                        BTreeDefaultTraits::INTERNAL_SLOTS,
                        BTreeDefaultTraits::LEAF_SLOTS>;
 
-} // namespace search::btree
-
-} // namespace search
+}

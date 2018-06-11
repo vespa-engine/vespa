@@ -2725,6 +2725,7 @@ void FileStorManagerTest::update_command_size_is_added_to_metric() {
     document::BucketId bucket(16, 4000);
     createBucket(bucket, 0);
     auto update = std::make_shared<document::DocumentUpdate>(
+            _node->getTestDocMan().getTypeRepo(),
             _node->getTestDocMan().createRandomDocument()->getType(),
             document::DocumentId("id:foo:testdoctype1::bar"));
     auto cmd = std::make_shared<api::UpdateCommand>(

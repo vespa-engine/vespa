@@ -13,7 +13,7 @@ ForceLink::ForceLink(void)
     if (time(NULL) == 0) {
         DocumentType          type("foo", 1);
         Document              document(type, DocumentId("doc:ns:bar"));
-        DocumentUpdate        documentUpdate(type, DocumentId("doc:ns:bar"));
+        DocumentUpdate        documentUpdate;
         MapValueUpdate        mapValueUpdate(IntFieldValue(3), ClearValueUpdate());
         AddValueUpdate        addValueUpdate(IntFieldValue(3));
         RemoveValueUpdate     removeValueUpdate(IntFieldValue(3));

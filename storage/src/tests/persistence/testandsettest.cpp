@@ -6,6 +6,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/persistence/spi/test.h>
 #include <functional>
@@ -188,7 +189,7 @@ std::unique_ptr<api::UpdateCommand> TestAndSetTest::conditional_update_test(
 {
     putTestDocument(matchingHeader, timestampOne);
 
-    auto docUpdate = std::make_shared<document::DocumentUpdate>(testDoc->getType(), testDocId);
+    auto docUpdate = std::make_shared<document::DocumentUpdate>(_env->_testDocMan.getTypeRepo(), testDoc->getType(), testDocId);
     auto fieldUpdate = document::FieldUpdate(testDoc->getField("content"));
     fieldUpdate.addUpdate(document::AssignValueUpdate(NEW_CONTENT));
     docUpdate->addUpdate(fieldUpdate);

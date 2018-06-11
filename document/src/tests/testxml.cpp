@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include <vespa/document/base/testdocrepo.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/update/documentupdate.h>
@@ -11,6 +10,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using vespalib::StringTokenizer;
@@ -73,7 +73,7 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
     const DocumentType* type(repo.getDocumentType("testdoc"));
     DocumentId id("doc:crawler/http://www.ntnu.no/");
 
-    DocumentUpdate::UP up(new DocumentUpdate(*type, id));
+    DocumentUpdate::UP up(new DocumentUpdate(repo, *type, id));
     up->addUpdate(FieldUpdate(type->getField("intattr"))
 		  .addUpdate(AssignValueUpdate(IntFieldValue(7))));
     up->addUpdate(FieldUpdate(type->getField("stringattr"))

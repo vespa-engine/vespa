@@ -15,13 +15,10 @@
 
 #include "valueupdate.h"
 #include <vespa/document/base/field.h>
-#include <vespa/document/util/serializable.h>
 
 namespace document {
 
 class Document;
-class DocumentType;
-class DocumentTypeRepo;
 
 class FieldUpdate : public vespalib::Identifiable,
                     public Printable,
@@ -48,7 +45,7 @@ public:
      * @param buffer A byte buffer that contains a serialized field update.
      * @param serializationVersion The serialization version the update was serialized with.
      */
-    FieldUpdate(const DocumentTypeRepo& repo, const DocumentType& type,
+    FieldUpdate(const DocumentTypeRepo& repo, const DataType & type,
                 ByteBuffer& buffer, int16_t version);
 
     bool operator==(const FieldUpdate&) const;

@@ -3,7 +3,8 @@
 #pragma once
 
 #include "idocumentstore.h"
-#include "idatastore.h"
+#include <vespa/vespalib/util/compressionconfig.h>
+
 
 namespace search {
 
@@ -62,7 +63,7 @@ public:
     DocumentStore(const Config & config, IDataStore & store);
     ~DocumentStore();
 
-    document::Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &repo) const override;
+    DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo &repo) const override;
     void visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const override;
     void write(uint64_t synkToken, DocumentIdT lid, const document::Document& doc) override;
     void write(uint64_t synkToken, DocumentIdT lid, const vespalib::nbostream & os) override;

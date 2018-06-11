@@ -10,6 +10,7 @@
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/read_consistency.h>
+#include <vespa/document/fieldset/fieldset.h>
 
 namespace proton {
 
@@ -39,12 +40,9 @@ private:
     bool isWeakRead() const { return _readConsistency == ReadConsistency::WEAK; }
 
 public:
-    DocumentIterator(const storage::spi::Bucket &bucket,
-                     const document::FieldSet& fields,
-                     const storage::spi::Selection &selection,
-                     storage::spi::IncludedVersions versions,
-                     ssize_t defaultSerializedSize,
-                     bool ignoreMaxBytes,
+    DocumentIterator(const storage::spi::Bucket &bucket, const document::FieldSet& fields,
+                     const storage::spi::Selection &selection, storage::spi::IncludedVersions versions,
+                     ssize_t defaultSerializedSize, bool ignoreMaxBytes,
                      ReadConsistency readConsistency=ReadConsistency::STRONG);
     ~DocumentIterator();
     void add(const IDocumentRetriever::SP &retriever);

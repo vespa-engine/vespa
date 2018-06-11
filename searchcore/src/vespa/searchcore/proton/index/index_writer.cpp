@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "index_writer.h"
+#include <vespa/document/fieldvalue/document.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.indexadapter");
 
 using document::Document;
-using document::FieldValue;
 
 namespace proton {
 
@@ -15,7 +15,7 @@ IndexWriter::IndexWriter(const IIndexManager::SP &mgr)
 {
 }
 
-IndexWriter::~IndexWriter() {}
+IndexWriter::~IndexWriter() = default;
 
 bool
 IndexWriter::ignoreOperation(search::SerialNum serialNum) const {
@@ -23,9 +23,7 @@ IndexWriter::ignoreOperation(search::SerialNum serialNum) const {
 }
 
 void
-IndexWriter::put(search::SerialNum serialNum,
-                 const document::Document &doc,
-                 const search::DocumentIdT lid)
+IndexWriter::put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid)
 {
     if (ignoreOperation(serialNum)) {
         return;
@@ -45,14 +43,12 @@ IndexWriter::put(search::SerialNum serialNum,
 }
 
 void
-IndexWriter::remove(search::SerialNum serialNum,
-                    const search::DocumentIdT lid)
+IndexWriter::remove(search::SerialNum serialNum, const search::DocumentIdT lid)
 {
     if (serialNum <= _mgr->getFlushedSerialNum()) {
         return;
     }
-    VLOG(getDebugLevel(lid, NULL), "Handle remove: serial(%" PRIu64 "), lid(%u)",
-        serialNum, lid);
+    VLOG(getDebugLevel(lid, NULL), "Handle remove: serial(%" PRIu64 "), lid(%u)", serialNum, lid);
     _mgr->removeDocument(lid, serialNum);
 }
 
@@ -70,6 +66,5 @@ IndexWriter::heartBeat(search::SerialNum serialNum)
 {
     _mgr->heartBeat(serialNum);
 }
-
 
 } // namespace proton

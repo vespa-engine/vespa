@@ -163,8 +163,7 @@ DocumentUpdate::SP DocumentSelectParserTest::createUpdate(
         const std::string& hstr)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
-    DocumentUpdate::SP doc(
-            new DocumentUpdate(*type, DocumentId(id)));
+    DocumentUpdate::SP doc(new DocumentUpdate(*_repo, *type, DocumentId(id)));
     doc->addUpdate(FieldUpdate(doc->getType().getField("headerval"))
                       .addUpdate(AssignValueUpdate(IntFieldValue(hint))));
     doc->addUpdate(FieldUpdate(doc->getType().getField("hstringval"))

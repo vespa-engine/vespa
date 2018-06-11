@@ -5,6 +5,8 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/persistence/spi/documentselection.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/test.h>
@@ -65,7 +67,8 @@ createDoc(const DocumentType &docType, const DocumentId &docId)
 document::DocumentUpdate::SP
 createUpd(const DocumentType& docType, const DocumentId &docId)
 {
-    return document::DocumentUpdate::SP(new document::DocumentUpdate(docType, docId));
+    static document::DocumentTypeRepo repo;
+    return document::DocumentUpdate::SP(new document::DocumentUpdate(repo, docType, docId));
 }
 
 storage::spi::ClusterState

@@ -21,7 +21,7 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/searchlib/index/docbuilder.h>
 
 #include <vespa/log/log.h>
@@ -478,11 +478,11 @@ struct DocumentContext
 
 DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder)
     : doc(builder.startDocument(docId).startSummaryField("s1").addStr(docId).endField().endDocument().release()),
-      upd(new DocumentUpdate(builder.getDocumentType(), doc->getId())),
+      upd(new DocumentUpdate(*builder.getDocumentTypeRepo(), builder.getDocumentType(), doc->getId())),
       bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
       ts(timestamp)
 {}
-DocumentContext::~DocumentContext() {}
+DocumentContext::~DocumentContext() = default;
 
 struct FeedTokenContext
 {

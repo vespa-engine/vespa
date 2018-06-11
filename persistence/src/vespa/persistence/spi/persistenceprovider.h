@@ -15,8 +15,7 @@ namespace document {
     class FieldSet;
 }
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 /**
  * This interface is the basis for a persistence provider in Vespa.  A
@@ -100,8 +99,7 @@ struct PersistenceProvider
      * other buckets may be deactivated, so the node must be able to serve
      * the data from its secondary index or get reduced coverage.
      */
-    virtual Result setActiveState(const Bucket&,
-                                  BucketInfo::ActiveState) = 0;
+    virtual Result setActiveState(const Bucket&, BucketInfo::ActiveState) = 0;
 
     /**
      * Retrieve metadata for a bucket, previously returned in listBuckets(),
@@ -171,10 +169,7 @@ struct PersistenceProvider
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
      */
-    virtual RemoveResult remove(const Bucket&,
-                                Timestamp timestamp,
-                                const DocumentId& id,
-                                Context&) = 0;
+    virtual RemoveResult remove(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&) = 0;
     /**
      * @see remove()
      * <p/>
@@ -189,10 +184,7 @@ struct PersistenceProvider
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
      */
-    virtual RemoveResult removeIfFound(const Bucket&,
-                                       Timestamp timestamp,
-                                       const DocumentId& id,
-                                       Context&) = 0;
+    virtual RemoveResult removeIfFound(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&) = 0;
 
     /**
      * Remove any trace of the entry with the given timestamp. (Be it a document
@@ -209,10 +201,7 @@ struct PersistenceProvider
      * @param timestamp The timestamp to use for the new update entry.
      * @param update The document update to apply to the stored document.
      */
-    virtual UpdateResult update(const Bucket&,
-                                Timestamp timestamp,
-                                const DocumentUpdateSP& update,
-                                Context&) = 0;
+    virtual UpdateResult update(const Bucket&, Timestamp timestamp, const DocumentUpdateSP& update, Context&) = 0;
 
     /**
      * The service layer may choose to batch certain commands. This means that
@@ -246,10 +235,7 @@ struct PersistenceProvider
      * @param fieldSet A set of fields that should be retrieved.
      * @param id The document id to retrieve.
      */
-    virtual GetResult get(const Bucket&,
-                          const document::FieldSet& fieldSet,
-                          const DocumentId& id,
-                          Context&) const = 0;
+    virtual GetResult get(const Bucket&, const document::FieldSet& fieldSet, const DocumentId& id, Context&) const = 0;
 
     /**
      * Create an iterator for a given bucket and selection criteria, returning
@@ -341,9 +327,7 @@ struct PersistenceProvider
      * @param maxByteSize An indication of the maximum number of bytes that
      * should be returned.
      */
-    virtual IterateResult iterate(IteratorId id,
-                                  uint64_t maxByteSize,
-                                  Context&) const = 0;
+    virtual IterateResult iterate(IteratorId id, uint64_t maxByteSize, Context&) const = 0;
 
     /**
      * Destroys the iterator specified by the given id.
@@ -394,8 +378,7 @@ struct PersistenceProvider
      * scheduled more often than HIGH maintenance, allowing costly operations
      * to be run less.
      */
-    virtual Result maintain(const Bucket&,
-                            MaintenanceLevel level) = 0;
+    virtual Result maintain(const Bucket&, MaintenanceLevel level) = 0;
 
     /**
      * Splits the source bucket into the two target buckets.
@@ -412,19 +395,13 @@ struct PersistenceProvider
      * don't want to split far enough to split content in two. In these cases
      * target2 will specify invalid bucket 0 (with 0 used bits).
      */
-    virtual Result split(const Bucket& source,
-                         const Bucket& target1,
-                         const Bucket& target2,
-                         Context&) = 0;
+    virtual Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) = 0;
 
     /**
      * Joins two buckets into one. After the join, all documents from
      * source1 and source2 should be stored in the target bucket.
      */
-    virtual Result join(const Bucket& source1,
-                        const Bucket& source2,
-                        const Bucket& target,
-                        Context&) = 0;
+    virtual Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) = 0;
 
     /**
      * Moves a bucket from one partition to another.
@@ -434,6 +411,4 @@ struct PersistenceProvider
     virtual Result move(const Bucket&, PartitionId target, Context&) = 0;
 };
 
-} // spi
-} // storage
-
+}

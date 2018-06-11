@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistence.h"
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <ostream>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(PutCommand, PutReply)
 IMPLEMENT_REPLY(PutReply)
@@ -22,22 +23,25 @@ IMPLEMENT_REPLY(RevertReply)
 TestAndSetCommand::TestAndSetCommand(const MessageType & messageType, const document::Bucket &bucket)
     : BucketInfoCommand(messageType, bucket)
 {}
-TestAndSetCommand::~TestAndSetCommand() { }
+TestAndSetCommand::~TestAndSetCommand() = default;
 
-PutCommand::PutCommand(const document::Bucket &bucket,
-                       const document::Document::SP& doc, Timestamp time)
+PutCommand::PutCommand(const document::Bucket &bucket, const DocumentSP& doc, Timestamp time)
     : TestAndSetCommand(MessageType::PUT, bucket),
       _doc(doc),
       _timestamp(time),
       _updateTimestamp(0)
 {
     if (_doc.get() == 0) {
-        throw vespalib::IllegalArgumentException(
-                "Cannot put a null document", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("Cannot put a null document", VESPA_STRLOC);
     }
 }
 
-PutCommand::~PutCommand() {}
+PutCommand::~PutCommand() = default;
+
+const document::DocumentId&
+PutCommand::getDocumentId() const {
+    return _doc->getId();
+}
 
 vespalib::string
 PutCommand::getSummary() const
@@ -52,8 +56,7 @@ PutCommand::getSummary() const
 }
 
 void
-PutCommand::print(std::ostream& out, bool verbose,
-                  const std::string& indent) const
+PutCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "Put(" << getBucketId() << ", " << _doc->getId()
         << ", timestamp " << _timestamp << ", size "
@@ -76,15 +79,13 @@ PutReply::PutReply(const PutCommand& cmd, bool wasFoundFlag)
 {
 }
 
-PutReply::~PutReply() {}
+PutReply::~PutReply() = default;
 
 void
 PutReply::print(std::ostream& out, bool verbose,
-                 const std::string& indent) const
+                const std::string& indent) const
 {
-    out << "PutReply("
-        << _docId.toString() << ", " << getBucketId() << ", timestamp "
-        << _timestamp;
+    out << "PutReply(" << _docId.toString() << ", " << getBucketId() << ", timestamp " << _timestamp;
 
     if (hasBeenRemapped()) {
         out << " (was remapped)";
@@ -97,28 +98,29 @@ PutReply::print(std::ostream& out, bool verbose,
     }
 }
 
-UpdateCommand::UpdateCommand(const document::Bucket &bucket,
-                             const document::DocumentUpdate::SP& update,
-                             Timestamp time)
+UpdateCommand::UpdateCommand(const document::Bucket &bucket, const document::DocumentUpdate::SP& update, Timestamp time)
     : TestAndSetCommand(MessageType::UPDATE, bucket),
       _update(update),
       _timestamp(time),
       _oldTimestamp(0)
 {
     if (_update.get() == 0) {
-        throw vespalib::IllegalArgumentException(
-                "Cannot update a null update", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("Cannot update a null update", VESPA_STRLOC);
     }
 }
 
-UpdateCommand::~UpdateCommand() {}
+UpdateCommand::~UpdateCommand() = default;
+
+const document::DocumentId&
+UpdateCommand::getDocumentId() const {
+    return _update->getId();
+}
 
 vespalib::string
 UpdateCommand::getSummary() const {
     vespalib::asciistream stream;
     stream << "Update(BucketId(0x" << vespalib::hex << getBucketId().getId() << "), "
-           << _update->getId().toString()
-           << ", timestamp " << vespalib::dec << _timestamp;
+           << _update->getId().toString() << ", timestamp " << vespalib::dec << _timestamp;
     if (_oldTimestamp != 0) {
         stream << ", old timestamp " << _oldTimestamp;
     }
@@ -128,11 +130,9 @@ UpdateCommand::getSummary() const {
 }
 
 void
-UpdateCommand::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
+UpdateCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "Update(" << getBucketId() << ", " << _update->getId()
-        << ", timestamp " << _timestamp;
+    out << "Update(" << getBucketId() << ", " << _update->getId() << ", timestamp " << _timestamp;
     if (_oldTimestamp != 0) {
         out << ", old timestamp " << _oldTimestamp;
     }
@@ -154,11 +154,10 @@ UpdateReply::UpdateReply(const UpdateCommand& cmd, Timestamp oldTimestamp)
 {
 }
 
-UpdateReply::~UpdateReply() {}
+UpdateReply::~UpdateReply() = default;
 
 void
-UpdateReply::print(std::ostream& out, bool verbose,
-                 const std::string& indent) const
+UpdateReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "UpdateReply("
         << _docId.toString() << ", " << getBucketId() << ", timestamp "
@@ -176,8 +175,7 @@ UpdateReply::print(std::ostream& out, bool verbose,
     }
 }
 
-GetCommand::GetCommand(const document::Bucket &bucket,
-                       const document::DocumentId& docId,
+GetCommand::GetCommand(const document::Bucket &bucket, const document::DocumentId& docId,
                        const vespalib::stringref & fieldSet, Timestamp before)
     : BucketInfoCommand(MessageType::GET, bucket),
       _docId(docId),
@@ -186,24 +184,21 @@ GetCommand::GetCommand(const document::Bucket &bucket,
 {
 }
 
-GetCommand::~GetCommand() {}
+GetCommand::~GetCommand() = default;
 
 vespalib::string
 GetCommand::getSummary() const
 {
     vespalib::asciistream stream;
-    stream << "Get(BucketId(" << vespalib::hex << getBucketId().getId() << "), "
-           << _docId.toString()
-           << ", beforetimestamp " << vespalib::dec << _beforeTimestamp
-           << ')';
+    stream << "Get(BucketId(" << vespalib::hex << getBucketId().getId() << "), " << _docId.toString()
+           << ", beforetimestamp " << vespalib::dec << _beforeTimestamp << ')';
 
     return stream.str();
 }
 
 
 void
-GetCommand::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
+GetCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "Get(" << getBucketId() << ", " << _docId << ")";
     if (verbose) {
@@ -212,9 +207,7 @@ GetCommand::print(std::ostream& out, bool verbose,
     }
 }
 
-GetReply::GetReply(const GetCommand& cmd,
-                   const document::Document::SP& doc,
-                   Timestamp lastModified)
+GetReply::GetReply(const GetCommand& cmd, const DocumentSP& doc, Timestamp lastModified)
     : BucketInfoReply(cmd),
       _docId(cmd.getDocumentId()),
       _fieldSet(cmd.getFieldSet()),
@@ -224,30 +217,26 @@ GetReply::GetReply(const GetCommand& cmd,
 {
 }
 
-GetReply::~GetReply() {}
+GetReply::~GetReply() = default;
 
 void
-GetReply::print(std::ostream& out, bool verbose,
-                 const std::string& indent) const
+GetReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "GetReply(" << getBucketId() << ", " << _docId
-        << ", timestamp " << _lastModifiedTime << ")";
+    out << "GetReply(" << getBucketId() << ", " << _docId << ", timestamp " << _lastModifiedTime << ")";
     if (verbose) {
         out << " : ";
         BucketReply::print(out, verbose, indent);
     }
 }
 
-RemoveCommand::RemoveCommand(const document::Bucket &bucket,
-                             const document::DocumentId& docId,
-                             Timestamp timestamp)
+RemoveCommand::RemoveCommand(const document::Bucket &bucket, const document::DocumentId& docId, Timestamp timestamp)
     : TestAndSetCommand(MessageType::REMOVE, bucket),
       _docId(docId),
       _timestamp(timestamp)
 {
 }
 
-RemoveCommand::~RemoveCommand() {}
+RemoveCommand::~RemoveCommand() = default;
 
 vespalib::string
 RemoveCommand::getSummary() const {
@@ -258,11 +247,9 @@ RemoveCommand::getSummary() const {
     return stream.str();
 }
 void
-RemoveCommand::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
+RemoveCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "Remove(" << getBucketId() << ", " << _docId
-        << ", timestamp " << _timestamp << ")";
+    out << "Remove(" << getBucketId() << ", " << _docId << ", timestamp " << _timestamp << ")";
     if (verbose) {
         out << " : ";
         BucketInfoCommand::print(out, verbose, indent);
@@ -277,14 +264,12 @@ RemoveReply::RemoveReply(const RemoveCommand& cmd, Timestamp oldTimestamp)
 {
 }
 
-RemoveReply::~RemoveReply() {}
+RemoveReply::~RemoveReply() = default;
 
 void
-RemoveReply::print(std::ostream& out, bool verbose,
-                 const std::string& indent) const
+RemoveReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "RemoveReply(" << getBucketId() << ", " << _docId
-        << ", timestamp " << _timestamp;
+    out << "RemoveReply(" << getBucketId() << ", " << _docId << ", timestamp " << _timestamp;
     if (_oldTimestamp != 0) {
         out << ", removed doc from " << _oldTimestamp;
     } else {
@@ -297,18 +282,16 @@ RemoveReply::print(std::ostream& out, bool verbose,
     }
 }
 
-RevertCommand::RevertCommand(const document::Bucket &bucket,
-                             const std::vector<Timestamp>& revertTokens)
+RevertCommand::RevertCommand(const document::Bucket &bucket, const std::vector<Timestamp>& revertTokens)
     : BucketInfoCommand(MessageType::REVERT, bucket),
       _tokens(revertTokens)
 {
 }
 
-RevertCommand::~RevertCommand() {}
+RevertCommand::~RevertCommand() = default;
 
 void
-RevertCommand::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
+RevertCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "Revert(" << getBucketId();
     if (verbose) {
@@ -330,11 +313,10 @@ RevertReply::RevertReply(const RevertCommand& cmd)
 {
 }
 
-RevertReply::~RevertReply() {}
+RevertReply::~RevertReply() = default;
 
 void
-RevertReply::print(std::ostream& out, bool verbose,
-                   const std::string& indent) const
+RevertReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "RevertReply(" << getBucketId() << ")";
     if (verbose) {
@@ -343,5 +325,4 @@ RevertReply::print(std::ostream& out, bool verbose,
     }
 }
 
-} // api
-} // storage
+}

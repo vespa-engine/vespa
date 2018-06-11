@@ -2,6 +2,7 @@
 #include "arithmeticvalueupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
 
@@ -9,8 +10,7 @@ using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using namespace vespalib::xml;
 
-namespace document
-{
+namespace document {
 
 IMPLEMENT_IDENTIFIABLE(ArithmeticValueUpdate, ValueUpdate);
 
@@ -22,8 +22,7 @@ bool
 ArithmeticValueUpdate::operator==(const ValueUpdate& other) const
 {
     if (other.getClass().id() != ArithmeticValueUpdate::classId) return false;
-    const ArithmeticValueUpdate& o(
-            static_cast<const ArithmeticValueUpdate&>(other));
+    const ArithmeticValueUpdate& o(static_cast<const ArithmeticValueUpdate&>(other));
     if (_operator != o._operator) return false;
     if (_operand != o._operand) return false;
     return true;
@@ -115,8 +114,7 @@ ArithmeticValueUpdate::applyTo(const std::string & value) const
 void
 ArithmeticValueUpdate::print(std::ostream& out, bool, const std::string& indent) const
 {
-    out << indent << "ArithmeticValueUpdate(" << operatorNameC[_operator]
-        << " " << _operand << ")";
+    out << indent << "ArithmeticValueUpdate(" << operatorNameC[_operator] << " " << _operand << ")";
 }
 
 void

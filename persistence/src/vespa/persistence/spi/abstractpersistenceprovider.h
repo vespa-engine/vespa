@@ -3,9 +3,7 @@
 
 #include <vespa/persistence/spi/persistenceprovider.h>
 
-namespace storage {
-
-namespace spi {
+namespace storage::spi {
 
 /**
  * Simplified abstract persistence provider class. Implements
@@ -73,6 +71,3 @@ public:
 };
 
 }
-
-}
-

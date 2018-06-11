@@ -14,8 +14,7 @@
 
 #include "bucketcommand.h"
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 class BucketInfoCommand : public BucketCommand {
 protected:
@@ -27,6 +26,5 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-} // api
-} // storage
+}
 
