@@ -88,6 +88,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 new com.yahoo.component.Version(modelFactory.getVersion().toString()),
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
+        Logger.getLogger("REDEPLOY").info("ApplicationModelsBuilder.buildModelVersion: " + applicationId + " generation " + appGeneration + " created with internalRedeploy=" + applicationPackage.getMetaData().isInternalRedeploy());
         return new Application(modelFactory.createModel(modelContext), cache, appGeneration,
                                applicationPackage.getMetaData().isInternalRedeploy(),
                                modelFactory.getVersion(),
