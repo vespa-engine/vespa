@@ -249,30 +249,13 @@ ByteBuffer::setLimit(size_t limit) // throw (BufferOutOfBoundsException)
     }
 }
 
-void ByteBuffer::clear()
-{
-    LOG_DEBUG1("Clearing content. Setting pos to 0");
-    _pos=0;
-    _limit=_len;
-}
-
-void ByteBuffer::flip()
-{
-    LOG_DEBUG2("Flipping buffer. Setting limit to %" PRIu64 ".", _pos);
-    _limit = _pos;
-    _pos = 0;
-}
-
 
 ByteBuffer::BufferHolder::BufferHolder(Alloc buffer)
     : _buffer(std::move(buffer))
 {
 }
 
-ByteBuffer::BufferHolder::~BufferHolder()
-{
-}
-
+ByteBuffer::BufferHolder::~BufferHolder() = default;
 void ByteBuffer::dump() const
 {
     fprintf(stderr, "ByteBuffer: Length %lu, Pos %lu, Limit %lu\n",
