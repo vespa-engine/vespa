@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalLong;
 
 import static com.yahoo.config.provision.SystemName.main;
@@ -71,7 +72,8 @@ public class ApplicationSerializerTest {
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                                        createClusterUtils(3, 0.2), createClusterInfo(3, 4),
                                        new DeploymentMetrics(2,3,4,5,6),
-                                       DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt))));
+                                       DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
+                                                                 OptionalDouble.of(200), OptionalDouble.of(10))));
 
         OptionalLong projectId = OptionalLong.of(123L);
         List<JobStatus> statusList = new ArrayList<>();

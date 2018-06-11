@@ -427,8 +427,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Activity
         Cursor activity = object.setObject("activity");
-        application.activity().lastQueried().ifPresent(lastQueried -> activity.setLong("queriedAt", lastQueried.toEpochMilli()));
-        application.activity().lastWritten().ifPresent(lastQueried -> activity.setLong("writtenAt", lastQueried.toEpochMilli()));
+        application.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried", instant.toEpochMilli()));
+        application.activity().lastWritten().ifPresent(instant -> activity.setLong("lastWritten", instant.toEpochMilli()));
+        application.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
+        application.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
         application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
         application.deploymentJobs().issueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
@@ -478,6 +480,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                                   instant.toEpochMilli()));
         deployment.activity().lastWritten().ifPresent(instant -> activity.setLong("lastWritten",
                                                                                   instant.toEpochMilli()));
+        deployment.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
+        deployment.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
         // Cost
         DeploymentCost appCost = deployment.calculateCost();

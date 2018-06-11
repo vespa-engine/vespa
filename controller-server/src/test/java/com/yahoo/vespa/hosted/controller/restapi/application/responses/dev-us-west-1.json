@@ -17,7 +17,9 @@
   "screwdriverId": "123",
   "activity": {
     "lastQueried": 1527848130000,
-    "lastWritten": 1527848130000
+    "lastWritten": 1527848130000,
+    "lastQueriesPerSecond": 1.0,
+    "lastWritesPerSecond": 2.0
   },
   "cost": {
     "tco": 74,

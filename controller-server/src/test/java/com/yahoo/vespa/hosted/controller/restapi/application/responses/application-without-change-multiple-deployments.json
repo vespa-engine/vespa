@@ -251,7 +251,9 @@
     "writeServiceQuality": 0.7
   },
   "activity": {
-    "queriedAt": 1527848130000,
-    "writtenAt": 1527848130000
+    "lastQueried": 1527848130000,
+    "lastWritten": 1527848130000,
+    "lastQueriesPerSecond": 1.0,
+    "lastWritesPerSecond": 2.0
   }
 }

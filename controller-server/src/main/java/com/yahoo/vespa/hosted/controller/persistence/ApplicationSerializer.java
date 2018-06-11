@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalLong;
 
 /**
@@ -71,6 +72,8 @@ public class ApplicationSerializer {
     private final String commitField = "commitField";
     private final String lastQueriedField = "lastQueried";
     private final String lastWrittenField = "lastWritten";
+    private final String lastQueriesPerSecondField = "lastQueriesPerSecond";
+    private final String lastWritesPerSecondField = "lastWritesPerSecond";
 
     // DeploymentJobs fields
     private final String projectIdField = "projectId";
@@ -154,6 +157,8 @@ public class ApplicationSerializer {
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
+        deployment.activity().lastQueriesPerSecond().ifPresent(value -> object.setDouble(lastQueriesPerSecondField, value));
+        deployment.activity().lastWritesPerSecond().ifPresent(value -> object.setDouble(lastWritesPerSecondField, value));
     }
 
     private void deploymentMetricsToSlime(DeploymentMetrics metrics, Cursor object) {
@@ -296,7 +301,9 @@ public class ApplicationSerializer {
                               clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(optionalInstant(deploymentObject.field(lastQueriedField)),
-                                                        optionalInstant(deploymentObject.field(lastWrittenField))));
+                                                        optionalInstant(deploymentObject.field(lastWrittenField)),
+                                                        optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
+                                                        optionalDouble(deploymentObject.field(lastWritesPerSecondField))));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
@@ -423,6 +430,10 @@ public class ApplicationSerializer {
 
     private OptionalLong optionalLong(Inspector field) {
         return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
+    }
+
+    private OptionalDouble optionalDouble(Inspector field) {
+        return field.valid() ? OptionalDouble.of(field.asDouble()) : OptionalDouble.empty();
     }
 
     private Optional<String> optionalString(Inspector field) {
