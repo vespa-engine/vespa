@@ -147,7 +147,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         List<MODELRESULT> allApplicationVersions = new ArrayList<>();
         allApplicationVersions.add(latestModelVersion);
 
-        if (Arrays.asList(Environment.dev, Environment.test).contains(zone().environment()))
+        // TODO: Enable for all zones
+        if (Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment())
+                || zone().region().value().equals("corp-us-east-1"))
             versions = keepThoseUsedOn(allocatedHosts.get(), versions);
 
         // TODO: We use the allocated hosts from the newest version when building older model versions.
