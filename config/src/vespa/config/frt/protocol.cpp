@@ -40,6 +40,7 @@ const Memory RESPONSE_CONFIG_MD5 = "configMD5";
 const Memory RESPONSE_CONFIG_GENERATION = "generation";
 const Memory RESPONSE_PAYLOAD = "payload";
 const Memory RESPONSE_TRACE = "trace";
+const Memory RESPONSE_INTERNAL_REDEPLOY = "internalRedeploy";
 
 const Inspector &
 extractPayload(const Slime & data)

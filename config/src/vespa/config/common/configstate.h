@@ -14,15 +14,18 @@ struct ConfigState
 public:
     ConfigState()
         : md5(""),
-          generation(0)
+          generation(0),
+          internalRedeploy(false)
     { }
-    ConfigState(const vespalib::string & md5sum, int64_t gen)
+    ConfigState(const vespalib::string & md5sum, int64_t gen, bool value)
         : md5(md5sum),
-          generation(gen)
+          generation(gen),
+          internalRedeploy(value)
     { }
 
     vespalib::string md5;
     int64_t generation;
+    bool internalRedeploy;
 
     bool isNewerGenerationThan(const ConfigState & other) const {
         return isGenerationNewer(generation, other.generation);
