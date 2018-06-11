@@ -20,7 +20,6 @@ class SequencedTaskExecutor : public ISequencedTaskExecutor
 {
     using Stats = vespalib::ExecutorStats;
     std::vector<std::shared_ptr<vespalib::BlockingThreadStackExecutor>> _executors;
-    vespalib::hash_map<size_t, ExecutorId> _ids;
 public:
     using ISequencedTaskExecutor::getExecutorId;
 
@@ -28,8 +27,6 @@ public:
     ~SequencedTaskExecutor();
 
     void setTaskLimit(uint32_t taskLimit);
-    uint32_t getNumExecutors() const override { return _executors.size(); }
-    ExecutorId getExecutorId(uint64_t componentId) override;
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
     Stats getStats();

@@ -25,6 +25,7 @@ public:
     private:
         uint32_t _id;
     };
+    ISequencedTaskExecutor(uint32_t numExecutors) : _numExecutors(numExecutors) { }
     virtual ~ISequencedTaskExecutor() { }
 
     /**
@@ -34,10 +35,12 @@ public:
      * @param componentId   component id
      * @return              executor id
      */
-    virtual ExecutorId getExecutorId(uint64_t componentId) = 0;
-    virtual uint32_t getNumExecutors() const = 0;
+    ExecutorId getExecutorId(uint64_t componentId) const {
+        return ExecutorId((componentId * 1099511628211ULL ) % _numExecutors);
+    }
+    uint32_t getNumExecutors() const { return _numExecutors; }
 
-    ExecutorId getExecutorId(vespalib::stringref componentId) {
+    ExecutorId getExecutorId(vespalib::stringref componentId) const {
         vespalib::hash<vespalib::stringref> hashfun;
         return getExecutorId(hashfun(componentId));
     }
@@ -96,7 +99,8 @@ public:
     void execute(ExecutorId id, FunctionType &&function) {
         executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
-
+private:
+    uint32_t _numExecutors;
 };
 
 } // namespace search

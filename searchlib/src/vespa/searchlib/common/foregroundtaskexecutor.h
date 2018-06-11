@@ -16,8 +16,6 @@ namespace search {
  */
 class ForegroundTaskExecutor : public ISequencedTaskExecutor
 {
-    const uint32_t                       _threads;
-    vespalib::hash_map<size_t, ExecutorId> _ids;
 public:
     using ISequencedTaskExecutor::getExecutorId;
 
@@ -25,8 +23,6 @@ public:
     ForegroundTaskExecutor(uint32_t threads);
     ~ForegroundTaskExecutor() override;
 
-    uint32_t getNumExecutors() const override { return _threads; }
-    ExecutorId getExecutorId(uint64_t componentId) override;
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
 };

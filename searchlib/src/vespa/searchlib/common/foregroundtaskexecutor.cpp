@@ -14,32 +14,16 @@ ForegroundTaskExecutor::ForegroundTaskExecutor()
 }
 
 ForegroundTaskExecutor::ForegroundTaskExecutor(uint32_t threads)
-    : _threads(threads),
-      _ids()
+    : ISequencedTaskExecutor(threads)
 {
 }
 
-ForegroundTaskExecutor::~ForegroundTaskExecutor()
-{
-}
-
-ISequencedTaskExecutor::ExecutorId
-ForegroundTaskExecutor::getExecutorId(uint64_t componentId)
-{
-    auto itr = _ids.find(componentId);
-    if (itr == _ids.end()) {
-        auto insarg = std::make_pair(componentId, ExecutorId(_ids.size() % _threads));
-        auto insres = _ids.insert(insarg);
-        assert(insres.second);
-        itr = insres.first;
-    }
-    return itr->second;
-}
+ForegroundTaskExecutor::~ForegroundTaskExecutor() = default;
 
 void
 ForegroundTaskExecutor::executeTask(ExecutorId id, vespalib::Executor::Task::UP task)
 {
-    assert(id.getId() < _threads);
+    assert(id.getId() < getNumExecutors());
     task->run();
 }
 
@@ -47,6 +31,5 @@ void
 ForegroundTaskExecutor::sync()
 {
 }
-
 
 } // namespace search
