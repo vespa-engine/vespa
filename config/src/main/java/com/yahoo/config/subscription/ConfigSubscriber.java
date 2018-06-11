@@ -267,7 +267,6 @@ public class ConfigSubscriber {
             // This indicates the clients will possibly reconfigure their services, so "reset" changed-logic in subscriptions.
             // Also if appropriate update the changed flag on the handler, which clients use.
             markSubsChangedSeen(currentGen);
-            Logger.getLogger("REDEPLOY").info("ConfigSubscriber.acquireSnapshot: Received config generation " + generation + " with internalRedeploy=" + internalRedeployOnly);
             internalRedeploy = internalRedeployOnly;
             generation = currentGen;
         }
