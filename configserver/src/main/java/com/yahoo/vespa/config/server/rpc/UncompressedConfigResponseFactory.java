@@ -21,11 +21,11 @@ public class UncompressedConfigResponseFactory implements ConfigResponseFactory 
     public ConfigResponse createResponse(ConfigPayload payload,
                                          InnerCNode defFile,
                                          long generation,
-                                         boolean internalRedeployment) {
+                                         boolean internalRedeploy) {
         Utf8Array rawPayload = payload.toUtf8Array(true);
         String configMd5 = ConfigUtils.getMd5(rawPayload);
         CompressionInfo info = CompressionInfo.create(CompressionType.UNCOMPRESSED, rawPayload.getByteLength());
-        return new SlimeConfigResponse(rawPayload, defFile, generation, internalRedeployment, configMd5, info);
+        return new SlimeConfigResponse(rawPayload, defFile, generation, internalRedeploy, configMd5, info);
     }
 
 }
