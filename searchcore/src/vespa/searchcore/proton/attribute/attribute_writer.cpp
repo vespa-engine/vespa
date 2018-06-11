@@ -184,11 +184,11 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
 
     BatchUpdateTask(SerialNum serialNum, DocumentIdT lid, bool immediateCommit,
                     AttributeWriter::OnWriteDoneType onWriteDone)
-            : AttrUpdates(),
-              _serialNum(serialNum),
-              _lid(lid),
-              _immediateCommit(immediateCommit),
-              _onWriteDone(onWriteDone)
+        : vespalib::Executor::Task(),
+          _serialNum(serialNum),
+          _lid(lid),
+          _immediateCommit(immediateCommit),
+          _onWriteDone(onWriteDone)
     { }
 
     void run() override {
@@ -204,10 +204,10 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
     }
 
 
-    AttrUpdates                      _updates;
     SerialNum                        _serialNum;
     DocumentIdT                      _lid;
     bool                             _immediateCommit;
+    AttrUpdates                      _updates;
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
 };
 
