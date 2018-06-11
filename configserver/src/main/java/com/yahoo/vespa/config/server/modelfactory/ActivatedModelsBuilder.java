@@ -15,7 +15,6 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.tenant.Rotations;
-import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -74,7 +73,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             Instant now) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.getVersion(), appGeneration, applicationId));
-        ServerCache cache = zkClient.loadServerCache();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 Optional.empty(),
@@ -88,7 +86,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 new com.yahoo.component.Version(modelFactory.getVersion().toString()),
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
-        return new Application(modelFactory.createModel(modelContext), cache, appGeneration,
+        return new Application(modelFactory.createModel(modelContext), zkClient.loadServerCache(), appGeneration,
                                applicationPackage.getMetaData().isInternalRedeploy(),
                                modelFactory.getVersion(),
                                applicationMetricUpdater, applicationId);

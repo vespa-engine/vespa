@@ -7,10 +7,9 @@ import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import java.util.Map;
 
 /**
- * Represents a repository of config definitions.
+ * A config definition repository.
  *
- * @author lulf
- * @since 5.10
+ * @author Ulf Lillengen
  */
 public interface ConfigDefinitionRepo {
 
@@ -18,5 +17,11 @@ public interface ConfigDefinitionRepo {
      * Retrieve a map with all config definitions in this repo.
      */
     Map<ConfigDefinitionKey, ConfigDefinition> getConfigDefinitions();
+
+    /**
+     * Gets a config definition from repo or null if not found
+     */
+    // TODO: Remove default implementation when 6.246 is the oldest version in use
+    default ConfigDefinition get(ConfigDefinitionKey key) { return null; }
 
 }

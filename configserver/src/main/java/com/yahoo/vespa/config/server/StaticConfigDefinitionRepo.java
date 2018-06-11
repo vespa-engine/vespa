@@ -13,19 +13,23 @@ import java.util.Map;
  * A global pool of all config definitions that this server knows about. These objects can be shared
  * by all tenants, as they are not modified.
  *
- * @author lulf
- * @since 5.10
+ * @author Ulf Lilleengen
  */
 public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
 
     private final ConfigDefinitionRepo repo;
 
-    // Only useful in tests that dont need full blown repo.
+    // Only useful in tests that don't need full blown repo.
     public StaticConfigDefinitionRepo() {
         this.repo = new ConfigDefinitionRepo() {
             @Override
             public Map<ConfigDefinitionKey, ConfigDefinition> getConfigDefinitions() {
                 return Collections.emptyMap();
+            }
+
+            @Override
+            public ConfigDefinition get(ConfigDefinitionKey key) {
+                return null;
             }
         };
     }
@@ -39,4 +43,7 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
     public Map<ConfigDefinitionKey, ConfigDefinition> getConfigDefinitions() {
         return repo.getConfigDefinitions();
     }
+
+    @Override
+    public ConfigDefinition get(ConfigDefinitionKey key) { return repo.get(key); }
 }

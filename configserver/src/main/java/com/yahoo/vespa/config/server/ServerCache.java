@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
@@ -10,21 +11,28 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Cache that holds configs and config definitions. It has separate maps for the separate
- * "types", for clarity.
+ * Cache that holds configs and config definitions (builtin and user config definitions).
  *
  * @author vegardh
  */
 public class ServerCache {
 
-    private final Map<ConfigDefinitionKey, ConfigDefinition> defs = new ConcurrentHashMap<>();
+    private final ConfigDefinitionRepo builtinConfigDefinitions;
+    private final ConfigDefinitionRepo userConfigDefinitions;
 
     // NOTE: The reason we do a double mapping here is to dedup configs that have the same md5.
     private final Map<ConfigCacheKey, String> md5Sums = new ConcurrentHashMap<>();
     private final Map<String, ConfigResponse> md5ToConfig = new ConcurrentHashMap<>();
 
-    public void addDef(ConfigDefinitionKey key, ConfigDefinition def) {
-        defs.put(key, def);
+
+    public ServerCache(ConfigDefinitionRepo builtinConfigDefinitions, ConfigDefinitionRepo userConfigDefinitions) {
+        this.builtinConfigDefinitions = builtinConfigDefinitions;
+        this.userConfigDefinitions = userConfigDefinitions;
+    }
+
+    // For testing only
+    public ServerCache() {
+        this(new StaticConfigDefinitionRepo(), new UserConfigDefinitionRepo());
     }
 
     public void put(ConfigCacheKey key, ConfigResponse config, String configMd5) {
@@ -42,15 +50,17 @@ public class ServerCache {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Cache\n");
-        sb.append("defs:        ").append(defs.size()).append("\n");
-        sb.append("md5sums:     ").append(md5Sums.size()).append("\n");
-        sb.append("md5ToConfig: ").append(md5ToConfig.size()).append("\n");
+        sb.append("builtin defs: ").append(builtinConfigDefinitions.getConfigDefinitions().size()).append("\n");
+        sb.append("user defs:    ").append(userConfigDefinitions.getConfigDefinitions().size()).append("\n");
+        sb.append("md5sums:      ").append(md5Sums.size()).append("\n");
+        sb.append("md5ToConfig:  ").append(md5ToConfig.size()).append("\n");
 
         return sb.toString();
     }
 
     public ConfigDefinition getDef(ConfigDefinitionKey defKey) {
-        return defs.get(defKey);
+        ConfigDefinition def = userConfigDefinitions.get(defKey);
+        return (def != null) ? def : builtinConfigDefinitions.getConfigDefinitions().get(defKey);
     }
     
     /**

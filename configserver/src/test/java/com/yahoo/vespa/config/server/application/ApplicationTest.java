@@ -23,7 +23,9 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.ModelStub;
 import com.yahoo.vespa.config.server.ServerCache;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
+import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.model.VespaModel;
@@ -47,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationTest {
 
     @Test
-    public void testThatApplicationIsInitialized() throws IOException, SAXException {
+    public void testThatApplicationIsInitialized() {
         ApplicationId appId = ApplicationId.from(TenantName.defaultName(),
                                               ApplicationName.from("foobar"), InstanceName.defaultName());
         ServerCache cache = new ServerCache();
@@ -76,22 +78,22 @@ public class ApplicationTest {
     }
 
     private static ServerCache createCacheAndAddContent() {
-        ServerCache cache = new ServerCache();
+        UserConfigDefinitionRepo userDefs = new UserConfigDefinitionRepo();
 
         ConfigDefinitionKey key = new ConfigDefinitionKey(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE);
         com.yahoo.vespa.config.buildergen.ConfigDefinition def = getDef(key, SimpletypesConfig.CONFIG_DEF_SCHEMA);
         // TODO Why do we have to use empty def md5 here?
-        cache.addDef(key, def);
+        userDefs.add(key, def);
 
         ConfigDefinitionKey key2 = new ConfigDefinitionKey(SlobroksConfig.CONFIG_DEF_NAME, SlobroksConfig.CONFIG_DEF_NAMESPACE);
         com.yahoo.vespa.config.buildergen.ConfigDefinition def2 = getDef(key2, SlobroksConfig.CONFIG_DEF_SCHEMA);
-        cache.addDef(key2, def2);
+        userDefs.add(key2, def2);
 
         ConfigDefinitionKey key3 = new ConfigDefinitionKey(LogdConfig.CONFIG_DEF_NAME, LogdConfig.CONFIG_DEF_NAMESPACE);
         com.yahoo.vespa.config.buildergen.ConfigDefinition def3 = getDef(key3, LogdConfig.CONFIG_DEF_SCHEMA);
-        cache.addDef(key3, def3);
+        userDefs.add(key3, def3);
 
-        return cache;
+        return new ServerCache(new TestConfigDefinitionRepo(), userDefs);
     }
 
     private static com.yahoo.vespa.config.buildergen.ConfigDefinition getDef(ConfigDefinitionKey key, String[] schema) {
@@ -104,18 +106,18 @@ public class ApplicationTest {
     }
 
     @Test
-    public void require_that_known_config_defs_are_found() throws IOException, SAXException {
+    public void require_that_known_config_defs_are_found() {
         handler.resolveConfig(createSimpleConfigRequest(emptySchema));
     }
 
     @Test
-    public void require_that_build_config_can_be_resolved() throws IOException, SAXException {
+    public void require_that_build_config_can_be_resolved() {
         List<String> payload = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA)).getLegacyPayload();
         assertTrue(payload.get(1).contains("host"));
     }
 
     @Test
-    public void require_that_non_existent_fields_in_schema_is_skipped() throws IOException, SAXException {
+    public void require_that_non_existent_fields_in_schema_is_skipped() {
         // Ask for config without schema and check that we get correct default value back
         List<String> payload = handler.resolveConfig(createSimpleConfigRequest(emptySchema)).getLegacyPayload();
         assertThat(payload.get(0), is("boolval false"));
