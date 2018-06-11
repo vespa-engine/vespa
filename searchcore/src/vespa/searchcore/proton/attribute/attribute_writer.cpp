@@ -182,13 +182,12 @@ using AttrUpdates = std::vector<std::pair<AttributeVector *, const FieldUpdate *
 
 struct BatchUpdateTask : public vespalib::Executor::Task {
 
-    BatchUpdateTask(SerialNum serialNum, DocumentIdT lid, bool immediateCommit,
-                    AttributeWriter::OnWriteDoneType onWriteDone)
+    BatchUpdateTask(SerialNum serialNum, DocumentIdT lid, bool immediateCommit)
         : vespalib::Executor::Task(),
           _serialNum(serialNum),
           _lid(lid),
           _immediateCommit(immediateCommit),
-          _onWriteDone(onWriteDone)
+          _onWriteDone()
     { }
 
     void run() override {
@@ -208,7 +207,7 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
     DocumentIdT                      _lid;
     bool                             _immediateCommit;
     AttrUpdates                      _updates;
-    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
+    search::IDestructorCallback::SP  _onWriteDone;
 };
 
 class FieldContext
@@ -537,7 +536,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
     uint32_t numExecutors = _attributeFieldWriter.getNumExecutors();
     args.reserve(numExecutors);
     for (uint32_t i(0); i < numExecutors; i++) {
-        args.emplace_back(std::make_unique<BatchUpdateTask>(serialNum, lid, immediateCommit, onWriteDone));
+        args.emplace_back(std::make_unique<BatchUpdateTask>(serialNum, lid, immediateCommit));
         args.back()->_updates.reserve((2*upd.getUpdates().size())/numExecutors);
     }
 
@@ -560,6 +559,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
     // in a operation done context object.
     for (uint32_t id(0); id < args.size(); id++) {
         if ( ! args[id]->_updates.empty()) {
+            args[id]->_onWriteDone = onWriteDone;
             _attributeFieldWriter.executeTask(id, std::move(args[id]));
         }
     }
