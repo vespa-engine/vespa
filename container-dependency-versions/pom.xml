@@ -470,15 +470,16 @@
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->
         <!-- MUST be updated each time jersey2 is upgraded! -->
-        <!-- Check versions by doing: ' ls -l vespa/vespa_jersey2/target/dependency' -->
-        <hk2.version>2.5.0-b05</hk2.version>
+        <!-- Check versions in the properties section of the pom for org/glassfish/jersey/project/ -->
+        <!-- and then verify  by doing: ' ls -l vespa/vespa_jersey2/target/dependency' -->
+        <hk2.version>2.5.0-b32</hk2.version>
         <hk2.osgi-resource-locator.version>1.0.1</hk2.osgi-resource-locator.version>
-        <jackson2.version>2.8.3</jackson2.version>
+        <jackson2.version>2.8.4</jackson2.version>
         <javassist.version>3.20.0-GA</javassist.version>
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
         <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
         <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
-        <jersey2.version>2.23.2</jersey2.version>
+        <jersey2.version>2.25</jersey2.version>
         <mimepull.version>1.9.6</mimepull.version>
     </properties>
 
