@@ -21,35 +21,35 @@ vespalib::Memory valueName("value");
 class StructMapAttributeFieldWriterState : public DocsumFieldWriterState
 {
     std::unique_ptr<AttributeFieldWriter> _keyWriter;
-    std::vector<std::unique_ptr<AttributeFieldWriter>> _writers;
+    std::vector<std::unique_ptr<AttributeFieldWriter>> _valueWriters;
 
 public:
     StructMapAttributeFieldWriterState(const vespalib::string &keyAttributeName,
-                                       const std::vector<vespalib::string> &fieldNames,
-                                       const std::vector<vespalib::string> &attributeNames,
+                                       const std::vector<vespalib::string> &valueFieldNames,
+                                       const std::vector<vespalib::string> &valueAttributeNames,
                                        IAttributeContext &context);
     ~StructMapAttributeFieldWriterState() override;
     void insertField(uint32_t docId, vespalib::slime::Inserter &target) override;
 };
 
 StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const vespalib::string &keyAttributeName,
-                                                                       const std::vector<vespalib::string> &fieldNames,
-                                                                       const std::vector<vespalib::string> &attributeNames,
+                                                                       const std::vector<vespalib::string> &valueFieldNames,
+                                                                       const std::vector<vespalib::string> &valueAttributeNames,
                                                                        IAttributeContext &context)
     : DocsumFieldWriterState(),
       _keyWriter(),
-      _writers()
+      _valueWriters()
 {
     const IAttributeVector *attr = context.getAttribute(keyAttributeName);
     if (attr != nullptr) {
         _keyWriter = AttributeFieldWriter::create(keyName, *attr);
     }
-    size_t fields = fieldNames.size();
-    _writers.reserve(fields);
+    size_t fields = valueFieldNames.size();
+    _valueWriters.reserve(fields);
     for (uint32_t field = 0; field < fields; ++field) {
-        attr = context.getAttribute(attributeNames[field]);
+        attr = context.getAttribute(valueAttributeNames[field]);
         if (attr != nullptr) {
-            _writers.emplace_back(AttributeFieldWriter::create(fieldNames[field], *attr));
+            _valueWriters.emplace_back(AttributeFieldWriter::create(valueFieldNames[field], *attr));
         }
     }
 }
@@ -66,10 +66,10 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
             elems = _keyWriter->size();
         }
     }
-    for (auto &writer : _writers) {
-        writer->fetch(docId);
-        if (elems < writer->size()) {
-            elems = writer->size();
+    for (auto &valueWriter : _valueWriters) {
+        valueWriter->fetch(docId);
+        if (elems < valueWriter->size()) {
+            elems = valueWriter->size();
         }
     }
     if (elems == 0) {
@@ -82,8 +82,8 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
             _keyWriter->print(idx, keyValueObj);
         }
         Cursor &obj = keyValueObj.setObject(valueName);
-        for (auto &writer : _writers) {
-            writer->print(idx, obj);
+        for (auto &valueWriter : _valueWriters) {
+            valueWriter->print(idx, obj);
         }
     }
 }
@@ -91,17 +91,17 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 }
 
 StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
-                                                             const std::vector<vespalib::string> &fields)
+                                                             const std::vector<vespalib::string> &valueFields)
     : AttributeCombinerDFW(fieldName),
       _keyAttributeName(),
-      _fields(fields),
-      _attributeNames()
+      _valueFields(valueFields),
+      _valueAttributeNames()
 {
     _keyAttributeName = fieldName + ".key";
-    _attributeNames.reserve(_fields.size());
+    _valueAttributeNames.reserve(_valueFields.size());
     vespalib::string prefix = fieldName + ".value.";
-    for (const auto &field : _fields) {
-        _attributeNames.emplace_back(prefix + field);
+    for (const auto &field : _valueFields) {
+        _valueAttributeNames.emplace_back(prefix + field);
     }
 }
 
@@ -110,7 +110,7 @@ StructMapAttributeCombinerDFW::~StructMapAttributeCombinerDFW() = default;
 std::unique_ptr<DocsumFieldWriterState>
 StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context)
 {
-    return std::make_unique<StructMapAttributeFieldWriterState>(_keyAttributeName, _fields, _attributeNames, context);
+    return std::make_unique<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context);
 }
 
 }

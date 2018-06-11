@@ -17,13 +17,13 @@ class DocsumFieldWriterState;
 class StructMapAttributeCombinerDFW : public AttributeCombinerDFW
 {
     vespalib::string              _keyAttributeName;
-    std::vector<vespalib::string> _fields;
-    std::vector<vespalib::string> _attributeNames;
+    std::vector<vespalib::string> _valueFields;
+    std::vector<vespalib::string> _valueAttributeNames;
 
     std::unique_ptr<DocsumFieldWriterState> allocFieldWriterState(search::attribute::IAttributeContext &context) override;
 public:
     StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
-                              const std::vector<vespalib::string> &fields);
+                              const std::vector<vespalib::string> &valueFields);
     ~StructMapAttributeCombinerDFW() override;
 };
 
