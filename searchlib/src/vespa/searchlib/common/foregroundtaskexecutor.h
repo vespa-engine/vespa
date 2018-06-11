@@ -4,15 +4,9 @@
 #include "isequencedtaskexecutor.h"
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace vespalib
-{
+namespace vespalib { class ThreadStackExecutorBase; }
 
-class ThreadStackExecutorBase;
-
-}
-
-namespace search
-{
+namespace search {
 
 /**
  * Class to run multiple tasks in parallel, but tasks with same
@@ -29,14 +23,12 @@ public:
 
     ForegroundTaskExecutor();
     ForegroundTaskExecutor(uint32_t threads);
+    ~ForegroundTaskExecutor() override;
 
-    ~ForegroundTaskExecutor();
-
-    virtual uint32_t getExecutorId(uint64_t componentId) override;
-
-    virtual void executeTask(uint32_t executorId, vespalib::Executor::Task::UP task) override;
-
-    virtual void sync() override;
+    uint32_t getNumExecutors() const override { return _threads; }
+    uint32_t getExecutorId(uint64_t componentId) override;
+    void executeTask(uint32_t executorId, vespalib::Executor::Task::UP task) override;
+    void sync() override;
 };
 
 } // namespace search
