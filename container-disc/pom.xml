@@ -144,15 +144,6 @@
       <scope>compile</scope>
     </dependency>
   </dependencies>
-  <properties>
-    <!-- These versions must be the ones used by the current jersey version (see vespa_jersey2/target/dependency).
-         Declared here to clarify what usually needs to be updated after a jersey version upgrade,
-         _not_ to enforce particular versions of these dependencies.
-         Do not move these to the root pom! -->
-    <hk2.version>2.5.0-b05</hk2.version>
-    <javassist.version>3.20.0-GA</javassist.version>
-    <mimepull.version>1.9.6</mimepull.version>
-  </properties>
   <build>
     <plugins>
       <plugin>
