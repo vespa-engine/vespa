@@ -5,7 +5,6 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 
 namespace proton {
 
@@ -24,9 +23,9 @@ private:
     ExecutorThreadService _masterService;
     ExecutorThreadService _indexService;
     ExecutorThreadService _summaryService;
-    search::SequencedTaskExecutor _indexFieldInverter;
-    search::SequencedTaskExecutor _indexFieldWriter;
-    search::SequencedTaskExecutor _attributeFieldWriter;
+    std::unique_ptr<search::ISequencedTaskExecutor> _indexFieldInverter;
+    std::unique_ptr<search::ISequencedTaskExecutor> _indexFieldWriter;
+    std::unique_ptr<search::ISequencedTaskExecutor> _attributeFieldWriter;
 
 public:
     /**
@@ -38,12 +37,12 @@ public:
     ExecutorThreadingService(uint32_t threads = 1,
                              uint32_t stackSize = 128 * 1024,
                              uint32_t taskLimit = 1000);
-    ~ExecutorThreadingService();
+    ~ExecutorThreadingService() override;
 
     /**
      * Implements vespalib::Syncable
      */
-    virtual vespalib::Syncable &sync() override;
+    vespalib::Syncable &sync() override;
 
     void shutdown();
 
@@ -63,27 +62,27 @@ public:
     /**
      * Implements IThreadingService
      */
-    virtual searchcorespi::index::IThreadService &master() override {
+    searchcorespi::index::IThreadService &master() override {
         return _masterService;
     }
-    virtual searchcorespi::index::IThreadService &index() override {
+    searchcorespi::index::IThreadService &index() override {
         return _indexService;
     }
 
-    virtual searchcorespi::index::IThreadService &summary() override {
+    searchcorespi::index::IThreadService &summary() override {
         return _summaryService;
     }
 
-    virtual search::ISequencedTaskExecutor &indexFieldInverter() override {
-        return _indexFieldInverter;
+    search::ISequencedTaskExecutor &indexFieldInverter() override {
+        return *_indexFieldInverter;
     }
 
-    virtual search::ISequencedTaskExecutor &indexFieldWriter() override {
-        return _indexFieldWriter;
+    search::ISequencedTaskExecutor &indexFieldWriter() override {
+        return *_indexFieldWriter;
     }
 
-    virtual search::ISequencedTaskExecutor &attributeFieldWriter() override {
-        return _attributeFieldWriter;
+    search::ISequencedTaskExecutor &attributeFieldWriter() override {
+        return *_attributeFieldWriter;
     }
 
     ExecutorThreadingServiceStats getStats();

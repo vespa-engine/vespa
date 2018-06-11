@@ -12,13 +12,14 @@
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
+
+#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
-#include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
-
 LOG_SETUP(".proton.server.storeonlyfeedview");
 
 using document::BucketId;

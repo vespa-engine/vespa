@@ -2,11 +2,9 @@
 #pragma once
 
 #include "i_thread_service.h"
-#include <vespa/vespalib/util/runnable.h>
-#include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/syncable.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 
+namespace search { class ISequencedTaskExecutor; }
 namespace searchcorespi::index {
 
 /**
