@@ -234,6 +234,11 @@ TEST_F("require that executeLambda works", Fixture)
     EXPECT_EQUAL(5, i);
 }
 
+TEST("require that you get correct number of executors") {
+    SequencedTaskExecutor seven(7);
+    EXPECT_EQUAL(7u, seven.getNumExecutors());
+}
+
 
 }
 
