@@ -220,14 +220,14 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * This method should be called when config is reloaded in the server.
      */
     @Override
-    public void configActivated(TenantName tenant, ApplicationSet applicationSet) {
+    public void configActivated(ApplicationSet applicationSet) {
         ApplicationId applicationId = applicationSet.getId();
         configReloaded(delayedConfigResponses.drainQueue(applicationId), TenantRepository.logPre(applicationId));
-        reloadSuperModel(tenant, applicationSet);
+        reloadSuperModel(applicationSet);
     }
 
-    private void reloadSuperModel(TenantName tenant, ApplicationSet applicationSet) {
-        superModelRequestHandler.reloadConfig(tenant, applicationSet);
+    private void reloadSuperModel(ApplicationSet applicationSet) {
+        superModelRequestHandler.reloadConfig(applicationSet);
         configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), TenantRepository.logPre(ApplicationId.global()));
     }
 

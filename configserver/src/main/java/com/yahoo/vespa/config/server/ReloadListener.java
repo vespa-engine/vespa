@@ -39,7 +39,7 @@ public interface ReloadListener {
      *
      * Must be thread-safe.
      */
-    void configActivated(TenantName tenant, ApplicationSet application);
+    void configActivated(ApplicationSet application);
 
     /**
      * Application has been removed.

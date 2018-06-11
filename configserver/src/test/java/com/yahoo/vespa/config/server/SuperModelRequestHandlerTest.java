@@ -42,7 +42,7 @@ public class SuperModelRequestHandlerTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
-    public void setup() throws IOException {
+    public void setup() {
         counter = new SuperModelGenerationCounter(new MockCurator());
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         manager = new SuperModelManager(configserverConfig, emptyNodeFlavors(), counter);
@@ -54,16 +54,16 @@ public class SuperModelRequestHandlerTest {
         TenantName tenantA = TenantName.from("a");
         assertNotNull(controller.getHandler());
         long gen = counter.increment();
-        controller.reloadConfig(tenantA, createApp(tenantA, "foo", 3l, 1));
+        controller.reloadConfig(createApp(tenantA, "foo", 3l, 1));
         assertNotNull(controller.getHandler());
         assertThat(controller.getHandler().getGeneration(), is(gen));
-        controller.reloadConfig(tenantA, createApp(tenantA, "foo", 4l, 2));
+        controller.reloadConfig(createApp(tenantA, "foo", 4l, 2));
         assertThat(controller.getHandler().getGeneration(), is(gen));
         // Test that a new app is used when there already exist an application with the same id
         ApplicationId appId = new ApplicationId.Builder().tenant(tenantA).applicationName("foo").build();
         assertThat(controller.getHandler().getSuperModel().applicationModels().get(tenantA).get(appId).getGeneration(), is(4l));
         gen = counter.increment();
-        controller.reloadConfig(tenantA, createApp(tenantA, "bar", 2l, 3));
+        controller.reloadConfig(createApp(tenantA, "bar", 2l, 3));
         assertThat(controller.getHandler().getGeneration(), is(gen));
     }
 
@@ -72,9 +72,9 @@ public class SuperModelRequestHandlerTest {
         TenantName tenantA = TenantName.from("a");
         TenantName tenantB = TenantName.from("b");
         long gen = counter.increment();
-        controller.reloadConfig(tenantA, createApp(tenantA, "foo", 3l, 1));
-        controller.reloadConfig(tenantA, createApp(tenantA, "bar", 30l, 2));
-        controller.reloadConfig(tenantB, createApp(tenantB, "baz", 9l, 3));
+        controller.reloadConfig(createApp(tenantA, "foo", 3l, 1));
+        controller.reloadConfig(createApp(tenantA, "bar", 30l, 2));
+        controller.reloadConfig(createApp(tenantB, "baz", 9l, 3));
         assertThat(controller.getHandler().getGeneration(), is(gen));
         assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(2));
         assertThat(controller.getHandler().getSuperModel().applicationModels().get(TenantName.from("a")).size(), is(2));
@@ -100,7 +100,7 @@ public class SuperModelRequestHandlerTest {
         controller = new SuperModelRequestHandler(new TestConfigDefinitionRepo(), configserverConfig, manager);
 
         long gen = counter.increment();
-        controller.reloadConfig(tenantA, createApp(tenantA, "foo", 3L, 1));
+        controller.reloadConfig(createApp(tenantA, "foo", 3L, 1));
         assertThat(controller.getHandler().getGeneration(), is(masterGen + gen));
     }
 
@@ -123,7 +123,7 @@ public class SuperModelRequestHandlerTest {
 
     private static class TestApplication extends Application {
 
-        public TestApplication(VespaModel vespaModel, ServerCache cache, long appGeneration, ApplicationId app, long version) {
+        TestApplication(VespaModel vespaModel, ServerCache cache, long appGeneration, ApplicationId app, long version) {
             super(vespaModel, cache, appGeneration, false, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), app);
         }
 

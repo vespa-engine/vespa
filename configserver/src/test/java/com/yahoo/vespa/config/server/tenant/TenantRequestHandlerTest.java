@@ -254,10 +254,11 @@ public class TenantRequestHandlerTest {
 
     public static class MockReloadListener implements ReloadListener {
         public AtomicInteger reloaded = new AtomicInteger(0);
-        public AtomicInteger removed = new AtomicInteger(0);
-        public Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
+        AtomicInteger removed = new AtomicInteger(0);
+        Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
+
         @Override
-        public void configActivated(TenantName tenant, ApplicationSet application) {
+        public void configActivated(ApplicationSet application) {
             reloaded.incrementAndGet();
         }
 
@@ -277,7 +278,7 @@ public class TenantRequestHandlerTest {
     }
 
     @Test
-    public void testHasApplication() throws IOException, SAXException {
+    public void testHasApplication() {
         assertdefaultAppNotFound();
         server.reloadConfig(reloadConfig(1l, Clock.systemUTC()));
         assertTrue(server.hasApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build(),
