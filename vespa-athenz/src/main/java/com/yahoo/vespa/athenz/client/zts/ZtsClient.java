@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.client.zts;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
@@ -61,15 +62,13 @@ public interface ZtsClient extends AutoCloseable {
     /**
      * Fetch role certificate for the target domain and role
      *
-     * @param domain Target domain
-     * @param roleName Target role
+     * @param role Target role
      * @param expiry Certificate expiry
      * @param keyPair Key pair which will be used to generate CSR (certificate signing request)
      * @param cloud The cloud suffix used in DNS SAN entries
      * @return A role certificate
      */
-    X509Certificate getRoleCertificate(AthenzDomain domain,
-                                       String roleName,
+    X509Certificate getRoleCertificate(AthenzRole role,
                                        Duration expiry,
                                        KeyPair keyPair,
                                        String cloud);
@@ -77,14 +76,12 @@ public interface ZtsClient extends AutoCloseable {
     /**
      * Fetch role certificate for the target domain and role
      *
-     * @param domain Target domain
-     * @param roleName Target role
+     * @param role Target role
      * @param keyPair Key pair which will be used to generate CSR (certificate signing request)
      * @param cloud The cloud suffix used in DNS SAN entries
      * @return A role certificate
      */
-    X509Certificate getRoleCertificate(AthenzDomain domain,
-                                       String roleName,
+    X509Certificate getRoleCertificate(AthenzRole role,
                                        KeyPair keyPair,
                                        String cloud);
 
