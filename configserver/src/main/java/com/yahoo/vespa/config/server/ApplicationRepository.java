@@ -349,10 +349,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Application getApplication(ApplicationId applicationId) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
-        long sessionId = getSessionIdForApplication(tenant, applicationId);
-        RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
-        return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty(), clock.instant());
+        try {
+            Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+            long sessionId = getSessionIdForApplication(tenant, applicationId);
+            RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
+            return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty(), clock.instant());
+        } catch (Exception e) {
+            log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "'", e);
+            throw e;
+        }
     }
 
     private Set<ApplicationId> listApplications() {
