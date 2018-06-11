@@ -1,6 +1,9 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.core.identity.IdentityConfig;
@@ -9,6 +12,7 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProviderListenerHelper;
@@ -52,6 +56,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final AthenzService identity;
     private final ServiceIdentityProviderListenerHelper listenerHelper;
 
+    private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
+    private final static Duration roleSslContextExpiry = Duration.ofHours(24);
+
     // TODO IdentityConfig should contain ZTS uri and dns suffix
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
@@ -78,6 +85,15 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.identity = new AthenzService(config.domain(), config.service());
         this.listenerHelper = new ServiceIdentityProviderListenerHelper(this.identity);
         registerInstance();
+        roleSslContextCache = CacheBuilder.newBuilder()
+                .refreshAfterWrite(roleSslContextExpiry.dividedBy(2).toMinutes(), TimeUnit.MINUTES)
+                .expireAfterWrite(roleSslContextExpiry.toMinutes(), TimeUnit.MINUTES)
+                .build(new CacheLoader<AthenzRole, SSLContext>() {
+                    @Override
+                    public SSLContext load(AthenzRole key) throws Exception {
+                        return createRoleSslContext(key);
+                    }
+                });
     }
 
     private void registerInstance() {
@@ -123,9 +139,16 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     @Override
     public SSLContext getRoleSslContext(String domain, String role) {
         // This ssl context should ideally be cached as it is quite expensive to create.
+        try {
+            return roleSslContextCache.get(new AthenzRole(new AthenzDomain(domain), role));
+        } catch (Exception e) {
+            throw new AthenzIdentityProviderException("Could not retrieve role certificate.", e);
+        }
+    }
+
+    private SSLContext createRoleSslContext(AthenzRole role) {
         PrivateKey privateKey = credentials.getKeyPair().getPrivate();
         X509Certificate roleCertificate = ztsClient.getRoleCertificate(
-                new AthenzDomain(domain),
                 role,
                 credentials.getIdentityDocument().dnsSuffix(),
                 credentials.getIdentityDocument().ztsEndpoint(),

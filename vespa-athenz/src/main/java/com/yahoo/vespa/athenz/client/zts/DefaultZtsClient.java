@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
@@ -147,18 +148,17 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     @Override
-    public X509Certificate getRoleCertificate(AthenzDomain domain,
-                                              String roleName,
+    public X509Certificate getRoleCertificate(AthenzRole role,
                                               Duration expiry,
                                               KeyPair keyPair,
                                               String cloud) {
-        X500Principal principal = new X500Principal(String.format("cn=%s:role.%s", domain.getName(), roleName));
+        X500Principal principal = new X500Principal(String.format("cn=%s:role.%s", role.domain().getName(), role.roleName()));
         Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
                 .addSubjectAlternativeName(DNS_NAME, String.format("%s.%s.%s", identity.getName(), identity.getDomainName().replace('.', '-'), cloud))
                 .addSubjectAlternativeName(RFC822_NAME, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), cloud))
                 .build();
         RoleCertificateRequestEntity requestEntity = new RoleCertificateRequestEntity(csr, expiry);
-        URI uri = ztsUrl.resolve(String.format("domain/%s/role/%s/token", domain.getName(), roleName));
+        URI uri = ztsUrl.resolve(String.format("domain/%s/role/%s/token", role.domain().getName(), role.roleName()));
         HttpUriRequest request = RequestBuilder.post(uri)
                 .setEntity(toJsonStringEntity(requestEntity))
                 .build();
@@ -171,11 +171,10 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     @Override
-    public X509Certificate getRoleCertificate(AthenzDomain domain,
-                                              String roleName,
+    public X509Certificate getRoleCertificate(AthenzRole role,
                                               KeyPair keyPair,
                                               String cloud) {
-        return getRoleCertificate(domain, roleName, null, keyPair, cloud);
+        return getRoleCertificate(role, null, keyPair, cloud);
     }
 
     private static InstanceIdentity getInstanceIdentity(HttpResponse response) throws IOException {

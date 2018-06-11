@@ -7,6 +7,7 @@ import com.yahoo.athenz.zts.RoleCertificateRequest;
 import com.yahoo.athenz.zts.RoleToken;
 import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
@@ -102,8 +103,7 @@ class ZtsClient {
                         .getRoleToken(domain.getName(), roleName).getToken());
     }
 
-    X509Certificate getRoleCertificate(AthenzDomain roleDomain,
-                                       String roleName,
+    X509Certificate getRoleCertificate(AthenzRole role,
                                        String dnsSuffix,
                                        URI ztsEndpoint,
                                        AthenzService identity,
@@ -113,8 +113,8 @@ class ZtsClient {
         URI correctedZtsEndpoint = ztsEndpoint.resolve("/zts/v1");
         ZTSClient ztsClient = new ZTSClient(correctedZtsEndpoint.toString(), sslContext);
         RoleCertificateRequest rcr = ZTSClient.generateRoleCertificateRequest(
-                identity.getDomain().getName(), identity.getName(), roleDomain.getName(), roleName, privateKey, dnsSuffix, (int) Duration.ofHours(1).getSeconds());
-        RoleToken pemCert = ztsClient.postRoleCertificateRequest(roleDomain.getName(), roleName, rcr);
+                identity.getDomain().getName(), identity.getName(), role.domain().getName(), role.roleName(), privateKey, dnsSuffix, (int) Duration.ofHours(1).getSeconds());
+        RoleToken pemCert = ztsClient.postRoleCertificateRequest(role.domain().getName(), role.roleName(), rcr);
         return X509CertificateUtils.fromPem(pemCert.token);
     }
 
