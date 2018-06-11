@@ -60,21 +60,28 @@ public class DeploymentMetricsMaintainerTest {
         maintainer.maintain();
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t2, deployment.get().activity().lastWritten().get());
+        assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);
+        assertEquals(2, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
 
-        // Query traffic disappears. Query activity time is no longer updated
+        // Query traffic disappears. Query activity stops updating
         tester.clock().advance(Duration.ofHours(1));
         Instant t3 = tester.clock().instant();
         tester.metricsService().setMetric("queriesPerSecond", 0D);
+        tester.metricsService().setMetric("writesPerSecond", 5D);
         maintainer.maintain();
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t3, deployment.get().activity().lastWritten().get());
+        assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);
+        assertEquals(5, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
 
-        // Feed traffic disappears. Feed activity time is no longer updated
+        // Feed traffic disappears. Feed activity stops updating
         tester.clock().advance(Duration.ofHours(1));
         tester.metricsService().setMetric("writesPerSecond", 0D);
         maintainer.maintain();
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t3, deployment.get().activity().lastWritten().get());
+        assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);
+        assertEquals(5, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
     }
 
 }
