@@ -4,5 +4,3 @@ config.cfg
 config_command.sh
 configure
 project.dsw
-versiontag.mak
-/messagebus_test.mak
