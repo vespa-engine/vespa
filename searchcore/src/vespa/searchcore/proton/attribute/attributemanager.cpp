@@ -87,8 +87,7 @@ std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::
 
 }
 
-AttributeManager::AttributeWrap::AttributeWrap(const AttributeVectorSP & a,
-                                               bool isExtra_)
+AttributeManager::AttributeWrap::AttributeWrap(const AttributeVectorSP & a, bool isExtra_)
     : _attr(a),
       _isExtra(isExtra_)
 {
@@ -100,9 +99,7 @@ AttributeManager::AttributeWrap::AttributeWrap()
 {
 }
 
-AttributeManager::AttributeWrap::~AttributeWrap()
-{
-}
+AttributeManager::AttributeWrap::~AttributeWrap() = default;
 
 AttributeManager::AttributeWrap
 AttributeManager::AttributeWrap::extraAttribute(const AttributeVectorSP &a)
@@ -128,9 +125,7 @@ AttributeManager::FlushableWrap::FlushableWrap(FlushableAttributeSP flusher, Shr
 {
 }
 
-AttributeManager::FlushableWrap::~FlushableWrap()
-{
-}
+AttributeManager::FlushableWrap::~FlushableWrap() = default;
 
 AttributeVector::SP
 AttributeManager::internalAddAttribute(const AttributeSpec &spec,
@@ -168,7 +163,7 @@ AttributeManager::findAttribute(const vespalib::string &name) const
 {
     AttributeMap::const_iterator itr = _attributes.find(name);
     return (itr != _attributes.end())
-        ? static_cast<const AttributeVector::SP &>(itr->second.getAttribute())
+        ? itr->second.getAttribute()
         : AttributeVector::SP();
 }
 
