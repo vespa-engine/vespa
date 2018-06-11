@@ -79,7 +79,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     private void notifyReloadListeners(ApplicationSet applicationSet) {
         for (ReloadListener reloadListener : reloadListeners) {
             reloadListener.hostsUpdated(tenant, hostRegistry.getAllHosts());
-            reloadListener.configActivated(tenant, applicationSet);
+            reloadListener.configActivated(applicationSet);
         }
     }
 

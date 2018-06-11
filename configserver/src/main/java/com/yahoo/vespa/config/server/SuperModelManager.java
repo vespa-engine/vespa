@@ -69,7 +69,7 @@ public class SuperModelManager implements SuperModelProvider {
         return zone;
     }
 
-    public synchronized void configActivated(TenantName tenant, ApplicationSet applicationSet) {
+    public synchronized void configActivated(ApplicationSet applicationSet) {
         // TODO: Should supermodel care about multiple versions?
         ApplicationInfo applicationInfo = applicationSet
                 .getForVersionOrLatest(Optional.empty(), Instant.now())

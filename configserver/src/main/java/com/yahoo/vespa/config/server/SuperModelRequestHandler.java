@@ -52,11 +52,10 @@ public class SuperModelRequestHandler implements RequestHandler {
      * Signals that config has been reloaded for an {@link com.yahoo.vespa.config.server.application.Application}
      * belonging to a tenant.
      *
-     * @param tenant Name of tenant owning the application.
      * @param applicationSet The reloaded set of {@link com.yahoo.vespa.config.server.application.Application}.
      */
-    public synchronized void reloadConfig(TenantName tenant, ApplicationSet applicationSet) {
-        superModelManager.configActivated(tenant, applicationSet);
+    public synchronized void reloadConfig(ApplicationSet applicationSet) {
+        superModelManager.configActivated(applicationSet);
         updateHandler();
     }
 

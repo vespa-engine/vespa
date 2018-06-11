@@ -79,7 +79,7 @@ public class RpcServerTest extends TestWithRpc {
                                           MetricUpdater.createTestUpdater(),
                                           ApplicationId.defaultId());
         ApplicationSet appSet = ApplicationSet.fromSingle(app);
-        rpcServer.configActivated(TenantName.defaultName(), appSet);
+        rpcServer.configActivated(appSet);
         ConfigKey<?> key = new ConfigKey<>(LbServicesConfig.class, "*");
         JRTClientConfigRequest clientReq = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, LbServicesConfig.CONFIG_DEF_MD5), 120_000, Trace.createDummy(), CompressionType.UNCOMPRESSED, Optional.empty());
         assertTrue(clientReq.validateParameters());
@@ -96,7 +96,7 @@ public class RpcServerTest extends TestWithRpc {
         assertThat(clientReq.errorCode(), is(0));
     }
 
-    public void testGetConfig() {
+    private void testGetConfig() {
         ((MockRequestHandler)tenantProvider.getRequestHandler()).throwException = false;
         ConfigKey<?> key = new ConfigKey<>(SimpletypesConfig.class, "brim");
         ((MockRequestHandler)tenantProvider.getRequestHandler()).responses.put(ApplicationId.defaultId(), createResponse(true));
@@ -118,7 +118,7 @@ public class RpcServerTest extends TestWithRpc {
         assertThat(config.intval(), is(123));
     }
 
-    public ConfigResponse createResponse(boolean internalRedeploy) {
+    private ConfigResponse createResponse(boolean internalRedeploy) {
         SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
         builder.intval(123);
         SimpletypesConfig responseConfig = new SimpletypesConfig(builder);
@@ -133,7 +133,7 @@ public class RpcServerTest extends TestWithRpc {
                                                      ConfigUtils.getMd5(responsePayload));
     }
 
-    public void testPrintStatistics() {
+    private void testPrintStatistics() {
         Request req = new Request("printStatistics");
         rpcServer.printStatistics(req);
         assertThat(req.returnValues().get(0).asString(), is("Delayed responses queue size: 0"));
