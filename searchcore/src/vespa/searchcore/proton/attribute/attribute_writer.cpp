@@ -559,7 +559,9 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
     // NOTE: The lifetime of the field update will be ensured by keeping the document update alive
     // in a operation done context object.
     for (uint32_t id(0); id < args.size(); id++) {
-        _attributeFieldWriter.executeTask(id, std::move(args[id]));
+        if ( ! args[id]->_updates.empty()) {
+            _attributeFieldWriter.executeTask(id, std::move(args[id]));
+        }
     }
 
 }
