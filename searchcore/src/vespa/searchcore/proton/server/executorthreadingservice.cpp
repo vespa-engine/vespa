@@ -9,10 +9,6 @@ using search::SequencedTaskExecutor;
 
 namespace proton {
 
-    SequencedTaskExecutor & cast(search::ISequencedTaskExecutor & executor) {
-        return static_cast<SequencedTaskExecutor &>(executor);
-    }
-
 ExecutorThreadingService::ExecutorThreadingService(uint32_t threads, uint32_t stackSize, uint32_t taskLimit)
 
     : _masterExecutor(1, stackSize),
@@ -66,9 +62,9 @@ ExecutorThreadingService::setTaskLimit(uint32_t taskLimit, uint32_t summaryTaskL
 {
     _indexExecutor.setTaskLimit(taskLimit);
     _summaryExecutor.setTaskLimit(summaryTaskLimit);
-    cast(*_indexFieldInverter).setTaskLimit(taskLimit);
-    cast(*_indexFieldWriter).setTaskLimit(taskLimit);
-    cast(*_attributeFieldWriter).setTaskLimit(taskLimit);
+    _indexFieldInverter->setTaskLimit(taskLimit);
+    _indexFieldWriter->setTaskLimit(taskLimit);
+    _attributeFieldWriter->setTaskLimit(taskLimit);
 }
 
 ExecutorThreadingServiceStats
@@ -77,9 +73,24 @@ ExecutorThreadingService::getStats()
     return ExecutorThreadingServiceStats(_masterExecutor.getStats(),
                                          _indexExecutor.getStats(),
                                          _summaryExecutor.getStats(),
-                                         cast(*_indexFieldInverter).getStats(),
-                                         cast(*_indexFieldWriter).getStats(),
-                                         cast(*_attributeFieldWriter).getStats());
+                                         _indexFieldInverter->getStats(),
+                                         _indexFieldWriter->getStats(),
+                                         _attributeFieldWriter->getStats());
+}
+
+search::ISequencedTaskExecutor &
+ExecutorThreadingService::indexFieldInverter() {
+    return *_indexFieldInverter;
+}
+
+search::ISequencedTaskExecutor &
+ExecutorThreadingService::indexFieldWriter() {
+    return *_indexFieldWriter;
+}
+
+search::ISequencedTaskExecutor &
+ExecutorThreadingService::attributeFieldWriter() {
+    return *_attributeFieldWriter;
 }
 
 } // namespace proton

@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
+namespace search { class SequencedTaskExecutor; }
 namespace proton {
 
 class ExecutorThreadingServiceStats;
@@ -23,9 +24,9 @@ private:
     ExecutorThreadService _masterService;
     ExecutorThreadService _indexService;
     ExecutorThreadService _summaryService;
-    std::unique_ptr<search::ISequencedTaskExecutor> _indexFieldInverter;
-    std::unique_ptr<search::ISequencedTaskExecutor> _indexFieldWriter;
-    std::unique_ptr<search::ISequencedTaskExecutor> _attributeFieldWriter;
+    std::unique_ptr<search::SequencedTaskExecutor> _indexFieldInverter;
+    std::unique_ptr<search::SequencedTaskExecutor> _indexFieldWriter;
+    std::unique_ptr<search::SequencedTaskExecutor> _attributeFieldWriter;
 
 public:
     /**
@@ -73,18 +74,9 @@ public:
         return _summaryService;
     }
 
-    search::ISequencedTaskExecutor &indexFieldInverter() override {
-        return *_indexFieldInverter;
-    }
-
-    search::ISequencedTaskExecutor &indexFieldWriter() override {
-        return *_indexFieldWriter;
-    }
-
-    search::ISequencedTaskExecutor &attributeFieldWriter() override {
-        return *_attributeFieldWriter;
-    }
-
+    search::ISequencedTaskExecutor &indexFieldInverter() override;
+    search::ISequencedTaskExecutor &indexFieldWriter() override;
+    search::ISequencedTaskExecutor &attributeFieldWriter() override;
     ExecutorThreadingServiceStats getStats();
 };
 
