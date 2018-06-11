@@ -25,10 +25,12 @@ import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
  */
 class NodeIdentifier {
 
-    private static final String TENANT_DOCKER_HOST_IDENTITY = "vespa.vespa.tenant-host";
-    private static final String PROXY_HOST_IDENTITY = "vespa.vespa.proxy";
-    private static final String CONFIGSERVER_HOST_IDENTITY = "vespa.vespa.configserver";
-    private static final String TENANT_DOCKER_CONTAINER_IDENTITY = "vespa.vespa.tenant";
+    static final String TENANT_DOCKER_HOST_IDENTITY = "vespa.vespa.tenant-host";
+    static final String PROXY_HOST_IDENTITY = "vespa.vespa.proxy";
+    static final String CONFIGSERVER_HOST_IDENTITY = "vespa.vespa.configserver";
+    static final String TENANT_DOCKER_CONTAINER_IDENTITY = "vespa.vespa.tenant";
+    static final String ZTS_ON_PREM_IDENTITY = "zts.athens.yahoo.com";
+    static final String ZTS_AWS_IDENTITY = "zts.athenz.ouroath.com";
     private static final String INSTANCE_ID_DELIMITER = ".instanceid.athenz.";
 
     private final Zone zone;
@@ -60,6 +62,9 @@ class NodeIdentifier {
                 default:
                     return NodePrincipal.withAthenzIdentity(subjectCommonName, certificateChain);
             }
+        } else if (subjectCommonName.equals(ZTS_ON_PREM_IDENTITY) || subjectCommonName.equals(ZTS_AWS_IDENTITY)) {
+            // ZTS treated as a node principal even though its not a Vespa node
+            return NodePrincipal.withLegacyIdentity(subjectCommonName, certificateChain);
         } else { // self-signed where common name is hostname
             // TODO Remove this branch once self-signed certificates are gone
             return NodePrincipal.withLegacyIdentity(subjectCommonName, certificateChain);
