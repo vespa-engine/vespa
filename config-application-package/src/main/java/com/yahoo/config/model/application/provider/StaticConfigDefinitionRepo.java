@@ -22,8 +22,7 @@ import java.util.stream.Collectors;
  * A global pool of all config definitions that this server knows about. These objects can be shared
  * by all tenants, as they are not modified.
  *
- * @author lulf
- * @since 5.10
+ * @author Ulf Lilleengen
  */
 public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
 
@@ -66,5 +65,8 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
     public Map<ConfigDefinitionKey, ConfigDefinition> getConfigDefinitions() {
         return Collections.unmodifiableMap(configDefinitions);
     }
+
+    @Override
+    public ConfigDefinition get(ConfigDefinitionKey key) { return configDefinitions.get(key); }
 
 }

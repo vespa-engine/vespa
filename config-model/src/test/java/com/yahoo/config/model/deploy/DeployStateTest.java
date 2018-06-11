@@ -126,6 +126,10 @@ public class DeployStateTest {
             public Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> getConfigDefinitions() {
                 return defs;
             }
+            @Override
+            public com.yahoo.vespa.config.buildergen.ConfigDefinition get(ConfigDefinitionKey key) {
+                return null;
+            }
         });
         return builder.build(true);
     }
