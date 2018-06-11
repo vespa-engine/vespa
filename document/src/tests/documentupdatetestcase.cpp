@@ -60,6 +60,8 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
   void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
+  void array_element_update_can_be_roundtrip_serialized();
+  void array_element_update_applies_to_specified_element();
 
   CPPUNIT_TEST_SUITE(DocumentUpdateTest);
   CPPUNIT_TEST(testSimpleUsage);
@@ -85,6 +87,8 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
+  CPPUNIT_TEST(array_element_update_can_be_roundtrip_serialized);
+  CPPUNIT_TEST(array_element_update_applies_to_specified_element);
   CPPUNIT_TEST_SUITE_END();
 
 };
@@ -1075,6 +1079,56 @@ DocumentUpdateTest::testThatCreateIfNonExistentFlagIsSerializedAndDeserialized()
     DocumentUpdate::UP deserialized = DocumentUpdate::create42(f.docMan.getTypeRepo(), *buf);
     CPPUNIT_ASSERT_EQUAL(*f.update, *deserialized);
     CPPUNIT_ASSERT(deserialized->getCreateIfNonExistent());
+}
+
+struct ArrayUpdateFixture {
+    TestDocMan doc_man;
+    std::unique_ptr<Document> doc;
+    const Field& array_field;
+    std::unique_ptr<DocumentUpdate> update;
+
+    ArrayUpdateFixture();
+    ~ArrayUpdateFixture();
+};
+
+ArrayUpdateFixture::ArrayUpdateFixture()
+    : doc_man(),
+      doc(doc_man.createDocument()),
+      array_field(doc->getType().getField("tags")) // of type array<string>
+{
+    update = std::make_unique<DocumentUpdate>(*doc->getDataType(), doc->getId());
+    update->addUpdate(FieldUpdate(array_field)
+                              .addUpdate(MapValueUpdate(IntFieldValue(1),
+                                                        AssignValueUpdate(StringFieldValue("bar")))));
+}
+ArrayUpdateFixture::~ArrayUpdateFixture() = default;
+
+void DocumentUpdateTest::array_element_update_can_be_roundtrip_serialized() {
+    ArrayUpdateFixture f;
+
+    auto buffer = serializeHEAD(*f.update);
+    buffer->flip();
+
+    auto deserialized = DocumentUpdate::createHEAD(f.doc_man.getTypeRepo(), *buffer);
+    CPPUNIT_ASSERT_EQUAL(*f.update, *deserialized);
+}
+
+void DocumentUpdateTest::array_element_update_applies_to_specified_element() {
+    ArrayUpdateFixture f;
+
+    ArrayFieldValue array_value(f.array_field.getDataType());
+    array_value.add("foo");
+    array_value.add("baz");
+    array_value.add("blarg");
+    f.doc->setValue(f.array_field, array_value);
+
+    f.update->applyTo(*f.doc);
+
+    auto result_array = f.doc->getAs<ArrayFieldValue>(f.array_field);
+    CPPUNIT_ASSERT_EQUAL(size_t(3), result_array->size());
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("foo"), (*result_array)[0].getAsString());
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("bar"), (*result_array)[1].getAsString());
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("blarg"), (*result_array)[2].getAsString());
 }
 
 }  // namespace document

@@ -141,12 +141,15 @@ MapValueUpdate::deserialize(const DocumentTypeRepo& repo,
     VespaDocumentDeserializer deserializer(repo, stream, version);
     switch(type.getClass().id()) {
         case ArrayDataType::classId:
+        {
             _key.reset(new IntFieldValue);
             deserializer.read(*_key);
             buffer.incPos(buffer.getRemaining() - stream.size());
+            const ArrayDataType& arrayType = static_cast<const ArrayDataType&>(type);
             _update.reset(ValueUpdate::createInstance(
-                            repo, type, buffer, version).release());
+                    repo, arrayType.getNestedType(), buffer, version).release());
             break;
+        }
         case WeightedSetDataType::classId:
         {
             const WeightedSetDataType& wset(
