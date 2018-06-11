@@ -15,12 +15,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * @author jvenstad
+ */
 public class MockOrganization implements Organization {
 
     private final Clock clock;
-    private final AtomicLong counter;
-    private final HashMap<IssueId, WrappedIssue> issues;
-    private final HashMap<PropertyId, PropertyInfo> properties;
+    private final AtomicLong counter = new AtomicLong();
+    private final Map<IssueId, MockIssue> issues = new HashMap<>();
+    private final Map<PropertyId, PropertyInfo> properties = new HashMap<>();
 
     @Inject
     @SuppressWarnings("unused")
@@ -30,25 +33,21 @@ public class MockOrganization implements Organization {
 
     public MockOrganization(Clock clock) {
         this.clock = clock;
-
-        counter = new AtomicLong();
-        issues = new HashMap<>();
-        properties = new HashMap<>();
     }
 
     @Override
     public IssueId file(Issue issue) {
         IssueId issueId = IssueId.from("" + counter.incrementAndGet());
-        issues.put(issueId, new WrappedIssue(issue));
+        issues.put(issueId, new MockIssue(issue));
         return issueId;
     }
 
     @Override
     public Optional<IssueId> findBySimilarity(Issue issue) {
         return issues.entrySet().stream()
-                .filter(entry -> entry.getValue().issue.summary().equals(issue.summary()))
-                .findFirst()
-                .map(Map.Entry::getKey);
+                     .filter(entry -> entry.getValue().issue.summary().equals(issue.summary()))
+                     .findFirst()
+                     .map(Map.Entry::getKey);
     }
 
     @Override
@@ -103,6 +102,10 @@ public class MockOrganization implements Organization {
         return URI.create("www.properties.tld/" + propertyId.id());
     }
 
+    public Map<IssueId, MockIssue> issues() {
+        return Collections.unmodifiableMap(issues);
+    }
+
     public void close(IssueId issueId) {
         issues.get(issueId).open = false;
         touch(issueId);
@@ -125,20 +128,23 @@ public class MockOrganization implements Organization {
     }
 
 
-    private class WrappedIssue {
+    public class MockIssue {
 
         private Issue issue;
         private Instant updated;
         private boolean open;
         private User assignee;
 
-        private WrappedIssue(Issue issue) {
+        private MockIssue(Issue issue) {
             this.issue = issue;
-
-            updated = clock.instant();
-            open = true;
-            assignee = issue.assignee().orElse(properties.get(issue.propertyId()).defaultAssignee);
+            this.updated = clock.instant();
+            this.open = true;
+            this.assignee = issue.assignee().orElse(properties.get(issue.propertyId()).defaultAssignee);
         }
+
+        public Issue issue() { return issue; }
+        public User assignee() { return assignee; }
+        public boolean isOpen() { return open; }
 
     }
 
