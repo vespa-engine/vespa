@@ -1,11 +1,25 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+
+def validate_vm_env_option(name)
+  opt = ENV[name]
+  if opt.nil? or opt.empty?
+    raise Vagrant::Errors::VagrantError.new, "Environment variable #{name} must be set to a valid value before running vagrant"
+  end
+end
+
+validate_vm_env_option('VESPA_VAGRANT_VM_BOX')
+validate_vm_env_option('VESPA_VAGRANT_VM_BOX_URL')
+
+vm_box = ENV['VESPA_VAGRANT_VM_BOX']
+vm_box_url = ENV['VESPA_VAGRANT_VM_BOX_URL']
+
 # For a complete reference, please see the online documentation at https://docs.vagrantup.com.
 Vagrant.configure("2") do |config|
 
-  config.vm.box = "TODO"
-  config.vm.box_url = "TODO"
+  config.vm.box = vm_box
+  config.vm.box_url = vm_box_url
 
   config.ssh.forward_agent = true
 
