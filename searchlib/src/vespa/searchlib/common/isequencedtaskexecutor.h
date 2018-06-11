@@ -14,22 +14,19 @@ namespace search {
 class ISequencedTaskExecutor
 {
 public:
-    ISequencedTaskExecutor(uint32_t numExecutors) : _numExecutors(numExecutors) { }
     virtual ~ISequencedTaskExecutor() { }
 
-    uint32_t getNumExecutors() const { return _numExecutors; }
-
     /**
-     * Calculate which executor will handle an component.
+     * Calculate which executor will handle an component. All callers
+     * must be in the same thread.
      *
      * @param componentId   component id
      * @return              executor id
      */
-    uint32_t getExecutorId(uint64_t componentId) const {
-        return (componentId * 1099511628211ULL ) % _numExecutors;
-    }
+    virtual uint32_t getExecutorId(uint64_t componentId) = 0;
+    virtual uint32_t getNumExecutors() const = 0;
 
-    uint32_t getExecutorId(vespalib::stringref componentId) const {
+    uint32_t getExecutorId(vespalib::stringref componentId) {
         vespalib::hash<vespalib::stringref> hashfun;
         return getExecutorId(hashfun(componentId));
     }
@@ -89,8 +86,6 @@ public:
         uint32_t executorId = getExecutorId(componentId);
         executeTask(executorId, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
-private:
-    uint32_t _numExecutors;
 };
 
 } // namespace search
