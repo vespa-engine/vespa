@@ -332,7 +332,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
                 .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .collect(Collectors.toSet());
-        if (deleteFromDisk) {
+        if (deleteFromDisk && fileReferencesToDelete.size() > 0) {
             log.log(LogLevel.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
                 File file = new File(fileReferencesPath, fileReference);
