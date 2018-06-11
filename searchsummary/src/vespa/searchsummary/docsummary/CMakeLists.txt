@@ -25,6 +25,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     positionsdfw.cpp
     linguisticsannotation.cpp
     searchdatatype.cpp
+    struct_map_attribute_combiner_dfw.cpp
     summaryfieldconverter.cpp
     AFTER
     searchsummary_config

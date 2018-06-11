@@ -94,9 +94,15 @@ struct AttributeManagerFixture
 AttributeManagerFixture::AttributeManagerFixture()
     : mgr()
 {
-    buildStringAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}});
-    buildIntegerAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}});
-    buildFloatAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }});
+    buildStringAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
+    buildIntegerAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
+    buildFloatAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
+    buildStringAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1", "k3.2"}, {"", "k4.2"}, {}});
+    buildStringAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
+    buildIntegerAttribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
+    buildFloatAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
+    buildStringAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1"}, {"", "k4.2"}, {}});
+    buildStringAttribute("map.value", {{"n1.1", "n1.2"}, {}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
 }
 
 AttributeManagerFixture::~AttributeManagerFixture() = default;
@@ -165,14 +171,14 @@ struct Fixture
     DummyStateCallback                  stateCallback;
     GetDocsumsState                     state;
 
-    Fixture();
+    Fixture(const vespalib::string &fieldName);
     ~Fixture();
     void assertWritten(const vespalib::string &exp, uint32_t docId);
 };
 
-Fixture::Fixture()
+Fixture::Fixture(const vespalib::string &fieldName)
     : attrs(),
-      writer(AttributeCombinerDFW::create("array", attrs.mgr)),
+      writer(AttributeCombinerDFW::create(fieldName, attrs.mgr)),
       stateCallback(),
       state(stateCallback)
 {
@@ -181,9 +187,7 @@ Fixture::Fixture()
     state._fieldWriterStates.resize(1);
 }
 
-Fixture::~Fixture()
-{
-}
+Fixture::~Fixture() = default;
 
 void
 Fixture::assertWritten(const vespalib::string &expectedJson, uint32_t docId)
@@ -204,12 +208,31 @@ Fixture::assertWritten(const vespalib::string &expectedJson, uint32_t docId)
     }
 }
 
-TEST_F("require that attributes combiner dfw generates correct slime output for array of struct", Fixture())
+TEST_F("require that attribute combiner dfw generates correct slime output for array of struct", Fixture("array"))
 {
-    f.assertWritten("[ { fval: 110.0, name: \"n1.1\", val: 10}, { name: \"n1.2\", val: 11}]", 1);
-    f.assertWritten("[ { fval: 120.0, name: \"n2\", val: 20}, { fval: 121.0, val: 21 }]", 2);
-    f.assertWritten("[ { fval: 130.0, name: \"n3.1\", val: 30}, { fval: 131.0, name: \"n3.2\"} ]", 3);
-    f.assertWritten("[ { }, { fval: 141.0, name: \"n4.2\", val:  41} ]", 4);
+    TEST_DO(f.assertWritten("[ { fval: 110.0, name: \"n1.1\", val: 10}, { name: \"n1.2\", val: 11}]", 1));
+    TEST_DO(f.assertWritten("[ { fval: 120.0, name: \"n2\", val: 20}, { fval: 121.0, val: 21 }]", 2));
+    TEST_DO(f.assertWritten("[ { fval: 130.0, name: \"n3.1\", val: 30}, { fval: 131.0, name: \"n3.2\"} ]", 3));
+    TEST_DO(f.assertWritten("[ { }, { fval: 141.0, name: \"n4.2\", val:  41} ]", 4));
+    TEST_DO(f.assertWritten("null", 5));
+}
+
+TEST_F("require that attribute combiner dfw generates correct slime output for map of struct", Fixture("smap"))
+{
+    TEST_DO(f.assertWritten("[ { key: \"k1.1\", value: { fval: 110.0, name: \"n1.1\", val: 10} }, { key: \"k1.2\", value: { name: \"n1.2\", val: 11} }]", 1));
+    TEST_DO(f.assertWritten("[ { key: \"k2\", value: { fval: 120.0, name: \"n2\", val: 20} }, { value: { fval: 121.0, val: 21 } }]", 2));
+    TEST_DO(f.assertWritten("[ { key: \"k3.1\", value: { fval: 130.0, name: \"n3.1\", val: 30} }, { key: \"k3.2\", value: { fval: 131.0, name: \"n3.2\"} } ]", 3));
+    TEST_DO(f.assertWritten("[ { value: { } }, { key: \"k4.2\", value: { fval: 141.0, name: \"n4.2\", val:  41} } ]", 4));
+    TEST_DO(f.assertWritten("null", 5));
+}
+
+TEST_F("require that attribute combiner dfw generates correct slime output for map of string", Fixture("map"))
+{
+    TEST_DO(f.assertWritten("[ { key: \"k1.1\", value: \"n1.1\" }, { key: \"k1.2\", value: \"n1.2\"}]", 1));
+    TEST_DO(f.assertWritten("[ { key: \"k2\"}]", 2));
+    TEST_DO(f.assertWritten("[ { key: \"k3.1\", value: \"n3.1\" }, { value: \"n3.2\"} ]", 3));
+    TEST_DO(f.assertWritten("[ { }, { key: \"k4.2\", value: \"n4.2\" } ]", 4));
+    TEST_DO(f.assertWritten("null", 5));
 }
 
 }

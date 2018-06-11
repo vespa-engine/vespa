@@ -30,7 +30,8 @@ public:
 ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector<vespalib::string> &fieldNames,
                                                                const std::vector<vespalib::string> &attributeNames,
                                                                IAttributeContext &context)
-    : DocsumFieldWriterState()
+    : DocsumFieldWriterState(),
+      _writers()
 {
     size_t fields = fieldNames.size();
     _writers.reserve(fields);
@@ -53,6 +54,9 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
         if (elems < writer->size()) {
             elems = writer->size();
         }
+    }
+    if (elems == 0) {
+        return;
     }
     Cursor &arr = target.insertArray();
     for (uint32_t idx = 0; idx < elems; ++idx) {

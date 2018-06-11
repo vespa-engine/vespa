@@ -13,7 +13,7 @@ using vespalib::slime::Cursor;
 
 namespace search::docsummary {
 
-AttributeFieldWriter::AttributeFieldWriter(const vespalib::string &fieldName,
+AttributeFieldWriter::AttributeFieldWriter(vespalib::Memory fieldName,
                                            const IAttributeVector &attr)
     : _fieldName(fieldName),
       _attr(attr),
@@ -31,7 +31,7 @@ class WriteField : public AttributeFieldWriter
 protected:
     Content _content;
 
-    WriteField(const vespalib::string &fieldName, const IAttributeVector &attr);
+    WriteField(vespalib::Memory fieldName, const IAttributeVector &attr);
     ~WriteField() override;
 private:
     void fetch(uint32_t docId) override;
@@ -40,7 +40,7 @@ private:
 class WriteStringField : public WriteField<search::attribute::ConstCharContent>
 {
 public:
-    WriteStringField(const vespalib::string &fieldName,
+    WriteStringField(vespalib::Memory fieldName,
                      const IAttributeVector &attr);
     ~WriteStringField() override;
     void print(uint32_t idx, Cursor &cursor) override;
@@ -50,7 +50,7 @@ public:
 class WriteFloatField : public WriteField<search::attribute::FloatContent>
 {
 public:
-    WriteFloatField(const vespalib::string &fieldName,
+    WriteFloatField(vespalib::Memory fieldName,
                     const IAttributeVector &attr);
     ~WriteFloatField() override;
     void print(uint32_t idx, Cursor &cursor) override;
@@ -60,7 +60,7 @@ class WriteIntField : public WriteField<search::attribute::IntegerContent>
 {
     IAttributeVector::largeint_t _undefined;
 public:
-    WriteIntField(const vespalib::string &fieldName,
+    WriteIntField(vespalib::Memory fieldName,
                   const IAttributeVector &attr,
                   IAttributeVector::largeint_t undefined);
     ~WriteIntField() override;
@@ -68,7 +68,7 @@ public:
 };
 
 template <class Content>
-WriteField<Content>::WriteField(const vespalib::string &fieldName, const IAttributeVector &attr)
+WriteField<Content>::WriteField(vespalib::Memory fieldName, const IAttributeVector &attr)
     : AttributeFieldWriter(fieldName, attr),
       _content()
 {
@@ -85,7 +85,7 @@ WriteField<Content>::fetch(uint32_t docId)
     _size = _content.size();
 }
 
-WriteStringField::WriteStringField(const vespalib::string &fieldName,
+WriteStringField::WriteStringField(vespalib::Memory fieldName,
                                    const IAttributeVector &attr)
     : WriteField(fieldName, attr)
 {
@@ -104,7 +104,7 @@ WriteStringField::print(uint32_t idx, Cursor &cursor)
     }
 }
 
-WriteFloatField::WriteFloatField(const vespalib::string &fieldName,
+WriteFloatField::WriteFloatField(vespalib::Memory fieldName,
                                  const IAttributeVector &attr)
     : WriteField(fieldName, attr)
 {
@@ -123,7 +123,7 @@ WriteFloatField::print(uint32_t idx, Cursor &cursor)
     }
 }
 
-WriteIntField::WriteIntField(const vespalib::string &fieldName,
+WriteIntField::WriteIntField(vespalib::Memory fieldName,
                              const IAttributeVector &attr,
                              IAttributeVector::largeint_t undefined)
     : WriteField(fieldName, attr),
@@ -147,7 +147,7 @@ WriteIntField::print(uint32_t idx, Cursor &cursor)
 }
 
 std::unique_ptr<AttributeFieldWriter>
-AttributeFieldWriter::create(const vespalib::string &fieldName, const IAttributeVector &attr)
+AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector &attr)
 {
     switch (attr.getBasicType()) {
     case BasicType::INT8:

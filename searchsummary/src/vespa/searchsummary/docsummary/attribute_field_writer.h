@@ -21,13 +21,13 @@ protected:
     const vespalib::Memory                     _fieldName;
     const search::attribute::IAttributeVector &_attr;
     size_t                                     _size;
-public:
-    AttributeFieldWriter(const vespalib::string &fieldName,
+    AttributeFieldWriter(vespalib::Memory fieldName,
                          const search::attribute::IAttributeVector &attr);
+public:
     virtual ~AttributeFieldWriter();
     virtual void fetch(uint32_t docId) = 0;
     virtual void print(uint32_t idx, vespalib::slime::Cursor &cursor) = 0;
-    static std::unique_ptr<AttributeFieldWriter> create(const vespalib::string &fieldName, const search::attribute::IAttributeVector &attr);
+    static std::unique_ptr<AttributeFieldWriter> create(vespalib::Memory fieldName, const search::attribute::IAttributeVector &attr);
     uint32_t size() const { return _size; }
 };
 
