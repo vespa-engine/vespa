@@ -4,7 +4,6 @@
 #include "field.h"
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/document/util/identifiableid.h>
-#include <memory>
 #include <vector>
 
 namespace vespalib { class ObjectVisitor; }

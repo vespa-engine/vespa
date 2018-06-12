@@ -94,37 +94,5 @@ public:
     void deserialize(const DocumentTypeRepo &repo, ByteBuffer& buffer);
 };
 
-/**
- * If a deserializable needs a version number of the bytestream to deserialize,
- * and they doesn't include this version number in their own bytestream, they
- * can be VersionedDeserializable, getting version number externally.
- *
- * This is a special case used since document now uses this approach to
- * deserialize its contents. It is preferable to let each component store its
- * own version number, unless this has a big impact on the size of what is
- * serialized.
- */
-class VersionedDeserializable
-{
-protected:
-    virtual void onDeserialize(ByteBuffer& buffer, uint16_t version) = 0;
-
-public:
-    virtual ~VersionedDeserializable() {}
-
-    /**
-     * Overwrite this object with the object represented by the given
-     * bytestream. On success, buffer will be positioned after the bytestream
-     * representing the instance we've just deserialized, on failure, bytebuffer
-     * will be pointing to where it was pointing before calling this function.
-     *
-     * @throw DeserializeException If read data doesn't represent a legal object
-     *                             of this type.
-     * @throw BufferOutOfBoundsException If instance wants to read more data
-     *                                   than is available in the buffer.
-     */
-    void deserialize(ByteBuffer& buffer, uint16_t version);
-};
-
 }
 

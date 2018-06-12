@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/document/fieldvalue/document.h>
 #include <persistence/spi/types.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/read_consistency.h>
@@ -10,11 +9,11 @@
 #include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchcore/proton/common/cachedselect.h>
 #include <vespa/searchlib/query/base.h>
-#include <memory>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 
-namespace proton
-{
+namespace document { class Document; }
+
+namespace proton {
 
 /**
  * This is an interface that allows retrieval of documents by local id and document metadata
@@ -26,16 +25,18 @@ class IDocumentRetriever
 public:
     using ReadConsistency = storage::spi::ReadConsistency;
     using ReadGuard = IDocumentMetaStoreContext::IReadGuard::UP;
-    typedef std::unique_ptr<IDocumentRetriever> UP;
-    typedef std::shared_ptr<IDocumentRetriever> SP;
+    using UP = std::unique_ptr<IDocumentRetriever>;
+    using SP = std::shared_ptr<IDocumentRetriever>;
 
-    typedef search::IDocumentStore::LidVector LidVector;
+    using LidVector = search::IDocumentStore::LidVector;
+    using DocumentUP = std::unique_ptr<document::Document>;
+
     virtual ~IDocumentRetriever() {}
 
     virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const = 0;
     virtual void getBucketMetaData(const storage::spi::Bucket &bucket, search::DocumentMetaData::Vector &result) const = 0;
     virtual search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const = 0;
-    virtual document::Document::UP getDocument(search::DocumentIdT lid) const = 0;
+    virtual DocumentUP getDocument(search::DocumentIdT lid) const = 0;
     virtual ReadGuard getReadGuard() const = 0;
     virtual uint32_t getDocIdLimit() const = 0;
     /**

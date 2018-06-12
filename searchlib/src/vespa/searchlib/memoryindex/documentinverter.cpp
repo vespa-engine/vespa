@@ -84,7 +84,6 @@ DocumentInverter::~DocumentInverter()
 {
     _invertThreads.sync();
     _pushThreads.sync();
-
 }
 
 

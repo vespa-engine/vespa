@@ -2,6 +2,7 @@
 
 #include "valueupdate.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <stdexcept>
 
 namespace document {
@@ -10,9 +11,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(ValueUpdate, Identifiable);
 
 // Create a value update from a byte buffer.
 std::unique_ptr<ValueUpdate>
-ValueUpdate::createInstance(const DocumentTypeRepo& repo,
-                            const DataType& type, ByteBuffer& buffer,
-                            int serializationVersion)
+ValueUpdate::createInstance(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer, int serializationVersion)
 {
     ValueUpdate* update(NULL);
     int32_t classId = 0;

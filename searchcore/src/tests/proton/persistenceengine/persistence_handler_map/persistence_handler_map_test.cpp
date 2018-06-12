@@ -2,6 +2,9 @@
 
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
 #include <vespa/searchcore/proton/persistenceengine/persistence_handler_map.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace document;
@@ -11,43 +14,24 @@ using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
 
 struct DummyPersistenceHandler : public IPersistenceHandler {
     using SP = std::shared_ptr<DummyPersistenceHandler>;
-    virtual void initialize() override {}
-    virtual void handlePut(FeedToken,
-                           const storage::spi::Bucket &,
-                           storage::spi::Timestamp,
-                           const document::Document::SP &) override {}
-    virtual void handleUpdate(FeedToken,
-                              const storage::spi::Bucket &,
-                              storage::spi::Timestamp,
-                              const document::DocumentUpdate::SP &) override {}
-    virtual void handleRemove(FeedToken,
-                              const storage::spi::Bucket &,
-                              storage::spi::Timestamp,
-                              const document::DocumentId &) override {}
-    virtual void handleListBuckets(IBucketIdListResultHandler &) override {}
-    virtual void handleSetClusterState(const storage::spi::ClusterState &,
-                                       IGenericResultHandler &) override {}
-    virtual void handleSetActiveState(const storage::spi::Bucket &,
-                                      storage::spi::BucketInfo::ActiveState,
-                                      IGenericResultHandler &) override {}
-    virtual void handleGetBucketInfo(const storage::spi::Bucket &,
-                                     IBucketInfoResultHandler &) override {}
-    virtual void handleCreateBucket(FeedToken, const storage::spi::Bucket &) override {}
-    virtual void handleDeleteBucket(FeedToken, const storage::spi::Bucket &) override {}
-    virtual void handleGetModifiedBuckets(IBucketIdListResultHandler &) override {}
-    virtual void handleSplit(FeedToken,
-                             const storage::spi::Bucket &,
-                             const storage::spi::Bucket &,
-                             const storage::spi::Bucket &) override {}
-    virtual void handleJoin(FeedToken,
-                            const storage::spi::Bucket &,
-                            const storage::spi::Bucket &,
-                            const storage::spi::Bucket &) override {}
-    virtual RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override { return RetrieversSP(); }
-    virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &) override { return BucketGuard::UP(); }
-    virtual void handleListActiveBuckets(IBucketIdListResultHandler &) override {}
-    virtual void handlePopulateActiveBuckets(document::BucketId::List &,
-                                             IGenericResultHandler &) override {}
+    void initialize() override {}
+    void handlePut(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::Document::SP &) override {}
+    void handleUpdate(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::DocumentUpdate::SP &) override {}
+    void handleRemove(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::DocumentId &) override {}
+    void handleListBuckets(IBucketIdListResultHandler &) override {}
+    void handleSetClusterState(const storage::spi::ClusterState &, IGenericResultHandler &) override {}
+    void handleSetActiveState(const storage::spi::Bucket &, storage::spi::BucketInfo::ActiveState, IGenericResultHandler &) override {}
+    void handleGetBucketInfo(const storage::spi::Bucket &, IBucketInfoResultHandler &) override {}
+    void handleCreateBucket(FeedToken, const storage::spi::Bucket &) override {}
+    void handleDeleteBucket(FeedToken, const storage::spi::Bucket &) override {}
+    void handleGetModifiedBuckets(IBucketIdListResultHandler &) override {}
+    void handleSplit(FeedToken, const storage::spi::Bucket &, const storage::spi::Bucket &, const storage::spi::Bucket &) override {}
+    void handleJoin(FeedToken, const storage::spi::Bucket &, const storage::spi::Bucket &, const storage::spi::Bucket &) override {}
+
+    RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override { return RetrieversSP(); }
+    BucketGuard::UP lockBucket(const storage::spi::Bucket &) override { return BucketGuard::UP(); }
+    void handleListActiveBuckets(IBucketIdListResultHandler &) override {}
+    void handlePopulateActiveBuckets(document::BucketId::List &, IGenericResultHandler &) override {}
 };
 
 BucketSpace space_1(1);

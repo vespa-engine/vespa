@@ -20,7 +20,10 @@ namespace vespa::config::search::internal {
 }
 namespace vespa::config::search::summary { namespace internal { class InternalJuniperrcType; } }
 
-namespace document { class DocumentTypeRepo; }
+namespace document {
+    class DocumentTypeRepo;
+    class DocumentType;
+}
 namespace document::internal { class InternalDocumenttypesType; }
 
 namespace proton {

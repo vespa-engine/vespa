@@ -3,6 +3,7 @@
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/document.h>
 
 using namespace search;
 using CompressionConfig = vespalib::compression::CompressionConfig;

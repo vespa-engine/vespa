@@ -4,8 +4,7 @@
 
 #include "memoryfieldindex.h"
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 class IDocumentRemoveListener;
 class FieldInverter;
@@ -57,8 +56,4 @@ public:
     uint32_t getNumFields() const { return _numFields; }
 };
 
-} // namespace search::memoryindex
-
-
-} // namespace search
-
+}

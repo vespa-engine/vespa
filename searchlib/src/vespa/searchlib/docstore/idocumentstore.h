@@ -2,11 +2,17 @@
 
 #pragma once
 
-#include <vespa/document/fieldvalue/document.h>
+#include "idatastore.h"
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
-#include <vespa/searchlib/docstore/idatastore.h>
 #include <vespa/searchlib/query/base.h>
 #include <future>
+
+namespace document {
+    class Document;
+    class DocumentTypeRepo;
+}
+
+namespace vespalib { class nbostream; }
 
 namespace search {
 
@@ -15,16 +21,18 @@ class CacheStats;
 class IDocumentStoreReadVisitor
 {
 public:
+    using DocumentSP = std::shared_ptr<document::Document>;
     virtual ~IDocumentStoreReadVisitor() { }
-    virtual void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) = 0;
+    virtual void visit(uint32_t lid, const DocumentSP &doc) = 0;
     virtual void visit(uint32_t lid) = 0;
 };
 
 class IDocumentStoreRewriteVisitor
 {
 public:
+    using DocumentSP = std::shared_ptr<document::Document>;
     virtual ~IDocumentStoreRewriteVisitor() { }
-    virtual void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) = 0;
+    virtual void visit(uint32_t lid, const DocumentSP &doc) = 0;
 };
 
 class IDocumentStoreVisitorProgress
@@ -38,8 +46,9 @@ public:
 class IDocumentVisitor
 {
 public:
+    using DocumentUP = std::unique_ptr<document::Document>;
     virtual ~IDocumentVisitor() { }
-    virtual void visit(uint32_t lid, document::Document::UP doc) = 0;
+    virtual void visit(uint32_t lid, DocumentUP doc) = 0;
     virtual bool allowVisitCaching() const = 0;
 private:
 };
@@ -57,6 +66,7 @@ public:
      **/
     using SP = std::shared_ptr<IDocumentStore>;
     using LidVector = std::vector<uint32_t>;
+    using DocumentUP = std::unique_ptr<document::Document>;
 
 
     /**
@@ -74,7 +84,7 @@ public:
      * @param lid The local ID associated with the document.
      * @return NULL if there is no document associated with the lid.
      **/
-    virtual document::Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &repo) const = 0;
+    virtual DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo &repo) const = 0;
     virtual void visit(const LidVector & lidVector, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const;
 
     /**

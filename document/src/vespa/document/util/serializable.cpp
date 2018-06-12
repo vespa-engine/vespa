@@ -68,18 +68,4 @@ Deserializable::deserialize(const DocumentTypeRepo &repo, ByteBuffer& buffer) {
         throw;
     }
 }
-void
-VersionedDeserializable::deserialize(ByteBuffer& buffer, uint16_t version) {
-    int pos = buffer.getPos();
-    try{
-        onDeserialize(buffer, version);
-    } catch (const DeserializeException &) {
-        buffer.setPos(pos);
-        throw;
-    } catch (const BufferOutOfBoundsException &) {
-        buffer.setPos(pos);
-        throw;
-    }
-}
-
 }

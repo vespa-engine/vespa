@@ -2,11 +2,9 @@
 
 #pragma once
 
-namespace search
-{
+#include <vespa/vespalib/stllike/string.h>
 
-namespace memoryindex
-{
+namespace search::memoryindex {
 
 /**
  * Interface used to track which {wordRef, fieldId} pairs that are
@@ -16,13 +14,7 @@ class IDocumentRemoveListener
 {
 public:
     virtual ~IDocumentRemoveListener() {}
-
-    virtual void remove(const vespalib::stringref word,
-                        uint32_t docId) = 0;
+    virtual void remove(const vespalib::stringref word, uint32_t docId) = 0;
 };
 
-
 }
-
-}
-

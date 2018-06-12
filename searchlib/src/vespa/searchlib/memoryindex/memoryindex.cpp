@@ -2,6 +2,7 @@
 
 #include "memoryindex.h"
 #include "postingiterator.h"
+#include "documentinverter.h"
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
@@ -45,7 +46,9 @@ using queryeval::FieldSpecBaseList;
 using queryeval::FieldSpec;
 using queryeval::IRequestContext;
 
-namespace memoryindex {
+}
+
+namespace search::memoryindex {
 
 MemoryIndex::MemoryIndex(const Schema &schema,
                          ISequencedTaskExecutor &invertThreads,
@@ -53,10 +56,10 @@ MemoryIndex::MemoryIndex(const Schema &schema,
     : _schema(schema),
       _invertThreads(invertThreads),
       _pushThreads(pushThreads),
-      _inverter0(_schema, _invertThreads, _pushThreads),
-      _inverter1(_schema, _invertThreads, _pushThreads),
-      _inverter(&_inverter0),
-      _dictionary(_schema),
+      _inverter0(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads)),
+      _inverter1(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads)),
+      _inverter(_inverter0.get()),
+      _dictionary(std::make_unique<Dictionary>(_schema)),
       _frozen(false),
       _maxDocId(0), // docId 0 is reserved
       _numDocs(0),
@@ -93,8 +96,7 @@ void
 MemoryIndex::removeDocument(uint32_t docId)
 {
     if (_frozen) {
-        LOG(warning, "Memory index frozen: ignoring remove of document (%u)",
-            docId);
+        LOG(warning, "Memory index frozen: ignoring remove of document (%u)", docId);
         return;
     }
     _inverter->removeDocument(docId);
@@ -109,7 +111,7 @@ MemoryIndex::commit(const std::shared_ptr<IDestructorCallback> &onWriteDone)
 {
     _invertThreads.sync(); // drain inverting into this inverter
     _pushThreads.sync(); // drain use of other inverter
-    _inverter->pushDocuments(_dictionary, onWriteDone);
+    _inverter->pushDocuments(*_dictionary, onWriteDone);
     flipInverter();
 }
 
@@ -117,11 +119,7 @@ MemoryIndex::commit(const std::shared_ptr<IDestructorCallback> &onWriteDone)
 void
 MemoryIndex::flipInverter()
 {
-    if (_inverter != &_inverter0) {
-        _inverter = &_inverter0;
-    } else {
-        _inverter = &_inverter1;
-    }
+    _inverter = (_inverter != _inverter0.get()) ? _inverter0.get(): _inverter1.get();
 }
 
 void
@@ -133,7 +131,7 @@ MemoryIndex::freeze()
 void
 MemoryIndex::dump(IndexBuilder &indexBuilder)
 {
-    _dictionary.dump(indexBuilder);
+    _dictionary->dump(indexBuilder);
 }
 
 namespace {
@@ -243,7 +241,7 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
     if (fieldId == Schema::UNKNOWN_FIELD_ID || _hiddenFields[fieldId]) {
         return Blueprint::UP(new EmptyBlueprint(field));
     }
-    CreateBlueprintVisitor visitor(*this, requestContext, field, fieldId, _dictionary);
+    CreateBlueprintVisitor visitor(*this, requestContext, field, fieldId, *_dictionary);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
 }
@@ -252,8 +250,13 @@ MemoryUsage
 MemoryIndex::getMemoryUsage() const
 {
     MemoryUsage usage;
-    usage.merge(_dictionary.getMemoryUsage());
+    usage.merge(_dictionary->getMemoryUsage());
     return usage;
+}
+
+uint64_t
+MemoryIndex::getNumWords() const {
+    return _dictionary->getNumUniqueWords();
 }
 
 void
@@ -287,5 +290,4 @@ MemoryIndex::getPrunedSchema() const
     return _prunedSchema;
 }
 
-} // namespace memoryindex
-} // namespace search
+}

@@ -4,10 +4,10 @@
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
-
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
@@ -18,14 +18,14 @@ namespace document {
 
 IMPLEMENT_IDENTIFIABLE(AssignValueUpdate, ValueUpdate);
 
-AssignValueUpdate::AssignValueUpdate() : ValueUpdate(), _value() {}
+AssignValueUpdate::AssignValueUpdate() = default;
 
 AssignValueUpdate::AssignValueUpdate(const FieldValue& value)
     : ValueUpdate(),
       _value(value.clone())
 {
 }
-AssignValueUpdate::~AssignValueUpdate() {}
+AssignValueUpdate::~AssignValueUpdate() = default;
 
 // Declare content bits.
 static const unsigned char CONTENT_HASVALUE = 0x01;
@@ -90,9 +90,7 @@ AssignValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-AssignValueUpdate::deserialize(
-        const DocumentTypeRepo& repo, const DataType& type,
-        ByteBuffer& buffer, uint16_t version)
+AssignValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer, uint16_t version)
 {
     // Read content bit vector.
     unsigned char content = 0x00;

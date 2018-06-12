@@ -145,11 +145,11 @@ public:
             bool headerOnly)
         { return doGetOnDisk(0, bucketId, docId, headerOnly); }
 
-    document::DocumentUpdate::SP createBodyUpdate(
+    std::shared_ptr<document::DocumentUpdate> createBodyUpdate(
             const document::DocumentId& id,
             const document::FieldValue& updateValue);
 
-    document::DocumentUpdate::SP createHeaderUpdate(
+    std::shared_ptr<document::DocumentUpdate> createHeaderUpdate(
             const document::DocumentId& id,
             const document::FieldValue& updateValue);
 
@@ -172,7 +172,7 @@ public:
                uint16_t disk = 0);
 
     spi::UpdateResult doUpdate(document::BucketId bid,
-                               const document::DocumentUpdate::SP& update,
+                               const std::shared_ptr<document::DocumentUpdate>& update,
                                spi::Timestamp time,
                                uint16_t disk = 0);
 
