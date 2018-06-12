@@ -5,11 +5,11 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
+import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
@@ -19,9 +19,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 
 import java.net.URI;
 import java.security.PrivateKey;
-import java.security.Signature;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,6 +31,7 @@ import java.util.Set;
  */
 public class IdentityDocumentGenerator {
 
+    private final IdentityDocumentSigner signer = new IdentityDocumentSigner();
     private final NodeRepository nodeRepository;
     private final Zone zone;
     private final KeyProvider keyProvider;
@@ -53,16 +52,13 @@ public class IdentityDocumentGenerator {
         Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
         try {
             IdentityDocument identityDocument = generateIdDocument(node, identityType);
-            String identityDocumentString = Utils.getMapper().writeValueAsString(EntityBindingsMapper.toIdentityDocumentEntity(identityDocument));
-
-            String encodedIdentityDocument =
-                    Base64.getEncoder().encodeToString(identityDocumentString.getBytes());
-            Signature sigGenerator = Signature.getInstance("SHA512withRSA");
 
             PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
-            sigGenerator.initSign(privateKey);
-            sigGenerator.update(encodedIdentityDocument.getBytes());
-            String signature = Base64.getEncoder().encodeToString(sigGenerator.sign());
+            AthenzService providerService = new AthenzService(zoneConfig.domain(), zoneConfig.serviceName());
+
+            String signature = signer.generateSignature(
+                    identityDocument.providerUniqueId(), providerService, identityDocument.configServerHostname(),
+                    identityDocument.instanceHostname(), identityDocument.createdAt(), identityDocument.ipAddresses(), identityType, privateKey);
 
             return new SignedIdentityDocument(
                     identityDocument,
@@ -70,7 +66,7 @@ public class IdentityDocumentGenerator {
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
                     identityDocument.providerUniqueId(),
                     toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
-                    new AthenzService(zoneConfig.domain(), zoneConfig.serviceName()),
+                    providerService,
                     URI.create(zoneConfig.ztsUrl()),
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION,
                     identityDocument.configServerHostname(),

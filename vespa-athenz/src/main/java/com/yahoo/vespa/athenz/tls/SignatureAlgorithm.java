@@ -5,7 +5,8 @@ package com.yahoo.vespa.athenz.tls;
  * @author bjorncs
  */
 public enum SignatureAlgorithm {
-    SHA256_WITH_RSA("SHA256withRSA");
+    SHA256_WITH_RSA("SHA256withRSA"),
+    SHA512_WITH_RSA("SHA512withRSA");
 
     private final String algorithmName;
 
