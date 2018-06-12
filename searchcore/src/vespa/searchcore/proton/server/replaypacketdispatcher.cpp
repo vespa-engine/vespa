@@ -106,9 +106,7 @@ ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
 }
 
 
-ReplayPacketDispatcher::~ReplayPacketDispatcher()
-{
-}
+ReplayPacketDispatcher::~ReplayPacketDispatcher() = default;
 
 
 void

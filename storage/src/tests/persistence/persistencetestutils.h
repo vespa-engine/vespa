@@ -35,10 +35,9 @@ struct PersistenceTestEnvironment {
 };
 
 class PersistenceTestUtils : public CppUnit::TestFixture {
-private:
+public:
     std::unique_ptr<PersistenceTestEnvironment> _env;
 
-public:
     PersistenceTestUtils();
     virtual ~PersistenceTestUtils();
 

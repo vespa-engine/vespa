@@ -27,7 +27,7 @@ int readInt(ByteBuffer & buffer) {
 
 }
 
-FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DocumentType& type, ByteBuffer& buffer, int16_t version)
+FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, ByteBuffer& buffer, int16_t version)
     : Printable(),
       _field(type.getField(readInt(buffer))),
       _updates()

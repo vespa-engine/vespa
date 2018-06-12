@@ -33,7 +33,7 @@
 namespace document {
 
 class Document;
-
+class VespaDocumentSerializer;
 /**
  * Class containing a document update.  In vespa 5.0, support for field
  * path updates was added, and a new serialization format was

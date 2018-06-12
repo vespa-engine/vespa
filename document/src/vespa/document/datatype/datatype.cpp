@@ -6,6 +6,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <stdexcept>
 
@@ -153,9 +154,7 @@ DataType::DataType(const vespalib::stringref & name)
 {
 }
 
-DataType::~DataType()
-{
-}
+DataType::~DataType() = default;
 
 bool
 DataType::operator==(const DataType& other) const
@@ -177,6 +176,12 @@ DataType::buildFieldPath(FieldPath & path, const vespalib::stringref & remainFie
         path.reserve(4);  // Optimize for short paths
         onBuildFieldPath(path,remainFieldName);
     }
+}
+
+const Field&
+DataType::getField(int fieldId) const
+{
+    throw FieldNotFoundException(fieldId, 7, VESPA_STRLOC);
 }
 
 } // document
