@@ -9,6 +9,9 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.common.bitvector");
+
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using vespalib::hwaccelrated::IAccelrated;
@@ -275,12 +278,12 @@ BitVector::hasTrueBitsInternal() const
 void
 BitVector::resize(Index)
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 GenerationHeldBase::UP
 BitVector::grow(Index, Index )
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 size_t

@@ -7,6 +7,9 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.tensor.wrapped_simple_tensor");
+
 namespace vespalib::tensor {
 
 bool
@@ -59,21 +62,21 @@ WrappedSimpleTensor::clone() const
 Tensor::UP
 WrappedSimpleTensor::apply(const CellFunction &) const
 {
-    abort();
+    LOG_ABORT("should not be reached");
     return Tensor::UP();
 }
 
 Tensor::UP
 WrappedSimpleTensor::join(join_fun_t, const Tensor &) const
 {
-    abort();
+    LOG_ABORT("should not be reached");
     return Tensor::UP();
 }
 
 Tensor::UP
 WrappedSimpleTensor::reduce(join_fun_t, const std::vector<vespalib::string> &) const
 {
-    abort();
+    LOG_ABORT("should not be reached");
     return Tensor::UP();
 }
 

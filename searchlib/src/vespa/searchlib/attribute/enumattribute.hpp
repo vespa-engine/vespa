@@ -109,7 +109,7 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
                 this->_enumStore.fallbackResize(extraBytesNeeded);
                 if (extraBytesNeeded > this->_enumStore.getRemaining()) {
                     fprintf(stderr, "Cannot fallbackResize enumStore\n");
-                    abort();
+                    LOG_ABORT("should not be reached");
                 }
                 break;  // fallback resize performed instead of compaction.
             }

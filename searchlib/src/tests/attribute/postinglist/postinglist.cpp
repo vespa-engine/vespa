@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP("postinglist_test");
+
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
@@ -10,9 +13,6 @@
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <set>
-
-#include <vespa/log/log.h>
-LOG_SETUP("postinglist_test");
 
 namespace search {
 

@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP("frozenbtree_test");
+
 #define DEBUG_FROZENBTREE
 #define LOG_FROZENBTREEXX
 #include <vespa/vespalib/testkit/testapp.h>
@@ -9,9 +12,6 @@
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <map>
-
-#include <vespa/log/log.h>
-LOG_SETUP("frozenbtree_test");
 
 using search::btree::BTreeRoot;
 using search::btree::BTreeNode;
@@ -306,7 +306,7 @@ FrozenBTreeTest::sortRandomValues()
         } else if (*i == prevVal)
             okcnt++;
         else
-            abort();
+            LOG_ABORT("should not be reached");
         prevVal = *i;
     }
     EXPECT_TRUE(okcnt == sorted.size());

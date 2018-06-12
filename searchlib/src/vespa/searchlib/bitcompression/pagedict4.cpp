@@ -1185,7 +1185,7 @@ lookup(const vespalib::stringref &key)
                 break;  // key < counts
             }
             LOG(error, "FATAL: Missing L7 entry for overflow entry");
-            abort();    // counts < key, should not happen (missing L7 entry)
+            LOG_ABORT("should not be reached");    // counts < key, should not happen (missing L7 entry)
         } else {
             bool l6NotLessThanKey = !(word < key);
             if (l6NotLessThanKey)
@@ -1477,7 +1477,7 @@ lookup(const SSReader &ssReader,
             bool l3NotLessThanKey = !(word < key);
             if (l3NotLessThanKey)
                 break;
-            abort();
+            LOG_ABORT("should not be reached");
             _l3Word = word;
         }
         readStartOffset(dL3,

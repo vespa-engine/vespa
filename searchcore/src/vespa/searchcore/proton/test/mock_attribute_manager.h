@@ -54,16 +54,16 @@ public:
     virtual void pruneRemovedFields(search::SerialNum) override {
     }
     virtual const IAttributeFactory::SP &getFactory() const override {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     virtual search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     virtual search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
         return nullptr;
     }
     virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>) const override {
     }

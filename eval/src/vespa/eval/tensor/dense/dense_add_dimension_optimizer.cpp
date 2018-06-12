@@ -6,6 +6,9 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.tensor.dense.add_dimension_optimizer");
+
 namespace vespalib::tensor {
 
 using eval::ValueType;

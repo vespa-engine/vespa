@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attrvector.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.attr_vector");
 #include "attrvector.hpp"
 #include "iattributesavetarget.h"
 
@@ -172,7 +174,7 @@ bool StringDirectAttribute::onLoad()
 
 void StringDirectAttribute::onCommit()
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 bool StringDirectAttribute::addDoc(DocId & doc)

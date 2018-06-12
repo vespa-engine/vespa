@@ -214,7 +214,7 @@ TEST_F("Test that ioerror handler can process read error", Fixture)
         injectreadErrnoTrigger = 1;
         f.file->ReadBuf(buf, fileSize);
         LOG(error, "Should never get here");
-        abort();
+        LOG_ABORT("should not be reached");
     } catch (std::runtime_error &e) {
         LOG(info, "Caught std::runtime_error exception: %s", e.what());
         EXPECT_TRUE(strstr(e.what(), "Input/output error") != nullptr);
@@ -254,7 +254,7 @@ TEST_F("Test that ioerror handler can process pread error", Fixture)
         injectpreadErrnoTrigger = 1;
         f.file->ReadBuf(buf, fileSize, 0);
         LOG(error, "Should never get here");
-        abort();
+        LOG_ABORT("should not be reached");
     } catch (std::runtime_error &e) {
         LOG(info, "Caught std::runtime_error exception: %s", e.what());
         EXPECT_TRUE(strstr(e.what(), "Input/output error") != nullptr);
@@ -288,7 +288,7 @@ TEST_F("Test that ioerror handler can process write error", Fixture)
         injectwriteErrnoTrigger = 1;
         f.writeTestString();
         LOG(error, "Should never get here");
-        abort();
+        LOG_ABORT("should not be reached");
     } catch (std::runtime_error &e) {
         LOG(info, "Caught std::runtime_error exception: %s", e.what());
         EXPECT_TRUE(strstr(e.what(), "Input/output error") != nullptr);
@@ -323,7 +323,7 @@ TEST_F("Test that ioerror handler can process pwrite error", Fixture)
         injectpwriteErrnoTrigger = 1;
         f.writeTestString();
         LOG(error, "Should never get here");
-        abort();
+        LOG_ABORT("should not be reached");
     } catch (std::runtime_error &e) {
         LOG(info, "Caught std::runtime_error exception: %s", e.what());
         EXPECT_TRUE(strstr(e.what(), "Input/output error") != nullptr);

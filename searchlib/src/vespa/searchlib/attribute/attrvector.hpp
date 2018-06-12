@@ -130,7 +130,7 @@ template <typename B>
 void NumericDirectAttribute<B>::onCommit()
 {
     B::_changes.clear();
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 template <typename B>

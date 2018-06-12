@@ -697,7 +697,7 @@ Zc4PostingSeqWrite::readHeader(const vespalib::string &name)
     if (!res) {
         LOG(error, "Could not open %s for reading file header: %s",
             name.c_str(), getLastErrorString().c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 
     drc.setFile(&file);

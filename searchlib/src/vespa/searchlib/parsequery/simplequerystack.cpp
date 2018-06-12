@@ -326,7 +326,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
 
         default:
             LOG(error, "Unhandled type %d", type);
-            abort();
+            LOG_ABORT("should not be reached");
         }
     }
     return result;

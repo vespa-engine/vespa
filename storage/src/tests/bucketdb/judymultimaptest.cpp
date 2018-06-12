@@ -1,5 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP(".judy_multi_map_test");
 #include <vespa/storage/bucketdb/judymultimap.h>
 #include <vespa/storage/bucketdb/judymultimap.hpp>
 #include <vespa/vdstestlib/cppunit/macros.h>

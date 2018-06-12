@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "time_bomb.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.testkit.time_bomb");
 
 namespace vespalib {
 
@@ -20,7 +22,7 @@ void bomb(Gate &gate, size_t seconds) {
         }
     }
     fprintf(stderr, "BOOM!\n");
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 } // namespace vespalib::<unnamed>

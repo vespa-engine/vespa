@@ -3,6 +3,9 @@
 #include "aggr.h"
 #include <vespa/vespalib/util/stash.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.eval.aggr");
+
 namespace vespalib {
 namespace eval {
 
@@ -117,7 +120,7 @@ Aggregator::create(Aggr aggr, Stash &stash)
     case Aggr::MAX:   return stash.create<Max>();
     case Aggr::MIN:   return stash.create<Min>();
     }
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 } // namespace vespalib::eval

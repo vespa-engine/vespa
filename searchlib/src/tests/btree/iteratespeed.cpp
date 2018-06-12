@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP("iteratespeed");
+
 #include <vespa/searchlib/btree/btreeroot.h>
 #include <vespa/searchlib/btree/btreebuilder.h>
 #include <vespa/searchlib/btree/btreenodeallocator.h>
@@ -17,9 +20,6 @@
 
 #include <vespa/fastos/app.h>
 #include <vespa/fastos/timestamp.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("iteratespeed");
 
 namespace search {
 namespace btree {

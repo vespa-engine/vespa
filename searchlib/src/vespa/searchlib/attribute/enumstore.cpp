@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumstore.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.enum_store");
 #include "enumstore.hpp"
 #include <iomanip>
 
@@ -130,7 +132,7 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
     uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
     if (buffer.remaining() < entrySize) {
         fprintf(stderr, "Out of enumstore bufferspace\n");
-        abort(); // not enough space
+        LOG_ABORT("should not be reached"); // not enough space
     }
     uint64_t offset = buffer.size();
     char *dst(_store.getBufferEntry<char>(activeBufferId, offset));

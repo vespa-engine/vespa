@@ -213,7 +213,7 @@ public:
                                                    _tuneFileDocumentDB, _hwInfo);
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(0);
-        if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) { abort(); }
+        if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) { LOG_ABORT("should not be reached"); }
         _ddb.reset(new DocumentDB("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
                                   DocTypeName(docTypeName), makeBucketSpace(),
 				  *b->getProtonConfigSP(), *this, _summaryExecutor, _summaryExecutor,

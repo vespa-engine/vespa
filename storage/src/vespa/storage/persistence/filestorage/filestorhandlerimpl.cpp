@@ -419,8 +419,7 @@ namespace {
                 return static_cast<const api::RemoveCommand&>(msg).getDocumentId();
                 break;
             default:
-                assert(false);
-                abort();
+                LOG_ABORT("should not be reached");
         }
     }
     uint32_t findCommonBits(document::BucketId a, document::BucketId b) {
@@ -544,7 +543,7 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
         } else {
             LOG(debug, "Did not remap %s with bucket %s from bucket %s",
                 cmd.toString().c_str(), cmd.getBucketId().toString().c_str(), source.toString().c_str());
-            assert(false);
+            LOG_ABORT("should not be reached");
         }
         break;
     }

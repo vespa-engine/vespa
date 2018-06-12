@@ -117,7 +117,7 @@ RegRpcSrvCommand::doneHandler(OkState result)
         goto alldone;
     }
     // no other state should be possible
-    abort();
+    LOG_ABORT("should not be reached");
  alldone:
     cleanupReservation();
     delete _data;

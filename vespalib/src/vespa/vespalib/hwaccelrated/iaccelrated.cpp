@@ -7,6 +7,9 @@
 #include "avx2.h"
 #include "avx512.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.hwaccelrated");
+
 namespace vespalib::hwaccelrated {
 
 namespace {
@@ -57,7 +60,7 @@ void verifyAccelrator(const IAccelrated & accel)
         T hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelrator is not computing dotproduct correctly.\n");
-            abort();
+            LOG_ABORT("should not be reached");
         }
     }
     delete [] a;

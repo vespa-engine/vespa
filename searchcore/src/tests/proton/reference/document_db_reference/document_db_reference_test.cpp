@@ -1,14 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/log/log.h>
+LOG_SETUP("document_db_reference_test");
 
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/reference/document_db_reference.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("document_db_reference_test");
 
 using namespace proton;
 

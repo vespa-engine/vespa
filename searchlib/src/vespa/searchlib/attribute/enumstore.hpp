@@ -151,7 +151,7 @@ EnumStoreT<EntryType>::deserialize(const void *src,
     datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
     uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
     if (buffer.remaining() < entrySize) {
-        abort(); // not enough space
+        LOG_ABORT("should not be reached"); // not enough space
     }
     uint64_t offset = buffer.size();
     char *dst(_store.getBufferEntry<char>(activeBufferId, offset));
@@ -256,7 +256,7 @@ EnumStoreT<EntryType>::addEnum(Type value,
         buffer._deadElems, entrySize);
 #endif
     if (buffer.remaining() < entrySize) {
-        abort(); // not enough space
+        LOG_ABORT("should not be reached"); // not enough space
     }
 
     // check if already present

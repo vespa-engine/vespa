@@ -557,17 +557,17 @@ BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
 identical(const BTreeIteratorBase &rhs) const
 {
     if (_pathSize != rhs._pathSize || _leaf != rhs._leaf) {
-        abort();
+        LOG_ABORT("should not be reached");
         return false;
     }
     for (uint32_t level = 0; level < _pathSize; ++level) {
         if (_path[level] != rhs._path[level]) {
-            abort();
+            LOG_ABORT("should not be reached");
             return false;
         }
     }
     if (_leafRoot != rhs._leafRoot) {
-        abort();
+        LOG_ABORT("should not be reached");
         return false;
     }
     return true;

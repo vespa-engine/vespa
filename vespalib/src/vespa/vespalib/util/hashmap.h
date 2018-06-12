@@ -4,6 +4,7 @@
 #include "hashmapdata.h"
 #include <cstring>
 #include <cstdlib>
+#include <assert.h>
 
 /**
  * @brief namespace for generic Vespa library
@@ -350,6 +351,7 @@ HashMap<T>::maxDepth() const
         }
         if (d > ret) ret = d;
     }
+    assert(cnt == _entryCnt);
     if (cnt != _entryCnt) abort();
     return ret;
 }

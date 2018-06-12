@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <assert.h>
 #include <vespa/document/util/printable.h>
 
 namespace document::select {
@@ -48,7 +49,7 @@ public:
             return 1u;
         if (this == &Result::True)
             return 2u;
-        abort();
+        assert(false); abort();
     }
 
     static const Result &fromEnum(uint32_t val) {
@@ -58,7 +59,7 @@ public:
             return Result::False;
         if (val == 2u)
             return Result::True;
-        abort();
+        assert(false); abort();
     }
 
 private:

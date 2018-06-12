@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.documentmetastore");
+
 #include "documentmetastore.h"
 #include "search_context.h"
 #include "documentmetastoresaver.h"
@@ -77,7 +80,7 @@ public:
         _headerLen = _header.readFile(*_datFile);
         _datFile->SetPosition(_headerLen);
         if (!search::ReaderBase::extractFileSize(_header, *_datFile, _datFileSize)) {
-            abort();
+            LOG_ABORT("should not be reached");
         }
         _docIdLimit = _header.getTag(DOCID_LIMIT).asInteger();
         _version = _header.getTag(VERSION).asInteger();

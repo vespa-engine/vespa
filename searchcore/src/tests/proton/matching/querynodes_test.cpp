@@ -31,10 +31,10 @@
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-
 #include <vespa/log/log.h>
 LOG_SETUP("querynodes_test");
+
+#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 
 using search::fef::FieldInfo;
 using search::fef::FieldType;

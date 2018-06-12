@@ -5,6 +5,9 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <iostream>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".document.repo.document_type_repo_factory");
+
 namespace document {
 
 std::mutex DocumentTypeRepoFactory::_mutex;
@@ -22,7 +25,7 @@ EmptyFactoryCheck::~EmptyFactoryCheck()
 {
     if (!DocumentTypeRepoFactory::empty()) {
         std::cerr << "DocumentTypeRepoFactory not empty at shutdown" << std::endl;
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

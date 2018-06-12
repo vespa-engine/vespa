@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/log/log.h>
+LOG_SETUP("matching_test");
 
 #include <vespa/document/base/globalid.h>
 #include <initializer_list>
@@ -33,8 +35,6 @@
 #include <vespa/searchcore/proton/matching/match_params.h>
 #include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
-#include <vespa/log/log.h>
-LOG_SETUP("matching_test");
 
 using namespace proton::matching;
 using namespace proton;

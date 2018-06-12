@@ -74,7 +74,7 @@ AttributeFile::OpenReadOnly()
     if (!FileSizeCalculator::extractFileSize(datHeader, _datHeaderLen,
                                              _datFile->GetFileName(),
                                              _datFileSize)) {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     if (_idxFile.get()) {
         if ( ! _idxFile->OpenReadOnly()) {
@@ -93,7 +93,7 @@ AttributeFile::OpenReadOnly()
         if (!FileSizeCalculator::extractFileSize(idxHeader, _idxHeaderLen,
                                                  _idxFile->GetFileName(),
                                                  _idxFileSize)) {
-            abort();
+            LOG_ABORT("should not be reached");
         }
         if (_weightFile.get()) {
             if ( ! _weightFile->OpenReadOnly()) {

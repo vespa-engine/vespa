@@ -4,6 +4,9 @@
 #include "fieldinverter.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.dictionary");
+
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>

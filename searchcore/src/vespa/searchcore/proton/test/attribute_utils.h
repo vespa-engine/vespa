@@ -24,7 +24,7 @@ struct AttributeUtils
         search::IntegerAttribute &ia = static_cast<search::IntegerAttribute &>(*attr);
         while (ia.getNumDocs() < to) {
             uint32_t docId;
-            if (!ia.addDoc(docId)) { abort(); }
+            if (!ia.addDoc(docId)) { LOG_ABORT("should not be reached"); }
         }
         for (uint32_t i = from; i < to; ++i) {
             ia.update(i, value);

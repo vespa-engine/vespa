@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for documentretriever.
 
+#include <vespa/log/log.h>
+LOG_SETUP("document_retriever_test");
+
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>

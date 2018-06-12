@@ -146,7 +146,7 @@ PosOccFieldParams::setSchemaParams(const Schema &schema, uint32_t fieldId)
         break;
     default:
         LOG(error, "Bad collection type");
-        abort();
+        LOG_ABORT("should not be reached");
     }
     _avgElemLen = field.getAvgElemLen();
     _name = field.getName();
@@ -180,7 +180,7 @@ PosOccFieldParams::readHeader(const vespalib::GenericHeader &header,
         break;
     default:
         LOG(error, "Bad collection type when reading field param in header");
-        abort();
+        LOG_ABORT("should not be reached");
     }
     _avgElemLen = header.getTag(avgElemLenKey).asInteger();
 }
@@ -208,7 +208,7 @@ PosOccFieldParams::writeHeader(vespalib::GenericHeader &header,
     default:
         LOG(error,
             "Bad collection type when writing field param in header");
-        abort();
+        LOG_ABORT("should not be reached");
     }
     header.putTag(GenericHeader::Tag(collKey, schema::getTypeName(ct)));
     header.putTag(GenericHeader::Tag(avgElemLenKey, _avgElemLen));
@@ -285,7 +285,7 @@ PosOccFieldsParams::setSchemaParams(const Schema &schema,
     cacheParamsRef();
     const Schema::IndexField &field = schema.getIndexField(indexId);
     if (!SchemaUtil::validateIndexField(field))
-        abort();
+        LOG_ABORT("should not be reached");
     _params[0].setSchemaParams(schema, indexId);
 }
 

@@ -33,7 +33,7 @@ getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
         case searchlib::TranslogserverConfig::xxh64:
             return DomainPart::xxh64;
     }
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 }

@@ -63,9 +63,9 @@ public:
         return &_attr;
     }
     virtual const IAttributeVector *
-    getAttributeStableEnum(const string &) const override { abort(); }
+    getAttributeStableEnum(const string &) const override { LOG_ABORT("should not be reached"); }
     virtual void getAttributeList(vector<const IAttributeVector *> &) const override
-    { abort(); }
+    { LOG_ABORT("should not be reached"); }
 };
 
 class MyAttributeManager : public IAttributeManager {
@@ -74,13 +74,13 @@ public:
 
     MyAttributeManager(const IAttributeVector &attr) : _attr(attr) {}
     virtual AttributeGuard::UP getAttribute(const string &) const override {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool) const override {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     virtual void getAttributeList(vector<AttributeGuard> &) const override {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     virtual IAttributeContext::UP createContext() const override {
         return IAttributeContext::UP(new MyAttributeContext(_attr));

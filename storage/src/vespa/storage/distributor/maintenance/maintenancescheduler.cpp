@@ -5,6 +5,9 @@
 #include <vespa/storage/distributor/operationstarter.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".storage.distributor.maintenance.maintenance_scheduler");
+
 namespace storage::distributor {
 
 MaintenanceScheduler::MaintenanceScheduler(
@@ -84,7 +87,7 @@ MaintenanceScheduler::convertToOperationPriority(MaintenancePriority::Priority p
         return OperationStarter::Priority(0);
     default:
         assert(false);
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

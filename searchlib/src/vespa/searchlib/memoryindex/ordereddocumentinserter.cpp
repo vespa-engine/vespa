@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "ordereddocumentinserter.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.ordered_document_inserter");
 #include "i_document_insert_listener.h"
 
 #include <vespa/searchlib/index/docidandfeatures.h>

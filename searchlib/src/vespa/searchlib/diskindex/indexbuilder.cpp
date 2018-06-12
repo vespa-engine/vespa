@@ -297,7 +297,7 @@ FileHandle::open(const vespalib::stringref &dir,
                             tuneFileWrite, fileHeaderContext)) {
         LOG(error, "Could not open term writer %s for write (%s)",
             dir.c_str(), getLastErrorString().c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 
@@ -688,7 +688,7 @@ IndexBuilder::open(uint32_t docIdLimit, uint64_t numWordIds,
     vespalib::string schemaFile = appendToPrefix("schema.txt");
     if (!_schema.saveToFile(schemaFile)) {
         LOG(error, "Cannot save schema to \"%s\"", schemaFile.c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 
@@ -705,7 +705,7 @@ IndexBuilder::close()
     if (!docsummary::DocumentSummary::writeDocIdLimit(_prefix, _docIdLimit)) {
         LOG(error, "Could not write docsum count in dir %s: %s",
             _prefix.c_str(), getLastErrorString().c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

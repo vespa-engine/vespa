@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP("btreestress_test");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/btree/btreeroot.h>
 #include <vespa/searchlib/btree/btreebuilder.h>
@@ -20,9 +23,6 @@
 
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("btreestress_test");
 
 using MyTree = search::btree::BTree<uint32_t, uint32_t>;
 using MyTreeIterator = typename MyTree::Iterator;

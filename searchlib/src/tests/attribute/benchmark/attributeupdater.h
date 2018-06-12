@@ -25,7 +25,7 @@ public:
         if (!rc) {
             std::cout << "Assert " << _totalCnt << " failed: \"" << str << "\" ("
                 << file << ":" << line << ")" << std::endl;
-            abort();
+            LOG_ABORT("should not be reached");
         }
         return true;
     }
@@ -39,7 +39,7 @@ public:
             std::cout << aStr << ": " << a << std::endl;
             std::cout << bStr << ": " << b << std::endl;
             std::cout << "(" << file << ":" << line << ")" << std::endl;
-            abort();
+            LOG_ABORT("should not be reached");
         }
         return true;
     }

@@ -9,6 +9,9 @@
 #include "visit_stuff.h"
 #include <vespa/vespalib/objects/objectdumper.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.eval.tensor_function");
+
 namespace vespalib {
 namespace eval {
 
@@ -292,7 +295,7 @@ If::compile_self(Stash &) const
 {
     // 'if' is handled directly by compile_tensor_function to enable
     // lazy-evaluation of true/false sub-expressions.
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 void

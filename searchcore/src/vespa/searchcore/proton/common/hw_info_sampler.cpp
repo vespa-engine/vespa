@@ -10,6 +10,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <experimental/filesystem>
 #include <thread>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.common.hw_info_sampler");
 
 using config::ConfigHandle;
 using config::ConfigSubscriber;
@@ -70,7 +72,7 @@ void writeConfig(const vespalib::string &path,
     builder.disk.sampletime = std::chrono::duration_cast<std::chrono::seconds>(sampleTime.time_since_epoch()).count();
     config::FileConfigWriter writer(path + "/hwinfo.cfg");
     if (!writer.write(builder)) {
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

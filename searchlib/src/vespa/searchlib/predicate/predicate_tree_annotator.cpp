@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicate_tree_annotator.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.predicate.predicate_tree_annotator");
 #include "predicate_index.h"
 #include "predicate_range_expander.h"
 #include "predicate_tree_analyzer.h"
 #include <vespa/document/predicate/predicate.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".predicate_tree_annotator");
 
 using document::Predicate;
 using std::map;

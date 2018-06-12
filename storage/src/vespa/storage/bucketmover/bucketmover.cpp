@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmover.h"
+#include <vespa/log/bufferedlogger.h>
+LOG_SETUP(".bucketmover");
 #include "htmltable.h"
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/common/bucketmessages.h>
@@ -11,9 +13,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <thread>
-
-#include <vespa/log/bufferedlogger.h>
-LOG_SETUP(".bucketmover");
 
 namespace storage::bucketmover {
 

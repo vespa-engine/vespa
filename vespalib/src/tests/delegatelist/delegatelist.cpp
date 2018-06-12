@@ -290,7 +290,7 @@ Actor::perform(int cnt, int start, const CmdList &cmdList)
                 return cmdList.size();
                 break;
             default:
-                abort(); // that does not seem to work
+                LOG_ABORT("should not be reached"); // that does not seem to work
             }
         }
     }

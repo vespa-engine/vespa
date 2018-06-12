@@ -2111,7 +2111,7 @@ AttributeTest::testCompactLidSpace(const Config &config)
         }
         break;
     default:
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

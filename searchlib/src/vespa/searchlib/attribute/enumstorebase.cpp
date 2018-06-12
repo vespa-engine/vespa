@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumstorebase.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.enumstorebase");
 #include "enumstore.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/exceptions.h>
@@ -572,7 +574,7 @@ template <>
 EnumPostingTree &
 EnumStoreDict<EnumTree>::getPostingDictionary()
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 
@@ -588,7 +590,7 @@ template <>
 const EnumPostingTree &
 EnumStoreDict<EnumTree>::getPostingDictionary() const
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 

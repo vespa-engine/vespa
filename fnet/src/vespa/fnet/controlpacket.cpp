@@ -4,6 +4,9 @@
 #include "context.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".fnet.controlpacket");
+
 void
 FNET_ControlPacket::Free()
 {
@@ -60,13 +63,13 @@ FNET_ControlPacket::GetLength()
 void
 FNET_ControlPacket::Encode(FNET_DataBuffer *)
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 bool
 FNET_ControlPacket::Decode(FNET_DataBuffer *, uint32_t)
 {
-    abort(); return false;
+    LOG_ABORT("should not be reached");
 }
 
 vespalib::string

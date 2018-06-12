@@ -8,6 +8,9 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/blueprint.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("max_reduce_prod_join_replacer_test");
+
 using search::features::MaxReduceProdJoinReplacer;
 using search::features::rankingexpression::ExpressionReplacer;
 using search::features::rankingexpression::FeatureNameExtractor;
@@ -36,7 +39,7 @@ struct MyBlueprint : Blueprint {
         return true;
     }
     FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &) const override {
-        abort();
+        LOG_ABORT("should not be reached");
     }
 };
 

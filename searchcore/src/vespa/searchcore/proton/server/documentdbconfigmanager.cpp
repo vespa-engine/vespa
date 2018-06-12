@@ -292,7 +292,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         search::index::SchemaBuilder::build(*newIndexschemaConfig, schema);
         if (!search::index::SchemaUtil::validateSchema(schema)) {
             LOG(error, "Cannot use bad index schema, validation failed");
-            abort();
+            LOG_ABORT("should not be reached");
         }
     }
     if (snapshot.isChanged<AttributesConfig>(_configId, currentGeneration)) {

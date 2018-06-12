@@ -95,7 +95,7 @@ AttributeDirectory::saveSnapInfo()
         LOG(warning,
             "Could not save meta-info file for attribute vector '%s' to disk",
             dirName.c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

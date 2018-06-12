@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "flagattribute.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.flag_attribute");
 #include "load_utils.hpp"
 #include "attributeiterators.h"
 #include "multinumericattribute.hpp"
 
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.flagattribute");
 
 namespace search {
 

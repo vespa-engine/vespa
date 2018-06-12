@@ -90,7 +90,7 @@ FileHeader::taste(const vespalib::string &name,
         if (_completed && _fileBitSize > 8 * fileSize) {
             LOG(error, "FileHeader::taste(\"%s\"): fleBitSize(%" PRIu64 ") > 8 * fileSize(%" PRIu64 ")",
                 name.c_str(), _fileBitSize, fileSize);
-            abort();
+            LOG_ABORT("should not be reached");
         }
     } else if (!_allowNoFileBitSize) {
         LOG(error, "FileHeader::taste(\"%s\"): Missing fileBitSize tag", name.c_str());

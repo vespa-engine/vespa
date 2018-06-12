@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_attribute.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
 #include "dense_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
 #include <vespa/eval/tensor/tensor.h>
@@ -66,7 +68,7 @@ TensorReader::getNumCells() {
         return 0u;
     }
     if (detect != tensorIsPresent) {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     size_t numCells = _numBoundCells;
     if (_numUnboundDims != 0) {

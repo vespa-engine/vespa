@@ -214,7 +214,7 @@ Fusion::mergeField(uint32_t id)
     if (!res) {
         LOG(error, "Could not merge field postings for field %s dir %s",
             indexName.c_str(), indexDir.c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
     if (!FileKit::createStamp(indexDir +  "/.mergeocc_done"))
         return false;
@@ -324,7 +324,7 @@ Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index,
                      _fileHeaderContext)) {
         LOG(error, "Could not open output posocc + dictionary in %s",
             dir.c_str());
-        abort();
+        LOG_ABORT("should not be reached");
         return false;
     }
     return true;
@@ -375,7 +375,7 @@ Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index)
     if (!fieldWriter.close()) {
         LOG(error, "Could not close output posocc + dictionary in %s/%s",
             _outDir.c_str(), indexName.c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
     return true;
 }

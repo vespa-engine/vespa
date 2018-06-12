@@ -7,6 +7,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
+#include <vespa/log/log.h>
 
 namespace vespalib {
 
@@ -19,7 +20,7 @@ uint32_t maybe(uint32_t value, bool yes) { return yes ? value : 0; }
 void check(int res) {
     if (res == -1) {
         if (errno == ENOMEM) {
-            abort();
+	    LOG_ABORT("out of memory");
         }
     }
 }

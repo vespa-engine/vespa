@@ -1,5 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.common.attrupdate");
 #include "attrupdate.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
@@ -21,9 +23,6 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
 #include <sstream>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".attrupdate");
 
 using namespace document;
 using vespalib::make_string;

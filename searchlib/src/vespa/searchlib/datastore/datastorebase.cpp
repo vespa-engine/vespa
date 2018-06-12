@@ -4,6 +4,9 @@
 #include <vespa/vespalib/util/array.hpp>
 #include <limits>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.datastore.datastorebase");
+
 using vespalib::GenerationHeldBase;
 
 namespace search::datastore {
@@ -324,7 +327,7 @@ DataStoreBase::getMemStats() const
             stats._deadBytes += bState.getDeadElems() * elementSize;
             stats._holdBytes += (bState.getHoldElems() * elementSize) + bState.getExtraHoldBytes();
         } else {
-            abort();
+            LOG_ABORT("should not be reached");
         }
     }
     size_t genHolderHeldBytes = _genHolder.getHeldBytes();
@@ -353,7 +356,7 @@ DataStoreBase::getAddressSpaceUsage() const
         } else if (bState.isFree()) {
             limitClusters += _maxClusters;
         } else {
-            abort();
+            LOG_ABORT("should not be reached");
         }
     }
     return AddressSpace(usedClusters, deadClusters, limitClusters);

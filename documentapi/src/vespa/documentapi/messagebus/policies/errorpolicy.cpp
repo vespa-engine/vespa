@@ -3,6 +3,8 @@
 #include "errorpolicy.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/emptyreply.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".documentapi.messagebus.policies.error_policy");
 
 namespace documentapi {
 
@@ -19,7 +21,7 @@ ErrorPolicy::select(mbus::RoutingContext &ctx)
 void
 ErrorPolicy::merge(mbus::RoutingContext &)
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 }

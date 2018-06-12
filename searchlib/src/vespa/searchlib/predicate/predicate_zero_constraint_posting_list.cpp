@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.predicate.predicate_zero_constraint_posting_list");
+
 #include "predicate_zero_constraint_posting_list.h"
 
 namespace search {

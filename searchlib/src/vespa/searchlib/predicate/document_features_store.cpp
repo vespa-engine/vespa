@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_features_store.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.predicate.document_features_store");
 #include "predicate_index.h"
 #include "predicate_range_expander.h"
 #include "predicate_tree_annotator.h"

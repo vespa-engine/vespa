@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/log/log.h>
+LOG_SETUP("attributeblueprint_test");
+
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -14,9 +17,6 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/testkit/testapp.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("attributeblueprint_test");
 
 using search::AttributeGuard;
 using search::AttributeVector;
