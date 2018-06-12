@@ -101,6 +101,8 @@ public class AuthorizerTest {
         assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/node/host1"));
         assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/node/child1-1"));
         assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/command/reboot?hostname=child1-1"));
+        assertTrue(authorizedTenantHostNode("host1", "/athenz/v1/provider/identity-document/tenant/host1"));
+        assertTrue(authorizedTenantHostNode("host1", "/athenz/v1/provider/identity-document/node/child1-1"));
 
         // Trusted services can access everything in their own system
         assertFalse(authorizedController("vespa.vespa.cd.hosting", "/")); // Wrong system
@@ -149,6 +151,12 @@ public class AuthorizerTest {
         assertTrue(authorizedLegacyNode("cfg1", "/"));
         assertTrue(authorizedLegacyNode("cfg1", "/application/v2"));
         assertTrue(authorizedLegacyNode("cfghost1", "/application/v2"));
+    }
+
+    @Test
+    public void zts_allowed_for_athenz_provider_api() {
+        assertTrue(authorizedLegacyNode(NodeIdentifier.ZTS_AWS_IDENTITY, "/athenz/v1/provider/refresh"));
+        assertTrue(authorizedLegacyNode(NodeIdentifier.ZTS_ON_PREM_IDENTITY, "/athenz/v1/provider/instance"));
     }
 
     private boolean authorizedTenantNode(String hostname, String path) {

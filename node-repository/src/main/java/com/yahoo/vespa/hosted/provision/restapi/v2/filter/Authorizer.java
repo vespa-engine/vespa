@@ -7,7 +7,6 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodePrincipal;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
@@ -52,6 +51,11 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
             return true;
         }
         if (principal.getHostname().isPresent()) {
+            String hostname = principal.getHostname().get();
+            if (isAthenzProviderApi(uri)) {
+                return hostname.equals(NodeIdentifier.ZTS_AWS_IDENTITY) || hostname.equals(NodeIdentifier.ZTS_ON_PREM_IDENTITY);
+            }
+
             // Individual nodes can only access their own resources
             if (canAccessAll(hostnamesFrom(uri), principal, this::isSelfOrParent)) {
                 return true;
@@ -63,11 +67,16 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
             }
 
             // The host itself can access all resources
-            if (whitelistedHostnames.contains(principal.getHostname().get())) {
+            if (whitelistedHostnames.contains(hostname)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean isAthenzProviderApi(URI uri) {
+        return "/athenz/v1/provider/instance".equals(uri.getPath()) ||
+                "/athenz/v1/provider/refresh".equals(uri.getPath());
     }
 
     /** Returns whether principal is the node itself or the parent of the node */
@@ -152,6 +161,9 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
         if (isChildOf("/nodes/v2/command/", uri.getPath()) ||
             "/nodes/v2/node/".equals(uri.getPath())) {
             return hostnamesFromQuery(uri);
+        }
+        if (isChildOf("/athenz/v1/provider/identity-document", uri.getPath())) {
+            return Collections.singletonList(lastChildOf(uri.getPath()));
         }
         return Collections.emptyList();
     }
