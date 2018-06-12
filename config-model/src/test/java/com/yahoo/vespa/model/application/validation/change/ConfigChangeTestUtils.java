@@ -22,6 +22,10 @@ public class ConfigChangeTestUtils {
         return new VespaRestartAction(message, services);
     }
 
+    public static VespaConfigChangeAction newRefeedAction(String name, String message) {
+        return VespaRefeedAction.of(name, ValidationOverrides.empty, message, Instant.now());
+    }
+
     public static VespaConfigChangeAction newRefeedAction(String name, ValidationOverrides overrides, String message, Instant now) {
         return VespaRefeedAction.of(name, overrides, message, now);
     }

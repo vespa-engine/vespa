@@ -19,7 +19,10 @@ import com.yahoo.document.StructDataType;
 public class ComplexAttributeFieldUtils {
 
     public static boolean isArrayOfSimpleStruct(ImmutableSDField field) {
-        DataType fieldType = field.getDataType();
+        return isArrayOfSimpleStruct(field.getDataType());
+    }
+
+    public static boolean isArrayOfSimpleStruct(DataType fieldType) {
         if (fieldType instanceof ArrayDataType) {
             ArrayDataType arrayType = (ArrayDataType)fieldType;
             return isSimpleStruct(arrayType.getNestedType());
@@ -29,7 +32,10 @@ public class ComplexAttributeFieldUtils {
     }
 
     public static boolean isMapOfSimpleStruct(ImmutableSDField field) {
-        DataType fieldType = field.getDataType();
+        return isMapOfSimpleStruct(field.getDataType());
+    }
+
+    public static boolean isMapOfSimpleStruct(DataType fieldType) {
         if (fieldType instanceof MapDataType) {
             MapDataType mapType = (MapDataType)fieldType;
             return isPrimitiveType(mapType.getKeyType()) &&
@@ -40,7 +46,10 @@ public class ComplexAttributeFieldUtils {
     }
 
     public static boolean isMapOfPrimitiveType(ImmutableSDField field) {
-        DataType fieldType = field.getDataType();
+        return isMapOfPrimitiveType(field.getDataType());
+    }
+
+    public static boolean isMapOfPrimitiveType(DataType fieldType) {
         if (fieldType instanceof MapDataType) {
             MapDataType mapType = (MapDataType)fieldType;
             return isPrimitiveType(mapType.getKeyType()) &&

@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfPrimitiveType;
@@ -151,6 +152,12 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     public Collection<Attribute> attributes() {
         return Collections.unmodifiableCollection(attributes.values());
+    }
+
+    public Collection<Attribute> structFieldAttributes(String baseFieldName) {
+        return attributes().stream()
+                .filter(attribute -> attribute.getName().startsWith(baseFieldName + "."))
+                .collect(Collectors.toList());
     }
 
     public String toString() {

@@ -36,6 +36,7 @@ public class DocumentDatabaseChangeValidator {
     public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
         result.addAll(validateAttributeChanges(overrides, now));
+        result.addAll(validateStructFieldAttributeChanges(overrides, now));
         result.addAll(validateIndexingScriptChanges(overrides, now));
         result.addAll(validateDocumentTypeChanges(overrides, now));
         return result;
@@ -47,6 +48,11 @@ public class DocumentDatabaseChangeValidator {
                 currentDatabase.getDerivedConfiguration().getIndexSchema(), currentDocType,
                 nextDatabase.getDerivedConfiguration().getAttributeFields(),
                 nextDatabase.getDerivedConfiguration().getIndexSchema(), nextDocType).validate(overrides, now);
+    }
+
+    private List<VespaConfigChangeAction> validateStructFieldAttributeChanges(ValidationOverrides overrides, Instant now) {
+        return new StructFieldAttributeChangeValidator(currentDocType, currentDatabase.getDerivedConfiguration().getAttributeFields(),
+                nextDocType, nextDatabase.getDerivedConfiguration().getAttributeFields()).validate(overrides, now);
     }
 
     private List<VespaConfigChangeAction> validateIndexingScriptChanges(ValidationOverrides overrides, Instant now) {
