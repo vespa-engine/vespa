@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "structureddatatype.h"
+#include <vespa/document/base/fieldpath.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/document/base/exceptions.h>
 
@@ -10,10 +11,7 @@ namespace document {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructuredDataType, DataType);
 
-StructuredDataType::StructuredDataType() :
-    DataType()
-{
-}
+StructuredDataType::StructuredDataType() = default;
 
 StructuredDataType::StructuredDataType(const vespalib::stringref &name)
     : DataType(name, createId(name))

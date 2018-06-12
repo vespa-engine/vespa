@@ -8,6 +8,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
 #include <vespa/vespalib/testkit/test_kit.h>

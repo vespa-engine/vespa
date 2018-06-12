@@ -3,6 +3,7 @@
 #include <vespa/persistence/spi/result.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>

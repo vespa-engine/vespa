@@ -21,7 +21,7 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/searchlib/index/docbuilder.h>
 
 #include <vespa/log/log.h>

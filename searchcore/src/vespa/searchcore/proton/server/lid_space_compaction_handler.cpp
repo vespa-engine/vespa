@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/document/fieldvalue/document.h>
 
 using document::BucketId;
 using document::Document;

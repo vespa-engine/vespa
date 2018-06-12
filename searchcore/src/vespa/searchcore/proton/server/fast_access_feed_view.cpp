@@ -9,7 +9,6 @@
 
 using document::Document;
 using document::DocumentUpdate;
-using document::FieldUpdate;
 using search::index::Schema;
 
 namespace proton {

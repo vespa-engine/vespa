@@ -17,6 +17,7 @@
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
