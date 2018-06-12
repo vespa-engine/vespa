@@ -63,6 +63,33 @@ nbostream::nbostream(const nbostream & rhs) :
     memcpy(&_wbuf[0], &rhs._rbuf[rhs._rp], _wp);
 }
 
+nbostream::nbostream(nbostream && rhs) noexcept
+    : _wbuf(std::move(rhs._wbuf)),
+      _rbuf(rhs._rbuf),
+      _rp(rhs._rp),
+      _wp(rhs._wp),
+      _state(rhs._state),
+      _longLivedBuffer(rhs._longLivedBuffer)
+{
+    rhs._rp = 0;
+    rhs._wp = 0;
+    rhs._rbuf = ConstBufferRef();
+    if (!_longLivedBuffer && (_wbuf.capacity() == 0)) {
+        _wbuf.resize(roundUp2inN(_rbuf.size()));
+        memcpy(&_wbuf[0], &_rbuf[_rp], size());
+        _wp = size();
+        _rp = 0;
+        _rbuf = ConstBufferRef(&_wbuf[0], _wbuf.capacity());
+    }
+}
+
+nbostream &
+nbostream::operator = (nbostream && rhs) noexcept {
+    nbostream tmp(std::move(rhs));
+    swap(tmp);
+    return *this;
+}
+
 nbostream &
 nbostream::operator = (const nbostream & rhs) {
     if (this != &rhs) {
@@ -134,6 +161,7 @@ void nbostream::swap(nbostream & os)
     std::swap(_state, os._state);
     _wbuf.swap(os._wbuf);
     std::swap(_rbuf, os._rbuf);
+    std::swap(_longLivedBuffer, os._longLivedBuffer);
 }
 
 }
