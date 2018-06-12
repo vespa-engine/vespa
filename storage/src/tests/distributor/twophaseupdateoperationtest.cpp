@@ -350,9 +350,7 @@ TwoPhaseUpdateOperationTest::testSimple()
     MessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0"),
-            sender.getCommands(true));
+    CPPUNIT_ASSERT_EQUAL(std::string("Update => 0"), sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
 

@@ -33,6 +33,7 @@ using namespace document::config_builder;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
+using vespalib::nbostream;
 
 namespace document {
 
@@ -100,7 +101,7 @@ namespace {
 
 ByteBuffer::UP serializeHEAD(const DocumentUpdate & update)
 {
-    vespalib::nbostream stream;
+    nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.writeHEAD(update);
     ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
@@ -110,7 +111,7 @@ ByteBuffer::UP serializeHEAD(const DocumentUpdate & update)
 
 ByteBuffer::UP serialize42(const DocumentUpdate & update)
 {
-    vespalib::nbostream stream;
+    nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.write42(update);
     ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
@@ -120,7 +121,7 @@ ByteBuffer::UP serialize42(const DocumentUpdate & update)
 
 ByteBuffer::UP serialize(const ValueUpdate & update)
 {
-    vespalib::nbostream stream;
+    nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.write(update);
     ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
@@ -130,7 +131,7 @@ ByteBuffer::UP serialize(const ValueUpdate & update)
 
 ByteBuffer::UP serialize(const FieldUpdate & update)
 {
-    vespalib::nbostream stream;
+    nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.write(update);
     ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
@@ -163,8 +164,7 @@ createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
 
 FieldValue::UP createTensorFieldValue() {
     auto fv(std::make_unique<TensorFieldValue>());
-    *fv = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
-                       {"x", "y"});
+    *fv = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} }, {"x", "y"});
     return std::move(fv);
 }
 
@@ -174,11 +174,8 @@ void
 DocumentUpdateTest::testSimpleUsage() {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(42, "test",
-                     Struct("test.header")
-                     .addField("bytef", DataType::T_BYTE)
-                     .addField("intf", DataType::T_INT),
-                     Struct("test.body")
-                     .addField("intarr", Array(DataType::T_INT)));
+                     Struct("test.header").addField("bytef", DataType::T_BYTE).addField("intf", DataType::T_INT),
+                     Struct("test.body").addField("intarr", Array(DataType::T_INT)));
     DocumentTypeRepo repo(builder.config());
     const DocumentType* docType(repo.getDocumentType("test"));
     const DataType *arrayType = repo.getDataType(*docType, "Array<Int>");
@@ -186,8 +183,7 @@ DocumentUpdateTest::testSimpleUsage() {
         // Test that primitive value updates can be serialized
     testValueUpdate(ClearValueUpdate(), *DataType::INT);
     testValueUpdate(AssignValueUpdate(IntFieldValue(1)), *DataType::INT);
-    testValueUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Div, 4.3),
-                    *DataType::FLOAT);
+    testValueUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Div, 4.3), *DataType::FLOAT);
     testValueUpdate(AddValueUpdate(IntFieldValue(1), 4), *arrayType);
     testValueUpdate(RemoveValueUpdate(IntFieldValue(1)), *arrayType);
 
@@ -551,8 +547,7 @@ DocumentUpdateTest::testIncrementExistingWSetField()
     }
     fixture.applyUpdateToDocument();
 
-    std::unique_ptr<WeightedSetFieldValue> ws(
-            fixture.doc.getAs<WeightedSetFieldValue>(fixture.field));
+    auto ws(fixture.doc.getAs<WeightedSetFieldValue>(fixture.field));
     CPPUNIT_ASSERT_EQUAL(size_t(2), ws->size());
     CPPUNIT_ASSERT(ws->contains(StringFieldValue("foo")));
     CPPUNIT_ASSERT_EQUAL(1, ws->get(StringFieldValue("foo"), 0));
@@ -564,12 +559,11 @@ DocumentUpdateTest::testIncrementWithZeroResultWeightIsRemoved()
     WeightedSetAutoCreateFixture fixture;
     fixture.update.addUpdate(FieldUpdate(fixture.field)
             .addUpdate(MapValueUpdate(StringFieldValue("baz"),
-                    ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 0))));
+                                      ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 0))));
 
     fixture.applyUpdateToDocument();
 
-    std::unique_ptr<WeightedSetFieldValue> ws(
-            fixture.doc.getAs<WeightedSetFieldValue>(fixture.field));
+    auto ws(fixture.doc.getAs<WeightedSetFieldValue>(fixture.field));
     CPPUNIT_ASSERT_EQUAL(size_t(1), ws->size());
     CPPUNIT_ASSERT(ws->contains(StringFieldValue("foo")));
     CPPUNIT_ASSERT(!ws->contains(StringFieldValue("baz")));
@@ -671,10 +665,9 @@ void DocumentUpdateTest::testGenerateSerializedFile()
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
     ByteBuffer::UP buf(serialize42(upd));
 
-    int fd = open(TEST_PATH("data/serializeupdatecpp.dat").c_str(),
-                  O_WRONLY | O_TRUNC | O_CREAT, 0644);
+    int fd = open(TEST_PATH("data/serializeupdatecpp.dat").c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
-	throw vespalib::Exception("read failed");
+	    throw vespalib::Exception("read failed");
     }
     close(fd);
 }
@@ -698,7 +691,6 @@ void DocumentUpdateTest::testSetBadFieldTypes()
         ; // fprintf(stderr, "Got exception => OK: %s\n", e.what());
     }
 
-    // Apply update
     update.applyTo(*doc);
 
     // Verify that the field is NOT set in the document.

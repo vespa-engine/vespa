@@ -100,14 +100,12 @@ makeDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name).
-                     addField("string", DataType::T_STRING).
-                     addField("struct", Struct("pair").
-                              addField("x", DataType::T_STRING).
-                              addField("y", DataType::T_STRING)).
-                     addField("map", Map(DataType::T_STRING,
-                                         DataType::T_STRING)));
-    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
+                     Struct(header_name),
+                     Struct(body_name)
+                             .addField("string", DataType::T_STRING)
+                             .addField("struct", Struct("pair").addField("x", DataType::T_STRING).addField("y", DataType::T_STRING))
+                             .addField("map", Map(DataType::T_STRING, DataType::T_STRING)));
+    return std::make_unique<const DocumentTypeRepo>(builder.config());
 }
 
 

@@ -60,12 +60,8 @@ public:
         close();
     }
 
-    void replyToMessage(
-            UpdateOperation& callback,
-            MessageSenderStub& sender,
-            uint32_t index,
-            uint64_t oldTimestamp,
-            api::BucketInfo info = api::BucketInfo(2,4,6));
+    void replyToMessage(UpdateOperation& callback, MessageSenderStub& sender, uint32_t index,
+                        uint64_t oldTimestamp, api::BucketInfo info = api::BucketInfo(2,4,6));
 
     std::shared_ptr<UpdateOperation>
     sendUpdate(const std::string& bucketState);
@@ -88,26 +84,18 @@ UpdateOperation_Test::sendUpdate(const std::string& bucketState)
     addNodesToBucketDB(_bId, bucketState);
 
     std::shared_ptr<api::UpdateCommand> msg(
-            new api::UpdateCommand(makeDocumentBucket(document::BucketId(0)),
-                                   update,
-                                   100));
+            new api::UpdateCommand(makeDocumentBucket(document::BucketId(0)), update, 100));
 
     ExternalOperationHandler& handler = getExternalOperationHandler();
     return std::shared_ptr<UpdateOperation>(
-            new UpdateOperation(handler,
-                                getDistributorBucketSpace(),
-                                msg,
+            new UpdateOperation(handler, getDistributorBucketSpace(), msg,
                                 getDistributor().getMetrics().updates[msg->getLoadType()]));
 }
 
 
 void
-UpdateOperation_Test::replyToMessage(
-        UpdateOperation& callback,
-        MessageSenderStub& sender,
-        uint32_t index,
-        uint64_t oldTimestamp,
-        api::BucketInfo info)
+UpdateOperation_Test::replyToMessage(UpdateOperation& callback, MessageSenderStub& sender, uint32_t index,
+                                     uint64_t oldTimestamp, api::BucketInfo info)
 {
     std::shared_ptr<api::StorageMessage> msg2  = sender.commands[index];
     UpdateCommand* updatec = dynamic_cast<UpdateCommand*>(msg2.get());
@@ -116,8 +104,7 @@ UpdateOperation_Test::replyToMessage(
     updateR->setOldTimestamp(oldTimestamp);
     updateR->setBucketInfo(info);
 
-    callback.onReceive(sender,
-                       std::shared_ptr<StorageReply>(reply.release()));
+    callback.onReceive(sender, std::shared_ptr<StorageReply>(reply.release()));
 }
 
 void
@@ -129,9 +116,7 @@ UpdateOperation_Test::testSimple()
     MessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0"),
-            sender.getCommands(true));
+    CPPUNIT_ASSERT_EQUAL(std::string("Update => 0"), sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
 
@@ -150,9 +135,7 @@ UpdateOperation_Test::testNotFound()
     MessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0"),
-            sender.getCommands(true));
+    CPPUNIT_ASSERT_EQUAL(std::string("Update => 0"), sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 0);
 
@@ -170,9 +153,7 @@ UpdateOperation_Test::testMultiNode()
     MessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    CPPUNIT_ASSERT_EQUAL(std::string("Update => 0,Update => 1"), sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 120);
     replyToMessage(*cb, sender, 1, 120);
@@ -198,9 +179,7 @@ UpdateOperation_Test::testMultiNodeInconsistentTimestamp()
     MessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    CPPUNIT_ASSERT_EQUAL(std::string("Update => 0,Update => 1"), sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 119);
     replyToMessage(*cb, sender, 1, 120);
