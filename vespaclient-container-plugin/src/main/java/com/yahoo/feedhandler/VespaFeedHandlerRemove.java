@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.concurrent.Executor;
 
+@Deprecated
 public class VespaFeedHandlerRemove extends VespaFeedHandlerBase {
 
     @Inject

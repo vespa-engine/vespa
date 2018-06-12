@@ -11,6 +11,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.search.handler.SearchHandler;
 
+@Deprecated
 public class VespaFeedHandlerGet extends ThreadedHttpRequestHandler {
 
     private final SearchHandler searchHandler;

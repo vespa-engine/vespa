@@ -41,8 +41,6 @@ public class ContainerDocumentApi implements FeederConfig.Producer {
 
     private void setupHandlers(ContainerCluster cluster) {
         cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandler", "feed"));
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerRemove", "remove"));
-        cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation", "removelocation"));
         cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerGet", "get"));
         cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerVisit", "visit"));
         cluster.addComponent(newVespaClientHandler("com.yahoo.document.restapi.resource.RestApi", "document/v1/*"));
