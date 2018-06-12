@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.ApplicationId;
@@ -195,7 +194,8 @@ public class DeploymentTrigger {
             buildService.trigger(BuildJob.of(applicationId, application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
             return singletonList(component);
         }
-        Versions versions = versions(application, application.change(), deploymentFor(application, jobType));
+        Versions versions = Versions.from(application.change(), application, deploymentFor(application, jobType),
+                                          controller.systemVersion());
         String reason = "Job triggered manually by " + user;
         return (jobType.isProduction() && ! isTested(application, versions)
                 ? testJobs(application, versions, reason, clock.instant()).stream()
@@ -241,7 +241,7 @@ public class DeploymentTrigger {
 
     private Optional<JobRun> successOn(Application application, JobType jobType, Versions versions) {
         return application.deploymentJobs().statusOf(jobType).flatMap(JobStatus::lastSuccess)
-                          .filter(run -> targetsMatch(versions, run));
+                          .filter(versions::targetsMatch);
     }
 
     private Optional<Deployment> deploymentFor(Application application, JobType jobType) {
@@ -286,7 +286,8 @@ public class DeploymentTrigger {
                     List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! isComplete(change, application, job)).collect(toList());
                     if ( ! remainingJobs.isEmpty()) { // Step is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                         for (JobType job : remainingJobs) {
-                            Versions versions = versions(application, change, deploymentFor(application, job));
+                            Versions versions = Versions.from(change, application, deploymentFor(application, job),
+                                                              controller.systemVersion());
                             if (isTested(application, versions)) {
                                 if (   completedAt.isPresent()
                                     && jobStateOf(application, job) == idle
@@ -315,7 +316,7 @@ public class DeploymentTrigger {
                     }
                 }
             if (testJobs == null)
-                testJobs = testJobs(application, versions(application, application.change(), Optional.empty()),
+                testJobs = testJobs(application, Versions.from(application, controller.systemVersion()),
                                     "Testing last changes outside prod", clock.instant());
             jobs.addAll(testJobs);
         });
@@ -358,7 +359,7 @@ public class DeploymentTrigger {
      */
     private boolean isComplete(Change change, Application application, JobType jobType) {
         Optional<Deployment> existingDeployment = deploymentFor(application, jobType);
-        return    successOn(application, jobType, versions(application, change, existingDeployment)).isPresent()
+        return    successOn(application, jobType, Versions.from(change, application, existingDeployment, controller.systemVersion())).isPresent()
                ||    jobType.isProduction()
                   && existingDeployment.map(deployment -> ! isUpgrade(change, deployment) && isDowngrade(application.change(), deployment))
                                        .orElse(false);
@@ -379,7 +380,7 @@ public class DeploymentTrigger {
     private Optional<Instant> testedAt(Application application, Versions versions) {
         Optional<JobRun> testRun = successOn(application, systemTest, versions);
         Optional<JobRun> stagingRun = successOn(application, stagingTest, versions)
-                .filter(run -> sourcesMatchIfPresent(versions, run));
+                .filter(versions::sourcesMatchIfPresent);
         return max(testRun.map(JobRun::at), stagingRun.map(JobRun::at))
                 .filter(__ -> testRun.isPresent() && stagingRun.isPresent());
     }
@@ -388,22 +389,9 @@ public class DeploymentTrigger {
         return application.deploymentJobs().jobStatus().values().stream()
                           .filter(job -> job.type().isProduction())
                           .anyMatch(job -> job.lastTriggered()
-                                              .filter(run -> targetsMatch(versions, run))
-                                              .filter(run -> sourcesMatchIfPresent(versions, run))
+                                              .filter(versions::targetsMatch)
+                                              .filter(versions::sourcesMatchIfPresent)
                                               .isPresent());
-    }
-
-    /** If the given state's sources are present and differ from its targets, returns whether they are equal to those
-     * of the given job run. */
-    private static boolean sourcesMatchIfPresent(Versions versions, JobRun jobRun) {
-        return   (   ! versions.sourcePlatform.filter(version -> ! version.equals(versions.targetPlatform)).isPresent()
-                  ||   versions.sourcePlatform.equals(jobRun.sourcePlatform()))
-              && (   ! versions.sourceApplication.filter(version -> ! version.equals(versions.targetApplication)).isPresent()
-                  ||   versions.sourceApplication.equals(jobRun.sourceApplication()));
-    }
-
-    private static boolean targetsMatch(Versions versions, JobRun jobRun) {
-        return versions.targetPlatform.equals(jobRun.platform()) && versions.targetApplication.equals(jobRun.application());
     }
 
     // ---------- Change management o_O ----------
@@ -438,7 +426,7 @@ public class DeploymentTrigger {
         List<Job> jobs = new ArrayList<>();
         for (JobType jobType : jobsOf(testStepsOf(application))) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
-                    .filter(run -> sourcesMatchIfPresent(versions, run) || jobType == systemTest);
+                    .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
             if ( ! completion.isPresent() && jobStateOf(application, jobType) == idle)
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
         }
@@ -468,27 +456,10 @@ public class DeploymentTrigger {
                                      .filter(JobError.outOfCapacity::equals).isPresent();
         if (isRetry) reason += "; retrying on out of capacity";
 
-        JobRun triggering = JobRun.triggering(versions.targetPlatform, versions.targetApplication, versions.sourcePlatform, versions.sourceApplication, reason, clock.instant());
+        JobRun triggering = JobRun.triggering(versions.targetPlatform(), versions.targetApplication(),
+                                              versions.sourcePlatform(), versions.sourceApplication(),
+                                              reason, clock.instant());
         return new Job(application, triggering, jobType, availableSince, isRetry, change.application().isPresent());
-    }
-
-    private Versions versions(Application application, Change change, Optional<Deployment> deployment) {
-        return new Versions(targetPlatform(application, change, deployment),
-                            targetApplication(application, change, deployment),
-                            deployment.map(Deployment::version),
-                            deployment.map(Deployment::applicationVersion));
-    }
-
-    private Version targetPlatform(Application application, Change change, Optional<Deployment> deployment) {
-        return max(deployment.map(Deployment::version), change.platform())
-                .orElse(application.oldestDeployedPlatform()
-                                   .orElse(controller.systemVersion()));
-    }
-
-    private ApplicationVersion targetApplication(Application application, Change change, Optional<Deployment> deployment) {
-        return max(deployment.map(Deployment::applicationVersion), change.application())
-                .orElse(application.oldestDeployedApplication()
-                                   .orElse(application.deploymentJobs().jobStatus().get(component).lastSuccess().get().application()));
     }
 
     // ---------- Data containers ----------
@@ -516,35 +487,6 @@ public class DeploymentTrigger {
         Instant availableSince() { return availableSince; } // TODO jvenstad: This is 95% broken now. Change.at() can restore it.
         boolean isRetry() { return isRetry; }
         boolean applicationUpgrade() { return isApplicationUpgrade; }
-
-    }
-
-
-    private static class Versions {
-
-        private final Version targetPlatform;
-        private final ApplicationVersion targetApplication;
-        private final Optional<Version> sourcePlatform;
-        private final Optional<ApplicationVersion> sourceApplication;
-
-        private Versions(Version targetPlatform, ApplicationVersion targetApplication, Optional<Version> sourcePlatform,
-                         Optional<ApplicationVersion> sourceApplication) {
-            this.targetPlatform = targetPlatform;
-            this.targetApplication = targetApplication;
-            this.sourcePlatform = sourcePlatform;
-            this.sourceApplication = sourceApplication;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("platform %s%s, application %s%s",
-                                 sourcePlatform.filter(source -> ! source.equals(targetPlatform))
-                                               .map(source -> source + " -> ").orElse(""),
-                                 targetPlatform,
-                                 sourceApplication.filter(source -> ! source.equals(targetApplication))
-                                                  .map(source -> source.id() + " -> ").orElse(""),
-                                 targetApplication.id());
-        }
 
     }
 
