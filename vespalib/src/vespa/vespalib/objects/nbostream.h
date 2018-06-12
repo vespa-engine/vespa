@@ -28,11 +28,11 @@ public:
     nbostream(const void * buf, size_t sz);
     nbostream(Alloc && buf, size_t sz);
     nbostream(const nbostream & rhs);
-    nbostream(nbostream && rhs) noexcept = default;
+    nbostream(nbostream && rhs) noexcept;
 
     ~nbostream();
     nbostream & operator = (const nbostream & rhs);
-    nbostream & operator = (nbostream && rhs) noexcept = default;
+    nbostream & operator = (nbostream && rhs) noexcept;
 
     nbostream & operator << (double v)     { double n(nbo::n2h(v)); write8(&n); return *this; }
     nbostream & operator >> (double & v)   { double n; read8(&n); v = nbo::n2h(n); return *this; }
@@ -228,7 +228,7 @@ public:
     size_t         _rp;
     size_t         _wp;
     State          _state;
-    const bool     _longLivedBuffer;
+    bool           _longLivedBuffer;
 };
 
 class nbostream_longlivedbuf : public nbostream {

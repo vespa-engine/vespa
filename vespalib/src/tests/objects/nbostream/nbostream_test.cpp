@@ -7,6 +7,7 @@
 #include <ostream>
 
 using vespalib::nbostream;
+using vespalib::alloc::Alloc;
 using ExpBuffer = std::vector<uint8_t>;
 
 namespace std
@@ -60,6 +61,44 @@ struct Fixture
     }
 };
 
+TEST("test that move of owned buffer does not copy") {
+    Alloc buf = Alloc::allocHeap(1000);
+    const void * ptr = buf.get();
+    nbostream os(std::move(buf), 0);
+    os << static_cast<long>(0x567);
+    EXPECT_EQUAL(ptr, os.peek());
+    EXPECT_EQUAL(8ul, os.size());
+    nbostream moved(std::move(os));
+    EXPECT_TRUE(nullptr == os.peek());
+    EXPECT_EQUAL(0ul, os.size());
+    EXPECT_EQUAL(ptr, moved.peek());
+    EXPECT_EQUAL(8ul, moved.size());
+    long tmp(0);
+    moved >> tmp;
+    EXPECT_EQUAL(0x567l, tmp);
+}
+
+TEST("test that move of non-owned buffer does copy") {
+    Alloc buf = Alloc::allocHeap(1000);
+    const void * ptr = buf.get();
+    nbostream os(std::move(buf), 0);
+    os << static_cast<long>(0x567);
+    EXPECT_EQUAL(ptr, os.peek());
+    EXPECT_EQUAL(8ul, os.size());
+    nbostream refering(os.peek(), os.size());
+    EXPECT_EQUAL(ptr, os.peek());
+    EXPECT_EQUAL(8ul, os.size());
+    EXPECT_EQUAL(ptr, refering.peek());
+    EXPECT_EQUAL(8ul, refering.size());
+    nbostream moved(std::move(refering));
+    EXPECT_TRUE(nullptr == refering.peek());
+    EXPECT_EQUAL(0ul, refering.size());
+    EXPECT_TRUE(ptr != moved.peek());
+    EXPECT_EQUAL(8ul, moved.size());
+    long tmp(0);
+    moved >> tmp;
+    EXPECT_EQUAL(0x567l, tmp);
+}
 
 TEST_F("test serializing 64-bit signed integers", Fixture)
 {
