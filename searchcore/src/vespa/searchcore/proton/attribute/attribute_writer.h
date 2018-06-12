@@ -5,6 +5,7 @@
 #include "i_attribute_writer.h"
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/document/base/fieldpath.h>
+#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 
 namespace document { class DocumentType; }
 
@@ -25,6 +26,7 @@ private:
     const IAttributeManager::SP _mgr;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
     const std::vector<search::AttributeVector *> &_writableAttributes;
+    using ExecutorId = search::ISequencedTaskExecutor::ExecutorId;
 public:
     class WriteField
     {
@@ -41,17 +43,17 @@ public:
     };
     class WriteContext
     {
-        uint32_t _executorId;
+        ExecutorId _executorId;
         std::vector<WriteField> _fields;
         bool _hasStructFieldAttribute;
     public:
-        WriteContext(uint32_t executorId);
+        WriteContext(ExecutorId executorId);
         WriteContext(WriteContext &&rhs);
         ~WriteContext();
         WriteContext &operator=(WriteContext &&rhs);
         void buildFieldPaths(const DocumentType &docType);
         void add(AttributeVector &attr);
-        uint32_t getExecutorId() const { return _executorId; }
+        ExecutorId getExecutorId() const { return _executorId; }
         const std::vector<WriteField> &getFields() const { return _fields; }
         bool hasStructFieldAttribute() const { return _hasStructFieldAttribute; }
     };
