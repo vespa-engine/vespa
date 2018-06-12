@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.restapi.v2;
+package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodePrincipal;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import org.junit.Before;
@@ -102,6 +101,8 @@ public class AuthorizerTest {
         assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/node/host1"));
         assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/node/child1-1"));
         assertTrue(authorizedTenantHostNode("host1", "/nodes/v2/command/reboot?hostname=child1-1"));
+        assertTrue(authorizedTenantHostNode("host1", "/athenz/v1/provider/identity-document/tenant/host1"));
+        assertTrue(authorizedTenantHostNode("host1", "/athenz/v1/provider/identity-document/node/child1-1"));
 
         // Trusted services can access everything in their own system
         assertFalse(authorizedController("vespa.vespa.cd.hosting", "/")); // Wrong system
@@ -150,6 +151,12 @@ public class AuthorizerTest {
         assertTrue(authorizedLegacyNode("cfg1", "/"));
         assertTrue(authorizedLegacyNode("cfg1", "/application/v2"));
         assertTrue(authorizedLegacyNode("cfghost1", "/application/v2"));
+    }
+
+    @Test
+    public void zts_allowed_for_athenz_provider_api() {
+        assertTrue(authorizedLegacyNode(NodeIdentifier.ZTS_AWS_IDENTITY, "/athenz/v1/provider/refresh"));
+        assertTrue(authorizedLegacyNode(NodeIdentifier.ZTS_ON_PREM_IDENTITY, "/athenz/v1/provider/instance"));
     }
 
     private boolean authorizedTenantNode(String hostname, String path) {
