@@ -155,13 +155,19 @@ public:
      * Resets pos to 0, and sets limit to old pos. Use this before reading
      * from a buffer you have written to
      */
-    void flip();
+    void flip() {
+        _limit = _pos;
+        _pos = 0;
+    }
 
     /**
      * Sets pos to 0 and limit to length. Use this to start writing from the
      * start of the buffer.
      */
-    void clear();
+    void clear() {
+        _pos=0;
+        _limit=_len;
+    }
 
     void getNumericNetwork(uint8_t & v) { getNumeric(v); }
     void getNumeric(uint8_t & v);
