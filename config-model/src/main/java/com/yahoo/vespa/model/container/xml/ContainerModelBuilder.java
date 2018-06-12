@@ -759,7 +759,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         spec.athenzDomain().ifPresent(domain -> {
             AthenzService service = spec.athenzService(zone.environment(), zone.region())
                     .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
-            IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs), ztsUrl, athenzDnsSuffix);
+            String zoneDnsSuffix = zone.environment().value() + "-" + zone.region().value() + "." + athenzDnsSuffix;
+            IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs), ztsUrl, zoneDnsSuffix, zone);
             cluster.addComponent(identityProvider);
 
             cluster.getContainers().forEach(container -> {

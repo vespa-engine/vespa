@@ -18,6 +18,7 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>

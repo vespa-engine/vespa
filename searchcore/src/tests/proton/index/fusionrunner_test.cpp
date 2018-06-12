@@ -11,6 +11,7 @@
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/fastos/file.h>
 #include <set>

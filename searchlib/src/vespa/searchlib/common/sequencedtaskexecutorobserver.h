@@ -26,8 +26,8 @@ public:
     virtual ~SequencedTaskExecutorObserver() override;
 
     uint32_t getNumExecutors() const override { return _executor.getNumExecutors(); }
-    uint32_t getExecutorId(uint64_t componentId) override;
-    void executeTask(uint32_t executorId, vespalib::Executor::Task::UP task) override;
+    ExecutorId getExecutorId(uint64_t componentId) override;
+    void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
 
     uint32_t getExecuteCnt() const { return _executeCnt; }

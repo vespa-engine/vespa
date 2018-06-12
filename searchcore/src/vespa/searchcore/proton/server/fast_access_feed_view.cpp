@@ -5,6 +5,7 @@
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
 #include "putdonecontext.h"
+#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 
 using document::Document;
 using document::DocumentUpdate;

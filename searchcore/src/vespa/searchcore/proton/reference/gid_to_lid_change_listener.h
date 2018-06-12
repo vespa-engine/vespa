@@ -7,7 +7,6 @@
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
 
-
 namespace proton {
 
 /*
@@ -16,12 +15,12 @@ namespace proton {
  */
 class GidToLidChangeListener : public IGidToLidChangeListener
 {
-    search::ISequencedTaskExecutor &_attributeFieldWriter;
-    uint32_t                        _executorId;
+    search::ISequencedTaskExecutor                        &_attributeFieldWriter;
+    search::ISequencedTaskExecutor::ExecutorId             _executorId;
     std::shared_ptr<search::attribute::ReferenceAttribute> _attr;
-    MonitoredRefCount              &_refCount;
-    vespalib::string               _name;
-    vespalib::string               _docTypeName;
+    MonitoredRefCount                                     &_refCount;
+    vespalib::string                                       _name;
+    vespalib::string                                       _docTypeName;
 
 public:
     GidToLidChangeListener(search::ISequencedTaskExecutor &attributeFieldWriter,

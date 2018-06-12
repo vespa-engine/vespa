@@ -1,5 +1,4 @@
 Makefile.ini
 config_command.sh
 doxygen
-messagebus.mak
 project.dsw

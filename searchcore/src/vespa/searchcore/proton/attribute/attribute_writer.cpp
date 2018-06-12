@@ -21,6 +21,7 @@ LOG_SETUP(".proton.server.attributeadapter");
 using namespace document;
 using namespace search;
 using search::attribute::ImportedAttributeVector;
+using ExecutorId = search::ISequencedTaskExecutor::ExecutorId;
 
 namespace proton {
 
@@ -50,7 +51,7 @@ AttributeWriter::WriteField::buildFieldPath(const DocumentType &docType)
     _fieldPath = std::move(fp);
 }
 
-AttributeWriter::WriteContext::WriteContext(uint32_t executorId)
+AttributeWriter::WriteContext::WriteContext(ExecutorId executorId)
     : _executorId(executorId),
       _fields(),
       _hasStructFieldAttribute(false)
@@ -214,15 +215,15 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
 
 class FieldContext
 {
-    vespalib::string _name;
-    uint32_t         _executorId;
-    AttributeVector *_attr;
+    vespalib::string   _name;
+    ExecutorId         _executorId;
+    AttributeVector   *_attr;
 
 public:
     FieldContext(ISequencedTaskExecutor &writer, AttributeVector *attr);
     ~FieldContext();
     bool operator<(const FieldContext &rhs) const;
-    uint32_t getExecutorId() const { return _executorId; }
+    ExecutorId getExecutorId() const { return _executorId; }
     AttributeVector *getAttribute() const { return _attr; }
 };
 
@@ -554,7 +555,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
         // document and attribute.
         if (attrp->getStatus().getLastSyncToken() >= serialNum)
             continue;
-        args[_attributeFieldWriter.getExecutorId(attrp->getName())]->_updates.emplace_back(attrp, &fupd);
+        args[_attributeFieldWriter.getExecutorId(attrp->getName()).getId()]->_updates.emplace_back(attrp, &fupd);
         LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attrp->getName().c_str());
     }
     // NOTE: The lifetime of the field update will be ensured by keeping the document update alive
@@ -562,7 +563,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
     for (uint32_t id(0); id < args.size(); id++) {
         if ( ! args[id]->_updates.empty()) {
             args[id]->_onWriteDone = onWriteDone;
-            _attributeFieldWriter.executeTask(id, std::move(args[id]));
+            _attributeFieldWriter.executeTask(ExecutorId(id), std::move(args[id]));
         }
     }
 

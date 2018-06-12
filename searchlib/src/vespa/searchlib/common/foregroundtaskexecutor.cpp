@@ -23,12 +23,12 @@ ForegroundTaskExecutor::~ForegroundTaskExecutor()
 {
 }
 
-uint32_t
+ISequencedTaskExecutor::ExecutorId
 ForegroundTaskExecutor::getExecutorId(uint64_t componentId)
 {
     auto itr = _ids.find(componentId);
     if (itr == _ids.end()) {
-        auto insarg = std::make_pair(componentId, _ids.size() % _threads);
+        auto insarg = std::make_pair(componentId, ExecutorId(_ids.size() % _threads));
         auto insres = _ids.insert(insarg);
         assert(insres.second);
         itr = insres.first;
@@ -37,12 +37,11 @@ ForegroundTaskExecutor::getExecutorId(uint64_t componentId)
 }
 
 void
-ForegroundTaskExecutor::executeTask(uint32_t executorId, vespalib::Executor::Task::UP task)
+ForegroundTaskExecutor::executeTask(ExecutorId id, vespalib::Executor::Task::UP task)
 {
-    assert(executorId < _threads);
+    assert(id.getId() < _threads);
     task->run();
 }
-
 
 void
 ForegroundTaskExecutor::sync()

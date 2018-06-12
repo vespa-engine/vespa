@@ -2,8 +2,7 @@
 
 #include "sequencedtaskexecutorobserver.h"
 
-namespace search
-{
+namespace search {
 
 SequencedTaskExecutorObserver::SequencedTaskExecutorObserver(ISequencedTaskExecutor &executor)
     : _executor(executor),
@@ -14,26 +13,23 @@ SequencedTaskExecutorObserver::SequencedTaskExecutorObserver(ISequencedTaskExecu
 {
 }
 
-SequencedTaskExecutorObserver::~SequencedTaskExecutorObserver()
-{
-}
+SequencedTaskExecutorObserver::~SequencedTaskExecutorObserver() = default;
 
-uint32_t
+ISequencedTaskExecutor::ExecutorId
 SequencedTaskExecutorObserver::getExecutorId(uint64_t componentId)
 {
     return _executor.getExecutorId(componentId);
 }
 
 void
-SequencedTaskExecutorObserver::executeTask(uint32_t executorId,
-                                           vespalib::Executor::Task::UP task)
+SequencedTaskExecutorObserver::executeTask(ExecutorId id, vespalib::Executor::Task::UP task)
 {
     ++_executeCnt;
     {
         std::lock_guard<std::mutex> guard(_mutex);
-        _executeHistory.emplace_back(executorId);
+        _executeHistory.emplace_back(id.getId());
     }
-    _executor.executeTask(executorId, std::move(task));
+    _executor.executeTask(id, std::move(task));
 }
 
 void

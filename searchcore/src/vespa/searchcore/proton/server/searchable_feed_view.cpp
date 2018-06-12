@@ -6,6 +6,7 @@
 #include "removedonecontext.h"
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
+#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>

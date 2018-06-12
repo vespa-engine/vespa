@@ -3,13 +3,10 @@
 #pragma once
 
 #include "i_compactable_lid_space.h"
+#include "isequencedtaskexecutor.h"
 #include <memory>
 
-namespace search {
-
-class ISequencedTaskExecutor;
-
-namespace common {
+namespace search::common {
 
 /**
  * Adapter class for a component that has a lid space that can be
@@ -19,16 +16,16 @@ namespace common {
 class ThreadedCompactableLidSpace : public ICompactableLidSpace
 {
     std::shared_ptr<ICompactableLidSpace> _target;
-    ISequencedTaskExecutor &_executor;
-    uint32_t                _executorId;
+    ISequencedTaskExecutor               &_executor;
+    ISequencedTaskExecutor::ExecutorId    _executorId;
 public:
-    ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target, ISequencedTaskExecutor &executor, uint32_t executorId);
-    virtual ~ThreadedCompactableLidSpace() override;
-    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
-    virtual bool canShrinkLidSpace() const override;
-    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
-    virtual void shrinkLidSpace() override;
+    ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target, ISequencedTaskExecutor &executor,
+                                ISequencedTaskExecutor::ExecutorId executorId);
+    ~ThreadedCompactableLidSpace() override;
+    void compactLidSpace(uint32_t wantedDocLidLimit) override;
+    bool canShrinkLidSpace() const override;
+    size_t getEstimatedShrinkLidSpaceGain() const override;
+    void shrinkLidSpace() override;
 };
 
-}
 }

@@ -161,7 +161,7 @@ vespalib::string makeAltComponentId(Fixture &f)
 {
     int tryCnt = 0;
     char altComponentId[20];
-    uint32_t executorId0 = f._threads.getExecutorId("0");
+    ISequencedTaskExecutor::ExecutorId executorId0 = f._threads.getExecutorId("0");
     for (tryCnt = 1; tryCnt < 100; ++tryCnt) {
         sprintf(altComponentId, "%d", tryCnt);
         if (f._threads.getExecutorId(altComponentId) == executorId0) {
@@ -227,7 +227,7 @@ TEST_F("require that executeLambda works", Fixture)
     std::vector<int> res;
     const auto lambda = [i, &res]() mutable
                         { res.push_back(i--); res.push_back(i--); };
-    f._threads.executeLambda(0, lambda);
+    f._threads.executeLambda(ISequencedTaskExecutor::ExecutorId(0), lambda);
     f._threads.sync();
     std::vector<int> exp({5, 4});
     EXPECT_EQUAL(exp, res);

@@ -63,7 +63,7 @@ private:
         static AttributeWrap extraAttribute(const AttributeVectorSP &a);
         static AttributeWrap normalAttribute(const AttributeVectorSP &a);
         bool isExtra() const { return _isExtra; }
-        const AttributeVectorSP getAttribute() const { return _attr; }
+        const AttributeVectorSP & getAttribute() const { return _attr; }
     };
 
     class FlushableWrap

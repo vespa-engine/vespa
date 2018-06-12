@@ -4,6 +4,8 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -23,14 +25,21 @@ public class IdentityProvider extends SimpleComponent implements IdentityConfig.
     private final HostName loadBalancerName;
     private final URI ztsUrl;
     private final String athenzDnsSuffix;
+    private final Zone zone;
 
-    public IdentityProvider(AthenzDomain domain, AthenzService service, HostName loadBalancerName, URI ztsUrl, String athenzDnsSuffix) {
+    public IdentityProvider(AthenzDomain domain,
+                            AthenzService service,
+                            HostName loadBalancerName,
+                            URI ztsUrl,
+                            String athenzDnsSuffix,
+                            Zone zone) {
         super(new ComponentModel(BundleInstantiationSpecification.getFromStrings(CLASS, CLASS, BUNDLE)));
         this.domain = domain;
         this.service = service;
         this.loadBalancerName = loadBalancerName;
         this.ztsUrl = ztsUrl;
         this.athenzDnsSuffix = athenzDnsSuffix;
+        this.zone = zone;
     }
 
     @Override
@@ -42,5 +51,15 @@ public class IdentityProvider extends SimpleComponent implements IdentityConfig.
         builder.loadBalancerAddress(loadBalancerName.value());
         builder.ztsUrl(ztsUrl != null ? ztsUrl.toString() : "");
         builder.athenzDnsSuffix(athenzDnsSuffix != null ? athenzDnsSuffix : "");
+        builder.nodeIdentityName("vespa.vespa.tenant"); // TODO Move to Oath configmodel amender
+        builder.configserverIdentityName(getConfigserverIdentityName());
+    }
+
+    // TODO Move to Oath configmodel amender
+    private String getConfigserverIdentityName() {
+        return String.format("%s.provider_%s_%s",
+                             zone.system() == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd",
+                             zone.environment().value(),
+                             zone.region().value());
     }
 }

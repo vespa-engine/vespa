@@ -28,6 +28,7 @@
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/io/fileutil.h>
 

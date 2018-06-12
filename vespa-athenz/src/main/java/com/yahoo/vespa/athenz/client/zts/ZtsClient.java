@@ -26,7 +26,7 @@ public interface ZtsClient extends AutoCloseable {
      */
     InstanceIdentity registerInstance(AthenzService providerIdentity,
                                       AthenzService instanceIdentity,
-                                      String instanceId,
+                                      String instanceId, // TODO Remove this parameter (unused/unnecessary)
                                       String attestationData,
                                       boolean requestServiceToken,
                                       Pkcs10Csr csr);
