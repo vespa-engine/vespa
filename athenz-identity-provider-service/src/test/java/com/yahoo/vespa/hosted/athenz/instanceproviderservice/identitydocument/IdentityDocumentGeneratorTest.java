@@ -85,7 +85,7 @@ public class IdentityDocumentGeneratorTest {
         SignedIdentityDocument signedIdentityDocument = identityDocumentGenerator.generateSignedIdentityDocument(containerHostname, IdentityType.TENANT);
 
         // Verify attributes
-        assertEquals(containerHostname, signedIdentityDocument.identityDocument().instanceHostname());
+        assertEquals(containerHostname, signedIdentityDocument.instanceHostname());
 
         String environment = "dev";
         String region = "us-north-1";
@@ -97,7 +97,7 @@ public class IdentityDocumentGeneratorTest {
         assertEquals(expectedProviderUniqueId, signedIdentityDocument.providerUniqueId());
 
         // Validate that container ips are present
-        assertThat(signedIdentityDocument.identityDocument().ipAddresses(), Matchers.containsInAnyOrder("::1"));
+        assertThat(signedIdentityDocument.ipAddresses(), Matchers.containsInAnyOrder("::1"));
 
         SignedIdentityDocumentEntity signedIdentityDocumentEntity = EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument);
 
