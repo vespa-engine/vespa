@@ -8,6 +8,7 @@ import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -22,6 +23,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.function.Supplier;
 
 /**
@@ -102,6 +104,11 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                 .setSSLContext(sslContext)
                 .setSSLHostnameVerifier(hostnameVerifier)
                 .setUserAgent("default-identity-document-client")
+                .setDefaultRequestConfig(RequestConfig.custom()
+                                                    .setConnectTimeout((int)Duration.ofSeconds(10).toMillis())
+                                                    .setConnectionRequestTimeout((int)Duration.ofSeconds(10).toMillis())
+                                                    .setSocketTimeout((int)Duration.ofSeconds(20).toMillis())
+                                                    .build())
                 .build();
     }
 

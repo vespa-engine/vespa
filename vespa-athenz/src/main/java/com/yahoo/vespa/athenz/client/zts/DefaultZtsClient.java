@@ -20,6 +20,7 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -246,6 +247,11 @@ public class DefaultZtsClient implements ZtsClient {
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
                 .setUserAgent("vespa-zts-client")
                 .setSSLContext(sslContext)
+                .setDefaultRequestConfig(RequestConfig.custom()
+                                                 .setConnectTimeout((int)Duration.ofSeconds(10).toMillis())
+                                                 .setConnectionRequestTimeout((int)Duration.ofSeconds(10).toMillis())
+                                                 .setSocketTimeout((int)Duration.ofSeconds(20).toMillis())
+                                                 .build())
                 .build();
     }
 
