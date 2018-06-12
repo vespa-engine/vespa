@@ -74,6 +74,7 @@ public class SignedIdentityDocument {
         return providerUniqueId;
     }
 
+    @Deprecated
     public String dnsSuffix() {
         return dnsSuffix;
     }
@@ -82,6 +83,7 @@ public class SignedIdentityDocument {
         return providerService;
     }
 
+    @Deprecated
     public URI ztsEndpoint() {
         return ztsEndpoint;
     }
