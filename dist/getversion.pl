@@ -5,12 +5,7 @@ use POSIX qw(strftime);
 
 $srcdir = ".";
 
-my $generatejava = 0;
-my $printdefines = 0;
 my $printmap = 0;
-my $simple = 0;
-my $target = "";
-my $pkgname = "";
 my $tagtype = "";
 
 while ($opt = shift) {
@@ -84,7 +79,7 @@ if (defined $ENV{FACTORY_VESPA_VERSION}) {
     $version = $mainver . $dateadd;
 }
 
-if ($printdefines || $generatejava || $printmap) {
+if ($printmap) {
     # other useful information
 
     chomp($ostype = `uname -s`);
