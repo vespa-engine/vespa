@@ -70,8 +70,10 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private long timeOfFirstFailingConnectionAttempt;
     /**
      * Sets the version of the state transaction that this node accepts.
-     * Version 0 is the original one, with getnodestate command.
-     * Version 1 is the new one, with getnodestate2 command too.
+     * Version 0 is the original one, with getnodestate command (legacy, not supported).
+     * Version 1 is for the getnodestate2 command ((legacy, not supported).
+     * Version 2 is for the getnodestate3 command
+     * Version 3 adds support for setdistributionstates
      */
     private int version;
 
@@ -374,28 +376,12 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     /** @return True if we demoted communication version so this can be valid error. */
     public boolean notifyNoSuchMethodError(String methodName, Timer timer) {
-        if (methodName.equals("getnodestate3")) {
-            if (version > 1) {
-                downgradeToRpcVersion(1, methodName, timer);
-                return true;
-            } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
-                log.log(LogLevel.DEBUG, "Node " + toString() + " does not support " + methodName + " call. Version already at 1 and was recently adjusted, so ignoring it.");
-                return true;
-            }
-        } else if (methodName.equals(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME)) {
+        if (methodName.equals(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME)) {
             if (version == RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_VERSION) {
                 downgradeToRpcVersion(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_VERSION, methodName, timer);
                 return true;
             } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
                 log.log(LogLevel.DEBUG, () -> "Node " + toString() + " does not support " + methodName + " call. Version already downgraded, so ignoring it.");
-                return true;
-            }
-        } else if (methodName.equals("getnodestate2") || methodName.equals(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME)) {
-            if (version > 0) {
-                downgradeToRpcVersion(0, methodName, timer);
-                return true;
-            } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
-                log.log(LogLevel.DEBUG, "Node " + toString() + " does not support " + methodName + " call. Version already at 0 and was recently adjusted, so ignoring it.");
                 return true;
             }
         }
