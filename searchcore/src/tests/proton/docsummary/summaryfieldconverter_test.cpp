@@ -33,7 +33,7 @@
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/searchsummary/docsummary/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/searchdatatype.h>

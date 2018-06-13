@@ -349,7 +349,8 @@ void addDocumentTypes(const DocumentTypeMap &type_map, Repo &repo) {
     }
 }
 
-void addDefaultDocument(DocumentTypeMap &type_map) {
+const DocumentType *
+addDefaultDocument(DocumentTypeMap &type_map) {
     DataTypeRepo::UP data_types(new DataTypeRepo);
     vector<const DataType *> default_types = DataType::getDefaultDataTypes();
     for (size_t i = 0; i < default_types.size(); ++i) {
@@ -365,7 +366,9 @@ void addDefaultDocument(DocumentTypeMap &type_map) {
     }
 
     uint32_t typeId = data_types->doc_type->getId();
+    const DocumentType * docType = data_types->doc_type;
     type_map[typeId] = data_types.release();
+    return docType;
 }
 
 const DataTypeRepo &lookupRepo(int32_t id, const DocumentTypeMap &type_map) {
@@ -478,15 +481,15 @@ void configureAllRepos(const DocumenttypesConfig::DocumenttypeVector &t, Documen
 }  // namespace
 
 DocumentTypeRepo::DocumentTypeRepo() :
-    _doc_types(std::make_unique<internal::DocumentTypeMap>())
+    _doc_types(std::make_unique<internal::DocumentTypeMap>()),
+    _default(addDefaultDocument(*_doc_types))
 {
-    addDefaultDocument(*_doc_types);
 }
 
 DocumentTypeRepo::DocumentTypeRepo(const DocumentType & type) :
-    _doc_types(std::make_unique<internal::DocumentTypeMap>())
+    _doc_types(std::make_unique<internal::DocumentTypeMap>()),
+    _default(addDefaultDocument(*_doc_types))
 {
-    addDefaultDocument(*_doc_types);
     try {
         addDataTypeRepo(makeDataTypeRepo(type, *_doc_types), *_doc_types);
     } catch (...) {
@@ -496,9 +499,9 @@ DocumentTypeRepo::DocumentTypeRepo(const DocumentType & type) :
 }
 
 DocumentTypeRepo::DocumentTypeRepo(const DocumenttypesConfig &config) :
-    _doc_types(std::make_unique<internal::DocumentTypeMap>())
+    _doc_types(std::make_unique<internal::DocumentTypeMap>()),
+    _default(addDefaultDocument(*_doc_types))
 {
-    addDefaultDocument(*_doc_types);
     try {
         createAllDocumentTypes(config.documenttype, *_doc_types);
         addAllDocumentTypesToRepos(*_doc_types);

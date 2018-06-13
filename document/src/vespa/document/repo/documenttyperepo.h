@@ -20,6 +20,7 @@ class DocumentType;
 
 class DocumentTypeRepo {
     std::unique_ptr<internal::DocumentTypeMap> _doc_types;
+    const DocumentType * _default;
 
 public:
     using DocumenttypesConfig = const internal::InternalDocumenttypesType;
@@ -39,7 +40,7 @@ public:
     const DataType *getDataType(const DocumentType &doc_type, const vespalib::stringref &name) const;
     const AnnotationType *getAnnotationType(const DocumentType &doc_type, int32_t id) const;
     void forEachDocumentType(vespalib::Closure1<const DocumentType &> &c) const;
-
+    const DocumentType *getDefaultDocType() const { return _default; }
 };
 
 }  // namespace document
