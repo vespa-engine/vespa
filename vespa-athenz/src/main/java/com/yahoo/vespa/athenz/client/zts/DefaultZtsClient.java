@@ -132,7 +132,11 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     @Override
-    public ZToken getRoleToken(AthenzDomain domain, String roleName) {
+    public ZToken getRoleToken(AthenzRole athenzRole) {
+        return getRoleToken(athenzRole.domain(), athenzRole.roleName());
+    }
+
+    private ZToken getRoleToken(AthenzDomain domain, String roleName) {
         URI uri = ztsUrl.resolve(String.format("domain/%s/token", domain.getName()));
         RequestBuilder requestBuilder = RequestBuilder.get(uri)
                 .addHeader("Content-Type", "application/json");
