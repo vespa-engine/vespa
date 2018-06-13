@@ -185,9 +185,9 @@ DocumentUpdate::serializeHeader() {
     _backing.write(id_string.data(), id_string.size());
     _backing << static_cast<uint8_t>(0);
     _backing.write(getType().getName().c_str(), getType().getName().size() + 1);
-    _backing << static_cast<uint16_t>(0);
-    _backing << static_cast<uint32_t>(0);
-    _backing << static_cast<uint32_t>(0);
+    _backing << static_cast<uint16_t>(0); // version
+    _backing << static_cast<uint32_t>(0); // Number of updates
+    _backing << static_cast<uint32_t>(0); // Number of field path updates
 }
 
 void
@@ -206,6 +206,15 @@ DocumentUpdate::serializeFlags(int size_) const
 }
 
 namespace {
+
+vespalib::stringref
+readCStr(nbostream & stream) {
+    const char * s = stream.peek();
+    size_t sz = strnlen(s, stream.size());
+    stream.adjustReadPos(sz+1);
+    return vespalib::stringref(s, sz);
+}
+
 std::pair<const DocumentType *, DocumentId>
 deserializeTypeAndId(const DocumentTypeRepo& repo, vespalib::nbostream & stream) {
     DocumentId docId(stream);
@@ -221,8 +230,7 @@ deserializeTypeAndId(const DocumentTypeRepo& repo, vespalib::nbostream & stream)
         throw IllegalStateException("Missing document type", VESPA_STRLOC);
     }
 
-    vespalib::stringref typestr = stream.peek();
-    stream.adjustReadPos(typestr.length() + 1);
+    vespalib::stringref typestr = readCStr(stream);
 
     int16_t version = 0;
     stream >> version;
@@ -299,7 +307,7 @@ DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, vespalib::nbostream 
         _documentId = typeAndId.second;
         // Read field updates, if any.
         if (! stream.empty()) {
-            int sizeAndFlags = 0;
+            int32_t sizeAndFlags = 0;
             stream >> sizeAndFlags;
             int numUpdates = deserializeFlags(sizeAndFlags);
             _updates.reserve(numUpdates);
@@ -325,11 +333,14 @@ DocumentUpdate::deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostr
     assert(_fieldPathUpdates.empty());
     _documentId = DocumentId(stream);
 
-    vespalib::stringref typestr = stream.peek();
-    stream.adjustReadPos(typestr.length() + 1);
+    vespalib::stringref typestr = readCStr(stream);
     int16_t version = 0;
     stream >> version;
     const DocumentType *docType = repo.getDocumentType(typestr);
+    if (!docType) {
+        throw DocumentTypeNotFoundException(typestr, VESPA_STRLOC);
+    }
+    _type = docType;
     _type = docType;
 }
 
@@ -342,8 +353,7 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
     try {
         _documentId = DocumentId(stream);
 
-        vespalib::stringref typestr = stream.peek();
-        stream.adjustReadPos(typestr.length() + 1);
+        vespalib::stringref typestr = readCStr(stream);
 
         int16_t version = 0;
         stream >> version;
@@ -355,7 +365,7 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
 
         // Read field updates, if any.
         if ( ! stream.empty() ) {
-            int numUpdates = 0;
+            int32_t numUpdates = 0;
             stream >> numUpdates;
             _updates.reserve(numUpdates);
             ByteBuffer buffer(stream.peek(), stream.size());
@@ -365,7 +375,7 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
             stream.adjustReadPos(buffer.getPos());
         }
         // Read fieldpath updates, if any
-        int sizeAndFlags = 0;
+        int32_t sizeAndFlags = 0;
         stream >> sizeAndFlags;
         int numUpdates = deserializeFlags(sizeAndFlags);
         _fieldPathUpdates.reserve(numUpdates);
