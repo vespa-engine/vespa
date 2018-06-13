@@ -373,11 +373,9 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
         stream >> sizeAndFlags;
         int numUpdates = deserializeFlags(sizeAndFlags);
         _fieldPathUpdates.reserve(numUpdates);
-        ByteBuffer buffer(stream.peek(), stream.size());
         for (int i = 0; i < numUpdates; ++i) {
-            _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, buffer).release());
+            _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, stream).release());
         }
-        stream.adjustReadPos(buffer.getPos());
     } catch (const DeserializeException &) {
         stream.rp(pos);
         throw;

@@ -44,7 +44,7 @@ public:
 
 private:
     uint8_t getSerializedType() const override { return AssignMagic; }
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream) override;
 
     std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc, const DocumentTypeRepo & repo) const override;
 

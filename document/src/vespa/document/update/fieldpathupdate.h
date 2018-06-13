@@ -23,13 +23,14 @@ class FieldPathUpdate : public vespalib::Cloneable,
                         public vespalib::Identifiable
 {
 protected:
+    using nbostream = vespalib::nbostream;
     using stringref = vespalib::stringref;
     /** To be used for deserialization */
     FieldPathUpdate();
     FieldPathUpdate(const FieldPathUpdate &);
     FieldPathUpdate & operator =(const FieldPathUpdate &);
 
-   static vespalib::string getString(ByteBuffer& buffer);
+   static stringref getString(nbostream & stream);
 public:
     using SP = std::shared_ptr<FieldPathUpdate>;
     using CP = vespalib::CloneablePtr<FieldPathUpdate>;
@@ -71,7 +72,7 @@ public:
     /** Deserializes and creates a new FieldPathUpdate instance.
      * Requires type id to be not yet read.
      */
-    static std::unique_ptr<FieldPathUpdate> createInstance(const DocumentTypeRepo& repo, const DataType &type, ByteBuffer& buffer);
+    static std::unique_ptr<FieldPathUpdate> createInstance(const DocumentTypeRepo& repo, const DataType &type, nbostream & stream);
 
 protected:
     FieldPathUpdate(stringref fieldPath, stringref whereClause = stringref());
@@ -84,7 +85,7 @@ protected:
      * @param buffer The byte buffer that contains the serialized object.
      * @param version The serialization version of the object to deserialize.
      */
-    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer);
+    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream);
 
     /** @return the datatype of the last path element in the field path */
     const DataType& getResultingDataType(const FieldPath & path) const;

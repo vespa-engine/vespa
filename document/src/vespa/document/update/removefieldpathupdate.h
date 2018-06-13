@@ -23,7 +23,7 @@ public:
 
 private:
     uint8_t getSerializedType() const override { return RemoveMagic; }
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
 
     std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document &, const DocumentTypeRepo &) const override;
 };
