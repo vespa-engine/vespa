@@ -47,6 +47,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     // TODO These should match the requested expiration
     static final Duration UPDATE_PERIOD = Duration.ofDays(1);
     static final Duration AWAIT_TERMINTATION_TIMEOUT = Duration.ofSeconds(90);
+    private final static Duration ROLE_SSL_CONTEXT_EXPIRY = Duration.ofHours(24);
 
     public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
 
@@ -62,7 +63,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final URI ztsEndpoint;
 
     private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
-    private final static Duration roleSslContextExpiry = Duration.ofHours(24);
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
@@ -93,8 +93,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.ztsEndpoint = URI.create(config.ztsUrl());
         registerInstance();
         roleSslContextCache = CacheBuilder.newBuilder()
-                .refreshAfterWrite(roleSslContextExpiry.dividedBy(2).toMinutes(), TimeUnit.MINUTES)
-                .expireAfterWrite(roleSslContextExpiry.toMinutes(), TimeUnit.MINUTES)
+                .refreshAfterWrite(ROLE_SSL_CONTEXT_EXPIRY.dividedBy(2).toMinutes(), TimeUnit.MINUTES)
+                .expireAfterWrite(ROLE_SSL_CONTEXT_EXPIRY.toMinutes(), TimeUnit.MINUTES)
                 .build(new CacheLoader<AthenzRole, SSLContext>() {
                     @Override
                     public SSLContext load(AthenzRole key) throws Exception {
