@@ -38,6 +38,9 @@ bool fastPartialUpdateAttribute(BasicType::Type attrType) {
             (attrType != BasicType::Type::REFERENCE));
 }
 
+bool isStructFieldAttribute(const vespalib::string &name) {
+    return name.find('.') != vespalib::string::npos;
+}
 
 FilterAttributeManager::AttributeSet
 getAttributeSetToPopulate(const ARIConfig &newCfg,
@@ -100,7 +103,8 @@ getFieldsToPopulate(const ARIConfig &newCfg,
         // keep the original in order to preserve annotations.
         bool wasStringIndexField = oldIndexschemaInspector.isStringIndex(name);
         bool populateField = !inNewAttrMgr && unchangedField && !wasStringIndexField &&
-                             fastPartialUpdateAttribute(attrType.type());
+                             fastPartialUpdateAttribute(attrType.type()) &&
+                             !isStructFieldAttribute(name);
         LOG(debug, "getFieldsToPopulate(): name='%s', inNewAttrMgr=%s, unchangedField=%s, "
                 "wasStringIndexField=%s, dataType=%s, populate=%s",
                 name.c_str(), toStr(inNewAttrMgr), toStr(unchangedField),
