@@ -125,7 +125,6 @@ public:
     bool getCreateIfNonExistent() const;
 
     int serializeFlags(int size_) const;
-    int16_t getVersion() const { return _version; }
 
 private:
     DocumentId              _documentId; // The ID of the document to update.
@@ -134,7 +133,6 @@ private:
     vespalib::nbostream     _backing;
     FieldUpdateV            _updates; // The list of field updates.
     FieldPathUpdateV        _fieldPathUpdates;
-    const int16_t           _version; // Serialization version
     bool                    _createIfNonExistent;
     bool                    _needHardReserialize;
 

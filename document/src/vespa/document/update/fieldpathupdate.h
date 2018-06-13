@@ -71,10 +71,7 @@ public:
     /** Deserializes and creates a new FieldPathUpdate instance.
      * Requires type id to be not yet read.
      */
-    static std::unique_ptr<FieldPathUpdate> createInstance(
-            const DocumentTypeRepo& repo,
-            const DataType &type, ByteBuffer& buffer,
-            int serializationVersion);
+    static std::unique_ptr<FieldPathUpdate> createInstance(const DocumentTypeRepo& repo, const DataType &type, ByteBuffer& buffer);
 
 protected:
     FieldPathUpdate(stringref fieldPath, stringref whereClause = stringref());
@@ -87,8 +84,7 @@ protected:
      * @param buffer The byte buffer that contains the serialized object.
      * @param version The serialization version of the object to deserialize.
      */
-    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                             ByteBuffer& buffer, uint16_t version);
+    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer);
 
     /** @return the datatype of the last path element in the field path */
     const DataType& getResultingDataType(const FieldPath & path) const;

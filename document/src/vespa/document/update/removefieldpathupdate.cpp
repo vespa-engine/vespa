@@ -36,10 +36,9 @@ RemoveFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string&
 }
 
 void
-RemoveFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                                   ByteBuffer& buffer, uint16_t version)
+RemoveFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer)
 {
-    FieldPathUpdate::deserialize(repo, type, buffer, version);
+    FieldPathUpdate::deserialize(repo, type, buffer);
 }
 
 namespace {

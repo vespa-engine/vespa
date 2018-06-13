@@ -32,7 +32,6 @@ DocumentUpdate::DocumentUpdate(const DocumentTypeRepo & repo, const DataType &ty
       _backing(),
       _updates(),
       _fieldPathUpdates(),
-      _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false),
       _needHardReserialize(false)
 {
@@ -49,7 +48,6 @@ DocumentUpdate::DocumentUpdate()
       _backing(),
       _updates(),
       _fieldPathUpdates(),
-      _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false),
       _needHardReserialize(false)
 {
@@ -377,7 +375,7 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
         _fieldPathUpdates.reserve(numUpdates);
         ByteBuffer buffer(stream.peek(), stream.size());
         for (int i = 0; i < numUpdates; ++i) {
-            _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, buffer, _version).release());
+            _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, buffer).release());
         }
         stream.adjustReadPos(buffer.getPos());
     } catch (const DeserializeException &) {

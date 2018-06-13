@@ -425,7 +425,7 @@ namespace {
 
 void VespaDocumentSerializer::write42(const DocumentUpdate &value)
 {
-    _stream << static_cast<uint16_t>(value.getVersion());
+    _stream << static_cast<uint16_t>(Document::getNewestSerializationVersion());
     write(value.getId());
     _stream << static_cast<uint8_t>(CONTENT_HASTYPE);
     _stream.write(value.getType().getName().c_str(), value.getType().getName().size() + 1);

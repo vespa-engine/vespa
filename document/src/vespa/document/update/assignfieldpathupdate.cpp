@@ -218,10 +218,9 @@ AssignFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string&
 }
 
 void
-AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                                   ByteBuffer& buffer, uint16_t version)
+AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer)
 {
-    FieldPathUpdate::deserialize(repo, type, buffer, version);
+    FieldPathUpdate::deserialize(repo, type, buffer);
 
     uint8_t flags = 0x00;
     buffer.getByte(flags);
@@ -236,7 +235,7 @@ AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType&
         type.buildFieldPath(path, getOriginalFieldPath());
         _newValue.reset(getResultingDataType(path).createFieldValue().release());
         nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
-        VespaDocumentDeserializer deserializer(repo, stream, version);
+        VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
         deserializer.read(*_newValue);
         buffer.incPos(buffer.getRemaining() - stream.size());
     }

@@ -117,15 +117,14 @@ FieldPathUpdate::getString(ByteBuffer& buffer)
 }
 
 void
-FieldPathUpdate::deserialize(const DocumentTypeRepo&, const DataType&, ByteBuffer& buffer, uint16_t)
+FieldPathUpdate::deserialize(const DocumentTypeRepo&, const DataType&, ByteBuffer& buffer)
 {
     _originalFieldPath = getString(buffer);
     _originalWhereClause = getString(buffer);
 }
 
 std::unique_ptr<FieldPathUpdate>
-FieldPathUpdate::createInstance(const DocumentTypeRepo& repo, const DataType &type,
-                                ByteBuffer& buffer, int serializationVersion)
+FieldPathUpdate::createInstance(const DocumentTypeRepo& repo, const DataType &type, ByteBuffer& buffer)
 {
     unsigned char updateType = 0;
     buffer.getByte(updateType);
@@ -144,7 +143,7 @@ FieldPathUpdate::createInstance(const DocumentTypeRepo& repo, const DataType &ty
     default:
         throw DeserializeException(make_string("Unknown fieldpath update type: %d", updateType), VESPA_STRLOC);
     }
-    update->deserialize(repo, type, buffer, serializationVersion);
+    update->deserialize(repo, type, buffer);
     return update;
 }
 

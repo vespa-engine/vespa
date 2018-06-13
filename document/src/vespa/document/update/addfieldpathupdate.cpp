@@ -3,6 +3,7 @@
 #include "addfieldpathupdate.h"
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -88,10 +89,9 @@ AddFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string& in
 }
 
 void
-AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                                ByteBuffer& buffer, uint16_t version)
+AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer)
 {
-    FieldPathUpdate::deserialize(repo, type, buffer, version);
+    FieldPathUpdate::deserialize(repo, type, buffer);
 
     FieldPath path;
     type.buildFieldPath(path, getOriginalFieldPath());
@@ -100,7 +100,7 @@ AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& ty
     FieldValue::UP val = fieldType.createFieldValue();
     _values.reset(static_cast<ArrayFieldValue*>(val.release()));
     nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
-    VespaDocumentDeserializer deserializer(repo, stream, version);
+    VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
     deserializer.read(*_values);
     buffer.incPos(buffer.getRemaining() - stream.size());
 }
