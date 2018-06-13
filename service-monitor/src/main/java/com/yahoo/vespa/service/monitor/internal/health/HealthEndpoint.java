@@ -5,25 +5,22 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Optional;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author hakon
  */
-class HealthEndpoint {
-    private final URL url;
-    private final Optional<HostnameVerifier> hostnameVerifier;
-    private final Optional<ServiceIdentityProvider> serviceIdentityProvider;
+public interface HealthEndpoint {
 
     static HealthEndpoint forHttp(HostName hostname, int port) {
         URL url = uncheck(() -> new URL("http", hostname.value(), port, "/state/v1/health"));
-        return new HealthEndpoint(url, Optional.empty(), Optional.empty());
+        return new HttpHealthEndpoint(url);
     }
 
     static HealthEndpoint forHttps(HostName hostname,
@@ -32,26 +29,12 @@ class HealthEndpoint {
                                    AthenzIdentity remoteIdentity) {
         URL url = uncheck(() -> new URL("https", hostname.value(), port, "/state/v1/health"));
         HostnameVerifier peerVerifier = new AthenzIdentityVerifier(Collections.singleton(remoteIdentity));
-        return new HealthEndpoint(url, Optional.of(serviceIdentityProvider), Optional.of(peerVerifier));
+        return new HttpsHealthEndpoint(url, serviceIdentityProvider, peerVerifier);
     }
 
-    private HealthEndpoint(URL url,
-                           Optional<ServiceIdentityProvider> serviceIdentityProvider,
-                           Optional<HostnameVerifier> hostnameVerifier) {
-        this.url = url;
-        this.serviceIdentityProvider = serviceIdentityProvider;
-        this.hostnameVerifier = hostnameVerifier;
-    }
-
-    public URL getStateV1HealthUrl() {
-        return url;
-    }
-
-    public Optional<ServiceIdentityProvider> getServiceIdentityProvider() {
-        return serviceIdentityProvider;
-    }
-
-    public Optional<HostnameVerifier> getHostnameVerifier() {
-        return hostnameVerifier;
-    }
+    URL getStateV1HealthUrl();
+    ConnectionSocketFactory getConnectionSocketFactory();
+    void registerListener(ServiceIdentityProvider.Listener listener);
+    void removeListener(ServiceIdentityProvider.Listener listener);
+    String toString();
 }

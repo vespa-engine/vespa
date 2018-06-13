@@ -50,7 +50,17 @@ public class HealthInfo {
         return healthStatusCode.map(UP_STATUS_CODE::equals).orElse(false);
     }
 
-    public ServiceStatus toSerivceStatus() {
+    public ServiceStatus toServiceStatus() {
+        // Bootstrapping ServiceStatus: To avoid thundering herd problem at startup,
+        // the clients will not fetch the health immediately. What should the ServiceStatus
+        // be before the first health has been fetched?
+        //
+        // NOT_CHECKED: Logically the right thing, but if an Orchestrator gets a suspend request
+        // in this window, and another service within the cluster is down, it ends up allowing
+        // suspension when it shouldn't have done so.
+        //
+        // DOWN: Only safe initial value, possibly except if the first initial delay is long,
+        // as that could indicate it has been down for too long.
         return isHealthy() ? ServiceStatus.UP : ServiceStatus.DOWN;
     }
 
@@ -65,7 +75,7 @@ public class HealthInfo {
         } else if (healthStatusCode.isPresent()) {
             return "Bad health status code '" + healthStatusCode.get() + "'";
         } else if (exception.isPresent()) {
-            return Exceptions.toMessageString(exception.get());
+            return "Exception: " + Exceptions.toMessageString(exception.get());
         } else if (httpStatusCode.isPresent()) {
             return "Bad HTTP response status code " + httpStatusCode.getAsInt();
         } else {

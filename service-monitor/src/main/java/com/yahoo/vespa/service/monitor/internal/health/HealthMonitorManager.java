@@ -9,17 +9,20 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.application.ZoneApplication;
 import com.yahoo.vespa.service.monitor.internal.MonitorManager;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Manages all /state/v1/health related monitoring.
+ *
  * @author hakon
  */
 public class HealthMonitorManager implements MonitorManager {
-    private final Map<ApplicationId, ApplicationHealthMonitor> healthMonitors = new HashMap<>();
+    private final ConcurrentHashMap<ApplicationId, ApplicationHealthMonitor> healthMonitors =
+            new ConcurrentHashMap<>();
     private final ConfigserverConfig configserverConfig;
 
     @Inject
@@ -29,7 +32,7 @@ public class HealthMonitorManager implements MonitorManager {
 
     @Override
     public void applicationActivated(ApplicationInfo application) {
-        if (applicationMonitored(application.getApplicationId())) {
+        if (applicationMonitoredForHealth(application.getApplicationId())) {
             ApplicationHealthMonitor monitor =
                     ApplicationHealthMonitor.startMonitoring(application);
             healthMonitors.put(application.getApplicationId(), monitor);
@@ -38,11 +41,9 @@ public class HealthMonitorManager implements MonitorManager {
 
     @Override
     public void applicationRemoved(ApplicationId id) {
-        if (applicationMonitored(id)) {
-            ApplicationHealthMonitor monitor = healthMonitors.remove(id);
-            if (monitor != null) {
-                monitor.close();
-            }
+        ApplicationHealthMonitor monitor = healthMonitors.remove(id);
+        if (monitor != null) {
+            monitor.close();
         }
     }
 
@@ -58,11 +59,15 @@ public class HealthMonitorManager implements MonitorManager {
             return ServiceStatus.UP;
         }
 
-        return ServiceStatus.NOT_CHECKED;
+        ApplicationHealthMonitor monitor = healthMonitors.get(applicationId);
+        if (monitor == null) {
+            return ServiceStatus.NOT_CHECKED;
+        }
+
+        return monitor.getStatus(applicationId, clusterId, serviceType, configId);
     }
 
-    private boolean applicationMonitored(ApplicationId id) {
-        // todo: health-check config server
-        return false;
+    private boolean applicationMonitoredForHealth(ApplicationId id) {
+        return id.equals(ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId());
     }
 }
