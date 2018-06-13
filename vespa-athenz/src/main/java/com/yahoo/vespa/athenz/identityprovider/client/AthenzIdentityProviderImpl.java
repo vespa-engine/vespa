@@ -78,7 +78,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
              new AthenzCredentialsService(config,
                                           createNodeIdentityProvider(config),
                                           getDefaultTrustStoreLocation(),
-                                          Defaults.getDefaults().vespaHostname()),
+                                          Defaults.getDefaults().vespaHostname(),
+                                          Clock.systemUTC()),
              new ScheduledThreadPoolExecutor(1),
              Clock.systemUTC());
     }
