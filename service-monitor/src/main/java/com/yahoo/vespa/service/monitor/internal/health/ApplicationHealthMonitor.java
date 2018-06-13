@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Responsible for monitoring a whole application using /state/v1/health.
@@ -37,7 +38,13 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
     private final Map<ServiceId, HealthMonitor> healthMonitors;
 
     public static ApplicationHealthMonitor startMonitoring(ApplicationInfo application) {
-        return new ApplicationHealthMonitor(makeHealthMonitors(application));
+        return startMonitoring(application, HealthMonitor::new);
+    }
+
+    /** For testing. */
+    static ApplicationHealthMonitor startMonitoring(ApplicationInfo application,
+                                                    Function<HealthEndpoint, HealthMonitor> mapper) {
+        return new ApplicationHealthMonitor(makeHealthMonitors(application, mapper));
     }
 
     private ApplicationHealthMonitor(Map<ServiceId, HealthMonitor> healthMonitors) {
@@ -64,7 +71,8 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
         healthMonitors.clear();
     }
 
-    private static Map<ServiceId, HealthMonitor> makeHealthMonitors(ApplicationInfo application) {
+    private static Map<ServiceId, HealthMonitor> makeHealthMonitors(
+            ApplicationInfo application, Function<HealthEndpoint, HealthMonitor> monitorFactory) {
         Map<ServiceId, HealthMonitor> healthMonitors = new HashMap<>();
         for (HostInfo hostInfo : application.getModel().getHosts()) {
             for (ServiceInfo serviceInfo : hostInfo.getServices()) {
@@ -73,7 +81,8 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
                             application,
                             hostInfo,
                             serviceInfo,
-                            portInfo)
+                            portInfo,
+                            monitorFactory)
                             .ifPresent(healthMonitor -> healthMonitors.put(
                                     ApplicationInstanceGenerator.getServiceId(application, serviceInfo),
                                     healthMonitor));
@@ -87,14 +96,14 @@ public class ApplicationHealthMonitor implements ServiceStatusProvider, AutoClos
             ApplicationInfo applicationInfo,
             HostInfo hostInfo,
             ServiceInfo serviceInfo,
-            PortInfo portInfo) {
+            PortInfo portInfo,
+            Function<HealthEndpoint, HealthMonitor> monitorFactory) {
         if (portInfo.getTags().containsAll(PORT_TAGS_HEALTH)) {
             HostName hostname = HostName.from(hostInfo.getHostname());
             HealthEndpoint endpoint = HealthEndpoint.forHttp(hostname, portInfo.getPort());
-            // todo: make HealthMonitor
-            // HealthMonitor healthMonitor = new HealthMonitor(endpoint);
-            // healthMonitor.startMonitoring();
-            return Optional.empty();
+            HealthMonitor healthMonitor = monitorFactory.apply(endpoint);
+            healthMonitor.startMonitoring();
+            return Optional.of(healthMonitor);
         }
 
         return Optional.empty();
