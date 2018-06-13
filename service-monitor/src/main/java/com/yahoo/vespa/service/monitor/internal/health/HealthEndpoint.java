@@ -36,5 +36,5 @@ public interface HealthEndpoint {
     ConnectionSocketFactory getConnectionSocketFactory();
     void registerListener(ServiceIdentityProvider.Listener listener);
     void removeListener(ServiceIdentityProvider.Listener listener);
-    String toString();
+    String description();
 }

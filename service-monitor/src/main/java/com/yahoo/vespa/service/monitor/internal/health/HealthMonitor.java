@@ -71,8 +71,12 @@ public class HealthMonitor implements AutoCloseable {
         healthClient.close();
     }
 
-    private long initialDelayInMillis(long maxInitialDelayInSeconds) {
-        return random.nextLong() % maxInitialDelayInSeconds;
+    private long initialDelayInMillis(long maxInitialDelayInMillis) {
+        if (maxInitialDelayInMillis >= Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Max initial delay is out of bounds: " + maxInitialDelayInMillis);
+        }
+
+        return (long) random.nextInt((int) maxInitialDelayInMillis);
     }
 
     private void updateSynchronously() {
@@ -81,7 +85,7 @@ public class HealthMonitor implements AutoCloseable {
         } catch (Throwable t) {
             // An uncaught exception will kill the executor.scheduleWithFixedDelay thread!
             logger.log(LogLevel.WARNING, "Failed to get health info for " +
-                    healthClient.getEndpoint(), t);
+                    healthClient.getEndpoint().description(), t);
         }
     }
 }

@@ -47,7 +47,7 @@ public class HttpsHealthEndpoint implements HealthEndpoint {
     }
 
     @Override
-    public String toString() {
+    public String description() {
         return url.toString();
     }
 }

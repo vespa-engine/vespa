@@ -150,9 +150,7 @@ public class HealthClient implements AutoCloseable, ServiceIdentityProvider.List
             throw new IllegalStateException("HTTP client never started or has closed");
         }
 
-        CloseableHttpResponse httpResponse = httpClient.execute(httpget);
-
-        try {
+        try (CloseableHttpResponse httpResponse = httpClient.execute(httpget)) {
             int httpStatusCode = httpResponse.getStatusLine().getStatusCode();
             if (httpStatusCode < 200 || httpStatusCode >= 300) {
                 return HealthInfo.fromBadHttpStatusCode(httpStatusCode);
@@ -171,8 +169,6 @@ public class HealthClient implements AutoCloseable, ServiceIdentityProvider.List
             } else {
                 return HealthInfo.fromHealthStatusCode(healthResponse.status.code);
             }
-        } finally {
-            httpResponse.close();
         }
     }
 }
