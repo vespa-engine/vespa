@@ -17,7 +17,10 @@ namespace features {
  **/
 class RandomNormalExecutor : public fef::FeatureExecutor {
 private:
-    Rand48 _rnd;
+    Rand48 _rnd;       // seeded once per query
+    Rand48 _matchRnd;  // seeded once per match
+    uint64_t _matchSeed;
+
     double _mean;
     double _stddev;
 
@@ -25,7 +28,7 @@ private:
     double _spare;
 
 public:
-    RandomNormalExecutor(uint64_t seed, double mean, double stddev);
+    RandomNormalExecutor(uint64_t seed, uint64_t matchSeed, double mean, double stddev);
     void execute(uint32_t docId) override;
 };
 

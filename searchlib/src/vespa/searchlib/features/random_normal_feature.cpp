@@ -12,17 +12,22 @@ LOG_SETUP(".features.randomnormalfeature");
 namespace search {
 namespace features {
 
-RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double stddev) :
+RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, uint64_t matchSeed, double mean, double stddev) :
     search::fef::FeatureExecutor(),
     _rnd(),
+    _matchRnd(),
+    _matchSeed(matchSeed),
     _mean(mean),
     _stddev(stddev),
     _hasSpare(false),
     _spare(0.0)
-
 {
-    LOG(debug, "RandomNormalExecutor: seed=%zu, mean=%f, stddev=%f", seed, mean, stddev);
+    LOG(debug, "RandomNormalExecutor: seed=%zu, matchSeed=%zu, mean=%f, stddev=%f", seed, matchSeed, mean, stddev);
     _rnd.srand48(seed);
+}
+
+feature_t generateRandom(Rand48 generator) {
+    return (generator.lrand48() / (feature_t)0x80000000u) * 2.0 - 1.0;
 }
 
 /**
@@ -30,7 +35,7 @@ RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double st
  * using the Marsaglia polar method.
  */
 void
-RandomNormalExecutor::execute(uint32_t)
+RandomNormalExecutor::execute(uint32_t docId)
 {
     feature_t result = _spare;
     if (_hasSpare) {
@@ -40,8 +45,8 @@ RandomNormalExecutor::execute(uint32_t)
 
         feature_t u, v, s;
         do {
-            u = (_rnd.lrand48() / (feature_t)0x80000000u) * 2.0 - 1.0;
-            v = (_rnd.lrand48() / (feature_t)0x80000000u) * 2.0 - 1.0;
+            u = generateRandom(_rnd);
+            v = generateRandom(_rnd);
             s = u * u + v * v;
         } while ( (s >= 1.0) || (s == 0.0) );
         s = std::sqrt(-2.0 * std::log(s) / s);
@@ -49,10 +54,18 @@ RandomNormalExecutor::execute(uint32_t)
         _spare = v * s; // saved for next invocation
         result = u * s;
     }
-
     outputs().set_number(0, _mean + _stddev * result);
-}
 
+    _matchRnd.srand48(_matchSeed + docId);
+    feature_t u, v, s;
+    do {
+        u = generateRandom(_matchRnd);
+        v = generateRandom(_matchRnd);
+        s = u * u + v * v;
+    } while ( (s >= 1.0) || (s == 0.0) );
+    s = std::sqrt(-2.0 * std::log(s) / s);
+    outputs().set_number(1, _mean + _stddev * u * s);
+}
 
 RandomNormalBlueprint::RandomNormalBlueprint() :
     search::fef::Blueprint("randomNormal"),
@@ -82,7 +95,6 @@ RandomNormalBlueprint::setup(const search::fef::IIndexEnvironment & env,
     if (p.found()) {
         _seed = util::strToNum<uint64_t>(p.get());
     }
-
     if (params.size() > 0) {
         _mean = params[0].asDouble();
     }
@@ -91,12 +103,13 @@ RandomNormalBlueprint::setup(const search::fef::IIndexEnvironment & env,
     }
 
     describeOutput("out" , "A random value drawn from the Gaussian distribution");
+    describeOutput("match" , "A random value drawn from the Gaussian distribution that is stable for a given match (document and query)");
 
     return true;
 }
 
 search::fef::FeatureExecutor &
-RandomNormalBlueprint::createExecutor(const search::fef::IQueryEnvironment &, vespalib::Stash &stash) const
+RandomNormalBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     uint64_t seed = _seed;
     if (seed == 0) {
@@ -105,7 +118,9 @@ RandomNormalBlueprint::createExecutor(const search::fef::IQueryEnvironment &, ve
         seed = static_cast<uint64_t>(time.MicroSecs()) ^
                 reinterpret_cast<uint64_t>(&seed); // results in different seeds in different threads
     }
-    return stash.create<RandomNormalExecutor>(seed, _mean, _stddev);
+    uint64_t matchSeed = util::strToNum<uint64_t>
+            (env.getProperties().lookup(getName(), "match", "seed").get("1024")); // default seed
+    return stash.create<RandomNormalExecutor>(seed, matchSeed, _mean, _stddev);
 }
 
 

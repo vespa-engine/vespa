@@ -1769,6 +1769,16 @@ Test::testRandomNormal()
             ASSERT_TRUE(ft2.execute(((rr.getScore("randomNormal(0.0,0.1)")-0.0)/0.1) * 0.2 + 1.0, EPS, i + 1));
         }
     }
+    { // Test executor (randomNormal.match)
+        FtFeatureTest ft(_factory, "randomNormal.match");
+        ASSERT_TRUE(ft.setup());
+        RankResult rr;
+        for (uint32_t i = 0; i < 5; ++i) {
+            rr.clear();
+            ASSERT_TRUE(ft.executeOnly(rr, i + 1));
+            ASSERT_TRUE(ft.execute(rr.getScore("randomNormal.match"), EPS, i + 1));
+        }
+    }
 }
 
 void
