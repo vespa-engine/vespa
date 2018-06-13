@@ -1,11 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import com.yahoo.container.plugin.bundle.TransformExportPackages;
-import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import org.apache.felix.framework.util.Util;
 import org.osgi.framework.Constants;
-import scala.collection.immutable.List;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -95,11 +92,5 @@ public class ExportPackages {
         try (JarInputStream jar = new JarInputStream(new FileInputStream(jarFile))) {
             return jar.getManifest().getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
         }
-    }
-
-    private static String transformExports(List<Export> exports, String newVersion) {
-        return  TransformExportPackages.toExportPackageProperty(
-                TransformExportPackages.removeUses(
-                        TransformExportPackages.replaceVersions(exports, newVersion)));
     }
 }

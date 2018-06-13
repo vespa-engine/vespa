@@ -44,35 +44,14 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
       <!-- Added to verify that module-info.class can be handled by bundle-plugin without throwing an exception. -->
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
       <version>2.3.0</version>
     </dependency>
-
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>add-source</goal>
-              <goal>compile</goal>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
       <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>

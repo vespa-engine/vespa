@@ -147,13 +147,6 @@
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <!-- This seems odd. Used for export-package parsing. Lazy stuff. Should be separated out. -->
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>bundle-plugin</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

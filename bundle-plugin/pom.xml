@@ -39,16 +39,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-        </dependency>
-        <dependency>
-        <groupId>org.scala-lang.modules</groupId>
-            <artifactId>scala-parser-combinators_${scala.major-version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.major-version}</artifactId>
+        <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -93,19 +85,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>add-source</goal>
-                            <goal>compile</goal>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
