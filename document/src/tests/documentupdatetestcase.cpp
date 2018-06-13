@@ -140,9 +140,7 @@ void testValueUpdate(const UpdateType& update, const DataType &type) {
     try{
         DocumentTypeRepo repo;
         nbostream stream = serialize(update);
-        typename UpdateType::UP copy(dynamic_cast<UpdateType*>(
-                        ValueUpdate::createInstance(repo, type, stream, Document::getNewestSerializationVersion())
-                        .release()));
+        typename UpdateType::UP copy(dynamic_cast<UpdateType*>(ValueUpdate::createInstance(repo, type, stream).release()));
         CPPUNIT_ASSERT_EQUAL(update, *copy);
     } catch (std::exception& e) {
             std::cerr << "Failed while processing update " << update << "\n";
@@ -184,7 +182,7 @@ DocumentUpdateTest::testSimpleUsage() {
     FieldUpdate fieldUpdate(docType->getField("intf"));
     fieldUpdate.addUpdate(AssignValueUpdate(IntFieldValue(1)));
     nbostream stream = serialize(fieldUpdate);
-    FieldUpdate fieldUpdateCopy(repo, *docType, stream, Document::getNewestSerializationVersion());
+    FieldUpdate fieldUpdateCopy(repo, *docType, stream);
     CPPUNIT_ASSERT_EQUAL(fieldUpdate, fieldUpdateCopy);
 
         // Test that a document update can be serialized

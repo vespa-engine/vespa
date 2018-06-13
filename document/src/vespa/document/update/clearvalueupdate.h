@@ -24,8 +24,7 @@ public:
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     nbostream& buffer, uint16_t version) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
     ClearValueUpdate* clone() const override { return new ClearValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(ClearValueUpdate);

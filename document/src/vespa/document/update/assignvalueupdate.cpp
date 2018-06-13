@@ -89,7 +89,7 @@ AssignValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-AssignValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream, uint16_t version)
+AssignValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
     // Read content bit vector.
     uint8_t content = 0x00;
@@ -98,7 +98,7 @@ AssignValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& typ
     // Read field value, if any.
     if (content & CONTENT_HASVALUE) {
         _value.reset(type.createFieldValue().release());
-        VespaDocumentDeserializer deserializer(repo, stream, version);
+        VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
         deserializer.read(*_value);
     }
 }

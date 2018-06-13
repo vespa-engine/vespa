@@ -33,7 +33,6 @@ public:
     /** @return The field value to assign during this update. */
     bool hasValue() const { return bool(_value); }
     const FieldValue& getValue() const { return *_value; }
-    const FieldValue* getValuePtr() const { return _value.get(); }
 
     /**
      * Sets the field value to assign during this update.
@@ -49,8 +48,7 @@ public:
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     nbostream & buffer, uint16_t version) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
     AssignValueUpdate* clone() const override { return new AssignValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(AssignValueUpdate);

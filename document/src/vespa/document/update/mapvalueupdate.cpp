@@ -127,16 +127,16 @@ MapValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-MapValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream, uint16_t version)
+MapValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
-    VespaDocumentDeserializer deserializer(repo, stream, version);
+    VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
     switch(type.getClass().id()) {
         case ArrayDataType::classId:
         {
             _key.reset(new IntFieldValue);
             deserializer.read(*_key);
             const ArrayDataType& arrayType = static_cast<const ArrayDataType&>(type);
-            _update.reset(ValueUpdate::createInstance(repo, arrayType.getNestedType(), stream, version).release());
+            _update.reset(ValueUpdate::createInstance(repo, arrayType.getNestedType(), stream).release());
             break;
         }
         case WeightedSetDataType::classId:
@@ -144,7 +144,7 @@ MapValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, 
             const WeightedSetDataType& wset(static_cast<const WeightedSetDataType&>(type));
             _key.reset(wset.getNestedType().createFieldValue().release());
             deserializer.read(*_key);
-            _update.reset(ValueUpdate::createInstance(repo, *DataType::INT, stream, version).release());
+            _update.reset(ValueUpdate::createInstance(repo, *DataType::INT, stream).release());
             break;
         }
         default:

@@ -84,7 +84,7 @@ RemoveValueUpdate::print(std::ostream& out, bool, const std::string&) const
 
 // Deserialize this update from the given buffer.
 void
-RemoveValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream, uint16_t version)
+RemoveValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
     switch(type.getClass().id()) {
         case ArrayDataType::classId:
@@ -92,7 +92,7 @@ RemoveValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& typ
         {
             const CollectionDataType& c(static_cast<const CollectionDataType&>(type));
             _key.reset(c.getNestedType().createFieldValue().release());
-            VespaDocumentDeserializer deserializer(repo, stream, version);
+            VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
             deserializer.read(*_key);
             break;
         }

@@ -44,8 +44,7 @@ public:
      * @param type A data type that describes the content of the buffer.
      * @param buffer The byte buffer that containes the serialized update.
      */
-    static std::unique_ptr<ValueUpdate> createInstance(const DocumentTypeRepo& repo, const DataType& type,
-                                                       nbostream & buffer, int serializationVersion);
+    static std::unique_ptr<ValueUpdate> createInstance(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer);
 
     /** Define all types of value updates. */
     enum ValueUpdateType {
@@ -88,10 +87,8 @@ public:
      *
      * @param type A data type that describes the content of the buffer.
      * @param buffer The byte buffer that contains the serialized update object.
-     * @param version The serialization version of the object to deserialize.
      */
-    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                             nbostream & stream, uint16_t version) = 0;
+    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream) = 0;
 
     /** @return The operation type. */
     ValueUpdateType getType() const {

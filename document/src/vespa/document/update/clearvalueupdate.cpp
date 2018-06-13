@@ -44,7 +44,7 @@ ClearValueUpdate::print(std::ostream& out, bool, const std::string&) const
 
 // Deserialize this update from the given buffer.
 void
-ClearValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream &, uint16_t)
+ClearValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream &)
 {
 }
 

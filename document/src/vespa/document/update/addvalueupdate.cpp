@@ -86,15 +86,14 @@ AddValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-AddValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                            nbostream& stream, uint16_t version)
+AddValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream)
 {
     const CollectionDataType* ctype = Identifiable::cast<const CollectionDataType*>(&type);
-    if (ctype == NULL) {
+    if (ctype == nullptr) {
         throw DeserializeException("Can not perform add operation on non-collection type.");
     }
     _value.reset(ctype->getNestedType().createFieldValue().release());
-    VespaDocumentDeserializer deserializer(repo, stream, version);
+    VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
     deserializer.read(*_value);
     stream >> _weight;
 }

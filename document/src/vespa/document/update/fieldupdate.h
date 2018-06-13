@@ -46,8 +46,7 @@ public:
      * @param stream A stream that contains a serialized field update.
      * @param serializationVersion The serialization version the update was serialized with.
      */
-    FieldUpdate(const DocumentTypeRepo& repo, const DataType & type,
-                nbostream & stream, int16_t version);
+    FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream);
 
     bool operator==(const FieldUpdate&) const;
     bool operator!=(const FieldUpdate & rhs) const { return ! (*this == rhs); }
@@ -92,10 +91,8 @@ public:
      *
      * @param type A document type that describes the buffer content.
      * @param buffer The byte buffer that contains the serialized update object.
-     * @param serializationVersion The serialization version the update was serialized with.
      */
-    void deserialize(const DocumentTypeRepo& repo, const DocumentType& type,
-                     nbostream& stream, int16_t serializationVersion);
+    void deserialize(const DocumentTypeRepo& repo, const DocumentType& type, nbostream& stream);
 
 };
 

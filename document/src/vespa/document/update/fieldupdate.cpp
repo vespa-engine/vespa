@@ -27,7 +27,7 @@ int readInt(nbostream & stream) {
 
 }
 
-FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream, int16_t version)
+FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream)
     : Printable(),
       _field(type.getField(readInt(stream))),
       _updates()
@@ -36,7 +36,7 @@ FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nb
     _updates.reserve(numUpdates);
     const DataType& dataType = _field.getDataType();
     for(int i(0); i < numUpdates; i++) {
-        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, stream, version).release());
+        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, stream).release());
     }
 }
 
@@ -104,8 +104,7 @@ FieldUpdate::print(std::ostream& out, bool verbose, const std::string& indent) c
 
 // Deserialize this field update from the given buffer.
 void
-FieldUpdate::deserialize(const DocumentTypeRepo& repo, const DocumentType& docType,
-                         nbostream& stream, int16_t version)
+FieldUpdate::deserialize(const DocumentTypeRepo& repo, const DocumentType& docType, nbostream& stream)
 {
     int fieldId = readInt(stream);
     _field = docType.getField(fieldId);
@@ -115,7 +114,7 @@ FieldUpdate::deserialize(const DocumentTypeRepo& repo, const DocumentType& docTy
     _updates.clear();
     _updates.resize(numUpdates);
     for(int i = 0; i < numUpdates; i++) {
-        _updates[i].reset(ValueUpdate::createInstance(repo, dataType, stream, version).release());
+        _updates[i].reset(ValueUpdate::createInstance(repo, dataType, stream).release());
     }
 }
 

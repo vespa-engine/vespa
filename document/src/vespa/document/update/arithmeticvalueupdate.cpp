@@ -127,7 +127,7 @@ ArithmeticValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-ArithmeticValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream & stream, uint16_t)
+ArithmeticValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream & stream)
 {
     int32_t opt;
     stream >> opt >>_operand;
