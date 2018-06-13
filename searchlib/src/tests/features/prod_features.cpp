@@ -1735,7 +1735,7 @@ Test::testRandomNormal()
         EXPECT_TRUE(assertCreateInstance(pt, "randomNormal"));
 
         StringList params, in, out;
-        FT_SETUP_OK (pt, params, in, out.add("out"));
+        FT_SETUP_OK (pt, params, in, out.add("out").add("match"));
         FT_SETUP_OK (pt, params.add("0.5").add("1.0"), in, out);
         FT_SETUP_OK (pt, params.add("val1"), in, out);
 
