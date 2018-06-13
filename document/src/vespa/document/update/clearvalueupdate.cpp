@@ -1,14 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "clearvalueupdate.h"
-#include <vespa/document/base/field.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <ostream>
 
-using vespalib::IllegalArgumentException;
-using vespalib::IllegalStateException;
 using namespace vespalib::xml;
 
 namespace document {
@@ -29,9 +24,8 @@ ClearValueUpdate::checkCompatibility(const Field&) const
 
 // Apply this update to the given document.
 bool
-ClearValueUpdate::applyTo(FieldValue& value) const
+ClearValueUpdate::applyTo(FieldValue& ) const
 {
-    (void) value;
     return false;
 }
 
@@ -50,8 +44,7 @@ ClearValueUpdate::print(std::ostream& out, bool, const std::string&) const
 
 // Deserialize this update from the given buffer.
 void
-ClearValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&,
-                             ByteBuffer&, uint16_t)
+ClearValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream &, uint16_t)
 {
 }
 

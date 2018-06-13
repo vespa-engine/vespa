@@ -8,7 +8,7 @@
  */
 #pragma once
 
-#include <vespa/document/update/valueupdate.h>
+#include "valueupdate.h"
 
 namespace document {
 
@@ -93,7 +93,7 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     ByteBuffer& buffer, uint16_t version) override;
+                     nbostream & buffer, uint16_t version) override;
     ArithmeticValueUpdate* clone() const override { return new ArithmeticValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(ArithmeticValueUpdate);

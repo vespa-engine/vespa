@@ -83,7 +83,7 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     ByteBuffer& buffer, uint16_t version) override;
+                     nbostream& buffer, uint16_t version) override;
     MapValueUpdate* clone() const override { return new MapValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(MapValueUpdate);

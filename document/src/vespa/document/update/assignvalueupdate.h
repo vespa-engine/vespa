@@ -26,7 +26,7 @@ public:
     AssignValueUpdate();
 
     AssignValueUpdate(const FieldValue& value);
-    ~AssignValueUpdate();
+    ~AssignValueUpdate() override;
 
     bool operator==(const ValueUpdate& other) const override;
 
@@ -50,10 +50,10 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     ByteBuffer& buffer, uint16_t version) override;
+                     nbostream & buffer, uint16_t version) override;
     AssignValueUpdate* clone() const override { return new AssignValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(AssignValueUpdate);
 };
 
-} // document
+}

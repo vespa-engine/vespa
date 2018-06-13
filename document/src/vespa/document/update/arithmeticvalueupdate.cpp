@@ -2,7 +2,7 @@
 #include "arithmeticvalueupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
 
@@ -127,14 +127,11 @@ ArithmeticValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-ArithmeticValueUpdate::deserialize(
-        const DocumentTypeRepo&, const DataType&,
-        ByteBuffer& buffer, uint16_t)
+ArithmeticValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream & stream, uint16_t)
 {
     int32_t opt;
-    buffer.getIntNetwork(opt);
+    stream >> opt >>_operand;
     _operator = static_cast<ArithmeticValueUpdate::Operator>(opt);
-    buffer.getDoubleNetwork(_operand);
 }
 
 } // document

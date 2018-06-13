@@ -26,6 +26,7 @@ class FieldUpdate : public vespalib::Identifiable,
 {
     Field _field;
     std::vector<ValueUpdate::CP> _updates;
+    using nbostream = vespalib::nbostream;
 
 public:
     typedef vespalib::CloneablePtr<FieldUpdate> CP;
@@ -42,11 +43,11 @@ public:
      * a byte buffer by deserializing all its content from the buffer.
      *
      * @param type A document type that describes the buffer content.
-     * @param buffer A byte buffer that contains a serialized field update.
+     * @param stream A stream that contains a serialized field update.
      * @param serializationVersion The serialization version the update was serialized with.
      */
     FieldUpdate(const DocumentTypeRepo& repo, const DataType & type,
-                ByteBuffer& buffer, int16_t version);
+                nbostream & stream, int16_t version);
 
     bool operator==(const FieldUpdate&) const;
     bool operator!=(const FieldUpdate & rhs) const { return ! (*this == rhs); }
@@ -94,7 +95,7 @@ public:
      * @param serializationVersion The serialization version the update was serialized with.
      */
     void deserialize(const DocumentTypeRepo& repo, const DocumentType& type,
-                     ByteBuffer& buffer, int16_t serializationVersion);
+                     nbostream& stream, int16_t serializationVersion);
 
 };
 

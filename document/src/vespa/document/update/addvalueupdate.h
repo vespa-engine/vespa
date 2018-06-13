@@ -7,8 +7,8 @@
  */
 #pragma once
 
+#include "valueupdate.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/update/valueupdate.h>
 
 namespace document {
 
@@ -68,7 +68,7 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     ByteBuffer& buffer, uint16_t version) override;
+                     nbostream & buffer, uint16_t version) override;
     AddValueUpdate* clone() const override { return new AddValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(AddValueUpdate);
@@ -76,4 +76,3 @@ public:
 };
 
 } // document
-

@@ -9,10 +9,10 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
 
-
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::nbostream;
+using vespalib::make_string;
 using namespace vespalib::xml;
 
 namespace document {
@@ -25,7 +25,7 @@ AddValueUpdate:: AddValueUpdate(const FieldValue& value, int weight)
       _weight(weight)
 {}
 
-AddValueUpdate::~AddValueUpdate() { }
+AddValueUpdate::~AddValueUpdate() = default;
 bool
 AddValueUpdate::operator==(const ValueUpdate& other) const
 {
@@ -41,19 +41,14 @@ void
 AddValueUpdate::checkCompatibility(const Field& field) const
 {
     if (field.getDataType().inherits(CollectionDataType::classId)) {
-        const CollectionDataType& type(
-                static_cast<const CollectionDataType&>(field.getDataType()));
+        const CollectionDataType& type(static_cast<const CollectionDataType&>(field.getDataType()));
         if (!type.getNestedType().isValueType(*_value)) {
-            throw IllegalArgumentException(
-                "Cannot add value of type "
-                + _value->getDataType()->toString() + " to field "
-                + field.getName().c_str() + " of container type "
-                + field.getDataType().toString(), VESPA_STRLOC);
+            throw IllegalArgumentException("Cannot add value of type " + _value->getDataType()->toString() +
+                                           " to field " + field.getName().c_str() + " of container type " +
+                                           field.getDataType().toString(), VESPA_STRLOC);
         }
     } else {
-        throw IllegalArgumentException(
-            "Can not add a value to field of type"
-            + field.getDataType().toString(), VESPA_STRLOC);
+        throw IllegalArgumentException("Can not add a value to field of type" + field.getDataType().toString(), VESPA_STRLOC);
     }
 }
 
@@ -75,9 +70,7 @@ AddValueUpdate::applyTo(FieldValue& value) const
         WeightedSetFieldValue& doc(static_cast<WeightedSetFieldValue&>(value));
         doc.add(*_value, _weight);	
     } else {
-        std::string err = vespalib::make_string(
-                "Unable to add a value to a \"%s\" field value.",
-                value.getClass().name());
+        std::string err = make_string("Unable to add a value to a \"%s\" field value.", value.getClass().name());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;
@@ -93,23 +86,17 @@ AddValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-AddValueUpdate::deserialize(const DocumentTypeRepo& repo,
-                            const DataType& type,
-                            ByteBuffer& buffer, uint16_t version)
+AddValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type,
+                            nbostream& stream, uint16_t version)
 {
-    const CollectionDataType* ctype =
-        Identifiable::cast<const CollectionDataType*>(&type);
+    const CollectionDataType* ctype = Identifiable::cast<const CollectionDataType*>(&type);
     if (ctype == NULL) {
-        throw DeserializeException("Can not perform add operation on "
-                                   "non-collection type.");
+        throw DeserializeException("Can not perform add operation on non-collection type.");
     }
     _value.reset(ctype->getNestedType().createFieldValue().release());
-    nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
     VespaDocumentDeserializer deserializer(repo, stream, version);
     deserializer.read(*_value);
-    buffer.incPos(buffer.getRemaining() - stream.size());
-    buffer.getIntNetwork(_weight);
+    stream >> _weight;
 }
 
 }
-

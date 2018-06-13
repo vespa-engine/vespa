@@ -4,11 +4,11 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace document {
 
-typedef std::vector<ValueUpdate::CP> ValueUpdateList;
+using vespalib::nbostream;
 
 FieldUpdate::FieldUpdate(const Field& field)
     : Printable(),
@@ -19,24 +19,24 @@ FieldUpdate::FieldUpdate(const Field& field)
 
 namespace {
 
-int readInt(ByteBuffer & buffer) {
+int readInt(nbostream & stream) {
     int tmp;
-    buffer.getIntNetwork(tmp);
+    stream >> tmp;
     return tmp;
 }
 
 }
 
-FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, ByteBuffer& buffer, int16_t version)
+FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream, int16_t version)
     : Printable(),
-      _field(type.getField(readInt(buffer))),
+      _field(type.getField(readInt(stream))),
       _updates()
 {
-    int numUpdates = readInt(buffer);
+    int numUpdates = readInt(stream);
     _updates.reserve(numUpdates);
     const DataType& dataType = _field.getDataType();
     for(int i(0); i < numUpdates; i++) {
-        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, buffer, version).release());
+        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, stream, version).release());
     }
 }
 
@@ -105,19 +105,17 @@ FieldUpdate::print(std::ostream& out, bool verbose, const std::string& indent) c
 // Deserialize this field update from the given buffer.
 void
 FieldUpdate::deserialize(const DocumentTypeRepo& repo, const DocumentType& docType,
-                         ByteBuffer& buffer, int16_t version)
+                         nbostream& stream, int16_t version)
 {
-    int fieldId;
-    buffer.getIntNetwork(fieldId);
+    int fieldId = readInt(stream);
     _field = docType.getField(fieldId);
     const DataType& dataType = _field.getDataType();
 
-    int numUpdates = 0;
-    buffer.getIntNetwork(numUpdates);
+    int numUpdates = readInt(stream);
     _updates.clear();
     _updates.resize(numUpdates);
     for(int i = 0; i < numUpdates; i++) {
-        _updates[i].reset(ValueUpdate::createInstance(repo, dataType, buffer, version).release());
+        _updates[i].reset(ValueUpdate::createInstance(repo, dataType, stream, version).release());
     }
 }
 
