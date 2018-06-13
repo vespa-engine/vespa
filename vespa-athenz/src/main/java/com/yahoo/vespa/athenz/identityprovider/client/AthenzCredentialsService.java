@@ -5,6 +5,7 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
+import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
@@ -59,7 +60,7 @@ class AthenzCredentialsService {
                 document.ipAddresses(),
                 keyPair);
 
-        try (com.yahoo.vespa.athenz.client.zts.ZtsClient ztsClient =
+        try (ZtsClient ztsClient =
                      new DefaultZtsClient(URI.create(identityConfig.ztsUrl()), nodeIdentityProvider)) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
@@ -67,7 +68,7 @@ class AthenzCredentialsService {
                             tenantIdentity,
                             null,
                             EntityBindingsMapper.toAttestationData(document),
-                            true,
+                            false,
                             csr);
             return toAthenzCredentials(instanceIdentity, keyPair, document);
         }
@@ -82,14 +83,14 @@ class AthenzCredentialsService {
                 document.ipAddresses(),
                 newKeyPair);
 
-        try (com.yahoo.vespa.athenz.client.zts.ZtsClient ztsClient =
+        try (ZtsClient ztsClient =
                      new DefaultZtsClient(URI.create(identityConfig.ztsUrl()), tenantIdentity, sslContext)) {
             InstanceIdentity instanceIdentity =
                     ztsClient.refreshInstance(
                             new AthenzService(identityConfig.configserverIdentityName()),
                             tenantIdentity,
                             document.providerUniqueId().asDottedString(),
-                            true,
+                            false,
                             csr);
             return toAthenzCredentials(instanceIdentity, newKeyPair, document);
         }
@@ -99,9 +100,8 @@ class AthenzCredentialsService {
                                                   KeyPair keyPair,
                                                   SignedIdentityDocument identityDocument) {
         X509Certificate certificate = instanceIdentity.certificate();
-        String serviceToken = instanceIdentity.nToken().get().getRawToken();
         SSLContext identitySslContext = createIdentitySslContext(keyPair.getPrivate(), certificate);
-        return new AthenzCredentials(serviceToken, certificate, keyPair, identityDocument, identitySslContext);
+        return new AthenzCredentials(certificate, keyPair, identityDocument, identitySslContext);
     }
 
     private SSLContext createIdentitySslContext(PrivateKey privateKey, X509Certificate certificate) {
