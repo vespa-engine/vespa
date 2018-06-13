@@ -48,7 +48,7 @@ Register::Register() :
     _listByName()
 { }
 
-Register::~Register() { }
+Register::~Register() = default;
 
 bool Register::erase(Identifiable::RuntimeClass * c)
 {
