@@ -16,7 +16,8 @@ using namespace search::fef::test;
 using namespace search::features;
 using CollectionType = FieldInfo::CollectionType;
 
-const std::string featureName("nativeDotProduct(foo)");
+const std::string fooFeatureName("nativeDotProduct(foo)");
+const std::string anyFeatureName("nativeDotProduct");
 
 struct BlueprintFactoryFixture {
     BlueprintFactory factory;
@@ -78,7 +79,8 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
     std::vector<TermFieldHandle> fooHandles;
     std::vector<TermFieldHandle> barHandles;
     RankFixture(const std::vector<uint32_t> &fooWeights,
-                const std::vector<uint32_t> &barWeights)
+                const std::vector<uint32_t> &barWeights,
+                const vespalib::string &featureName = fooFeatureName)
         : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
           mdl(), match_data(), rankProgram(), fooHandles(), barHandles()
     {
@@ -152,6 +154,12 @@ TEST_FF("require that setup fails for unknown field", NativeDotProductBlueprint,
     EXPECT_TRUE(!((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "unknown")));
 }
 
+TEST_FF("require that setup can be done without field", NativeDotProductBlueprint, IndexFixture) {
+    DummyDependencyHandler deps(f1);
+    f1.setName(vespalib::make_string("%s", f1.getBaseName().c_str()));
+    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>()));
+}
+
 TEST_F("require that not searching a field will give it 0.0 dot product", RankFixture(vec(), vec(1, 2, 3))) {
     EXPECT_EQUAL(0.0, f1.getScore(10));
 }
@@ -183,11 +191,18 @@ TEST_F("require that data from other fields is ignored", RankFixture(vec(1, 3), 
     EXPECT_EQUAL(14, f1.getScore(10));
 }
 
+TEST_F("require that not specifying field includes all term/field combinations", RankFixture(vec(1, 3), vec(5, 7), anyFeatureName)) {
+    f1.setFooWeight(0, 10, 2);
+    f1.setFooWeight(1, 10, 4);
+    f1.setBarWeight(0, 10, 6);
+    f1.setBarWeight(1, 10, 8);
+    EXPECT_EQUAL(100, f1.getScore(10));
+}
+
 TEST_F("require that negative weights in the index works", RankFixture(vec(1, 3), vec())) {
     f1.setFooWeight(0, 10, 2);
     f1.setFooWeight(1, 10, -4);
     EXPECT_EQUAL(-10, f1.getScore(10));
 }
-
 
 TEST_MAIN() { TEST_RUN_ALL(); }
