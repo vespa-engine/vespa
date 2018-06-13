@@ -32,7 +32,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -55,7 +54,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Responsible for scheduling deployment jobs in a build system and keeping
@@ -73,18 +71,18 @@ public class DeploymentTrigger {
 
     private final Controller controller;
     private final Clock clock;
-    private final DeploymentOrder order;
+    private final DeploymentSteps steps;
     private final BuildService buildService;
 
     public DeploymentTrigger(Controller controller, BuildService buildService, Clock clock) {
         this.controller = Objects.requireNonNull(controller, "controller cannot be null");
         this.buildService = Objects.requireNonNull(buildService, "buildService cannot be null");
         this.clock = Objects.requireNonNull(clock, "clock cannot be null");
-        this.order = new DeploymentOrder(controller::system);
+        this.steps = new DeploymentSteps(controller::system);
     }
 
-    public DeploymentOrder deploymentOrder() {
-        return order;
+    public DeploymentSteps deploymentSteps() {
+        return steps;
     }
 
     /**
@@ -282,7 +280,7 @@ public class DeploymentTrigger {
 
             if (change.isPresent())
                 for (Step step : productionStepsOf(application)) {
-                    Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
+                    List<JobType> stepJobs = steps.toJobs(step);
                     List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! isComplete(change, application, job)).collect(toList());
                     if ( ! remainingJobs.isEmpty()) { // Step is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                         for (JobType job : remainingJobs) {
@@ -404,8 +402,8 @@ public class DeploymentTrigger {
 
     private Change remainingChange(Application application) {
         List<JobType> jobs = productionStepsOf(application).isEmpty()
-                ? jobsOf(testStepsOf(application))
-                : jobsOf(productionStepsOf(application));
+                ? steps.toJobs(testStepsOf(application))
+                : steps.toJobs(productionStepsOf(application));
 
         Change change = application.change();
         if (jobs.stream().allMatch(job -> isComplete(application.change().withoutApplication(), application, job)))
@@ -424,17 +422,13 @@ public class DeploymentTrigger {
      */
     private List<Job> testJobs(Application application, Versions versions, String reason, Instant availableSince) {
         List<Job> jobs = new ArrayList<>();
-        for (JobType jobType : jobsOf(testStepsOf(application))) {
+        for (JobType jobType : steps.toJobs(testStepsOf(application))) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
                     .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
             if ( ! completion.isPresent() && jobStateOf(application, jobType) == idle)
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
         }
         return jobs;
-    }
-
-    private List<JobType> jobsOf(Collection<Step> steps) {
-        return steps.stream().flatMap(step -> step.zones().stream()).map(order::toJob).collect(toList());
     }
 
     private List<Step> testStepsOf(Application application) {

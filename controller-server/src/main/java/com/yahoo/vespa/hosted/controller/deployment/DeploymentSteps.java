@@ -14,21 +14,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 
 /**
- * This class determines the order of deployments according to an application's deployment spec.
+ * This class provides helper methods for mapping a deployment spec to jobs.
  *
  * @author mpolden
  */
-public class DeploymentOrder {
+public class DeploymentSteps {
 
     private final Supplier<SystemName> system;
 
-    public DeploymentOrder(Supplier<SystemName> system) {
+    public DeploymentSteps(Supplier<SystemName> system) {
         this.system = Objects.requireNonNull(system, "system may not be null");
     }
 
@@ -37,7 +37,7 @@ public class DeploymentOrder {
         return deploymentSpec.steps().stream()
                              .flatMap(step -> step.zones().stream())
                              .map(this::toJob)
-                             .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                             .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     /** Returns job status sorted according to deployment spec */
@@ -45,7 +45,7 @@ public class DeploymentOrder {
         List<DeploymentJobs.JobType> sortedJobs = jobsFrom(deploymentSpec);
         return jobStatus.stream()
                         .sorted(comparingInt(job -> sortedJobs.indexOf(job.type())))
-                        .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                        .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     /** Returns deployments sorted according to declared zones */
@@ -53,16 +53,26 @@ public class DeploymentOrder {
         List<ZoneId> productionZones = zones.stream()
                                             .filter(z -> z.region().isPresent())
                                             .map(z -> ZoneId.from(z.environment(), z.region().get()))
-                                            .collect(toList());
+                                            .collect(Collectors.toList());
         return deployments.stream()
                           .sorted(comparingInt(deployment -> productionZones.indexOf(deployment.zone())))
-                          .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+                          .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
-    /** Resolve job from deployment step */
+    /** Resolve job from deployment zone */
     public JobType toJob(DeploymentSpec.DeclaredZone zone) {
         return JobType.from(system.get(), zone.environment(), zone.region().orElse(null))
                       .orElseThrow(() -> new IllegalArgumentException("Invalid zone " + zone));
+    }
+
+    /** Resolve jobs from step */
+    public List<JobType> toJobs(DeploymentSpec.Step step) {
+        return step.zones().stream().map(this::toJob).collect(Collectors.toList());
+    }
+
+    /** Resolve jobs from steps */
+    public List<JobType> toJobs(List<DeploymentSpec.Step> steps) {
+        return steps.stream().flatMap(step -> toJobs(step).stream()).collect(Collectors.toList());
     }
 
 }
