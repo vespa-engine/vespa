@@ -193,8 +193,8 @@ public class DeploymentTester {
 
     private void completeDeployment(Application application, ApplicationPackage applicationPackage,
                                     Optional<JobType> failOnJob, boolean includingProductionZones) {
-        DeploymentSteps order = new DeploymentSteps(controller()::system);
-        List<JobType> jobs = order.jobsFrom(applicationPackage.deploymentSpec());
+        DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
+        List<JobType> jobs = steps.jobs();
         if ( ! includingProductionZones)
             jobs = jobs.stream().filter(job -> ! job.isProduction()).collect(Collectors.toList());
         for (JobType job : jobs) {
