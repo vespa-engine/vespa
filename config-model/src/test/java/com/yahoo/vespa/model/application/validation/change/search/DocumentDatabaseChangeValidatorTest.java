@@ -31,14 +31,20 @@ public class DocumentDatabaseChangeValidatorTest {
 
     @Test
     public void requireThatAttributeIndexAndDocumentTypeChangesAreDiscovered() throws Exception {
-        Fixture f = new Fixture("field f1 type string { indexing: summary } " +
+        Fixture f = new Fixture("struct s { field s1 type string {} } " +
+                "field f1 type string { indexing: summary } " +
                 "field f2 type string { indexing: summary } " +
-                "field f3 type int { indexing: summary }",
+                "field f3 type int { indexing: summary } " +
+                "field f4 type array<s> { } ",
+                "struct s { field s1 type string {} } " +
                 "field f1 type string { indexing: attribute | summary } " +
                 "field f2 type string { indexing: index | summary } " +
-                "field f3 type string { indexing: summary }");
+                "field f3 type string { indexing: summary } " +
+                "field f4 type array<s> { struct-field s1 { indexing: attribute } }");
         f.assertValidation(Arrays.asList(
                 newRestartAction("Field 'f1' changed: add attribute aspect"),
+                newRefeedAction("field-type-change",
+                        "Field 'f4.s1' changed: add attribute aspect"),
                 newRefeedAction("indexing-change",
                                 ValidationOverrides.empty,
                                 "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +
