@@ -25,7 +25,7 @@ public class SignedIdentityDocumentEntity {
     private static final ObjectMapper mapper = createObjectMapper();
 
     @JsonProperty("identity-document")public final String rawIdentityDocument;
-    @JsonIgnore public final IdentityDocumentEntity identityDocument;
+    @JsonIgnore @Deprecated  public final IdentityDocumentEntity identityDocument;
     @JsonProperty("signature") public final String signature;
     @JsonProperty("signing-key-version") public final int signingKeyVersion;
     @JsonProperty("provider-unique-id") public final String providerUniqueId; // String representation

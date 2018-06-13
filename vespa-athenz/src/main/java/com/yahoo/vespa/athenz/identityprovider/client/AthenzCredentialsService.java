@@ -56,7 +56,7 @@ class AthenzCredentialsService {
         Pkcs10Csr csr = instanceCsrGenerator.generateCsr(
                 tenantIdentity,
                 document.providerUniqueId(),
-                document.identityDocument().ipAddresses(),
+                document.ipAddresses(),
                 keyPair);
 
         try (com.yahoo.vespa.athenz.client.zts.ZtsClient ztsClient =
@@ -79,7 +79,7 @@ class AthenzCredentialsService {
         Pkcs10Csr csr = instanceCsrGenerator.generateCsr(
                 tenantIdentity,
                 document.providerUniqueId(),
-                document.identityDocument().ipAddresses(),
+                document.ipAddresses(),
                 newKeyPair);
 
         try (com.yahoo.vespa.athenz.client.zts.ZtsClient ztsClient =
