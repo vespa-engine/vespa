@@ -17,8 +17,8 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
     // TODO a lot of this logic could be replaced with a CompleteableFuture
 
     private Exception failure = null;
-    private boolean resultSet = false;
-    private Result result = null;
+    protected boolean resultSet = false;
+    protected Result result = null;
     private final MasterState masterState;
 
 
