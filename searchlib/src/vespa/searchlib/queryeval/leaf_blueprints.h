@@ -51,6 +51,7 @@ private:
     vespalib::string _term;
     FieldSpec   _field;
     FakeResult  _result;
+    bool _is_attr;
 
 protected:
     SearchIterator::UP
@@ -65,6 +66,12 @@ public:
         return *this;
     }
     const vespalib::string &tag() const { return _tag; }
+
+    FakeBlueprint &is_attr(bool value) {
+        _is_attr = value;
+        return *this;
+    }
+    bool is_attr() const { return _is_attr; }
 
     FakeBlueprint &term(const vespalib::string &t) {
         _term = t;

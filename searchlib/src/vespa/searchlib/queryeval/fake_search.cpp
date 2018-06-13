@@ -4,9 +4,36 @@
 #include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
+#include <vespa/searchcommon/attribute/i_search_context.h>
 
 namespace search {
 namespace queryeval {
+
+namespace {
+
+struct FakeContext : search::attribute::ISearchContext {
+    int32_t onFind(DocId, int32_t, int32_t &) const override { return -1; }
+    int32_t onFind(DocId, int32_t) const override { return -1; }
+    unsigned int approximateHits() const override { return 0; }
+    std::unique_ptr<SearchIterator> createIterator(fef::TermFieldMatchData *, bool) override { abort(); }
+    void fetchPostings(bool) override { }
+    bool valid() const override { return true; }
+    search::Int64Range getAsIntegerTerm() const override { abort(); }
+    const search::QueryTermBase &queryTerm() const override { abort(); }
+    const vespalib::string &attributeName() const override { abort(); }
+};
+
+} // namespace search::queryeval::<unnamed>
+
+void
+FakeSearch::is_attr(bool value)
+{
+    if (value) {
+        _ctx = std::make_unique<FakeContext>();
+    } else {
+        _ctx.reset();
+    }
+}
 
 void
 FakeSearch::doSeek(uint32_t docid)
@@ -49,5 +76,5 @@ FakeSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "term",  _term);
 }
 
-} // namespace queryeval
+} // namespace search::queryeval
 } // namespace search

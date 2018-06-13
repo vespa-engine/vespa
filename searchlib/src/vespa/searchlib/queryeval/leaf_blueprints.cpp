@@ -64,7 +64,9 @@ SimpleBlueprint::tag(const vespalib::string &t)
 SearchIterator::UP
 FakeBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
 {
-    return std::make_unique<FakeSearch>(_tag, _field.getName(), _term, _result, tfmda);
+    auto result = std::make_unique<FakeSearch>(_tag, _field.getName(), _term, _result, tfmda);
+    result->is_attr(_is_attr);
+    return result;
 }
 
 FakeBlueprint::FakeBlueprint(const FieldSpec &field, const FakeResult &result)
@@ -72,7 +74,8 @@ FakeBlueprint::FakeBlueprint(const FieldSpec &field, const FakeResult &result)
       _tag("<tag>"),
       _term("<term>"),
       _field(field),
-      _result(result)
+      _result(result),
+      _is_attr(false)
 {
     setEstimate(HitEstimate(result.inspect().size(), result.inspect().empty()));
 }
