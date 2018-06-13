@@ -306,6 +306,18 @@ TEST("require that added attribute aspect with flushed attribute after interrupt
     EXPECT_TRUE(f.assertAttributes({}));
 }
 
+TEST_F("require that removed attribute aspect from struct field does not require document field populate", Fixture)
+{
+    f.addOldConfig({"array.a"}, {"array.a"}).addNewConfig({"array.a"}, {}).init();
+    EXPECT_TRUE(f.assertFields({}));
+}
+
+TEST_F("require that added attribute aspect to struct field requires attribute populate", Fixture)
+{
+    f.addOldConfig({"array.a"}, {}).addNewConfig({"array.a"}, {"array.a"}).init();
+    EXPECT_TRUE(f.assertAttributes({"array.a"}));
+}
+
 TEST_MAIN()
 {
     TEST_RUN_ALL();

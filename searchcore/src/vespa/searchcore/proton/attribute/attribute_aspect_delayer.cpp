@@ -29,11 +29,15 @@ bool fastPartialUpdateAttribute(const search::attribute::Config &cfg) {
             (basicType != BasicType::Type::REFERENCE));
 }
 
+bool isStructFieldAttribute(const vespalib::string &name) {
+    return name.find('.') != vespalib::string::npos;
+}
+
 bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Config &cfg,
                                                   const IIndexschemaInspector &indexschemaInspector,
                                                   const vespalib::string &name)
 {
-    return fastPartialUpdateAttribute(cfg) && !indexschemaInspector.isStringIndex(name);
+    return fastPartialUpdateAttribute(cfg) && !indexschemaInspector.isStringIndex(name) && !isStructFieldAttribute(name);
 }
 
 
@@ -73,6 +77,7 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
                     SummarymapConfigBuilder &summarymapConfig)
 {
     vespalib::hash_set<vespalib::string> delayed;
+    vespalib::hash_set<vespalib::string> delayedStruct;
     AttributesConfigHash oldAttrs(oldAttributesConfig.attribute);
     for (const auto &newAttr : newAttributesConfig.attribute) {
         search::attribute::Config newCfg = ConfigConverter::convert(newAttr);
@@ -102,6 +107,10 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
             } else {
                 // Delay addition of attribute aspect
                 delayed.insert(newAttr.name);
+                auto pos = newAttr.name.find('.');
+                if (pos != vespalib::string::npos) {
+                    delayedStruct.insert(newAttr.name.substr(0, pos));
+                }
             }
         }
     }
@@ -109,6 +118,11 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
         if (override.command == "attribute") {
             auto itr = delayed.find(override.field);
             if (itr == delayed.end()) {
+                summarymapConfig.override.emplace_back(override);
+            }
+        } else if (override.command == "attributecombiner") {
+            auto itr = delayedStruct.find(override.field);
+            if (itr == delayedStruct.end()) {
                 summarymapConfig.override.emplace_back(override);
             }
         } else {

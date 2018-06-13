@@ -36,13 +36,22 @@ namespace proton
 
 namespace {
 
-AttributesConfig::Attribute make_sv_cfg(AttributesConfig::Attribute::Datatype dataType)
+AttributesConfig::Attribute make_sv_cfg(const vespalib::string &name, AttributesConfig::Attribute::Datatype dataType)
 {
     AttributesConfig::Attribute attr;
-    attr.name = "a";
+    attr.name = name;
     attr.datatype = dataType;
     attr.collectiontype = AttributesConfig::Attribute::Collectiontype::SINGLE;
     return attr;
+}
+
+AttributesConfig::Attribute make_sv_cfg(AttributesConfig::Attribute::Datatype dataType)
+{
+    return make_sv_cfg("a", dataType);
+}
+
+AttributesConfig::Attribute make_int32_sv_cfg(const vespalib::string &name) {
+    return make_sv_cfg(name, AttributesConfig::Attribute::Datatype::INT32);
 }
 
 AttributesConfig::Attribute make_int32_sv_cfg() {
@@ -101,6 +110,14 @@ SummarymapConfig::Override make_geopos_override(const vespalib::string &name)
     override.field = name;
     override.command = "geopos";
     override.arguments = name;
+    return override;
+}
+
+SummarymapConfig::Override make_attribute_combiner_override(const vespalib::string &name)
+{
+    SummarymapConfig::Override override;
+    override.field = name;
+    override.command = "attributecombiner";
     return override;
 }
 
@@ -304,6 +321,29 @@ TEST_F("require that fast access flag change is not delayed, true->false edge, s
     f.setup(attrCfg({make_fa(make_string_sv_cfg())}), smCfg({make_attribute_override("a")}), attrCfg({make_string_sv_cfg()}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_string_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
+}
+
+TEST_F("require that adding attribute aspect to struct field is not delayed if field type is changed", Fixture)
+{
+    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg("array.a")}), smCfg({make_attribute_combiner_override("array")}));
+    TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg("array.a")}));
+    TEST_DO(f.assertSummarymapConfig({make_attribute_combiner_override("array")}));
+}
+
+TEST_F("require that adding attribute aspect to struct field is delayed if field type is unchanged", Fixture)
+{
+    f.addFields({"array.a"});
+    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg("array.a")}), smCfg({make_attribute_combiner_override("array")}));
+    TEST_DO(f.assertAttributeConfig({}));
+    TEST_DO(f.assertSummarymapConfig({}));
+}
+
+TEST_F("require that removing attribute aspect from struct field is not delayed", Fixture)
+{
+    f.addFields({"array.a"});
+    f.setup(attrCfg({make_int32_sv_cfg("array.a")}), smCfg({make_attribute_combiner_override("array")}), attrCfg({}), smCfg({}));
+    TEST_DO(f.assertAttributeConfig({}));
+    TEST_DO(f.assertSummarymapConfig({}));
 }
 
 }

@@ -47,6 +47,8 @@ AttributeWriter::WriteField::buildFieldPath(const DocumentType &docType)
         docType.buildFieldPath(fp, name);
     } catch (document::FieldNotFoundException & e) {
         fp = FieldPath();
+    } catch (vespalib::IllegalArgumentException &e) {
+        fp = FieldPath();
     }
     _fieldPath = std::move(fp);
 }
