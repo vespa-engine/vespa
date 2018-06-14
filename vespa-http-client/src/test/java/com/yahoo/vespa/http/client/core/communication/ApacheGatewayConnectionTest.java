@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.vespa.http.client.TestUtils;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -31,18 +28,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
@@ -65,7 +58,6 @@ public class ApacheGatewayConnectionTest {
                 .setEnableV3Protocol(true)
                 .build();
         final List<Document> documents = new ArrayList<>();
-        final CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
 
         final String vespaDocContent ="Hello, I a JSON doc.";
         final String docId = "42";
@@ -74,7 +66,6 @@ public class ApacheGatewayConnectionTest {
         // This is the fake server, takes header client ID and uses this as session Id.
         ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> {
             final Header clientIdHeader = post.getFirstHeader(Headers.CLIENT_ID);
-            verifyContentSentLatch.countDown();
             return httpResponse(clientIdHeader.getValue(), "3");
         });
 
@@ -91,7 +82,6 @@ public class ApacheGatewayConnectionTest {
         documents.add(createDoc(docId, vespaDocContent, true));
 
         apacheGatewayConnection.writeOperations(documents);
-        assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -150,8 +140,6 @@ public class ApacheGatewayConnectionTest {
                 .build();
         final List<Document> documents = new ArrayList<>();
 
-        final CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
-
         final String vespaDocContent ="Hello, I a JSON doc.";
         final String docId = "42";
 
@@ -168,7 +156,6 @@ public class ApacheGatewayConnectionTest {
             assertNotNull(header);
             assertThat(header.getValue(), is(FeedParams.DataFormat.JSON_UTF8.name()));
             // Test is done.
-            verifyContentSentLatch.countDown();
             return httpResponse("clientId", "3");
         });
 
@@ -186,7 +173,6 @@ public class ApacheGatewayConnectionTest {
         documents.add(createDoc(docId, vespaDocContent, true));
 
         apacheGatewayConnection.writeOperations(documents);
-        assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -213,8 +199,6 @@ public class ApacheGatewayConnectionTest {
                 .build();
         final List<Document> documents = new ArrayList<>();
 
-        final CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
-
         final String vespaDocContent ="Hello, I am the document data.";
         final String docId = "42";
 
@@ -232,7 +216,6 @@ public class ApacheGatewayConnectionTest {
                 assertThat(rawContent, is(
                         doc.getOperationId() + " 38\n" + vespaHeaderText + vespaDocContent + "\n"
                                 + vespaFooterText));
-                verifyContentSentLatch.countDown();
 
             }
             return httpResponse("clientId", "3");
@@ -255,7 +238,6 @@ public class ApacheGatewayConnectionTest {
         documents.add(doc);
 
         apacheGatewayConnection.writeOperations(documents);
-        assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -270,15 +252,12 @@ public class ApacheGatewayConnectionTest {
                 .addDynamicHeader("foo", headerProvider)
                 .build();
 
-        CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
-
         AtomicInteger counter = new AtomicInteger(1);
         ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post  -> {
             Header[] fooHeader = post.getHeaders("foo");
             assertEquals(1, fooHeader.length);
             assertEquals("foo", fooHeader[0].getName());
             assertEquals("v" + counter.getAndIncrement(), fooHeader[0].getValue());
-            verifyContentSentLatch.countDown();
             return httpResponse("clientId", "3");
 
         });
@@ -298,24 +277,18 @@ public class ApacheGatewayConnectionTest {
         documents.add(createDoc("42", "content", true));
         apacheGatewayConnection.writeOperations(documents);
         apacheGatewayConnection.writeOperations(documents);
-        assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
 
         verify(headerProvider, times(3)).getHeaderValue(); // 1x connect(), 2x writeOperations()
     }
 
     @Test
-    public void detailed_error_message_is_extracted_from_error_responses_with_json() throws IOException, ServerResponseException, InterruptedException {
+    public void detailed_error_message_is_extracted_from_error_responses_with_json() throws IOException, ServerResponseException {
         String reasonPhrase = "Unauthorized";
         String errorMessage = "Invalid credentials";
         expectedException.expect(ServerResponseException.class);
         expectedException.expectMessage(reasonPhrase + " - " + errorMessage);
 
-        CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
-
-        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post  -> {
-            verifyContentSentLatch.countDown();
-            return createErrorHttpResponse(401, reasonPhrase, errorMessage);
-        });
+        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post  -> createErrorHttpResponse(401, reasonPhrase, errorMessage));
 
         ApacheGatewayConnection apacheGatewayConnection =
             new ApacheGatewayConnection(
@@ -329,7 +302,6 @@ public class ApacheGatewayConnectionTest {
         apacheGatewayConnection.handshake();
 
         apacheGatewayConnection.writeOperations(Collections.singletonList(createDoc("42", "content", true)));
-        assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
     }
 
     private static ApacheGatewayConnection.HttpClientFactory mockHttpClientFactory(HttpExecuteMock httpExecuteMock) throws IOException {
