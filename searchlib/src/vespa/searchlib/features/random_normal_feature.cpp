@@ -26,7 +26,7 @@ RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, uint64_t matchSeed, do
     _rnd.srand48(seed);
 }
 
-feature_t generateRandom(Rand48 generator) {
+feature_t generateRandom(Rand48& generator) {
     return (generator.lrand48() / (feature_t)0x80000000u) * 2.0 - 1.0;
 }
 
