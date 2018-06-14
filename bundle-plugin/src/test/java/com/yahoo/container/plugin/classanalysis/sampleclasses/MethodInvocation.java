@@ -7,6 +7,7 @@ package com.yahoo.container.plugin.classanalysis.sampleclasses;
 public class MethodInvocation {
     void invokeMethod() {
         Interface1 interface1 = null;
+        @SuppressWarnings({ "unused", "null" })
         Object o = interface1.methodSignatureTest(null, null);
     }
 }

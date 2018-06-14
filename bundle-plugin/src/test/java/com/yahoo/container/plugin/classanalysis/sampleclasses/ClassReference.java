@@ -6,6 +6,7 @@ package com.yahoo.container.plugin.classanalysis.sampleclasses;
  */
 public class ClassReference {
     void classReference() {
+        @SuppressWarnings("unused")
         Class<?> clazz = Interface1.class;
     }
 }
