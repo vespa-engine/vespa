@@ -4,7 +4,6 @@
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/fastos/time.h>
-#include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomnormalfeature");
@@ -18,53 +17,18 @@ RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, uint64_t matchSeed, do
     _matchRnd(),
     _matchSeed(matchSeed),
     _mean(mean),
-    _stddev(stddev),
-    _hasSpare(false),
-    _spare(0.0)
+    _stddev(stddev)
 {
     LOG(debug, "RandomNormalExecutor: seed=%zu, matchSeed=%zu, mean=%f, stddev=%f", seed, matchSeed, mean, stddev);
-    _rnd.srand48(seed);
+    _rnd.seed(seed);
 }
 
-feature_t generateRandom(Rand48& generator) {
-    return (generator.lrand48() / (feature_t)0x80000000u) * 2.0 - 1.0;
-}
-
-/**
- * Draws a random number from the Gaussian distribution
- * using the Marsaglia polar method.
- */
 void
 RandomNormalExecutor::execute(uint32_t docId)
 {
-    feature_t result = _spare;
-    if (_hasSpare) {
-        _hasSpare = false;
-    } else {
-        _hasSpare = true;
-
-        feature_t u, v, s;
-        do {
-            u = generateRandom(_rnd);
-            v = generateRandom(_rnd);
-            s = u * u + v * v;
-        } while ( (s >= 1.0) || (s == 0.0) );
-        s = std::sqrt(-2.0 * std::log(s) / s);
-
-        _spare = v * s; // saved for next invocation
-        result = u * s;
-    }
-    outputs().set_number(0, _mean + _stddev * result);
-
-    _matchRnd.srand48(_matchSeed + docId);
-    feature_t u, v, s;
-    do {
-        u = generateRandom(_matchRnd);
-        v = generateRandom(_matchRnd);
-        s = u * u + v * v;
-    } while ( (s >= 1.0) || (s == 0.0) );
-    s = std::sqrt(-2.0 * std::log(s) / s);
-    outputs().set_number(1, _mean + _stddev * u * s);
+    outputs().set_number(0, _mean + _stddev * _rnd.next());
+    _matchRnd.seed(_matchSeed + docId);
+    outputs().set_number(0, _mean + _stddev * _matchRnd.next(false));
 }
 
 RandomNormalBlueprint::RandomNormalBlueprint() :

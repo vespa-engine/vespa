@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/searchlib/util/random_normal.h>
 
 namespace search {
 namespace features {
@@ -17,15 +17,12 @@ namespace features {
  **/
 class RandomNormalExecutor : public fef::FeatureExecutor {
 private:
-    Rand48 _rnd;       // seeded once per query
-    Rand48 _matchRnd;  // seeded once per match
-    uint64_t _matchSeed;
+    RandomNormal _rnd;       // seeded once per query
+    RandomNormal _matchRnd;  // seeded once per match
 
+    uint64_t _matchSeed;
     double _mean;
     double _stddev;
-
-    bool _hasSpare;
-    double _spare;
 
 public:
     RandomNormalExecutor(uint64_t seed, uint64_t matchSeed, double mean, double stddev);
