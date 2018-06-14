@@ -61,7 +61,7 @@ RPCSend::RPCSend() :
     _serverIdent("server")
 { }
 
-RPCSend::~RPCSend() {}
+RPCSend::~RPCSend() = default;
 
 void
 RPCSend::attach(RPCNetwork &net)
@@ -256,12 +256,6 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
-    doRequest(req);
-}
-
-void
-RPCSend::doRequest(FRT_RPCRequest *req)
-{
     FRT_Values &args = *req->GetParams();
 
     std::unique_ptr<Params> params = toParams(args);
@@ -272,6 +266,20 @@ RPCSend::doRequest(FRT_RPCRequest *req)
                          make_string("Protocol '%s' is not known by %s.", params->getProtocol().c_str(), _serverIdent.c_str())));
         return;
     }
+    if (protocol->requireSequencing()) {
+        doRequest(req, protocol, std::move(params));
+    } else {
+        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req, protocol, params = std::move(params)]() mutable {
+            doRequest(req, protocol, std::move(params));
+        }));
+        assert (!rejected);
+    }
+}
+
+void
+RPCSend::doRequest(FRT_RPCRequest *req, const IProtocol * protocol, std::unique_ptr<Params> params)
+{
+
     Routable::UP routable = protocol->decode(params->getVersion(), params->getPayload());
     req->DiscardBlobs();
     if ( ! routable ) {
