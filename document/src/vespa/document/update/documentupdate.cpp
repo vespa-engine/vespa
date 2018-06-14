@@ -32,7 +32,6 @@ DocumentUpdate::DocumentUpdate(const DocumentTypeRepo & repo, const DataType &ty
       _backing(),
       _updates(),
       _fieldPathUpdates(),
-      _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false),
       _needHardReserialize(false)
 {
@@ -49,7 +48,6 @@ DocumentUpdate::DocumentUpdate()
       _backing(),
       _updates(),
       _fieldPathUpdates(),
-      _version(Document::getNewestSerializationVersion()),
       _createIfNonExistent(false),
       _needHardReserialize(false)
 {
@@ -311,11 +309,9 @@ DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, vespalib::nbostream 
             stream >> sizeAndFlags;
             int numUpdates = deserializeFlags(sizeAndFlags);
             _updates.reserve(numUpdates);
-            ByteBuffer buffer(stream.peek(), stream.size());
             for (int i = 0; i < numUpdates; i++) {
-                _updates.emplace_back(repo, *typeAndId.first, buffer, _version);
+                _updates.emplace_back(repo, *typeAndId.first, stream);
             }
-            stream.adjustReadPos(buffer.getPos());
         }
     } catch (const DeserializeException &) {
         stream.rp(pos);
@@ -368,22 +364,18 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, vespalib::nbostrea
             int32_t numUpdates = 0;
             stream >> numUpdates;
             _updates.reserve(numUpdates);
-            ByteBuffer buffer(stream.peek(), stream.size());
             for (int i = 0; i < numUpdates; i++) {
-                _updates.emplace_back(repo, *docType, buffer, _version);
+                _updates.emplace_back(repo, *docType, stream);
             }
-            stream.adjustReadPos(buffer.getPos());
         }
         // Read fieldpath updates, if any
         int32_t sizeAndFlags = 0;
         stream >> sizeAndFlags;
         int numUpdates = deserializeFlags(sizeAndFlags);
         _fieldPathUpdates.reserve(numUpdates);
-        ByteBuffer buffer(stream.peek(), stream.size());
         for (int i = 0; i < numUpdates; ++i) {
-            _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, buffer, _version).release());
+            _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, stream).release());
         }
-        stream.adjustReadPos(buffer.getPos());
     } catch (const DeserializeException &) {
         stream.rp(pos);
         throw;

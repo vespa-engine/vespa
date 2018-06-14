@@ -7,7 +7,6 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
 
 using vespalib::IllegalArgumentException;
@@ -85,7 +84,7 @@ RemoveValueUpdate::print(std::ostream& out, bool, const std::string&) const
 
 // Deserialize this update from the given buffer.
 void
-RemoveValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer, uint16_t version)
+RemoveValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
     switch(type.getClass().id()) {
         case ArrayDataType::classId:
@@ -93,10 +92,8 @@ RemoveValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& typ
         {
             const CollectionDataType& c(static_cast<const CollectionDataType&>(type));
             _key.reset(c.getNestedType().createFieldValue().release());
-            nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
-            VespaDocumentDeserializer deserializer(repo, stream, version);
+            VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
             deserializer.read(*_key);
-            buffer.incPos(buffer.getRemaining() - stream.size());
             break;
         }
         default:

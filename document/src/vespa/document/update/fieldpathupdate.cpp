@@ -5,7 +5,7 @@
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/util/serializableexceptions.h>
-#include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -106,29 +106,29 @@ FieldPathUpdate::getResultingDataType(const FieldPath & path) const
     return path.back().getDataType();
 }
 
-vespalib::string
-FieldPathUpdate::getString(ByteBuffer& buffer)
+vespalib::stringref
+FieldPathUpdate::getString(nbostream & stream)
 {
-    int32_t length = 0;
-    buffer.getIntNetwork(length);
-    vespalib::string s(buffer.getBufferAtPos());
-    buffer.incPos(length);
+    uint32_t sz(0);
+    stream >> sz;
+
+    vespalib::stringref s(stream.peek(), sz - 1);
+    stream.adjustReadPos(sz);
     return s;
 }
 
 void
-FieldPathUpdate::deserialize(const DocumentTypeRepo&, const DataType&, ByteBuffer& buffer, uint16_t)
+FieldPathUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream & stream)
 {
-    _originalFieldPath = getString(buffer);
-    _originalWhereClause = getString(buffer);
+    _originalFieldPath = getString(stream);
+    _originalWhereClause = getString(stream);
 }
 
 std::unique_ptr<FieldPathUpdate>
-FieldPathUpdate::createInstance(const DocumentTypeRepo& repo, const DataType &type,
-                                ByteBuffer& buffer, int serializationVersion)
+FieldPathUpdate::createInstance(const DocumentTypeRepo& repo, const DataType &type, nbostream& stream)
 {
     unsigned char updateType = 0;
-    buffer.getByte(updateType);
+    stream >> updateType;
 
     std::unique_ptr<FieldPathUpdate> update;
     switch (updateType) {
@@ -144,7 +144,7 @@ FieldPathUpdate::createInstance(const DocumentTypeRepo& repo, const DataType &ty
     default:
         throw DeserializeException(make_string("Unknown fieldpath update type: %d", updateType), VESPA_STRLOC);
     }
-    update->deserialize(repo, type, buffer, serializationVersion);
+    update->deserialize(repo, type, stream);
     return update;
 }
 

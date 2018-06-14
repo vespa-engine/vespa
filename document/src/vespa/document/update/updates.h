@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/update/fieldupdate.h>
-
-#include <vespa/document/update/addvalueupdate.h>
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/clearvalueupdate.h>
-#include <vespa/document/update/mapvalueupdate.h>
-#include <vespa/document/update/removevalueupdate.h>
+#include "documentupdate.h"
+#include "fieldupdate.h"
+#include "addvalueupdate.h"
+#include "arithmeticvalueupdate.h"
+#include "assignvalueupdate.h"
+#include "clearvalueupdate.h"
+#include "mapvalueupdate.h"
+#include "removevalueupdate.h"
 

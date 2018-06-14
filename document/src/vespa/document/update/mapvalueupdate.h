@@ -18,8 +18,6 @@ namespace document {
 
 class MapValueUpdate : public ValueUpdate {
     FieldValue::CP _key; // The field value this update is mapping to.
-                         // This is shared pointer to be able to lookup key
-                         // in weighted set map.
     ValueUpdate::CP _update; //The update to apply to the value member of this.
 
     // Used by ValueUpdate's static factory function
@@ -47,11 +45,9 @@ public:
 
     bool operator==(const ValueUpdate& other) const override;
 
-    /** @return The key of the field value to update. */
     const FieldValue& getKey() const { return *_key; }
     FieldValue& getKey() { return *_key; }
 
-    /** @return The update to apply to the field value of this. */
     const ValueUpdate& getUpdate() const { return *_update; }
     ValueUpdate& getUpdate() { return *_update; }
 
@@ -77,18 +73,16 @@ public:
         return *this;
     }
 
-    // ValueUpdate implementation
     void checkCompatibility(const Field& field) const override;
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     ByteBuffer& buffer, uint16_t version) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
     MapValueUpdate* clone() const override { return new MapValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(MapValueUpdate);
 
 };
 
-} // document
+}
 

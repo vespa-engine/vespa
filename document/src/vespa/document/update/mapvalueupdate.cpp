@@ -5,7 +5,6 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/serializableexceptions.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -128,18 +127,16 @@ MapValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-MapValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer, uint16_t version)
+MapValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
-    nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
-    VespaDocumentDeserializer deserializer(repo, stream, version);
+    VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
     switch(type.getClass().id()) {
         case ArrayDataType::classId:
         {
             _key.reset(new IntFieldValue);
             deserializer.read(*_key);
-            buffer.incPos(buffer.getRemaining() - stream.size());
             const ArrayDataType& arrayType = static_cast<const ArrayDataType&>(type);
-            _update.reset(ValueUpdate::createInstance(repo, arrayType.getNestedType(), buffer, version).release());
+            _update.reset(ValueUpdate::createInstance(repo, arrayType.getNestedType(), stream).release());
             break;
         }
         case WeightedSetDataType::classId:
@@ -147,8 +144,7 @@ MapValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, 
             const WeightedSetDataType& wset(static_cast<const WeightedSetDataType&>(type));
             _key.reset(wset.getNestedType().createFieldValue().release());
             deserializer.read(*_key);
-            buffer.incPos(buffer.getRemaining() - stream.size());
-            _update.reset(ValueUpdate::createInstance(repo, *DataType::INT, buffer, version).release());
+            _update.reset(ValueUpdate::createInstance(repo, *DataType::INT, stream).release());
             break;
         }
         default:

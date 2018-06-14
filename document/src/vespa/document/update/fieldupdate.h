@@ -26,6 +26,7 @@ class FieldUpdate : public vespalib::Identifiable,
 {
     Field _field;
     std::vector<ValueUpdate::CP> _updates;
+    using nbostream = vespalib::nbostream;
 
 public:
     typedef vespalib::CloneablePtr<FieldUpdate> CP;
@@ -39,14 +40,12 @@ public:
 
     /**
      * This is a convenience function to construct a field update directly from
-     * a byte buffer by deserializing all its content from the buffer.
+     * a stream by deserializing all its content from the stream.
      *
-     * @param type A document type that describes the buffer content.
-     * @param buffer A byte buffer that contains a serialized field update.
-     * @param serializationVersion The serialization version the update was serialized with.
+     * @param type A document type that describes the stream content.
+     * @param stream A stream that contains a serialized field update.
      */
-    FieldUpdate(const DocumentTypeRepo& repo, const DataType & type,
-                ByteBuffer& buffer, int16_t version);
+    FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream);
 
     bool operator==(const FieldUpdate&) const;
     bool operator!=(const FieldUpdate & rhs) const { return ! (*this == rhs); }
@@ -71,30 +70,18 @@ public:
     const std::vector<ValueUpdate::CP>& getUpdates() const { return _updates; }
 
     const Field& getField() const { return _field; }
-
-    /**
-     * Applies this update object to the given {@link Document} object.
-     *
-     * @param doc The document to apply this update to.
-     */
     void applyTo(Document& doc) const;
-
-    // Printable implementation
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    // XmlSerializable implementation
     void printXml(XmlOutputStream&) const override;
 
     /**
-     * Deserializes the given byte buffer into an instance of an update object.
+     * Deserializes the given stream into an instance of an update object.
      * Not a Deserializable, as document type is needed as extra information.
      *
-     * @param type A document type that describes the buffer content.
-     * @param buffer The byte buffer that contains the serialized update object.
-     * @param serializationVersion The serialization version the update was serialized with.
+     * @param type A document type that describes the stream content.
+     * @param buffer The stream that contains the serialized update object.
      */
-    void deserialize(const DocumentTypeRepo& repo, const DocumentType& type,
-                     ByteBuffer& buffer, int16_t serializationVersion);
+    void deserialize(const DocumentTypeRepo& repo, const DocumentType& type, nbostream& stream);
 
 };
 

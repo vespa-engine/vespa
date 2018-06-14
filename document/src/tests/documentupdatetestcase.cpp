@@ -119,36 +119,28 @@ ByteBuffer::UP serialize42(const DocumentUpdate & update)
     return retVal;
 }
 
-ByteBuffer::UP serialize(const ValueUpdate & update)
+nbostream serialize(const ValueUpdate & update)
 {
     nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.write(update);
-    ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
-    retVal->putBytes(stream.peek(), stream.size());
-    return retVal;
+    return stream;
 }
 
-ByteBuffer::UP serialize(const FieldUpdate & update)
+nbostream serialize(const FieldUpdate & update)
 {
     nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.write(update);
-    ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
-    retVal->putBytes(stream.peek(), stream.size());
-    return retVal;
+    return stream;
 }
 
 template<typename UpdateType>
 void testValueUpdate(const UpdateType& update, const DataType &type) {
     try{
         DocumentTypeRepo repo;
-        ByteBuffer::UP buf = serialize(update);
-        buf->flip();
-        typename UpdateType::UP copy(dynamic_cast<UpdateType*>(
-                        ValueUpdate::createInstance(repo, type, *buf,
-                                Document::getNewestSerializationVersion())
-                        .release()));
+        nbostream stream = serialize(update);
+        typename UpdateType::UP copy(dynamic_cast<UpdateType*>(ValueUpdate::createInstance(repo, type, stream).release()));
         CPPUNIT_ASSERT_EQUAL(update, *copy);
     } catch (std::exception& e) {
             std::cerr << "Failed while processing update " << update << "\n";
@@ -189,9 +181,8 @@ DocumentUpdateTest::testSimpleUsage() {
 
     FieldUpdate fieldUpdate(docType->getField("intf"));
     fieldUpdate.addUpdate(AssignValueUpdate(IntFieldValue(1)));
-    ByteBuffer::UP fieldBuf = serialize(fieldUpdate);
-    fieldBuf->flip();
-    FieldUpdate fieldUpdateCopy(repo, *docType, *fieldBuf, Document::getNewestSerializationVersion());
+    nbostream stream = serialize(fieldUpdate);
+    FieldUpdate fieldUpdateCopy(repo, *docType, stream);
     CPPUNIT_ASSERT_EQUAL(fieldUpdate, fieldUpdateCopy);
 
         // Test that a document update can be serialized
