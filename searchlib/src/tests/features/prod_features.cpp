@@ -1770,15 +1770,30 @@ Test::testRandomNormal()
         }
     }
     { // Test executor (randomNormal.match)
-        FtFeatureTest ft(_factory, "randomNormal.match");
-        ASSERT_TRUE(ft.setup());
-        RankResult rr;
+        FtFeatureTest ft1(_factory, "randomNormal.match");
+        FtFeatureTest ft2(_factory, "randomNormal.match");
+        ASSERT_TRUE(ft1.setup());
+        ASSERT_TRUE(ft2.setup());
+        RankResult rr1;
+        RankResult rr2;
         for (uint32_t i = 0; i < 5; ++i) {
-            rr.clear();
-            ASSERT_TRUE(ft.executeOnly(rr, i + 1));
-            ASSERT_TRUE(ft.execute(rr.getScore("randomNormal.match"), EPS, i + 1));
+            rr1.clear();
+            rr2.clear();
+            ASSERT_TRUE(ft1.executeOnly(rr1, i + 1));
+            ASSERT_TRUE(ft2.executeOnly(rr2, i + 1));
+
+            feature_t rn1 = rr1.getScore("randomNormal");
+            feature_t rn2 = rr2.getScore("randomNormal");
+            LOG(info, "randomNormal: %f - %f", rn1, rn2);
+            ASSERT_NOT_EQUAL(rn1, rn2);
+
+            feature_t rnm1 = rr1.getScore("randomNormal.match");
+            feature_t rnm2 = rr2.getScore("randomNormal.match");
+            LOG(info, "randomNormalMatch: %f - %f", rnm1, rnm2);
+            ASSERT_EQUAL(rnm1, rnm2);
         }
     }
+
 }
 
 void

@@ -26,9 +26,17 @@ RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, uint64_t matchSeed, do
 void
 RandomNormalExecutor::execute(uint32_t docId)
 {
-    outputs().set_number(0, _mean + _stddev * _rnd.next());
     _matchRnd.seed(_matchSeed + docId);
-    outputs().set_number(0, _mean + _stddev * _matchRnd.next(false));
+
+    feature_t out = _mean + _stddev * _rnd.next();
+    feature_t match = _mean + _stddev * _matchRnd.next(false);
+
+    outputs().set_number(0, out);
+    outputs().set_number(1, match);
+
+    // Note: calculating match here almost triples the cost for generating the non-match
+    // value. If this turns out to be too costly, we should consider creating an own
+    // feature executor for the match.
 }
 
 RandomNormalBlueprint::RandomNormalBlueprint() :
