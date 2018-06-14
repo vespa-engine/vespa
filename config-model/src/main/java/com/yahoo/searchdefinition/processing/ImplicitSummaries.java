@@ -83,7 +83,7 @@ public class ImplicitSummaries extends Processor {
             }
         }
 
-        if (addedSummaryField != null && isComplexFieldWithOnlyStructFieldAttributes(field)) {
+        if (addedSummaryField != null && isComplexFieldWithOnlyStructFieldAttributes(field, search.getDocument())) {
             addedSummaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
         }
 
