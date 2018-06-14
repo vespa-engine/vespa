@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -102,8 +101,8 @@ public class DeploymentTrigger {
             JobRun triggering;
             if (report.jobType() == component) {
                 ApplicationVersion applicationVersion = ApplicationVersion.from(report.sourceRevision().get(), report.buildNumber());
-                triggering = JobRun.triggering(controller.systemVersion(), applicationVersion, Optional
-                        .empty(), Optional.empty(), "Application commit", clock.instant());
+                triggering = JobRun.triggering(controller.systemVersion(), applicationVersion, Optional.empty(),
+                                               Optional.empty(), "Application commit", clock.instant());
                 if (report.success()) {
                     if (acceptNewApplicationVersion(application.get()))
                         application = application.withChange(application.get().change().with(applicationVersion))
@@ -284,7 +283,7 @@ public class DeploymentTrigger {
                             Versions versions = Versions.from(change, application, deploymentFor(application, job),
                                                               controller.systemVersion());
                             if (isTested(application, versions)) {
-                                if (canTrigger(job, application, stepJobs, completedAt)) {
+                                if (completedAt.isPresent() && canTrigger(job, application, stepJobs)) {
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 }
                                 if (!alreadyTriggered(application, versions)) {
@@ -319,13 +318,43 @@ public class DeploymentTrigger {
         return Collections.unmodifiableList(jobs);
     }
 
-    /** Returns whether given job can be triggered at this point in time */
-    private boolean canTrigger(JobType job, Application application, List<JobType> stepJobs, Optional<Instant> completedAt) {
-        if (!completedAt.isPresent()) return false;
+    /** Returns whether given job should be triggered */
+    private boolean canTrigger(JobType job, Application application, List<JobType> parallelJobs) {
         if (jobStateOf(application, job) != idle) return false;
-        if (!stepJobs.containsAll(runningProductionJobs(application))) return false;
+        if (parallelJobs != null && !parallelJobs.containsAll(runningProductionJobs(application))) return false;
 
-        return true;
+        return triggerAt(clock.instant(), job, application);
+    }
+
+    /** Returns whether given job should be triggered */
+    private boolean canTrigger(JobType job, Application application) {
+        return canTrigger(job, application, null);
+    }
+
+    /** Returns whether job can trigger at given instant */
+    private boolean triggerAt(Instant instant, JobType job, Application application) {
+        Optional<JobStatus> jobStatus = application.deploymentJobs().statusOf(job);
+        if (!jobStatus.isPresent()) return true;
+        if (jobStatus.get().isSuccess()) return true; // Success
+        if (!jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
+        if (!jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
+
+        Instant firstFailing = jobStatus.get().firstFailing().get().at();
+        Instant lastCompleted = jobStatus.get().lastCompleted().get().at();
+
+        // Retry all errors immediately for 1 minute
+        if (firstFailing.isAfter(instant.minus(Duration.ofMinutes(1)))) return true;
+
+        // Retry out of capacity errors in test environments every minute
+        if (job.isTest() && jobStatus.get().isOutOfCapacity()) {
+            return lastCompleted.isBefore(instant.minus(Duration.ofMinutes(1)));
+        }
+
+        // Retry other errors
+        if (firstFailing.isAfter(instant.minus(Duration.ofHours(1)))) { // If we failed within the last hour ...
+            return lastCompleted.isBefore(instant.minus(Duration.ofMinutes(10))); // ... retry every 10 minutes
+        }
+        return lastCompleted.isBefore(instant.minus(Duration.ofHours(2))); // Retry at most every 2 hours
     }
 
     // ---------- Job state helpers ----------
@@ -433,15 +462,17 @@ public class DeploymentTrigger {
         for (JobType jobType : steps(application.deploymentSpec()).testJobs()) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
                     .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
-            if ( ! completion.isPresent() && jobStateOf(application, jobType) == idle)
+            if (!completion.isPresent() && canTrigger(jobType, application)) {
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
+            }
         }
         return jobs;
     }
 
     private Job deploymentJob(Application application, Versions versions, Change change, JobType jobType, String reason, Instant availableSince) {
-        boolean isRetry = application.deploymentJobs().statusOf(jobType).flatMap(JobStatus::jobError)
-                                     .filter(JobError.outOfCapacity::equals).isPresent();
+        boolean isRetry = application.deploymentJobs().statusOf(jobType)
+                                     .map(JobStatus::isOutOfCapacity)
+                                     .orElse(false);
         if (isRetry) reason += "; retrying on out of capacity";
 
         JobRun triggering = JobRun.triggering(versions.targetPlatform(), versions.targetApplication(),

@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -93,6 +91,11 @@ public class JobStatus {
 
     /** The error of the last completion, or empty if the last run succeeded */
     public Optional<DeploymentJobs.JobError> jobError() { return jobError; }
+
+    /** Returns whether this last failed on out of capacity */
+    public boolean isOutOfCapacity() {
+        return jobError.filter(error -> error == DeploymentJobs.JobError.outOfCapacity).isPresent();
+    }
 
     /**
      * Returns the last triggering of this job, or empty if the controller has never triggered it

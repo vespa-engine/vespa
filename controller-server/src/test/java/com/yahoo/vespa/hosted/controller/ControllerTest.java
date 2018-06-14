@@ -16,10 +16,10 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
@@ -31,7 +31,6 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -103,7 +102,7 @@ public class ControllerTest {
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         ApplicationVersion applicationVersion = tester.controller().applications().require(app1.id()).change().application().get();
-        assertTrue("Application version has been set during deployment", applicationVersion != ApplicationVersion.unknown);
+        assertFalse("Application version has been set during deployment", applicationVersion.isUnknown());
         assertStatus(JobStatus.initial(stagingTest)
                               .withTriggering(version1, applicationVersion, Optional.empty(),"", tester.clock().instant())
                               .withCompletion(42, Optional.empty(), tester.clock().instant()), app1.id(), tester.controller());
@@ -155,6 +154,8 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
+        tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time passes for failing job to be retried
+        tester.readyJobTrigger().maintain();
         expectedJobStatus = expectedJobStatus
                 .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant())
                 .withCompletion(42, Optional.empty(), tester.clock().instant());

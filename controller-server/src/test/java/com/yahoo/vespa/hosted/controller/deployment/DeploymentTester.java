@@ -296,8 +296,20 @@ public class DeploymentTester {
                 .build();
     }
 
-    public void assertRunning(ApplicationId id, JobType jobType) {
-        assertTrue(buildService().jobs().contains(BuildService.BuildJob.of(id, application(id).deploymentJobs().projectId().getAsLong(), jobType.jobName())));
+    public void assertRunning(JobType job, ApplicationId application) {
+        assertTrue(String.format("Job %s for %s is running", job, application), isRunning(job, application));
+    }
+
+    public void assertNotRunning(JobType job, ApplicationId application) {
+        assertFalse(String.format("Job %s for %s is not running", job, application), isRunning(job, application));
+    }
+
+    private boolean isRunning(JobType job, ApplicationId application) {
+        return buildService().jobs().contains(BuildService.BuildJob.of(application,
+                                                                       application(application).deploymentJobs()
+                                                                                               .projectId()
+                                                                                               .getAsLong(),
+                                                                       job.jobName()));
     }
 
 }

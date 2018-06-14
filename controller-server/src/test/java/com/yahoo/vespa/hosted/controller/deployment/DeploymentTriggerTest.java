@@ -21,7 +21,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static com.yahoo.config.provision.SystemName.main;
@@ -74,11 +73,11 @@ public class DeploymentTriggerTest {
         tester.buildService().remove(buildJob(app, stagingTest));
         tester.readyJobTrigger().maintain();
         assertEquals("Retried dead job", 2, tester.buildService().jobs().size());
-        tester.assertRunning(app.id(), stagingTest);
+        tester.assertRunning(stagingTest, app.id());
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
 
         // system-test is now the only running job -- production jobs haven't started yet, since it is unfinished.
-        tester.assertRunning(app.id(), systemTest);
+        tester.assertRunning(systemTest, app.id());
         assertEquals(1, tester.buildService().jobs().size());
 
         // system-test fails and is retried
@@ -86,7 +85,7 @@ public class DeploymentTriggerTest {
         assertEquals("Job is retried on failure", 1, tester.buildService().jobs().size());
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
 
-        tester.assertRunning(app.id(), productionUsWest1);
+        tester.assertRunning(productionUsWest1, app.id());
     }
 
     @Test
@@ -145,13 +144,13 @@ public class DeploymentTriggerTest {
 
         // 30 seconds later, the first jobs may trigger.
         assertEquals(1, mockBuildService.jobs().size());
-        tester.assertRunning(application.id(), productionUsWest1);
+        tester.assertRunning(productionUsWest1, application.id());
 
         // 3 minutes pass, delayed trigger does nothing as us-west-1 is still in progress
         tester.clock().advance(Duration.ofMinutes(3));
         tester.deploymentTrigger().triggerReadyJobs();
         assertEquals(1, mockBuildService.jobs().size());
-        tester.assertRunning(application.id(), productionUsWest1);
+        tester.assertRunning(productionUsWest1, application.id());
 
         // us-west-1 completes
         tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
@@ -202,8 +201,8 @@ public class DeploymentTriggerTest {
 
         // Deploys in two regions in parallel
         assertEquals(2, tester.buildService().jobs().size());
-        tester.assertRunning(application.id(), productionUsEast3);
-        tester.assertRunning(application.id(), productionUsWest1);
+        tester.assertRunning(productionUsEast3, application.id());
+        tester.assertRunning(productionUsWest1, application.id());
 
         tester.deploy(JobType.productionUsWest1, application, applicationPackage, false);
         tester.jobCompletion(JobType.productionUsWest1).application(application).submit();
@@ -405,8 +404,8 @@ public class DeploymentTriggerTest {
         });
         assertEquals(0, tester.buildService().jobs().size());
         readyJobsTrigger.run();
-        tester.assertRunning(app.id(), systemTest);
-        tester.assertRunning(app.id(), stagingTest);
+        tester.assertRunning(systemTest, app.id());
+        tester.assertRunning(stagingTest, app.id());
     }
 
     @Test
@@ -500,18 +499,24 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
         tester.deployAndNotify(application, applicationPackage, true, stagingTest);
 
+        tester.assertNotRunning(productionUsCentral1, application.id());
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1))); // Enough time for prod.us-central-1 to be retried
+        tester.readyJobTrigger().maintain();
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
-        assertEquals((Long) 42L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+        assertEquals(Long.valueOf(42L), app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
         assertNotEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, applicationPackage);
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
-        assertEquals((Long) 43L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+        assertEquals(Long.valueOf(43), app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
 
         // Change is again strictly dominated, and us-central-1 is skipped, even though it is still failing.
-        tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
+        tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time for retry
+        tester.readyJobTrigger().maintain();
+        // Failing job is not retried as change has been deployed
+        tester.assertNotRunning(productionUsCentral1, application.id());
 
         // Last job has a different deployment target, so tests need to run again.
         tester.deployAndNotify(application, empty(), true, systemTest);

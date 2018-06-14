@@ -229,6 +229,8 @@ public class UpgraderTest {
         tester.completeUpgradeWithError(default0, version55, "default", stagingTest);
         tester.completeUpgradeWithError(default1, version55, "default", stagingTest);
         tester.completeUpgradeWithError(default2, version55, "default", stagingTest);
+        tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Retry failing job for default3
+        tester.readyJobTrigger().maintain();
         tester.completeUpgradeWithError(default3, version55, "default", DeploymentJobs.JobType.productionUsWest1);
         tester.upgradeSystem(version55);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
@@ -801,7 +803,7 @@ public class UpgraderTest {
 
         // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());
-        tester.assertRunning(deadLocked.id(), systemTest);
+        tester.assertRunning(systemTest, deadLocked.id());
         assertFalse("No change present", deadLocked.change().isPresent());
 
         // 4 out of 5 applications are repaired and confidence is restored
