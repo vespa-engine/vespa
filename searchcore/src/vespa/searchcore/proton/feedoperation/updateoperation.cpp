@@ -82,11 +82,12 @@ UpdateOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &re
 }
 
 void
-UpdateOperation::deserializeUpdate(const DocumentTypeRepo &repo)
+UpdateOperation::verifyUpdate(const DocumentTypeRepo &repo)
 {
     vespalib::nbostream stream;
     serializeUpdate(stream);
     deserializeUpdate(std::move(stream), repo);
+    _upd->eagerDeserialize();  // Will trigger exceptions if incompatible
 }
 
 vespalib::string

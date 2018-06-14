@@ -30,7 +30,7 @@ public:
     const DocumentUpdateSP &getUpdate() const { return _upd; }
     void serialize(vespalib::nbostream &os) const override;
     void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
-    void deserializeUpdate(const document::DocumentTypeRepo &repo);
+    void verifyUpdate(const document::DocumentTypeRepo &repo);
     vespalib::string toString() const override;
 };
 
