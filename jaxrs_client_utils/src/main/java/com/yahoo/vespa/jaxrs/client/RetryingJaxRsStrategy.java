@@ -21,7 +21,6 @@ import java.util.logging.Logger;
  */
 public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private static final Logger logger = Logger.getLogger(RetryingJaxRsStrategy.class.getName());
-    private static final int NUM_LOOP_ATTEMPTS = 2;
 
     private final List<HostName> hostNames;
     private final int port;
@@ -29,6 +28,8 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private final Class<T> apiClass;
     private String pathPrefix;
     private final String scheme;
+
+    private int maxIterations = 2;
 
     public RetryingJaxRsStrategy(
             final Set<HostName> hostNames,
@@ -52,11 +53,21 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
         this.scheme = scheme;
     }
 
+    /**
+     * The the max number of times the hostnames should be iterated over, before giving up.
+     *
+     * <p>By default, maxIterations is 2.
+     */
+    public RetryingJaxRsStrategy<T> setMaxIterations(int maxIterations) {
+        this.maxIterations = maxIterations;
+        return this;
+    }
+
     @Override
     public <R> R apply(final Function<T, R> function) throws IOException {
         ProcessingException sampleException = null;
 
-        for (int i = 0; i < NUM_LOOP_ATTEMPTS; ++i) {
+        for (int i = 0; i < maxIterations; ++i) {
             for (final HostName hostName : hostNames) {
                 final T jaxRsClient = jaxRsClientFactory.createClient(apiClass, hostName, port, pathPrefix, scheme);
                 try {
@@ -72,7 +83,7 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
 
         final String message = String.format(
                 "Giving up invoking REST API after %d tries against hosts %s.%s",
-                NUM_LOOP_ATTEMPTS,
+                maxIterations,
                 hostNames,
                 sampleException == null ? "" : ", sample error: " + sampleException.getMessage());
 

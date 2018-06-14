@@ -53,7 +53,7 @@ public class JaxRsStrategyFactory {
         this.scheme = scheme;
     }
 
-    public <T> JaxRsStrategy<T> apiWithRetries(final Class<T> apiClass, final String pathPrefix) {
+    public <T> RetryingJaxRsStrategy<T> apiWithRetries(final Class<T> apiClass, final String pathPrefix) {
         Objects.requireNonNull(apiClass, "apiClass argument may not be null");
         Objects.requireNonNull(pathPrefix, "pathPrefix argument may not be null");
         return new RetryingJaxRsStrategy<T>(hostNames, port, jaxRsClientFactory, apiClass, pathPrefix, scheme);
