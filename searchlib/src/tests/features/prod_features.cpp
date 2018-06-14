@@ -32,6 +32,7 @@ LOG_SETUP("prod_features_test");
 #include <vespa/searchlib/features/querytermcountfeature.h>
 #include <vespa/searchlib/features/randomfeature.h>
 #include <vespa/searchlib/features/random_normal_feature.h>
+#include <vespa/searchlib/features/random_normal_match_feature.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/termfeature.h>
@@ -105,6 +106,7 @@ Test::Main()
     TEST_DO(testQueryTermCount());      TEST_FLUSH();
     TEST_DO(testRandom());              TEST_FLUSH();
     TEST_DO(testRandomNormal());        TEST_FLUSH();
+    TEST_DO(testRandomNormalMatch());   TEST_FLUSH();
     TEST_DO(testRankingExpression());   TEST_FLUSH();
     TEST_DO(testTerm());                TEST_FLUSH();
     TEST_DO(testTermDistance());        TEST_FLUSH();
@@ -1727,17 +1729,16 @@ Test::testRandom()
 }
 
 void
-Test::testRandomNormal()
-{
+Test::testRandomNormal() {
     { // Test blueprint.
         RandomNormalBlueprint pt;
 
         EXPECT_TRUE(assertCreateInstance(pt, "randomNormal"));
 
         StringList params, in, out;
-        FT_SETUP_OK (pt, params, in, out.add("out").add("match"));
-        FT_SETUP_OK (pt, params.add("0.5").add("1.0"), in, out);
-        FT_SETUP_OK (pt, params.add("val1"), in, out);
+        FT_SETUP_OK(pt, params, in, out.add("out"));
+        FT_SETUP_OK(pt, params.add("0.5").add("1.0"), in, out);
+        FT_SETUP_OK(pt, params.add("val1"), in, out);
 
         FT_DUMP_EMPTY(_factory, "randomNormal");
     }
@@ -1766,32 +1767,52 @@ Test::testRandomNormal()
         for (uint32_t i = 0; i < 5; ++i) {
             rr.clear();
             ASSERT_TRUE(ft1.executeOnly(rr, i + 1));
-            ASSERT_TRUE(ft2.execute(((rr.getScore("randomNormal(0.0,0.1)")-0.0)/0.1) * 0.2 + 1.0, EPS, i + 1));
+            ASSERT_TRUE(ft2.execute(((rr.getScore("randomNormal(0.0,0.1)") - 0.0) / 0.1) * 0.2 + 1.0, EPS, i + 1));
+        }
+    }
+}
+
+void
+Test::testRandomNormalMatch() {
+    { // Test blueprint.
+        RandomNormalMatchBlueprint pt;
+
+        EXPECT_TRUE(assertCreateInstance(pt, "randomNormalMatch"));
+
+        StringList params, in, out;
+        FT_SETUP_OK(pt, params, in, out.add("out"));
+        FT_SETUP_OK(pt, params.add("0.5").add("1.0"), in, out);
+        FT_SETUP_OK(pt, params.add("val1"), in, out);
+
+        FT_DUMP_EMPTY(_factory, "randomNormalMatch");
+    }
+
+    { // Test setting of mean and stddev values, and seed
+        FtFeatureTest ft1(_factory, "randomNormalMatch(0.0,0.1)");
+        FtFeatureTest ft2(_factory, "randomNormalMatch(1.0,0.2)");
+        ft1.getIndexEnv().getProperties().add("randomNormalMatch(0.0,0.1).seed", "100");
+        ft2.getIndexEnv().getProperties().add("randomNormalMatch(1.0,0.2).seed", "100");
+        ASSERT_TRUE(ft1.setup());
+        ASSERT_TRUE(ft2.setup());
+        RankResult rr;
+        for (uint32_t i = 0; i < 5; ++i) {
+            rr.clear();
+            ASSERT_TRUE(ft1.executeOnly(rr, i + 1));
+            ASSERT_TRUE(ft2.execute(((rr.getScore("randomNormalMatch(0.0,0.1)") - 0.0) / 0.1) * 0.2 + 1.0, EPS, i + 1));
         }
     }
     { // Test executor (randomNormal.match)
-        FtFeatureTest ft1(_factory, "randomNormal.match");
-        FtFeatureTest ft2(_factory, "randomNormal.match");
+        FtFeatureTest ft1(_factory, "randomNormalMatch");
+        FtFeatureTest ft2(_factory, "randomNormalMatch");
         ASSERT_TRUE(ft1.setup());
         ASSERT_TRUE(ft2.setup());
-        RankResult rr1;
-        RankResult rr2;
+        RankResult rr;
         for (uint32_t i = 0; i < 5; ++i) {
-            rr1.clear();
-            rr2.clear();
-            ASSERT_TRUE(ft1.executeOnly(rr1, i + 1));
-            ASSERT_TRUE(ft2.executeOnly(rr2, i + 1));
-
-            feature_t rn1 = rr1.getScore("randomNormal");
-            feature_t rn2 = rr2.getScore("randomNormal");
-            ASSERT_NOT_EQUAL(rn1, rn2);
-
-            feature_t rnm1 = rr1.getScore("randomNormal.match");
-            feature_t rnm2 = rr2.getScore("randomNormal.match");
-            ASSERT_EQUAL(rnm1, rnm2);
+            rr.clear();
+            ASSERT_TRUE(ft1.executeOnly(rr, i + 1));
+            ASSERT_TRUE(ft2.execute(rr.getScore("randomNormalMatch"), EPS, i + 1));
         }
     }
-
 }
 
 void

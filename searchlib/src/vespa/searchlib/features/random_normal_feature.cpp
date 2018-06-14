@@ -11,32 +11,18 @@ LOG_SETUP(".features.randomnormalfeature");
 namespace search {
 namespace features {
 
-RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, uint64_t matchSeed, double mean, double stddev) :
+RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double stddev) :
     search::fef::FeatureExecutor(),
-    _rnd(),
-    _matchRnd(),
-    _matchSeed(matchSeed),
-    _mean(mean),
-    _stddev(stddev)
+    _rnd(mean, stddev, true)
 {
-    LOG(debug, "RandomNormalExecutor: seed=%zu, matchSeed=%zu, mean=%f, stddev=%f", seed, matchSeed, mean, stddev);
+    LOG(debug, "RandomNormalExecutor: seed=%zu, mean=%f, stddev=%f", seed, mean, stddev);
     _rnd.seed(seed);
 }
 
 void
-RandomNormalExecutor::execute(uint32_t docId)
+RandomNormalExecutor::execute(uint32_t)
 {
-    _matchRnd.seed(_matchSeed + docId);
-
-    feature_t out = _mean + _stddev * _rnd.next();
-    feature_t match = _mean + _stddev * _matchRnd.next(false);
-
-    outputs().set_number(0, out);
-    outputs().set_number(1, match);
-
-    // Note: calculating match here almost triples the cost for generating the non-match
-    // value. If this turns out to be too costly, we should consider creating an own
-    // feature executor for the match.
+    outputs().set_number(0, _rnd.next());
 }
 
 RandomNormalBlueprint::RandomNormalBlueprint() :
@@ -75,13 +61,12 @@ RandomNormalBlueprint::setup(const search::fef::IIndexEnvironment & env,
     }
 
     describeOutput("out" , "A random value drawn from the Gaussian distribution");
-    describeOutput("match" , "A random value drawn from the Gaussian distribution that is stable for a given match (document and query)");
 
     return true;
 }
 
 search::fef::FeatureExecutor &
-RandomNormalBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
+RandomNormalBlueprint::createExecutor(const search::fef::IQueryEnvironment &, vespalib::Stash &stash) const
 {
     uint64_t seed = _seed;
     if (seed == 0) {
@@ -90,9 +75,7 @@ RandomNormalBlueprint::createExecutor(const search::fef::IQueryEnvironment &env,
         seed = static_cast<uint64_t>(time.MicroSecs()) ^
                 reinterpret_cast<uint64_t>(&seed); // results in different seeds in different threads
     }
-    uint64_t matchSeed = util::strToNum<uint64_t>
-            (env.getProperties().lookup(getName(), "match", "seed").get("1024")); // default seed
-    return stash.create<RandomNormalExecutor>(seed, matchSeed, _mean, _stddev);
+    return stash.create<RandomNormalExecutor>(seed, _mean, _stddev);
 }
 
 

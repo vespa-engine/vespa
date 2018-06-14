@@ -9,18 +9,19 @@
 namespace search {
 namespace features {
 
-
 /**
  * Implements the executor for the random normal feature outputting a
  * random number drawn from the Gaussian distribution with the
  * two arguments 'mean' and 'stddev'.
+ * The same hit always returns the same random number.
  **/
-class RandomNormalExecutor : public fef::FeatureExecutor {
+class RandomNormalMatchExecutor : public fef::FeatureExecutor {
 private:
-    RandomNormal _rnd;       // seeded once per query
+    RandomNormal _rnd;       // seeded once per match
+    uint64_t     _seed;
 
 public:
-    RandomNormalExecutor(uint64_t seed, double mean, double stddev);
+    RandomNormalMatchExecutor(uint64_t seed, double mean, double stddev);
     void execute(uint32_t docId) override;
 };
 
@@ -28,14 +29,14 @@ public:
 /**
  * Implements the blueprint for the random normal feature.
  */
-class RandomNormalBlueprint : public fef::Blueprint {
+class RandomNormalMatchBlueprint : public fef::Blueprint {
 private:
     uint64_t _seed;
     double   _mean;
     double   _stddev;
 
 public:
-    RandomNormalBlueprint();
+    RandomNormalMatchBlueprint();
 
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;

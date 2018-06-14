@@ -11,6 +11,10 @@ class RandomNormal
 {
 private:
     Rand48    _rnd;
+    double    _mean;
+    double    _stddev;
+
+    bool      _useSpare;
     bool      _hasSpare;
     feature_t _spare;
 
@@ -19,7 +23,14 @@ private:
     }
 
 public:
-    RandomNormal() : _rnd(), _hasSpare(false), _spare(0.0) {}
+    RandomNormal(double mean, double stddev, bool useSpare = true) :
+            _rnd(),
+            _mean(mean),
+            _stddev(stddev),
+            _useSpare(useSpare),
+            _hasSpare(false),
+            _spare(0.0)
+    {}
 
     void seed(long seed) {
         _rnd.srand48(seed);
@@ -29,9 +40,9 @@ public:
      * Draws a random number from the Gaussian distribution
      * using the Marsaglia polar method.
      */
-    feature_t next(bool useSpare = true) {
+    feature_t next() {
         feature_t result = _spare;
-        if (_hasSpare && useSpare) {
+        if (_useSpare && _hasSpare) {
             _hasSpare = false;
         } else {
             _hasSpare = true;
@@ -47,7 +58,7 @@ public:
             _spare = v * s; // saved for next invocation
             result = u * s;
         }
-        return result;
+        return _mean + _stddev * result;
     }
 
 };
