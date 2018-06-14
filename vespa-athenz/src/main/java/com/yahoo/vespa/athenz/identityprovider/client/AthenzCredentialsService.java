@@ -60,7 +60,7 @@ class AthenzCredentialsService {
                              String hostname,
                              Clock clock) {
         this.tenantIdentity = new AthenzService(identityConfig.domain(), identityConfig.service());
-        this.configserverEndpoint = URI.create(identityConfig.loadBalancerAddress());
+        this.configserverEndpoint = URI.create("https://" + identityConfig.loadBalancerAddress() + ":4443");
         this.ztsEndpoint = URI.create(identityConfig.ztsUrl());
         this.configserverIdentity = new AthenzService(identityConfig.configserverIdentityName());
         this.nodeIdentityProvider = nodeIdentityProvider;
