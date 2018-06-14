@@ -97,6 +97,10 @@ class NodeIdentifier {
     }
 
     private String getHostFromVespaCertificate(List<SubjectAlternativeName> sans) {
+        // TODO Remove this branch once all BM nodes are gone
+        if (sans.stream().anyMatch(san -> san.getValue().endsWith("ostk.yahoo.cloud"))) {
+            return getHostFromCalypsoCertificate(sans);
+        }
         VespaUniqueInstanceId instanceId = VespaUniqueInstanceId.fromDottedString(getUniqueInstanceId(sans));
         if (!zone.environment().value().equals(instanceId.environment()))
             throw new NodeIdentifierException("Invalid environment: " + instanceId.environment());

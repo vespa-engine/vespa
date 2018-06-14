@@ -201,6 +201,25 @@ public class NodeIdentifierTest {
         assertEquals(CONTROLLER_IDENTITY, identity.getHostIdentityName());
     }
 
+    @Test
+    public void accepts_openstack_bm_tenant_certificate() {
+        NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
+        nodeRepositoryDummy.addNode(OPENSTACK_ID, HOSTNAME, INSTANCE_ID, NodeType.tenant);
+        nodeRepositoryDummy.setNodeState(HOSTNAME, Node.State.active);
+        Pkcs10Csr csr = Pkcs10CsrBuilder
+                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_CONTAINER_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
+                .build();
+        X509Certificate certificate = X509CertificateBuilder
+                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .addSubjectAlternativeName(OPENSTACK_ID + ".instanceid.athenz.ostk.yahoo.cloud")
+                .build();
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
+        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
+        assertTrue(identity.getHostname().isPresent());
+        assertEquals(HOSTNAME, identity.getHostname().get());
+        assertEquals(TENANT_DOCKER_CONTAINER_IDENTITY, identity.getHostIdentityName());
+    }
+
     private static Node createNode(String clusterId, int clusterIndex, String tenant, String application) {
         return Node
                 .createDockerNode(
