@@ -2,30 +2,29 @@
 #pragma once
 
 #include "feedoperation.h"
-#include <vespa/vespalib/objects/nbostream.h>
 
 namespace proton {
+
+    namespace feedoperation {
+        struct IStreamHandler {
+            virtual ~IStreamHandler() {}
+            virtual void serializeConfig(search::SerialNum serialNum, vespalib::nbostream &os) = 0;
+            virtual void deserializeConfig(search::SerialNum serialNum, vespalib::nbostream &is) = 0;
+        };
+    }
 
 class NewConfigOperation : public FeedOperation
 {
 public:
-    struct IStreamHandler {
-        virtual ~IStreamHandler() {}
-        virtual void serializeConfig(SerialNum serialNum,
-                                     vespalib::nbostream &os) = 0;
-        virtual void deserializeConfig(SerialNum serialNum,
-                                       vespalib::nbostream &is) = 0;
-    };
+    using IStreamHandler = feedoperation::IStreamHandler;
 private:
     IStreamHandler &_streamHandler;
 public:
-    NewConfigOperation(SerialNum serialNum,
-                       IStreamHandler &streamHandler);
-    virtual ~NewConfigOperation() {}
-    virtual void serialize(vespalib::nbostream &os) const override;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo) override;
-    virtual vespalib::string toString() const override;
+    NewConfigOperation(SerialNum serialNum, IStreamHandler &streamHandler);
+    ~NewConfigOperation() override {}
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
+    vespalib::string toString() const override;
 };
 
 } // namespace proton

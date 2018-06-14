@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config/helper/configgetter.h>
-
 #include <vespa/searchcore/proton/server/replaypacketdispatcher.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>

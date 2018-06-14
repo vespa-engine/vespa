@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
 #include <vespa/searchcore/proton/server/matchview.h>
 #include <vespa/searchcore/proton/server/searchable_feed_view.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/test/document_meta_store_context_observer.h>
 #include <vespa/searchcore/proton/test/dummy_document_store.h>
 #include <vespa/searchcore/proton/test/dummy_summary_manager.h>

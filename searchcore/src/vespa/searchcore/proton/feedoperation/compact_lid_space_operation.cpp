@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "compact_lid_space_operation.h"
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace proton {
@@ -27,8 +28,7 @@ CompactLidSpaceOperation::serialize(vespalib::nbostream& os) const
 }
 
 void
-CompactLidSpaceOperation::deserialize(vespalib::nbostream& is,
-                                      const document::DocumentTypeRepo&)
+CompactLidSpaceOperation::deserialize(vespalib::nbostream& is, const document::DocumentTypeRepo&)
 {
     is >> _subDbId;
     is >> _lidLimit;

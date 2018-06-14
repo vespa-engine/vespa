@@ -2,6 +2,7 @@
 
 #include "lidvectorcontext.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.feedoperation.lidvectorcontext");

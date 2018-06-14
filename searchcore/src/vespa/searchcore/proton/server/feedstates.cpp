@@ -6,6 +6,7 @@
 #include "ireplayconfig.h"
 #include "replaypacketdispatcher.h"
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/util/closuretask.h>
