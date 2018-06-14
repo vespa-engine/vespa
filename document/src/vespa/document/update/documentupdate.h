@@ -58,14 +58,6 @@ public:
     static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream stream);
     static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, ByteBuffer & buffer);
 
-    /**
-     * Create a document update from a byte buffer containing a serialized
-     * document update. Public to allow useage in std::make_unique/shared.
-     *
-     * @param repo Document type repo used to find proper document type
-     * @param buffer The buffer containing the serialized document update
-     * @param serializeVersion Selector between serialization formats.
-     */
     DocumentUpdate();
     /**
      * The document type is not strictly needed, as we know this at applyTo()

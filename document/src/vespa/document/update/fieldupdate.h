@@ -40,9 +40,9 @@ public:
 
     /**
      * This is a convenience function to construct a field update directly from
-     * a byte buffer by deserializing all its content from the buffer.
+     * a stream by deserializing all its content from the stream.
      *
-     * @param type A document type that describes the buffer content.
+     * @param type A document type that describes the stream content.
      * @param stream A stream that contains a serialized field update.
      */
     FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream);
@@ -75,10 +75,10 @@ public:
     void printXml(XmlOutputStream&) const override;
 
     /**
-     * Deserializes the given byte buffer into an instance of an update object.
+     * Deserializes the given stream into an instance of an update object.
      * Not a Deserializable, as document type is needed as extra information.
      *
-     * @param type A document type that describes the buffer content.
+     * @param type A document type that describes the stream content.
      * @param buffer The stream that contains the serialized update object.
      */
     void deserialize(const DocumentTypeRepo& repo, const DocumentType& type, nbostream& stream);

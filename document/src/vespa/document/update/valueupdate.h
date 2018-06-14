@@ -39,7 +39,7 @@ public:
     using CP = vespalib::CloneablePtr<ValueUpdate>;
 
     /**
-     * Create a value update object from the given byte buffer.
+     * Create a value update object from the given stream.
      *
      * @param type A data type that describes the content of the buffer.
      * @param buffer The stream that containes the serialized update.
@@ -82,9 +82,9 @@ public:
     ValueUpdate* clone() const override = 0;
 
     /**
-     * Deserializes the given byte buffer into an instance of an update object.
+     * Deserializes the given stream into an instance of an update object.
      *
-     * @param type A data type that describes the content of the buffer.
+     * @param type A data type that describes the content of the stream.
      * @param buffer The stream that contains the serialized update object.
      */
     virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream) = 0;

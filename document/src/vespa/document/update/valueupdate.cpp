@@ -9,7 +9,6 @@ namespace document {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ValueUpdate, Identifiable);
 
-// Create a value update from a byte buffer.
 std::unique_ptr<ValueUpdate>
 ValueUpdate::createInstance(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
