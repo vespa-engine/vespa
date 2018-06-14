@@ -112,6 +112,7 @@ fixdir ${VESPA_USER} wheel  755  var/db/vespa/index
 fixdir ${VESPA_USER} wheel  755  var/db/vespa/logcontrol
 fixdir ${VESPA_USER} wheel  755  var/db/vespa/search
 fixdir ${VESPA_USER} wheel  755  var/jdisc_core
+fixdir ${VESPA_USER} wheel  755  var/vespa
 fixdir ${VESPA_USER} wheel  755  var/vespa/bundlecache
 fixdir ${VESPA_USER} wheel  755  var/vespa/bundlecache/configserver
 fixdir ${VESPA_USER} wheel  755  var/vespa/cache/config/
