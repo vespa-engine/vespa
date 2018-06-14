@@ -1784,12 +1784,10 @@ Test::testRandomNormal()
 
             feature_t rn1 = rr1.getScore("randomNormal");
             feature_t rn2 = rr2.getScore("randomNormal");
-            LOG(info, "randomNormal: %f - %f", rn1, rn2);
             ASSERT_NOT_EQUAL(rn1, rn2);
 
             feature_t rnm1 = rr1.getScore("randomNormal.match");
             feature_t rnm2 = rr2.getScore("randomNormal.match");
-            LOG(info, "randomNormalMatch: %f - %f", rnm1, rnm2);
             ASSERT_EQUAL(rnm1, rnm2);
         }
     }
