@@ -31,6 +31,12 @@ public class ComplexAttributeFieldUtils {
                 isMapOfPrimitiveType(field));
     }
 
+    public static boolean isSupportedComplexField(DataType fieldType) {
+        return (isArrayOfSimpleStruct(fieldType) ||
+                isMapOfSimpleStruct(fieldType) ||
+                isMapOfPrimitiveType(fieldType));
+    }
+
     public static boolean isArrayOfSimpleStruct(ImmutableSDField field, SDDocumentType docType) {
         return isArrayOfSimpleStruct(field.getDataType(), Optional.of(docType));
     }

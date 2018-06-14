@@ -52,6 +52,7 @@ public class Validation {
         }
         new ComponentValidator().validate(model, deployState);
         new SearchDataTypeValidator().validate(model, deployState);
+        new ComplexAttributeFieldsValidator().validate(model, deployState);
         new StreamingValidator().validate(model, deployState);
         new RankSetupValidator(force).validate(model, deployState);
         new NoPrefixForIndexes().validate(model, deployState);
