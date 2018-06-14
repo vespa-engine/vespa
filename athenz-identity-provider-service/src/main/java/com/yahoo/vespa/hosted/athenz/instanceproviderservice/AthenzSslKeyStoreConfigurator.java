@@ -92,10 +92,11 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
         boolean isExpired = certificate.get().getNotAfter().toInstant().isBefore(minimumExpiration);
         if (isExpired) return Optional.empty();
 
+        char[] password = generateKeystorePassword();
         KeyStore keyStore = KeyStoreBuilder.withType(KeyStoreType.JKS)
-                .withKeyEntry(CERTIFICATE_ALIAS, privateKey.get(), certificate.get())
+                .withKeyEntry(CERTIFICATE_ALIAS, privateKey.get(), password, certificate.get())
                 .build();
-        return Optional.of(new KeyStoreAndPassword(keyStore, generateKeystorePassword()));
+        return Optional.of(new KeyStoreAndPassword(keyStore, password));
     }
 
     @Override
