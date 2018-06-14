@@ -14,6 +14,9 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.ZToken;
+import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
+import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProviderListenerHelper;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
@@ -25,7 +28,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.net.URI;
-import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
@@ -33,9 +35,12 @@ import java.time.Instant;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 /**
+ * A {@link AthenzIdentityProvider} / {@link ServiceIdentityProvider} component that provides the tenant identity.
+ *
  * @author mortent
  * @author bjorncs
  */
@@ -47,11 +52,12 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     // TODO These should match the requested expiration
     static final Duration UPDATE_PERIOD = Duration.ofDays(1);
     static final Duration AWAIT_TERMINTATION_TIMEOUT = Duration.ofSeconds(90);
+    private final static Duration ROLE_SSL_CONTEXT_EXPIRY = Duration.ofHours(24);
+    private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(30);
 
     public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
 
     private volatile AthenzCredentials credentials;
-    private final ZtsClient ztsClient = new ZtsClient();
     private final Metric metric;
     private final AthenzCredentialsService athenzCredentialsService;
     private final ScheduledExecutorService scheduler;
@@ -62,7 +68,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final URI ztsEndpoint;
 
     private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
-    private final static Duration roleSslContextExpiry = Duration.ofHours(24);
+    private final LoadingCache<AthenzRole, ZToken> roleSpecificRoleTokenCache;
+    private final LoadingCache<AthenzDomain, ZToken> domainSpecificRoleTokenCache;
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
@@ -71,7 +78,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
              new AthenzCredentialsService(config,
                                           createNodeIdentityProvider(config),
                                           getDefaultTrustStoreLocation(),
-                                          Defaults.getDefaults().vespaHostname()),
+                                          Defaults.getDefaults().vespaHostname(),
+                                          Clock.systemUTC()),
              new ScheduledThreadPoolExecutor(1),
              Clock.systemUTC());
     }
@@ -91,14 +99,20 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.listenerHelper = new ServiceIdentityProviderListenerHelper(this.identity);
         this.dnsSuffix = config.athenzDnsSuffix();
         this.ztsEndpoint = URI.create(config.ztsUrl());
+        roleSslContextCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::createRoleSslContext);
+        roleSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
+        domainSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         registerInstance();
-        roleSslContextCache = CacheBuilder.newBuilder()
-                .refreshAfterWrite(roleSslContextExpiry.dividedBy(2).toMinutes(), TimeUnit.MINUTES)
-                .expireAfterWrite(roleSslContextExpiry.toMinutes(), TimeUnit.MINUTES)
-                .build(new CacheLoader<AthenzRole, SSLContext>() {
+    }
+
+    private static <KEY, VALUE> LoadingCache<KEY, VALUE> createCache(Duration expiry, Function<KEY, VALUE> cacheLoader) {
+        return CacheBuilder.newBuilder()
+                .refreshAfterWrite(expiry.dividedBy(2).toMinutes(), TimeUnit.MINUTES)
+                .expireAfterWrite(expiry.toMinutes(), TimeUnit.MINUTES)
+                .build(new CacheLoader<KEY, VALUE>() {
                     @Override
-                    public SSLContext load(AthenzRole key) throws Exception {
-                        return createRoleSslContext(key);
+                    public VALUE load(KEY key) {
+                        return cacheLoader.apply(key);
                     }
                 });
     }
@@ -149,44 +163,52 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try {
             return roleSslContextCache.get(new AthenzRole(new AthenzDomain(domain), role));
         } catch (Exception e) {
-            throw new AthenzIdentityProviderException("Could not retrieve role certificate.", e);
+            throw new AthenzIdentityProviderException("Could not retrieve role certificate: " + e.getMessage(), e);
         }
-    }
-
-    private SSLContext createRoleSslContext(AthenzRole role) {
-        PrivateKey privateKey = credentials.getKeyPair().getPrivate();
-        X509Certificate roleCertificate = ztsClient.getRoleCertificate(
-                role,
-                dnsSuffix,
-                ztsEndpoint,
-                identity,
-                privateKey,
-                credentials.getIdentitySslContext());
-        return new SslContextBuilder()
-                .withKeyStore(privateKey, roleCertificate)
-                .withTrustStore(getDefaultTrustStoreLocation(), KeyStoreType.JKS)
-                .build();
     }
 
     @Override
     public String getRoleToken(String domain) {
-        return ztsClient
-                .getRoleToken(
-                        new AthenzDomain(domain),
-                        ztsEndpoint,
-                        credentials.getIdentitySslContext())
-                .getRawToken();
+        try {
+            return domainSpecificRoleTokenCache.get(new AthenzDomain(domain)).getRawToken();
+        } catch (Exception e) {
+            throw new AthenzIdentityProviderException("Could not retrieve role token: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public String getRoleToken(String domain, String role) {
-        return ztsClient
-                .getRoleToken(
-                        new AthenzDomain(domain),
-                        role,
-                        ztsEndpoint,
-                        credentials.getIdentitySslContext())
-                .getRawToken();
+        try {
+            return roleSpecificRoleTokenCache.get(new AthenzRole(domain, role)).getRawToken();
+        } catch (Exception e) {
+            throw new AthenzIdentityProviderException("Could not retrieve role token: " + e.getMessage(), e);
+        }
+    }
+
+    private SSLContext createRoleSslContext(AthenzRole role) {
+        try (ZtsClient client = createZtsClient()) {
+            X509Certificate roleCertificate = client.getRoleCertificate(role, credentials.getKeyPair(), dnsSuffix);
+            return new SslContextBuilder()
+                    .withKeyStore(credentials.getKeyPair().getPrivate(), roleCertificate)
+                    .withTrustStore(getDefaultTrustStoreLocation(), KeyStoreType.JKS)
+                    .build();
+        }
+    }
+
+    private ZToken createRoleToken(AthenzRole athenzRole) {
+        try (ZtsClient client = createZtsClient()) {
+            return client.getRoleToken(athenzRole);
+        }
+    }
+
+    private ZToken createRoleToken(AthenzDomain domain) {
+        try (ZtsClient client = createZtsClient()) {
+            return client.getRoleToken(domain);
+        }
+    }
+
+    private DefaultZtsClient createZtsClient() {
+        return new DefaultZtsClient(ztsEndpoint, identity(), getIdentitySslContext());
     }
 
     @Override

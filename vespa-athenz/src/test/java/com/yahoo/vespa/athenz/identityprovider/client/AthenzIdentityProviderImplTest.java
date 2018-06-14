@@ -62,12 +62,12 @@ public class AthenzIdentityProviderImplTest {
         X509Certificate certificate = getCertificate(getExpirationSupplier(clock));
 
         when(athenzCredentialsService.registerInstance())
-                .thenReturn(new AthenzCredentials(null, certificate, null, null, null));
+                .thenReturn(new AthenzCredentials(certificate, null, null, null));
 
         when(athenzCredentialsService.updateCredentials(any(), any()))
                 .thenThrow(new RuntimeException("#1"))
                 .thenThrow(new RuntimeException("#2"))
-                .thenReturn(new AthenzCredentials(null, certificate, null, null, null));
+                .thenReturn(new AthenzCredentials(certificate, null, null, null));
 
         AthenzIdentityProviderImpl identityProvider =
                 new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, athenzCredentialsService, mock(ScheduledExecutorService.class), clock);

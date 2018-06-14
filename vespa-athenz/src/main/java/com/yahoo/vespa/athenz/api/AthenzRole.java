@@ -15,6 +15,11 @@ public class AthenzRole {
         this.roleName = roleName;
     }
 
+    public AthenzRole(String domain, String roleName) {
+        this.domain = new AthenzDomain(domain);
+        this.roleName = roleName;
+    }
+
     public AthenzDomain domain() {
         return domain;
     }

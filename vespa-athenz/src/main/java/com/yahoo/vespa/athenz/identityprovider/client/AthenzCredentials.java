@@ -12,26 +12,19 @@ import java.security.cert.X509Certificate;
  */
 class AthenzCredentials {
 
-    private final String nToken;
     private final X509Certificate certificate;
     private final KeyPair keyPair;
     private final SignedIdentityDocument identityDocument;
     private final SSLContext identitySslContext;
 
-    AthenzCredentials(String nToken,
-                      X509Certificate certificate,
+    AthenzCredentials(X509Certificate certificate,
                       KeyPair keyPair,
                       SignedIdentityDocument identityDocument,
                       SSLContext identitySslContext) {
-        this.nToken = nToken;
         this.certificate = certificate;
         this.keyPair = keyPair;
         this.identityDocument = identityDocument;
         this.identitySslContext = identitySslContext;
-    }
-
-    String getNToken() {
-        return nToken;
     }
 
     X509Certificate getCertificate() {
