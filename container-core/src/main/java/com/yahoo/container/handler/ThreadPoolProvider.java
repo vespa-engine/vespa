@@ -1,6 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import com.google.common.util.concurrent.ForwardingExecutorService;
+import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.container.di.componentgraph.Provider;
+import com.yahoo.container.protect.ProcessTerminator;
+import com.yahoo.jdisc.Metric;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -11,14 +19,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.inject.Inject;
-import com.yahoo.container.protect.ProcessTerminator;
-import com.google.common.util.concurrent.ForwardingExecutorService;
-import com.yahoo.component.AbstractComponent;
-import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.jdisc.Metric;
 
 /**
  * A configurable thread pool provider. This provides the worker threads used for normal request processing.
@@ -177,13 +177,13 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         @Override
         protected void beforeExecute(Thread t, Runnable r) {
             super.beforeExecute(t, r);
+            lastThreadReturnTimeMillis = System.currentTimeMillis();
             startedCount.incrementAndGet();
         }
 
         @Override
         protected void afterExecute(Runnable r, Throwable t) {
             super.afterExecute(r, t);
-            lastThreadReturnTimeMillis = System.currentTimeMillis();
             completedCount.incrementAndGet();
         }
 
