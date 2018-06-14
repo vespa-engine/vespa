@@ -19,7 +19,6 @@ public:
     ClearValueUpdate(const ClearValueUpdate& update) : ValueUpdate(update) {}
     bool operator==(const ValueUpdate& other) const override;
 
-    // ValueUpdate implementation
     void checkCompatibility(const Field& field) const override;
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
@@ -30,5 +29,5 @@ public:
     DECLARE_IDENTIFIABLE(ClearValueUpdate);
 };
 
-} // document
+}
 

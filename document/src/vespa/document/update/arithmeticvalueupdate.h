@@ -57,10 +57,7 @@ public:
 
     bool operator==(const ValueUpdate& other) const override;
 
-    /** @return the operator of this arithmetic update. */
     Operator getOperator() const { return _operator; }
-
-    /** @return the operand of this arithmetic update. */
     double getOperand() const { return _operand; }
 
     /**
@@ -87,7 +84,6 @@ public:
      */
     long applyTo(int64_t value) const;
 
-    // ValueUpdate implementation
     void checkCompatibility(const Field& field) const override;
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
@@ -96,7 +92,6 @@ public:
     ArithmeticValueUpdate* clone() const override { return new ArithmeticValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(ArithmeticValueUpdate);
-
 };
 
 } // document

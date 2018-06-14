@@ -30,20 +30,14 @@ public:
 
     bool operator==(const ValueUpdate& other) const override;
 
-    /** @return The field value to assign during this update. */
     bool hasValue() const { return bool(_value); }
     const FieldValue& getValue() const { return *_value; }
 
-    /**
-     * Sets the field value to assign during this update.
-     * @return A reference to this.
-     */
     AssignValueUpdate& setValue(const FieldValue* value) {
         _value.reset(value ? value->clone() : 0);
         return *this;
     }
 
-    // ValueUpdate implementation.
     void checkCompatibility(const Field& field) const override;
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;

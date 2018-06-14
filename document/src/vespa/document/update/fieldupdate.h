@@ -44,7 +44,6 @@ public:
      *
      * @param type A document type that describes the buffer content.
      * @param stream A stream that contains a serialized field update.
-     * @param serializationVersion The serialization version the update was serialized with.
      */
     FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream);
 
@@ -71,18 +70,8 @@ public:
     const std::vector<ValueUpdate::CP>& getUpdates() const { return _updates; }
 
     const Field& getField() const { return _field; }
-
-    /**
-     * Applies this update object to the given {@link Document} object.
-     *
-     * @param doc The document to apply this update to.
-     */
     void applyTo(Document& doc) const;
-
-    // Printable implementation
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    // XmlSerializable implementation
     void printXml(XmlOutputStream&) const override;
 
     /**
@@ -90,7 +79,7 @@ public:
      * Not a Deserializable, as document type is needed as extra information.
      *
      * @param type A document type that describes the buffer content.
-     * @param buffer The byte buffer that contains the serialized update object.
+     * @param buffer The stream that contains the serialized update object.
      */
     void deserialize(const DocumentTypeRepo& repo, const DocumentType& type, nbostream& stream);
 

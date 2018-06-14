@@ -42,7 +42,7 @@ public:
      * Create a value update object from the given byte buffer.
      *
      * @param type A data type that describes the content of the buffer.
-     * @param buffer The byte buffer that containes the serialized update.
+     * @param buffer The stream that containes the serialized update.
      */
     static std::unique_ptr<ValueUpdate> createInstance(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer);
 
@@ -68,8 +68,7 @@ public:
      * Recursively checks the compatibility of this value update as
      * applied to the given document field.
      *
-     * @throws IllegalArgumentException Thrown if this value update
-     *                                  is not compatible.
+     * @throws IllegalArgumentException Thrown if this value update is not compatible.
      */
     virtual void checkCompatibility(const Field& field) const = 0;
 
@@ -86,7 +85,7 @@ public:
      * Deserializes the given byte buffer into an instance of an update object.
      *
      * @param type A data type that describes the content of the buffer.
-     * @param buffer The byte buffer that contains the serialized update object.
+     * @param buffer The stream that contains the serialized update object.
      */
     virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream) = 0;
 
@@ -103,5 +102,5 @@ public:
     DECLARE_IDENTIFIABLE_ABSTRACT(ValueUpdate);
 };
 
-} // document
+}
 

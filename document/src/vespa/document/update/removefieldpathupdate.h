@@ -28,4 +28,5 @@ private:
     std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document &, const DocumentTypeRepo &) const override;
 };
 
-} // ns document
+}
+

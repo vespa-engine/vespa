@@ -150,4 +150,5 @@ private:
     friend VespaDocumentSerializer;
 };
 
-} // document
+}
+

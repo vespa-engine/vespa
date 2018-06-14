@@ -70,21 +70,13 @@ public:
     virtual uint8_t getSerializedType() const = 0;
 
     /** Deserializes and creates a new FieldPathUpdate instance.
-     * Requires type id to be not yet read.
+     * Requires type id to be not yet consumed.
      */
     static std::unique_ptr<FieldPathUpdate> createInstance(const DocumentTypeRepo& repo, const DataType &type, nbostream & stream);
 
 protected:
     FieldPathUpdate(stringref fieldPath, stringref whereClause = stringref());
 
-    /**
-     * Deserializes the given byte buffer into an instance of a FieldPathUpdate
-     * object.
-     *
-     * @param type A data type that describes the content of the buffer.
-     * @param buffer The byte buffer that contains the serialized object.
-     * @param version The serialization version of the object to deserialize.
-     */
     virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream);
 
     /** @return the datatype of the last path element in the field path */

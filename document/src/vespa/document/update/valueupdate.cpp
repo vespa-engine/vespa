@@ -20,7 +20,7 @@ ValueUpdate::createInstance(const DocumentTypeRepo& repo, const DataType& type, 
     if (rtc != nullptr) {
         std::unique_ptr<ValueUpdate> update(static_cast<ValueUpdate*>(rtc->create()));
         /// \todo TODO (was warning):  Updates are not versioned in serialization format. Will not work without altering it.
-        /// Should also use the serializer, not this deserilize into self.
+        /// Should also use the serializer, not this deserialize into self.
         update->deserialize(repo, type, stream);
         return update;
     } else {
