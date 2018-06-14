@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
 #include <vespa/searchcore/proton/server/matchview.h>
 #include <vespa/searchcore/proton/server/searchable_feed_view.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/test/document_meta_store_context_observer.h>
 #include <vespa/searchcore/proton/test/dummy_document_store.h>
 #include <vespa/searchcore/proton/test/dummy_summary_manager.h>
@@ -478,11 +479,11 @@ struct DocumentContext
 
 DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder)
     : doc(builder.startDocument(docId).startSummaryField("s1").addStr(docId).endField().endDocument().release()),
-      upd(new DocumentUpdate(builder.getDocumentType(), doc->getId())),
+      upd(new DocumentUpdate(*builder.getDocumentTypeRepo(), builder.getDocumentType(), doc->getId())),
       bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
       ts(timestamp)
 {}
-DocumentContext::~DocumentContext() {}
+DocumentContext::~DocumentContext() = default;
 
 struct FeedTokenContext
 {

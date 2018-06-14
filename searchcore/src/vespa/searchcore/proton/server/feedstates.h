@@ -28,16 +28,13 @@ public:
     {
     }
 
-    virtual void handleOperation(FeedToken, FeedOperation::UP op) override {
+    void handleOperation(FeedToken, FeedOperationUP op) override {
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }
 
-    virtual void
-    receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
-        throwExceptionInReceive(_doc_type_name.c_str(),
-                                wrap->packet.range().from(),
-                                wrap->packet.range().to(),
-                                wrap->packet.size());
+    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
+        throwExceptionInReceive(_doc_type_name.c_str(), wrap->packet.range().from(),
+                                wrap->packet.range().to(), wrap->packet.size());
     }
 };
 
@@ -57,12 +54,11 @@ public:
             IReplayConfig &replay_config,
             FeedConfigStore &config_store);
 
-    virtual void handleOperation(FeedToken, FeedOperation::UP op) override {
+    void handleOperation(FeedToken, FeedOperationUP op) override {
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }
 
-    virtual void receive(const PacketWrapper::SP &wrap,
-                         vespalib::Executor &executor) override;
+    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &executor) override;
 };
 
 
@@ -79,15 +75,13 @@ public:
           _handler(handler) {
     }
 
-    void handleOperation(FeedToken token, FeedOperation::UP op) override {
+    void handleOperation(FeedToken token, FeedOperationUP op) override {
         _handler.performOperation(std::move(token), std::move(op));
     }
 
     void receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
-        throwExceptionInReceive(_handler.getDocTypeName().c_str(),
-                                wrap->packet.range().from(),
-                                wrap->packet.range().to(),
-                                wrap->packet.size());
+        throwExceptionInReceive(_handler.getDocTypeName().c_str(), wrap->packet.range().from(),
+                                wrap->packet.range().to(), wrap->packet.size());
     }
 };
 }  // namespace proton

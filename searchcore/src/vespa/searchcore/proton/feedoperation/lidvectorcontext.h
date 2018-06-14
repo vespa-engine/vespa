@@ -2,8 +2,9 @@
 #pragma once
 
 #include <vespa/searchlib/query/base.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vector>
+
+namespace vespalib { class nbostream; }
 
 namespace proton {
 
@@ -29,5 +30,4 @@ public:
     size_t getNumLids() const { return _result.size(); }
 };
 
-} // namespace proton
-
+}

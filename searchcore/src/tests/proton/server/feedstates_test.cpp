@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for feedstates.
 
-#include <vespa/log/log.h>
-LOG_SETUP("feedstates_test");
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/testdocrepo.h>
@@ -11,12 +9,16 @@ LOG_SETUP("feedstates_test");
 #include <vespa/searchcore/proton/server/feedstates.h>
 #include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
+#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("feedstates_test");
 
 using document::BucketId;
 using document::DocumentId;
@@ -83,7 +85,7 @@ Fixture::Fixture()
       state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store)
 {
 }
-Fixture::~Fixture() {}
+Fixture::~Fixture() = default;
 
 
 struct RemoveOperationContext
@@ -107,7 +109,7 @@ RemoveOperationContext::RemoveOperationContext(search::SerialNum serial)
     packet.reset(new Packet());
     packet->add(Packet::Entry(serial, FeedOperation::REMOVE, buf));
 }
-RemoveOperationContext::~RemoveOperationContext() {}
+RemoveOperationContext::~RemoveOperationContext() = default;
 TEST_F("require that active FeedView can change during replay", Fixture)
 {
     RemoveOperationContext opCtx(10);

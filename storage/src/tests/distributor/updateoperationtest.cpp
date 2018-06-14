@@ -75,8 +75,7 @@ std::shared_ptr<UpdateOperation>
 UpdateOperation_Test::sendUpdate(const std::string& bucketState)
 {
     document::DocumentUpdate::SP update(
-            new document::DocumentUpdate(
-                    *_html_type,
+            new document::DocumentUpdate(*_repo, *_html_type,
                     document::DocumentId(document::DocIdString("test", "test"))));
 
     _bId = getExternalOperationHandler().getBucketId(update->getId());

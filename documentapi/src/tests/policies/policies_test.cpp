@@ -621,7 +621,7 @@ Test::testDocumentRouteSelector()
     EXPECT_TRUE(frame.testSelect(StringList().add("foo").add("bar")));
 
     frame.setMessage(make_unique<UpdateDocumentMessage>(
-            make_shared<DocumentUpdate>(*_docType, DocumentId("doc:scheme:"))));
+            make_shared<DocumentUpdate>(*_repo, *_docType, DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
     put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("doc:scheme:")));
@@ -650,7 +650,7 @@ Test::testDocumentRouteSelectorIgnore()
     EXPECT_EQUAL(0u, reply->getNumErrors());
 
     frame.setMessage(make_unique<UpdateDocumentMessage>(
-            make_shared<DocumentUpdate>(*_docType, DocumentId("doc:scheme:"))));
+            make_shared<DocumentUpdate>(*_repo, *_docType, DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("docproc/cluster.foo")));
 }
 

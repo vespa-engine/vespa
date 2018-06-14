@@ -3,21 +3,14 @@
 #pragma once
 
 #include "ifeedview.h"
-#include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
-#include <vespa/searchcore/proton/feedoperation/joinbucketsoperation.h>
-#include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
-#include <vespa/searchcore/proton/feedoperation/putoperation.h>
-#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
-#include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
-#include <vespa/searchcore/proton/feedoperation/updateoperation.h>
-#include <vespa/searchcore/proton/feedoperation/createbucketoperation.h>
-#include <vespa/searchlib/common/serialnum.h>
 #include "replaypacketdispatcher.h"
 #include "ibucketstatecalculator.h"
+#include <vespa/searchcore/proton/common/feedtoken.h>
+#include <vespa/searchlib/common/serialnum.h>
 
 namespace proton {
 
+class DocumentOperation;
 
 class CombiningFeedView : public IFeedView
 {

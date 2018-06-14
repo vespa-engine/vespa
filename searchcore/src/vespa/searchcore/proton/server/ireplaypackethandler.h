@@ -2,9 +2,27 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/feedoperation/operations.h>
+namespace document { class DocumentTypeRepo; }
 
 namespace proton {
+
+class PutOperation;
+class RemoveOperation;
+class UpdateOperation;
+class NoopOperation;
+class NewConfigOperation;
+class WipeHistoryOperation;
+class DeleteBucketOperation;
+class SplitBucketOperation;
+class JoinBucketsOperation;
+class PruneRemovedDocumentsOperation;
+class SpoolerReplayStartOperation;
+class SpoolerReplayCompleteOperation;
+class MoveOperation;
+class CreateBucketOperation;
+class CompactLidSpaceOperation;
+
+namespace feedoperation { class IStreamHandler; }
 
 /**
  * Interface used to handle the various feed operations during
@@ -29,7 +47,7 @@ struct IReplayPacketHandler
     virtual void replay(const CreateBucketOperation &op) = 0;
     virtual void replay(const CompactLidSpaceOperation &op) = 0;
     
-    virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() = 0;
+    virtual feedoperation::IStreamHandler &getNewConfigStreamHandler() = 0;
     virtual const document::DocumentTypeRepo &getDeserializeRepo() = 0;
 };
 

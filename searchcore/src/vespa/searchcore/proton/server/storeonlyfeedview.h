@@ -13,7 +13,7 @@
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
-#include <vespa/searchcore/proton/feedoperation/feedoperation.h>
+#include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 #include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
 #include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
@@ -23,7 +23,6 @@
 
 namespace search { class IDestructorCallback; }
 
-namespace document { class GLobalId; }
 
 namespace proton {
 
@@ -35,6 +34,8 @@ class RemoveDoneContext;
 class CommitTimeTracker;
 class IGidToLidChangeHandler;
 class IFieldUpdateCallback;
+class RemoveDocumentsOperation;
+class DocumentOperation;
 
 namespace documentmetastore { class ILidReuseDelayer; }
 

@@ -2,6 +2,7 @@
 
 #include "pruneremoveddocumentsoperation.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -22,8 +23,7 @@ PruneRemovedDocumentsOperation::PruneRemovedDocumentsOperation()
 
 
 PruneRemovedDocumentsOperation::
-PruneRemovedDocumentsOperation(DocumentIdT docIdLimit,
-                               uint32_t subDbId)
+PruneRemovedDocumentsOperation(DocumentIdT docIdLimit, uint32_t subDbId)
     : RemoveDocumentsOperation(FeedOperation::PRUNE_REMOVED_DOCUMENTS),
       _subDbId(subDbId)
 {
@@ -44,8 +44,7 @@ PruneRemovedDocumentsOperation::serialize(vespalib::nbostream &os) const
 
 
 void
-PruneRemovedDocumentsOperation::deserialize(vespalib::nbostream &is,
-                                            const DocumentTypeRepo &)
+PruneRemovedDocumentsOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &)
 {
     is >> _subDbId;
     deserializeLidsToRemove(is);

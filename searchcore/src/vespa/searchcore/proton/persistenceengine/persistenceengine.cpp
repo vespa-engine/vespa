@@ -377,6 +377,7 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
                                             upd->getId().toString().c_str(), state.message().c_str()));
         }
     }
+    upd->eagerDeserialize();
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     DocTypeName docType(upd->getType());
     LOG(spam, "update(%s, %" PRIu64 ", (\"%s\", \"%s\"), createIfNonExistent='%s')",

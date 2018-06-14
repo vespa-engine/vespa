@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("combiningfeedview_test");
 
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("combiningfeedview_test");
 
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
@@ -22,8 +23,8 @@ typedef std::vector<IFeedView::SP> FeedViewVector;
 
 struct MyStreamHandler : public NewConfigOperation::IStreamHandler
 {
-    virtual void serializeConfig(SerialNum, vespalib::nbostream &) override {}
-    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
+    void serializeConfig(SerialNum, vespalib::nbostream &) override {}
+    void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
 };
 
 

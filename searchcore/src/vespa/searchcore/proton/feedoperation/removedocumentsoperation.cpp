@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "removedocumentsoperation.h"
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace proton {
 
@@ -16,11 +17,9 @@ RemoveDocumentsOperation::serializeLidsToRemove(vespalib::nbostream &os) const
 {
     uint32_t mapSize = _lidsToRemoveMap.size();
     os << mapSize;
-    for (LidsToRemoveMap::const_iterator
-             it = _lidsToRemoveMap.begin(), ite = _lidsToRemoveMap.end();
-         it != ite; ++it) {
-        os << it->first;
-        it->second->serialize(os);
+    for (const auto & entry : _lidsToRemoveMap) {
+        os << entry.first;
+        entry.second->serialize(os);
     }
 }
 

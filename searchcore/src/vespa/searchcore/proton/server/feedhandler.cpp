@@ -14,6 +14,7 @@
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/gatecallback.h>
@@ -522,7 +523,7 @@ FeedHandler::considerUpdateOperationForRejection(FeedToken &token, UpdateOperati
      */
     if (_documentType != &update.getType()) {
         try {
-            op.deserializeUpdate(*_repo);
+            op.verifyUpdate(*_repo);
         } catch (document::FieldNotFoundException &e) {
             if (token) {
                 auto message = make_string("Update operation rejected for document '%s' of type '%s': 'Field not found'",

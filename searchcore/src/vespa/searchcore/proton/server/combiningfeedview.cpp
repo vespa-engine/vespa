@@ -3,7 +3,7 @@
 #include "combiningfeedview.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
-#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 
 #include <vespa/log/log.h>
@@ -13,17 +13,15 @@ using document::DocumentTypeRepo;
 using document::DocumentId;
 using search::IDestructorCallback;
 
-namespace proton
-{
+namespace proton {
 
-namespace
-{
+namespace {
 
 std::shared_ptr<const DocumentTypeRepo>
 getRepo(const std::vector<IFeedView::SP> &views)
 {
     for (const auto &view : views) {
-        if (view.get() == NULL)
+        if (view.get() == nullptr)
             continue;
         return view->getDocumentTypeRepo();
     }

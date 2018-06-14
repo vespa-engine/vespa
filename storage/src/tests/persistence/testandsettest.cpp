@@ -189,7 +189,7 @@ std::unique_ptr<api::UpdateCommand> TestAndSetTest::conditional_update_test(
 {
     putTestDocument(matchingHeader, timestampOne);
 
-    auto docUpdate = std::make_shared<document::DocumentUpdate>(testDoc->getType(), testDocId);
+    auto docUpdate = std::make_shared<document::DocumentUpdate>(_env->_testDocMan.getTypeRepo(), testDoc->getType(), testDocId);
     auto fieldUpdate = document::FieldUpdate(testDoc->getField("content"));
     fieldUpdate.addUpdate(document::AssignValueUpdate(NEW_CONTENT));
     docUpdate->addUpdate(fieldUpdate);
