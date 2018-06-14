@@ -10,6 +10,9 @@ RPCNetworkParams::RPCNetworkParams() :
     _listenPort(0),
     _maxInputBufferSize(256*1024),
     _maxOutputBufferSize(256*1024),
+    _numThreads(4),
+    _dispatchOnEncode(true),
+    _dispatchOnDecode(false),
     _connectionExpireSecs(600),
     _compressionConfig(CompressionConfig::LZ4, 6, 90, 1024)
 { }

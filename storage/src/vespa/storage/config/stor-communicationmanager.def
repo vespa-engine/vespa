@@ -28,3 +28,16 @@ mbus.compress.type enum {NONE, LZ4, ZSTD} default=LZ4
 
 ## TTL for rpc target cache
 mbus.rpctargetcache.ttl double default = 600
+
+## Number of threads for mbus threadpool
+## Any value below 1 will be 1.
+mbus.num_threads int default=4
+
+## Enable to use above thread pool for encoding replies
+## False will use network(fnet) thread
+mbus.dispatch_on_encode bool default=true
+
+## Enable to use above thread pool for decoding replies
+## False will use network(fnet) thread
+## Todo: Change default once verified in large scale deployment.
+mbus.dispatch_on_decode bool default=false
