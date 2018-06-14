@@ -2,12 +2,15 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.MasterInterface;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.SetNodeStateRequest;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.WantedStateSetter;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.DeadlineExceededException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OperationNotSupportedForUnitException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.UnknownMasterException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
@@ -26,6 +29,9 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SetNodeStateTest extends StateRestApiTest {
 
@@ -426,4 +432,30 @@ public class SetNodeStateTest extends StateRestApiTest {
         request.getResult();
     }
 
+    @Test
+    public void no_fail_if_modified() throws StateRestApiException {
+        assertFalse(isFailed(true));
+    }
+
+    @Test
+    public void fail_if_not_modified() throws StateRestApiException {
+        assertTrue(isFailed(false));
+    }
+
+    private boolean isFailed(boolean wasModified) throws StateRestApiException {
+        WantedStateSetter wantedStateSetter = mock(WantedStateSetter.class);
+        SetNodeStateRequest request = new SetNodeStateRequest(
+                createDummyId(),
+                new SetUnitStateRequestImpl("music/storage/1").setNewState("user", "maintenance", "whatever reason."),
+                wantedStateSetter);
+        SetResponse response = new SetResponse("some reason", wasModified);
+        when(wantedStateSetter.set(any(), any(), any(), any(), any(), any())).thenReturn(response);
+
+        RemoteClusterControllerTask.Context context = mock(RemoteClusterControllerTask.Context.class);
+        MasterInterface masterInterface = mock(MasterInterface.class);
+        context.masterInfo = masterInterface;
+        when(masterInterface.isMaster()).thenReturn(true);
+        request.doRemoteFleetControllerTask(context);
+        return request.isFailed();
+    }
 }

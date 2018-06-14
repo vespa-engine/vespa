@@ -32,26 +32,31 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     private final Map<String, UnitState> newStates;
     private final SetUnitStateRequest.Condition condition;
     private final SetUnitStateRequest.ResponseWait responseWait;
-
+    private final WantedStateSetter wantedState;
 
     public SetNodeStateRequest(Id.Node id, SetUnitStateRequest setUnitStateRequest) {
+        this(id, setUnitStateRequest, SetNodeStateRequest::setWantedState);
+    }
+
+    /** Public for tests. */
+    public SetNodeStateRequest(Id.Node id, SetUnitStateRequest setUnitStateRequest, WantedStateSetter wantedState) {
         super(MasterState.MUST_BE_MASTER);
         this.id = id;
         this.newStates = setUnitStateRequest.getNewState();
         this.condition = setUnitStateRequest.getCondition();
         this.responseWait = setUnitStateRequest.getResponseWait();
+        this.wantedState = wantedState;
     }
 
     @Override
     public SetResponse calculateResult(RemoteClusterControllerTask.Context context) throws StateRestApiException {
-        SetResponse setResponse = setWantedState(
+        return wantedState.set(
                 context.cluster,
                 condition,
                 newStates,
                 id.getNode(),
                 context.nodeStateOrHostInfoChangeHandler,
                 context.currentConsolidatedState);
-        return setResponse;
     }
 
     static NodeState getRequestedNodeState(Map<String, UnitState> newStates, Node n) throws StateRestApiException {
@@ -71,6 +76,12 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     @Override
     public boolean hasVersionAckDependency() {
         return (responseWait == SetUnitStateRequest.ResponseWait.WAIT_UNTIL_CLUSTER_ACKED);
+    }
+
+    @Override
+    public boolean isFailed() {
+        // Failure to set a node state is propagated as a 200 with wasModified false.
+        return super.isFailed() || (resultSet && !result.getWasModified());
     }
 
     static SetResponse setWantedState(
