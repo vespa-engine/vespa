@@ -139,7 +139,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
                 super.execute(command);
             } catch (RejectedExecutionException e) {
                 metric.add(MetricNames.REJECTED_REQUEST, 1, null);
-                long timeSinceLastReturnedThreadMillis = System.currentTimeMillis() - wrapped.lastThreadReturnTimeMillis;
+                long timeSinceLastReturnedThreadMillis = System.currentTimeMillis() - wrapped.lastThreadAssignmentTimeMillis;
                 if (timeSinceLastReturnedThreadMillis > maxThreadExecutionTimeMillis)
                     processTerminator.logAndDie("No worker threads have been available for " +
                                                 timeSinceLastReturnedThreadMillis + " ms. Shutting down.", true);
@@ -161,7 +161,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     /** A thread pool executor which maintains the last time a worker completed */
     private final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
-        volatile long lastThreadReturnTimeMillis = System.currentTimeMillis();
+        volatile long lastThreadAssignmentTimeMillis = System.currentTimeMillis();
         private final AtomicLong startedCount = new AtomicLong(0);
         private final AtomicLong completedCount = new AtomicLong(0);
 
@@ -177,7 +177,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         @Override
         protected void beforeExecute(Thread t, Runnable r) {
             super.beforeExecute(t, r);
-            lastThreadReturnTimeMillis = System.currentTimeMillis();
+            lastThreadAssignmentTimeMillis = System.currentTimeMillis();
             startedCount.incrementAndGet();
         }
 
