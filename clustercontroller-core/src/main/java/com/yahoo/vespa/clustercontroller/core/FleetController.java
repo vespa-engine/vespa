@@ -746,7 +746,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 taskCompletion.getTask().notifyCompleted();
                 taskCompletionQueue.remove();
             } else if (taskCompletion.getDeadlineTimePointMs() <= now) {
-                log.fine(() -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure",
+                log.log(LogLevel.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure",
                         taskCompletion.getTask().getClass().getName()));
                 taskCompletion.getTask().handleFailure(RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED);
                 taskCompletion.getTask().notifyCompleted();
