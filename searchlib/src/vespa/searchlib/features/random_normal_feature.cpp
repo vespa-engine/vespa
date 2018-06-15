@@ -4,7 +4,6 @@
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/fastos/time.h>
-#include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomnormalfeature");
@@ -14,45 +13,17 @@ namespace features {
 
 RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double stddev) :
     search::fef::FeatureExecutor(),
-    _rnd(),
-    _mean(mean),
-    _stddev(stddev),
-    _hasSpare(false),
-    _spare(0.0)
-
+    _rnd(mean, stddev, true)
 {
     LOG(debug, "RandomNormalExecutor: seed=%zu, mean=%f, stddev=%f", seed, mean, stddev);
-    _rnd.srand48(seed);
+    _rnd.seed(seed);
 }
 
-/**
- * Draws a random number from the Gaussian distribution
- * using the Marsaglia polar method.
- */
 void
 RandomNormalExecutor::execute(uint32_t)
 {
-    feature_t result = _spare;
-    if (_hasSpare) {
-        _hasSpare = false;
-    } else {
-        _hasSpare = true;
-
-        feature_t u, v, s;
-        do {
-            u = (_rnd.lrand48() / (feature_t)0x80000000u) * 2.0 - 1.0;
-            v = (_rnd.lrand48() / (feature_t)0x80000000u) * 2.0 - 1.0;
-            s = u * u + v * v;
-        } while ( (s >= 1.0) || (s == 0.0) );
-        s = std::sqrt(-2.0 * std::log(s) / s);
-
-        _spare = v * s; // saved for next invocation
-        result = u * s;
-    }
-
-    outputs().set_number(0, _mean + _stddev * result);
+    outputs().set_number(0, _rnd.next());
 }
-
 
 RandomNormalBlueprint::RandomNormalBlueprint() :
     search::fef::Blueprint("randomNormal"),
@@ -82,7 +53,6 @@ RandomNormalBlueprint::setup(const search::fef::IIndexEnvironment & env,
     if (p.found()) {
         _seed = util::strToNum<uint64_t>(p.get());
     }
-
     if (params.size() > 0) {
         _mean = params[0].asDouble();
     }

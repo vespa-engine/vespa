@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -9,33 +9,34 @@
 namespace search {
 namespace features {
 
-
 /**
  * Implements the executor for the random normal feature outputting a
  * random number drawn from the Gaussian distribution with the
  * two arguments 'mean' and 'stddev'.
+ * The same hit always returns the same random number.
  **/
-class RandomNormalExecutor : public fef::FeatureExecutor {
+class RandomNormalStableExecutor : public fef::FeatureExecutor {
 private:
-    RandomNormal _rnd;       // seeded once per query
+    RandomNormal _rnd;  // seeded once per match
+    uint64_t     _seed;
 
 public:
-    RandomNormalExecutor(uint64_t seed, double mean, double stddev);
+    RandomNormalStableExecutor(uint64_t seed, double mean, double stddev);
     void execute(uint32_t docId) override;
 };
 
 
 /**
- * Implements the blueprint for the random normal feature.
+ * Implements the blueprint for the random normal stable feature.
  */
-class RandomNormalBlueprint : public fef::Blueprint {
+class RandomNormalStableBlueprint : public fef::Blueprint {
 private:
     uint64_t _seed;
     double   _mean;
     double   _stddev;
 
 public:
-    RandomNormalBlueprint();
+    RandomNormalStableBlueprint();
 
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
