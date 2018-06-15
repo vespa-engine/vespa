@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.Inspectable;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.Type;
 import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
@@ -45,6 +47,7 @@ import com.yahoo.yolean.trace.TraceVisitor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -311,6 +314,32 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         renderTrace(getExecution().trace());
         renderTiming();
         generator.writeFieldName(ROOT);
+    }
+
+    public String renderAsMap(Inspector data) throws IOException {
+        if (data.type() != Type.ARRAY) return null;
+        if (data.entryCount() == 0) return null;
+        ByteArrayOutputStream subStream = new ByteArrayOutputStream();
+        JsonGenerator subGenerator = generatorFactory.createGenerator(subStream, JsonEncoding.UTF8);
+        subGenerator.writeStartObject();
+        for (int i = 0; i < data.entryCount(); i++) {
+            Inspector obj = data.entry(i);
+            if (obj.type() != Type.OBJECT) return null;
+            if (obj.fieldCount() != 2) return null;
+            Inspector keyObj = obj.field("key");
+            if (keyObj.type() != Type.STRING) return null;
+
+            subGenerator.writeFieldName(keyObj.asString());
+
+            Inspector valueObj = obj.field("value");
+            if (! valueObj.valid()) return null;
+            StringBuilder intermediate = new StringBuilder();
+            JsonRender.render(valueObj, intermediate, true);
+            subGenerator.writeRawValue(intermediate.toString());
+        }
+        subGenerator.writeEndObject();
+        subGenerator.close();
+        return subStream.toString("UTF-8");
     }
 
     private void renderTiming() throws IOException {
@@ -662,7 +691,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
      * This instance is reused for all hits of a Result since we are in a single-threaded context
      * and want to limit object creation.
      */
-    private static class FieldConsumer implements Hit.RawUtf8Consumer {
+    private class FieldConsumer implements Hit.RawUtf8Consumer {
 
         private final JsonGenerator generator;
         private final boolean debugRendering;
@@ -741,6 +770,17 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return true;
         }
 
+        private void renderInspector(Inspector data) throws IOException {
+            String asMap = renderAsMap(data);
+            if (asMap != null) {
+                generator.writeRawValue(asMap);
+            } else {
+                StringBuilder intermediate = new StringBuilder();
+                JsonRender.render(data, intermediate, true);
+                generator.writeRawValue(intermediate.toString());
+            }
+        }
+
         private void renderFieldContents(Object field) throws IOException {
             if (field == null) {
                 generator.writeNull();
@@ -753,9 +793,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof JsonProducer) {
                 generator.writeRawValue(((JsonProducer) field).toJson());
             } else if (field instanceof Inspectable) {
-                StringBuilder intermediate = new StringBuilder();
-                JsonRender.render((Inspectable) field, intermediate, true);
-                generator.writeRawValue(intermediate.toString());
+                renderInspector(((Inspectable)field).inspect());
             } else if (field instanceof StringFieldValue) {
                 generator.writeString(((StringFieldValue)field).getString());
             } else if (field instanceof TensorFieldValue) {

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
@@ -1108,6 +1109,53 @@ public class JsonRendererTestCase {
         assertEquals(jsonCallback + "(", jsonCallbackBegin);
         assertEqualJson(expected, json);
         assertEquals(");", jsonCallbackEnd);
+    }
+
+    @Test
+    public final void testMapInField() throws IOException, InterruptedException, ExecutionException, JSONException {
+        String expected = "{\n"
+                + "    \"root\": {\n"
+                + "        \"children\": [\n"
+                + "            {\n"
+                + "                \"fields\": {\n"
+                + "                    \"structured\": {\n"
+                + "                        \"foo\": \"string foo\",\n"
+                + "                        \"bar\": [\"array bar elem 1\", \"array bar elem 2\"],\n"
+                + "                        \"baz\": {\"f1\": \"object baz field 1\", \"f2\": \"object baz field 2\"}\n"
+                + "                    }\n"
+                + "                },\n"
+                + "                \"id\": \"MapInField\",\n"
+                + "                \"relevance\": 1.0\n"
+                + "            }\n"
+                + "        ],\n"
+                + "        \"fields\": {\n"
+                + "            \"totalCount\": 1\n"
+                + "        },\n"
+                + "        \"id\": \"toplevel\",\n"
+                + "        \"relevance\": 1.0\n"
+                + "    }\n"
+                + "}\n";
+        Result r = newEmptyResult();
+        Hit h = new Hit("MapInField");
+        Value.ArrayValue atop = new Value.ArrayValue();
+        atop.add(new Value.ObjectValue()
+                 .put("key", new Value.StringValue("foo"))
+                 .put("value", new Value.StringValue("string foo")))
+            .add(new Value.ObjectValue()
+                 .put("key", new Value.StringValue("bar"))
+                 .put("value", new Value.ArrayValue()
+                      .add(new Value.StringValue("array bar elem 1"))
+                      .add(new Value.StringValue("array bar elem 2"))))
+            .add(new Value.ObjectValue()
+                 .put("key", new Value.StringValue("baz"))
+                 .put("value", new Value.ObjectValue()
+                      .put("f1", new Value.StringValue("object baz field 1"))
+                      .put("f2", new Value.StringValue("object baz field 2"))));
+        h.setField("structured", atop);
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+        assertEqualJson(expected, summary);
     }
 
     @Test
