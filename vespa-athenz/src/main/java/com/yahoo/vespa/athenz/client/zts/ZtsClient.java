@@ -43,6 +43,25 @@ public interface ZtsClient extends AutoCloseable {
                                      Pkcs10Csr csr);
 
     /**
+     * Get service identity
+     *
+     * @return A x509 certificate with CA certificates
+     */
+    Identity getServiceIdentity(AthenzService identity,
+                                String keyId,
+                                Pkcs10Csr csr);
+
+    /**
+     * Get service identity
+     *
+     * @return A x509 certificate with CA certificates
+     */
+    Identity getServiceIdentity(AthenzService identity,
+                                String keyId,
+                                KeyPair keyPair,
+                                String dnsSuffix);
+
+    /**
      * Fetch a role token for the target domain
      *
      * @param domain Target domain
