@@ -61,7 +61,7 @@ RPCSend::RPCSend() :
     _serverIdent("server")
 { }
 
-RPCSend::~RPCSend() {}
+RPCSend::~RPCSend() = default;
 
 void
 RPCSend::attach(RPCNetwork &net)
@@ -221,7 +221,7 @@ void
 RPCSend::handleReply(Reply::UP reply)
 {
     const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
-    if (!protocol || protocol->requireSequencing()) {
+    if (!protocol || protocol->requireSequencing() || !_net->allowDispatchForEncode()) {
         doHandleReply(protocol, std::move(reply));
     } else {
         auto rejected = _net->getExecutor().execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
@@ -256,22 +256,29 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
-    doRequest(req);
-}
-
-void
-RPCSend::doRequest(FRT_RPCRequest *req)
-{
     FRT_Values &args = *req->GetParams();
 
     std::unique_ptr<Params> params = toParams(args);
     IProtocol * protocol = _net->getOwner().getProtocol(params->getProtocol());
     if (protocol == nullptr) {
         replyError(req, params->getVersion(), params->getTraceLevel(),
-                   Error(ErrorCode::UNKNOWN_PROTOCOL,
-                         make_string("Protocol '%s' is not known by %s.", params->getProtocol().c_str(), _serverIdent.c_str())));
+                   Error(ErrorCode::UNKNOWN_PROTOCOL, make_string("Protocol '%s' is not known by %s.",
+                                                                  params->getProtocol().c_str(), _serverIdent.c_str())));
         return;
     }
+    if (protocol->requireSequencing() || !_net->allowDispatchForDecode()) {
+        doRequest(req, protocol, std::move(params));
+    } else {
+        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req, protocol, params = std::move(params)]() mutable {
+            doRequest(req, protocol, std::move(params));
+        }));
+        assert (!rejected);
+    }
+}
+
+void
+RPCSend::doRequest(FRT_RPCRequest *req, const IProtocol * protocol, std::unique_ptr<Params> params)
+{
     Routable::UP routable = protocol->decode(params->getVersion(), params->getPayload());
     req->DiscardBlobs();
     if ( ! routable ) {

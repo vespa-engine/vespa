@@ -79,7 +79,7 @@ StorageTransportContext::StorageTransportContext(std::unique_ptr<RPCRequestWrapp
     : _request(std::move(request))
 { }
 
-StorageTransportContext::~StorageTransportContext() { }
+StorageTransportContext::~StorageTransportContext() = default;
 
 void
 CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageReply>& reply)
@@ -278,13 +278,13 @@ void CommunicationManager::fail_with_unresolvable_bucket_space(
 namespace {
 
 struct PlaceHolderBucketResolver : public BucketResolver {
-    virtual document::Bucket bucketFromId(const document::DocumentId &) const override {
+    document::Bucket bucketFromId(const document::DocumentId &) const override {
         return document::Bucket(FixedBucketSpaces::default_space(), document::BucketId(0));
     }
-    virtual document::BucketSpace bucketSpaceFromName(const vespalib::string &) const override {
+    document::BucketSpace bucketSpaceFromName(const vespalib::string &) const override {
         return FixedBucketSpaces::default_space();
     }
-    virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
+    vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
         assert(bucketSpace == FixedBucketSpaces::default_space());
         return FixedBucketSpaces::to_string(bucketSpace);
     }
@@ -423,6 +423,9 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
 
         params.setSlobrokConfig(_configUri);
         params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
+        params.setNumThreads(std::max(1, config->mbus.numThreads));
+        params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
+        params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
         if (config->mbusport != -1) {

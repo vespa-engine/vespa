@@ -77,6 +77,9 @@ private:
     std::unique_ptr<RPCSendAdapter>                 _sendV2;
     SendAdapterMap                                  _sendAdapters;
     CompressionConfig                               _compressionConfig;
+    bool                                            _allowDispatchForEncode;
+    bool                                            _allowDispatchForDecode;
+
 
     /**
      * Resolves and assigns a service address for the given recipient using the
@@ -135,7 +138,7 @@ public:
     /**
      * Destruct
      **/
-    virtual ~RPCNetwork();
+    ~RPCNetwork() override;
 
     /**
      * Obtain the owner of this network. This method may only be invoked after
@@ -226,7 +229,10 @@ public:
     const slobrok::api::IMirrorAPI &getMirror() const override;
     CompressionConfig getCompressionConfig() { return _compressionConfig; }
     void invoke(FRT_RPCRequest *req);
-    vespalib::Executor & getExecutor();
+    vespalib::Executor & getExecutor() const { return *_executor; }
+    bool allowDispatchForEncode() const { return _allowDispatchForEncode; }
+    bool allowDispatchForDecode() const { return _allowDispatchForDecode; }
+
 };
 
 } // namespace mbus

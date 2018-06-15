@@ -120,11 +120,13 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(4,65536)),
+    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 65536)),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
-    _compressionConfig(params.getCompressionConfig())
+    _compressionConfig(params.getCompressionConfig()),
+    _allowDispatchForEncode(params.getDispatchOnEncode()),
+    _allowDispatchForDecode(params.getDispatchOnDecode())
 {
     _transport->SetDirectWrite(false);
     _transport->SetMaxInputBufferSize(params.getMaxInputBufferSize());
@@ -222,11 +224,6 @@ RPCNetwork::start()
         return false;
     }
     return true;
-}
-
-vespalib::Executor &
-RPCNetwork::getExecutor() {
-    return *_executor;
 }
 
 bool
