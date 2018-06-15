@@ -120,7 +120,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(std::min(1u, params.getNumThreads()), 65536)),
+    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 65536)),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),

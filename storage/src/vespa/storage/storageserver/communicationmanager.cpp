@@ -423,7 +423,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
 
         params.setSlobrokConfig(_configUri);
         params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
-        params.setNumThreads(config->mbus.numThreads);
+        params.setNumThreads(std::max(1, config->mbus.numThreads));
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
         params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
 
