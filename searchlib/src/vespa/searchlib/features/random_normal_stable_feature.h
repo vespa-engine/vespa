@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -17,7 +17,7 @@ namespace features {
  **/
 class RandomNormalStableExecutor : public fef::FeatureExecutor {
 private:
-    RandomNormal _rnd;       // seeded once per match
+    RandomNormal _rnd;  // seeded once per match
     uint64_t     _seed;
 
 public:
@@ -27,7 +27,7 @@ public:
 
 
 /**
- * Implements the blueprint for the random normal feature.
+ * Implements the blueprint for the random normal stable feature.
  */
 class RandomNormalStableBlueprint : public fef::Blueprint {
 private:

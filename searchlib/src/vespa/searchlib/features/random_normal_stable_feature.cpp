@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "random_normal_stable_feature.h"
 #include "utils.h"
@@ -13,7 +13,7 @@ namespace features {
 
 RandomNormalStableExecutor::RandomNormalStableExecutor(uint64_t seed, double mean, double stddev) :
     search::fef::FeatureExecutor(),
-    _rnd(mean, stddev, true),
+    _rnd(mean, stddev, false),  // don't use spares, as we reset seed on every generation
     _seed(seed)
 {
     LOG(debug, "RandomNormalStableExecutor: seed=%zu, mean=%f, stddev=%f", seed, mean, stddev);
@@ -61,7 +61,7 @@ RandomNormalStableBlueprint::setup(const search::fef::IIndexEnvironment & env,
         _stddev = params[1].asDouble();
     }
 
-    describeOutput("out" , "A random value drawn from the Gaussian distribution that is stable for a given Stable (document and query)");
+    describeOutput("out" , "A random value drawn from the Gaussian distribution that is stable for a given match (document and query)");
 
     return true;
 }
@@ -69,8 +69,11 @@ RandomNormalStableBlueprint::setup(const search::fef::IIndexEnvironment & env,
 search::fef::FeatureExecutor &
 RandomNormalStableBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    uint64_t seed = util::strToNum<uint64_t>
-            (env.getProperties().lookup(getName(), "seed").get("1024")); // default seed
+    uint64_t seed = _seed;
+    if (seed == 0) {
+        seed = util::strToNum<uint64_t>
+                (env.getProperties().lookup(getName(), "seed").get("1024")); // default seed
+    }
     return stash.create<RandomNormalStableExecutor>(seed, _mean, _stddev);
 }
 

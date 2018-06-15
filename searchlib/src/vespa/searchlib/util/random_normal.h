@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -7,6 +7,10 @@
 
 namespace search {
 
+/**
+ * Draws a random number from the Gaussian distribution
+ * using the Marsaglia polar method.
+ */
 class RandomNormal
 {
 private:
@@ -36,10 +40,6 @@ public:
         _rnd.srand48(seed);
     }
 
-    /**
-     * Draws a random number from the Gaussian distribution
-     * using the Marsaglia polar method.
-     */
     feature_t next() {
         feature_t result = _spare;
         if (_useSpare && _hasSpare) {
