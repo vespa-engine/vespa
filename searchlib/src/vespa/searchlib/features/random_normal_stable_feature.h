@@ -15,13 +15,13 @@ namespace features {
  * two arguments 'mean' and 'stddev'.
  * The same hit always returns the same random number.
  **/
-class RandomNormalMatchExecutor : public fef::FeatureExecutor {
+class RandomNormalStableExecutor : public fef::FeatureExecutor {
 private:
     RandomNormal _rnd;       // seeded once per match
     uint64_t     _seed;
 
 public:
-    RandomNormalMatchExecutor(uint64_t seed, double mean, double stddev);
+    RandomNormalStableExecutor(uint64_t seed, double mean, double stddev);
     void execute(uint32_t docId) override;
 };
 
@@ -29,14 +29,14 @@ public:
 /**
  * Implements the blueprint for the random normal feature.
  */
-class RandomNormalMatchBlueprint : public fef::Blueprint {
+class RandomNormalStableBlueprint : public fef::Blueprint {
 private:
     uint64_t _seed;
     double   _mean;
     double   _stddev;
 
 public:
-    RandomNormalMatchBlueprint();
+    RandomNormalStableBlueprint();
 
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;

@@ -35,7 +35,7 @@ public:
     void testQueryTermCount();
     void testRandom();
     void testRandomNormal();
-    void testRandomNormalMatch();
+    void testRandomNormalStable();
     void testRankingExpression();
     void testTerm();
     void testTermDistance();

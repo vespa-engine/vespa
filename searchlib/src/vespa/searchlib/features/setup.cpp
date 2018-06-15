@@ -38,7 +38,7 @@
 #include "querytermcountfeature.h"
 #include "randomfeature.h"
 #include "random_normal_feature.h"
-#include "random_normal_match_feature.h"
+#include "random_normal_stable_feature.h"
 #include "rankingexpressionfeature.h"
 #include "raw_score_feature.h"
 #include "reverseproximityfeature.h"
@@ -101,7 +101,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(Blueprint::SP(new QueryTermCountBlueprint()));
     registry.addPrototype(Blueprint::SP(new RandomBlueprint()));
     registry.addPrototype(Blueprint::SP(new RandomNormalBlueprint()));
-    registry.addPrototype(Blueprint::SP(new RandomNormalMatchBlueprint()));
+    registry.addPrototype(Blueprint::SP(new RandomNormalStableBlueprint()));
     registry.addPrototype(Blueprint::SP(new RawScoreBlueprint()));
     registry.addPrototype(Blueprint::SP(new SubqueriesBlueprint));
     registry.addPrototype(Blueprint::SP(new TensorFromLabelsBlueprint()));
