@@ -75,8 +75,8 @@ public class OutstandingChangeDeployerTest {
         List<BuildService.BuildJob> jobs = tester.buildService().jobs();
         assertEquals(2, jobs.size());
         assertEquals(11, jobs.get(0).projectId());
-        tester.assertRunning(app.id(), DeploymentJobs.JobType.systemTest);
-        tester.assertRunning(app.id(), DeploymentJobs.JobType.stagingTest);
+        tester.assertRunning(DeploymentJobs.JobType.systemTest, app.id());
+        tester.assertRunning(DeploymentJobs.JobType.stagingTest, app.id());
         assertFalse(tester.application("app1").outstandingChange().isPresent());
     }
 

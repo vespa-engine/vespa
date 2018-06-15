@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -193,8 +192,8 @@ public class DeploymentTester {
 
     private void completeDeployment(Application application, ApplicationPackage applicationPackage,
                                     Optional<JobType> failOnJob, boolean includingProductionZones) {
-        DeploymentOrder order = new DeploymentOrder(controller()::system);
-        List<JobType> jobs = order.jobsFrom(applicationPackage.deploymentSpec());
+        DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
+        List<JobType> jobs = steps.jobs();
         if ( ! includingProductionZones)
             jobs = jobs.stream().filter(job -> ! job.isProduction()).collect(Collectors.toList());
         for (JobType job : jobs) {
@@ -262,6 +261,10 @@ public class DeploymentTester {
         deployAndNotify(application, Optional.of(applicationPackage), success, job);
     }
 
+    public void deployAndNotify(Application application, boolean success, JobType job) {
+        deployAndNotify(application, Optional.empty(), success, job);
+    }
+
     public void deployAndNotify(Application application, Optional<ApplicationPackage> applicationPackage, boolean success, JobType job) {
         if (success) {
             // Staging deploys twice, once with current version and once with new version
@@ -296,8 +299,16 @@ public class DeploymentTester {
                 .build();
     }
 
-    public void assertRunning(ApplicationId id, JobType jobType) {
-        assertTrue(buildService().jobs().contains(BuildService.BuildJob.of(id, application(id).deploymentJobs().projectId().getAsLong(), jobType.jobName())));
+    public void assertRunning(JobType job, ApplicationId application) {
+        assertTrue(String.format("Job %s for %s is running", job, application), isRunning(job, application));
+    }
+
+    public void assertNotRunning(JobType job, ApplicationId application) {
+        assertFalse(String.format("Job %s for %s is not running", job, application), isRunning(job, application));
+    }
+
+    private boolean isRunning(JobType job, ApplicationId application) {
+        return buildService().jobs().contains(ControllerTester.buildJob(application(application), job));
     }
 
 }
