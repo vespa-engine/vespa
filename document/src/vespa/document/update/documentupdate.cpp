@@ -36,7 +36,7 @@ readCStr(nbostream & stream) {
 
 std::pair<const DocumentType *, DocumentId>
 deserializeTypeAndId(const DocumentTypeRepo& repo, vespalib::nbostream & stream) {
-    DocumentId docId(stream);
+    DocumentId docId(readCStr(stream));
 
     // Read content bit vector.
     unsigned char content = 0x00;
@@ -63,9 +63,7 @@ deserializeTypeAndId(const DocumentTypeRepo& repo, vespalib::nbostream & stream)
 const DocumentType *
 deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream, vespalib::stringref & documentId)
 {
-    size_t sz = strnlen(stream.peek(), stream.size());
-    documentId = vespalib::stringref(stream.peek(), sz);
-    stream.adjustReadPos(sz + 1);
+    documentId = readCStr(stream);
     vespalib::stringref typestr = readCStr(stream);
     int16_t version = 0;
     stream >> version;
