@@ -38,9 +38,11 @@ public class ExportPackages {
            .append("javax.inject;version=1.0.0,")  // Included in guice, but not exported. Needed by container-jersey.
            .append("org.aopalliance.intercept,")
            .append("org.aopalliance.aop,")
+           .append("sun.misc,")
+           .append("sun.net.util,")
+           .append("sun.security.krb5,")
 
-           // xml-apis:xml-apis:1.4.01 is not a bundle
-           .append("org.w3c.dom,")
+           // TODO: remove for Vespa 7 (xml-apis:xml-apis:1.4.01 is not a bundle, but exposed from system classpath on Java 9)
            .append("org.w3c.dom.bootstrap,")
            .append("org.w3c.dom.css,")
            .append("org.w3c.dom.events,")
@@ -49,11 +51,8 @@ public class ExportPackages {
            .append("org.w3c.dom.ranges,")
            .append("org.w3c.dom.stylesheets,")
            .append("org.w3c.dom.traversal,")
-           .append("org.w3c.dom.views,")
+           .append("org.w3c.dom.views");
 
-           .append("sun.misc,")
-           .append("sun.net.util,")
-           .append("sun.security.krb5");
         for (int i = 1; i < args.length; ++i) {
             out.append(",").append(getExportedPackages(args[i]));
         }
