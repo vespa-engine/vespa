@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -262,6 +261,10 @@ public class DeploymentTester {
         deployAndNotify(application, Optional.of(applicationPackage), success, job);
     }
 
+    public void deployAndNotify(Application application, boolean success, JobType job) {
+        deployAndNotify(application, Optional.empty(), success, job);
+    }
+
     public void deployAndNotify(Application application, Optional<ApplicationPackage> applicationPackage, boolean success, JobType job) {
         if (success) {
             // Staging deploys twice, once with current version and once with new version
@@ -305,11 +308,7 @@ public class DeploymentTester {
     }
 
     private boolean isRunning(JobType job, ApplicationId application) {
-        return buildService().jobs().contains(BuildService.BuildJob.of(application,
-                                                                       application(application).deploymentJobs()
-                                                                                               .projectId()
-                                                                                               .getAsLong(),
-                                                                       job.jobName()));
+        return buildService().jobs().contains(ControllerTester.buildJob(application(application), job));
     }
 
 }

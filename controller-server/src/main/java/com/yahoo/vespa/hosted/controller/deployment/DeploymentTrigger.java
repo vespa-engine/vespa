@@ -283,7 +283,7 @@ public class DeploymentTrigger {
                             Versions versions = Versions.from(change, application, deploymentFor(application, job),
                                                               controller.systemVersion());
                             if (isTested(application, versions)) {
-                                if (completedAt.isPresent() && canTrigger(job, application, stepJobs)) {
+                                if (completedAt.isPresent() && canTrigger(job, versions, application, stepJobs)) {
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 }
                                 if (!alreadyTriggered(application, versions)) {
@@ -319,25 +319,26 @@ public class DeploymentTrigger {
     }
 
     /** Returns whether given job should be triggered */
-    private boolean canTrigger(JobType job, Application application, List<JobType> parallelJobs) {
+    private boolean canTrigger(JobType job, Versions versions, Application application, List<JobType> parallelJobs) {
         if (jobStateOf(application, job) != idle) return false;
         if (parallelJobs != null && !parallelJobs.containsAll(runningProductionJobs(application))) return false;
 
-        return triggerAt(clock.instant(), job, application);
+        return triggerAt(clock.instant(), job, versions, application);
     }
 
     /** Returns whether given job should be triggered */
-    private boolean canTrigger(JobType job, Application application) {
-        return canTrigger(job, application, null);
+    private boolean canTrigger(JobType job, Versions versions, Application application) {
+        return canTrigger(job, versions, application, null);
     }
 
     /** Returns whether job can trigger at given instant */
-    private boolean triggerAt(Instant instant, JobType job, Application application) {
+    private boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
         Optional<JobStatus> jobStatus = application.deploymentJobs().statusOf(job);
         if (!jobStatus.isPresent()) return true;
         if (jobStatus.get().isSuccess()) return true; // Success
         if (!jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
         if (!jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
+        if (!versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
 
         Instant firstFailing = jobStatus.get().firstFailing().get().at();
         Instant lastCompleted = jobStatus.get().lastCompleted().get().at();
@@ -462,7 +463,7 @@ public class DeploymentTrigger {
         for (JobType jobType : steps(application.deploymentSpec()).testJobs()) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
                     .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
-            if (!completion.isPresent() && canTrigger(jobType, application)) {
+            if (!completion.isPresent() && canTrigger(jobType, versions, application)) {
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
             }
         }

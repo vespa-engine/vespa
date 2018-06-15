@@ -150,12 +150,11 @@ public class ControllerTest {
                               .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant())
                               .withCompletion(42, Optional.empty(), tester.clock().instant()),
                      app1.id(), tester.controller());
+        tester.clock().advance(Duration.ofHours(1)); // Stop retrying
         tester.jobCompletion(productionCorpUsEast1).application(app1).unsuccessful().submit();
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
-        tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time passes for failing job to be retried
-        tester.readyJobTrigger().maintain();
         expectedJobStatus = expectedJobStatus
                 .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant())
                 .withCompletion(42, Optional.empty(), tester.clock().instant());
