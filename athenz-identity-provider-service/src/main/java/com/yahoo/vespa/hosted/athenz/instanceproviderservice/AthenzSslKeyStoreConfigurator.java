@@ -16,11 +16,15 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
+import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
@@ -54,6 +58,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
     private static final String CERTIFICATE_ALIAS = "athenz";
     private static final Duration EXPIRATION_MARGIN = Duration.ofHours(6);
     private static final Path VESPA_SIA_DIRECTORY = Paths.get(Defaults.getDefaults().underVespaHome("var/vespa/sia"));
+    private static final Path CA_CERT_FILE = VESPA_SIA_DIRECTORY.resolve("ca-certs.pem");
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final ZtsClient ztsClient;
@@ -92,19 +97,29 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
 
     private static Optional<KeyStoreAndPassword> tryReadKeystoreFile(AthenzService configserverIdentity,
                                                                      Duration updatePeriod) {
-        Optional<X509Certificate> certificate = SiaUtils.readCertificateFile(VESPA_SIA_DIRECTORY, configserverIdentity);
-        if (!certificate.isPresent()) return Optional.empty();
-        Optional<PrivateKey> privateKey = SiaUtils.readPrivateKeyFile(VESPA_SIA_DIRECTORY, configserverIdentity);
-        if (!privateKey.isPresent()) return Optional.empty();
-        Instant minimumExpiration = Instant.now().plus(updatePeriod).plus(EXPIRATION_MARGIN);
-        boolean isExpired = certificate.get().getNotAfter().toInstant().isBefore(minimumExpiration);
-        if (isExpired) return Optional.empty();
+        try {
+            Optional<X509Certificate> certificate = SiaUtils.readCertificateFile(VESPA_SIA_DIRECTORY, configserverIdentity);
+            if (!certificate.isPresent()) return Optional.empty();
+            Optional<PrivateKey> privateKey = SiaUtils.readPrivateKeyFile(VESPA_SIA_DIRECTORY, configserverIdentity);
+            if (!privateKey.isPresent()) return Optional.empty();
+            Instant minimumExpiration = Instant.now().plus(updatePeriod).plus(EXPIRATION_MARGIN);
+            boolean isExpired = certificate.get().getNotAfter().toInstant().isBefore(minimumExpiration);
+            if (isExpired) return Optional.empty();
+            if (Files.notExists(CA_CERT_FILE)) return Optional.empty();
+            List<X509Certificate> caCertificates = X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(CA_CERT_FILE)));
 
-        char[] password = generateKeystorePassword();
-        KeyStore keyStore = KeyStoreBuilder.withType(KeyStoreType.JKS)
-                .withKeyEntry(CERTIFICATE_ALIAS, privateKey.get(), password, certificate.get())
-                .build();
-        return Optional.of(new KeyStoreAndPassword(keyStore, password));
+            List<X509Certificate> chain = new ArrayList<>();
+            chain.add(certificate.get());
+            chain.addAll(caCertificates);
+
+            char[] password = generateKeystorePassword();
+            KeyStore keyStore = KeyStoreBuilder.withType(KeyStoreType.JKS)
+                    .withKeyEntry(CERTIFICATE_ALIAS, privateKey.get(), password, chain)
+                    .build();
+            return Optional.of(new KeyStoreAndPassword(keyStore, password));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
@@ -147,7 +162,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
                                                                 new KeyPair(publicKey, privateKey),
                                                                 zoneConfig.certDnsSuffix());
         X509Certificate certificate = serviceIdentity.certificate();
-        writeCredentials(configserverIdentity, certificate, privateKey);
+        writeCredentials(configserverIdentity, certificate, serviceIdentity.caCertificates(), privateKey);
         Instant expirationTime = certificate.getNotAfter().toInstant();
         Duration expiry = Duration.between(certificate.getNotBefore().toInstant(), expirationTime);
         log.log(LogLevel.INFO, String.format("Got Athenz x509 certificate with expiry %s (expires %s)", expiry, expirationTime));
@@ -164,9 +179,15 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
 
     private static void writeCredentials(AthenzService configserverIdentity,
                                          X509Certificate certificate,
+                                         List<X509Certificate> caCertificates,
                                          PrivateKey privateKey) {
         SiaUtils.writeCertificateFile(VESPA_SIA_DIRECTORY, configserverIdentity, certificate);
         SiaUtils.writePrivateKeyFile(VESPA_SIA_DIRECTORY, configserverIdentity, privateKey);
+        try {
+            Files.write(CA_CERT_FILE, X509CertificateUtils.toPem(caCertificates).getBytes());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static char[] generateKeystorePassword() {
