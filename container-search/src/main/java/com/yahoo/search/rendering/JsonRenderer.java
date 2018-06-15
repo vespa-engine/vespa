@@ -781,10 +781,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator.writeTree((TreeNode) field);
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
-            } else if (field instanceof JsonProducer) {
-                generator.writeRawValue(((JsonProducer) field).toJson());
             } else if (field instanceof Inspectable) {
                 renderInspector(((Inspectable)field).inspect());
+            } else if (field instanceof JsonProducer) {
+                generator.writeRawValue(((JsonProducer) field).toJson());
             } else if (field instanceof StringFieldValue) {
                 generator.writeString(((StringFieldValue)field).getString());
             } else if (field instanceof TensorFieldValue) {
