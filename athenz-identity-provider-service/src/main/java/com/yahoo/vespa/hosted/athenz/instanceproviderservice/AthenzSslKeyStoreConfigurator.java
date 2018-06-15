@@ -72,7 +72,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
         AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
         AthenzService configserverIdentity = new AthenzService(zoneConfig.domain(), zoneConfig.serviceName());
         Duration updatePeriod = Duration.ofDays(config.updatePeriodDays());
-        DefaultZtsClient ztsClient = new DefaultZtsClient(URI.create(zoneConfig.ztsUrl()), bootstrapIdentity);
+        DefaultZtsClient ztsClient = new DefaultZtsClient(URI.create(zoneConfig.ztsUrl()).resolve("/zts/v1"), bootstrapIdentity); // TODO Remove URI.resolve() once config in hosted is updated
         this.ztsClient = ztsClient;
         this.keyProvider = keyProvider;
         this.zoneConfig = zoneConfig;
