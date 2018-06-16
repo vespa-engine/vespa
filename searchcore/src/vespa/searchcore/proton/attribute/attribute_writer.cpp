@@ -4,16 +4,16 @@
 #include "ifieldupdatecallback.h"
 #include "attributemanager.h"
 #include "document_field_extractor.h"
-#include <vespa/document/base/exceptions.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.attributeadapter");
@@ -474,9 +474,15 @@ AttributeWriter::AttributeWriter(const proton::IAttributeManager::SP &mgr)
       _writableAttributes(mgr->getWritableAttributes()),
       _writeContexts(),
       _dataType(nullptr),
-      _hasStructFieldAttribute(false)
+      _hasStructFieldAttribute(false),
+      _attrMap()
 {
     setupWriteContexts();
+    for (auto attr : getWritableAttributes()) {
+        vespalib::stringref name = attr->getName();
+        vespalib::stringref prefix = name.substr(0, name.find('.'));
+        _attrMap[attr->getName()] = AttrWithId(attr, _attributeFieldWriter.getExecutorId(prefix));
+    }
 }
 
 AttributeWriter::~AttributeWriter()
@@ -547,7 +553,8 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
 
     for (const auto &fupd : upd.getUpdates()) {
         LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().c_str());
-        AttributeVector *attrp = _mgr->getWritableAttribute(fupd.getField().getName());
+        auto found = _attrMap.find(fupd.getField().getName());
+        AttributeVector * attrp = (found != _attrMap.end()) ? found->second.first : nullptr;
         onUpdate.onUpdateField(fupd.getField().getName(), attrp);
         if (attrp == nullptr) {
             LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().c_str());
@@ -557,7 +564,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
         // document and attribute.
         if (attrp->getStatus().getLastSyncToken() >= serialNum)
             continue;
-        args[_attributeFieldWriter.getExecutorId(attrp->getName()).getId()]->_updates.emplace_back(attrp, &fupd);
+        args[found->second.second.getId()]->_updates.emplace_back(attrp, &fupd);
         LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attrp->getName().c_str());
     }
     // NOTE: The lifetime of the field update will be ensured by keeping the document update alive

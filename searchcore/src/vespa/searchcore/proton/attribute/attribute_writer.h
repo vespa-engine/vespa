@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/document/base/fieldpath.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace document { class DocumentType; }
 
@@ -58,9 +59,12 @@ public:
         bool hasStructFieldAttribute() const { return _hasStructFieldAttribute; }
     };
 private:
+    using AttrWithId = std::pair<search::AttributeVector *, ExecutorId>;
+    using AttrMap = vespalib::hash_map<vespalib::string, AttrWithId>;
     std::vector<WriteContext> _writeContexts;
     const DataType           *_dataType;
     bool                      _hasStructFieldAttribute;
+    AttrMap                   _attrMap;
 
     void setupWriteContexts();
     void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
