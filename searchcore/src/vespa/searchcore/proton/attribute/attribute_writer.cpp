@@ -86,11 +86,6 @@ AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
 
 namespace {
 
-vespalib::stringref
-getPrefix(vespalib::stringref name ) {
-    return name.substr(0, name.find('.'));
-}
-
 void
 ensureLidSpace(SerialNum serialNum, DocumentIdT lid, AttributeVector &attr)
 {
@@ -237,7 +232,7 @@ public:
 
 FieldContext::FieldContext(ISequencedTaskExecutor &writer, AttributeVector *attr)
     :  _name(attr->getName()),
-       _executorId(writer.getExecutorId(getPrefix(_name))),
+       _executorId(writer.getExecutorId(attr->getNamePrefix()),
        _attr(attr)
 {
 }
@@ -488,7 +483,7 @@ AttributeWriter::AttributeWriter(const proton::IAttributeManager::SP &mgr)
 void AttributeWriter::setupAttriuteMapping() {
     for (auto attr : getWritableAttributes()) {
         vespalib::stringref name = attr->getName();
-        _attrMap[name] = AttrWithId(attr, _attributeFieldWriter.getExecutorId(getPrefix(name)));
+        _attrMap[name] = AttrWithId(attr, _attributeFieldWriter.getExecutorId(attr->getNamePrefix()));
     }    
 }
 
