@@ -197,9 +197,8 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
         search::AttributeVector::SP attrsp = guard.getSP();
         // Name must be extracted in document db master thread or attribute
         // writer thread
-        vespalib::string attributeName = attrsp->getName();
-        attributeFieldWriter.
-            execute(attributeName, [attrsp, func]() { (*func)(*attrsp); });
+        attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
+                                     [attrsp, func]() { (*func)(*attrsp); });
     }
 }
 

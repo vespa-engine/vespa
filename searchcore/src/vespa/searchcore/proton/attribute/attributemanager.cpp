@@ -569,16 +569,15 @@ AttributeManager::getWritableAttributes() const
 
 
 void
-AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
-                                        func) const
+AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
 {
     for (const auto &attr : _attributes) {
         if (attr.second.isExtra()) {
             continue;
         }
         AttributeVector::SP attrsp = attr.second.getAttribute();
-        _attributeFieldWriter.
-            execute(attr.first, [attrsp, func]() { (*func)(*attrsp); });
+        _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
+                                      [attrsp, func]() { (*func)(*attrsp); });
     }
 }
 

@@ -419,7 +419,7 @@ AttributeWriter::setupWriteContexts()
 {
     std::vector<FieldContext> fieldContexts;
     assert(_writeContexts.empty());
-    for (auto attr : _writableAttributes) {
+    for (auto attr : getWritableAttributes()) {
         fieldContexts.emplace_back(_attributeFieldWriter, attr);
     }
     std::sort(fieldContexts.begin(), fieldContexts.end());
@@ -476,18 +476,22 @@ AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid, bool immed
 AttributeWriter::AttributeWriter(const proton::IAttributeManager::SP &mgr)
     : _mgr(mgr),
       _attributeFieldWriter(mgr->getAttributeFieldWriter()),
-      _writableAttributes(mgr->getWritableAttributes()),
       _writeContexts(),
       _dataType(nullptr),
       _hasStructFieldAttribute(false),
       _attrMap()
 {
     setupWriteContexts();
+    setupAttriuteMapping();
+}
+
+void AttributeWriter::setupAttriuteMapping() {
     for (auto attr : getWritableAttributes()) {
         vespalib::stringref name = attr->getName();
         _attrMap[name] = AttrWithId(attr, _attributeFieldWriter.getExecutorId(getPrefix(name)));
-    }
+    }    
 }
+
 
 AttributeWriter::~AttributeWriter()
 {
@@ -585,11 +589,10 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
 void
 AttributeWriter::heartBeat(SerialNum serialNum)
 {
-    for (auto attrp : _writableAttributes) {
-        auto &attr = *attrp;
-        _attributeFieldWriter.execute(attr.getName(),
-                                      [serialNum, &attr]()
-                                      { applyHeartBeat(serialNum, attr); });
+    for (auto entry : _attrMap) {
+        _attributeFieldWriter.execute(entry.second.second,
+                                      [serialNum, attr=entry.second.first]()
+                                      { applyHeartBeat(serialNum, *attr); });
     }
 }
 
@@ -614,11 +617,10 @@ AttributeWriter::forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone)
 void
 AttributeWriter::onReplayDone(uint32_t docIdLimit)
 {
-    for (auto attrp : _writableAttributes) {
-        auto &attr = *attrp;
-        _attributeFieldWriter.execute(attr.getName(),
-                                      [docIdLimit, &attr]()
-                                      { applyReplayDone(docIdLimit, attr); });
+    for (auto entry : _attrMap) {
+        _attributeFieldWriter.execute(entry.second.second,
+                                      [docIdLimit, attr = entry.second.first]()
+                                      { applyReplayDone(docIdLimit, *attr); });
     }
     _attributeFieldWriter.sync();
 }
@@ -627,12 +629,11 @@ AttributeWriter::onReplayDone(uint32_t docIdLimit)
 void
 AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum)
 {
-    for (auto attrp : _writableAttributes) {
-        auto &attr = *attrp;
+    for (auto entry : _attrMap) {
         _attributeFieldWriter.
-            execute(attr.getName(),
-                    [wantedLidLimit, serialNum, &attr]()
-                    { applyCompactLidSpace(wantedLidLimit, serialNum, attr); });
+            execute(entry.second.second,
+                    [wantedLidLimit, serialNum, attr=entry.second.first]()
+                    { applyCompactLidSpace(wantedLidLimit, serialNum, *attr); });
     }
     _attributeFieldWriter.sync();
 }

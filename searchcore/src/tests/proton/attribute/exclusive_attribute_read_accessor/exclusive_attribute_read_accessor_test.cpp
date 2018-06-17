@@ -37,7 +37,7 @@ TEST_F("require that attribute write thread is blocked while guard is held", Fix
 {
     ReadGuard::UP guard = f.accessor.takeGuard();
     Gate gate;
-    f.writer.execute("myattr", [&gate]() { gate.countDown(); });
+    f.writer.execute(f.writer.getExecutorId(f.attribute->getNamePrefix()), [&gate]() { gate.countDown(); });
     bool reachedZero = gate.await(100);
     EXPECT_FALSE(reachedZero);
     EXPECT_EQUAL(1u, gate.getCount());

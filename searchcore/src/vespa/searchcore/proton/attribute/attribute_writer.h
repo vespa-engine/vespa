@@ -26,7 +26,6 @@ private:
     typedef document::FieldValue FieldValue;
     const IAttributeManager::SP _mgr;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
-    const std::vector<search::AttributeVector *> &_writableAttributes;
     using ExecutorId = search::ISequencedTaskExecutor::ExecutorId;
 public:
     class WriteField
@@ -67,6 +66,7 @@ private:
     AttrMap                   _attrMap;
 
     void setupWriteContexts();
+    void setupAttriuteMapping();
     void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
     void internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                      bool immediateCommit, bool allAttributes, OnWriteDoneType onWriteDone);
@@ -77,13 +77,13 @@ public:
     AttributeWriter(const proton::IAttributeManager::SP &mgr);
     ~AttributeWriter();
 
+    /* Only for in tests that add attributes after AttributeWriter construction. */
+
     /**
      * Implements IAttributeWriter.
      */
-    std::vector<search::AttributeVector *>
-    getWritableAttributes() const override;
-    search::AttributeVector *
-    getWritableAttribute(const vespalib::string &name) const override;
+    std::vector<search::AttributeVector *> getWritableAttributes() const override;
+    search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override;
     void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
              bool immediateCommit, OnWriteDoneType onWriteDone) override;
     void remove(SerialNum serialNum, DocumentIdT lid,
