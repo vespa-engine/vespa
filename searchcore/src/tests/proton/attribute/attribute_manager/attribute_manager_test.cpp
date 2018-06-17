@@ -1,7 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_manager_test");
-
 #include <vespa/config-attributes.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
@@ -41,6 +38,9 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_manager_test");
 
 namespace vespa { namespace config { namespace search {}}}
 
@@ -84,7 +84,7 @@ class MyAttributeFunctor : public proton::IAttributeFunctor
     std::vector<vespalib::string> _names;
 
 public:
-    virtual void
+    void
     operator()(const search::AttributeVector &attributeVector) override {
         _names.push_back(attributeVector.getName());
     }
@@ -166,13 +166,12 @@ BaseFixture::BaseFixture()
       _hwInfo()
 {
 }
-BaseFixture::~BaseFixture() {}
+BaseFixture::~BaseFixture() = default;
 
 struct AttributeManagerFixture
 {
     proton::AttributeManager::SP _msp;
     proton::AttributeManager &_m;
-    AttributeWriter _aw;
     ImportedAttributesRepoBuilder _builder;
     AttributeManagerFixture(BaseFixture &bf);
     ~AttributeManagerFixture();
@@ -191,10 +190,9 @@ AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
     : _msp(std::make_shared<proton::AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
                                                       bf._fileHeaderContext, bf._attributeFieldWriter, bf._hwInfo)),
       _m(*_msp),
-      _aw(_msp),
       _builder()
 {}
-AttributeManagerFixture::~AttributeManagerFixture() {}
+AttributeManagerFixture::~AttributeManagerFixture() = default;
 
 struct Fixture : public BaseFixture, public AttributeManagerFixture
 {
@@ -318,16 +316,21 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         fillAttribute(a1, 1, 2, 200);
         EXPECT_EQUAL(4u, a1->getNumDocs());
         AttributeVector::SP a2 = amf.addAttribute("a2"); // loaded
-        EXPECT_EQUAL(5u, a2->getNumDocs());
-        EXPECT_EQUAL(4u, a1->getNumDocs());
-        amf._aw.onReplayDone(5u);
-        EXPECT_EQUAL(5u, a2->getNumDocs());
-        EXPECT_EQUAL(5u, a1->getNumDocs());
-        fillAttribute(a2, 1, 4, 200);
-        EXPECT_EQUAL(6u, a2->getNumDocs());
+        {
+            AttributeWriter aw(amf._msp);
+
+            EXPECT_EQUAL(5u, a2->getNumDocs());
+            EXPECT_EQUAL(4u, a1->getNumDocs());
+            aw.onReplayDone(5u);
+            EXPECT_EQUAL(5u, a2->getNumDocs());
+            EXPECT_EQUAL(5u, a1->getNumDocs());
+            fillAttribute(a2, 1, 4, 200);
+            EXPECT_EQUAL(6u, a2->getNumDocs());
+        }
         AttributeVector::SP a3 = amf.addAttribute("a3"); // not-loaded
+        AttributeWriter aw(amf._msp);
         EXPECT_EQUAL(1u, a3->getNumDocs());
-        amf._aw.onReplayDone(6);
+        aw.onReplayDone(6);
         EXPECT_EQUAL(6u, a3->getNumDocs());
         fillAttribute(a3, 1, 7, 6, 200);
         EXPECT_EQUAL(7u, a3->getNumDocs());
@@ -352,10 +355,11 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         EXPECT_EQUAL(6u, a1->getNumDocs());
         EXPECT_EQUAL(6u, a2->getNumDocs());
         AttributeVector::SP a3 = amf.addAttribute("a3"); // loaded
+        AttributeWriter aw(amf._msp);
         EXPECT_EQUAL(6u, a1->getNumDocs());
         EXPECT_EQUAL(6u, a2->getNumDocs());
         EXPECT_EQUAL(7u, a3->getNumDocs());
-        amf._aw.onReplayDone(7);
+        aw.onReplayDone(7);
         EXPECT_EQUAL(7u, a1->getNumDocs());
         EXPECT_EQUAL(7u, a2->getNumDocs());
         EXPECT_EQUAL(7u, a3->getNumDocs());
@@ -559,6 +563,7 @@ TEST_F("require that lid space can be compacted", Fixture)
     AttributeVector::SP a2 = f.addAttribute("a2");
     AttributeVector::SP ex(new Int32Attribute("ex"));
     f._m.addExtraAttribute(ex);
+    AttributeWriter aw(f._msp);
     const int64_t attrValue = 33;
     fillAttribute(a1, 20, attrValue, 100);
     fillAttribute(a2, 20, attrValue, 100);
@@ -571,7 +576,7 @@ TEST_F("require that lid space can be compacted", Fixture)
     EXPECT_EQUAL(21u, a2->getCommittedDocIdLimit());
     EXPECT_EQUAL(20u, ex->getCommittedDocIdLimit());
 
-    f._aw.compactLidSpace(10, 101);
+    aw.compactLidSpace(10, 101);
 
     EXPECT_EQUAL(21u, a1->getNumDocs());
     EXPECT_EQUAL(21u, a2->getNumDocs());
@@ -587,6 +592,7 @@ TEST_F("require that lid space compaction op can be ignored", Fixture)
     AttributeVector::SP a2 = f.addAttribute("a2");
     AttributeVector::SP ex(new Int32Attribute("ex"));
     f._m.addExtraAttribute(ex);
+    AttributeWriter aw(f._msp);
     const int64_t attrValue = 33;
     fillAttribute(a1, 20, attrValue, 200);
     fillAttribute(a2, 20, attrValue, 100);
@@ -599,7 +605,7 @@ TEST_F("require that lid space compaction op can be ignored", Fixture)
     EXPECT_EQUAL(21u, a2->getCommittedDocIdLimit());
     EXPECT_EQUAL(20u, ex->getCommittedDocIdLimit());
 
-    f._aw.compactLidSpace(10, 101);
+    aw.compactLidSpace(10, 101);
 
     EXPECT_EQUAL(21u, a1->getNumDocs());
     EXPECT_EQUAL(21u, a2->getNumDocs());
