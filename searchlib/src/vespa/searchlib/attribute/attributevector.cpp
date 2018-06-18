@@ -58,17 +58,11 @@ namespace search {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(AttributeVector, vespalib::Identifiable);
 
-AttributeVector::BaseName::BaseName(vespalib::stringref base,
-                                    vespalib::stringref snap,
-                                    vespalib::stringref name)
+AttributeVector::BaseName::BaseName(vespalib::stringref base, vespalib::stringref name)
     : string(base),
       _name(name)
 {
     if (!empty()) {
-        push_back('/');
-    }
-    if ( ! snap.empty() ) {
-        append(snap);
         push_back('/');
     }
     append(name);
@@ -99,23 +93,6 @@ AttributeVector::BaseName::getIndexName() const
         return substr(0, subDBPos);
     return substr(indexNamePos + 1, subDBPos - indexNamePos - 1);
 }
-
-
-AttributeVector::BaseName::string
-AttributeVector::BaseName::getSnapshotName() const
-{
-    string snapShot;
-    size_t p(rfind("snapshot-"));
-    if (p != string::npos) {
-        string fullSnapshot(substr(p));
-        p = fullSnapshot.find('/');
-        if (p != string::npos) {
-            snapShot = fullSnapshot.substr(0, p);
-        }
-    }
-    return snapShot;
-}
-
 
 AttributeVector::BaseName::string
 AttributeVector::BaseName::createAttributeName(vespalib::stringref s)
@@ -165,10 +142,7 @@ AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config 
       _enumLock(),
       _genHandler(),
       _genHolder(),
-      _status(Status::createName((_baseFileName.getIndexName() +
-                                  (_baseFileName.getSnapshotName().empty() ? "" : ".") +
-                                  _baseFileName.getSnapshotName()),
-                                 _baseFileName.getAttributeName())),
+      _status(),
       _highestValueCount(1),
       _enumMax(0),
       _committedDocIdLimit(0u),

@@ -137,13 +137,10 @@ public:
             return *this;
         }
 
-        BaseName(vespalib::stringref base,
-                 vespalib::stringref snap,
-                 vespalib::stringref name);
+        BaseName(vespalib::stringref base, vespalib::stringref name);
         ~BaseName();
 
         string getIndexName() const;
-        string getSnapshotName() const;
         const string & getAttributeName() const { return _name; }
         string getDirName() const;
     private:
@@ -405,7 +402,6 @@ public:
     const BaseName & getBaseFileName() const { return _baseFileName; }
     void setBaseFileName(vespalib::stringref name) { _baseFileName = name; }
 
-    // Implements IAttributeVector
     const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
 
     bool hasArrayType() const { return _config.collectionType().isArray(); }

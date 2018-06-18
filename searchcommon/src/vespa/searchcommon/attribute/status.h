@@ -9,8 +9,6 @@ namespace search::attribute {
 class Status
 {
 public:
-    // TODO: name isn't stored anywhere or used for anything
-    Status(const vespalib::string &name);
     Status();
 
     void updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,

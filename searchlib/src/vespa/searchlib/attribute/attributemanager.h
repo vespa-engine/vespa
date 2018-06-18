@@ -49,7 +49,6 @@ public:
 
     const Snapshot & getSnapshot()         const { return _snapShot; }
     const string & getBaseDir()       const { return _baseDir; }
-    void setSnapshot(const Snapshot &snap)       { _snapShot = snap; }
     void setBaseDir(const string & base);
     bool hasReaders() const;
     uint64_t getMemoryFootprint() const;
@@ -59,7 +58,7 @@ protected:
     mutable std::mutex _loadLock;
 private:
     const VectorHolder * findAndLoadAttribute(const string & name) const;
-    string createBaseFileName(const string & name, bool useSnapshot) const;
+    string createBaseFileName(const string & name) const;
     string    _baseDir;
     Snapshot  _snapShot;
     std::shared_ptr<attribute::Interlock> _interlock;

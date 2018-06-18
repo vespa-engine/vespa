@@ -1,26 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "status.h"
-
 namespace search::attribute {
-
-Status::Status(const vespalib::string &)
-    : _numDocs              (0),
-      _numValues            (0),
-      _numUniqueValues      (0),
-      _allocated            (0),
-      _used                 (0),
-      _dead                 (0),
-      _unused               (0),
-      _onHold               (0),
-      _onHoldMax            (0),
-      _lastSyncToken        (0),
-      _updates              (0),
-      _nonIdempotentUpdates (0),
-      _bitVectors(0)
-{
-}
-
 
 Status::Status()
     : _numDocs              (0),
@@ -39,7 +20,6 @@ Status::Status()
 {
 }
 
-
 vespalib::string
 Status::createName(vespalib::stringref index, vespalib::stringref attr)
 {
@@ -48,7 +28,6 @@ Status::createName(vespalib::stringref index, vespalib::stringref attr)
     name += attr;
     return name;
 }
-
 
 void
 Status::updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,
