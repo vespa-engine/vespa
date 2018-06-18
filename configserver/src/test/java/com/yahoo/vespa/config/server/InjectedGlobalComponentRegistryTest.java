@@ -73,7 +73,8 @@ public class InjectedGlobalComponentRegistryTest {
         zone = Zone.defaultZone();
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,
-                                                    generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone);
+                                                    generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone,
+                                                    new ConfigServerDB(configserverConfig));
     }
 
     @Test

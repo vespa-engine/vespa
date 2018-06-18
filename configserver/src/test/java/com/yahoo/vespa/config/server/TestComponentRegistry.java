@@ -51,6 +51,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final Clock clock;
+    private final ConfigServerDB configServerDB;
 
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
@@ -82,6 +83,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.sessionPreparer = sessionPreparer;
         this.zone = zone;
         this.clock = clock;
+        this.configServerDB = new ConfigServerDB(configserverConfig);
     }
 
     public static class Builder {
@@ -206,6 +208,9 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     }
     @Override
     public Clock getClock() { return clock;}
+    @Override
+    public ConfigServerDB getConfigServerDB() { return configServerDB;}
+
 
     public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
 
