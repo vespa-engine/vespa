@@ -41,11 +41,11 @@ public class SimpleDetector implements Detector {
         return new Detection(guessLanguage(input), Utf8.getCharset().name(), false);
     }
 
-    public static Language guessLanguage(byte[] buf, int offset, int length) {
+    public Language guessLanguage(byte[] buf, int offset, int length) {
         return guessLanguage(Utf8.toString(buf, offset, length));
     }
 
-    public static Language guessLanguage(String input) {
+    public Language guessLanguage(String input) {
         if (input == null || input.length() == 0) {
             return Language.UNKNOWN;
         }
