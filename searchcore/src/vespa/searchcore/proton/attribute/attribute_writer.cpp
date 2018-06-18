@@ -232,7 +232,7 @@ public:
 
 FieldContext::FieldContext(ISequencedTaskExecutor &writer, AttributeVector *attr)
     :  _name(attr->getName()),
-       _executorId(writer.getExecutorId(attr->getNamePrefix()),
+       _executorId(writer.getExecutorId(attr->getNamePrefix())),
        _attr(attr)
 {
 }
