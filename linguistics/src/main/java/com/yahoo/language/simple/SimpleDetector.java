@@ -45,7 +45,7 @@ public class SimpleDetector implements Detector {
         return guessLanguage(Utf8.toString(buf, offset, length));
     }
 
-    public static Language guessLanguage(String input) {
+    public Language guessLanguage(String input) {
         if (input == null || input.length() == 0) {
             return Language.UNKNOWN;
         }
