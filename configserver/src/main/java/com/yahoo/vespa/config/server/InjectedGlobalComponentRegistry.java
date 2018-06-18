@@ -40,7 +40,9 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final HostRegistries hostRegistries;
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
+    private final ConfigServerDB configServerDB;
 
+    @SuppressWarnings("WeakerAccess")
     @Inject
     public InjectedGlobalComponentRegistry(Curator curator,
                                            ConfigCurator configCurator,
@@ -54,7 +56,8 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            PermanentApplicationPackage permanentApplicationPackage,
                                            HostRegistries hostRegistries,
                                            HostProvisionerProvider hostProvisionerProvider,
-                                           Zone zone) {
+                                           Zone zone,
+                                           ConfigServerDB configServerDB) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -68,6 +71,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.hostRegistries = hostRegistries;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
+        this.configServerDB = configServerDB;
     }
 
     @Override
@@ -107,4 +111,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public Clock getClock() {return  Clock.systemUTC();}
+
+    @Override
+    public ConfigServerDB getConfigServerDB() { return configServerDB; }
 }

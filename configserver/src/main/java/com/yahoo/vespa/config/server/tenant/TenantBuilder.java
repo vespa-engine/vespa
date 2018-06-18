@@ -160,7 +160,7 @@ public class TenantBuilder {
 
     private void createServerDbDirs() {
         if (tenantFileSystemDirs == null) {
-            tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigserverConfig(), tenant);
+            tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenant);
         }
     }
 
