@@ -122,8 +122,8 @@ TEST_F("require that task with same string component id are serialized", Fixture
     std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
     EXPECT_EQUAL(0, tv->_val);
     auto test2 = [=]() { tv->modify(14, 42); };
-    f._threads.execute("0", [=]() { usleep(2000); tv->modify(0, 14); });
-    f._threads.execute("0", test2);
+    f._threads.execute(f._threads.getExecutorId("0"), [=]() { usleep(2000); tv->modify(0, 14); });
+    f._threads.execute(f._threads.getExecutorId("0"), test2);
     tv->wait(2);
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
@@ -132,8 +132,7 @@ TEST_F("require that task with same string component id are serialized", Fixture
     EXPECT_EQUAL(42, tv->_val);
 }
 
-namespace
-{
+namespace {
 
 int detectSerializeFailure(Fixture &f, vespalib::stringref altComponentId, int tryLimit)
 {
@@ -141,8 +140,8 @@ int detectSerializeFailure(Fixture &f, vespalib::stringref altComponentId, int t
     for (tryCnt = 0; tryCnt < tryLimit; ++tryCnt) {
         std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
         EXPECT_EQUAL(0, tv->_val);
-        f._threads.execute("0", [=]() { usleep(2000); tv->modify(0, 14); });
-        f._threads.execute(altComponentId, [=]() { tv->modify(14, 42); });
+        f._threads.execute(f._threads.getExecutorId("0"), [=]() { usleep(2000); tv->modify(0, 14); });
+        f._threads.execute(f._threads.getExecutorId(altComponentId), [=]() { tv->modify(14, 42); });
         tv->wait(2);
         if (tv->_fail != 1) {
              continue;

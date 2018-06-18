@@ -829,20 +829,16 @@ Test::requireThatAttributesAreUsed()
                              "bi:[]}", *rep, 1, false));
     TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
 
-    proton::IAttributeManager::SP attributeManager =
-        dc._ddb->getReadySubDB()->getAttributeManager();
-    search::ISequencedTaskExecutor &attributeFieldWriter =
-        attributeManager->getAttributeFieldWriter();
-    search::AttributeVector *bjAttr =
-        attributeManager->getWritableAttribute("bj");
-    search::tensor::TensorAttribute *bjTensorAttr =
-        dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
+    proton::IAttributeManager::SP attributeManager = dc._ddb->getReadySubDB()->getAttributeManager();
+    search::ISequencedTaskExecutor &attributeFieldWriter = attributeManager->getAttributeFieldWriter();
+    search::AttributeVector *bjAttr = attributeManager->getWritableAttribute("bj");
+    auto bjTensorAttr = dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
 
-    attributeFieldWriter.
-        execute("bj",
-                [&]() { bjTensorAttr->setTensor(3,
-                                                *createTensor({ {{{"x", "a"},{"y", "b"}}, 4} }, { "x"}));
-                           bjTensorAttr->commit(); });
+    attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(bjAttr->getNamePrefix()),
+                                 [&]() {
+                                     bjTensorAttr->setTensor(3, *createTensor({ {{{"x", "a"},{"y", "b"}}, 4} }, { "x"}));
+                                     bjTensorAttr->commit();
+                                 });
     attributeFieldWriter.sync();
 
     DocsumReply::UP rep2 = dc._ddb->getDocsums(req);
@@ -961,8 +957,7 @@ Test::requireThatUrisAreUsed()
     Document::UP exp = bc._bld.startDocument("doc::0").
                        startIndexField("urisingle").
                        startSubField("all").
-                       addUrlTokenizedString(
-                               "http://www.example.com:81/fluke?ab=2#4").
+                       addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
                        endSubField().
                        startSubField("scheme").
                        addUrlTokenizedString("http").
@@ -986,8 +981,7 @@ Test::requireThatUrisAreUsed()
                        startIndexField("uriarray").
                        startElement(1).
                        startSubField("all").
-                       addUrlTokenizedString(
-                               "http://www.example.com:82/fluke?ab=2#8").
+                       addUrlTokenizedString("http://www.example.com:82/fluke?ab=2#8").
                        endSubField().
                        startSubField("scheme").
                        addUrlTokenizedString("http").
@@ -1010,8 +1004,7 @@ Test::requireThatUrisAreUsed()
                        endElement().
                        startElement(1).
                        startSubField("all").
-                       addUrlTokenizedString(
-                               "http://www.flickr.com:82/fluke?ab=2#9").
+                       addUrlTokenizedString("http://www.flickr.com:82/fluke?ab=2#9").
                        endSubField().
                        startSubField("scheme").
                        addUrlTokenizedString("http").
@@ -1036,8 +1029,7 @@ Test::requireThatUrisAreUsed()
                        startIndexField("uriwset").
                        startElement(4).
                        startSubField("all").
-                       addUrlTokenizedString(
-                               "http://www.example.com:83/fluke?ab=2#12").
+                       addUrlTokenizedString("http://www.example.com:83/fluke?ab=2#12").
                        endSubField().
                        startSubField("scheme").
                        addUrlTokenizedString("http").
@@ -1060,8 +1052,7 @@ Test::requireThatUrisAreUsed()
                        endElement().
                        startElement(7).
                        startSubField("all").
-                       addUrlTokenizedString(
-                               "http://www.flickr.com:85/fluke?ab=2#13").
+                       addUrlTokenizedString("http://www.flickr.com:85/fluke?ab=2#13").
                        endSubField().
                        startSubField("scheme").
                        addUrlTokenizedString("http").

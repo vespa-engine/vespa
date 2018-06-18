@@ -37,8 +37,7 @@ ExclusiveAttributeReadAccessor(const AttributeVector::SP &attribute,
 namespace {
 
 void
-attributeWriteBlockingTask(GateSP entranceGate,
-                           GateSP exitGate)
+attributeWriteBlockingTask(GateSP entranceGate, GateSP exitGate)
 {
     entranceGate->countDown();
     exitGate->await();
@@ -51,9 +50,8 @@ ExclusiveAttributeReadAccessor::takeGuard()
 {
     GateSP entranceGate = std::make_shared<Gate>();
     GateSP exitGate = std::make_shared<Gate>();
-    _attributeFieldWriter.execute(_attribute->getName(),
-            [entranceGate, exitGate]()
-            { attributeWriteBlockingTask(entranceGate, exitGate); });
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(_attribute->getNamePrefix()),
+                                  [entranceGate, exitGate]() { attributeWriteBlockingTask(entranceGate, exitGate); });
     entranceGate->await();
     return std::make_unique<Guard>(*_attribute, exitGate);
 }

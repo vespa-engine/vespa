@@ -89,14 +89,14 @@ public:
      * call sync before tearing down pointed to/referenced data.
      * All tasks must be scheduled from same thread.
      *
-     * @param componentId   component id
-     * @param function      function to be wrapped in a task and later executed
+     * @param id        executor id
+     * @param function  function to be wrapped in a task and later executed
      */
     template <class FunctionType>
-    void execute(vespalib::stringref componentId, FunctionType &&function) {
-        ExecutorId id = getExecutorId(componentId);
+    void execute(ExecutorId id, FunctionType &&function) {
         executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
+
 };
 
 } // namespace search
