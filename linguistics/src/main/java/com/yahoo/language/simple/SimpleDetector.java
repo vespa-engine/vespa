@@ -137,7 +137,7 @@ public class SimpleDetector implements Detector {
         }
     }
 
-    private String guessEncoding(byte[] input) {
+    public String guessEncoding(byte[] input) {
         boolean isUtf8 = true;
         boolean hasHighs = false;
         scan:
