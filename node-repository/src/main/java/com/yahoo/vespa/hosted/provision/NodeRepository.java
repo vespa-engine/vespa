@@ -661,4 +661,5 @@ public class NodeRepository extends AbstractComponent {
     private Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
     }
+
 }

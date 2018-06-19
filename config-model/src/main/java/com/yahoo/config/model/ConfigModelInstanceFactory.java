@@ -4,8 +4,7 @@ package com.yahoo.config.model;
 /**
  * Interface for factories of config models.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public interface ConfigModelInstanceFactory<MODEL extends ConfigModel> {
 

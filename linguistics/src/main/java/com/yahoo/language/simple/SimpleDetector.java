@@ -10,7 +10,7 @@ import com.yahoo.text.Utf8;
 import java.nio.ByteBuffer;
 
 /**
- * <p>Includes functionality for determining the langCode from a sample or from the encoding. Currently only Chinese,
+ * Includes functionality for determining the langCode from a sample or from the encoding. Currently only Chinese,
  * Japanese and Korean are supported.  There are two ways to guess a String's langCode, by encoding and by character
  * set.  If the encoding is available this is a very good indication of the langCode.  If the encoding is not available,
  * then the actual characters in the string can be used to make an educated guess at the String's langCode.  Recall a
@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
  * Unfortunately, its not 100% fool-proof. From what I've been able to determine, Korean characters do not overlap with
  * Japanese or Chinese characters, so their presence is a good indication of Korean.  If a string contains phonetic
  * japanese, this is a good indication of Japanese.  However, Japanese and Chinese characters occupy many of the same
- * character blocks, so if there are no definitive signs of Japanese then it is assumed that the String is Chinese.</p>
+ * character blocks, so if there are no definitive signs of Japanese then it is assumed that the String is Chinese.
  *
  * @author Rich Pito
  */
