@@ -78,7 +78,7 @@ public class FileDirectory  {
             return Files.walk(file.toPath(), 100).map(path -> {
                 try {
                     log.log(LogLevel.DEBUG, "Calculating hash for '" + path + "'");
-                    return hash(file, hasher);
+                    return hash(path.toFile(), hasher);
                 } catch (IOException e) {
                     log.log(LogLevel.WARNING, "Failed getting hash from '" + path + "'");
                     return 0;
