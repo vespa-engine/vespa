@@ -24,10 +24,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
@@ -25,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRou
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
@@ -122,7 +122,7 @@ public final class ControllerTester {
                 });
     }
 
-    public static BuildService.BuildJob buildJob(Application application, DeploymentJobs.JobType jobType) {
+    public static BuildService.BuildJob buildJob(Application application, JobType jobType) {
         return BuildService.BuildJob.of(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName());
     }
 

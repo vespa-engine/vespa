@@ -7,7 +7,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.zone;
  * The methods here return instances of {@link ZoneList}, which extends ZoneFilter, but with accessors and additional filters.
  * This forces the developer to consider which of the filters in this class to apply, prior to processing any zones.
  *
- * @author jvenstad
+ * @author jonmv
  */
 public interface ZoneFilter {
 

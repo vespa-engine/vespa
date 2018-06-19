@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.config.provision.ApplicationId;
 
 /**
- * @author jvenstad
+ * @author jonmv
  */
 public interface BuildService {
 
@@ -19,6 +19,11 @@ public interface BuildService {
      * Returns the state of the given job in the build service.
      */
     JobState stateOf(BuildJob buildJob);
+
+    /**
+     * Returns whether the given build job should be performed by this build service.
+     */
+    default boolean builds(BuildJob buildJob) { return true; }
 
     enum JobState {
 
