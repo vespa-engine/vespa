@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
@@ -40,7 +40,7 @@ public class HostedVespaPolicy implements Policy {
     }
 
     @Override
-    public void grantSuspensionRequest(ApplicationApi application)
+    public void grantSuspensionRequest(OrchestratorContext context, ApplicationApi application)
             throws HostStateChangeDeniedException {
         // Apply per-cluster policy
         for (ClusterApi cluster : application.getClusters()) {
@@ -50,7 +50,7 @@ public class HostedVespaPolicy implements Policy {
         // Ask Cluster Controller to set UP storage nodes in maintenance.
         // These storage nodes are guaranteed to be NO_REMARKS
         for (StorageNode storageNode : application.getUpStorageNodesInGroupInClusterOrder()) {
-            storageNode.setNodeState(ClusterControllerNodeState.MAINTENANCE);
+            storageNode.setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
             log.log(LogLevel.INFO, "The storage node on " + storageNode.hostName() + " has been set to MAINTENANCE");
         }
 
@@ -62,10 +62,11 @@ public class HostedVespaPolicy implements Policy {
     }
 
     @Override
-    public void releaseSuspensionGrant(ApplicationApi application) throws HostStateChangeDeniedException {
+    public void releaseSuspensionGrant(OrchestratorContext context, ApplicationApi application)
+            throws HostStateChangeDeniedException {
         // Always defer to Cluster Controller whether it's OK to resume storage node
         for (StorageNode storageNode : application.getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder()) {
-            storageNode.setNodeState(ClusterControllerNodeState.UP);
+            storageNode.setNodeState(context, ClusterControllerNodeState.UP);
             log.log(LogLevel.INFO, "The storage node on " + storageNode.hostName() + " has been set to UP");
         }
 
@@ -76,7 +77,8 @@ public class HostedVespaPolicy implements Policy {
     }
 
     @Override
-    public void acquirePermissionToRemove(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+    public void acquirePermissionToRemove(OrchestratorContext context, ApplicationApi applicationApi)
+            throws HostStateChangeDeniedException {
         ApplicationInstanceStatus applicationStatus = applicationApi.getApplicationStatus();
         if (applicationStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
             throw new HostStateChangeDeniedException(
@@ -94,7 +96,7 @@ public class HostedVespaPolicy implements Policy {
         // Ask Cluster Controller to set storage nodes to DOWN.
         // These storage nodes are guaranteed to be NO_REMARKS
         for (StorageNode storageNode : applicationApi.getStorageNodesInGroupInClusterOrder()) {
-            storageNode.setNodeState(ClusterControllerNodeState.DOWN);
+            storageNode.setNodeState(context, ClusterControllerNodeState.DOWN);
             log.log(LogLevel.INFO, "The storage node on " + storageNode.hostName() + " has been set DOWN");
         }
 
@@ -107,24 +109,14 @@ public class HostedVespaPolicy implements Policy {
 
     // TODO: Remove later - currently used for backward compatibility testing
     @Override
-    public void grantSuspensionRequest(ApplicationInstance applicationInstance,
-                                       HostName hostName,
-                                       MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
-        NodeGroup nodeGroup = new NodeGroup(applicationInstance);
-        nodeGroup.addNode(hostName);
-        ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup, hostStatusService, clusterControllerClientFactory);
-        grantSuspensionRequest(applicationApi);
-    }
-
-    // TODO: Remove later - currently used for backward compatibility testing
-    @Override
     public void releaseSuspensionGrant(
+            OrchestratorContext context,
             ApplicationInstance applicationInstance,
             HostName hostName,
             MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostName);
         ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup, hostStatusService, clusterControllerClientFactory);
-        releaseSuspensionGrant(applicationApi);
+        releaseSuspensionGrant(context, applicationApi);
     }
 
 }

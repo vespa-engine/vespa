@@ -44,6 +44,13 @@ public class InMemoryStatusService implements StatusService {
 
     @Override
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(ApplicationInstanceReference applicationInstanceReference) {
+        return lockApplicationInstance_forCurrentThreadOnly(applicationInstanceReference, 10);
+    }
+
+    @Override
+    public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
+            ApplicationInstanceReference applicationInstanceReference,
+            long timeoutSeconds) {
         Lock lock = instanceLockService.get(applicationInstanceReference);
         return new InMemoryMutableStatusRegistry(lock, applicationInstanceReference);
     }

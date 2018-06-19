@@ -5,6 +5,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.DummyInstanceLookupService;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 
 import java.io.IOException;
@@ -52,13 +53,13 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
         return new ClusterControllerClient() {
 
             @Override
-            public ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerNodeState wantedState) throws IOException {
+            public ClusterControllerStateResponse setNodeState(OrchestratorContext context, int storageNodeIndex, ClusterControllerNodeState wantedState) throws IOException {
                 nodes.put(clusterName + storageNodeIndex, wantedState);
                 return new ClusterControllerStateResponse(true, "Yes");
             }
 
             @Override
-            public ClusterControllerStateResponse setApplicationState(ClusterControllerNodeState wantedState) throws IOException {
+            public ClusterControllerStateResponse setApplicationState(OrchestratorContext context, ClusterControllerNodeState wantedState) throws IOException {
                 Set<String> keyCopy = new HashSet<>(nodes.keySet());
                 for (String s : keyCopy) {
                     if (s.startsWith(clusterName)) {

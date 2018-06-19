@@ -7,6 +7,7 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
@@ -43,7 +44,7 @@ public class StorageNodeImpl implements StorageNode {
     }
 
     @Override
-    public void setNodeState(ClusterControllerNodeState wantedNodeState)
+    public void setNodeState(OrchestratorContext context, ClusterControllerNodeState wantedNodeState)
             throws HostStateChangeDeniedException {
         // The "cluster name" used by the Cluster Controller IS the cluster ID.
         String clusterId = this.clusterId.s();
@@ -66,7 +67,7 @@ public class StorageNodeImpl implements StorageNode {
 
         ClusterControllerStateResponse response;
         try {
-            response = client.setNodeState(nodeIndex, wantedNodeState);
+            response = client.setNodeState(context, nodeIndex, wantedNodeState);
         } catch (IOException e) {
             throw new HostStateChangeDeniedException(
                     hostName(),

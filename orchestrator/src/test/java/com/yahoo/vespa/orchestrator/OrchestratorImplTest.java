@@ -2,6 +2,7 @@
 package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -77,7 +78,8 @@ public class OrchestratorImplTest {
                 clustercontroller,
                 new InMemoryStatusService(),
                 new OrchestratorConfig(new OrchestratorConfig.Builder()),
-                new DummyInstanceLookupService());
+                new DummyInstanceLookupService(),
+                mock(Timer.class));
 
         clustercontroller.setAllDummyNodesAsUp();
     }
@@ -307,7 +309,8 @@ public class OrchestratorImplTest {
                 clusterControllerClientFactory,
                 statusService,
                 new OrchestratorConfig(new OrchestratorConfig.Builder()),
-                lookupService);
+                lookupService,
+                mock(Timer.class));
 
         HostName hostName = new HostName("host.yahoo.com");
         TenantId tenantId = new TenantId("tenant");

@@ -3,12 +3,16 @@ package com.yahoo.vespa.orchestrator.controller;
 
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.LocalPassThroughJaxRsStrategy;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import org.junit.Test;
+
+import java.util.Optional;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ClusterControllerClientTest {
     private static final String CLUSTER_NAME = "clusterName";
@@ -24,7 +28,9 @@ public class ClusterControllerClientTest {
 
         final ClusterControllerNodeState wantedState = ClusterControllerNodeState.MAINTENANCE;
 
-        clusterControllerClient.setNodeState(STORAGE_NODE_INDEX, wantedState);
+        OrchestratorContext context = mock(OrchestratorContext.class);
+        when(context.getSuboperationTimeoutInSeconds()).thenReturn(Optional.of(1.0f));
+        clusterControllerClient.setNodeState(context, STORAGE_NODE_INDEX, wantedState);
 
         final ClusterControllerStateRequest expectedNodeStateRequest = new ClusterControllerStateRequest(
                 new ClusterControllerStateRequest.State(wantedState, ClusterControllerClientImpl.REQUEST_REASON),
@@ -33,6 +39,7 @@ public class ClusterControllerClientTest {
                 .setNodeState(
                         eq(CLUSTER_NAME),
                         eq(STORAGE_NODE_INDEX),
+                        eq(1.0f),
                         eq(expectedNodeStateRequest));
     }
 }

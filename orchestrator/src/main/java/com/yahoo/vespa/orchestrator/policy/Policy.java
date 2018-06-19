@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 
@@ -10,30 +11,20 @@ import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
  * @author oyving
  */
 public interface Policy {
-
-    /**
-     * Decide whether to grant a request for temporarily suspending the services on a host.
-     *
-     * @throws HostStateChangeDeniedException if the grant was not given.
-     */
-    void grantSuspensionRequest(
-            ApplicationInstance applicationInstance,
-            HostName hostName,
-            MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException;
-
     /**
      * Decide whether to grant a request for temporarily suspending the services on all hosts in the group.
      */
-    void grantSuspensionRequest(ApplicationApi applicationApi) throws HostStateChangeDeniedException;
+    void grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException;
 
-    void releaseSuspensionGrant(ApplicationApi application) throws HostStateChangeDeniedException;
+    void releaseSuspensionGrant(OrchestratorContext context, ApplicationApi application) throws HostStateChangeDeniedException;
 
     /**
      * Give all hosts in a group permission to be removed from the application.
      *
+     * @param context
      * @param applicationApi
      */
-    void acquirePermissionToRemove(ApplicationApi applicationApi) throws HostStateChangeDeniedException;
+    void acquirePermissionToRemove(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException;
 
     /**
      * Release an earlier grant for suspension.
@@ -41,7 +32,7 @@ public interface Policy {
      * @throws HostStateChangeDeniedException if the release failed.
      */
     void releaseSuspensionGrant(
-            ApplicationInstance applicationInstance,
+            OrchestratorContext context, ApplicationInstance applicationInstance,
             HostName hostName,
             MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException;
 }
