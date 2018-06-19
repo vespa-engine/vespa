@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.Applicat
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -195,7 +194,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value())); // (Necessary but not provided in this API)
 
         // Trigger deployment from completion of component job
-        controllerTester.jobCompletion(JobType.component)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.component)
                         .application(id)
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
@@ -210,7 +209,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default");
         // Called through the separate screwdriver/v1 API
-        controllerTester.jobCompletion(JobType.systemTest)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.systemTest)
                         .application(id)
                         .projectId(screwdriverProjectId)
                         .submit();
@@ -223,7 +222,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default", DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default");
-        controllerTester.jobCompletion(JobType.stagingTest)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.stagingTest)
                         .application(id)
                         .projectId(screwdriverProjectId)
                         .submit();
@@ -233,7 +232,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
-        controllerTester.jobCompletion(JobType.productionCorpUsEast1)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.productionCorpUsEast1)
                         .application(id)
                         .projectId(screwdriverProjectId)
                         .unsuccessful()
@@ -493,7 +492,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(deployData)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
-        controllerTester.jobCompletion(JobType.productionUsEast3)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.productionUsEast3)
                         .application(id)
                         .projectId(projectId)
                         .submit();
@@ -512,7 +511,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(deployData)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
-        controllerTester.jobCompletion(JobType.productionUsWest1)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.productionUsWest1)
                         .application(id)
                         .projectId(projectId)
                         .submit();
@@ -522,7 +521,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(deployData)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
-        controllerTester.jobCompletion(JobType.productionUsEast3)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.productionUsEast3)
                         .application(id)
                         .projectId(projectId)
                         .submit();
@@ -831,7 +830,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
 
         // Allow systemtest to succeed by notifying completion of system test
-        controllerTester.jobCompletion(JobType.component)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.component)
                         .application(application.id())
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
@@ -860,27 +859,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
         BuildJob job = new BuildJob(report -> notifyCompletion(report, tester), tester.artifactRepository())
                 .application(app)
                 .projectId(projectId);
-        job.type(JobType.component).uploadArtifact(applicationPackage).submit();
+        job.type(DeploymentJobs.JobType.component).uploadArtifact(applicationPackage).submit();
         tester.deploy(app, applicationPackage, TEST_ZONE, projectId);
-        job.type(JobType.systemTest).submit();
+        job.type(DeploymentJobs.JobType.systemTest).submit();
 
         // Notifying about unknown job fails
         Request request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
-                .data(asJson(job.type(JobType.productionUsEast3).report()))
+                .data(asJson(job.type(DeploymentJobs.JobType.productionUsEast3).report()))
                 .userIdentity(HOSTED_VESPA_OPERATOR)
                 .get();
         tester.containerTester().assertResponse(request, new File("jobreport-unexpected-completion.json"), 400);
 
         // ... and assert it was recorded
         JobStatus recordedStatus =
-                tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(JobType.component);
+                tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(DeploymentJobs.JobType.component);
 
         assertNotNull("Status was recorded", recordedStatus);
         assertTrue(recordedStatus.isSuccess());
         assertEquals(vespaVersion, recordedStatus.lastCompleted().get().platform());
 
         recordedStatus =
-                tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(JobType.productionApNortheast2);
+                tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(DeploymentJobs.JobType.productionApNortheast2);
         assertNull("Status of never-triggered jobs is empty", recordedStatus);
 
         Response response;
@@ -907,19 +906,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
         BuildJob job = new BuildJob(report -> notifyCompletion(report, tester), tester.artifactRepository())
                 .application(app)
                 .projectId(projectId);
-        job.type(JobType.component).uploadArtifact(applicationPackage).submit();
+        job.type(DeploymentJobs.JobType.component).uploadArtifact(applicationPackage).submit();
 
         tester.deploy(app, applicationPackage, TEST_ZONE, projectId);
-        job.type(JobType.systemTest).submit();
+        job.type(DeploymentJobs.JobType.systemTest).submit();
         tester.deploy(app, applicationPackage, STAGING_ZONE, projectId);
-        job.type(JobType.stagingTest).error(DeploymentJobs.JobError.outOfCapacity).submit();
+        job.type(DeploymentJobs.JobType.stagingTest).error(DeploymentJobs.JobError.outOfCapacity).submit();
 
         // Appropriate error is recorded
         JobStatus jobStatus = tester.controller().applications().get(app.id())
                 .get()
                 .deploymentJobs()
                 .jobStatus()
-                .get(JobType.stagingTest);
+                .get(DeploymentJobs.JobType.stagingTest);
         assertFalse(jobStatus.isSuccess());
         assertEquals(DeploymentJobs.JobError.outOfCapacity, jobStatus.jobError().get());
     }
@@ -1063,7 +1062,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Trigger application change
         controllerTester.artifactRepository().put(application, applicationPackage,"1.0." + buildNumber
                                                                                   + "-commit1");
-        controllerTester.jobCompletion(JobType.component)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.component)
                         .application(application)
                         .projectId(projectId)
                         .buildNumber(buildNumber)
@@ -1079,7 +1078,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request(testPath, DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                 "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
-        controllerTester.jobCompletion(JobType.systemTest)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.systemTest)
                         .application(application)
                         .projectId(projectId)
                         .submit();
@@ -1094,7 +1093,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request(stagingPath, DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                 "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
-        controllerTester.jobCompletion(JobType.stagingTest)
+        controllerTester.jobCompletion(DeploymentJobs.JobType.stagingTest)
                         .application(application)
                         .projectId(projectId)
                         .submit();

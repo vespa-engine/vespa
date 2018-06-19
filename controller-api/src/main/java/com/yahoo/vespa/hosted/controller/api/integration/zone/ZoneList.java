@@ -12,7 +12,7 @@ import java.util.List;
  * This is typically offered after an initial filter from {@link ZoneFilter} has been applied.
  * This forces the developer to consider which zones to process.
  *
- * @author jonmv
+ * @author jvenstad
  */
 public interface ZoneList extends ZoneFilter {
 

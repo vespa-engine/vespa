@@ -48,7 +48,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -857,7 +856,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         return new DeploymentJobs.JobReport(
                 ApplicationId.from(tenantName, applicationName, report.field("instance").asString()),
-                JobType.fromJobName(report.field("jobName").asString()),
+                DeploymentJobs.JobType.fromJobName(report.field("jobName").asString()),
                 report.field("projectId").asLong(),
                 report.field("buildNumber").asLong(),
                 toSourceRevision(report.field("sourceRevision")),

@@ -12,12 +12,14 @@ import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
+import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -36,7 +38,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -90,7 +92,7 @@ public class ContainerControllerTester {
     }
 
     /** Notify the controller about a job completing */
-    public BuildJob jobCompletion(JobType job) {
+    public BuildJob jobCompletion(DeploymentJobs.JobType job) {
         return new BuildJob(this::notifyJobCompletion, artifactRepository()).type(job);
     }
 

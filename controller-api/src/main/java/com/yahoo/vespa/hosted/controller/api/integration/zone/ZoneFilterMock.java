@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 /**
  * A Zones.List implementation which assumes all zones are controllerManaged.
  *
- * @author jonmv
+ * @author jvenstad
  */
 public class ZoneFilterMock implements ZoneList {
 

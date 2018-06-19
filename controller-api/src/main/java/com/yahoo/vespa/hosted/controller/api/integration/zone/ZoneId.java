@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * Serialised form is 'environment.region'.
  *
- * @author jonmv
+ * @author jvenstad
  */
 public class ZoneId {
     // TODO: Replace usages of environment + region with usages of this.

@@ -10,7 +10,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
@@ -79,13 +78,13 @@ public class ApplicationSerializerTest {
         OptionalLong projectId = OptionalLong.of(123L);
         List<JobStatus> statusList = new ArrayList<>();
 
-        statusList.add(JobStatus.initial(JobType.systemTest)
+        statusList.add(JobStatus.initial(DeploymentJobs.JobType.systemTest)
                                 .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, empty(), "Test", Instant.ofEpochMilli(7))
                                 .withCompletion(30, empty(), Instant.ofEpochMilli(8)));
-        statusList.add(JobStatus.initial(JobType.stagingTest)
+        statusList.add(JobStatus.initial(DeploymentJobs.JobType.stagingTest)
                                 .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, empty(), "Test 2", Instant.ofEpochMilli(5))
                                 .withCompletion(11, Optional.of(JobError.unknown), Instant.ofEpochMilli(6)));
-        statusList.add(JobStatus.initial(JobType.from(main, zone1).get())
+        statusList.add(JobStatus.initial(DeploymentJobs.JobType.from(main, zone1).get())
                                 .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, deployments.stream().findFirst(), "Test 3", Instant.ofEpochMilli(6))
                                 .withCompletion(11, empty(), Instant.ofEpochMilli(7)));
 
@@ -120,10 +119,10 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.deploymentJobs().projectId(), serialized.deploymentJobs().projectId());
         assertEquals(original.deploymentJobs().jobStatus().size(), serialized.deploymentJobs().jobStatus().size());
-        assertEquals(  original.deploymentJobs().jobStatus().get(JobType.systemTest),
-                     serialized.deploymentJobs().jobStatus().get(JobType.systemTest));
-        assertEquals(  original.deploymentJobs().jobStatus().get(JobType.stagingTest),
-                     serialized.deploymentJobs().jobStatus().get(JobType.stagingTest));
+        assertEquals(  original.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest),
+                     serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest));
+        assertEquals(  original.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest),
+                     serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest));
 
         assertEquals(original.outstandingChange(), serialized.outstandingChange());
 

@@ -12,7 +12,7 @@ import java.util.Optional;
 /**
  * Represents the people responsible for keeping Vespa up and running in a given organization, etc..
  *
- * @author jonmv
+ * @author jvenstad
  */
 public interface DeploymentIssues {
 

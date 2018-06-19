@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * @author jonmv
+ * @author jvenstad
  */
 public class GitHubMock implements GitHub {
 

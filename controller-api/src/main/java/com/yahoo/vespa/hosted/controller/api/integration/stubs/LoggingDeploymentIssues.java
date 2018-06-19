@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * A memory backed implementation of the Issues API which logs changes and does nothing else.
  * 
  * @author bratseth
- * @author jonmv
+ * @author jvenstad
  */
 public class LoggingDeploymentIssues implements DeploymentIssues {
 

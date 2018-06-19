@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * Represents a human computer user, typically by UNIX account name.
  *
- * @author jonmv
+ * @author jvenstad
  */
 public class User {
 
