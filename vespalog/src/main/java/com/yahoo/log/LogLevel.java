@@ -95,7 +95,6 @@ public class LogLevel extends Level {
         javaToVespa.put(Level.FINEST, SPAM);
 
         // need the VESPA ones too
-        javaToVespa.put(UNKNOWN, UNKNOWN);
         javaToVespa.put(FATAL, FATAL);
         javaToVespa.put(ERROR, ERROR);
         javaToVespa.put(EVENT, EVENT);
@@ -144,16 +143,27 @@ public class LogLevel extends Level {
      * @param level The Java loglevel we want mapped to its VESPA
      *              counterpart
      * @return The VESPA LogLevel instance representing the corresponding
-     *         log level or the UNKNOWN instance if the log level was
-     *         unknown (ie. not contained in the mapping.  Should never
-     *         happen).
+     *         log level (or nearest normal level numerically if not in map)
      */
     public static Level getVespaLogLevel(Level level) {
         Level ll = javaToVespa.get(level);
         if (ll != null) {
             return ll;
         }
-        return UNKNOWN;
+        int lv = level.intValue();
+        if (lv > WARNING.intValue()) {
+            return ERROR;
+        }
+        if (lv > INFO.intValue()) {
+            return WARNING;
+        }
+        if (lv > DEBUG.intValue()) {
+            return INFO;
+        }
+        if (lv > FINEST.intValue()) {
+            return DEBUG;
+        }
+        return SPAM;
     }
 
     /**
