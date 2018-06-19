@@ -18,6 +18,7 @@ import java.nio.file.attribute.FileTime;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class FileDirectoryTest {
@@ -49,22 +50,29 @@ public class FileDirectoryTest {
 
         String subdirName = "subdir";
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
-        createFileInSubDir(subDirectory, "foo");
+        createFileInSubDir(subDirectory, "foo", "some content");
         FileReference fileReference = fileDirectory.addFile(subDirectory);
         File dir = fileDirectory.getFile(fileReference);
         assertTrue(dir.exists());
         assertTrue(new File(dir, "foo").exists());
         assertFalse(new File(dir, "doesnotexist").exists());
-        assertEquals("1315a322fc323608", fileReference.value());
+        assertEquals("bebc5a1aee74223d", fileReference.value());
 
+        // Change contents of a file, file reference value should change
+        createFileInSubDir(subDirectory, "foo", "new content");
+        FileReference fileReference2 = fileDirectory.addFile(subDirectory);
+        dir = fileDirectory.getFile(fileReference2);
+        assertTrue(new File(dir, "foo").exists());
+        assertNotEquals(fileReference + " should not be equal to " + fileReference2, fileReference, fileReference2);
+        assertEquals("e5d4b3fe5ee3ede3", fileReference2.value());
 
         // Add a file, should be available and file reference should have another value
-        createFileInSubDir(subDirectory, "bar");
-        fileReference = fileDirectory.addFile(subDirectory);
-        dir = fileDirectory.getFile(fileReference);
+        createFileInSubDir(subDirectory, "bar", "some other content");
+        FileReference fileReference3 = fileDirectory.addFile(subDirectory);
+        dir = fileDirectory.getFile(fileReference3);
         assertTrue(new File(dir, "foo").exists());
         assertTrue(new File(dir, "bar").exists());
-        assertEquals("9ca074b47a4b510c", fileReference.value());
+        assertEquals("894bced3fc9d199b", fileReference3.value());
     }
 
     @Test
@@ -73,7 +81,7 @@ public class FileDirectoryTest {
 
         String subdirName = "subdir";
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
-        createFileInSubDir(subDirectory, "foo");
+        createFileInSubDir(subDirectory, "foo", "some content");
         FileReference fileReference = fileDirectory.addFile(subDirectory);
         File dir = fileDirectory.getFile(fileReference);
         assertTrue(dir.exists());
@@ -81,7 +89,7 @@ public class FileDirectoryTest {
         assertTrue(foo.exists());
         FileTime fooCreatedTimestamp = Files.readAttributes(foo.toPath(), BasicFileAttributes.class).creationTime();
         assertFalse(new File(dir, "doesnotexist").exists());
-        assertEquals("1315a322fc323608", fileReference.value());
+        assertEquals("bebc5a1aee74223d", fileReference.value());
 
         // Remove a file, directory should be deleted before adding a new file
         try { Thread.sleep(1000);} catch (InterruptedException e) {/*ignore */} // Needed since we have timestamp resolution of 1 second
@@ -95,7 +103,7 @@ public class FileDirectoryTest {
         // Check that creation timestamp is newer than the old one to be sure that a new file was written
         assertTrue(foo2CreatedTimestamp.compareTo(fooCreatedTimestamp) > 0);
         assertFalse(new File(dir, "doesnotexist").exists());
-        assertEquals("1315a322fc323608", fileReference.value());
+        assertEquals("bebc5a1aee74223d", fileReference.value());
     }
 
     // Content in created file is equal to the filename string
@@ -105,11 +113,11 @@ public class FileDirectoryTest {
         return fileDirectory.addFile(file);
     }
 
-    private void createFileInSubDir(File subDirectory, String filename) throws IOException {
+    private void createFileInSubDir(File subDirectory, String filename, String fileContent) throws IOException {
         if (!subDirectory.exists())
             subDirectory.mkdirs();
         File file = new File(subDirectory, filename);
-        IOUtils.writeFile(file, filename, false);
+        IOUtils.writeFile(file, fileContent, false);
     }
 
 }
