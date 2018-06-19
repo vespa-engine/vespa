@@ -130,7 +130,8 @@ public class VersionStatus {
         ListMap<Version, HostName> versions = new ListMap<>();
         for (ZoneId zone : zones) {
             for (SystemApplication application : SystemApplication.all()) {
-                for (Node node : controller.configServer().nodeRepository().listOperational(zone, application.id())) {
+                for (Node node : controller.configServer().nodeRepository().list(zone, application.id(),
+                                                                                 SystemApplication.activeStates())) {
                     versions.put(node.currentVersion(), node.hostname());
                 }
             }
