@@ -8,6 +8,7 @@ search test {
       indexing: summary
       struct-field name {
         indexing: attribute
+        attribute: fast-search
       }
       struct-field weight {
         indexing: attribute

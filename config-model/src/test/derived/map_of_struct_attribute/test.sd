@@ -8,6 +8,7 @@ search test {
       indexing: summary
       struct-field key {
         indexing: attribute
+        attribute: fast-search
       }
       struct-field value.name {
         indexing: attribute
@@ -23,6 +24,7 @@ search test {
       }
       struct-field value.name {
         indexing: attribute
+        attribute: fast-search
       }
     }
   }
