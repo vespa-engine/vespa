@@ -2,14 +2,12 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -192,7 +190,7 @@ public class SystemUpgraderTest {
     private void completeUpgrade(SystemApplication application, Version version, ZoneId... zones) {
         assertWantedVersion(application, version, zones);
         for (ZoneId zone : zones) {
-            for (Node node : nodeRepository().listOperational(zone, application.id())) {
+            for (Node node : nodeRepository().list(zone, application.id(), SystemApplication.activeStates())) {
                 nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
                                                     node.wantedVersion(), node.wantedVersion()));
             }
@@ -215,25 +213,25 @@ public class SystemUpgraderTest {
     }
 
     private void assertWantedVersion(SystemApplication application, Version version, ZoneId... zones) {
-        assertVersion(application.id(), version, Node::wantedVersion, zones);
+        assertVersion(application, version, Node::wantedVersion, zones);
     }
 
     private void assertCurrentVersion(SystemApplication application, Version version, ZoneId... zones) {
-        assertVersion(application.id(), version, Node::currentVersion, zones);
+        assertVersion(application, version, Node::currentVersion, zones);
     }
 
     private void assertWantedVersion(List<SystemApplication> applications, Version version, ZoneId... zones) {
-        applications.forEach(application -> assertVersion(application.id(), version, Node::wantedVersion, zones));
+        applications.forEach(application -> assertVersion(application, version, Node::wantedVersion, zones));
     }
 
     private void assertCurrentVersion(List<SystemApplication> applications, Version version, ZoneId... zones) {
-        applications.forEach(application -> assertVersion(application.id(), version, Node::currentVersion, zones));
+        applications.forEach(application -> assertVersion(application, version, Node::currentVersion, zones));
     }
 
-    private void assertVersion(ApplicationId application, Version version, Function<Node, Version> versionField,
+    private void assertVersion(SystemApplication application, Version version, Function<Node, Version> versionField,
                                ZoneId... zones) {
         for (ZoneId zone : zones) {
-            for (Node node : nodeRepository().listOperational(zone, application)) {
+            for (Node node : nodeRepository().list(zone, application.id(), SystemApplication.activeStates())) {
                 assertEquals(application + " version", version, versionField.apply(node));
             }
         }

@@ -19,19 +19,10 @@ public interface NodeRepository {
     /** List all nodes in zone owned by given application */
     List<Node> list(ZoneId zone, ApplicationId application);
 
-    /** List all operational nodes in zone owned by given application */
-    default List<Node> listOperational(ZoneId zone, ApplicationId application) {
+    /** List all nodes in states, in zone owned by given application */
+    default List<Node> list(ZoneId zone, ApplicationId application, List<Node.State> states) {
         return list(zone, application).stream()
-                                      .filter(node -> {
-                                          switch (node.state()) {
-                                              case ready:
-                                              case active:
-                                              case inactive:
-                                              case reserved:
-                                                  return true;
-                                          }
-                                          return false;
-                                      })
+                                      .filter(node -> states.contains(node.state()))
                                       .collect(Collectors.toList());
     }
 
