@@ -694,19 +694,14 @@ public class RankProfile implements Serializable, Cloneable {
 
     private void compileThis(QueryProfileRegistry queryProfiles) {
         parseExpressions();
-
         checkNameCollisions(getMacros(), getConstants());
 
-        Map<String, Macro> compiledMacros = new LinkedHashMap<>();
-        for (Map.Entry<String, Macro> macroEntry : getMacros().entrySet()) {
-            Macro compiledMacro = macroEntry.getValue().clone();
-            compiledMacro.setRankingExpression(compile(macroEntry.getValue().getRankingExpression(),
-                                                       queryProfiles,
-                                                       getConstants(), Collections.<String, Macro>emptyMap()));
-            compiledMacros.put(macroEntry.getKey(), compiledMacro);
-        }
-        macros = compiledMacros;
-        Map<String, Macro> inlineMacros = keepInline(compiledMacros);
+        // Macro compiling first pass: compile inline macros without resolving other macros
+        Map<String, Macro> inlineMacros = compileMacros(getInlineMacros(), queryProfiles, Collections.emptyMap());
+
+        // Macro compiling second pass: compile all macros and insert previously compiled inline macros
+        macros = compileMacros(getMacros(), queryProfiles, inlineMacros);
+
         firstPhaseRanking = compile(this.getFirstPhaseRanking(), queryProfiles, getConstants(), inlineMacros);
         secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, getConstants(), inlineMacros);
     }
@@ -719,12 +714,22 @@ public class RankProfile implements Serializable, Cloneable {
         }
     }
 
-    private Map<String, Macro> keepInline(Map<String, Macro> macros) {
-        Map<String, Macro> inlineMacros = new HashMap<>();
-        for (Map.Entry<String, Macro> entry : macros.entrySet())
-            if (entry.getValue().getInline())
-                inlineMacros.put(entry.getKey(), entry.getValue());
-        return inlineMacros;
+    private Map<String, Macro> getInlineMacros() {
+        return getMacros().entrySet().stream().filter(x -> x.getValue().getInline())
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private Map<String, Macro> compileMacros(Map<String, Macro> macros,
+                                             QueryProfileRegistry queryProfiles,
+                                             Map<String, Macro> inlineMacros) {
+        Map<String, Macro> compiledMacros = new LinkedHashMap<>();
+        for (Map.Entry<String, Macro> entry : macros.entrySet()) {
+            Macro macro = entry.getValue().clone();
+            RankingExpression exp = compile(macro.getRankingExpression(), queryProfiles, getConstants(), inlineMacros);
+            macro.setRankingExpression(exp);
+            compiledMacros.put(entry.getKey(), macro);
+        }
+        return compiledMacros;
     }
 
     private RankingExpression compile(RankingExpression expression,
