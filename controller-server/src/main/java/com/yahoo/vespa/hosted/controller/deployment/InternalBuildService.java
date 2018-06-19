@@ -4,6 +4,9 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 
 /**
+ * Wraps a JobController as a BuildService.
+ *
+ * Shall be inlined when the {@link DelegatingBuildService} delegates all jobs to it.
  *
  * @author jonmv
  */

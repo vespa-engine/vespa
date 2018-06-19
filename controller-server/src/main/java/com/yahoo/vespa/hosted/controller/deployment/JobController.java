@@ -2,11 +2,21 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
 import java.util.List;
 
+/**
+ * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
+ *
+ * Keys are the {@link ApplicationId} of the real application, for which the deployment job is run, and the
+ * {@link ZoneId} of the real deployment to test.
+ *
+ * Although the deployment jobs are themselves applications, their IDs are not to be referenced.
+ *
+ * @author jonmv
+ */
 public class JobController {
 
     private final Controller controller;
@@ -30,12 +40,12 @@ public class JobController {
     }
 
     /** Returns all job types which have been run for the given application. */
-    List<DeploymentId> jobs(ApplicationId application) {
+    List<ZoneId> jobs(ApplicationId application) {
         return null;
     }
 
-    /** Returns a list of meta information about all runs of the given type. */
-    List<JobMeta> runs(DeploymentId deployment) {
+    /** Returns a list of meta information about all known runs of the given job type. */
+    List<JobMeta> runs(ApplicationId application, ZoneId zone) {
         return null;
     }
 
@@ -44,7 +54,7 @@ public class JobController {
         return null;
     }
 
-    /** Returns all details about the given job. */
+    /** Returns the details for the given job. */
     JobDetails details(JobId job) {
         return null;
     }
@@ -57,7 +67,7 @@ public class JobController {
     }
 
     /** Orders a run of the given type, and returns the id of the created job. */
-    JobId run(DeploymentId deployment) {
+    JobId run(ApplicationId application, ZoneId zone) {
         return null;
     }
 
