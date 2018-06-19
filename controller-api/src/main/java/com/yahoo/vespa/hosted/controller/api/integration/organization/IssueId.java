@@ -7,7 +7,7 @@ import java.util.Objects;
  * Used to identify issues stored in some issue tracking system.
  * The {@code value()} and {@code from()} methods should be inverses.
  *
- * @author jonmv
+ * @author jvenstad
  */
 public class IssueId {
 

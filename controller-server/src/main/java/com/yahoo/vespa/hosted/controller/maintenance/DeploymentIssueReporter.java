@@ -28,7 +28,7 @@ import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence
  * Maintenance job which files issues for tenants when they have jobs which fails continuously
  * and escalates issues which are not handled in a timely manner.
  *
- * @author jonmv
+ * @author jvenstad
  */
 public class DeploymentIssueReporter extends Maintainer {
 

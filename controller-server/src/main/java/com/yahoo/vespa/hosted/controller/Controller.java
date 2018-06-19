@@ -25,9 +25,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingSe
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.deployment.DelegatingBuildService;
-import com.yahoo.vespa.hosted.controller.deployment.InternalBuildService;
-import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -64,7 +61,6 @@ public class Controller extends AbstractComponent {
     private final CuratorDb curator;
     private final ApplicationController applicationController;
     private final TenantController tenantController;
-    private final JobController jobController;
     private final Clock clock;
     private final GitHub gitHub;
     private final EntityService entityService;
@@ -118,15 +114,13 @@ public class Controller extends AbstractComponent {
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "AthenzClientFactory cannot be null");
 
-        jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, athenzClientFactory,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
-                                                          new DelegatingBuildService(Objects.requireNonNull(buildService, "BuildService cannot be null"),
-                                                                                     new InternalBuildService(jobController)),
+                                                          Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
         tenantController = new TenantController(this, curator, athenzClientFactory);
 

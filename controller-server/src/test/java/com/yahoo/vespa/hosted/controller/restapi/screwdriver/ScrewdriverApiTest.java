@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.screwdriver;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
@@ -18,7 +18,7 @@ import java.util.OptionalLong;
 
 /**
  * @author bratseth
- * @author jonmv
+ * @author jvenstad
  */
 public class ScrewdriverApiTest extends ControllerContainerTest {
 
@@ -62,7 +62,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                                    new byte[0], Request.Method.POST, () -> "user"),
                        200, "{\"message\":\"Triggered component for tenant1.application1\"}");
         tester.controller().applications().deploymentTrigger().notifyOfCompletion(new JobReport(app.id(),
-                                                                                                JobType.component,
+                                                                                                DeploymentJobs.JobType.component,
                                                                                                 1,
                                                                                                 42,
                                                                                                 Optional.of(new SourceRevision("repo", "branch", "commit")),

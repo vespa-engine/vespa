@@ -23,7 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author jonmv
+ * @author jvenstad
  */
 public class ApplicationOwnershipConfirmerTest {
 

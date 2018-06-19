@@ -13,7 +13,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
@@ -399,8 +398,8 @@ public class ApplicationSerializer {
 
     private Optional<JobStatus> jobStatusFromSlime(Inspector object) {
         // if the job type has since been removed, ignore it
-        Optional<JobType> jobType =
-                JobType.fromOptionalJobName(object.field(jobTypeField).asString());
+        Optional<DeploymentJobs.JobType> jobType =
+                DeploymentJobs.JobType.fromOptionalJobName(object.field(jobTypeField).asString());
         if (! jobType.isPresent()) return Optional.empty();
 
         Optional<JobError> jobError = Optional.empty();

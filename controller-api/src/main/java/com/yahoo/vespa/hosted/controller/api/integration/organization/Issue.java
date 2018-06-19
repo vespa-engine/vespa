@@ -14,7 +14,7 @@ import java.util.Optional;
  * Represents an issue which needs to reported, typically from the controller, to a responsible party,
  * the identity of which is determined by the propertyId and, possibly, assignee fields.
  *
- * @author jonmv
+ * @author jvenstad
  */
 public class Issue {
 

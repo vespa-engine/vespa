@@ -8,8 +8,8 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
@@ -19,9 +19,9 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -44,9 +44,9 @@ public class FailureRedeployerTest {
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsEast3);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
 
         // New version is released
         version = Version.fromString("5.1");
@@ -56,12 +56,12 @@ public class FailureRedeployerTest {
         tester.readyJobTrigger().maintain();
 
         // Test environments pass
-        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
 
         // Production job fails and is retried
         tester.clock().advance(Duration.ofSeconds(1)); // Advance time so that we can detect jobs in progress
-        tester.deployAndNotify(app, applicationPackage, false, JobType.productionUsEast3);
+        tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
         assertEquals("Production job is retried", 1, tester.buildService().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
@@ -69,24 +69,24 @@ public class FailureRedeployerTest {
         version = Version.fromString("5.2");
         tester.upgradeSystem(version);
         tester.upgrader().maintain();
-        tester.jobCompletion(JobType.productionUsEast3).application(app).unsuccessful().submit();
+        tester.jobCompletion(DeploymentJobs.JobType.productionUsEast3).application(app).unsuccessful().submit();
         assertEquals("Application starts upgrading to new version", 2, tester.buildService().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // Failure re-deployer did not retry failing job for prod.us-east-3, since it no longer had an available change
         assertFalse("Job is not retried", tester.buildService().jobs().stream()
-                                                .anyMatch(j -> j.jobName().equals(JobType.productionUsEast3.jobName())));
+                                                .anyMatch(j -> j.jobName().equals(DeploymentJobs.JobType.productionUsEast3.jobName())));
 
         // Test environments pass
-        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
 
         // Production job fails again, and is retried
-        tester.deployAndNotify(app, applicationPackage, false, JobType.productionUsEast3);
+        tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
         assertEquals("Job is retried", Collections.singletonList(ControllerTester.buildJob(app, productionUsEast3)), tester.buildService().jobs());
 
         // Production job finally succeeds
-        tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsEast3);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
         assertFalse("No failures", tester.application(app.id()).deploymentJobs().hasFailures());
     }
@@ -103,9 +103,9 @@ public class FailureRedeployerTest {
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsEast3);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
 
         // New version is released
         version = Version.fromString("5.1");
@@ -116,7 +116,7 @@ public class FailureRedeployerTest {
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // system-test fails and is left with a retry
-        tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.systemTest);
 
         // Another version is released
         version = Version.fromString("5.2");

@@ -14,7 +14,7 @@ import java.util.Optional;
  * with reassurance that any misbehaving applications will swiftly be dealt with.
  * Ignored confirmation requests are periodically redirected to humans of higher rank, until they are acknowledged.
  *
- * @author jonmv
+ * @author jvenstad
  */
 public interface OwnershipIssues {
 

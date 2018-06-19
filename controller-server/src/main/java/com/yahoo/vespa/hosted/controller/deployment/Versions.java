@@ -3,13 +3,14 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
 import java.util.Optional;
+
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 
 /**
  * Source and target versions for an application.
@@ -101,7 +102,7 @@ public class Versions {
                                                         Optional<Deployment> deployment) {
         return max(deployment.map(Deployment::applicationVersion), change.application())
                 .orElse(application.oldestDeployedApplication()
-                                   .orElse(application.deploymentJobs().jobStatus().get(JobType.component)
+                                   .orElse(application.deploymentJobs().jobStatus().get(component)
                                                       .lastSuccess()
                                                       .get()
                                                       .application()));
