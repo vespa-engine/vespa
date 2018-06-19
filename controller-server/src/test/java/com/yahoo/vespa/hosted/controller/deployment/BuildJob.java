@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
@@ -24,7 +25,7 @@ public class BuildJob {
                                                                                   "master", "commit1");
     public static final long defaultBuildNumber = 42;
 
-    private DeploymentJobs.JobType job;
+    private JobType job;
     private ApplicationId applicationId;
     private Optional<DeploymentJobs.JobError> jobError = Optional.empty();
     private Optional<SourceRevision> sourceRevision = Optional.of(defaultSourceRevision);
@@ -41,7 +42,7 @@ public class BuildJob {
         this.artifactRepository = artifactRepository;
     }
 
-    public BuildJob type(DeploymentJobs.JobType job) {
+    public BuildJob type(JobType job) {
         this.job = job;
         return this;
     }
@@ -105,7 +106,7 @@ public class BuildJob {
     public BuildJob uploadArtifact(ApplicationPackage applicationPackage) {
         Objects.requireNonNull(job, "job cannot be null");
         Objects.requireNonNull(applicationId, "applicationId cannot be null");
-        if (job != DeploymentJobs.JobType.component) {
+        if (job != JobType.component) {
             throw new IllegalStateException(job + " cannot upload artifact");
         }
         artifactRepository.put(applicationId, applicationPackage, applicationVersion());
@@ -114,7 +115,7 @@ public class BuildJob {
 
     /** Send report for this build job to the controller */
     public void submit() {
-        if (job == DeploymentJobs.JobType.component &&
+        if (job == JobType.component &&
             !artifactRepository.contains(applicationId, applicationVersion())) {
             throw new IllegalStateException(job + " must upload artifact before reporting completion");
         }

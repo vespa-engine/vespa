@@ -13,7 +13,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.Job
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.running;
 
 /**
- * @author jvenstad
+ * @author jonmv
  */
 public class MockBuildService extends AbstractComponent implements BuildService {
 

@@ -12,8 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
@@ -26,13 +25,13 @@ import java.util.function.Supplier;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionEuWest1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsCentral1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -42,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author bratseth
  * @author mpolden
- * @author jvenstad
+ * @author jonmv
  */
 public class DeploymentTriggerTest {
 
@@ -61,8 +60,8 @@ public class DeploymentTriggerTest {
 
         // Deploy completely once
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsWest1);
 
         // New version is released
@@ -229,17 +228,17 @@ public class DeploymentTriggerTest {
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
 
         // Test environments pass
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
 
         // Last declared job completes first
-        tester.deploy(DeploymentJobs.JobType.productionUsWest1, app, applicationPackage);
-        tester.jobCompletion(DeploymentJobs.JobType.productionUsWest1).application(app).submit();
+        tester.deploy(JobType.productionUsWest1, app, applicationPackage);
+        tester.jobCompletion(JobType.productionUsWest1).application(app).submit();
         assertTrue("Change is present as not all jobs are complete",
                    tester.applications().require(app.id()).change().isPresent());
 
         // All jobs complete
-        tester.deploy(DeploymentJobs.JobType.productionUsEast3, app, applicationPackage);
+        tester.deploy(JobType.productionUsEast3, app, applicationPackage);
         tester.jobCompletion(JobType.productionUsEast3).application(app).submit();
         assertFalse("Change has been deployed",
                     tester.applications().require(app.id()).change().isPresent());

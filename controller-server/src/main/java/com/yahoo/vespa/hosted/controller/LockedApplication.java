@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -34,7 +34,7 @@ import java.util.OptionalLong;
  * An application that has been locked for modification. Provides methods for modifying an application's fields.
  *
  * @author mpolden
- * @author jvenstad
+ * @author jonmv
  */
 public class LockedApplication {
 
@@ -158,7 +158,7 @@ public class LockedApplication {
         return with(deployments);
     }
 
-    public LockedApplication withoutDeploymentJob(DeploymentJobs.JobType jobType) {
+    public LockedApplication withoutDeploymentJob(JobType jobType) {
         return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs.without(jobType), change, outstandingChange,
                                      ownershipIssueId, metrics, rotation);

@@ -22,7 +22,7 @@ import java.util.logging.Level;
  *
  * When to file new issues, escalate inactive ones, etc., is handled by the enclosed OwnershipIssues.
  *
- * @author jvenstad
+ * @author jonmv
  */
 public class ApplicationOwnershipConfirmer extends Maintainer {
 

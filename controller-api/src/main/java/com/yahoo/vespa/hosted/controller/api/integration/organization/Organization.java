@@ -12,7 +12,7 @@ import java.util.Optional;
  * Represents the humans who use this software, and their organization.
  * Lets the software report issues to its caretakers, and provides other useful human resource lookups.
  *
- * @author jvenstad
+ * @author jonmv
  */
 public interface Organization {
 
