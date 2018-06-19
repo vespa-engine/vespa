@@ -35,9 +35,11 @@ import static org.junit.Assert.fail;
 
 public class SlimeSummaryTestCase {
 
-    private static final String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
-    private static final String partial_summary1_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/partial-summary1.cfg";
-    private static final String partial_summary2_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/partial-summary2.cfg";
+    private static final String cf_pre = "file:src/test/java/com/yahoo/prelude/fastsearch/";
+    private static final String summary_cf = cf_pre + "summary.cfg";
+    private static final String partial_summary1_cf = cf_pre + "partial-summary1.cfg";
+    private static final String partial_summary2_cf = cf_pre + "partial-summary2.cfg";
+    private static final String partial_summary3_cf = cf_pre + "partial-summary3.cfg";
 
     @Test
     public void testDecodingEmpty() {
@@ -143,6 +145,7 @@ public class SlimeSummaryTestCase {
     public void testFieldAccessAPI() {
         DocsumDefinitionSet partialDocsum1 = createDocsumDefinitionSet(partial_summary1_cf);
         DocsumDefinitionSet partialDocsum2 = createDocsumDefinitionSet(partial_summary2_cf);
+        DocsumDefinitionSet partialDocsum3 = createDocsumDefinitionSet(partial_summary3_cf);
         DocsumDefinitionSet fullDocsum = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
         Map<String, Object> expected = new HashMap<>();
@@ -273,6 +276,18 @@ public class SlimeSummaryTestCase {
         expected.put("string_field", "string_value");
         expected.put("longstring_field", "longstring_value");
         assertFields(expected, hit);
+
+        hit.removeField("string_field");
+        hit.removeField("integer_field");
+        partialDocsum3.lazyDecode("partial3", partialSummary3(), hit);
+        expected.put("string_field", "new str val");
+        expected.put("integer_field", 5);
+        assertFields(expected, hit);
+
+        hit.removeField("integer_field");
+        partialDocsum2.lazyDecode("partial2", partialSummary2(), hit);
+        expected.put("integer_field", 4);
+        assertFields(expected, hit);
     }
 
 
@@ -341,6 +356,14 @@ public class SlimeSummaryTestCase {
         docsum.setLong("integer_field", 4);
         docsum.setDouble("float_field", 4.5);
         docsum.setDouble("double_field", 8.75);
+        return encode((slime));
+    }
+
+    private byte[] partialSummary3() {
+        Slime slime = new Slime();
+        Cursor docsum = slime.setObject();
+        docsum.setString("string_field", "new str val");
+        docsum.setLong("integer_field", 5);
         return encode((slime));
     }
 
