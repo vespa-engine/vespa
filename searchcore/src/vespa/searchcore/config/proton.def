@@ -467,7 +467,7 @@ hwinfo.cpu.cores int default = 0 restart
 ##   max(ceil(hwinfo.cpu.cores * feeding.concurrency), summary.log.numthreads)
 ## The number of threads in each of pools 2-4 is calculated as:
 ##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
-feeding.concurrency double default = 0.5 restart
+feeding.concurrency double default = 0.2 restart
 
 ## Adjustment to resource limit when determining if maintenance jobs can run.
 ##
