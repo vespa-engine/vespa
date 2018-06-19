@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.*;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.vespa.config.server.*;
@@ -54,10 +55,15 @@ public class RemoteSession extends Session {
     }
 
     private ApplicationSet loadApplication() {
+        ApplicationPackage applicationPackage = zooKeeperClient.loadApplicationPackage();
+
+        // Read hosts allocated on the config server instance which created this
+        Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
+
         return ApplicationSet.fromList(applicationLoader.buildModels(zooKeeperClient.readApplicationId(),
                                                                      zooKeeperClient.readVespaVersion(),
                                                                      zooKeeperClient.loadApplicationPackage(),
-                                                                     new SettableOptional<>(),
+                                                                     new SettableOptional<>(allocatedHosts),
                                                                      clock.instant()));
     }
 

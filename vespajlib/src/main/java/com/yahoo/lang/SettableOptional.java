@@ -19,6 +19,11 @@ public final class SettableOptional<T> {
     /** Creates a new settable optional with the given value */
     public SettableOptional(T value) { this.value = value; }
 
+    /** Creates a new settable optional with the given value, or an empty */
+    public SettableOptional(Optional<T> value) {
+        this.value = value.isPresent() ? value.get() : null;
+    }
+
     public boolean isPresent() {
         return value != null;
     }
