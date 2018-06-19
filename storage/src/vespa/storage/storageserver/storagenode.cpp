@@ -16,6 +16,8 @@
 #include <fcntl.h>
 
 #include <vespa/log/log.h>
+#include <vespa/config/print/configdatabuffer.h>
+
 LOG_SETUP(".node.server");
 
 using vespa::config::content::StorDistributionConfigBuilder;
@@ -466,12 +468,24 @@ StorageNode::shutdown()
     LOG(debug, "Done shutting down node");
 }
 
-void StorageNode::configure(std::unique_ptr<StorServerConfig> config)
-{
-        // When we get config, we try to grab the config lock to ensure noone
-        // else is doing configuration work, and then we write the new config
-        // to a variable where we can find it later when processing config
-        // updates
+namespace {
+
+void log_config_received(const config::ConfigInstance& cfg) {
+    if (LOG_WOULD_LOG(debug)) {
+        config::ConfigDataBuffer buf;
+        cfg.serialize(buf);
+        LOG(debug, "Received new %s config: %s", cfg.defName().c_str(), buf.getEncodedString().c_str());
+    }
+}
+
+}
+
+void StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
+    log_config_received(*config);
+    // When we get config, we try to grab the config lock to ensure noone
+    // else is doing configuration work, and then we write the new config
+    // to a variable where we can find it later when processing config
+    // updates
     {
         vespalib::LockGuard configLockGuard(_configLock);
         _newServerConfig = std::move(config);
@@ -482,13 +496,8 @@ void StorageNode::configure(std::unique_ptr<StorServerConfig> config)
     }
 }
 
-void
-StorageNode::configure(std::unique_ptr<UpgradingConfig> config)
-{
-        // When we get config, we try to grab the config lock to ensure noone
-        // else is doing configuration work, and then we write the new config
-        // to a variable where we can find it later when processing config
-        // updates
+void StorageNode::configure(std::unique_ptr<UpgradingConfig> config) {
+    log_config_received(*config);
     {
         vespalib::LockGuard configLockGuard(_configLock);
         _newClusterConfig = std::move(config);
@@ -499,13 +508,8 @@ StorageNode::configure(std::unique_ptr<UpgradingConfig> config)
     }
 }
 
-void
-StorageNode::configure(std::unique_ptr<StorDistributionConfig> config)
-{
-        // When we get config, we try to grab the config lock to ensure noone
-        // else is doing configuration work, and then we write the new config
-        // to a variable where we can find it later when processing config
-        // updates
+void StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
+    log_config_received(*config);
     {
         vespalib::LockGuard configLockGuard(_configLock);
         _newDistributionConfig = std::move(config);
@@ -516,9 +520,8 @@ StorageNode::configure(std::unique_ptr<StorDistributionConfig> config)
     }
 }
 
-void
-StorageNode::configure(std::unique_ptr<StorPrioritymappingConfig> config)
-{
+void StorageNode::configure(std::unique_ptr<StorPrioritymappingConfig> config) {
+    log_config_received(*config);
     {
         vespalib::LockGuard configLockGuard(_configLock);
         _newPriorityConfig = std::move(config);
@@ -533,6 +536,7 @@ void
 StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
                        bool hasChanged, int64_t generation)
 {
+    log_config_received(*config);
     (void) generation;
     if (!hasChanged)
         return;
@@ -546,9 +550,8 @@ StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
     }
 }
 
-void
-StorageNode::configure(std::unique_ptr<BucketspacesConfig> config)
-{
+void StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
+    log_config_received(*config);
     {
         vespalib::LockGuard configLockGuard(_configLock);
         _newBucketSpacesConfig = std::move(config);
