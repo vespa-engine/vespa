@@ -74,8 +74,8 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         Search search = SearchBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
-        assertAttribute("elem_array.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("elem_array.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("elem_array.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
+        assertAttribute("elem_array.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
         assertTrue(!attributes.hasNext());
     }
 
@@ -84,18 +84,19 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
-        assertAttribute("str_elem_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("str_elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("str_elem_map.value.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("int_elem_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("int_elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("str_elem_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
+        assertAttribute("str_elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, false, attributes.next());
+        assertAttribute("str_elem_map.value.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
+        assertAttribute("int_elem_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
+        assertAttribute("int_elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
         assertTrue(!attributes.hasNext());
     }
 
-    private static void assertAttribute(String name, Attribute.Type type, Attribute.CollectionType collection, Attribute attr) {
+    private static void assertAttribute(String name, Attribute.Type type, Attribute.CollectionType collection, boolean isFastSearch, Attribute attr) {
         assertEquals(name, attr.getName());
         assertEquals(type, attr.getType());
         assertEquals(collection, attr.getCollectionType());
+        assertEquals(isFastSearch, attr.isFastSearch());
     }
 
     @Test
@@ -110,7 +111,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
                           "}")).getSearch();
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
-        assertAttribute("pos_array_zcurve", Attribute.Type.LONG, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("pos_array_zcurve", Attribute.Type.LONG, Attribute.CollectionType.ARRAY, true, attributes.next());
         assertTrue(!attributes.hasNext());
     }
 
@@ -119,9 +120,9 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         Search search = SearchBuilder.buildFromFile("src/test/derived/map_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
-        assertAttribute("str_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("str_map.value", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, attributes.next());
-        assertAttribute("int_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, attributes.next());
+        assertAttribute("str_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
+        assertAttribute("str_map.value", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, false, attributes.next());
+        assertAttribute("int_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
         assertTrue(!attributes.hasNext());
     }
 

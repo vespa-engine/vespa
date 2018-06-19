@@ -122,10 +122,16 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     }
 
     public void apply(SDField field) {
-        Attribute attribute = field.getAttributes().get(name);
+        Attribute attribute = null;
+        if (attributeIsSuffixOfStructField(field.getName())) {
+            attribute = field.getAttributes().get(field.getName());
+        }
         if (attribute == null) {
-            attribute = new Attribute(name, field.getDataType());
-            field.addAttribute(attribute);
+            attribute = field.getAttributes().get(name);
+            if (attribute == null) {
+                attribute = new Attribute(name, field.getDataType());
+                field.addAttribute(attribute);
+            }
         }
 
         if (huge != null) {
@@ -152,6 +158,10 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         if (tensorType.isPresent()) {
             attribute.setTensorType(tensorType.get());
         }
+    }
+
+    private boolean attributeIsSuffixOfStructField(String fieldName) {
+        return ((fieldName.indexOf('.') != -1) && fieldName.endsWith(name));
     }
 
 }
