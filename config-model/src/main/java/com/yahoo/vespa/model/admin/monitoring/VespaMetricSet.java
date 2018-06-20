@@ -303,11 +303,11 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.queries.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.average"));
-        metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.average"));
+        metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.queries.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.average"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.docs_matched.average"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.docs_matched.rate"));
 
         return metrics;
     }
