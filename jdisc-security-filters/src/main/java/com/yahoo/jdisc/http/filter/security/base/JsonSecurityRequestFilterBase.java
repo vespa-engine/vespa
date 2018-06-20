@@ -36,6 +36,7 @@ public abstract class JsonSecurityRequestFilterBase implements SecurityRequestFi
         errorMessage.put("code", error.errorCode);
         errorMessage.put("message", error.message);
         error.response.headers().put("Content-Type", "application/json"); // Note: Overwrites header if already exists
+        error.response.headers().put("Cache-Control", "must-revalidate,no-cache,no-store");
         try (FastContentWriter writer = ResponseDispatch.newInstance(error.response).connectFastWriter(responseHandler)) {
             writer.write(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(errorMessage));
         } catch (JsonProcessingException e) {
