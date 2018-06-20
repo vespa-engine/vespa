@@ -96,7 +96,7 @@ public class AthenzAuthorizationFilterTest {
 
         @Override
         public AuthorizationResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action) {
-            return AuthorizationResult.ALLOW;
+            return AuthorizationResult.DENY;
         }
     }
 
