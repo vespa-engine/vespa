@@ -2,8 +2,11 @@
 package com.yahoo.vespa.athenz.api;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import static java.util.Collections.emptyList;
 
 /**
  * @author bjorncs
@@ -12,15 +15,24 @@ public class AthenzPrincipal implements Principal {
 
     private final AthenzIdentity athenzIdentity;
     private final NToken nToken;
+    private final List<AthenzRole> roles;
 
     public AthenzPrincipal(AthenzIdentity athenzIdentity) {
-        this(athenzIdentity, null);
+        this(athenzIdentity, null, emptyList());
     }
 
-    public AthenzPrincipal(AthenzIdentity athenzIdentity,
-                           NToken nToken) {
+    public AthenzPrincipal(AthenzIdentity athenzIdentity, NToken nToken) {
+        this(athenzIdentity, nToken, emptyList());
+    }
+
+    public AthenzPrincipal(AthenzIdentity identity, List<AthenzRole> roles) {
+        this(identity, null, roles);
+    }
+
+    private AthenzPrincipal(AthenzIdentity athenzIdentity, NToken nToken, List<AthenzRole> roles) {
         this.athenzIdentity = athenzIdentity;
         this.nToken = nToken;
+        this.roles = roles;
     }
 
     public AthenzIdentity getIdentity() {
@@ -38,6 +50,10 @@ public class AthenzPrincipal implements Principal {
 
     public Optional<NToken> getNToken() {
         return Optional.ofNullable(nToken);
+    }
+
+    public List<AthenzRole> getRoles() {
+        return roles;
     }
 
     @Override
