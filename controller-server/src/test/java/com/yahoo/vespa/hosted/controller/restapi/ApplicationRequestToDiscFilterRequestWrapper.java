@@ -27,9 +27,14 @@ import java.util.concurrent.TimeUnit;
 public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequest {
 
     private final Request request;
+    private final List<X509Certificate> clientCertificateChain;
     private Principal userPrincipal;
 
     public ApplicationRequestToDiscFilterRequestWrapper(Request request) {
+        this(request, Collections.emptyList());
+    }
+
+    public ApplicationRequestToDiscFilterRequestWrapper(Request request, List<X509Certificate> clientCertificateChain) {
         super(new ServletOrJdiscHttpRequest() {
             @Override
             public void copyHeaders(HeaderFields target) {
@@ -93,6 +98,7 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
         });
         this.request = request;
         this.userPrincipal = request.getUserPrincipal().orElse(null);
+        this.clientCertificateChain = clientCertificateChain;
     }
 
     public Request getUpdatedRequest() {
@@ -178,7 +184,7 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
 
     @Override
     public List<X509Certificate> getClientCertificateChain() {
-        return Collections.emptyList();
+        return clientCertificateChain;
     }
 
     @Override
