@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/log/log.h>
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/eval/tensor/direct_tensor_builder.h>
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
@@ -106,7 +106,7 @@ public:
 
     void insertCell(SparseTensorAddressRef address, double value) {
         // This address should not already exist and a new cell should be inserted.
-        insertCell(address, value, [](double, double) -> double { LOG_ABORT("should not be reached"); });
+        insertCell(address, value, [](double, double) -> double { HDR_ABORT("should not be reached"); });
     }
 
     template <class Function>
@@ -117,7 +117,7 @@ public:
 
     void insertCell(SparseTensorAddressBuilder &address, double value) {
         // This address should not already exist and a new cell should be inserted.
-        insertCell(address.getAddressRef(), value, [](double, double) -> double { LOG_ABORT("should not be reached"); });
+        insertCell(address.getAddressRef(), value, [](double, double) -> double { HDR_ABORT("should not be reached"); });
     }
 
     eval::ValueType &fast_type() { return _type; }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "attrvector.h"
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/util/filekit.h>
 
@@ -130,7 +131,7 @@ template <typename B>
 void NumericDirectAttribute<B>::onCommit()
 {
     B::_changes.clear();
-    LOG_ABORT("should not be reached");
+    HDR_ABORT("should not be reached");
 }
 
 template <typename B>

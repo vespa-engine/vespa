@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/fastos/file.h>
 
@@ -87,7 +88,7 @@ public:
      * or reads as much as possible if the (rest of) the file
      * is smaller than the buffer.
      * Caution: If the amount read is smaller than the expected
-     * amount, the method will LOG_ABORT("should not be reached").
+     * amount, the method will abort.
      */
     void fillReadBuf(void);
     /**

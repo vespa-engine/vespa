@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/log/log.h>
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/string_hash.h>
@@ -81,7 +81,7 @@ const T *as(const Node &node) { return dynamic_cast<const T *>(&node); }
 struct Leaf : public Node {
     size_t num_children() const override { return 0; }
     const Node &get_child(size_t) const override {
-        LOG_ABORT("should not be reached");
+        HDR_ABORT("should not be reached");
     }
     void detach_children(NodeHandler &) override {}
 };

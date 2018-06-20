@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
 
@@ -109,7 +110,7 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
                 this->_enumStore.fallbackResize(extraBytesNeeded);
                 if (extraBytesNeeded > this->_enumStore.getRemaining()) {
                     fprintf(stderr, "Cannot fallbackResize enumStore\n");
-                    LOG_ABORT("should not be reached");
+                    HDR_ABORT("should not be reached");
                 }
                 break;  // fallback resize performed instead of compaction.
             }

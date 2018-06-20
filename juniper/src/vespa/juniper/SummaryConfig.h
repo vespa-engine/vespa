@@ -27,6 +27,8 @@ public:
                   ConfigFlag esc_markup,
                   ConfigFlag preserve_white_space_);
 
+    ~SummaryConfig() {}
+
     inline const std::string & highlight_on()  const { return _highlight_on; }
     inline const std::string & highlight_off() const { return _highlight_off; }
     inline const std::string & dots()          const { return _dots; }
