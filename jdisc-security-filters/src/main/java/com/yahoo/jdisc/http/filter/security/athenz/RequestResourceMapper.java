@@ -15,7 +15,7 @@ public interface RequestResourceMapper {
     /**
      * @return A resource name + action to use for access control, empty if no access control should be performed.
      */
-    Optional<ResourceNameAndAction> getResourceNameAndMapping(String method, String uriPath, String uriQuery);
+    Optional<ResourceNameAndAction> getResourceNameAndAction(String method, String uriPath, String uriQuery);
 
     class ResourceNameAndAction {
         private final AthenzResourceName resourceName;

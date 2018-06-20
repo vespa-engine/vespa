@@ -27,7 +27,7 @@ public class StaticRequestResourceMapper implements RequestResourceMapper {
     }
 
     @Override
-    public Optional<ResourceNameAndAction> getResourceNameAndMapping(String method, String uriPath, String uriQuery) {
+    public Optional<ResourceNameAndAction> getResourceNameAndAction(String method, String uriPath, String uriQuery) {
         return Optional.of(new ResourceNameAndAction(resourceName, action));
     }
 }
