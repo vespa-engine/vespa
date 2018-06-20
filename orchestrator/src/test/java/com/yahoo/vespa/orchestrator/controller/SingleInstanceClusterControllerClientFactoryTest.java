@@ -4,11 +4,13 @@ package com.yahoo.vespa.orchestrator.controller;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -31,6 +33,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
     private static final HostName HOST_NAME_2 = new HostName("host2");
     private static final HostName HOST_NAME_3 = new HostName("host3");
 
+    OrchestratorContext context = mock(OrchestratorContext.class);
     private final ClusterControllerJaxRsApi mockApi = mock(ClusterControllerJaxRsApi.class);
     private final JaxRsClientFactory jaxRsClientFactory = mock(JaxRsClientFactory.class);
     private final ClusterControllerClientFactory clientFactory
@@ -64,8 +67,9 @@ public class SingleInstanceClusterControllerClientFactoryTest {
     public void testCreateClientWithSingleClusterControllerInstance() throws Exception {
         final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1);
 
+        when(context.getSuboperationTimeoutInSeconds()).thenReturn(Optional.of(1.0f));
         clientFactory.createClient(clusterControllers, "clusterName")
-                .setNodeState(0, ClusterControllerNodeState.MAINTENANCE);
+                .setNodeState(context, 0, ClusterControllerNodeState.MAINTENANCE);
 
         verify(jaxRsClientFactory).createClient(
                 ClusterControllerJaxRsApi.class,
@@ -91,8 +95,9 @@ public class SingleInstanceClusterControllerClientFactoryTest {
     public void testCreateClientWithThreeClusterControllerInstances() throws Exception {
         final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1, HOST_NAME_2, HOST_NAME_3);
 
+        when(context.getSuboperationTimeoutInSeconds()).thenReturn(Optional.of(1.0f));
         clientFactory.createClient(clusterControllers, "clusterName")
-                .setNodeState(0, ClusterControllerNodeState.MAINTENANCE);
+                .setNodeState(context, 0, ClusterControllerNodeState.MAINTENANCE);
 
         verify(jaxRsClientFactory).createClient(
                 eq(ClusterControllerJaxRsApi.class),

@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -43,7 +44,6 @@ import java.util.stream.Collectors;
  * @author smorgrav
  */
 public class OrchestratorImpl implements Orchestrator {
-
     private static final Logger log = Logger.getLogger(OrchestratorImpl.class.getName());
 
     private final Policy policy;
@@ -51,32 +51,36 @@ public class OrchestratorImpl implements Orchestrator {
     private final InstanceLookupService instanceLookupService;
     private final int serviceMonitorConvergenceLatencySeconds;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
+    private final Timer timer;
 
     @Inject
     public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
                             StatusService statusService,
                             OrchestratorConfig orchestratorConfig,
-                            InstanceLookupService instanceLookupService)
+                            InstanceLookupService instanceLookupService,
+                            Timer timer)
     {
         this(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory),
                 clusterControllerClientFactory,
                 statusService,
                 instanceLookupService,
-                orchestratorConfig.serviceMonitorConvergenceLatencySeconds());
+                orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
+                timer);
     }
 
     public OrchestratorImpl(Policy policy,
                             ClusterControllerClientFactory clusterControllerClientFactory,
                             StatusService statusService,
                             InstanceLookupService instanceLookupService,
-                            int serviceMonitorConvergenceLatencySeconds)
+                            int serviceMonitorConvergenceLatencySeconds,
+                            Timer timer)
     {
         this.policy = policy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.statusService = statusService;
         this.serviceMonitorConvergenceLatencySeconds = serviceMonitorConvergenceLatencySeconds;
         this.instanceLookupService = instanceLookupService;
-
+        this.timer = timer;
     }
 
     @Override
@@ -123,7 +127,10 @@ public class OrchestratorImpl implements Orchestrator {
 
         ApplicationInstance appInstance = getApplicationInstance(hostName);
 
-        try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(appInstance.reference())) {
+        OrchestratorContext context = new OrchestratorContext(timer);
+        try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(
+                appInstance.reference(),
+                context.getOriginalTimeoutInSeconds())) {
             final HostStatus currentHostState = statusRegistry.getHostStatus(hostName);
 
             if (HostStatus.NO_REMARKS == currentHostState) {
@@ -132,7 +139,7 @@ public class OrchestratorImpl implements Orchestrator {
 
             ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(appInstance.reference()).getApplicationInstanceStatus();
             if (appStatus == ApplicationInstanceStatus.NO_REMARKS) {
-                policy.releaseSuspensionGrant(appInstance, hostName, statusRegistry);
+                policy.releaseSuspensionGrant(context, appInstance, hostName, statusRegistry);
             }
         }
     }
@@ -149,13 +156,16 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstance appInstance = getApplicationInstance(hostName);
         NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
 
-        try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(appInstance.reference())) {
+        OrchestratorContext context = new OrchestratorContext(timer);
+        try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(
+                appInstance.reference(),
+                context.getOriginalTimeoutInSeconds())) {
             ApplicationApi applicationApi = new ApplicationApiImpl(
                     nodeGroup,
                     statusRegistry,
                     clusterControllerClientFactory);
 
-            policy.acquirePermissionToRemove(applicationApi);
+            policy.acquirePermissionToRemove(context, applicationApi);
         }
     }
 
@@ -164,7 +174,11 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspendGroup(NodeGroup nodeGroup) throws HostStateChangeDeniedException, HostNameNotFoundException {
         ApplicationInstanceReference applicationReference = nodeGroup.getApplicationReference();
 
-        try (MutableStatusRegistry hostStatusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(applicationReference)) {
+        OrchestratorContext context = new OrchestratorContext(timer);
+        try (MutableStatusRegistry hostStatusRegistry =
+                     statusService.lockApplicationInstance_forCurrentThreadOnly(
+                             applicationReference,
+                             context.getOriginalTimeoutInSeconds())) {
             ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(applicationReference).getApplicationInstanceStatus();
             if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
@@ -174,7 +188,7 @@ public class OrchestratorImpl implements Orchestrator {
                     nodeGroup,
                     hostStatusRegistry,
                     clusterControllerClientFactory);
-            policy.grantSuspensionRequest(applicationApi);
+            policy.grantSuspensionRequest(context, applicationApi);
         }
     }
 
@@ -287,9 +301,12 @@ public class OrchestratorImpl implements Orchestrator {
 
     private void setApplicationStatus(ApplicationId appId, ApplicationInstanceStatus status) 
             throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
+        OrchestratorContext context = new OrchestratorContext(timer);
         ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
         try (MutableStatusRegistry statusRegistry =
-                     statusService.lockApplicationInstance_forCurrentThreadOnly(appRef)) {
+                     statusService.lockApplicationInstance_forCurrentThreadOnly(
+                             appRef,
+                             context.getOriginalTimeoutInSeconds())) {
 
             // Short-circuit if already in wanted state
             if (status == statusRegistry.getApplicationInstanceStatus()) return;
@@ -304,14 +321,15 @@ public class OrchestratorImpl implements Orchestrator {
 
                 // If the clustercontroller throws an error the nodes will be marked as allowed to be down
                 // and be set back up on next resume invocation.
-                setClusterStateInController(application, ClusterControllerNodeState.MAINTENANCE);
+                setClusterStateInController(context, application, ClusterControllerNodeState.MAINTENANCE);
             }
 
             statusRegistry.setApplicationInstanceStatus(status);
         }
     }
 
-    private void setClusterStateInController(ApplicationInstance application,
+    private void setClusterStateInController(OrchestratorContext context,
+                                             ApplicationInstance application,
                                              ClusterControllerNodeState state)
             throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
         // Get all content clusters for this application
@@ -329,7 +347,7 @@ public class OrchestratorImpl implements Orchestrator {
                     clusterControllers,
                     clusterId.s());
             try {
-                ClusterControllerStateResponse response = client.setApplicationState(state);
+                ClusterControllerStateResponse response = client.setApplicationState(context, state);
                 if (!response.wasModified) {
                     String msg = String.format("Fail to set application %s, cluster name %s to cluster state %s due to: %s",
                             application.applicationInstanceId(), clusterId, state, response.reason);

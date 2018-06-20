@@ -93,7 +93,8 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
+    @Override
+    public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             ApplicationInstanceReference applicationInstanceReference,
             long timeoutSeconds) {
         String lockPath = applicationInstanceLock2Path(applicationInstanceReference);

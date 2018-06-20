@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.resources;
 
+import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -16,6 +17,7 @@ import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
@@ -59,7 +61,7 @@ import static org.mockito.Mockito.when;
  * @author hakonhall
  */
 public class HostResourceTest {
-
+    private static final Timer timer = mock(Timer.class);
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
@@ -110,28 +112,20 @@ public class HostResourceTest {
 
     private static class AlwaysAllowPolicy implements Policy {
         @Override
-        public void grantSuspensionRequest(
-                ApplicationInstance applicationInstance,
-                HostName hostName,
-                MutableStatusRegistry hostStatusService) {
-
+        public void grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) {
         }
 
         @Override
-        public void grantSuspensionRequest(ApplicationApi applicationApi) {
+        public void releaseSuspensionGrant(OrchestratorContext context, ApplicationApi application) {
         }
 
         @Override
-        public void releaseSuspensionGrant(ApplicationApi application) {
-        }
-
-        @Override
-        public void acquirePermissionToRemove(ApplicationApi applicationApi) {
+        public void acquirePermissionToRemove(OrchestratorContext context, ApplicationApi applicationApi) {
         }
 
         @Override
         public void releaseSuspensionGrant(
-                ApplicationInstance applicationInstance,
+                OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
                 MutableStatusRegistry hostStatusRegistry) {
         }
@@ -141,14 +135,16 @@ public class HostResourceTest {
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, mockInstanceLookupService,
-            SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS
+            SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
+            timer
     );
 
     private static final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyInstanceLookUpService,
-            SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS
+            SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
+            timer
     );
 
     private final UriInfo uriInfo = mock(UriInfo.class);
@@ -209,31 +205,23 @@ public class HostResourceTest {
 
     private static class AlwaysFailPolicy implements Policy {
         @Override
-        public void grantSuspensionRequest(
-                ApplicationInstance applicationInstance,
-                HostName hostName,
-                MutableStatusRegistry hostStatusRegistry) throws HostStateChangeDeniedException {
+        public void grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException {
             doThrow();
         }
 
         @Override
-        public void grantSuspensionRequest(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+        public void releaseSuspensionGrant(OrchestratorContext context, ApplicationApi application) throws HostStateChangeDeniedException {
             doThrow();
         }
 
         @Override
-        public void releaseSuspensionGrant(ApplicationApi application) throws HostStateChangeDeniedException {
-            doThrow();
-        }
-
-        @Override
-        public void acquirePermissionToRemove(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+        public void acquirePermissionToRemove(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException {
             doThrow();
         }
 
         @Override
         public void releaseSuspensionGrant(
-                ApplicationInstance applicationInstance,
+                OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
                 MutableStatusRegistry hostStatusRegistry) throws HostStateChangeDeniedException {
             doThrow();
@@ -253,7 +241,8 @@ public class HostResourceTest {
                 new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,mockInstanceLookupService,
-                SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS);
+                SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
+                timer);
 
         try {
             HostResource hostResource = new HostResource(alwaysRejectResolver, uriInfo);
@@ -271,7 +260,8 @@ public class HostResourceTest {
                 new ClusterControllerClientFactoryMock(),
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
                 mockInstanceLookupService,
-                SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS);
+                SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
+                timer);
 
         try {
             HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysRejectResolver);

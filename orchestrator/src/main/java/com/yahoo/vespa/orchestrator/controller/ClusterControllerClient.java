@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.controller;
 
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
+
 import java.io.IOException;
 
 /**
@@ -13,13 +15,13 @@ public interface ClusterControllerClient {
      *
      * @throws IOException if there was a problem communicating with the cluster controller
      */
-    ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerNodeState wantedState) throws IOException;
+    ClusterControllerStateResponse setNodeState(OrchestratorContext context, int storageNodeIndex, ClusterControllerNodeState wantedState) throws IOException;
 
     /**
      * Requests that a cluster controller sets all nodes in the cluster to the requested state.
      *
      * @throws IOException if there was a problem communicating with the cluster controller
      */
-    ClusterControllerStateResponse setApplicationState(ClusterControllerNodeState wantedState) throws IOException;
+    ClusterControllerStateResponse setApplicationState(OrchestratorContext context, ClusterControllerNodeState wantedState) throws IOException;
 
 }
