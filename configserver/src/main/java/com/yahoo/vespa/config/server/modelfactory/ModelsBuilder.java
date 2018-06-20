@@ -149,7 +149,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
         // TODO: Enable for all zones
         if (Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment())
-                || zone().region().value().equals("corp-us-east-1"))
+                || Arrays.asList("corp-us-east-1", "ap-southeast-1").contains(zone().region().value()))
             versions = keepThoseUsedOn(allocatedHosts.get(), versions);
 
         // TODO: We use the allocated hosts from the newest version when building older model versions.
