@@ -1,6 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import com.google.common.util.concurrent.ForwardingExecutorService;
+import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.container.di.componentgraph.Provider;
+import com.yahoo.container.protect.ProcessTerminator;
+import com.yahoo.jdisc.Metric;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -11,14 +19,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.inject.Inject;
-import com.yahoo.container.protect.ProcessTerminator;
-import com.google.common.util.concurrent.ForwardingExecutorService;
-import com.yahoo.component.AbstractComponent;
-import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.jdisc.Metric;
 
 /**
  * A configurable thread pool provider. This provides the worker threads used for normal request processing.
@@ -139,7 +139,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
                 super.execute(command);
             } catch (RejectedExecutionException e) {
                 metric.add(MetricNames.REJECTED_REQUEST, 1, null);
-                long timeSinceLastReturnedThreadMillis = System.currentTimeMillis() - wrapped.lastThreadReturnTimeMillis;
+                long timeSinceLastReturnedThreadMillis = System.currentTimeMillis() - wrapped.lastThreadAssignmentTimeMillis;
                 if (timeSinceLastReturnedThreadMillis > maxThreadExecutionTimeMillis)
                     processTerminator.logAndDie("No worker threads have been available for " +
                                                 timeSinceLastReturnedThreadMillis + " ms. Shutting down.", true);
@@ -161,7 +161,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     /** A thread pool executor which maintains the last time a worker completed */
     private final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
-        volatile long lastThreadReturnTimeMillis = System.currentTimeMillis();
+        volatile long lastThreadAssignmentTimeMillis = System.currentTimeMillis();
         private final AtomicLong startedCount = new AtomicLong(0);
         private final AtomicLong completedCount = new AtomicLong(0);
 
@@ -177,13 +177,13 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         @Override
         protected void beforeExecute(Thread t, Runnable r) {
             super.beforeExecute(t, r);
+            lastThreadAssignmentTimeMillis = System.currentTimeMillis();
             startedCount.incrementAndGet();
         }
 
         @Override
         protected void afterExecute(Runnable r, Throwable t) {
             super.afterExecute(r, t);
-            lastThreadReturnTimeMillis = System.currentTimeMillis();
             completedCount.incrementAndGet();
         }
 

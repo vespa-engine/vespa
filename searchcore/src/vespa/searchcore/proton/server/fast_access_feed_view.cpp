@@ -5,6 +5,7 @@
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
 #include "putdonecontext.h"
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 
 using document::Document;
@@ -71,7 +72,7 @@ FastAccessFeedView::FastAccessFeedView(const StoreOnlyFeedView::Context &storeOn
       _docIdLimit(ctx._docIdLimit)
 {}
 
-FastAccessFeedView::~FastAccessFeedView() {}
+FastAccessFeedView::~FastAccessFeedView() = default;
 
 void
 FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)

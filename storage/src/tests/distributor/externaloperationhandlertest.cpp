@@ -200,6 +200,7 @@ std::shared_ptr<api::UpdateCommand> ExternalOperationHandlerTest::makeUpdateComm
         const vespalib::string& doc_type,
         const vespalib::string& id) const {
     auto update = std::make_shared<document::DocumentUpdate>(
+            _testDocMan.getTypeRepo(),
             *_testDocMan.getTypeRepo().getDocumentType(doc_type),
             document::DocumentId(id));
     return std::make_shared<api::UpdateCommand>(

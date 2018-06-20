@@ -46,18 +46,16 @@ public:
         return *this;
     }
 
-    // ValueUpdate implementation
     void checkCompatibility(const Field& field) const override;
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     ByteBuffer& buffer, uint16_t version) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
     RemoveValueUpdate* clone() const override { return new RemoveValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(RemoveValueUpdate);
 
 };
 
-} // document
+}
 

@@ -39,6 +39,7 @@ public:
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t) override {}
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    const std::vector<SearchIterator::UP> &children() const { return _children; }
 };
 
 }

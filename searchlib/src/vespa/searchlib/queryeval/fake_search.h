@@ -5,6 +5,7 @@
 #include "searchiterator.h"
 #include "fake_result.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchcommon/attribute/i_search_context.h>
 
 namespace search {
 namespace queryeval {
@@ -18,6 +19,7 @@ private:
     FakeResult                   _result;
     uint32_t                     _offset;
     fef::TermFieldMatchDataArray _tfmda;
+    std::unique_ptr<attribute::ISearchContext> _ctx;
 
     bool valid() const { return _offset < _result.inspect().size(); }
     uint32_t currId() const { return _result.inspect()[_offset].docId; }
@@ -34,10 +36,12 @@ public:
     {
         assert(_tfmda.size() == 1);
     }
+    void is_attr(bool value);
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
     const PostingInfo *getPostingInfo() const override { return _result.postingInfo(); }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    const attribute::ISearchContext *getAttributeSearchContext() const override { return _ctx.get(); }
 };
 
 } // namespace queryeval

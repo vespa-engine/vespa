@@ -24,7 +24,6 @@
 
 namespace document {
 
-class ByteBuffer;
 class DocumentTypeRepo;
 class Field;
 class FieldValue;
@@ -34,18 +33,18 @@ class ValueUpdate : public vespalib::Identifiable,
                     public vespalib::Cloneable,
                     public XmlSerializable
 {
+protected:
+    using nbostream = vespalib::nbostream;
 public:
-    typedef vespalib::CloneablePtr<ValueUpdate> CP;
+    using CP = vespalib::CloneablePtr<ValueUpdate>;
 
     /**
-     * Create a value update object from the given byte buffer.
+     * Create a value update object from the given stream.
      *
      * @param type A data type that describes the content of the buffer.
-     * @param buffer The byte buffer that containes the serialized update.
+     * @param buffer The stream that containes the serialized update.
      */
-    static std::unique_ptr<ValueUpdate> createInstance(
-            const DocumentTypeRepo& repo, const DataType& type,
-            ByteBuffer& buffer, int serializationVersion);
+    static std::unique_ptr<ValueUpdate> createInstance(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer);
 
     /** Define all types of value updates. */
     enum ValueUpdateType {
@@ -69,8 +68,7 @@ public:
      * Recursively checks the compatibility of this value update as
      * applied to the given document field.
      *
-     * @throws IllegalArgumentException Thrown if this value update
-     *                                  is not compatible.
+     * @throws IllegalArgumentException Thrown if this value update is not compatible.
      */
     virtual void checkCompatibility(const Field& field) const = 0;
 
@@ -84,15 +82,12 @@ public:
     ValueUpdate* clone() const override = 0;
 
     /**
-     * Deserializes the given byte buffer into an instance of an update object.
+     * Deserializes the given stream into an instance of an update object.
      *
-     * @param type A data type that describes the content of the buffer.
-     * @param buffer The byte buffer that contains the serialized update object.
-     * @param version The serialization version of the object to deserialize.
+     * @param type A data type that describes the content of the stream.
+     * @param buffer The stream that contains the serialized update object.
      */
-    virtual void deserialize(const DocumentTypeRepo& repo,
-                             const DataType& type,
-                             ByteBuffer& buffer, uint16_t version) = 0;
+    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream) = 0;
 
     /** @return The operation type. */
     ValueUpdateType getType() const {
@@ -105,8 +100,7 @@ public:
     virtual void accept(UpdateVisitor &visitor) const = 0;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(ValueUpdate);
-
 };
 
-} // document
+}
 

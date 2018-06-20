@@ -50,9 +50,9 @@ public class FastHit extends Hit {
      * Summaries added to this hit which are not yet decoded into fields.
      * Fields are resolved by returning the first non-null value found by
      * 1) the field value from the Map of fields in the Hit supertype, and
-     * 2) each of the summaries, in the order of the list (which is the add order).
+     * 2) each of the summaries, reverse add order
      * This ensures that values set from code overwrites any value received as
-     * summary data.
+     * summary data, and fetching a new summary overrides previous summaries.
      *
      * The reason we keep this rather than eagerly decoding into a the field map
      * is to reduce garbage collection and decoding cost, with the assumption
@@ -163,7 +163,7 @@ public class FastHit extends Hit {
     public void addSummary(DocsumDefinition docsumDef, Inspector value) {
         if (removedFields != null)
             removedFields.removeAll(docsumDef.fieldNames());
-        summaries.add(new SummaryData(this, docsumDef, value, summaries.size()));
+        summaries.add(0, new SummaryData(this, docsumDef, value, 1 + summaries.size()));
     }
 
     /**
@@ -331,6 +331,7 @@ public class FastHit extends Hit {
     private Object getSummaryValue(String name) {
         if (removedFields != null && removedFields.contains(name))
             return null;
+        // fetch from last added summary with the field
         for (SummaryData summaryData : summaries) {
             Object value = summaryData.getField(name);
             if (value != null) return value;
@@ -520,7 +521,7 @@ public class FastHit extends Hit {
         private final DocsumDefinition type;
         private final Inspector data;
 
-        /** The index of this summary in the list of summaries added to this */
+        /** The index from the end of this summary in the list of summaries */
         private final int index;
 
         SummaryData(FastHit hit, DocsumDefinition type, Inspector data, int index) {
@@ -577,11 +578,11 @@ public class FastHit extends Hit {
 
         /**
          * Returns whether this field is present in the map properties
-         * or an earlier (lower index) summary in this hit
+         * or a summary added later in this hit
          */
         private boolean shadowed(String name) {
             if (hit.hasField(name)) return true;
-            for (int i = 0; i < index; i++) {
+            for (int i = 0; i < hit.summaries.size() - index; i++) {
                 if (hit.summaries.get(i).type.fieldNames().contains(name))
                     return true;
             }

@@ -13,6 +13,7 @@
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/document/datatype/documenttype.h>

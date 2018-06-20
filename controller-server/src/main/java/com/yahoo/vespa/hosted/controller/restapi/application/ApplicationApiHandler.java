@@ -48,6 +48,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -355,8 +356,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Jobs sorted according to deployment spec
         List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                .deploymentOrder()
-                .sortBy(application.deploymentSpec(), application.deploymentJobs().jobStatus().values());
+                .steps(application.deploymentSpec())
+                .sortBy(application.deploymentJobs().jobStatus().values());
 
         Cursor deploymentsArray = object.setArray("deploymentJobs");
         for (JobStatus job : jobStatus) {
@@ -396,8 +397,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = controller.applications().deploymentTrigger()
-                .deploymentOrder()
-                .sortBy(application.deploymentSpec().zones(), application.deployments().values());
+                .steps(application.deploymentSpec())
+                .sortBy2(application.deployments().values());
         Cursor instancesArray = object.setArray("instances");
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
@@ -856,7 +857,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         return new DeploymentJobs.JobReport(
                 ApplicationId.from(tenantName, applicationName, report.field("instance").asString()),
-                DeploymentJobs.JobType.fromJobName(report.field("jobName").asString()),
+                JobType.fromJobName(report.field("jobName").asString()),
                 report.field("projectId").asLong(),
                 report.field("buildNumber").asLong(),
                 toSourceRevision(report.field("sourceRevision")),

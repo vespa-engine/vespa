@@ -41,16 +41,6 @@ class VespaDocumentSerializer;
  */
 class DocumentUpdate final : public Printable, public XmlSerializable
 {
-private:
-    /**
-     * Enum class containing the legal serialization version for
-     * document updates. This version is not encoded in the serialized
-     * document update.
-     */
-    enum class SerializeVersion {
-        SERIALIZE_42,  // old style format, before vespa 5.0
-        SERIALIZE_HEAD // new style format, since vespa 5.0
-    };
 public:
     typedef std::unique_ptr<DocumentUpdate> UP;
     typedef std::shared_ptr<DocumentUpdate> SP;
@@ -60,22 +50,15 @@ public:
     /**
      * Create old style document update, no support for field path updates.
      */
-    static DocumentUpdate::UP create42(const DocumentTypeRepo&, ByteBuffer&);
+    static DocumentUpdate::UP create42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
 
     /**
      * Create new style document update, possibly with field path updates.
      */
-    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo&, ByteBuffer&);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream stream);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, ByteBuffer & buffer);
 
-    /**
-     * Create a document update from a byte buffer containing a serialized
-     * document update. Public to allow useage in std::make_unique/shared.
-     *
-     * @param repo Document type repo used to find proper document type
-     * @param buffer The buffer containing the serialized document update
-     * @param serializeVersion Selector between serialization formats.
-     */
-    DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer, SerializeVersion serializeVersion);
+    DocumentUpdate();
     /**
      * The document type is not strictly needed, as we know this at applyTo()
      * time, but search does not use applyTo() code to do the update, and don't
@@ -86,7 +69,7 @@ public:
      * @param type The document type that this update is applicable for.
      * @param id The identifier of the document that this update is created for.
      */
-    DocumentUpdate(const DataType &type, const DocumentId& id);
+    DocumentUpdate(const DocumentTypeRepo & repo, const DataType &type, const DocumentId& id);
 
     DocumentUpdate(const DocumentUpdate &) = delete;
     DocumentUpdate & operator = (const DocumentUpdate &) = delete;
@@ -104,63 +87,59 @@ public:
      * type as this.
      */
     void applyTo(Document& doc) const;
-	
-    /**
-     * Add a field update to this document update.
-     * @return A reference to this.
-     */
-    DocumentUpdate& addUpdate(const FieldUpdate& update);
 
-    /**
-     * Add a fieldpath update to this document update.
-     * @return A reference to this.
-     */
+    DocumentUpdate& addUpdate(const FieldUpdate& update);
     DocumentUpdate& addFieldPathUpdate(const FieldPathUpdate::CP& update);
 
     /** @return The list of updates. */
-    const FieldUpdateV & getUpdates() const { return _updates; }
+    const FieldUpdateV & getUpdates() const;
 
     /** @return The list of fieldpath updates. */
-    const FieldPathUpdateV & getFieldPathUpdates() const { return _fieldPathUpdates; }
+    const FieldPathUpdateV & getFieldPathUpdates() const;
+
+    void eagerDeserialize() const;
 
     /** @return The type of document this update is for. */
     const DocumentType& getType() const;
-	
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
     void serializeHEAD(vespalib::nbostream &stream) const;
-
     void printXml(XmlOutputStream&) const override;
 
     /**
      * Sets whether this update should create the document it updates if that document does not exist.
      * In this case an empty document is created before the update is applied.
      */
-    void setCreateIfNonExistent(bool value) {
-        _createIfNonExistent = value;
-    }
+    void setCreateIfNonExistent(bool value);
 
     /**
      * Gets whether this update should create the document it updates if that document does not exist.
      */
-    bool getCreateIfNonExistent() const {
-        return _createIfNonExistent;
-    }
+    bool getCreateIfNonExistent() const;
 
     int serializeFlags(int size_) const;
-    int16_t getVersion() const { return _version; }
 
 private:
-    DocumentId       _documentId; // The ID of the document to update.
-    const DataType  *_type; // The type of document this update is for.
-    FieldUpdateV     _updates; // The list of field updates.
-    FieldPathUpdateV _fieldPathUpdates;
-    int16_t          _version; // Serialization version
-    bool             _createIfNonExistent;
+    DocumentId              _documentId; // The ID of the document to update.
+    const DataType         *_type; // The type of document this update is for.
+    const DocumentTypeRepo *_repo;
+    vespalib::nbostream     _backing;
+    FieldUpdateV            _updates; // The list of field updates.
+    FieldPathUpdateV        _fieldPathUpdates;
+    bool                    _createIfNonExistent;
+    bool                    _needHardReserialize;
 
     int deserializeFlags(int sizeAndFlags);
-    void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
-    void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
+    void init42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void deserialize42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void deserializeBody(const DocumentTypeRepo &repo, vespalib::nbostream &stream);
+    void lazyDeserialize(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void ensureDeserialized() const;
+    void serializeHeader();
+    void reserialize();
+    friend VespaDocumentSerializer;
 };
 
-} // document
+}
+

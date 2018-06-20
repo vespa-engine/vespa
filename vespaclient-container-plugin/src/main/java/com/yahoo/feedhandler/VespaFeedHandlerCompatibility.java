@@ -9,7 +9,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 
-@Deprecated
 public class VespaFeedHandlerCompatibility extends ThreadedHttpRequestHandler {
 
     private final VespaFeedHandlerGet getHandler;

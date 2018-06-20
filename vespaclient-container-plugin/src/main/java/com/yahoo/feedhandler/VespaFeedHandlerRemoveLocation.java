@@ -20,7 +20,6 @@ import com.yahoo.vespaclient.config.FeederConfig;
 
 import java.util.concurrent.Executor;
 
-@Deprecated
 public class VespaFeedHandlerRemoveLocation extends VespaFeedHandlerBase {
 
     @Inject

@@ -136,7 +136,7 @@ FeatureNameBuilder::buildName() const
     vespalib::string ret;
     if (!_baseName.empty()) {
         ret = _baseName;
-        if (!_parameters.empty() > 0) {
+        if (!_parameters.empty()) {
             ret += "(";
             for (uint32_t i = 0; i < _parameters.size(); ++i) {
                 if (i > 0) {

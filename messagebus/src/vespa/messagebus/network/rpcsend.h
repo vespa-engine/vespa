@@ -83,7 +83,7 @@ public:
 
     void invoke(FRT_RPCRequest *req);
 private:
-    void doRequest(FRT_RPCRequest *req);
+    void doRequest(FRT_RPCRequest *req, const IProtocol * protocol, std::unique_ptr<Params> params);
     void doRequestDone(FRT_RPCRequest *req);
     void doHandleReply(const IProtocol * protocol, std::unique_ptr<Reply> reply);
     void attach(RPCNetwork &net) final override;

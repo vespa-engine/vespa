@@ -87,8 +87,8 @@ public class FileServer {
         this.pullExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
-    public boolean hasFile(String fileName) {
-        return hasFile(new FileReference(fileName));
+    public boolean hasFile(String fileReference) {
+        return hasFile(new FileReference(fileReference));
     }
 
     private boolean hasFile(FileReference reference) {

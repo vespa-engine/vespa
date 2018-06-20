@@ -12,14 +12,13 @@ class WipeHistoryOperation : public FeedOperation {
 public:
     WipeHistoryOperation();
     WipeHistoryOperation(SerialNum serialNum, fastos::TimeStamp wipeTimeLimit);
-    virtual ~WipeHistoryOperation() {}
+    ~WipeHistoryOperation() override {}
 
     fastos::TimeStamp getWipeTimeLimit() const { return _wipeTimeLimit; }
 
-    virtual void serialize(vespalib::nbostream &str) const override;
-    virtual void deserialize(vespalib::nbostream &str,
-                             const document::DocumentTypeRepo &) override;
-    virtual vespalib::string toString() const override;
+    void serialize(vespalib::nbostream &str) const override;
+    void deserialize(vespalib::nbostream &str, const document::DocumentTypeRepo &) override;
+    vespalib::string toString() const override;
 };
 
 } // namespace proton

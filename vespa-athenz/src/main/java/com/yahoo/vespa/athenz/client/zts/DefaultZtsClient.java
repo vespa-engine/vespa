@@ -10,12 +10,15 @@ import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
+import com.yahoo.vespa.athenz.client.zts.bindings.IdentityResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceIdentityCredentials;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceRefreshInformation;
+import com.yahoo.vespa.athenz.client.zts.bindings.IdentityRefreshRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceRegisterInformation;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleTokenResponseEntity;
+import com.yahoo.vespa.athenz.client.zts.utils.IdentityCsrGenerator;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
@@ -127,12 +130,37 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     @Override
+    public Identity getServiceIdentity(AthenzService identity, String keyId, Pkcs10Csr csr) {
+        URI uri = ztsUrl.resolve(String.format("instance/%s/%s/refresh", identity.getDomainName(), identity.getName()));
+        HttpUriRequest request = RequestBuilder.post()
+                .setUri(uri)
+                .setEntity(toJsonStringEntity(new IdentityRefreshRequestEntity(csr, keyId)))
+                .build();
+        return withClient(client -> {
+            try (CloseableHttpResponse response = client.execute(request)) {
+                IdentityResponseEntity entity = readEntity(response, IdentityResponseEntity.class);
+                return new Identity(entity.certificate(), entity.caCertificateBundle());
+            }
+        });
+    }
+
+    @Override
+    public Identity getServiceIdentity(AthenzService identity, String keyId, KeyPair keyPair, String dnsSuffix) {
+        Pkcs10Csr csr = new IdentityCsrGenerator(dnsSuffix).generateIdentityCsr(identity, keyPair);
+        return getServiceIdentity(identity, keyId, csr);
+    }
+
+    @Override
     public ZToken getRoleToken(AthenzDomain domain) {
         return getRoleToken(domain, null);
     }
 
     @Override
-    public ZToken getRoleToken(AthenzDomain domain, String roleName) {
+    public ZToken getRoleToken(AthenzRole athenzRole) {
+        return getRoleToken(athenzRole.domain(), athenzRole.roleName());
+    }
+
+    private ZToken getRoleToken(AthenzDomain domain, String roleName) {
         URI uri = ztsUrl.resolve(String.format("domain/%s/token", domain.getName()));
         RequestBuilder requestBuilder = RequestBuilder.get(uri)
                 .addHeader("Content-Type", "application/json");

@@ -5,9 +5,9 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -46,7 +46,7 @@ public class OutstandingChangeDeployerTest {
         assertEquals(Change.of(version), tester.application("app1").change());
         assertFalse(tester.application("app1").outstandingChange().isPresent());
 
-        tester.jobCompletion(DeploymentJobs.JobType.component)
+        tester.jobCompletion(JobType.component)
               .application(tester.application("app1"))
               .sourceRevision(new SourceRevision("repository1","master", "cafed00d"))
               .nextBuildNumber()
@@ -63,9 +63,9 @@ public class OutstandingChangeDeployerTest {
         assertEquals("No effect as job is in progress", 2, tester.buildService().jobs().size());
         assertEquals("1.0.43-cafed00d", app.outstandingChange().application().get().id());
 
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsWest1);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsWest1);
         assertEquals("Upgrade done", 0, tester.buildService().jobs().size());
 
         deployer.maintain();
@@ -75,8 +75,8 @@ public class OutstandingChangeDeployerTest {
         List<BuildService.BuildJob> jobs = tester.buildService().jobs();
         assertEquals(2, jobs.size());
         assertEquals(11, jobs.get(0).projectId());
-        tester.assertRunning(app.id(), DeploymentJobs.JobType.systemTest);
-        tester.assertRunning(app.id(), DeploymentJobs.JobType.stagingTest);
+        tester.assertRunning(JobType.systemTest, app.id());
+        tester.assertRunning(JobType.stagingTest, app.id());
         assertFalse(tester.application("app1").outstandingChange().isPresent());
     }
 

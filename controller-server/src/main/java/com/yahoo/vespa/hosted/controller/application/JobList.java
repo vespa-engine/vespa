@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 
 import java.time.Instant;
@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 /**
  * A list of deployment jobs that can be filtered in various ways.
  *
- * @author jvenstad
+ * @author jonmv
  */
 public class JobList {
 

@@ -67,7 +67,9 @@ createDoc(const DocumentType &docType, const DocumentId &docId)
 document::DocumentUpdate::SP
 createUpd(const DocumentType& docType, const DocumentId &docId)
 {
-    return document::DocumentUpdate::SP(new document::DocumentUpdate(docType, docId));
+    static std::vector<std::unique_ptr<document::DocumentTypeRepo>> repoList;
+    repoList.emplace_back(std::make_unique<document::DocumentTypeRepo>(docType));
+    return std::make_shared<document::DocumentUpdate>(*repoList.back(), docType, docId);
 }
 
 storage::spi::ClusterState

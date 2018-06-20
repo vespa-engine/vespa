@@ -37,6 +37,8 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             "/custom-handler/",
             "/search/",
             "/feed/",
+            "/remove/",
+            "/removelocation/",
             "/get/",
             "/visit/",
             "/document/",

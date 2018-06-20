@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.Sorting;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
@@ -18,10 +19,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfPrimitiveType;
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
+import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isSupportedComplexField;
 
 /**
  * The set of all attribute fields defined by a search definition
@@ -45,14 +48,14 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     /** Derives everything from a field */
     @Override
     protected void derive(ImmutableSDField field, Search search) {
-        if (unsupportedFieldType(field)) {
+        if (unsupportedFieldType(field, search.getDocument())) {
             return; // Ignore complex struct and map fields for indexed search (only supported for streaming search)
         }
         if (field.isImportedField()) {
             deriveImportedAttributes(field);
-        } else if (isArrayOfSimpleStruct(field)) {
+        } else if (isArrayOfSimpleStruct(field, search.getDocument())) {
             deriveArrayOfSimpleStruct(field);
-        } else if (isMapOfSimpleStruct(field)) {
+        } else if (isMapOfSimpleStruct(field, search.getDocument())) {
             deriveMapOfSimpleStruct(field);
         } else if (isMapOfPrimitiveType(field)) {
             deriveMapOfPrimitiveType(field);
@@ -61,11 +64,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
     }
 
-    private static boolean unsupportedFieldType(ImmutableSDField field) {
+    private static boolean unsupportedFieldType(ImmutableSDField field, SDDocumentType docType) {
         return (field.usesStructOrMap() &&
-                !isArrayOfSimpleStruct(field) &&
-                !isMapOfSimpleStruct(field) &&
-                !isMapOfPrimitiveType(field) &&
+                !isSupportedComplexField(field, docType) &&
                 !field.getDataType().equals(PositionDataType.INSTANCE) &&
                 !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)));
     }
@@ -151,6 +152,13 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     public Collection<Attribute> attributes() {
         return Collections.unmodifiableCollection(attributes.values());
+    }
+
+    public Collection<Attribute> structFieldAttributes(String baseFieldName) {
+        String structPrefix = baseFieldName + ".";
+        return attributes().stream()
+                .filter(attribute -> attribute.getName().startsWith(structPrefix))
+                .collect(Collectors.toList());
     }
 
     public String toString() {

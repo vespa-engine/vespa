@@ -42,8 +42,9 @@ public class Lock implements Mutex {
             throw new RuntimeException("Exception acquiring lock '" + lockPath + "'", e);
         }
 
-        if (! acquired) throw new UncheckedTimeoutException("Timed out after waiting " + timeout.toString() +
-                                                            " to acquire lock '" + lockPath + "'");
+        if (! acquired)
+            throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
+                                                " to acquire lock '" + lockPath + "'");
     }
 
     @Override

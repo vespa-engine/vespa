@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 
 import java.util.Arrays;
 import java.util.List;
@@ -51,6 +52,11 @@ public enum SystemApplication {
     /** All known system applications */
     public static List<SystemApplication> all() {
         return Arrays.asList(values());
+    }
+
+    /** Node states to consider when upgrading */
+    public static List<Node.State> activeStates() {
+        return Arrays.asList(Node.State.active, Node.State.reserved);
     }
 
     @Override

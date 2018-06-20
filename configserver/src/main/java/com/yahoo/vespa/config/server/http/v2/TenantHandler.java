@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 
 import com.yahoo.config.provision.TenantName;
@@ -26,6 +27,7 @@ public class TenantHandler extends HttpHandler {
     private final TenantRepository tenantRepository;
     private final ApplicationRepository applicationRepository;
 
+    @SuppressWarnings("WeakerAccess") // instantiated by dependency injection
     @Inject
     public TenantHandler(Context ctx, TenantRepository tenantRepository, ApplicationRepository applicationRepository) {
         super(ctx);
@@ -51,7 +53,7 @@ public class TenantHandler extends HttpHandler {
             Utils.checkThatTenantExists(tenantRepository, tenantName);
             return new TenantGetResponse(tenantName);
         } else if (isListTenantsRequest(request)) {
-            return new ListTenantsResponse(tenantRepository.getAllTenantNames());
+            return new ListTenantsResponse(ImmutableSet.copyOf(tenantRepository.getAllTenantNames()));
         } else {
             throw new BadRequestException(request.getUri().toString());
         }

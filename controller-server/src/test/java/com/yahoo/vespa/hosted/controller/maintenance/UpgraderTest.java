@@ -7,10 +7,10 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -19,12 +19,12 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsCentral1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -220,7 +220,7 @@ public class UpgraderTest {
 
         tester.completeUpgradeWithError(default3, version54, "default", stagingTest);
 
-        tester.completeUpgradeWithError(default4, version54, "default", DeploymentJobs.JobType.productionUsWest1);
+        tester.completeUpgradeWithError(default4, version54, "default", JobType.productionUsWest1);
         // State: Default applications started upgrading to 5.5
         tester.clock().advance(Duration.ofHours(1));
         tester.upgrader().maintain();
@@ -229,13 +229,15 @@ public class UpgraderTest {
         tester.completeUpgradeWithError(default0, version55, "default", stagingTest);
         tester.completeUpgradeWithError(default1, version55, "default", stagingTest);
         tester.completeUpgradeWithError(default2, version55, "default", stagingTest);
-        tester.completeUpgradeWithError(default3, version55, "default", DeploymentJobs.JobType.productionUsWest1);
+        tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Retry failing job for default3
+        tester.readyJobTrigger().maintain();
+        tester.completeUpgradeWithError(default3, version55, "default", JobType.productionUsWest1);
         tester.upgradeSystem(version55);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
 
         // Finish running job, without retry.
         tester.clock().advance(Duration.ofHours(1));
-        tester.jobCompletion(DeploymentJobs.JobType.productionUsWest1).application(default3).unsuccessful().submit();
+        tester.jobCompletion(JobType.productionUsWest1).application(default3).unsuccessful().submit();
 
         tester.upgrader().maintain();
         tester.buildService().clear();
@@ -801,7 +803,7 @@ public class UpgraderTest {
 
         // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());
-        tester.assertRunning(deadLocked.id(), systemTest);
+        tester.assertRunning(systemTest, deadLocked.id());
         assertFalse("No change present", deadLocked.change().isPresent());
 
         // 4 out of 5 applications are repaired and confidence is restored

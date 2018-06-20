@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,16 +37,7 @@ public class X509CertificateUtils {
 
     public static X509Certificate fromPem(String pem) {
         try (PEMParser parser = new PEMParser(new StringReader(pem))) {
-            Object pemObject = parser.readObject();
-            if (pemObject instanceof X509Certificate) {
-                return (X509Certificate) pemObject;
-            }
-            if (pemObject instanceof X509CertificateHolder) {
-                return new JcaX509CertificateConverter()
-                        .setProvider(BouncyCastleProviderHolder.getInstance())
-                        .getCertificate((X509CertificateHolder) pemObject);
-            }
-            throw new IllegalArgumentException("Invalid type of PEM object: " + pemObject);
+            return toX509Certificate(parser.readObject());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (CertificateException e) {
@@ -53,9 +45,50 @@ public class X509CertificateUtils {
         }
     }
 
+    public static List<X509Certificate> certificateListFromPem(String pem) {
+        try (PEMParser parser = new PEMParser(new StringReader(pem))) {
+            List<X509Certificate> list = new ArrayList<>();
+            Object pemObject;
+            while ((pemObject = parser.readObject()) != null) {
+                list.add(toX509Certificate(pemObject));
+            }
+            return list;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static X509Certificate toX509Certificate(Object pemObject) throws CertificateException {
+        if (pemObject instanceof X509Certificate) {
+            return (X509Certificate) pemObject;
+        }
+        if (pemObject instanceof X509CertificateHolder) {
+            return new JcaX509CertificateConverter()
+                    .setProvider(BouncyCastleProviderHolder.getInstance())
+                    .getCertificate((X509CertificateHolder) pemObject);
+        }
+        throw new IllegalArgumentException("Invalid type of PEM object: " + pemObject);
+    }
+
     public static String toPem(X509Certificate certificate) {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
             pemWriter.writeObject(new PemObject("CERTIFICATE", certificate.getEncoded()));
+            pemWriter.flush();
+            return stringWriter.toString();
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static String toPem(List<X509Certificate> certificates) {
+        try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
+            for (X509Certificate certificate : certificates) {
+                pemWriter.writeObject(new PemObject("CERTIFICATE", certificate.getEncoded()));
+            }
             pemWriter.flush();
             return stringWriter.toString();
         } catch (GeneralSecurityException e) {

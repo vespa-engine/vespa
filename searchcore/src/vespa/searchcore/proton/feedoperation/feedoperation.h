@@ -2,10 +2,10 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace document { class DocumentTypeRepo; }
-
+namespace vespalib { class nbostream; }
 namespace proton {
 
 class FeedOperation

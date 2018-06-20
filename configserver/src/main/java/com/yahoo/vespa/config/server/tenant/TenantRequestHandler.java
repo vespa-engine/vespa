@@ -85,6 +85,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
 
     /**
      * Activates the config of the given app. Notifies listeners
+     *
      * @param applicationSet the {@link ApplicationSet} to be reloaded
      */
     public void reloadConfig(ApplicationSet applicationSet) {

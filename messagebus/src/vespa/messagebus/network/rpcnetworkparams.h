@@ -19,6 +19,9 @@ private:
     int               _listenPort;
     uint32_t          _maxInputBufferSize;
     uint32_t          _maxOutputBufferSize;
+    uint32_t          _numThreads;
+    bool              _dispatchOnEncode;
+    bool              _dispatchOnDecode;
     double            _connectionExpireSecs;
     CompressionConfig _compressionConfig;
 
@@ -97,6 +100,19 @@ public:
     }
 
     /**
+     * Sets number of threads for the thread pool.
+     *
+     * @param numThreads number of threads for thread pool
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setNumThreads(uint32_t numThreads) {
+        _numThreads = numThreads;
+        return *this;
+    }
+
+    uint32_t getNumThreads() const { return _numThreads; }
+
+    /**
      * Returns the number of seconds before an idle network connection expires.
      *
      * @return The number of seconds.
@@ -165,6 +181,21 @@ public:
         return *this;
     }
     CompressionConfig getCompressionConfig() const { return _compressionConfig; }
+
+
+    RPCNetworkParams &setDispatchOnDecode(bool dispatchOnDecode) {
+        _dispatchOnDecode = dispatchOnDecode;
+        return *this;
+    }
+
+    uint32_t getDispatchOnDecode() const { return _dispatchOnDecode; }
+
+    RPCNetworkParams &setDispatchOnEncode(bool dispatchOnEncode) {
+        _dispatchOnEncode = dispatchOnEncode;
+        return *this;
+    }
+
+    uint32_t getDispatchOnEncode() const { return _dispatchOnEncode; }
 };
 
 }

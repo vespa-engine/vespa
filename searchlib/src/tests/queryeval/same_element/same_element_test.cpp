@@ -5,17 +5,24 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
+#include <vespa/searchlib/queryeval/same_element_search.h>
+#include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchcommon/attribute/i_search_context.h>
+#include <vespa/searchlib/attribute/elementiterator.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
+using search::attribute::ElementIterator;
 
-std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResult> &children) {
+std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResult> &children, bool fake_attr = false) {
     auto result = std::make_unique<SameElementBlueprint>();
     for (size_t i = 0; i < children.size(); ++i) {
         uint32_t field_id = i;
         vespalib::string field_name = vespalib::make_string("f%u", field_id);
         FieldSpec field = result->getNextChildField(field_name, field_id);
-        result->addTerm(std::make_unique<FakeBlueprint>(field, children[i]));
+        auto fake = std::make_unique<FakeBlueprint>(field, children[i]);
+        fake->is_attr(fake_attr);
+        result->addTerm(std::move(fake));
     }
     return result;
 }
@@ -94,6 +101,19 @@ TEST("require that children are sorted") {
     EXPECT_EQUAL(dynamic_cast<SameElementBlueprint&>(*bp).terms()[0]->getState().estimate().estHits, 2u);
     EXPECT_EQUAL(dynamic_cast<SameElementBlueprint&>(*bp).terms()[1]->getState().estimate().estHits, 3u);
     EXPECT_EQUAL(dynamic_cast<SameElementBlueprint&>(*bp).terms()[2]->getState().estimate().estHits, 4u);
+}
+
+TEST("require that attribute iterators are wrapped for element unpacking") {
+    auto a = make_result({{5, {1,3,7}}});
+    auto b = make_result({{5, {3,5,10}}});
+    auto bp = finalize(make_blueprint({a,b}, true), true);
+    auto md = MatchData::makeTestInstance(0, 0);
+    auto search = bp->createSearch(*md, false);
+    SameElementSearch *se = dynamic_cast<SameElementSearch*>(search.get());
+    ASSERT_TRUE(se != nullptr);
+    ASSERT_EQUAL(se->children().size(), 2u);
+    EXPECT_TRUE(dynamic_cast<ElementIterator*>(se->children()[0].get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<ElementIterator*>(se->children()[1].get()) != nullptr);   
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

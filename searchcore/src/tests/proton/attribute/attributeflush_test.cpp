@@ -256,13 +256,12 @@ BaseFixture::BaseFixture(const HwInfo &hwInfo)
           _attributeFieldWriter(),
           _hwInfo(hwInfo)
 {}
-BaseFixture::~BaseFixture() {}
+BaseFixture::~BaseFixture() = default;
 
 struct AttributeManagerFixture
 {
     AttributeManager::SP _msp;
     AttributeManager &_m;
-    AttributeWriter _aw;
     AttributeManagerFixture(BaseFixture &bf);
     ~AttributeManagerFixture();
     AttributeVector::SP addAttribute(const vespalib::string &name) {
@@ -278,10 +277,9 @@ struct AttributeManagerFixture
 AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
     : _msp(std::make_shared<AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
                                               bf._fileHeaderContext, bf._attributeFieldWriter, bf._hwInfo)),
-      _m(*_msp),
-      _aw(_msp)
+      _m(*_msp)
 {}
-AttributeManagerFixture::~AttributeManagerFixture() {}
+AttributeManagerFixture::~AttributeManagerFixture() = default;
 
 struct Fixture : public BaseFixture, public AttributeManagerFixture
 {
@@ -530,6 +528,7 @@ Test::requireThatShrinkWorks()
     Fixture f;
     AttributeManager &am = f._m;
     AttributeVector::SP av = f.addAttribute("a10");
+    AttributeWriter aw(f._msp);
     
     av->addDocs(1000 - av->getNumDocs());
     av->commit(50, 50);
@@ -546,13 +545,13 @@ Test::requireThatShrinkWorks()
     EXPECT_FALSE(av->canShrinkLidSpace());
     EXPECT_EQUAL(1000u, av->getNumDocs());
     EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
-    f._aw.heartBeat(51);
+    aw.heartBeat(51);
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_FALSE(av->canShrinkLidSpace());
     EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
                  ft->getApproxMemoryGain().getAfter());
     g.reset();
-    f._aw.heartBeat(52);
+    aw.heartBeat(52);
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_TRUE(av->canShrinkLidSpace());
     EXPECT_TRUE(ft->getApproxMemoryGain().getBefore() >

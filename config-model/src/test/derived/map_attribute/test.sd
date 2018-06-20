@@ -4,6 +4,7 @@ search test {
       indexing: summary 
       struct-field key {
         indexing: attribute
+        attribute: fast-search
       }
       struct-field value {
         indexing: attribute

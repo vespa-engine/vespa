@@ -12,10 +12,10 @@ import java.util.Collection;
  * reloaded. It only exists because the RpcServer cannot distinguish between a
  * successful reload of a new application and a reload of the same application.
  * 
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public interface ReloadListener {
+
     /**
      * Signal the listener that hosts used by by a particular tenant.
      *
@@ -47,4 +47,5 @@ public interface ReloadListener {
      * Must be thread-safe.
      */
     void applicationRemoved(ApplicationId applicationId);
+
 }

@@ -2,7 +2,8 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
@@ -76,5 +77,11 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
 
         // 'true' here means the current state now equals the request's wanted state.
         return new SetResponse("ok", true);
+    }
+
+    @Override
+    public boolean isFailed() {
+        // Failure to set a node state is propagated as a 200 with wasModified false.
+        return super.isFailed() || (resultSet && !result.getWasModified());
     }
 }

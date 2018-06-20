@@ -14,7 +14,6 @@ import com.yahoo.search.handler.SearchHandler;
 /**
  * @author thomasg
  */
-@Deprecated
 public class VespaFeedHandlerVisit extends ThreadedHttpRequestHandler {
 
     private final SearchHandler searchHandler;

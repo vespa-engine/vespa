@@ -198,6 +198,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      *         was not present for this id (meaning it either is not active or active on another
      *         node in the config server cluster)
      */
+    @Override
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application) {
         return deployFromLocalActive(application, Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()).plus(Duration.ofSeconds(5)));
     }
@@ -410,7 +411,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public void validateThatRemoteSessionIsPrepared(Tenant tenant, long sessionId) {
         RemoteSession session = getRemoteSession(tenant, sessionId);
-        if (!Session.Status.PREPARE.equals(session.getStatus()))
+        if ( ! Session.Status.PREPARE.equals(session.getStatus()))
             throw new IllegalStateException("Session not prepared: " + sessionId);
     }
 

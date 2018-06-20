@@ -8,6 +8,7 @@ import java.util.Map;
  * Input for class analysis tests.
  * @author tonytv
  */
+@SuppressWarnings("unused")
 public class Methods {
     public void method1() {
         Base b = new Base();

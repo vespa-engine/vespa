@@ -4,8 +4,9 @@ package com.yahoo.vespa.athenz.client.zts.bindings;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.yahoo.vespa.athenz.client.zts.bindings.serializers.Pkcs10CsrSerializer;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
 
 /**
  * @author bjorncs
@@ -15,13 +16,14 @@ import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
 public class InstanceRefreshInformation {
 
     @JsonProperty("csr")
-    private final String csr;
+    @JsonSerialize(using = Pkcs10CsrSerializer.class)
+    private final Pkcs10Csr csr;
     @JsonProperty("token")
     private final boolean requestServiceToken;
 
     public InstanceRefreshInformation(Pkcs10Csr csr,
                                       boolean requestServiceToken) {
-        this.csr = Pkcs10CsrUtils.toPem(csr);
+        this.csr = csr;
         this.requestServiceToken = requestServiceToken;
     }
 }

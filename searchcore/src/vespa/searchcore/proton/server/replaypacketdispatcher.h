@@ -7,6 +7,7 @@
 
 namespace proton {
 
+class FeedOperation;
 /**
  * Utility class that deserializes packet entries into feed operations
  * during replay from the transaction log and dispatches the feed operations
@@ -22,14 +23,11 @@ private:
     void replay(OperationType &op, vespalib::nbostream &is, const Packet::Entry &entry);
 
 protected:
-    virtual void
-    store(const FeedOperation &op);
+    virtual void store(const FeedOperation &op);
 
 public:
     ReplayPacketDispatcher(IReplayPacketHandler &handler);
-
-    virtual
-    ~ReplayPacketDispatcher();
+    virtual ~ReplayPacketDispatcher();
 
     void replayEntry(const Packet::Entry &entry);
 };

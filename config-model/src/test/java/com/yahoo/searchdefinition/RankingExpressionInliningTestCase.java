@@ -8,9 +8,10 @@ import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
-import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -67,6 +68,7 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
         assertEquals("7.0 * (9 + attribute(a))",
                      child.getFirstPhaseRanking().getRoot().toString());
     }
+
     @Test
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
@@ -122,36 +124,63 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
         RankProfile parent = rankProfileRegistry.getRankProfile(s, "parent").compile(new QueryProfileRegistry());
         assertEquals("17.0", parent.getFirstPhaseRanking().getRoot().toString());
         assertEquals("0.0", parent.getSecondPhaseRanking().getRoot().toString());
-        List<Pair<String, String>> parentRankProperties = new RawRankProfile(parent,
-                                                                             new QueryProfileRegistry(),
-                                                                             new AttributeFields(s)).configProperties();
-        assertEquals("(rankingExpression(foo).rankingScript,10.0)",
-                     parentRankProperties.get(0).toString());
-        assertEquals("(rankingExpression(firstphase).rankingScript,17.0)",
-                     parentRankProperties.get(2).toString());
-        assertEquals("(rankingExpression(secondphase).rankingScript,0.0)",
-                     parentRankProperties.get(4).toString());
+        assertEquals("10.0", getRankingExpression("foo", parent, s));
+        assertEquals("17.0", getRankingExpression("firstphase", parent, s));
+        assertEquals("0.0", getRankingExpression("secondphase", parent, s));
 
         RankProfile child = rankProfileRegistry.getRankProfile(s, "child").compile(new QueryProfileRegistry());
         assertEquals("31.0 + bar + arg(4.0)", child.getFirstPhaseRanking().getRoot().toString());
         assertEquals("24.0", child.getSecondPhaseRanking().getRoot().toString());
-        List<Pair<String, String>> childRankProperties = new RawRankProfile(child,
-                                                                            new QueryProfileRegistry(),
-                                                                            new AttributeFields(s)).configProperties();
-        assertEquals("(rankingExpression(foo).rankingScript,12.0)",
-                     childRankProperties.get(0).toString());
-        assertEquals("(rankingExpression(bar).rankingScript,14.0)",
-                     childRankProperties.get(1).toString());
-        assertEquals("(rankingExpression(boz).rankingScript,3.0)",
-                     childRankProperties.get(2).toString());
-        assertEquals("(rankingExpression(baz).rankingScript,9.0 + rankingExpression(boz))",
-                     childRankProperties.get(3).toString());
-        assertEquals("(rankingExpression(arg).rankingScript,a1 * 2)",
-                     childRankProperties.get(4).toString());
-        assertEquals("(rankingExpression(firstphase).rankingScript,31.0 + rankingExpression(bar) + rankingExpression(arg@))",
-                     censorBindingHash(childRankProperties.get(7).toString()));
-        assertEquals("(rankingExpression(secondphase).rankingScript,24.0)",
-                     childRankProperties.get(9).toString());
+        assertEquals("12.0", getRankingExpression("foo", child, s));
+        assertEquals("12.0", getRankingExpression("baz", child, s));
+        assertEquals("3.0", getRankingExpression("boz", child, s));
+        assertEquals("14.0", getRankingExpression("bar", child, s));
+        assertEquals("a1 * 2", getRankingExpression("arg", child, s));
+        assertEquals("31.0 + rankingExpression(bar) + rankingExpression(arg@)", getRankingExpression("firstphase", child, s));
+        assertEquals("24.0", getRankingExpression("secondphase", child, s));
+    }
+
+    @Test
+    public void testNonTopLevelInlining() throws ParseException {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        builder.importString(
+                "search test {\n" +
+                        "    document test { \n" +
+                        "        field a type double { \n" +
+                        "            indexing: attribute \n" +
+                        "        }\n" +
+                        "        field b type double { \n" +
+                        "            indexing: attribute \n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    rank-profile test {\n" +
+                        "        first-phase {\n" +
+                        "            expression: A + C + D\n" +
+                        "        }\n" +
+                        "        macro inline D() {\n" +
+                        "            expression: B + 1\n" +
+                        "        }\n" +
+                        "        macro C() {\n" +
+                        "            expression: A + B\n" +
+                        "        }\n" +
+                        "        macro inline B() {\n" +
+                        "            expression: attribute(b)\n" +
+                        "        }\n" +
+                        "        macro inline A() {\n" +
+                        "            expression: attribute(a)\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "\n" +
+                        "}\n");
+        builder.build();
+        Search s = builder.getSearch();
+
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        assertEquals("attribute(a) + C + (attribute(b) + 1)", test.getFirstPhaseRanking().getRoot().toString());
+        assertEquals("attribute(a) + attribute(b)", getRankingExpression("C", test, s));
+        assertEquals("attribute(b) + 1", getRankingExpression("D", test, s));
     }
 
     /**
@@ -175,6 +204,18 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                 areInHash = true;
         }
         return b.toString();
+    }
+
+    private String getRankingExpression(String name, RankProfile rankProfile, Search search) {
+        Optional<String> rankExpression =
+                new RawRankProfile(rankProfile, new QueryProfileRegistry(), new AttributeFields(search))
+                        .configProperties()
+                        .stream()
+                        .filter(r -> r.getFirst().equals("rankingExpression(" + name + ").rankingScript"))
+                        .map(Pair::getSecond)
+                        .findFirst();
+        assertTrue(rankExpression.isPresent());
+        return censorBindingHash(rankExpression.get());
     }
 
 }

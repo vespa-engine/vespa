@@ -87,37 +87,36 @@ public:
 
     PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter,
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);
-    ~PersistenceEngine();
+    ~PersistenceEngine() override;
 
     IPersistenceHandler::SP putHandler(document::BucketSpace bucketSpace, const DocTypeName &docType,
                                        const IPersistenceHandler::SP &handler);
     IPersistenceHandler::SP removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType);
 
     // Implements PersistenceProvider
-    virtual Result initialize() override;
-    virtual PartitionStateListResult getPartitionStates() const override;
-    virtual BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
-    virtual Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
-    virtual Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
-    virtual BucketInfoResult getBucketInfo(const Bucket&) const override;
-    virtual Result put(const Bucket&, Timestamp, const std::shared_ptr<document::Document>&, Context&) override;
-    virtual RemoveResult remove(const Bucket&, Timestamp, const document::DocumentId&, Context&) override;
-    virtual UpdateResult update(const Bucket&, Timestamp,
-                                const std::shared_ptr<document::DocumentUpdate>&, Context&) override;
-    virtual GetResult get(const Bucket&, const document::FieldSet&,
-                          const document::DocumentId&, Context&) const override;
-    virtual CreateIteratorResult createIterator(const Bucket&, const document::FieldSet&, const Selection&,
-                                                IncludedVersions, Context&) override;
-    virtual IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
-    virtual Result destroyIterator(IteratorId, Context&) override;
+    Result initialize() override;
+    PartitionStateListResult getPartitionStates() const override;
+    BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
+    Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
+    Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
+    BucketInfoResult getBucketInfo(const Bucket&) const override;
+    Result put(const Bucket&, Timestamp, const std::shared_ptr<document::Document>&, Context&) override;
+    RemoveResult remove(const Bucket&, Timestamp, const document::DocumentId&, Context&) override;
+    UpdateResult update(const Bucket&, Timestamp,
+                        const std::shared_ptr<document::DocumentUpdate>&, Context&) override;
+    GetResult get(const Bucket&, const document::FieldSet&, const document::DocumentId&, Context&) const override;
+    CreateIteratorResult createIterator(const Bucket&, const document::FieldSet&, const Selection&,
+                                        IncludedVersions, Context&) override;
+    IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
+    Result destroyIterator(IteratorId, Context&) override;
 
-    virtual Result createBucket(const Bucket &bucketId, Context &) override ;
-    virtual Result deleteBucket(const Bucket&, Context&) override;
-    virtual BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
-    virtual Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
-    virtual Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
+    Result createBucket(const Bucket &bucketId, Context &) override ;
+    Result deleteBucket(const Bucket&, Context&) override;
+    BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
+    Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
+    Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 
-    virtual Result maintain(const Bucket&, MaintenanceLevel) override;
+    Result maintain(const Bucket&, MaintenanceLevel) override;
 
     void destroyIterators();
     void propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler &handler);

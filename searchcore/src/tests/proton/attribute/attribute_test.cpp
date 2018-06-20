@@ -445,7 +445,7 @@ TEST_F("require that attribute writer handles update", Fixture)
     schema.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
     DocBuilder idb(schema);
     const document::DocumentType &dt(idb.getDocumentType());
-    DocumentUpdate upd(dt, DocumentId("doc::1"));
+    DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("doc::1"));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 5)));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a2"))
@@ -489,7 +489,7 @@ TEST_F("require that attribute writer handles predicate update", Fixture)
     EXPECT_EQUAL(2u, a1->getNumDocs());
 
     const document::DocumentType &dt(idb.getDocumentType());
-    DocumentUpdate upd(dt, DocumentId("doc::1"));
+    DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("doc::1"));
     PredicateFieldValue new_value(builder.feature("foo").value("bar").build());
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(AssignValueUpdate(new_value)));
@@ -678,7 +678,7 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
     EXPECT_TRUE(tensor->equals(*tensor2));
 
     const document::DocumentType &dt(builder.getDocumentType());
-    DocumentUpdate upd(dt, DocumentId("doc::1"));
+    DocumentUpdate upd(*builder.getDocumentTypeRepo(), dt, DocumentId("doc::1"));
     auto new_tensor = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
                                    {"x", "y"});
     TensorFieldValue new_value;

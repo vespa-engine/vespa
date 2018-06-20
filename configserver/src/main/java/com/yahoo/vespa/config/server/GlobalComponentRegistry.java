@@ -39,5 +39,6 @@ public interface GlobalComponentRegistry {
     Optional<Provisioner> getHostProvisioner();
     Zone getZone();
     Clock getClock();
+    ConfigServerDB getConfigServerDB();
 
 }

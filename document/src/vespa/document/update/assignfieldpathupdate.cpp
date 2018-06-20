@@ -6,7 +6,6 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/variablemap.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <boost/numeric/conversion/cast.hpp>
@@ -218,27 +217,24 @@ AssignFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string&
 }
 
 void
-AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                                   ByteBuffer& buffer, uint16_t version)
+AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
-    FieldPathUpdate::deserialize(repo, type, buffer, version);
+    FieldPathUpdate::deserialize(repo, type, stream);
 
     uint8_t flags = 0x00;
-    buffer.getByte(flags);
+    stream >> flags;
 
     _removeIfZero = (flags & REMOVE_IF_ZERO) != 0;
     _createMissingPath = (flags & CREATE_MISSING_PATH) != 0;
 
     if (flags & ARITHMETIC_EXPRESSION) {
-        _expression = getString(buffer);
+        _expression = getString(stream);
     } else {
         FieldPath path;
         type.buildFieldPath(path, getOriginalFieldPath());
         _newValue.reset(getResultingDataType(path).createFieldValue().release());
-        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
-        VespaDocumentDeserializer deserializer(repo, stream, version);
+        VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
         deserializer.read(*_newValue);
-        buffer.incPos(buffer.getRemaining() - stream.size());
     }
 }
 

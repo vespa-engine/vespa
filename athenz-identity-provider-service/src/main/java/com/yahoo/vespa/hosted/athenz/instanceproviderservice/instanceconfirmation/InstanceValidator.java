@@ -11,15 +11,10 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
+import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.util.Base64;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -35,6 +30,7 @@ public class InstanceValidator {
     static final String SERVICE_PROPERTIES_DOMAIN_KEY = "identity.domain";
     static final String SERVICE_PROPERTIES_SERVICE_KEY = "identity.service";
 
+    private final IdentityDocumentSigner signer = new IdentityDocumentSigner();
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
 
@@ -55,30 +51,14 @@ public class InstanceValidator {
         }
 
         log.log(LogLevel.INFO, () -> String.format("Validating instance %s.", providerUniqueId));
-        if (isInstanceSignatureValid(instanceConfirmation)) {
+
+        PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion());
+        if (signer.hasValidSignature(signedIdentityDocument, publicKey)) {
             log.log(LogLevel.INFO, () -> String.format("Instance %s is valid.", providerUniqueId));
             return true;
         }
         log.log(LogLevel.ERROR, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
         return false;
-    }
-
-    boolean isInstanceSignatureValid(InstanceConfirmation instanceConfirmation) {
-        SignedIdentityDocumentEntity signedIdentityDocument = instanceConfirmation.signedIdentityDocument;
-
-        PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion);
-        return isSignatureValid(publicKey, signedIdentityDocument.rawIdentityDocument, signedIdentityDocument.signature);
-    }
-
-    public static boolean isSignatureValid(PublicKey publicKey, String rawIdentityDocument, String signature) {
-        try {
-            Signature signatureVerifier = Signature.getInstance("SHA512withRSA");
-            signatureVerifier.initVerify(publicKey);
-            signatureVerifier.update(rawIdentityDocument.getBytes());
-            return signatureVerifier.verify(Base64.getDecoder().decode(signature));
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     // If/when we dont care about logging exactly whats wrong, this can be simplified

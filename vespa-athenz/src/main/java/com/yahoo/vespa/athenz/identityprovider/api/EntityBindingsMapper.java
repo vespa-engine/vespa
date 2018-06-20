@@ -8,7 +8,6 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.VespaUniqueInstanceIdEntity;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -52,12 +51,12 @@ public class EntityBindingsMapper {
 
     public static SignedIdentityDocument toSignedIdentityDocument(SignedIdentityDocumentEntity entity) {
         return new SignedIdentityDocument(
-                toIdentityDocument(entity.identityDocument),
+                entity.identityDocument != null ? toIdentityDocument(entity.identityDocument) : null,
                 entity.signature,
                 entity.signingKeyVersion,
                 fromDottedString(entity.providerUniqueId),
                 entity.dnsSuffix,
-                (AthenzService) AthenzIdentities.from(entity.providerService),
+                new AthenzService(entity.providerService),
                 entity.ztsEndpoint,
                 entity.documentVersion,
                 entity.configServerHostname,
@@ -84,7 +83,7 @@ public class EntityBindingsMapper {
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
         try {
-            IdentityDocumentEntity identityDocumentEntity = toIdentityDocumentEntity(model.identityDocument());
+            IdentityDocumentEntity identityDocumentEntity = model.identityDocument() != null ? toIdentityDocumentEntity(model.identityDocument()) : null;
             String rawDocument = Base64.getEncoder().encodeToString(mapper.writeValueAsString(identityDocumentEntity).getBytes());
             return new SignedIdentityDocumentEntity(
                     rawDocument,

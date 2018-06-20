@@ -6,7 +6,7 @@ import com.yahoo.language.process.TokenType;
 /**
  * @author arnej27959
  */
-class SimpleTokenType {
+public class SimpleTokenType {
 
     public static TokenType valueOf(int codePoint) {
         switch (Character.getType(codePoint)) {

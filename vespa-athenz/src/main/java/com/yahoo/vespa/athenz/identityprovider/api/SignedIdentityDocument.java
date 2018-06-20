@@ -58,6 +58,7 @@ public class SignedIdentityDocument {
         this.identityType = identityType;
     }
 
+    @Deprecated
     public IdentityDocument identityDocument() {
         return identityDocument;
     }

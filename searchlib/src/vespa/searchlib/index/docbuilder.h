@@ -4,6 +4,7 @@
 
 #include "doctypebuilder.h"
 #include <vespa/document/datatype/datatypes.h>
+#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>

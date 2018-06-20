@@ -979,8 +979,7 @@ String fieldBody(SDField field, Search search, SDDocumentType document) : { }
 
 /**
  * This rule consumes a single element of a struct subfield body block.
- * Only elements that make sense for streaming search are allowed,
- * since only streaming search supports structs for now.
+ * Only elements that are supported in streaming search and indexed search (with complex attributes) are allowed.
  *
  * @param field    The field being built.
  * @param search   The search object to add content to.
@@ -991,6 +990,7 @@ String structFieldBody(FieldOperationContainer field, Search search, SDDocumentT
 {
     ( summaryInField(field) |
       indexing(field) |
+      attribute(field) |
       match(field) |
       queryCommand(field) |
       structField(field, search, document) |

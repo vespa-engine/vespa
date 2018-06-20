@@ -6,7 +6,9 @@
 #include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/base/exceptions.h>
 
 
 #include <vespa/log/log.h>
@@ -25,6 +27,7 @@ using storage::spi::Result;
 using vespalib::IllegalStateException;
 using vespalib::Sequence;
 using vespalib::make_string;
+using std::make_unique;
 
 using namespace std::chrono_literals;
 
@@ -376,6 +379,18 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
                                 make_string("Update operation rejected for document '%s': '%s'",
                                             upd->getId().toString().c_str(), state.message().c_str()));
         }
+    }
+    try {
+        upd->eagerDeserialize();
+    } catch (document::FieldNotFoundException & e) {
+        return UpdateResult(Result::TRANSIENT_ERROR,
+                            make_string("Update operation rejected for document '%s' of type '%s': 'Field not found'",
+                                        upd->getId().toString().c_str(), upd->getType().getName().c_str()));
+    } catch (document::DocumentTypeNotFoundException & e) {
+        return UpdateResult(Result::TRANSIENT_ERROR,
+                            make_string("Update operation rejected for document '%s' of type '%s'.",
+                                        upd->getId().toString().c_str(), e.getDocumentTypeName().c_str()));
+
     }
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     DocTypeName docType(upd->getType());

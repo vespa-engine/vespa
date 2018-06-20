@@ -35,6 +35,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
 
     /**
      * Make a WAND item with no children. You can mention a common index or you can mention it on each child.
+     *
      * @param index The index it shall search.
      * @param N the target for minimum number of hits to produce;
      *        a backend will not suppress any hits in the operator
@@ -94,6 +95,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
      * This threshold is currently only used if the WeakAndItem is searching a RISE index field.
      * The score threshold then specifies the minimum dot product score a match needs to be part of the result set.
      * Default value is 0.
+     *
      * @param scoreThreshold the score threshold.
      */
     public void setScoreThreshold(int scoreThreshold) {

@@ -7,15 +7,16 @@
  */
 #pragma once
 
-#include <vespa/document/fieldvalue/literalfieldvalue.h>
+#include "literalfieldvalue.h"
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/fastos/dynamiclibrary.h>
 
 namespace document {
+
 class FixedTypeRepo;
+class DocumentTypeRepo;
 
 class StringFieldValue : public LiteralFieldValue<StringFieldValue, DataType::T_STRING, true> {
 public:

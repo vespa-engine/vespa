@@ -2,8 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -20,7 +19,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class JobStatus {
 
-    private final DeploymentJobs.JobType type;
+    private final JobType type;
 
     private final Optional<JobRun> lastTriggered;
     private final Optional<JobRun> lastCompleted;
@@ -33,7 +32,7 @@ public class JobStatus {
      * Used by the persistence layer (only) to create a complete JobStatus instance.
      * Other creation should be by using initial- and with- methods.
      */
-    public JobStatus(DeploymentJobs.JobType type, Optional<DeploymentJobs.JobError> jobError,
+    public JobStatus(JobType type, Optional<DeploymentJobs.JobError> jobError,
                      Optional<JobRun> lastTriggered, Optional<JobRun> lastCompleted,
                      Optional<JobRun> firstFailing, Optional<JobRun> lastSuccess) {
         requireNonNull(type, "jobType cannot be null");
@@ -47,14 +46,14 @@ public class JobStatus {
         this.jobError = jobError;
 
         // Never say we triggered component because we don't:
-        this.lastTriggered = type == DeploymentJobs.JobType.component ? Optional.empty() : lastTriggered;
+        this.lastTriggered = type == JobType.component ? Optional.empty() : lastTriggered;
         this.lastCompleted = lastCompleted;
         this.firstFailing = firstFailing;
         this.lastSuccess = lastSuccess;
     }
 
     /** Returns an empty job status */
-    public static JobStatus initial(DeploymentJobs.JobType type) {
+    public static JobStatus initial(JobType type) {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
@@ -84,7 +83,7 @@ public class JobStatus {
         return new JobStatus(type, jobError, lastTriggered, Optional.of(completion), firstFailing, lastSuccess);
     }
 
-    public DeploymentJobs.JobType type() { return type; }
+    public JobType type() { return type; }
 
     /** Returns true unless this job last completed with a failure */
     public boolean isSuccess() {
@@ -93,6 +92,11 @@ public class JobStatus {
 
     /** The error of the last completion, or empty if the last run succeeded */
     public Optional<DeploymentJobs.JobError> jobError() { return jobError; }
+
+    /** Returns whether this last failed on out of capacity */
+    public boolean isOutOfCapacity() {
+        return jobError.filter(error -> error == DeploymentJobs.JobError.outOfCapacity).isPresent();
+    }
 
     /**
      * Returns the last triggering of this job, or empty if the controller has never triggered it

@@ -24,7 +24,10 @@ class TestUtils {
     }
 
     static X509Certificate createCertificate(KeyPair keyPair)  {
-        X500Principal subject = new X500Principal("CN=mysubject");
+        return createCertificate(keyPair, new X500Principal("CN=mysubject"));
+    }
+
+    static X509Certificate createCertificate(KeyPair keyPair, X500Principal subject)  {
         return X509CertificateBuilder
                 .fromKeypair(
                         keyPair, subject, Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA256_WITH_RSA, 1)

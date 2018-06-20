@@ -6,6 +6,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.OngoingStubbing;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -47,7 +48,7 @@ public class RetryingJaxRsStrategyTest {
 
     private final JaxRsClientFactory jaxRsClientFactory = mock(JaxRsClientFactory.class);
     private final TestJaxRsApi mockApi = mock(TestJaxRsApi.class);
-    private final JaxRsStrategy<TestJaxRsApi> jaxRsStrategy = new RetryingJaxRsStrategy<>(
+    private final RetryingJaxRsStrategy<TestJaxRsApi> jaxRsStrategy = new RetryingJaxRsStrategy<>(
             SERVER_HOSTS, REST_PORT, jaxRsClientFactory, TestJaxRsApi.class, API_PATH, "http");
 
     @Before
@@ -111,14 +112,24 @@ public class RetryingJaxRsStrategyTest {
     }
 
     @Test
-    public void testRetryGivesUpAfterTwoLoopsOverAvailableServers() throws Exception {
-        when(mockApi.doSomething())
-                .thenThrow(new ProcessingException("Fake timeout 1 induced by test"))
-                .thenThrow(new ProcessingException("Fake timeout 2 induced by test"))
-                .thenThrow(new ProcessingException("Fake timeout 3 induced by test"))
-                .thenThrow(new ProcessingException("Fake timeout 4 induced by test"))
-                .thenThrow(new ProcessingException("Fake timeout 5 induced by test"))
-                .thenThrow(new ProcessingException("Fake timeout 6 induced by test"));
+    public void testRetryGivesUpAfterOneLoopOverAvailableServers() {
+        jaxRsStrategy.setMaxIterations(1);
+        testRetryGivesUpAfterXIterations(1);
+    }
+
+    @Test
+    public void testRetryGivesUpAfterTwoLoopsOverAvailableServers() {
+        testRetryGivesUpAfterXIterations(2);
+    }
+
+    private void testRetryGivesUpAfterXIterations(int iterations) {
+        OngoingStubbing<String> stub = when(mockApi.doSomething());
+        for (int i = 0; i < iterations; ++i) {
+            stub = stub
+                    .thenThrow(new ProcessingException("Fake timeout 1 iteration " + i))
+                    .thenThrow(new ProcessingException("Fake timeout 2 iteration " + i))
+                    .thenThrow(new ProcessingException("Fake timeout 3 iteration " + i));
+        }
 
         try {
             jaxRsStrategy.apply(TestJaxRsApi::doSomething);
@@ -127,7 +138,7 @@ public class RetryingJaxRsStrategyTest {
             // As expected.
         }
 
-        verify(mockApi, times(6)).doSomething();
+        verify(mockApi, times(iterations * 3)).doSomething();
         verifyAllServersContacted(jaxRsClientFactory);
     }
 

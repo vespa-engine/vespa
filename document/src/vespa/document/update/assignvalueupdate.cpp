@@ -4,7 +4,6 @@
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -90,19 +89,17 @@ AssignValueUpdate::printXml(XmlOutputStream& xos) const
 
 // Deserialize this update from the given buffer.
 void
-AssignValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer, uint16_t version)
+AssignValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
     // Read content bit vector.
-    unsigned char content = 0x00;
-    buffer.getByte(content);
+    uint8_t content = 0x00;
+    stream >> content;
 
     // Read field value, if any.
     if (content & CONTENT_HASVALUE) {
         _value.reset(type.createFieldValue().release());
-        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
-        VespaDocumentDeserializer deserializer(repo, stream, version);
+        VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
         deserializer.read(*_value);
-        buffer.incPos(buffer.getRemaining() - stream.size());
     }
 }
 

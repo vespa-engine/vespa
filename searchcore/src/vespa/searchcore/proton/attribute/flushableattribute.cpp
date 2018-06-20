@@ -243,10 +243,8 @@ FlushableAttribute::initFlush(SerialNum currentSerial)
     // Called by document db executor
     std::promise<IFlushTarget::Task::UP> promise;
     std::future<IFlushTarget::Task::UP> future = promise.get_future();
-    _attributeFieldWriter.execute(_attr->getName(),
-                                  [&]() { promise.set_value(
-                                              internalInitFlush(currentSerial));
-                                         });
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(_attr->getNamePrefix()),
+                                  [&]() { promise.set_value(internalInitFlush(currentSerial)); });
     return future.get();
 }
 
@@ -256,6 +254,5 @@ FlushableAttribute::getApproxBytesToWriteToDisk() const
 {
     return _attr->getEstimatedSaveByteSize();
 }
-
 
 } // namespace proton

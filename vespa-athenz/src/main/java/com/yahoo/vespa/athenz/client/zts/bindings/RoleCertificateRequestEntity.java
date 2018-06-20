@@ -8,8 +8,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.yahoo.vespa.athenz.client.zts.bindings.serializers.Pkcs10CsrSerializer;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -20,7 +20,7 @@ import java.time.Duration;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RoleCertificateRequestEntity {
     @JsonProperty("csr")
-    @JsonSerialize(using = CsrSerializer.class)
+    @JsonSerialize(using = Pkcs10CsrSerializer.class)
     public final Pkcs10Csr csr;
 
     @JsonProperty("expiryTime")
@@ -31,15 +31,6 @@ public class RoleCertificateRequestEntity {
     public RoleCertificateRequestEntity(Pkcs10Csr csr, Duration expiryTime) {
         this.csr = csr;
         this.expiryTime = expiryTime;
-    }
-
-    public static class CsrSerializer extends JsonSerializer<Pkcs10Csr> {
-        @Override
-        public void serialize(Pkcs10Csr csr,
-                              JsonGenerator jsonGenerator,
-                              SerializerProvider serializerProvider) throws IOException {
-            jsonGenerator.writeString(Pkcs10CsrUtils.toPem(csr));
-        }
     }
 
     public static class ExpirySerializer extends JsonSerializer<Duration> {

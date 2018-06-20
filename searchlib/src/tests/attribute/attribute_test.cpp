@@ -32,8 +32,7 @@ using search::index::DummyFileHeaderContext;
 using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
 
-namespace
-{
+namespace {
 
 vespalib::string empty;
 vespalib::string tmpDir("tmp");
@@ -2315,6 +2314,23 @@ AttributeTest::testPendingCompaction()
     populateSimple(iv, 1, 2);  // should not trigger new compaction
 }
 
+void testNamePrefix() {
+    Config cfg(BasicType::INT32, CollectionType::SINGLE);
+    AttributeVector::SP vFlat = createAttribute("sfsint32_pc", cfg);
+    AttributeVector::SP vS1 = createAttribute("sfsint32_pc.abc", cfg);
+    AttributeVector::SP vS2 = createAttribute("sfsint32_pc.xyz", cfg);
+    AttributeVector::SP vSS1 = createAttribute("sfsint32_pc.xyz.abc", cfg);
+    EXPECT_EQUAL("sfsint32_pc", vFlat->getName());
+    EXPECT_EQUAL("sfsint32_pc", vFlat->getNamePrefix());
+    EXPECT_EQUAL("sfsint32_pc.abc", vS1->getName());
+    EXPECT_EQUAL("sfsint32_pc", vS1->getNamePrefix());
+    EXPECT_EQUAL("sfsint32_pc.xyz", vS2->getName());
+    EXPECT_EQUAL("sfsint32_pc", vS2->getNamePrefix());
+    EXPECT_EQUAL("sfsint32_pc.xyz.abc", vSS1->getName());
+    EXPECT_EQUAL("sfsint32_pc", vSS1->getNamePrefix());
+
+}
+
 void
 deleteDataDirs()
 {
@@ -2361,6 +2377,7 @@ int AttributeTest::Main()
     TEST_DO(requireThatAddressSpaceUsageIsReported());
     testReaderDuringLastUpdate();
     TEST_DO(testPendingCompaction());
+    TEST_DO(testNamePrefix());
 
     deleteDataDirs();
     TEST_DONE();

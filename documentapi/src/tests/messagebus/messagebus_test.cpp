@@ -59,7 +59,7 @@ void Test::testMessage() {
     // Test one update.
     UpdateDocumentMessage upd1(
             document::DocumentUpdate::SP(
-                    new document::DocumentUpdate(*testdoc_type,
+                    new document::DocumentUpdate(*_repo, *testdoc_type,
                             document::DocumentId(document::DocIdString(
                                             "testdoc", "testme1")))));
 
@@ -80,7 +80,7 @@ void Test::testMessage() {
     // Compare to another.
     UpdateDocumentMessage upd2(
             document::DocumentUpdate::SP(
-                    new document::DocumentUpdate(*testdoc_type,
+                    new document::DocumentUpdate(*_repo, *testdoc_type,
                             document::DocumentId(document::DocIdString(
                                             "testdoc", "testme2")))));
     EXPECT_TRUE(!(upd1.getDocumentUpdate().getId() == upd2.getDocumentUpdate().getId()));

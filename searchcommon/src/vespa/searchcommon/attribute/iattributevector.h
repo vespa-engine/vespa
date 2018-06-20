@@ -71,6 +71,11 @@ public:
      **/
     virtual const vespalib::string & getName() const = 0;
 
+    vespalib::stringref getNamePrefix() const {
+        vespalib::stringref name = getName();
+        return name.substr(0, name.find('.'));
+    }
+
     /**
      * Returns the number of documents stored in this attribute vector.
      *

@@ -11,15 +11,12 @@ private:
     SerialNum _spoolerSerialNum;
 protected:
     SpoolerReplayOperation(Type type);
-    SpoolerReplayOperation(Type type,
-                           SerialNum serialNum,
-                           SerialNum spoolerSerialNum);
+    SpoolerReplayOperation(Type type, SerialNum serialNum, SerialNum spoolerSerialNum);
 public:
-    virtual ~SpoolerReplayOperation() {}
+    ~SpoolerReplayOperation() override {}
     SerialNum getSpoolerSerialNum() const { return _spoolerSerialNum; }
-    virtual void serialize(vespalib::nbostream &os) const override;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &) override {
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &) override {
         deserialize(is);
     }
     void deserialize(vespalib::nbostream &is);
@@ -38,8 +35,7 @@ public:
      * @param serialNum the current serial number of the transaction log.
      * @param spoolerSerialNum the serial number of the first entry of the spooler log replay.
      */
-    SpoolerReplayStartOperation(SerialNum serialNum,
-                                SerialNum spoolerSerialNum);
+    SpoolerReplayStartOperation(SerialNum serialNum, SerialNum spoolerSerialNum);
 };
 
 
@@ -54,8 +50,7 @@ public:
      * @param serialNum the current serial number of the transaction log.
      * @param spoolerSerialNum the serial number of the last entry of the spooler log replay.
      */
-    SpoolerReplayCompleteOperation(SerialNum serialNum,
-                                   SerialNum spoolerSerialNum);
+    SpoolerReplayCompleteOperation(SerialNum serialNum, SerialNum spoolerSerialNum);
 };
 
 } // namespace proton

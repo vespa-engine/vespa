@@ -9,7 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.Inspectable;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.Type;
 import com.yahoo.data.access.simple.JsonRender;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
@@ -741,6 +744,34 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return true;
         }
 
+        private static Inspector wrapAsMap(Inspector data) {
+            if (data.type() != Type.ARRAY) return null;
+            if (data.entryCount() == 0) return null;
+            Value.ObjectValue map = new Value.ObjectValue();
+            for (int i = 0; i < data.entryCount(); i++) {
+                Inspector obj = data.entry(i);
+                if (obj.type() != Type.OBJECT) return null;
+                if (obj.fieldCount() != 2) return null;
+                Inspector key = obj.field("key");
+                Inspector value = obj.field("value");
+                if (key.type() != Type.STRING) return null;
+                if (! value.valid()) return null;
+                map.put(key.asString(), value);
+            }
+            return map;
+        }
+
+        private void renderInspector(Inspector data) throws IOException {
+            StringBuilder intermediate = new StringBuilder();
+            Inspector asMap = wrapAsMap(data);
+            if (asMap != null) {
+                JsonRender.render(asMap, intermediate, true);
+            } else {
+                JsonRender.render(data, intermediate, true);
+            }
+            generator.writeRawValue(intermediate.toString());
+        }
+
         private void renderFieldContents(Object field) throws IOException {
             if (field == null) {
                 generator.writeNull();
@@ -750,12 +781,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator.writeTree((TreeNode) field);
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
+            } else if (field instanceof Inspectable) {
+                renderInspector(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
                 generator.writeRawValue(((JsonProducer) field).toJson());
-            } else if (field instanceof Inspectable) {
-                StringBuilder intermediate = new StringBuilder();
-                JsonRender.render((Inspectable) field, intermediate, true);
-                generator.writeRawValue(intermediate.toString());
             } else if (field instanceof StringFieldValue) {
                 generator.writeString(((StringFieldValue)field).getString());
             } else if (field instanceof TensorFieldValue) {
