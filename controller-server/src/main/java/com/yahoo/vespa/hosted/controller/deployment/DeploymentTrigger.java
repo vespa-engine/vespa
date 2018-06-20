@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 
@@ -40,9 +40,9 @@ import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.Bui
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.idle;
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.queued;
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.running;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
@@ -60,7 +60,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @author bratseth
  * @author mpolden
- * @author jvenstad
+ * @author jonmv
  */
 public class DeploymentTrigger {
 

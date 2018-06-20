@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareRes
  * @author Oyvind Gronnesby
  */
 public class ActivateResult {
+    // TODO jvenstad: Replace this class with just the PrepareResponse.
 
     private final RevisionId revisionId;
     private final PrepareResponse prepareResponse;
