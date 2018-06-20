@@ -8,9 +8,9 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -102,20 +102,20 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
     private void deployCompletely(Application application, ApplicationPackage applicationPackage, long projectId,
                                   boolean success) {
-        tester.jobCompletion(DeploymentJobs.JobType.component)
+        tester.jobCompletion(JobType.component)
               .application(application)
               .projectId(projectId)
               .uploadArtifact(applicationPackage)
               .submit();
         tester.deploy(application, applicationPackage, ZoneId.from(Environment.test, RegionName.from("us-east-1")),
                       projectId);
-        tester.jobCompletion(DeploymentJobs.JobType.systemTest)
+        tester.jobCompletion(JobType.systemTest)
               .application(application)
               .projectId(projectId)
               .submit();
         tester.deploy(application, applicationPackage, ZoneId.from(Environment.staging, RegionName.from("us-east-3")),
                       projectId);
-        tester.jobCompletion(DeploymentJobs.JobType.stagingTest)
+        tester.jobCompletion(JobType.stagingTest)
               .application(application)
               .projectId(projectId)
               .success(success)
@@ -123,7 +123,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
         if (success) {
             tester.deploy(application, applicationPackage, ZoneId.from(Environment.prod,
                                                                        RegionName.from("corp-us-east-1")), projectId);
-            tester.jobCompletion(DeploymentJobs.JobType.productionCorpUsEast1)
+            tester.jobCompletion(JobType.productionCorpUsEast1)
                   .application(application)
                   .projectId(projectId)
                   .submit();

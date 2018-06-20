@@ -13,7 +13,7 @@ import java.nio.file.Path;
  * Uses the Velocity engine to render a template, to and from both String and Path objects.
  *
  * @author hakonhall
- * @author jvenstad
+ * @author jonmv
  */
 public class Template {
 

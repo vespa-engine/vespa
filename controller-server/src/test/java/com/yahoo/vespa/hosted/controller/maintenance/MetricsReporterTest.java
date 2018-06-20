@@ -31,10 +31,10 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Map;
 
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
