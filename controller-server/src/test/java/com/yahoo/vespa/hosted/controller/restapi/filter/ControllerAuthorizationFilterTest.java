@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationActio
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -35,13 +37,12 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author bjorncs
  */
 public class ControllerAuthorizationFilterTest {
+
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private static final AthenzUser USER = user("john");
@@ -157,11 +158,9 @@ public class ControllerAuthorizationFilterTest {
     }
 
     private static DiscFilterRequest createRequest(Method method, String path, AthenzIdentity identity) {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
-        when(request.getMethod()).thenReturn(method.name());
-        when(request.getRequestURI()).thenReturn(path);
-        when(request.getUserPrincipal()).thenReturn(new AthenzPrincipal(identity));
-        return request;
+        Request request = new Request(path, new byte[0], Request.Method.valueOf(method.name()),
+                                      new AthenzPrincipal(identity));
+        return new ApplicationRequestToDiscFilterRequestWrapper(request);
     }
 
     private static String getErrorMessage(MockResponseHandler responseHandler) {
@@ -185,4 +184,5 @@ public class ControllerAuthorizationFilterTest {
             this.message = message;
         }
     }
+
 }
