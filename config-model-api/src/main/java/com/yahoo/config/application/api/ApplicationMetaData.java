@@ -171,4 +171,5 @@ public class ApplicationMetaData {
             throw new RuntimeException("Unable to encode metadata", e);
         }
     }
+
 }

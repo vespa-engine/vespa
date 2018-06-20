@@ -17,9 +17,9 @@ import java.util.logging.Logger;
 
 /**
  * @author hmusum
- * @since 5.5
  */
 public class UpstreamConfigSubscriber implements Subscriber {
+
     private final static Logger log = Logger.getLogger(UpstreamConfigSubscriber.class.getName());
 
     private final RawConfig config;
@@ -33,8 +33,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
 
     UpstreamConfigSubscriber(RawConfig config, ClientUpdater clientUpdater, ConfigSource configSourceSet,
                              TimingValues timingValues, Map<ConfigSourceSet, JRTConfigRequester> requesterPool,
-                             MemoryCache memoryCache)
-    {
+                             MemoryCache memoryCache) {
         this.config = config;
         this.clientUpdater = clientUpdater;
         this.configSourceSet = configSourceSet;
@@ -46,7 +45,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
     void subscribe() {
         subscriber = new GenericConfigSubscriber(requesterPool);
         ConfigKey<?> key = config.getKey();
-        handle = subscriber.subscribe(new ConfigKey<RawConfig>(key.getName(), key.getConfigId(), key.getNamespace()),
+        handle = subscriber.subscribe(new ConfigKey<>(key.getName(), key.getConfigId(), key.getNamespace()),
                                       config.getDefContent(), configSourceSet, timingValues);
     }
 
@@ -66,7 +65,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
     }
 
     private void updateWithNewConfig(GenericConfigHandle handle) {
-        final RawConfig newConfig = handle.getRawConfig();
+        RawConfig newConfig = handle.getRawConfig();
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "config to be returned for '" + newConfig.getKey() +
                     "', generation=" + newConfig.getGeneration() +
@@ -82,4 +81,5 @@ public class UpstreamConfigSubscriber implements Subscriber {
             subscriber.close();
         }
     }
+
 }

@@ -14,7 +14,10 @@ import java.util.logging.Logger;
 
 /**
  * Responsible for providing data from the currently live application subtree in zookeeper.
- * (i.e. /vespa/config/apps/&lt;id of currently active app&gt;/)
+ * (i.e. /vespa/config/apps/&lt;id of currently active app&gt;/).
+ *
+ * Note: The application revision ("session") stored in this tree is not necessarily live, just complete,
+ * preparable, prepared or active.
  *
  * @author tonytv
  */
@@ -34,7 +37,8 @@ public class ZKLiveApp {
      * Returns a list of the files (as readers) in the given path. The readers <b>must</b>
      * be closed by the caller.
      *
-     * @param path           a path relative to the currently active application (i.e. /vespa/config/apps/&lt;id of currently active app&gt;/).
+     * @param path           a path relative to the currently active application
+     *                       (i.e. /vespa/config/apps/&lt;id of currently active app&gt;/).
      * @param fileNameSuffix the suffix of files to return, or null to return all
      * @param recursive      if true, all files from all subdirectories of this will also be returned
      * @return the files in the given path, or an empty list (never null) if the directory does not exist or is empty.

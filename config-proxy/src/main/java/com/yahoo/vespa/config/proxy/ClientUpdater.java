@@ -15,6 +15,7 @@ import java.util.logging.Logger;
  * @author hmusum
  */
 class ClientUpdater {
+
     private final static Logger log = Logger.getLogger(ClientUpdater.class.getName());
 
     private final ConfigProxyStatistics statistics;

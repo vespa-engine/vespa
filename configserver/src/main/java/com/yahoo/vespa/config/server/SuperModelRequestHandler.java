@@ -23,8 +23,7 @@ import java.util.Set;
 /**
  * Handles request for supermodel config.
  *
- * @author lulf
- * @since 5.9
+ * @author Ulf Lilleengen
  */
 public class SuperModelRequestHandler implements RequestHandler {
 

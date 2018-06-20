@@ -132,7 +132,7 @@ public class ProxyServer implements Runnable {
     }
 
     static boolean configOrGenerationHasChanged(RawConfig config, JRTServerConfigRequest request) {
-        return (config != null && (!config.hasEqualConfig(request) || config.hasNewerGeneration(request)));
+        return (config != null && ( ! config.hasEqualConfig(request) || config.hasNewerGeneration(request)));
     }
 
     Mode getMode() {

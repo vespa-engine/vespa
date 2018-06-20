@@ -20,6 +20,7 @@ import java.util.List;
  * @author Ulf Lilleengen
  */
 public class ConfigServerDB {
+
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigServerDB.class.getName());
     private final File serverDB;
     private final ConfigserverConfig configserverConfig;

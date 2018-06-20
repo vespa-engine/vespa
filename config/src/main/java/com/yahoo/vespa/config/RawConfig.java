@@ -35,6 +35,7 @@ public class RawConfig extends ConfigInstance {
 
     /**
      * Constructor for an empty config (not yet resolved).
+     *
      * @param key     The ConfigKey
      * @param defMd5  The md5 sum of the .def-file.
      */
@@ -69,6 +70,7 @@ public class RawConfig extends ConfigInstance {
 
     /**
      * Creates a new Config from the given request, with the values in the response parameters.
+     *
      * @param req a {@link JRTClientConfigRequest}
      */
     public static RawConfig createFromResponseParameters(JRTClientConfigRequest req) {
@@ -85,6 +87,7 @@ public class RawConfig extends ConfigInstance {
 
     /**
      * Creates a new Config from the given request, with the values in the response parameters.
+     *
      * @param req a {@link JRTClientConfigRequest}
      */
     public static RawConfig createFromServerRequest(JRTServerConfigRequest req) {
@@ -135,7 +138,7 @@ public class RawConfig extends ConfigInstance {
     /**
      * Returns true if this config is equal to the config (same payload md5) in the given request.
      *
-     * @param req  The request for which to compare config payload with this config.
+     * @param req the request for which to compare config payload with this config.
      * @return  true if this config is equal to the config in the given request.
      */
     public boolean hasEqualConfig(JRTServerConfigRequest req) {
@@ -145,7 +148,7 @@ public class RawConfig extends ConfigInstance {
     /**
      * Returns true if this config has a more recent generation than the config in the given request.
      *
-     * @param req  The request for which to compare generation with this config.
+     * @param req the request for which to compare generation with this config.
      * @return true if this config has a more recent generation than the config in the given request.
      */
     public boolean hasNewerGeneration(JRTServerConfigRequest req) {
@@ -160,6 +163,7 @@ public class RawConfig extends ConfigInstance {
         return (errorCode() != 0);
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;
@@ -186,6 +190,7 @@ public class RawConfig extends ConfigInstance {
         }
     }
 
+    @Override
     public int hashCode() {
         int hash = 17;
         if (key != null) {
@@ -205,6 +210,7 @@ public class RawConfig extends ConfigInstance {
         return hash;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(key.getNamespace()).append(".").append(key.getName());
@@ -224,4 +230,5 @@ public class RawConfig extends ConfigInstance {
     public List<String> getDefContent() {
         return defContent;
     }
+
 }

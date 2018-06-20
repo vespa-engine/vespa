@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.TimingValues;
  * @author vegardh
  */
 public class GenericConfigSubscriber extends ConfigSubscriber {
+
     /**
      * Constructs a new subscriber using the given pool of requesters (JRTConfigRequester holds 1 connection which in
      * turn is subject to failover across the elems in the source set.)
@@ -72,4 +73,5 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
      */
     public void closeRequesters() {
     }
+
 }

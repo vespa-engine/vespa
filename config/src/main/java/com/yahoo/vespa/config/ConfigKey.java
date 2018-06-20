@@ -135,4 +135,5 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
     public static ConfigKey<?> createFull(String name, String configId, String namespace, String md5) {
         return new ConfigKey<>(name, configId, namespace, md5, null);
     }
+
 }

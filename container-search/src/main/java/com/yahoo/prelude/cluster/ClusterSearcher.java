@@ -192,8 +192,7 @@ public class ClusterSearcher extends Searcher {
     private static ClusterParams makeClusterParams(int searchclusterIndex,
                                                    LegacyEmulationConfig emulConfig,
                                                    int dispatchIndex) {
-        return new ClusterParams(searchclusterIndex,
-                                 "sc" + searchclusterIndex + ".num" + dispatchIndex,
+        return new ClusterParams("sc" + searchclusterIndex + ".num" + dispatchIndex,
                                  emulConfig);
     }
 
