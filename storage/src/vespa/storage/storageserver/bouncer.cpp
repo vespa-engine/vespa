@@ -2,6 +2,7 @@
 
 #include "bouncer.h"
 #include "bouncer_metrics.h"
+#include "config_logging.h"
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -69,6 +70,7 @@ Bouncer::onClose()
 void
 Bouncer::configure(std::unique_ptr<vespa::config::content::core::StorBouncerConfig> config)
 {
+    log_config_received(*config);
     validateConfig(*config);
     vespalib::LockGuard lock(_lock);
     _config = std::move(config);
