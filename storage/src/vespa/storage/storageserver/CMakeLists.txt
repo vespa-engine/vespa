@@ -8,6 +8,7 @@ vespa_add_library(storage_storageserver
     communicationmanager.cpp
     communicationmanagermetrics.cpp
     configurable_bucket_resolver.cpp
+    config_logging.cpp
     distributornode.cpp
     distributornodecontext.cpp
     documentapiconverter.cpp

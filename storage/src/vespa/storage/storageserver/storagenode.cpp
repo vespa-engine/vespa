@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "config_logging.h"
 #include "storagenode.h"
 #include "communicationmanager.h"
 #include "statemanager.h"
@@ -16,7 +17,6 @@
 #include <fcntl.h>
 
 #include <vespa/log/log.h>
-#include <vespa/config/print/configdatabuffer.h>
 
 LOG_SETUP(".node.server");
 
@@ -466,18 +466,6 @@ StorageNode::shutdown()
     }
 
     LOG(debug, "Done shutting down node");
-}
-
-namespace {
-
-void log_config_received(const config::ConfigInstance& cfg) {
-    if (LOG_WOULD_LOG(debug)) {
-        config::ConfigDataBuffer buf;
-        cfg.serialize(buf);
-        LOG(debug, "Received new %s config: %s", cfg.defName().c_str(), buf.getEncodedString().c_str());
-    }
-}
-
 }
 
 void StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
