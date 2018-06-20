@@ -116,6 +116,8 @@ public class RawConfig extends ConfigInstance {
 
     public void setGeneration(long generation) { this.generation = generation; }
 
+    public void setInternalRedeploy(boolean internalRedeploy) { this.internalRedeploy = internalRedeploy; }
+
     /**
      * Returns whether this config generation was created by a system internal redeploy, not an
      * application package change.

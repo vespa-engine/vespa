@@ -50,6 +50,17 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
         }
     }
 
+    // Override to propagate internal redeploy into the config value in addition to the config state
+    @Override
+    void setInternalRedeploy(boolean internalRedeploy) {
+        super.setInternalRedeploy(internalRedeploy);
+        ConfigState<RawConfig> configState = getConfigState();
+
+        if (configState.getConfig() != null) {
+            configState.getConfig().setInternalRedeploy(internalRedeploy);
+        }
+    }
+
     public RawConfig getRawConfig() {
         return getConfigState().getConfig();
     }
