@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_attribute.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
 #include "dense_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
 
 using vespalib::eval::ValueType;
 using vespalib::tensor::MutableDenseTensorView;

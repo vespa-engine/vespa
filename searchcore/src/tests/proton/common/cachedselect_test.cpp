@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("cachedselect_test");
-
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -25,6 +22,9 @@ LOG_SETUP("cachedselect_test");
 #include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("cachedselect_test");
 
 using document::DataType;
 using document::Document;

@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "reference_attribute.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.reference_attribute");
 #include "reference_attribute_saver.h"
 #include "attributesaver.h"
 #include "readerbase.h"
@@ -12,6 +10,9 @@ LOG_SETUP(".searchlib.attribute.reference_attribute");
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/vespalib/data/fileheader.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.reference_attribute");
 
 namespace search::attribute {
 

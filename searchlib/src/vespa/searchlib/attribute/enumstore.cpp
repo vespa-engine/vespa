@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumstore.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.enum_store");
 #include "enumstore.hpp"
 #include <iomanip>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.enum_store");
 
 namespace search {
 

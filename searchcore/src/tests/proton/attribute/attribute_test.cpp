@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_test");
-
 #include <vespa/config-attributes.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
@@ -46,6 +43,9 @@ LOG_SETUP("attribute_test");
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_test");
 
 namespace vespa { namespace config { namespace search {}}}
 

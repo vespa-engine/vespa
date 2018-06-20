@@ -10,6 +10,7 @@
 #include <limits>
 #include <stdexcept>
 #include <cassert>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.stllike.asciistream");
 

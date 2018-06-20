@@ -4,9 +4,9 @@
 #include "selectcontext.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.common.attribute_field_value_node");
-
 
 namespace proton {
 

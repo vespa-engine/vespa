@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_initializer_test");
-
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
@@ -12,6 +9,9 @@ LOG_SETUP("attribute_initializer_test");
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/stllike/string.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_initializer_test");
 
 using search::attribute::Config;
 using search::attribute::BasicType;

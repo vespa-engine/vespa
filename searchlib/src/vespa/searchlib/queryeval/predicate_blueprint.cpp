@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.predicate.predicate_blueprint");
 #include "predicate_blueprint.h"
 #include <vespa/searchlib/predicate/predicate_bounds_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_interval_posting_list.h>
@@ -9,7 +7,8 @@ LOG_SETUP(".searchlib.predicate.predicate_blueprint");
 #include <vespa/searchlib/predicate/predicate_zstar_compressed_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
-
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.predicate.predicate_blueprint");
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 
 using search::query::PredicateQuery;

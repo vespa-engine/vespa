@@ -1,14 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryfieldindex.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.memory_field_index");
-
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
-
 #include <vespa/searchlib/bitcompression/posocccompression.h>
-
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
@@ -18,6 +13,9 @@ LOG_SETUP(".searchlib.memoryindex.memory_field_index");
 #include <vespa/searchlib/btree/btree.hpp>
 #include "ordereddocumentinserter.h"
 #include <vespa/vespalib/util/array.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.memory_field_index");
 
 namespace search {
 

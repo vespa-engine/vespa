@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_searchable_adapter_test");
-
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
@@ -30,6 +27,9 @@ LOG_SETUP("attribute_searchable_adapter_test");
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <memory>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_searchable_adapter_test");
 
 using search::AttributeFactory;
 using search::AttributeGuard;

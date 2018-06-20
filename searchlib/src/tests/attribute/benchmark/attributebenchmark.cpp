@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("attributebenchmark");
-
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -20,6 +17,9 @@ LOG_SETUP("attributebenchmark");
 #include "attributesearcher.h"
 #include "attributeupdater.h"
 #include <sys/resource.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attributebenchmark");
 
 using std::shared_ptr;
 

@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("document_bucket_mover_test");
-
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
@@ -20,6 +17,9 @@ LOG_SETUP("document_bucket_mover_test");
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("document_bucket_mover_test");
 
 using namespace proton;
 using document::BucketId;

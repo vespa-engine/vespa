@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_blueprint_factory.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 #include "attribute_weighted_set_blueprint.h"
 #include "i_document_weight_attribute.h"
 #include "iterator_pack.h"
@@ -27,9 +25,11 @@ LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
-
 #include <vespa/vespalib/util/regexp.h>
 #include <sstream>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 
 using search::attribute::IAttributeVector;
 using search::attribute::ISearchContext;

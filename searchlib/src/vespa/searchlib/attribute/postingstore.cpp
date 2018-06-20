@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postingstore.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.posting_store");
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.posting_store");
 
 namespace search::attribute {
 

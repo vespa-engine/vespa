@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postinglistsearchcontext.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.posting_list_search_context");
 #include "postinglistsearchcontext.hpp"
 #include "attributeiterators.hpp"
 #include "diversity.hpp"
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.posting_list_search_context");
 
 
 namespace search {

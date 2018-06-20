@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singlesmallnumericattribute.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.asingle_small_numeric_attribute");
 #include "attributevector.hpp"
 #include "primitivereader.h"
 #include "attributeiterators.hpp"
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include "iattributesavetarget.h"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.single_small_numeric_attribute");
 
 namespace search {
 

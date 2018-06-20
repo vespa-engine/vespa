@@ -3,7 +3,6 @@
 #include "match_tools.h"
 #include "querynodes.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
 #include <vespa/searchlib/query/tree/querytreecreator.h>

@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("grouping_benchmark");
-
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
@@ -17,6 +14,9 @@ LOG_SETUP("grouping_benchmark");
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/util/rusage.h>
 #include <csignal>
+
+#include <vespa/log/log.h>
+LOG_SETUP("grouping_benchmark");
 
 using namespace vespalib;
 using namespace search;

@@ -2,8 +2,6 @@
 
 #include "fakememtreeocc.h"
 #include "fpfactory.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".fakememtreeocc");
 #include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
@@ -12,6 +10,9 @@ LOG_SETUP(".fakememtreeocc");
 #include <vespa/searchlib/btree/btreenodestore.hpp>
 #include <vespa/searchlib/memoryindex/postingiterator.h>
 #include <vespa/searchlib/util/postingpriorityqueue.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".fakememtreeocc");
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;

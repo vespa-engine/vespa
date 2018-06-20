@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributevector.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.attributevector");
-
 #include "attribute_read_guard.h"
 #include "attributefilesavetarget.h"
 #include "attributeiterators.hpp"
@@ -23,6 +20,9 @@ LOG_SETUP(".searchlib.attribute.attributevector");
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.attributevector");
 
 using vespalib::getLastErrorString;
 

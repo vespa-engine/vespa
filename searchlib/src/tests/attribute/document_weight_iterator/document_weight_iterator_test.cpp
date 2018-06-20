@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("document_weight_iterator_test");
-
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -27,6 +24,9 @@ LOG_SETUP("document_weight_iterator_test");
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("document_weight_iterator_test");
 
 using namespace search;
 using namespace search::attribute;

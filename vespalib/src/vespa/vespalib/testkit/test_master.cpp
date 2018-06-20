@@ -3,6 +3,7 @@
 #include "test_master.h"
 #include <vespa/vespalib/util/barrier.h>
 #include <cstring>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.testkit.test_master");
 

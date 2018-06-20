@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.documentmetastore");
-
 #include "documentmetastore.h"
 #include "search_context.h"
 #include "documentmetastoresaver.h"
@@ -24,6 +21,8 @@ LOG_SETUP(".proton.documentmetastore");
 #include <vespa/fastos/file.h>
 #include "document_meta_store_versions.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.documentmetastore");
 
 using document::BucketId;
 using document::GlobalId;

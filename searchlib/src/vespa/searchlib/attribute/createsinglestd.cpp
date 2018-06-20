@@ -1,9 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.create_single_std");
-
 #include "attributefactory.h"
 #include "predicate_attribute.h"
 #include "singlesmallnumericattribute.h"
@@ -13,6 +9,9 @@ LOG_SETUP(".searchlib.attribute.create_single_std");
 #include "singlestringattribute.h"
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.create_single_std");
 
 namespace search {
 

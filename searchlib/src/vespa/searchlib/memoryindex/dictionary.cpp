@@ -4,9 +4,6 @@
 #include "fieldinverter.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.dictionary");
-
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
@@ -16,6 +13,9 @@ LOG_SETUP(".searchlib.memoryindex.dictionary");
 #include <vespa/searchlib/btree/btree.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.dictionary");
 
 
 namespace search {

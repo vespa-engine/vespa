@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("frozenbtree_test");
-
 #define DEBUG_FROZENBTREE
 #define LOG_FROZENBTREEXX
 #include <vespa/vespalib/testkit/testapp.h>
@@ -12,6 +9,9 @@ LOG_SETUP("frozenbtree_test");
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <map>
+
+#include <vespa/log/log.h>
+LOG_SETUP("frozenbtree_test");
 
 using search::btree::BTreeRoot;
 using search::btree::BTreeNode;

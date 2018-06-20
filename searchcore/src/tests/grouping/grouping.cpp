@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("grouping_test");
-
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
@@ -14,6 +11,9 @@ LOG_SETUP("grouping_test");
 #include <vespa/searchcore/grouping/groupingsession.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <iostream>
+
+#include <vespa/log/log.h>
+LOG_SETUP("grouping_test");
 
 using namespace search::attribute;
 using namespace search::aggregation;

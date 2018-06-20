@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("per_doc_expr_test");
-
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
@@ -16,6 +13,9 @@ LOG_SETUP("per_doc_expr_test");
 #include <cmath>
 #include <iostream>
 #include <list>
+
+#include <vespa/log/log.h>
+LOG_SETUP("per_doc_expr_test");
 
 #define MU std::make_unique
 

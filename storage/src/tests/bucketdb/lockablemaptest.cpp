@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".lockable_map_test");
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/bucketdb/judymultimap.h>
 #include <vespa/storage/bucketdb/judymultimap.hpp>
@@ -9,6 +7,9 @@ LOG_SETUP(".lockable_map_test");
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <boost/operators.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".lockable_map_test");
 
 namespace storage {
 

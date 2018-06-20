@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.create_array_std");
 #include "attributefactory.h"
 #include "defines.h"
 #include "attributevector.hpp"
 #include "multivalueattribute.hpp"
 #include "multinumericattribute.hpp"
 #include "multistringattribute.hpp"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.create_array_std");
 
 namespace search {
 

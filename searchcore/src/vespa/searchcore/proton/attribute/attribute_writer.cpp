@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.attribute.attribute_writer");
-
 #include "attribute_writer.h"
 #include "ifieldupdatecallback.h"
 #include "attributemanager.h"
@@ -17,6 +14,9 @@ LOG_SETUP(".proton.attribute.attribute_writer");
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.attribute.attribute_writer");
 
 using namespace document;
 using namespace search;

@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.predicate_attribute");
 #include "predicate_attribute.h"
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
@@ -9,6 +7,9 @@ LOG_SETUP(".searchlib.attribute.predicate_attribute");
 #include <vespa/vespalib/data/slime/slime.h>
 #include "iattributesavetarget.h"
 #include "attribute_header.h"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.predicate_attribute");
 
 using document::Predicate;
 using document::PredicateFieldValue;

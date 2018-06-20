@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("attibute_aspect_delayer_test");
-
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
@@ -13,6 +10,9 @@ LOG_SETUP("attibute_aspect_delayer_test");
 #include <vespa/config-indexschema.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-summarymap.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attibute_aspect_delayer_test");
 
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
