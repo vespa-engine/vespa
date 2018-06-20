@@ -15,14 +15,14 @@ import java.security.cert.X509Certificate;
  */
 public class DefaultZpe implements Zpe {
     @Override
-    public AccessCheckResult checkAccessAllowed(ZToken roleToken, AthenzResourceName resourceName, String action) {
-        return AccessCheckResult.fromAccessCheckStatus(
+    public AuthorizationResult checkAccessAllowed(ZToken roleToken, AthenzResourceName resourceName, String action) {
+        return AuthorizationResult.fromAccessCheckStatus(
                 AuthZpeClient.allowAccess(roleToken.getRawToken(), resourceName.toResourceNameString(), action));
     }
 
     @Override
-    public AccessCheckResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action) {
-        return AccessCheckResult.fromAccessCheckStatus(
+    public AuthorizationResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action) {
+        return AuthorizationResult.fromAccessCheckStatus(
                 AuthZpeClient.allowAccess(roleCertificate, resourceName.toResourceNameString(), action));
     }
 

@@ -13,7 +13,7 @@ import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.tls.AthenzX509CertificateUtils;
-import com.yahoo.vespa.athenz.zpe.AccessCheckResult;
+import com.yahoo.vespa.athenz.zpe.AuthorizationResult;
 import com.yahoo.vespa.athenz.zpe.DefaultZpe;
 import com.yahoo.vespa.athenz.zpe.Zpe;
 
@@ -120,12 +120,12 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
                                                                   DiscFilterRequest request,
                                                                   ZpeCheck<C> accessCheck,
                                                                   Function<C, AthenzPrincipal> principalFactory) {
-        AccessCheckResult accessCheckResult = accessCheck.checkAccess(credentials, resAndAction.resourceName(), resAndAction.action());
-        if (accessCheckResult == AccessCheckResult.ALLOW) {
+        AuthorizationResult authorizationResult = accessCheck.checkAccess(credentials, resAndAction.resourceName(), resAndAction.action());
+        if (authorizationResult == AuthorizationResult.ALLOW) {
             request.setUserPrincipal(principalFactory.apply(credentials));
             return Optional.empty();
         }
-        return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access forbidden: " + accessCheckResult.getDescription()));
+        return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access forbidden: " + authorizationResult.getDescription()));
     }
 
     private static AthenzPrincipal createPrincipal(X509Certificate certificate) {
@@ -139,7 +139,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     }
 
     @FunctionalInterface private interface ZpeCheck<C> {
-        AccessCheckResult checkAccess(C credentials, AthenzResourceName resourceName, String action);
+        AuthorizationResult checkAccess(C credentials, AthenzResourceName resourceName, String action);
     }
 
 }

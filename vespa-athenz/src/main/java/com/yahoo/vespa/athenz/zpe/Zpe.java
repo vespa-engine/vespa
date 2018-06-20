@@ -12,6 +12,6 @@ import java.security.cert.X509Certificate;
  * @author bjorncs
  */
 public interface Zpe {
-    AccessCheckResult checkAccessAllowed(ZToken roleToken, AthenzResourceName resourceName, String action);
-    AccessCheckResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action);
+    AuthorizationResult checkAccessAllowed(ZToken roleToken, AthenzResourceName resourceName, String action);
+    AuthorizationResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action);
 }

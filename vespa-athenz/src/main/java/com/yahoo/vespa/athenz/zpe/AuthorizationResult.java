@@ -10,7 +10,7 @@ import java.util.Arrays;
  *
  * @author bjorncs
  */
-public enum AccessCheckResult {
+public enum AuthorizationResult {
     ALLOW(AccessCheckStatus.ALLOW),
     DENY(AccessCheckStatus.DENY),
     DENY_NO_MATCH(AccessCheckStatus.DENY_NO_MATCH),
@@ -28,7 +28,7 @@ public enum AccessCheckResult {
 
     private final AccessCheckStatus wrappedElement;
 
-    AccessCheckResult(AccessCheckStatus wrappedElement) {
+    AuthorizationResult(AccessCheckStatus wrappedElement) {
         this.wrappedElement = wrappedElement;
     }
 
@@ -36,7 +36,7 @@ public enum AccessCheckResult {
         return wrappedElement.toString();
     }
 
-    static AccessCheckResult fromAccessCheckStatus(AccessCheckStatus accessCheckStatus) {
+    static AuthorizationResult fromAccessCheckStatus(AccessCheckStatus accessCheckStatus) {
         return Arrays.stream(values())
                 .filter(value -> value.wrappedElement == accessCheckStatus)
                 .findFirst()
