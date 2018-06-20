@@ -132,8 +132,7 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
     datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
     uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
     if (buffer.remaining() < entrySize) {
-        fprintf(stderr, "Out of enumstore bufferspace\n");
-        LOG_ABORT("should not be reached"); // not enough space
+        LOG_ABORT("Out of enumstore bufferspace");
     }
     uint64_t offset = buffer.size();
     char *dst(_store.getBufferEntry<char>(activeBufferId, offset));

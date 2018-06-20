@@ -6,8 +6,7 @@
 enum ConfigFlag {
     CF_OFF,
     CF_ON,
-    CF_AUTO,
-    CF_MAXVAL
+    CF_AUTO
 };
 
 

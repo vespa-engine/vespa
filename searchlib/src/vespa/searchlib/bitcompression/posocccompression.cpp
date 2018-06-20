@@ -179,8 +179,7 @@ PosOccFieldParams::readHeader(const vespalib::GenericHeader &header,
         _hasElementWeights = true;
         break;
     default:
-        LOG(error, "Bad collection type when reading field param in header");
-        LOG_ABORT("should not be reached");
+        LOG_ABORT("Bad collection type when reading field param in header");
     }
     _avgElemLen = header.getTag(avgElemLenKey).asInteger();
 }
@@ -206,9 +205,7 @@ PosOccFieldParams::writeHeader(vespalib::GenericHeader &header,
         ct = schema::CollectionType::WEIGHTEDSET;
         break;
     default:
-        LOG(error,
-            "Bad collection type when writing field param in header");
-        LOG_ABORT("should not be reached");
+        LOG_ABORT("Bad collection type when writing field param in header");
     }
     header.putTag(GenericHeader::Tag(collKey, schema::getTypeName(ct)));
     header.putTag(GenericHeader::Tag(avgElemLenKey, _avgElemLen));

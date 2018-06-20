@@ -6,6 +6,9 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".document.select.operator");
+
 namespace document::select {
 
 Operator::OperatorMap Operator::_operators;
@@ -15,7 +18,7 @@ Operator::Operator(const vespalib::stringref & name)
 {
     OperatorMap::iterator it = _operators.find(name);
     if (it != _operators.end()) {
-        assert(false);
+        LOG_ABORT("unknown operator, should not happen");
     }
     _operators[_name] = this;
 }
@@ -25,7 +28,7 @@ Operator::get(const vespalib::stringref & name)
 {
     OperatorMap::iterator it = _operators.find(name);
     if (it == _operators.end()) {
-        assert(false);
+        LOG_ABORT("unknown operator, should not happen");
     }
     return *it->second;
 }

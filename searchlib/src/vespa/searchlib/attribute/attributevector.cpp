@@ -446,7 +446,10 @@ AttributeVector::createAttributeHeader() const {
                                    getVersion());
 }
 
-void AttributeVector::onSave(IAttributeSaveTarget &) { LOG_ABORT("should not be reached"); }
+void AttributeVector::onSave(IAttributeSaveTarget &)
+{
+    LOG_ABORT("should not be reached");
+}
 
 bool
 AttributeVector::hasLoadData() const {

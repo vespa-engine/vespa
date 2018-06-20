@@ -63,7 +63,7 @@ FRTConfigResponseV3::readConfigValue() const
         if (consumedSize == 0) {
             std::string json(make_json(*payloadData, true));
             LOG(error, "Error decoding JSON. Consumed size: %lu, uncompressed size: %u, compression type: %s, assumed uncompressed size(%u), compressed size: %u, slime(%s)", consumedSize, data.size, compressionTypeToString(info.compressionType).c_str(), info.uncompressedSize, ((*_returnValues)[1]._data._len), json.c_str());
-            assert(false);
+            LOG_ABORT("Error decoding JSON");
         }
     }
     if (LOG_WOULD_LOG(spam)) {

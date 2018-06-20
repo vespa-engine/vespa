@@ -92,8 +92,7 @@ AttributeDirectory::saveSnapInfo()
 {
     if (!_snapInfo.save()) {
         vespalib::string dirName(getDirName());
-        LOG(warning,
-            "Could not save meta-info file for attribute vector '%s' to disk",
+        LOG(warning, "Could not save meta-info file for attribute vector '%s' to disk",
             dirName.c_str());
         LOG_ABORT("should not be reached");
     }

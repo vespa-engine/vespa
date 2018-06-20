@@ -63,8 +63,7 @@ TEST("Test that sigbus handler can trap synthetic sigbus")
     if (sigsetjmp(sjb, 1) == 0) {
         sbh.setUnwind(&sjb);
         kill(getpid(), SIGBUS);
-        LOG(error, "Should never get here");
-        LOG_ABORT("should not be reached");
+        LOG_ABORT("Should never get here");
     }
     EXPECT_TRUE(sbh.fired());
     {
@@ -100,8 +99,7 @@ TEST("Test that sigbus handler can trap normal sigbus")
     if (sigsetjmp(sjb, 1) == 0) {
         sbh.setUnwind(&sjb);
         r = *p;
-        LOG(error, "Should never get here");
-        LOG_ABORT("should not be reached");
+        LOG_ABORT("Should never get here");
     }
     EXPECT_TRUE(sbh.fired());
     EXPECT_TRUE(r == '\0');

@@ -245,7 +245,7 @@ FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum,
             assert(idxFile.getSize() == 0);
         }
     } else {
-        assert(false);
+        LOG_ABORT("should not reach here");
     }
     return sz;
 }

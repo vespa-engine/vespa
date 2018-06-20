@@ -67,10 +67,8 @@ PrimitiveDataType::createFieldValue() const
         case T_BYTE: return FieldValue::UP(new ByteFieldValue);
         case T_PREDICATE: return FieldValue::UP(new PredicateFieldValue);
         case T_TENSOR: return std::make_unique<TensorFieldValue>();
-            LOG_ABORT("should not be reached");
     }
-    assert(!"getId() returned value out of range");
-    LOG_ABORT("should not be reached");
+    LOG_ABORT("getId() returned value out of range");
 }
 
 void

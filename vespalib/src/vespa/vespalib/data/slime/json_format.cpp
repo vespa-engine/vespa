@@ -136,7 +136,7 @@ struct JsonEncoder : public ArrayTraverser,
         case ARRAY::ID:  return encodeARRAY(inspector);
         case OBJECT::ID: return encodeOBJECT(inspector);
         }
-        LOG_ABORT("should not be reached"); // should not be reached
+        LOG_ABORT("should not be reached");
     }
     void entry(size_t idx, const Inspector &inspector) override;
     void field(const Memory &symbol_name, const Inspector &inspector) override;

@@ -520,7 +520,7 @@ TEST("require that attribute parallel wand works") {
         } else {
             fprintf(stderr, "    (fast_search: %s, strict: %s)\n",
                     as_str(fast_search), as_str(strict));
-            assert(false);
+            LOG_ABORT("should not reach here");
         }
     }
 }

@@ -86,7 +86,6 @@ MaintenanceScheduler::convertToOperationPriority(MaintenancePriority::Priority p
     case MaintenancePriority::VERY_HIGH:
         return OperationStarter::Priority(0);
     default:
-        assert(false);
         LOG_ABORT("should not be reached");
     }
 }

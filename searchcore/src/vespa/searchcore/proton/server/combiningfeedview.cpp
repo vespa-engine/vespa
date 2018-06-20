@@ -26,7 +26,6 @@ getRepo(const std::vector<IFeedView::SP> &views)
         return view->getDocumentTypeRepo();
     }
     LOG_ABORT("should not be reached");
-    return std::shared_ptr<const DocumentTypeRepo>();
 }
 
 };

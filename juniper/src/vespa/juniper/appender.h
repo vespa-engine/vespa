@@ -118,9 +118,6 @@ public:
                               _sumconf->highlight_off()[0] == '<' ||
                               _sumconf->dots()[0] == '<');
             break;
-        default:
-            HDR_ABORT("should not be reached");
-            break;
         }
 
         if (_sumconf->preserve_white_space() == CF_ON) {

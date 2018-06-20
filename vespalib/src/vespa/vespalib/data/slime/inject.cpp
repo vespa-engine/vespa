@@ -51,7 +51,7 @@ void injectValue(const Inserter &inserter, const Inspector &inspector, const Ins
     case ARRAY::ID:  return injectArray(inserter, inspector, guard);
     case OBJECT::ID: return injectObject(inserter, inspector, guard);
     }
-    LOG_ABORT("should not be reached"); // should not be reached
+    LOG_ABORT("should not be reached");
 }
 
 void

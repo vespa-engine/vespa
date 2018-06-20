@@ -63,21 +63,18 @@ Tensor::UP
 WrappedSimpleTensor::apply(const CellFunction &) const
 {
     LOG_ABORT("should not be reached");
-    return Tensor::UP();
 }
 
 Tensor::UP
 WrappedSimpleTensor::join(join_fun_t, const Tensor &) const
 {
     LOG_ABORT("should not be reached");
-    return Tensor::UP();
 }
 
 Tensor::UP
 WrappedSimpleTensor::reduce(join_fun_t, const std::vector<vespalib::string> &) const
 {
     LOG_ABORT("should not be reached");
-    return Tensor::UP();
 }
 
 } // namespace vespalib::tensor

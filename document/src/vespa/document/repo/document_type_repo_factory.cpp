@@ -24,8 +24,7 @@ public:
 EmptyFactoryCheck::~EmptyFactoryCheck()
 {
     if (!DocumentTypeRepoFactory::empty()) {
-        std::cerr << "DocumentTypeRepoFactory not empty at shutdown" << std::endl;
-        LOG_ABORT("should not be reached");
+        LOG_ABORT("DocumentTypeRepoFactory not empty at shutdown");
     }
 }
 

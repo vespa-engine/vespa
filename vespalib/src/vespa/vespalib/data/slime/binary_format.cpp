@@ -58,7 +58,7 @@ struct BinaryEncoder : public ArrayTraverser,
         case ARRAY::ID:  return encodeArray(inspector);
         case OBJECT::ID: return encodeObject(inspector);
         }
-        LOG_ABORT("should not be reached"); // should not be reached
+        LOG_ABORT("should not be reached");
     }
     void encodeSymbolTable(const Slime &slime) {
         size_t numSymbols = slime.symbols();
@@ -173,7 +173,7 @@ struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
         case ARRAY::ID:  return decodeArray(inserter, meta);
         case OBJECT::ID: return decodeObject(inserter, meta);
         }
-        LOG_ABORT("should not be reached"); // code should not be reached
+        LOG_ABORT("should not be reached");
     }
 
     void decodeValue(const Inserter &inserter) {
