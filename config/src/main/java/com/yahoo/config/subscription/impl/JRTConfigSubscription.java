@@ -172,6 +172,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     /**
      * The timing values of this
+     *
      * @return timing values
      */
     public TimingValues timingValues() {

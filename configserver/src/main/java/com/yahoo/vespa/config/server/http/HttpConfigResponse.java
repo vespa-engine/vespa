@@ -14,9 +14,9 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
  * HTTP getConfig response
  * 
  * @author lulf
- * @since 5.1
  */
 public class HttpConfigResponse extends HttpResponse {
+
     public static final String JSON_CONTENT_TYPE = "application/json";
     private final ConfigResponse config;
 

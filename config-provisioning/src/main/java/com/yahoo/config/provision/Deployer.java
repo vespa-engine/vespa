@@ -11,14 +11,13 @@ import java.util.Optional;
  */
 public interface Deployer {
 
-
     /**
      * Creates a new deployment from the active application, if available. Will use the default timeout for deployment.
      *
      * @param application the active application to be redeployed
      * @return a new deployment from the local active, or empty if a local active application
-     * was not present for this id (meaning it either is not active or active on another
-     * node in the config server cluster)
+     *         was not present for this id (meaning it either is not active or deployed at another
+     *         node in the config server cluster)
      */
     Optional<Deployment> deployFromLocalActive(ApplicationId application);
 

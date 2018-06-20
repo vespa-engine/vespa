@@ -324,6 +324,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      * True if someone has set the {@link #reloadedGeneration} number by calling {@link #reload(long)}
      * and hence wants to force a given generation programmatically. If that is the case,
      * sets the generation and flags it as changed accordingly.
+     *
      * @return true if {@link #reload(long)} has been called, false otherwise
      */
     protected boolean checkReloaded() {

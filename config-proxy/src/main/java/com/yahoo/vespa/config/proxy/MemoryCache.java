@@ -21,6 +21,7 @@ import java.util.logging.Logger;
  * @author hmusum
  */
 public class MemoryCache {
+
     private static final Logger log = Logger.getLogger(MemoryCache.class.getName());
 
     // Separator in file names between different fields of config key
@@ -35,6 +36,7 @@ public class MemoryCache {
 
     /**
      * Put in cache, except when config has an error
+     *
      * @param config config to put in cache
      */
     public void put(RawConfig config) {

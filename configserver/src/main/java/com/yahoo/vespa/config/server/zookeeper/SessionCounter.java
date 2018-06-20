@@ -25,4 +25,5 @@ public class SessionCounter extends InitializedCounter {
     public long nextSessionId() {
         return counter.next();
     }
+
 }

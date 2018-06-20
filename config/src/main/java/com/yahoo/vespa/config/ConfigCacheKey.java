@@ -3,10 +3,11 @@ package com.yahoo.vespa.config;
 
 /**
  * A ConfigKey that also uses the def MD5 sum. Used for caching when def payload is user provided.
- * @author vegardh
  *
+ * @author Vegard Havdal
  */
 public class ConfigCacheKey {
+
     private final ConfigKey<?> key;
     private final String defMd5;
 
@@ -45,6 +46,7 @@ public class ConfigCacheKey {
 
     /**
      * The def md5 sum of this key
+     *
      * @return md5 sum
      */
     public String getDefMd5() {

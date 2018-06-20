@@ -11,7 +11,6 @@ import java.util.List;
  * getting config.
  *
  * @author hmusum
- * @since 5.1.9
  */
 interface ConfigSourceClient {
 
@@ -24,4 +23,5 @@ interface ConfigSourceClient {
     String getActiveSourceConnection();
 
     List<String> getSourceConnections();
+
 }

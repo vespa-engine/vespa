@@ -148,7 +148,8 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                 log.log(LogLevel.DEBUG, () -> "Already a subscriber running for: " + configCacheKey);
             } else {
                 log.log(LogLevel.DEBUG, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
-                UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(input, clientUpdater, configSourceSet, timingValues, requesterPool, memoryCache);
+                UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(input, clientUpdater, configSourceSet,
+                                                                                   timingValues, requesterPool, memoryCache);
                 try {
                     subscriber.subscribe();
                     activeSubscribers.put(configCacheKey, subscriber);

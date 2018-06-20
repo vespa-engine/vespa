@@ -12,14 +12,15 @@ import com.yahoo.vespa.config.RawConfig;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class GenericConfigHandle extends ConfigHandle {
 
-    private final GenericJRTConfigSubscription genSub;
+    private final GenericJRTConfigSubscription subscription;
 
-    public GenericConfigHandle(GenericJRTConfigSubscription sub) {
-        super(sub);
-        genSub = sub;
+    public GenericConfigHandle(GenericJRTConfigSubscription subscription) {
+        super(subscription);
+        this.subscription = subscription;
     }
 
     public RawConfig getRawConfig() {
-        return genSub.getRawConfig();
+        return subscription.getRawConfig();
     }
+
 }

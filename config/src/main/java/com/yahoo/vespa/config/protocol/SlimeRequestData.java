@@ -12,11 +12,10 @@ import com.yahoo.vespa.config.ConfigKey;
 import java.util.Optional;
 
 /**
- * Contains slime request data objects. Provides methods for reading various fields from slime request data. All
- * data is read lazily.
+ * Contains slime request data objects. Provides methods for reading various fields from slime request data.
+ * All data is read lazily.
  *
-* @author lulf
-* @since 5.18
+* @author Ulf Lilleengen
 */
 class SlimeRequestData {
 

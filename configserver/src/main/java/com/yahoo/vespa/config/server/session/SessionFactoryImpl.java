@@ -92,14 +92,14 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                  File configApplicationDir,
                                                  String applicationName,
                                                  long sessionId,
-                                                 long currentlyActiveSession,
+                                                 long currentlyActiveSessionId,
                                                  boolean internalRedeploy) {
         long deployTimestamp = System.currentTimeMillis();
         String user = System.getenv("USER");
         if (user == null) {
             user = "unknown";
         }
-        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationName, deployTimestamp, internalRedeploy, sessionId, currentlyActiveSession);
+        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationName, deployTimestamp, internalRedeploy, sessionId, currentlyActiveSessionId);
         return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
     }
 
@@ -128,15 +128,15 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         File existingApp = getSessionAppDir(existingSession.getSessionId());
         ApplicationId existingApplicationId = existingSession.getApplicationId();
 
-        long liveApp = getLiveApp(existingApplicationId);
-        logger.log(LogLevel.DEBUG, "Create from existing application id " + existingApplicationId + ", live app for it is " + liveApp);
-        LocalSession session = create(existingApp, existingApplicationId, liveApp, internalRedeploy, timeoutBudget);
+        long activeSessionId = getActiveSessionId(existingApplicationId);
+        logger.log(LogLevel.DEBUG, "Create from existing application id " + existingApplicationId + ", active session id is " + activeSessionId);
+        LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         session.setApplicationId(existingApplicationId);
         session.setVespaVersion(existingSession.getVespaVersion());
         return session;
     }
 
-    private LocalSession create(File applicationFile, ApplicationId applicationId, long currentlyActiveSession,
+    private LocalSession create(File applicationFile, ApplicationId applicationId, long currentlyActiveSessionId,
                                 boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         long sessionId = sessionCounter.nextSessionId();
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
@@ -155,7 +155,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                                       userApplicationDir,
                                                                       applicationId.application().value(),
                                                                       sessionId,
-                                                                      currentlyActiveSession,
+                                                                      currentlyActiveSessionId,
                                                                       internalRedeploy);
             applicationPackage.writeMetaData();
             return createSessionFromApplication(applicationPackage, sessionId, sessionZooKeeperClient, timeoutBudget, clock);
@@ -188,7 +188,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         return new LocalSession(tenant, sessionId, sessionPreparer, context);
     }
 
-    private long getLiveApp(ApplicationId applicationId) {
+    private long getActiveSessionId(ApplicationId applicationId) {
         List<ApplicationId> applicationIds = applicationRepo.listApplications();
         if (applicationIds.contains(applicationId)) {
             return applicationRepo.getSessionIdForApplication(applicationId);

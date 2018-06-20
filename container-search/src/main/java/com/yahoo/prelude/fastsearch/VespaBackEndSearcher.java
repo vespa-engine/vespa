@@ -75,9 +75,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     /** Cache wrapper */
     protected CacheControl cacheControl = null;
 
-    /** Searchcluster number */
-    private int sourceNumber;
-
     protected final String getName()          { return name; }
     protected final String getDefaultDocsumClass() { return defaultDocsumClass; }
 
@@ -168,7 +165,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     public final void init(SummaryParameters docSumParams, ClusterParams clusterParams, CacheParams cacheParams,
                            DocumentdbInfoConfig documentdbInfoConfig) {
         this.name = clusterParams.searcherName;
-        this.sourceNumber = clusterParams.clusterNumber;
 
         Validator.ensureNotNull("Name of Vespa backend integration", getName());
 

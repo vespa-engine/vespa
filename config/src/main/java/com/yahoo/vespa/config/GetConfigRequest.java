@@ -7,10 +7,8 @@ import java.util.Optional;
 
 /**
  * Interface for getConfig requests.
- * @author lulf
- * @since 5.3
+ * @author Ulf Lilleengen
  */
-
 public interface GetConfigRequest {
 
     /**
@@ -22,6 +20,7 @@ public interface GetConfigRequest {
 
     /**
      * The def file contents in the request, or empty array if not sent/not supported
+     *
      * @return the contents (payload) of the def schema
      */
     DefContent getDefContent();
@@ -33,7 +32,9 @@ public interface GetConfigRequest {
 
     /**
      * Whether or not the config can be retrieved from or stored in a cache.
+     *
      * @return true if content should _not_ be cached, false if it should.
      */
     boolean noCache();
+
 }

@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @see DelayedResponseHandler
  */
 public class DelayedResponse implements Delayed {
+
     private final JRTServerConfigRequest request;
     private final long returnTime;
 
@@ -58,8 +59,7 @@ public class DelayedResponse implements Delayed {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(request.getShortDescription()).append(", delayLeft=").append(getDelay(TimeUnit.MILLISECONDS)).append(" ms");
-        return sb.toString();
+        return request.getShortDescription() + ", delayLeft=" + getDelay(TimeUnit.MILLISECONDS) + " ms";
     }
+
 }
