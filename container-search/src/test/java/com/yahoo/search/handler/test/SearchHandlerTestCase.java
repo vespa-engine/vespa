@@ -23,6 +23,7 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -30,12 +31,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -186,6 +184,8 @@ public class SearchHandlerTestCase {
             assertThat(responseHandler.getStatus(), is(400));
         }
     }
+
+
 
     // Query handling takes a different code path when a query profile is active, so we test both paths.
     @Test

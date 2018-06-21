@@ -55,15 +55,19 @@ import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.io.IOUtils;
+import org.json.*;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Optional;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Handles search request.
@@ -233,6 +237,9 @@ public class SearchHandler extends LoggingRequestHandler {
             } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
                 return internalServerErrorResponse(request, e);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return invalidJsonResponse(request, e);
             }
         } finally {
             requestsInFlight.decrementAndGet();
@@ -275,14 +282,44 @@ public class SearchHandler extends LoggingRequestHandler {
         return errorResponse(request, ErrorMessage.createInternalServerError(Exceptions.toMessageString(e)));
     }
 
-    private HttpSearchResponse handleBody(HttpRequest request) {
+    private HttpResponse invalidJsonResponse(HttpRequest request, JSONException e) {
+        return errorResponse(request, ErrorMessage.createBadRequest(Exceptions.toMessageString(e)));
+    }
+
+    private HttpSearchResponse handleBody(HttpRequest request) throws JSONException {
         // Find query profile
         String queryProfileName = request.getProperty("queryProfile");
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
 
+
         // Create query
-        Query query = new Query(request, queryProfile);
+        Query query;
+
+        //SLETT LINJE UNDER
+        Map<String, String> a = null;
+
+        if (checkJSON(request.getData()) && request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST) {
+            JSONObject json = null;
+
+            try {
+
+                String jsonString = "{" + IOUtils.toString(request.getData(), StandardCharsets.UTF_8);
+                System.out.println("Received JSON: " + jsonString);
+                json = new JSONObject(jsonString);
+            } catch (IOException e) { e.printStackTrace();
+            }
+
+
+            Map<String, String> requestMap = createRequestMapping(json);
+            query = new Query(request, requestMap, queryProfile);
+
+
+        } else {
+            query = new Query(request, queryProfile);
+
+        }
+
 
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
 
@@ -552,4 +589,47 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
+    private boolean checkJSON(InputStream inputStream) {
+        try {
+            byte[] bytes = new byte[1];
+
+            inputStream.read(bytes);
+            if (bytes[0] == 0x7B) {
+                // InputStream is believed to be JSON
+                return true;
+            }
+        } catch (IOException e) {
+            // Something went wrong
+        }
+
+        return false;
+
+    }
+
+    private Map<String, String> createRequestMapping(JSONObject json) {
+        // Create mapping
+        Map<String, String> requestMap = new HashMap<String, String>();
+        Iterator<?> keys = json.keys();
+
+        while( keys.hasNext() ){
+            String key = (String)keys.next();
+            String value = null;
+            try {
+                value = json.getString(key);
+                requestMap.put(key, value);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return requestMap;
+
+
+
+    }
+
+
+
 }
+
+

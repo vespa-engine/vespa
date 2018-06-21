@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * A search query containing all the information required to produce a Result.
@@ -270,12 +271,23 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         this("");
     }
 
+
     /**
      * Construct a query from a string formatted in the http style, e.g <code>?query=test&amp;offset=10&amp;hits=13</code>
      * The query must be uri encoded.
      */
     public Query(String query) {
         this(query, null);
+    }
+
+
+    /**
+     * Creates a query from a request
+     *
+     * @param request the HTTP request from which this is created
+     */
+    public Query(HttpRequest request) {
+        this(request, null);
     }
 
     /**
@@ -299,15 +311,27 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     /**
-     * Creates a query from a request
+     * Creates a query from a request containing a JSON-query.
      *
-     * @param request the HTTP request from which this is created
+     * @param request the HTTP request from which this is created.
+     * @param requestMap the property map of the query.
+     * @param queryProfile the query profile to use for this query, or null if none.
      */
-    public Query(HttpRequest request) {
-        this(request, null);
+    public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
+
+        super(new QueryPropertyAliases(propertyAliases));
+        this.httpRequest = request;
+        init(requestMap, queryProfile);
     }
 
+
+
     private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
+        String content = requestMap.entrySet()
+                .stream()
+                .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
+                .collect(Collectors.joining(", "));
+        System.out.println(content);
         startTime = System.currentTimeMillis();
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
