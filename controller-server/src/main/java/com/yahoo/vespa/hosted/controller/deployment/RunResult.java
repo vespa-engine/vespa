@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
  *
  * @author jonmv
  */
-public enum JobOutcome {
+public enum RunResult {
 
     /** Deployment of the real application was rejected due to missing capacity. */
     outOfCapacity,
