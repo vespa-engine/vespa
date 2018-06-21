@@ -70,8 +70,7 @@ public class Container {
         oldComponents.keySet().forEach(componentDeconstructor::deconstruct);
     }
 
-    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector /* = Guice.createInjector() */,
-            boolean restartOnRedeploy /* = false */) {
+    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean restartOnRedeploy) {
 
         try {
             ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, restartOnRedeploy);
@@ -124,8 +123,7 @@ public class Container {
         }
     }
 
-    public ComponentGraph getConfigAndCreateGraph(ComponentGraph graph /* =new ComponentGraph*/, Injector fallbackInjector,
-            boolean restartOnRedeploy) {
+    public ComponentGraph getConfigAndCreateGraph(ComponentGraph graph, Injector fallbackInjector, boolean restartOnRedeploy) {
 
         ConfigSnapshot snapshot;
 
