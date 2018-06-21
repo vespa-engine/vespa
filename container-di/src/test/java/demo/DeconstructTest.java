@@ -2,6 +2,7 @@
 package demo;
 
 import com.yahoo.container.di.ContainerTest;
+import com.yahoo.container.di.ContainerTestBase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;

@@ -15,7 +15,6 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.search.searchchain.FederationSearcher;
 import com.yahoo.vespa.model.container.search.searchchain.Searcher;
 import org.w3c.dom.Element;
-import scala.Option;
 
 import java.util.ArrayList;
 import java.util.List;
