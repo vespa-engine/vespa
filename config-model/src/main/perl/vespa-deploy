@@ -87,7 +87,7 @@ readConfFile();
 use strict;
 use warnings;
 use feature qw(switch say);
-use vars qw/ $opt_c $opt_h $opt_n $opt_v $opt_f $opt_t $opt_a $opt_e $opt_E $opt_r $opt_i $opt_p $opt_H $opt_R $opt_F /;
+use vars qw/ $opt_c $opt_h $opt_n $opt_v $opt_f $opt_t $opt_a $opt_e $opt_E $opt_r $opt_i $opt_p $opt_H $opt_R $opt_F $opt_V /;
 use Env qw($HOME);
 use JSON;
 use Getopt::Std;
@@ -117,7 +117,7 @@ my $version = "v2";
 my $configserver = "";
 my $port = "19071";
 
-getopts('c:fhnt:ve:E:r:a:i:p:HR:F:');
+getopts('c:fhnt:ve:E:r:a:i:p:HR:F:V:');
 
 if ($opt_h) {
   usage();
@@ -237,7 +237,7 @@ sub usage {
   } elsif ($command eq "fetch") {
       usage_fetch();
   } else {
-    print "Usage: vespa-deploy [-h] [-v] [-f] [-t] [-p] [<command>] [args]\n";
+    print "Usage: vespa-deploy [-h] [-v] [-f] [-t] [-p] [-V] [<command>] [args]\n";
     print "Supported commands: 'upload', 'prepare', 'activate', 'fetch' and 'help'\n";
     print "Supported options: '-h' (help), '-v' (verbose), '-f' (force/ignore validation errors), '-t' (timeout in seconds), '-p' (config server http port)\n";
     print "Try 'vespa-deploy help <command>' to get more help\n";
@@ -462,6 +462,7 @@ sub http_prepare {
   $url = add_url_property_from_option($url, $opt_i, "instance");
   $url = add_url_property_from_option($url, $opt_t, "timeout");
   $url = add_url_property_from_option($url, $opt_R, "rotations");
+  $url = add_url_property_from_option($url, $opt_V, "vespaVersion");
   print "Preparing session $session_id using $url\n";
   `$CURL_PUT \"$url\"`;
 }
