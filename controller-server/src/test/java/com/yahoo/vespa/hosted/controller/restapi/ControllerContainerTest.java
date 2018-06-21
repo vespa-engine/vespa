@@ -68,6 +68,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockLogStore'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.NodeRepositoryClientMock'/>\n" +
@@ -76,7 +77,6 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerProxyMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.MockMetricsService'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.MockLogStore'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.routing.MockRoutingGenerator'/>\n" +
