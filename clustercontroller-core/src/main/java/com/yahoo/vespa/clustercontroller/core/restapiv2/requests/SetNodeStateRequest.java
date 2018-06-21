@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
 import com.yahoo.log.LogLevel;
+import com.yahoo.time.TimeBudget;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -21,8 +22,10 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStat
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 public class SetNodeStateRequest extends Request<SetResponse> {
@@ -33,6 +36,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     private final SetUnitStateRequest.Condition condition;
     private final SetUnitStateRequest.ResponseWait responseWait;
     private final WantedStateSetter wantedState;
+    private final TimeBudget timeBudget;
 
     public SetNodeStateRequest(Id.Node id, SetUnitStateRequest setUnitStateRequest) {
         this(id, setUnitStateRequest, SetNodeStateRequest::setWantedState);
@@ -46,6 +50,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         this.condition = setUnitStateRequest.getCondition();
         this.responseWait = setUnitStateRequest.getResponseWait();
         this.wantedState = wantedState;
+        this.timeBudget = setUnitStateRequest.timeBudget();
     }
 
     @Override
@@ -76,6 +81,11 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     @Override
     public boolean hasVersionAckDependency() {
         return (responseWait == SetUnitStateRequest.ResponseWait.WAIT_UNTIL_CLUSTER_ACKED);
+    }
+
+    @Override
+    public Optional<Instant> getDeadline() {
+        return timeBudget.deadline();
     }
 
     @Override

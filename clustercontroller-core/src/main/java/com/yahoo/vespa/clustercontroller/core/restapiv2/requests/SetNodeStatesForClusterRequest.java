@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
+import com.yahoo.time.TimeBudget;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
@@ -14,7 +15,9 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStat
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
@@ -23,6 +26,7 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
     private final Id.Cluster cluster;
     private final Map<String, UnitState> newStates;
     private final SetUnitStateRequest.Condition condition;
+    private final TimeBudget timeBudget;
 
 
     public SetNodeStatesForClusterRequest(Id.Cluster cluster, SetUnitStateRequest request) {
@@ -30,6 +34,7 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
         this.cluster = cluster;
         this.newStates = request.getNewState();
         this.condition = request.getCondition();
+        this.timeBudget = request.timeBudget();
     }
 
     @Override
@@ -77,6 +82,11 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
 
         // 'true' here means the current state now equals the request's wanted state.
         return new SetResponse("ok", true);
+    }
+
+    @Override
+    public Optional<Instant> getDeadline() {
+        return timeBudget.deadline();
     }
 
     @Override

@@ -24,7 +24,7 @@ public class OrchestratorContext {
 
     /** Get the original timeout in seconds. */
     public long getOriginalTimeoutInSeconds() {
-        return timeBudget.originalTimeout().getSeconds();
+        return timeBudget.originalTimeout().get().getSeconds();
     }
 
     /**

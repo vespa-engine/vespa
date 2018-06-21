@@ -882,11 +882,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      */
     private void scheduleVersionDependentTasksForFutureCompletion(int completeAtVersion) {
         // TODO expose and use monotonic clock instead of system clock
-        final long deadlineTimePointMs = timer.getCurrentTimeInMillis() + options.getMaxDeferredTaskVersionWaitTime().toMillis();
+        final long maxDeadlineTimePointMs = timer.getCurrentTimeInMillis() + options.getMaxDeferredTaskVersionWaitTime().toMillis();
         for (RemoteClusterControllerTask task : tasksPendingStateRecompute) {
             log.finest(() -> String.format("Adding task of type '%s' to be completed at version %d",
                     task.getClass().getName(), completeAtVersion));
-            taskCompletionQueue.add(new VersionDependentTaskCompletion(completeAtVersion, task, deadlineTimePointMs));
+            taskCompletionQueue.add(new VersionDependentTaskCompletion(completeAtVersion, task, maxDeadlineTimePointMs));
         }
         tasksPendingStateRecompute.clear();
     }

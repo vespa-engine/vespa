@@ -1,19 +1,32 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.server;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.log.LogLevel;
-import com.yahoo.yolean.Exceptions;
+import com.yahoo.time.TimeBudget;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.JsonHttpResult;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
-import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.*;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.DeadlineExceededException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidOptionValueException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OtherMasterException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.UnknownMasterException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRequest;
-import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.*;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
+import com.yahoo.yolean.Exceptions;
 
-import java.util.*;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,10 +37,12 @@ public class RestApiHandler implements HttpRequestHandler {
     private final StateRestAPI restApi;
     private final JsonWriter jsonWriter;
     private final JsonReader jsonReader = new JsonReader();
+    private final Clock clock;
 
     public RestApiHandler(StateRestAPI restApi) {
         this.restApi = restApi;
         this.jsonWriter = new JsonWriter();
+        this.clock = Clock.systemUTC();
     }
 
     public RestApiHandler setDefaultPathPrefix(String defaultPathPrefix) {
@@ -43,6 +58,8 @@ public class RestApiHandler implements HttpRequestHandler {
 
     @Override
     public HttpResult handleRequest(HttpRequest request) {
+        Instant start = clock.instant();
+
         try{
             final String[] unitPath = createUnitPath(request);
             if (request.getHttpOperation().equals(HttpRequest.HttpOp.GET)) {
@@ -73,6 +90,8 @@ public class RestApiHandler implements HttpRequestHandler {
                     public Condition getCondition() { return setRequestData.condition; }
                     @Override
                     public ResponseWait getResponseWait() { return setRequestData.responseWait; }
+                    @Override
+                    public TimeBudget timeBudget() { return TimeBudget.from(clock, start, setRequestData.timeout); }
                 });
                 return new JsonHttpResult().setJson(jsonWriter.createJson(setResponse));
             }
@@ -89,7 +108,7 @@ public class RestApiHandler implements HttpRequestHandler {
             result.setHttpCode(503, "Service Unavailable");
             result.setJson(jsonWriter.createErrorJson(exception.getMessage()));
             return result;
-        } catch (DeadlineExceededException exception) {
+        } catch (DeadlineExceededException | UncheckedTimeoutException exception) {
             logRequestException(request, exception, Level.WARNING);
             JsonHttpResult result = new JsonHttpResult();
             result.setHttpCode(504, "Gateway Timeout");
