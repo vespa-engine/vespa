@@ -198,16 +198,13 @@ FastS_DataSetCollection::GetDataSet()
 bool
 FastS_DataSetCollection::AreEnginesReady()
 {
-    bool ready = true;
-
-    for (uint32_t datasetidx = 0;
-         ready && (datasetidx < GetMaxNumDataSets());
-         datasetidx++)
-    {
+    for (uint32_t datasetidx = 0; datasetidx < GetMaxNumDataSets(); datasetidx++) {
         FastS_DataSetBase *dataset = PeekDataSet(datasetidx);
-        ready = (dataset != nullptr && !dataset->AreEnginesReady());
+        if ((dataset != nullptr) && !dataset->AreEnginesReady()) {
+            return false;
+        }
     }
-    return ready;
+    return true;
 }
 
 
