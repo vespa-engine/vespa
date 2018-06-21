@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.time;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -32,7 +33,7 @@ public class TimeBudgetTestCase {
         try {
             timeBudget.timeLeftOrThrow();
             fail();
-        } catch (TimeoutException e) {
+        } catch (UncheckedTimeoutException e) {
             // OK
         }
     }
