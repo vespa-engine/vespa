@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -31,7 +31,6 @@ import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 
 import java.io.IOException;
-import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,20 +51,21 @@ public class OrchestratorImpl implements Orchestrator {
     private final InstanceLookupService instanceLookupService;
     private final int serviceMonitorConvergenceLatencySeconds;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
-    private final Clock clock;
+    private final Timer timer;
 
     @Inject
     public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
                             StatusService statusService,
                             OrchestratorConfig orchestratorConfig,
-                            InstanceLookupService instanceLookupService)
+                            InstanceLookupService instanceLookupService,
+                            Timer timer)
     {
         this(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory),
                 clusterControllerClientFactory,
                 statusService,
                 instanceLookupService,
                 orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
-                Clock.systemUTC());
+                timer);
     }
 
     public OrchestratorImpl(Policy policy,
@@ -73,14 +73,14 @@ public class OrchestratorImpl implements Orchestrator {
                             StatusService statusService,
                             InstanceLookupService instanceLookupService,
                             int serviceMonitorConvergenceLatencySeconds,
-                            Clock clock)
+                            Timer timer)
     {
         this.policy = policy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.statusService = statusService;
         this.serviceMonitorConvergenceLatencySeconds = serviceMonitorConvergenceLatencySeconds;
         this.instanceLookupService = instanceLookupService;
-        this.clock = clock;
+        this.timer = timer;
     }
 
     @Override
@@ -127,7 +127,7 @@ public class OrchestratorImpl implements Orchestrator {
 
         ApplicationInstance appInstance = getApplicationInstance(hostName);
 
-        OrchestratorContext context = new OrchestratorContext(clock);
+        OrchestratorContext context = new OrchestratorContext(timer);
         try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(
                 appInstance.reference(),
                 context.getOriginalTimeoutInSeconds())) {
@@ -156,7 +156,7 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstance appInstance = getApplicationInstance(hostName);
         NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
 
-        OrchestratorContext context = new OrchestratorContext(clock);
+        OrchestratorContext context = new OrchestratorContext(timer);
         try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(
                 appInstance.reference(),
                 context.getOriginalTimeoutInSeconds())) {
@@ -174,7 +174,7 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspendGroup(NodeGroup nodeGroup) throws HostStateChangeDeniedException, HostNameNotFoundException {
         ApplicationInstanceReference applicationReference = nodeGroup.getApplicationReference();
 
-        OrchestratorContext context = new OrchestratorContext(clock);
+        OrchestratorContext context = new OrchestratorContext(timer);
         try (MutableStatusRegistry hostStatusRegistry =
                      statusService.lockApplicationInstance_forCurrentThreadOnly(
                              applicationReference,
@@ -301,7 +301,7 @@ public class OrchestratorImpl implements Orchestrator {
 
     private void setApplicationStatus(ApplicationId appId, ApplicationInstanceStatus status) 
             throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
-        OrchestratorContext context = new OrchestratorContext(clock);
+        OrchestratorContext context = new OrchestratorContext(timer);
         ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
         try (MutableStatusRegistry statusRegistry =
                      statusService.lockApplicationInstance_forCurrentThreadOnly(
@@ -355,10 +355,6 @@ public class OrchestratorImpl implements Orchestrator {
                 }
             } catch (IOException e) {
                 throw new ApplicationStateChangeDeniedException(e.getMessage());
-            } catch (UncheckedTimeoutException e) {
-                throw new ApplicationStateChangeDeniedException(
-                        "Timed out while waiting for cluster controllers " + clusterControllers +
-                                " with cluster ID " + clusterId.s() + ": " + e.getMessage());
             }
         }
     }
