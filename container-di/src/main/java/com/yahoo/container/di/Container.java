@@ -35,6 +35,8 @@ import static com.yahoo.log.LogLevel.DEBUG;
  * @author ollivir
  */
 public class Container {
+    private static final Logger log = Logger.getLogger(Container.class.getName());
+
     private final SubscriberFactory subscriberFactory;
     private ConfigKey<BundlesConfig> bundlesConfigKey;
     private ConfigKey<ComponentsConfig> componentsConfigKey;
@@ -251,8 +253,6 @@ public class Container {
     private void deconstructAllComponents(ComponentGraph graph, ComponentDeconstructor deconstructor) {
         graph.allComponentsAndProviders().forEach(deconstructor::deconstruct);
     }
-
-    private static final Logger log = Logger.getLogger(Container.class.getName());
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
             Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
