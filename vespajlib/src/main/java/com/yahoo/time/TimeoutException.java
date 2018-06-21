@@ -4,15 +4,15 @@ package com.yahoo.time;
 /**
  * Exception thrown when a blocking operation times out.
  *
- * <p>Mirrors {@link java.util.concurrent.TimeoutException}
+ * <p>Unchecked variant of {@link java.util.concurrent.TimeoutException}
  *
  * @author hakon
  */
 @SuppressWarnings("serial")
-public class UncheckedTimeoutException extends RuntimeException {
-    public UncheckedTimeoutException() { }
+public class TimeoutException extends RuntimeException {
+    public TimeoutException() { }
 
-    public UncheckedTimeoutException(String message) {
+    public TimeoutException(String message) {
         super(message);
     }
 }

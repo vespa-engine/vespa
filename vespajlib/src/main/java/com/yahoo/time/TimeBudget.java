@@ -40,13 +40,13 @@ public class TimeBudget {
      * Returns the time until deadline.
      *
      * @return time until deadline. It's toMillis() is guaranteed to be positive.
-     * @throws UncheckedTimeoutException if the deadline has been reached or passed.
+     * @throws TimeoutException if the deadline has been reached or passed.
      */
     public Duration timeLeftOrThrow() {
         Instant now = clock.instant();
         Duration left = Duration.between(now, start.plus(timeout));
         if (left.toMillis() <= 0) {
-            throw new UncheckedTimeoutException("Time since start " + nonNegativeBetween(start, now) +
+            throw new TimeoutException("Time since start " + nonNegativeBetween(start, now) +
                     " exceeds timeout " + timeout);
         }
 

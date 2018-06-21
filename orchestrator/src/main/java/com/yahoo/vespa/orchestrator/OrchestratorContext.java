@@ -28,7 +28,7 @@ public class OrchestratorContext {
 
     /**
      * Get number of seconds until the deadline, or empty if there's no deadline, or throw
-     * an UncheckedTimeoutException if timed out.
+     * an TimeoutException if timed out.
      */
     public Optional<Float> getSuboperationTimeoutInSeconds() {
         return Optional.of((float) (timeBudget.timeLeftOrThrow().toMillis() / 1000.0));
