@@ -73,19 +73,19 @@ public class DoubleFormatterTestCase {
         assertEquals("1.0737418255E9", s);
 
         s = DoubleFormatter.stringValue(1.23456789012345669);
-        assertEquals("1.234567890123457", s);
+        assertEquals("1.2345678901234567", s);
         s = DoubleFormatter.stringValue(12.3456789012345673);
-        assertEquals("12.34567890123457", s);
+        assertEquals("12.345678901234567", s);
         s = DoubleFormatter.stringValue(123.456789012345666);
-        assertEquals("123.4567890123457", s);
+        assertEquals("123.45678901234567", s);
         s = DoubleFormatter.stringValue(1234.56789012345666);
-        assertEquals("1234.567890123457", s);
+        assertEquals("1234.5678901234567", s);
         s = DoubleFormatter.stringValue(12345.6789012345670);
-        assertEquals("12345.67890123457", s);
+        assertEquals("12345.678901234567", s);
         s = DoubleFormatter.stringValue(123456.789012345674);
-        assertEquals("123456.7890123457", s);
+        assertEquals("123456.78901234567", s);
         s = DoubleFormatter.stringValue(1234567.89012345671);
-        assertEquals("1234567.890123457", s);
+        assertEquals("1234567.8901234567", s);
 
         s = DoubleFormatter.stringValue(0.99);
         // assertEquals("0.99", s);
