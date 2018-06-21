@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.integration.MockLogStore;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -280,6 +281,7 @@ public final class ControllerTester {
                                                new AthenzClientFactoryMock(athensDb),
                                                artifactRepository,
                                                buildService,
+                                               new MockLogStore(),
                                                () -> "test-controller");
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;
