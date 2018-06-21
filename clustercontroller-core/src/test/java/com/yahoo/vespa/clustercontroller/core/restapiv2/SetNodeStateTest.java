@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
+import com.yahoo.time.TimeBudget;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.clustercontroller.core.MasterInterface;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
@@ -20,6 +21,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -42,6 +45,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         private Map<String, UnitState> newStates = new LinkedHashMap<>();
         private Condition condition = Condition.FORCE;
         private ResponseWait responseWait = ResponseWait.WAIT_UNTIL_CLUSTER_ACKED;
+        private TimeBudget timeBudget = TimeBudget.fromNow(Clock.systemUTC(), Duration.ofSeconds(10));
 
         public SetUnitStateRequestImpl(String req) {
             super(req, 0);
@@ -88,6 +92,11 @@ public class SetNodeStateTest extends StateRestApiTest {
         @Override
         public ResponseWait getResponseWait() {
             return responseWait;
+        }
+
+        @Override
+        public TimeBudget timeBudget() {
+            return timeBudget;
         }
     }
 
