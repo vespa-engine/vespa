@@ -1,4 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -9,6 +10,9 @@
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("searchvisitor_test");
 
 using namespace search;
 using namespace search::query;

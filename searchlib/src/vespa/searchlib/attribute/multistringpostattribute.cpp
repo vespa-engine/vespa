@@ -3,6 +3,9 @@
 #include "multistringpostattribute.h"
 #include "multistringpostattribute.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.multi_string_post_attribute");
+
 namespace search {
 
 EnumStoreBase::Index

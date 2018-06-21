@@ -10,6 +10,9 @@
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/approx.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.eval.llvm.compiled_function");
+
 namespace vespalib {
 namespace eval {
 
@@ -113,7 +116,7 @@ CompiledFunction::estimate_cost_us(const std::vector<double> &params, double bud
         auto baseline = [&](){empty(params[0], params[1], params[2], params[3], params[4]);};
         return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
     }
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 Function::Issues

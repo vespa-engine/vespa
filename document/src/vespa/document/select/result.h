@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <assert.h>
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/document/util/printable.h>
 
 namespace document::select {
@@ -48,7 +50,7 @@ public:
             return 1u;
         if (this == &Result::True)
             return 2u;
-        abort();
+        HDR_ABORT("should not be reached");
     }
 
     static const Result &fromEnum(uint32_t val) {
@@ -58,7 +60,7 @@ public:
             return Result::False;
         if (val == 2u)
             return Result::True;
-        abort();
+        HDR_ABORT("should not be reached");
     }
 
 private:

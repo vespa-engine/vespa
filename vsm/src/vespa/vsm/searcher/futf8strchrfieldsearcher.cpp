@@ -95,7 +95,7 @@ inline const char * advance(const char * n, const v16qi zero)
         charMap = __builtin_ia32_pmovmskb128(tmp0); // 1 in charMap equals to '\0' in input buffer
 #else
 #   warning "Intel's icc compiler does not like __builtin_ia32_xxxxx"
-    abort();
+    LOG_ABORT("should not be reached");
 #endif
         zeroCountSum += 16;
     } while (!charMap);
@@ -112,7 +112,7 @@ inline const char * advance(const char * n, const v16qi zero)
             zeroMap = __builtin_ia32_pmovmskb128(tmpCurrent); // 1 in zeroMap equals to word character in input buffer
 #else
 #   warning "Intel's icc compiler does not like __builtin_ia32_xxxxx"
-    abort();
+    LOG_ABORT("should not be reached");
 #endif
             zeroCountSum += 16;
         } while(!zeroMap);

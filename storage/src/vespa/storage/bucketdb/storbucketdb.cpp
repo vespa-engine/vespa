@@ -3,6 +3,9 @@
 #include "storbucketdb.h"
 #include "judymultimap.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".storage.bucketdb.stor_bucket_db");
+
 namespace storage {
 namespace bucketdb {
 

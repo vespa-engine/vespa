@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
-
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attribute_weighted_set_blueprint.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -14,9 +13,10 @@
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-
-
 #include <vespa/searchlib/attribute/enumstore.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_weighted_set_blueprint_test");
 
 using namespace search;
 using namespace search::query;

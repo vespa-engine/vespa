@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -54,16 +55,16 @@ public:
     virtual void pruneRemovedFields(search::SerialNum) override {
     }
     virtual const IAttributeFactory::SP &getFactory() const override {
-        abort();
+        HDR_ABORT("should not be reached");
     }
     virtual search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
-        abort();
+        HDR_ABORT("should not be reached");
     }
     virtual search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
         return nullptr;
     }
     virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
-        abort();
+        HDR_ABORT("should not be reached");
     }
     virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>) const override {
     }

@@ -8,6 +8,9 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
+
 using vespalib::eval::ValueType;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::tensor::Tensor;
@@ -66,7 +69,7 @@ TensorReader::getNumCells() {
         return 0u;
     }
     if (detect != tensorIsPresent) {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     size_t numCells = _numBoundCells;
     if (_numUnboundDims != 0) {

@@ -25,6 +25,9 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("document_weight_iterator_test");
+
 using namespace search;
 using namespace search::attribute;
 

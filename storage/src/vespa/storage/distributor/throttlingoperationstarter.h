@@ -2,6 +2,7 @@
 #pragma once
 
 #include "operationstarter.h"
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/storage/distributor/operations/operation.h>
 
 namespace storage::distributor {
@@ -49,11 +50,11 @@ class ThrottlingOperationStarter : public OperationStarter
         void onStart(DistributorMessageSender&) override {
             // Should never be called directly on the throttled operation
             // instance, but rather on its wrapped implementation.
-            assert(false);
+            HDR_ABORT("should not be reached");
         }
         void onReceive(DistributorMessageSender&,
                                const std::shared_ptr<api::StorageReply>&) override {
-            assert(false);
+            HDR_ABORT("should not be reached");
         }
     };
 

@@ -3,6 +3,9 @@
 #include "multinumericenumattribute.h"
 #include "multinumericenumattribute.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.multi_numeric_enum_attribute");
+
 namespace search {
 
 } // namespace search

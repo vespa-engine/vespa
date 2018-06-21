@@ -7,6 +7,9 @@
 #include "multinumericattribute.hpp"
 #include "multistringattribute.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.create_set_std");
+
 namespace search {
 
 using attribute::BasicType;

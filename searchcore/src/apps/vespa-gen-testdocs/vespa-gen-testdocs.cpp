@@ -71,7 +71,7 @@ shafile(const string &baseDir,
     bool openres = f.OpenReadOnly(fullFile.c_str());
     if (!openres) {
         LOG(error, "Could not open %s for sha256 checksum", fullFile.c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
     int64_t flen = f.GetSize();
     int64_t remainder = flen;

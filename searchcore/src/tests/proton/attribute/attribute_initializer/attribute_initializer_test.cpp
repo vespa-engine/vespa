@@ -10,6 +10,9 @@
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/stllike/string.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_initializer_test");
+
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;

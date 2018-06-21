@@ -12,6 +12,9 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <iostream>
 
+#include <vespa/log/log.h>
+LOG_SETUP("grouping_test");
+
 using namespace search::attribute;
 using namespace search::aggregation;
 using namespace search::expression;

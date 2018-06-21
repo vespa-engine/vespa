@@ -2,6 +2,9 @@
 
 #include "predicate_zero_constraint_posting_list.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.predicate.predicate_zero_constraint_posting_list");
+
 namespace search {
 namespace predicate {
 

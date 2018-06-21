@@ -3,6 +3,9 @@
 #include "extendableattributes.h"
 #include "attrvector.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.extendable_attributes");
+
 namespace search {
 
 //******************** CollectionType::SINGLE ********************//

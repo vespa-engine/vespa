@@ -306,7 +306,7 @@ FrozenBTreeTest::sortRandomValues()
         } else if (*i == prevVal)
             okcnt++;
         else
-            abort();
+            LOG_ABORT("should not be reached");
         prevVal = *i;
     }
     EXPECT_TRUE(okcnt == sorted.size());

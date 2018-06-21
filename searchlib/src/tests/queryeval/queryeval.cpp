@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/test/initrange.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
@@ -18,8 +18,10 @@
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
-
 #include <vespa/searchlib/fef/fef.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("query_eval_test");
 
 using namespace search::queryeval;
 using search::BitVector;

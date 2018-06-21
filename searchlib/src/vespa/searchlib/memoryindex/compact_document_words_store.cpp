@@ -143,7 +143,7 @@ CompactDocumentWordsStore::insert(const Builder &builder)
     if (!insres.second) {
         LOG(error, "Failed inserting remove info for docid %u",
             builder.docId());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

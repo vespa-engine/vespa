@@ -66,7 +66,7 @@ void
 HitsAggregationResult::onAggregate(const ResultNode & result)
 {
     (void) result;
-    assert(false);
+    LOG_ABORT("should not reach here");
 }
 
 void

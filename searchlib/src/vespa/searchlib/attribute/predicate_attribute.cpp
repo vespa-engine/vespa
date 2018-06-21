@@ -9,7 +9,7 @@
 #include "attribute_header.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".predicate_attribute");
+LOG_SETUP(".searchlib.attribute.predicate_attribute");
 
 using document::Predicate;
 using document::PredicateFieldValue;

@@ -40,8 +40,7 @@ namespace {
             case SchedulingOptions::CONTINUE:
                 return "Continuing any existing run";
             default:
-                assert(false);
-                abort();
+                LOG_ABORT("should not be reached");
         }
     }
 }

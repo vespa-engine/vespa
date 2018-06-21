@@ -5,6 +5,7 @@
 #include "btreeiterator.h"
 #include "btreeaggregator.h"
 #include "btreenode.hpp"
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace search {
@@ -557,18 +558,15 @@ BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
 identical(const BTreeIteratorBase &rhs) const
 {
     if (_pathSize != rhs._pathSize || _leaf != rhs._leaf) {
-        abort();
-        return false;
+        HDR_ABORT("should not be reached");
     }
     for (uint32_t level = 0; level < _pathSize; ++level) {
         if (_path[level] != rhs._path[level]) {
-            abort();
-            return false;
+            HDR_ABORT("should not be reached");
         }
     }
     if (_leafRoot != rhs._leafRoot) {
-        abort();
-        return false;
+        HDR_ABORT("should not be reached");
     }
     return true;
 }

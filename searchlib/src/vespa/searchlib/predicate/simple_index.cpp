@@ -2,8 +2,9 @@
 
 #include "simple_index.hpp"
 #include <vespa/vespalib/util/array.hpp>
+
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.simple_index");
+LOG_SETUP(".searchlib.predicate.simple_index");
 
 namespace search {
 namespace predicate {

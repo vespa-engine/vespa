@@ -18,6 +18,9 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("document_bucket_mover_test");
+
 using namespace proton;
 using document::BucketId;
 using document::Document;

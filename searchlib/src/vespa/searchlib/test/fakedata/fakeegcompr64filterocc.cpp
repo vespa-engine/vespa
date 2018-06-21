@@ -5,6 +5,9 @@
 #include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.test.fake_eg_compr64_filter_occ");
+
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
 
@@ -1428,7 +1431,7 @@ FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>::doSeek(uint32_t docId)
                        oCacheInt,
                        oPreRead,
                        _l1SkipDocIdBitsOffset);
-                abort();
+                LOG_ABORT("should not be reached");
             }
 #if DEBUG_EGCOMPR64FILTEROCC_PRINTF
             printf("L1DecodeV docId=%d docIdPos=%d L1SkipPos=%d\n",

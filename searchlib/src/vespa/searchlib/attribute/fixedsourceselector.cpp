@@ -3,6 +3,9 @@
 #include "fixedsourceselector.h"
 #include "singlenumericattribute.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.fixed_source_selector");
+
 namespace search {
 
 namespace {

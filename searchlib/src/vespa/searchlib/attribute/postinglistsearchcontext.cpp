@@ -6,6 +6,8 @@
 #include "diversity.hpp"
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.posting_list_search_context");
 
 
 namespace search {

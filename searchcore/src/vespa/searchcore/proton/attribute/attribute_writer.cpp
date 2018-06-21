@@ -16,7 +16,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".proton.server.attributeadapter");
+LOG_SETUP(".proton.attribute.attribute_writer");
 
 using namespace document;
 using namespace search;

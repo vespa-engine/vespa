@@ -17,6 +17,9 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("document_iterator_test");
+
 using document::BucketId;
 using document::DataType;
 using document::Document;

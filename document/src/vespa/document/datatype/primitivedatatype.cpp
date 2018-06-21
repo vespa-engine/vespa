@@ -6,6 +6,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".document.datatype.primitivedatatype");
+
 namespace document {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(PrimitiveDataType, DataType);
@@ -64,10 +67,8 @@ PrimitiveDataType::createFieldValue() const
         case T_BYTE: return FieldValue::UP(new ByteFieldValue);
         case T_PREDICATE: return FieldValue::UP(new PredicateFieldValue);
         case T_TENSOR: return std::make_unique<TensorFieldValue>();
-            abort();
     }
-    assert(!"getId() returned value out of range");
-    abort();
+    LOG_ABORT("getId() returned value out of range");
 }
 
 void

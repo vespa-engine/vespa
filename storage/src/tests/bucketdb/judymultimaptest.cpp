@@ -10,6 +10,9 @@
 #include <ostream>
 #include <vector>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".judy_multi_map_test");
+
 namespace storage {
 
 struct JudyMultiMapTest : public CppUnit::TestFixture {

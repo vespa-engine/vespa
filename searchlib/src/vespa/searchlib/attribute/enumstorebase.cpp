@@ -9,6 +9,9 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/common/rcuvector.hpp>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.enumstorebase");
+
 namespace search {
 
 using btree::BTreeNode;
@@ -572,7 +575,7 @@ template <>
 EnumPostingTree &
 EnumStoreDict<EnumTree>::getPostingDictionary()
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 
@@ -588,7 +591,7 @@ template <>
 const EnumPostingTree &
 EnumStoreDict<EnumTree>::getPostingDictionary() const
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 

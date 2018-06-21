@@ -188,7 +188,7 @@ BucketContent::insert(DocEntry::SP e)
                         "Was trying to insert %s.",
                         it->entry->toString().c_str(),
                         e->toString().c_str());
-                    assert(false);
+                    LOG_ABORT("should not reach here");
                 }
             }
         }
@@ -964,7 +964,7 @@ DummyPersistence::acquireBucketWithLock(const Bucket& b) const
     if (!bucketNotInUse) {
         LOG(error, "Attempted to acquire %s, but it was already marked as being in use!",
             b.toString().c_str());
-        assert(false);
+        LOG_ABORT("should not reach here");
     }
 
     return BucketContentGuard::UP(new BucketContentGuard(ncp, *it->second));

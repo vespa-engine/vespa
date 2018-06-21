@@ -7,6 +7,9 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.posting_store");
+
 namespace search::attribute {
 
 using btree::BTreeNoLeafData;

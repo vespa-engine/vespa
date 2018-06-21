@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-/* $Id: */
+#include <vespa/vespalib/util/hdr_abort.h>
 
 namespace juniper {
 
@@ -117,9 +117,6 @@ public:
             _escape_markup = (_sumconf->highlight_on()[0] == '<' ||
                               _sumconf->highlight_off()[0] == '<' ||
                               _sumconf->dots()[0] == '<');
-            break;
-        default:
-            assert(false);
             break;
         }
 

@@ -6,6 +6,9 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("cluster_state_handler_test");
+
 using namespace proton;
 using document::BucketId;
 using storage::lib::Distribution;

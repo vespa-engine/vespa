@@ -14,6 +14,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.dictionary");
+
 
 namespace search {
 

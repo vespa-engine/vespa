@@ -4,6 +4,9 @@
 #include "attrvector.hpp"
 #include "iattributesavetarget.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.attr_vector");
+
 namespace search {
 
 StringDirectAttribute::
@@ -172,7 +175,7 @@ bool StringDirectAttribute::onLoad()
 
 void StringDirectAttribute::onCommit()
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 bool StringDirectAttribute::addDoc(DocId & doc)

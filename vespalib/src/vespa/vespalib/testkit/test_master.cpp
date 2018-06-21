@@ -4,6 +4,9 @@
 #include <vespa/vespalib/util/barrier.h>
 #include <cstring>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.testkit.test_master");
+
 namespace vespalib {
 
 namespace {
@@ -111,7 +114,7 @@ TestMaster::handleFailure(const vespalib::LockGuard &guard, bool fatal)
         }
         fprintf(stderr, "%s: ERROR: vital check failed, aborting\n",
                 _name.c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

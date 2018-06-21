@@ -4,6 +4,9 @@
 #include "enumstore.hpp"
 #include <iomanip>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.enum_store");
+
 namespace search {
 
 template <>
@@ -129,8 +132,7 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
     datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
     uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
     if (buffer.remaining() < entrySize) {
-        fprintf(stderr, "Out of enumstore bufferspace\n");
-        abort(); // not enough space
+        LOG_ABORT("Out of enumstore bufferspace");
     }
     uint64_t offset = buffer.size();
     char *dst(_store.getBufferEntry<char>(activeBufferId, offset));

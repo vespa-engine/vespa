@@ -2,6 +2,7 @@
 #pragma once
 
 #include "judymultimap.h"
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <set>
@@ -150,7 +151,7 @@ JudyMultiMap<T0, T1, T2, T3>::operator[](key_type key)
         case 1: return _values1[getIndex(it.value())];
         case 2: return _values2[getIndex(it.value())];
         case 3: return _values3[getIndex(it.value())];
-        default: assert(false);
+        default: HDR_ABORT("should not be reached");
     }
     return T0(); // Avoid warning of no return
 }
@@ -289,8 +290,7 @@ JudyMultiMap<T0, T1, T2, T3>::ConstIterator::operator*() const
         case 3: return value_type(
             _iterator.key(), _parent->_values3[getIndex(_iterator.value())]);
         default:
-            assert(false);
-            abort();
+            HDR_ABORT("should not be reached");
     }
 }
 
@@ -299,11 +299,12 @@ typename JudyMultiMap<T0, T1, T2, T3>::mapped_type
 JudyMultiMap<T0, T1, T2, T3>::ConstIterator::value() const
 {
     switch (getType(_iterator.value())) {
-        default: assert(false);
         case 0: return _parent->_values0[getIndex(_iterator.value())];
         case 1: return _parent->_values1[getIndex(_iterator.value())];
         case 2: return _parent->_values2[getIndex(_iterator.value())];
         case 3: return _parent->_values3[getIndex(_iterator.value())];
+        default:
+            HDR_ABORT("should not be reached");
     }
 }
 

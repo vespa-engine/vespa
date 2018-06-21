@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicate_interval_store.h"
-
 #include "predicate_index.h"
 #include <vespa/searchlib/datastore/bufferstate.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/searchlib/datastore/entryref.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.predicate.predicate_interval_store");
 
 using search::datastore::BufferState;
 using search::datastore::EntryRef;

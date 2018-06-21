@@ -4,6 +4,9 @@
 #include <vespa/storage/storageserver/servicelayernode.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".storageserver.service_layer_process");
+
 namespace storage {
 
 ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri & configUri)

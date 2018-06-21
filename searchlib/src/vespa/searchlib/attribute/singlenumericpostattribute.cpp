@@ -3,6 +3,9 @@
 #include "singlenumericpostattribute.h"
 #include "singlenumericpostattribute.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.single_numeric_post_attribute");
+
 namespace search {
 
 } // namespace search

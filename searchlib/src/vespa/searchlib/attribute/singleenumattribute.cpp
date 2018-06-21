@@ -3,6 +3,9 @@
 #include "singleenumattribute.h"
 #include "singleenumattribute.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.single_enum_attribute");
+
 namespace search {
 
 using attribute::Config;

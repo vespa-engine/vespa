@@ -2,6 +2,7 @@
 #pragma once
 
 #include "lockablemap.h"
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
@@ -264,7 +265,8 @@ LockableMap<Map>::handleDecision(key_type& key, mapped_type& val,
                      break;
         case ABORT:  return true;
         case CONTINUE: break;
-        default: assert(false);
+        default:
+            HDR_ABORT("should not be reached");
     }
     return false;
 }

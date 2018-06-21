@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 
@@ -24,7 +25,7 @@ struct AttributeUtils
         search::IntegerAttribute &ia = static_cast<search::IntegerAttribute &>(*attr);
         while (ia.getNumDocs() < to) {
             uint32_t docId;
-            if (!ia.addDoc(docId)) { abort(); }
+            if (!ia.addDoc(docId)) { HDR_ABORT("should not be reached"); }
         }
         for (uint32_t i = from; i < to; ++i) {
             ia.update(i, value);

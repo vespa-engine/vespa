@@ -14,6 +14,9 @@
 #include <cmath>
 #include <iostream>
 
+#include <vespa/log/log.h>
+LOG_SETUP("grouping_engine_test");
+
 using namespace vespalib;
 using namespace search;
 using namespace search::attribute;

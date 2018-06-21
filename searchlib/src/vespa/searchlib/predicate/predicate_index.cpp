@@ -3,6 +3,9 @@
 #include "predicate_index.h"
 #include "predicate_hash.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.predicate.predicate_index");
+
 using search::datastore::EntryRef;
 using vespalib::DataBuffer;
 using std::vector;

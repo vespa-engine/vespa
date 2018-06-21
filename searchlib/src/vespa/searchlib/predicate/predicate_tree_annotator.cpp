@@ -7,7 +7,7 @@
 #include <vespa/document/predicate/predicate.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".predicate_tree_annotator");
+LOG_SETUP(".searchlib.predicate.predicate_tree_annotator");
 
 using document::Predicate;
 using std::map;

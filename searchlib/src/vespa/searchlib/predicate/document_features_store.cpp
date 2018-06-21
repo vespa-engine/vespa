@@ -10,6 +10,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.predicate.document_features_store");
+
 using search::btree::BTreeNoLeafData;
 using search::datastore::EntryRef;
 using vespalib::DataBuffer;

@@ -452,7 +452,7 @@ ShowPostingListSubApp::readPostings(const SchemaUtil::IndexIterator &index,
         r.read();
     }
     if (!r.close())
-        abort();
+        LOG_ABORT("should not be reached");
 }
 
 

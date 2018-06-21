@@ -21,6 +21,8 @@
 #include <vespa/fastos/file.h>
 #include "document_meta_store_versions.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.documentmetastore");
 
 using document::BucketId;
 using document::GlobalId;
@@ -77,7 +79,7 @@ public:
         _headerLen = _header.readFile(*_datFile);
         _datFile->SetPosition(_headerLen);
         if (!search::ReaderBase::extractFileSize(_header, *_datFile, _datFileSize)) {
-            abort();
+            LOG_ABORT("should not be reached");
         }
         _docIdLimit = _header.getTag(DOCID_LIMIT).asInteger();
         _version = _header.getTag(VERSION).asInteger();

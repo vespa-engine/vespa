@@ -18,6 +18,9 @@
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("fusion_test");
+
 namespace search {
 
 using document::Document;

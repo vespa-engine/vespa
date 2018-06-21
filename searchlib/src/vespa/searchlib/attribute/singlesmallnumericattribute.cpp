@@ -7,6 +7,9 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include "iattributesavetarget.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.single_small_numeric_attribute");
+
 namespace search {
 
 SingleValueSmallNumericAttribute::

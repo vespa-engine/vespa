@@ -12,7 +12,7 @@ void RealAppKiller::kill() {
     LOG(info, "Aborting the server to dump core, as we're "
               "most likely deadlocked and want a core file "
               "to view the stack traces.");
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 } // storage

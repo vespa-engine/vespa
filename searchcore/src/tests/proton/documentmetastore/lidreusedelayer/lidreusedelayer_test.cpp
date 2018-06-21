@@ -113,7 +113,7 @@ public:
 
     virtual const RawDocumentMetaData &getRawMetaData(DocId) const override
     {
-        abort();
+        LOG_ABORT("should not be reached");
     }
 
     virtual bool getFreeListActive() const override

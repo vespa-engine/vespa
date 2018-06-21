@@ -17,6 +17,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/fastos/file.h>
 #include <iostream>
+
 #include <vespa/log/log.h>
 LOG_SETUP("postinglistattribute_test");
 

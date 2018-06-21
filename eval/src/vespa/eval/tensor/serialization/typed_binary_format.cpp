@@ -10,6 +10,9 @@
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/tensor/wrapped_simple_tensor.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.tensor.serialization.typed_binary_format");
+
 using vespalib::nbostream;
 
 namespace vespalib {
@@ -48,7 +51,7 @@ TypedBinaryFormat::deserialize(nbostream &stream)
         stream.adjustReadPos(read_pos - stream.rp());
         return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::decode(stream));
     }
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 

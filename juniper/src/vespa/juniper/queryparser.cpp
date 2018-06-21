@@ -181,7 +181,7 @@ QueryItem* QueryParser::ParseExpr()
 	LOG(debug, "constraint operator %s - value %d", op.c_str(), p1);
 	break;
     default:
-	assert(false);
+        LOG_ABORT("should not reach here");
     }
     next();
     if (!match("(", true)) return NULL;

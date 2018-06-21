@@ -25,8 +25,6 @@
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
-
-
 #include <vespa/vespalib/util/regexp.h>
 #include <sstream>
 

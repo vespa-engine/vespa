@@ -426,7 +426,7 @@ FS4Packet_Shared::Encode(FNET_DataBuffer *dst) {
 
 bool
 FS4Packet_Shared::Decode(FNET_DataBuffer *, uint32_t ) {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 vespalib::string
@@ -492,7 +492,7 @@ FS4Packet_PreSerialized::Encode(FNET_DataBuffer *dst)
 bool
 FS4Packet_PreSerialized::Decode(FNET_DataBuffer *, uint32_t)
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 vespalib::string

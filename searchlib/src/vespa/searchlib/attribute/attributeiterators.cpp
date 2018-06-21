@@ -3,6 +3,9 @@
 #include "attributeiterators.hpp"
 #include "postinglistattribute.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.attribute_iterators");
+
 namespace search {
 
 using queryeval::MinMaxPostingInfo;

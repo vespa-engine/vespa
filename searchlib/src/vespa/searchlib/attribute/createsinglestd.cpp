@@ -10,6 +10,9 @@
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.create_single_std");
+
 namespace search {
 
 using attribute::BasicType;

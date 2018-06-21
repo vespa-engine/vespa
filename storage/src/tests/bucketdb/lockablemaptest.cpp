@@ -8,6 +8,9 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <boost/operators.hpp>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".lockable_map_test");
+
 namespace storage {
 
 struct LockableMapTest : public CppUnit::TestFixture {

@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attributevector.h"
 #include "attribute_read_guard.h"
 #include "attributefilesavetarget.h"
 #include "attributeiterators.hpp"
 #include "attributesaver.h"
-#include "attributevector.h"
 #include "attributevector.hpp"
 #include "floatbase.h"
 #include "interlock.h"
@@ -216,7 +216,7 @@ AttributeVector::commit(uint64_t firstSyncToken, uint64_t lastSyncToken)
     if (firstSyncToken < getStatus().getLastSyncToken()) {
         LOG(error, "Expected first token to be >= %" PRIu64 ", got %" PRIu64 ".",
             getStatus().getLastSyncToken(), firstSyncToken);
-        abort();
+        LOG_ABORT("should not be reached");
     }
     commit();
     _status.setLastSyncToken(lastSyncToken);
@@ -446,7 +446,10 @@ AttributeVector::createAttributeHeader() const {
                                    getVersion());
 }
 
-void AttributeVector::onSave(IAttributeSaveTarget &) { abort(); }
+void AttributeVector::onSave(IAttributeSaveTarget &)
+{
+    LOG_ABORT("should not be reached");
+}
 
 bool
 AttributeVector::hasLoadData() const {

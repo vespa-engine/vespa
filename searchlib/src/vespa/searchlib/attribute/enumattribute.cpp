@@ -3,6 +3,9 @@
 #include "enumattribute.h"
 #include "enumattribute.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.enum_attribute");
+
 namespace search {
 
 } // namespace search

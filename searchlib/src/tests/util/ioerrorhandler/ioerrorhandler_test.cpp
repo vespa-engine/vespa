@@ -213,8 +213,7 @@ TEST_F("Test that ioerror handler can process read error", Fixture)
         injectErrno = EIO;
         injectreadErrnoTrigger = 1;
         f.file->ReadBuf(buf, fileSize);
-        LOG(error, "Should never get here");
-        abort();
+        LOG_ABORT("Should never get here");
     } catch (std::runtime_error &e) {
         LOG(info, "Caught std::runtime_error exception: %s", e.what());
         EXPECT_TRUE(strstr(e.what(), "Input/output error") != nullptr);
@@ -253,8 +252,7 @@ TEST_F("Test that ioerror handler can process pread error", Fixture)
         injectErrno = EIO;
         injectpreadErrnoTrigger = 1;
         f.file->ReadBuf(buf, fileSize, 0);
-        LOG(error, "Should never get here");
-        abort();
+        LOG_ABORT("Should never get here");
     } catch (std::runtime_error &e) {
         LOG(info, "Caught std::runtime_error exception: %s", e.what());
         EXPECT_TRUE(strstr(e.what(), "Input/output error") != nullptr);
@@ -287,8 +285,7 @@ TEST_F("Test that ioerror handler can process write error", Fixture)
         injectErrno = EIO;
         injectwriteErrnoTrigger = 1;
         f.writeTestString();
-        LOG(error, "Should never get here");
-        abort();
+        LOG_ABORT("Should never get here");
     } catch (std::runtime_error &e) {
         LOG(info, "Caught std::runtime_error exception: %s", e.what());
         EXPECT_TRUE(strstr(e.what(), "Input/output error") != nullptr);
@@ -322,8 +319,7 @@ TEST_F("Test that ioerror handler can process pwrite error", Fixture)
         injectErrno = EIO;
         injectpwriteErrnoTrigger = 1;
         f.writeTestString();
-        LOG(error, "Should never get here");
-        abort();
+        LOG_ABORT("Should never get here");
     } catch (std::runtime_error &e) {
         LOG(info, "Caught std::runtime_error exception: %s", e.what());
         EXPECT_TRUE(strstr(e.what(), "Input/output error") != nullptr);

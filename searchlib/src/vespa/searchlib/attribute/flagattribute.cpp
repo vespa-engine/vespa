@@ -9,7 +9,7 @@
 #include <vespa/searchlib/common/bitvectoriterator.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.flagattribute");
+LOG_SETUP(".searchlib.attribute.flag_attribute");
 
 namespace search {
 

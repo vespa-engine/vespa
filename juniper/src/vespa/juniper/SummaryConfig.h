@@ -6,8 +6,7 @@
 enum ConfigFlag {
     CF_OFF,
     CF_ON,
-    CF_AUTO,
-    CF_MAXVAL
+    CF_AUTO
 };
 
 
@@ -26,6 +25,8 @@ public:
                   const unsigned char* connectors,
                   ConfigFlag esc_markup,
                   ConfigFlag preserve_white_space_);
+
+    ~SummaryConfig() {}
 
     inline const std::string & highlight_on()  const { return _highlight_on; }
     inline const std::string & highlight_off() const { return _highlight_off; }

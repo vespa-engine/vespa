@@ -142,7 +142,7 @@ void
 FRT_HookInvoker::HandleReturn()
 {
     // hooks cannot be detached
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 

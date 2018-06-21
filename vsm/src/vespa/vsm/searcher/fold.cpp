@@ -48,7 +48,7 @@ const unsigned char * sse2_foldaa(const unsigned char * toFoldOrg, size_t sz, un
     folded[i]    = __builtin_ia32_por128(_0_9, _a_z);
 #else
 #   warning "Intel's icc compiler does not like __builtin_ia32_pxor128"
-    abort();
+    LOG_ABORT("should not be reached");
 #endif
   }
   return toFoldOrg+i*16;
@@ -98,7 +98,7 @@ const unsigned char * sse2_foldua(const unsigned char * toFoldOrg, size_t sz, un
     folded[i]    = __builtin_ia32_por128(_0_9, _a_z);
 #else
 #   warning "Intel's icc compiler does not like __builtin_ia32_pxor128"
-    abort();
+    LOG_ABORT("should not be reached");
 #endif
   }
   return toFoldOrg+i*16;

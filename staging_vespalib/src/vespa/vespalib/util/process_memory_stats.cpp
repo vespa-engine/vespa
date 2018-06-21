@@ -83,7 +83,7 @@ std::string getLineHeader(const std::string &line)
         }
         ++len;
     }
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 }

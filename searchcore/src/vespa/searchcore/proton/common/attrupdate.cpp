@@ -17,13 +17,12 @@
 #include <vespa/searchlib/common/base.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
-
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".attrupdate");
+LOG_SETUP(".proton.common.attrupdate");
 
 using namespace document;
 using vespalib::make_string;

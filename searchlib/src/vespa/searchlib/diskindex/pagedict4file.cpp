@@ -23,7 +23,7 @@ void assertOpenWriteOnly(bool ok, const vespalib::string &fileName)
         LOG(error, "Could not open %s for write: %s",
             fileName.c_str(),
             vespalib::getOpenErrorString(osError, fileName.c_str()).c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

@@ -33,6 +33,9 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("document_retriever_test");
+
 using document::ArrayFieldValue;
 using document::FieldValue;
 using document::BucketId;

@@ -16,6 +16,9 @@
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btree.hpp>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.ordered_document_inserter");
+
 namespace search::memoryindex {
 
 namespace {

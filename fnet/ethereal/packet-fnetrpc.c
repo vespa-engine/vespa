@@ -385,5 +385,5 @@ decode_params_litend(proto_tree *tree, tvbuff_t *tvb, int offset, int len)
 void
 decode_params_bigend(proto_tree *tree, tvbuff_t *tvb, int offset, int len)
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }

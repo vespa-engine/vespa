@@ -205,7 +205,7 @@ Application::getTypeString(const FileHeader::Tag &tag)
         return "string";
     default:
         LOG_ASSERT(tag.getType() == FileHeader::Tag::TYPE_INTEGER);
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

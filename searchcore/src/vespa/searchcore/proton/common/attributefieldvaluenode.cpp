@@ -5,6 +5,8 @@
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.common.attribute_field_value_node");
 
 namespace proton {
 
@@ -80,7 +82,7 @@ getValue(const Context &context) const
         } while (0);
         break;
     default:
-        abort();
+        LOG_ABORT("should not be reached");
     }
     return Value::UP();
 

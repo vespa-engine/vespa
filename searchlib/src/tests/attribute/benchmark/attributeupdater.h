@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -25,7 +26,7 @@ public:
         if (!rc) {
             std::cout << "Assert " << _totalCnt << " failed: \"" << str << "\" ("
                 << file << ":" << line << ")" << std::endl;
-            abort();
+            HDR_ABORT("should not be reached");
         }
         return true;
     }
@@ -39,7 +40,7 @@ public:
             std::cout << aStr << ": " << a << std::endl;
             std::cout << bStr << ": " << b << std::endl;
             std::cout << "(" << file << ":" << line << ")" << std::endl;
-            abort();
+            HDR_ABORT("should not be reached");
         }
         return true;
     }

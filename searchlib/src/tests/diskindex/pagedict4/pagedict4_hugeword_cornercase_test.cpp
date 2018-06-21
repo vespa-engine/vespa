@@ -128,8 +128,7 @@ PostingListCounts makeCounts(uint32_t wantLen)
             return counts2;
         }
     }
-    LOG(info, "Could not calculate counts with wanted compressed length");
-    abort();
+    LOG_ABORT("Could not calculate counts with wanted compressed length");
 }
 
 using StartOffset = search::bitcompression::PageDict4StartOffset;

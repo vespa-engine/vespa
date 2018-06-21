@@ -11,6 +11,9 @@
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/vespalib/data/fileheader.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.reference_attribute");
+
 namespace search::attribute {
 
 namespace {

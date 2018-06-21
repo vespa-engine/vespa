@@ -319,11 +319,11 @@ MirrorAPI::makeRequest()
     if (_target == 0) return;
     if (_reqPending) {
         LOG(error, "cannot make new request, one is pending already");
-        abort();
+        LOG_ABORT("should not be reached");
     }
     if (_scheduled) {
         LOG(error, "cannot make new request, re-schedule is pending");
-        abort();
+        LOG_ABORT("should not be reached");
     }
 
     _req = _orb.AllocRPCRequest(_req);
@@ -343,7 +343,7 @@ MirrorAPI::reSched(double seconds)
 {
     if (_scheduled) {
         LOG(error, "already scheduled when asked to re-schedule in %f seconds", seconds);
-        abort();
+        LOG_ABORT("should not be reached");
     }
     Schedule(seconds);
     _scheduled = true;

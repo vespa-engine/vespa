@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/vespalib/util/sync.h>
@@ -30,7 +31,7 @@ public:
     void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override
     {
         // Never called.
-        assert(false);
+        HDR_ABORT("should not be reached");
     }
     void onClose(DistributorMessageSender&) override {}
 

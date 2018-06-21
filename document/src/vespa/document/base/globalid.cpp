@@ -7,6 +7,9 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cassert>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".document.base.globalid");
+
 namespace {
 
 bool
@@ -29,7 +32,7 @@ getHexVal(char c)
         return (c - 'A' + 10);
     }
     assert(validateHex(c));
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 }

@@ -153,14 +153,14 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     virtual const document::DocumentTypeRepo &
     getDocumentTypeRepo() const override
     {
-        abort();
+        LOG_ABORT("should not be reached");
     }
 
     virtual void
     getBucketMetaData(const storage::spi::Bucket &,
                       DocumentMetaData::Vector &) const override
     {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     virtual DocumentMetaData
     getDocumentMetaData(const DocumentId &) const override

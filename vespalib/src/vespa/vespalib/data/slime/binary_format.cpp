@@ -4,6 +4,9 @@
 #include "slime.h"
 #include <vespa/vespalib/data/memory_input.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.data.slime.binary_format");
+
 namespace vespalib {
 namespace slime {
 
@@ -55,7 +58,7 @@ struct BinaryEncoder : public ArrayTraverser,
         case ARRAY::ID:  return encodeArray(inspector);
         case OBJECT::ID: return encodeObject(inspector);
         }
-        abort(); // should not be reached
+        LOG_ABORT("should not be reached");
     }
     void encodeSymbolTable(const Slime &slime) {
         size_t numSymbols = slime.symbols();
@@ -170,7 +173,7 @@ struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
         case ARRAY::ID:  return decodeArray(inserter, meta);
         case OBJECT::ID: return decodeObject(inserter, meta);
         }
-        abort(); // code should not be reached
+        LOG_ABORT("should not be reached");
     }
 
     void decodeValue(const Inserter &inserter) {

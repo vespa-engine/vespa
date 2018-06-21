@@ -6,6 +6,9 @@
 #include "object_traverser.h"
 #include <cstdlib>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.data.slime.inject");
+
 namespace vespalib {
 namespace slime {
 
@@ -48,7 +51,7 @@ void injectValue(const Inserter &inserter, const Inspector &inspector, const Ins
     case ARRAY::ID:  return injectArray(inserter, inspector, guard);
     case OBJECT::ID: return injectObject(inserter, inspector, guard);
     }
-    abort(); // should not be reached
+    LOG_ABORT("should not be reached");
 }
 
 void

@@ -30,7 +30,6 @@
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/testkit/testapp.h>
-
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 
 #include <vespa/log/log.h>

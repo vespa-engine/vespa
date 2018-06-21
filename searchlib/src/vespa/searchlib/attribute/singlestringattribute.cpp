@@ -3,6 +3,9 @@
 #include "singlestringattribute.h"
 #include "singlestringattribute.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.single_string_attribute");
+
 namespace search {
 
 template class SingleValueStringAttributeT<EnumAttribute<StringAttribute>>; 

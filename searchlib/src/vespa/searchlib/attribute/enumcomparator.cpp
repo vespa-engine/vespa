@@ -4,6 +4,9 @@
 #include "enumstore.hpp"
 #include <vespa/searchlib/util/foldedstringcompare.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.enum_comparator");
+
 namespace search {
 
 namespace {

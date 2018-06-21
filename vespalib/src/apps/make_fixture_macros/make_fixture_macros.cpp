@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <algorithm>
 
+#include <vespa/log/log.h>
+LOG_SETUP("make_fixture_macros");
+
 void out(const char *str) { fprintf(stdout, "%s", str); }
 void out_n(const char *str, int n) { fprintf(stdout, str, n); }
 void out_nn(const char *str, int n) { fprintf(stdout, str, n, n); }
@@ -24,7 +27,7 @@ void out_list(const char *pre, const char *str, const char *sep, const char *pos
         case 0: out(str); break;
         case 1: out_n(str, i + 1); break;
         case 2: out_nn(str, i + 1); break;
-        default: abort();
+        default: LOG_ABORT("should not be reached");
         }
     }
     out_if(post, n > 0);

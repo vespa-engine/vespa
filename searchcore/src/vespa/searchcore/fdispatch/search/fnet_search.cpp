@@ -69,7 +69,7 @@ FastS_FNET_SearchNode::FastS_FNET_SearchNode(FastS_FNET_SearchNode &&)
 {
     // These objects are referenced everywhere and must never be either copied nor moved,
     // but as std::vector requires this to exist so we do this little trick.
-    assert(false);
+    LOG_ABORT("should not reach here");
 }
 
 bool

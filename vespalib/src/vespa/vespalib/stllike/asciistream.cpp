@@ -11,6 +11,9 @@
 #include <stdexcept>
 #include <cassert>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.stllike.asciistream");
+
 namespace vespalib {
 
 namespace {
@@ -521,7 +524,7 @@ void asciistream::write(const void * buf, size_t len)
         if (_wbuf.empty()) {
             _wbuf = _rbuf; // Read only to RW
         } else {
-            abort();  // Impossible
+            LOG_ABORT("should not be reached");  // Impossible
         }
     }
     _wbuf.append(buf, len);

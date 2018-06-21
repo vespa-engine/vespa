@@ -1211,7 +1211,7 @@ MergeThrottler::handleOutdatedMerges(const api::SetSystemStateCommand& cmd)
         markActiveMergesAsAborted(minimumVersion);
     } catch (std::exception& e) {
         LOG(error, "Received exception during merge aborting: %s", e.what());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 
     // Rendezvous released on scope exit

@@ -1,4 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -8,6 +9,7 @@
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/attrvector.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/fastos/thread.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
@@ -17,10 +19,7 @@
 #include <sys/resource.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP("attributebenchmark");
-
-#include <vespa/searchlib/attribute/attributevector.hpp>
 
 using std::shared_ptr;
 

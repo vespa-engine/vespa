@@ -10,6 +10,7 @@
 #include <vespa/searchlib/btree/btreenodestore.hpp>
 #include <vespa/searchlib/memoryindex/postingiterator.h>
 #include <vespa/searchlib/util/postingpriorityqueue.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fakememtreeocc");
 
@@ -325,7 +326,7 @@ FakeMemTreeOccFactory::make(const FakeWord &fw)
         i(_mgr._fw2WordIdx.find(&fw));
 
     if (i == _mgr._fw2WordIdx.end())
-        abort();
+        LOG_ABORT("should not be reached");
 
     uint32_t wordIdx = i->second;
 
@@ -395,7 +396,7 @@ FakeMemTreeOcc2Factory::make(const FakeWord &fw)
         i(_mgr._fw2WordIdx.find(&fw));
 
     if (i == _mgr._fw2WordIdx.end())
-        abort();
+        LOG_ABORT("should not be reached");
 
     uint32_t wordIdx = i->second;
 

@@ -2,6 +2,10 @@
 
 #include "statebuf.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.util.statebuf");
+
+
 static const char *hexx = "0123456789abcdef";
 
 namespace search {
@@ -9,7 +13,7 @@ namespace search {
 void
 StateBuf::overflow() noexcept
 {
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 
@@ -120,7 +124,7 @@ StateBuf::appendDecFraction(unsigned long val, unsigned int width) noexcept
 {
     char buf[22];
     if (width > sizeof(buf)) {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     char *p = buf;
     char *pe = buf + width;
@@ -174,7 +178,7 @@ StateBuf::appendTimestamp() noexcept
      */
     int gtres = clock_gettime(CLOCK_REALTIME, &ts);
     if (gtres != 0) {
-        abort();
+        LOG_ABORT("should not be reached");
     }
     appendTimestamp(ts);
     return *this;

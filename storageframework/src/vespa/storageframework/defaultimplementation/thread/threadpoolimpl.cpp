@@ -4,6 +4,8 @@
 #include "threadimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <thread>
+#include <vespa/log/log.h>
+LOG_SETUP(".storageframework.thread_pool_impl");
 
 using namespace std::chrono_literals;
 using vespalib::IllegalStateException;
@@ -36,7 +38,7 @@ ThreadPoolImpl::~ThreadPoolImpl()
         if (i > 1000) {
             fprintf(stderr, "Failed to kill thread pool. Threads won't die. (And if allowing thread pool object"
                             " to be deleted this will create a segfault later)\n");
-            abort();
+            LOG_ABORT("should not be reached");
         }
         std::this_thread::sleep_for(10ms);
     }

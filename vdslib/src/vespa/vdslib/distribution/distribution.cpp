@@ -124,7 +124,7 @@ namespace {
             case ConfigDiskDistribution::MODULO_INDEX : return Distribution::MODULO_INDEX;
             case ConfigDiskDistribution::MODULO_KNUTH : return Distribution::MODULO_KNUTH;
         }
-        abort();
+        LOG_ABORT("should not be reached");
     }
     ConfigDiskDistribution toConfig(Distribution::DiskDistribution cfg) {
         switch (cfg) {
@@ -133,7 +133,7 @@ namespace {
             case Distribution::MODULO_INDEX : return ConfigDiskDistribution::MODULO_INDEX;
             case Distribution::MODULO_KNUTH : return ConfigDiskDistribution::MODULO_KNUTH;
         }
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 

@@ -7,6 +7,9 @@
 #include <cmath>
 #include <vector>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".config.print.fileconfigformatter");
+
 using namespace vespalib::slime::convenience;
 
 using vespalib::slime::ArrayTraverser;
@@ -128,7 +131,7 @@ struct ConfigEncoder : public ArrayTraverser,
         case vespalib::slime::OBJECT::ID: return encodeOBJECT(inspector);
         case vespalib::slime::NIX::ID: return;
         }
-        abort(); // should not be reached
+        LOG_ABORT("should not be reached"); // should not be reached
     }
     void entry(size_t idx, const Inspector &inspector) override;
     void field(const Memory &symbol_name, const Inspector &inspector) override;

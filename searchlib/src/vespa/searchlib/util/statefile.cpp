@@ -8,6 +8,9 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.util.statefile");
+
 using Mutex = std::mutex;
 using Guard = std::lock_guard<Mutex>;
 
@@ -32,7 +35,7 @@ myopen(const char *name) noexcept
         std::error_code ec(errno, std::system_category());
         fprintf(stderr,
                 "Could not open %s: %s\n", name, ec.message().c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
     return fd;
 }
@@ -45,7 +48,7 @@ myfstat(const char *name, int fd, struct stat &stbuf) noexcept
     if (fsres != 0) {
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "Could not fstat %s: %s\n", name, ec.message().c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 
@@ -66,7 +69,7 @@ mypread(const char *name, int fd, void *buf, size_t bufLen, int64_t offset) noex
                     "Could not read %zu bytes from %s offset %" PRId64 ": %s\n",
                     bufLen, name, offset, ec.message().c_str());
         }
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 
@@ -87,7 +90,7 @@ mypwrite(const char *name, int fd, const void *buf, size_t bufLen,
                     "Could not write %zu bytes to %s offset %" PRId64 ": %s\n",
                     bufLen, name, offset, ec.message().c_str());
         }
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 
@@ -100,7 +103,7 @@ myclose(const char *name, int fd) noexcept
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "Could not close %s: %s\n",
                 name, ec.message().c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 
@@ -113,7 +116,7 @@ myfsync(const char *name, int fd) noexcept
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "Could not fsync %s: %s\n",
             name, ec.message().c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 
@@ -126,7 +129,7 @@ myunlink(const char *name) noexcept
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "Could not unlink %s: %s\n",
                 name, ec.message().c_str());
-        abort();
+        LOG_ABORT("should not be reached");
     }
 }
 
@@ -279,7 +282,7 @@ StateFile::trimHistory(std::vector<char> &history, const char *name, int hfd,
             std::error_code ec(errno, std::system_category());
             fprintf(stderr, "Could not truncate %s: %s\n",
                     name, ec.message().c_str());
-            abort();
+            LOG_ABORT("should not be reached");
         }
         history.resize(newHistSize);
     }
@@ -342,17 +345,17 @@ StateFile::checkState(const char *buf, size_t bufLen) noexcept
         if (*p == '\n') {
             if (p != buf + bufLen - 1) {
                 mystderr("statefile state corrupted: early newline\n");
-                abort();
+                LOG_ABORT("should not be reached");
             }
             return;
         }
         if (*p == '\0') {
             mystderr("statefile state corrupted: nul byte found\n");
-            abort();
+            LOG_ABORT("should not be reached");
         }
     }
     mystderr("statefile state corrupted: missing newline at end\n");
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 
@@ -370,22 +373,22 @@ StateFile::internalAddSignalState(const char *buf, size_t bufLen,
                   0644);
     if (fd < 0) {
         mystderr(openerr);
-        abort();
+        LOG_ABORT("should not be reached");
     }
     ssize_t wres = write(fd, buf, bufLen);
         if (static_cast<size_t>(wres) != bufLen) {
             mystderr(writeerr);
-            abort();
+            LOG_ABORT("should not be reached");
         }
         int fsyncres = fsync(fd);
         if (fsyncres != 0) {
             mystderr(fsyncerr);
-            abort();
+            LOG_ABORT("should not be reached");
         }
         int closeres = close(fd);
         if (closeres != 0) {
             mystderr(closeerr);
-            abort();
+            LOG_ABORT("should not be reached");
         }
 }
 

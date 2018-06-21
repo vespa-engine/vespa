@@ -4,6 +4,9 @@
 #include "btreestore.hpp"
 #include "btreeiterator.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.btree.breestore");
+
 namespace search::btree {
 
 template class BTreeStore<uint32_t, uint32_t,

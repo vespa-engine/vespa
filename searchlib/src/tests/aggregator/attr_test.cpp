@@ -8,6 +8,9 @@
 #include <vespa/searchlib/expression/arrayatlookupfunctionnode.h>
 #include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("attr_test");
+
 using namespace search;
 using namespace search::expression;
 using namespace vespalib;

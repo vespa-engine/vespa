@@ -23,6 +23,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     generationhandler.cpp
     generationholder.cpp
     hashmap.cpp
+    hdr_abort.cpp
     host_name.cpp
     joinable.cpp
     left_right_heap.cpp
@@ -42,12 +43,12 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     simple_thread_bundle.cpp
     slaveproc.cpp
     stash.cpp
-    string_hash.cpp
     stringfmt.cpp
-    thread.cpp
+    string_hash.cpp
     thread_bundle.cpp
-    threadstackexecutor.cpp
+    thread.cpp
     threadstackexecutorbase.cpp
+    threadstackexecutor.cpp
     time_tracker.cpp
     valgrind.cpp
     zstdcompressor.cpp

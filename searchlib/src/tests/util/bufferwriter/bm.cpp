@@ -46,7 +46,7 @@ callWork(size_t size, WorkFuncDispatch dispatch)
         workFunctor2(foo, writer);
         break;
     default:
-        abort();
+        LOG_ABORT("should not be reached");
     }
     double after = getTime();
     double delta = (after - before);

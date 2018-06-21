@@ -6,6 +6,9 @@
 #include "btreeroot.hpp"
 #include "btreenode.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.btree.btreeroot");
+
 namespace search::btree {
 
 template class BTreeRootT<uint32_t, uint32_t, NoAggregated>;
