@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -74,13 +73,6 @@ public class StorageNodeImpl implements StorageNode {
                     hostName(),
                     HostedVespaPolicy.CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT,
                     "Failed to communicate with cluster controllers " + clusterControllers + ": " + e,
-                    e);
-        } catch (UncheckedTimeoutException e) {
-            throw new HostStateChangeDeniedException(
-                    hostName(),
-                    HostedVespaPolicy.DEADLINE_CONSTRAINT,
-                    "Timeout while waiting for setNodeState(" + nodeIndex + ", " + wantedNodeState +
-                            ") against " + clusterControllers + ": " + e.getMessage(),
                     e);
         }
 
