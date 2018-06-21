@@ -13,8 +13,10 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.function.Supplier;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -50,13 +52,13 @@ public class DeploymentMetricsMaintainerTest {
         assertEquals(3, deployment.get().metrics().documentCount(), Double.MIN_VALUE);
         assertEquals(4, deployment.get().metrics().queryLatencyMillis(), Double.MIN_VALUE);
         assertEquals(5, deployment.get().metrics().writeLatencyMillis(), Double.MIN_VALUE);
-        Instant t1 = tester.clock().instant();
+        Instant t1 = tester.clock().instant().truncatedTo(MILLIS);
         assertEquals(t1, deployment.get().activity().lastQueried().get());
         assertEquals(t1, deployment.get().activity().lastWritten().get());
 
         // Time passes. Activity is updated as app is still receiving traffic
         tester.clock().advance(Duration.ofHours(1));
-        Instant t2 = tester.clock().instant();
+        Instant t2 = tester.clock().instant().truncatedTo(MILLIS);
         maintainer.maintain();
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t2, deployment.get().activity().lastWritten().get());
@@ -65,7 +67,7 @@ public class DeploymentMetricsMaintainerTest {
 
         // Query traffic disappears. Query activity stops updating
         tester.clock().advance(Duration.ofHours(1));
-        Instant t3 = tester.clock().instant();
+        Instant t3 = tester.clock().instant().truncatedTo(MILLIS);
         tester.metricsService().setMetric("queriesPerSecond", 0D);
         tester.metricsService().setMetric("writesPerSecond", 5D);
         maintainer.maintain();

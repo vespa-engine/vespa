@@ -61,6 +61,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -104,12 +105,12 @@ public class ControllerTest {
         ApplicationVersion applicationVersion = tester.controller().applications().require(app1.id()).change().application().get();
         assertFalse("Application version has been set during deployment", applicationVersion.isUnknown());
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(version1, applicationVersion, Optional.empty(),"", tester.clock().instant())
-                              .withCompletion(42, Optional.empty(), tester.clock().instant()), app1.id(), tester.controller());
+                              .withTriggering(version1, applicationVersion, Optional.empty(),"", tester.clock().instant().truncatedTo(MILLIS))
+                              .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS)), app1.id(), tester.controller());
 
         // Causes first deployment job to be triggered
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                              .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant()), app1.id(), tester.controller());
+                              .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant().truncatedTo(MILLIS)), app1.id(), tester.controller());
         tester.clock().advance(Duration.ofSeconds(1));
 
         // production job (failing) after deployment
@@ -118,13 +119,13 @@ public class ControllerTest {
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         JobStatus expectedJobStatus = JobStatus.initial(productionCorpUsEast1)
-                                               .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant()) // Triggered first without application version info
-                                               .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant())
+                                               .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant().truncatedTo(MILLIS)) // Triggered first without application version info
+                                               .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant().truncatedTo(MILLIS))
                                                .withTriggering(version1,
                                                                applicationVersion,
                                                                Optional.of(tester.application(app1.id()).deployments().get(productionCorpUsEast1.zone(main).get())),
                                                                "",
-                                                               tester.clock().instant()); // Re-triggering (due to failure) has application version info
+                                                               tester.clock().instant().truncatedTo(MILLIS)); // Re-triggering (due to failure) has application version info
 
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
@@ -147,8 +148,8 @@ public class ControllerTest {
         applicationVersion = tester.application("app1").change().application().get();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant())
-                              .withCompletion(42, Optional.empty(), tester.clock().instant()),
+                              .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant().truncatedTo(MILLIS))
+                              .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS)),
                      app1.id(), tester.controller());
         tester.clock().advance(Duration.ofHours(1)); // Stop retrying
         tester.jobCompletion(productionCorpUsEast1).application(app1).unsuccessful().submit();
@@ -156,14 +157,14 @@ public class ControllerTest {
 
         // production job succeeding now
         expectedJobStatus = expectedJobStatus
-                .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant())
-                .withCompletion(42, Optional.empty(), tester.clock().instant());
+                .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant().truncatedTo(MILLIS))
+                .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
         // causes triggering of next production job
         assertStatus(JobStatus.initial(productionUsEast3)
-                              .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant()),
+                              .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant().truncatedTo(MILLIS)),
                      app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
@@ -374,7 +375,7 @@ public class ControllerTest {
         Application app = tester.createApplication("app1", "foo", 1, 1L);
 
         // Initial failure
-        Instant initialFailure = tester.clock().instant();
+        Instant initialFailure = tester.clock().instant().truncatedTo(MILLIS);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure",
@@ -398,7 +399,7 @@ public class ControllerTest {
         // Two repeated failures again.
         // Initial failure
         tester.clock().advance(Duration.ofMillis(1000));
-        initialFailure = tester.clock().instant();
+        initialFailure = tester.clock().instant().truncatedTo(MILLIS);
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure",
@@ -840,22 +841,22 @@ public class ControllerTest {
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         JobStatus expected = JobStatus.initial(stagingTest)
                              .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant())
-                             .withCompletion(42, Optional.empty(), tester.clock().instant());
+                                             tester.clock().instant().truncatedTo(MILLIS))
+                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         assertStatus(expected, app.id(), tester.controller());
 
         // Deploy in production
         expected = JobStatus.initial(productionCorpUsEast1)
                              .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant())
-                             .withCompletion(42, Optional.empty(), tester.clock().instant());
+                                             tester.clock().instant().truncatedTo(MILLIS))
+                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
         assertStatus(expected, app.id(), tester.controller());
 
         expected = JobStatus.initial(productionUsEast3)
                              .withTriggering(vespaVersion, version, productionUsEast3.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant())
-                             .withCompletion(42, Optional.empty(), tester.clock().instant());
+                                             tester.clock().instant().truncatedTo(MILLIS))
+                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
         assertStatus(expected, app.id(), tester.controller());
 

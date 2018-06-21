@@ -34,6 +34,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,6 +46,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -736,11 +738,12 @@ public class ProvisioningTest {
                                     "default", tester);
         List<Node> reserved = tester.getNodes(application, Node.State.reserved).asList();
         assertEquals("Reserved required nodes", 4, reserved.size());
-        assertTrue("Time of event is updated for all nodes", reserved.stream()
-                                                                     .allMatch(n -> n.history()
-                                                                                     .event(History.Event.Type.reserved)
-                                                                                     .get().at()
-                                                                                     .equals(tester.clock().instant())));
+        assertTrue("Time of event is updated for all nodes",
+                   reserved.stream()
+                           .allMatch(n -> n.history()
+                           .event(History.Event.Type.reserved)
+                           .get().at()
+                           .equals(tester.clock().instant().truncatedTo(MILLIS))));
 
         // Over 10 minutes pass since first reservation. First set of reserved nodes are not expired
         tester.clock().advance(Duration.ofMinutes(8).plus(Duration.ofSeconds(1)));

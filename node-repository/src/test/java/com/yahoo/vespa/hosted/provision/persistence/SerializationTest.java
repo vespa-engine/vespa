@@ -24,11 +24,13 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -93,7 +95,7 @@ public class SerializationTest {
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
         assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
         assertEquals(1, copy.history().events().size());
-        assertEquals(clock.instant(), copy.history().event(History.Event.Type.reserved).get().at());
+        assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.reserved).get().at());
         assertEquals(NodeType.tenant, copy.type());
     }
 
@@ -170,7 +172,7 @@ public class SerializationTest {
         node = node.retire(Agent.application, clock.instant());
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(2, copy.history().events().size());
-        assertEquals(clock.instant(), copy.history().event(History.Event.Type.retired).get().at());
+        assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.retired).get().at());
         assertEquals(Agent.application,
                      (copy.history().event(History.Event.Type.retired).get()).agent());
         assertTrue(copy.allocation().get().membership().retired());

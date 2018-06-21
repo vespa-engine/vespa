@@ -10,11 +10,13 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -46,7 +48,7 @@ public class VersionStatusSerializerTest {
             VespaVersion a = status.versions().get(i);
             VespaVersion b = deserialized.versions().get(i);
             assertEquals(a.releaseCommit(), b.releaseCommit());
-            assertEquals(a.committedAt(), b.committedAt());
+            assertEquals(a.committedAt().truncatedTo(MILLIS), b.committedAt());
             assertEquals(a.isControllerVersion(), b.isControllerVersion());
             assertEquals(a.isSystemVersion(), b.isSystemVersion());
             assertEquals(a.statistics(), b.statistics());
