@@ -10,8 +10,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.MetricsMock;
 import com.yahoo.vespa.hosted.controller.MetricsMock.MapContext;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.AttributeMapping;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
+import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -38,9 +36,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
 
 /**
  * @author mortent
@@ -170,7 +165,7 @@ public class MetricsReporterTest {
 
     private MetricsReporter createReporter(Clock clock, Controller controller, MetricsMock metricsMock,
                                            SystemName system) {
-        Chef client = Mockito.mock(Chef.class);
+        ChefMock chef = new ChefMock();
         PartialNodeResult result;
         try {
             result = new ObjectMapper()
@@ -179,9 +174,8 @@ public class MetricsReporterTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        when(client.partialSearchNodes(anyString(), anyListOf(AttributeMapping.class))).thenReturn(result);
-
-        return new MetricsReporter(controller, metricsMock, client, clock, new JobControl(new MockCuratorDb()), system);
+        chef.addPartialResult(result.rows);
+        return new MetricsReporter(controller, metricsMock, chef, clock, new JobControl(new MockCuratorDb()), system);
     }
 
     private Map<MapContext, Map<String, Number>> getMetricsByHost(String hostname) {
