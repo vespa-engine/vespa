@@ -110,16 +110,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
                                  Clock clock) {
-        this(tenantRepository, new ConfigConvergenceChecker(), hostProvisioner, clock);
+        this(tenantRepository, hostProvisioner, clock, new ConfigserverConfig(new ConfigserverConfig.Builder()));
     }
 
+    // For testing
     public ApplicationRepository(TenantRepository tenantRepository,
-                                 ConfigConvergenceChecker convergenceChecker,
                                  Provisioner hostProvisioner,
-                                 Clock clock) {
-        this(tenantRepository, Optional.of(hostProvisioner),
-             convergenceChecker, new HttpProxy(new SimpleHttpFetcher()),
-             new ConfigserverConfig(new ConfigserverConfig.Builder()), clock, new FileDistributionStatus());
+                                 Clock clock,
+                                 ConfigserverConfig configserverConfig) {
+        this(tenantRepository, Optional.of(hostProvisioner), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
+             configserverConfig, clock, new FileDistributionStatus());
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -492,6 +492,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getLocalSession(tenant, sessionId).getMetaData();
     }
 
+    ConfigserverConfig configserverConfig() {
+        return configserverConfig;
+    }
+
     private void validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
         LocalSession session = getLocalSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
@@ -557,24 +561,42 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    void redeployAllApplications() throws InterruptedException {
+    boolean redeployAllApplications(Duration maxDuration) throws InterruptedException {
+        Instant end = Instant.now().plus(maxDuration);
+        Set<ApplicationId> applicationIds = listApplications();
+        do {
+            applicationIds = redeployApplications(applicationIds);
+        } while ( ! applicationIds.isEmpty() && Instant.now().isBefore(end));
+
+        if ( ! applicationIds.isEmpty()) {
+            log.log(LogLevel.ERROR, "Redeploying applications not finished after " + maxDuration +
+                    ", exiting, applications that failed redeployment: " + applicationIds);
+            return false;
+        }
+        return true;
+    }
+
+    // Returns the set of applications that failed to redeploy
+    private Set<ApplicationId> redeployApplications(Set<ApplicationId> applicationIds) throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                                 new DaemonThreadFactory("redeploy apps"));
         // Keep track of deployment per application
         Map<ApplicationId, Future<?>> futures = new HashMap<>();
-        tenantRepository.getAllTenants()
-                .forEach(tenant -> listApplicationIds(tenant)
-                        .forEach(appId -> deployFromLocalActive(appId).ifPresent(
-                                deployment -> futures.put(appId,executor.submit(deployment::activate)))));
+        Set<ApplicationId> failedDeployments = new HashSet<>();
+        applicationIds.forEach(appId -> deployFromLocalActive(appId).ifPresent(
+                deployment -> futures.put(appId, executor.submit(deployment::activate))));
         for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
             try {
                 f.getValue().get();
             } catch (ExecutionException e) {
-                throw new RuntimeException("Redeploying of " + f.getKey() + " failed", e);
+                ApplicationId app = f.getKey();
+                log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry");
+                failedDeployments.add(app);
             }
         }
         executor.shutdown();
         executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+        return failedDeployments;
     }
 
     private LocalSession getExistingSession(Tenant tenant, ApplicationId applicationId) {

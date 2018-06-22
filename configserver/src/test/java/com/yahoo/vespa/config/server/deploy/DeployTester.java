@@ -112,7 +112,7 @@ public class DeployTester {
         catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        applicationRepository = new ApplicationRepository(tenantRepository, new ProvisionerAdapter(provisioner), clock);
+        applicationRepository = new ApplicationRepository(tenantRepository, new ProvisionerAdapter(provisioner), clock, configserverConfig);
     }
 
     public Tenant tenant() {
