@@ -16,10 +16,12 @@ class VersionDependentTaskCompletion {
     private final RemoteClusterControllerTask task;
     private final long deadlineTimePointMs;
 
-    VersionDependentTaskCompletion(long minimumVersion, RemoteClusterControllerTask task, long deadlineTimePointMs) {
+    VersionDependentTaskCompletion(long minimumVersion, RemoteClusterControllerTask task, long maxDeadlineTimePointMs) {
         this.minimumVersion = minimumVersion;
         this.task = task;
-        this.deadlineTimePointMs = deadlineTimePointMs;
+        this.deadlineTimePointMs = task.getDeadline().map(deadline ->
+                Math.max(0, Math.min(deadline.toEpochMilli(), maxDeadlineTimePointMs)))
+                .orElse(maxDeadlineTimePointMs);
     }
 
     long getMinimumVersion() {
@@ -30,7 +32,9 @@ class VersionDependentTaskCompletion {
         return task;
     }
 
-    long getDeadlineTimePointMs() { return deadlineTimePointMs; }
+    long getDeadlineTimePointMs() {
+        return deadlineTimePointMs;
+    }
 
     @Override
     public boolean equals(Object o) {

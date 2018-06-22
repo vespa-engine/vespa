@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.requests;
 
+import com.yahoo.time.TimeBudget;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
@@ -62,4 +63,5 @@ public interface SetUnitStateRequest extends UnitRequest {
     }
     ResponseWait getResponseWait();
 
+    TimeBudget timeBudget();
 }

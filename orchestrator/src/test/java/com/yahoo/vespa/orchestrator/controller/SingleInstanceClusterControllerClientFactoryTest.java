@@ -10,7 +10,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -67,7 +66,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
     public void testCreateClientWithSingleClusterControllerInstance() throws Exception {
         final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1);
 
-        when(context.getSuboperationTimeoutInSeconds()).thenReturn(Optional.of(1.0f));
+        when(context.getSuboperationTimeoutInSeconds()).thenReturn(1.0f);
         clientFactory.createClient(clusterControllers, "clusterName")
                 .setNodeState(context, 0, ClusterControllerNodeState.MAINTENANCE);
 
@@ -95,7 +94,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
     public void testCreateClientWithThreeClusterControllerInstances() throws Exception {
         final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1, HOST_NAME_2, HOST_NAME_3);
 
-        when(context.getSuboperationTimeoutInSeconds()).thenReturn(Optional.of(1.0f));
+        when(context.getSuboperationTimeoutInSeconds()).thenReturn(1.0f);
         clientFactory.createClient(clusterControllers, "clusterName")
                 .setNodeState(context, 0, ClusterControllerNodeState.MAINTENANCE);
 
