@@ -20,7 +20,6 @@ import com.yahoo.search.searchchain.PhaseNames;
 @After(PhaseNames.BACKEND)
 public class ContainerLatencySearcher extends Searcher {
     private final Gauge latencyGauge;
-    private Point dims = null;
 
     public ContainerLatencySearcher(MetricReceiver metrics) {
         latencyGauge = metrics.declareGauge("query_container_latency");
@@ -28,11 +27,9 @@ public class ContainerLatencySearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        if (dims == null) {
-            PointBuilder p = latencyGauge.builder();
-            p.set("chain", execution.chain().getId().stringValue());
-            dims = p.build();
-        }
+        Point dims = latencyGauge.builder()
+                .set("chain", execution.chain().getId().stringValue())
+                .build();
         latencyGauge.sample(query.getDurationTime(), dims);
         return execution.search(query);
     }
