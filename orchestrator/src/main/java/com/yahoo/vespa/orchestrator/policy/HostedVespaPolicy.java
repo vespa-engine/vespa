@@ -28,6 +28,7 @@ public class HostedVespaPolicy implements Policy {
     public static final String ENOUGH_SERVICES_UP_CONSTRAINT = "enough-services-up";
     public static final String SET_NODE_STATE_CONSTRAINT = "controller-set-node-state";
     public static final String CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT = "controller-available";
+    public static final String DEADLINE_CONSTRAINT = "deadline";
 
     private static final Logger log = Logger.getLogger(HostedVespaPolicy.class.getName());
 
