@@ -53,7 +53,7 @@ public class Application {
     /** Creates an empty application */
     public Application(ApplicationId id) {
         this(id, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
-             new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty()),
+             new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
              Change.empty(), Change.empty(), Optional.empty(), new ApplicationMetrics(0, 0),
              Optional.empty());
     }

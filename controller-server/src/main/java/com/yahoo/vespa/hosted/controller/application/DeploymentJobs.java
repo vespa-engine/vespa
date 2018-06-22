@@ -27,19 +27,22 @@ public class DeploymentJobs {
     private final OptionalLong projectId;
     private final ImmutableMap<JobType, JobStatus> status;
     private final Optional<IssueId> issueId;
+    private final boolean builtInternally;
 
     public DeploymentJobs(OptionalLong projectId, Collection<JobStatus> jobStatusEntries,
-                          Optional<IssueId> issueId) {
-        this(projectId, asMap(jobStatusEntries), issueId);
+                          Optional<IssueId> issueId, boolean builtInternally) {
+        this(projectId, asMap(jobStatusEntries), issueId, builtInternally);
     }
 
-    private DeploymentJobs(OptionalLong projectId, Map<JobType, JobStatus> status, Optional<IssueId> issueId) {
+    private DeploymentJobs(OptionalLong projectId, Map<JobType, JobStatus> status, Optional<IssueId> issueId,
+                           boolean builtInternally) {
         requireId(projectId, "projectId must be a positive integer");
         Objects.requireNonNull(status, "status cannot be null");
         Objects.requireNonNull(issueId, "issueId cannot be null");
         this.projectId = projectId;
         this.status = ImmutableMap.copyOf(status);
         this.issueId = issueId;
+        this.builtInternally = builtInternally;
     }
 
     private static Map<JobType, JobStatus> asMap(Collection<JobStatus> jobStatusEntries) {
@@ -56,7 +59,7 @@ public class DeploymentJobs {
             if (job == null) job = JobStatus.initial(jobType);
             return job.withCompletion(completion, jobError);
         });
-        return new DeploymentJobs(OptionalLong.of(projectId), status, issueId);
+        return new DeploymentJobs(OptionalLong.of(projectId), status, issueId, builtInternally);
     }
 
     public DeploymentJobs withTriggering(JobType jobType, JobStatus.JobRun jobRun) {
@@ -65,21 +68,25 @@ public class DeploymentJobs {
             if (job == null) job = JobStatus.initial(jobType);
             return job.withTriggering(jobRun);
         });
-        return new DeploymentJobs(projectId, status, issueId);
+        return new DeploymentJobs(projectId, status, issueId, builtInternally);
     }
 
     public DeploymentJobs withProjectId(OptionalLong projectId) {
-        return new DeploymentJobs(projectId, status, issueId);
+        return new DeploymentJobs(projectId, status, issueId, builtInternally);
     }
 
     public DeploymentJobs with(IssueId issueId) {
-        return new DeploymentJobs(projectId, status, Optional.ofNullable(issueId));
+        return new DeploymentJobs(projectId, status, Optional.ofNullable(issueId), builtInternally);
     }
 
     public DeploymentJobs without(JobType job) {
         Map<JobType, JobStatus> status = new HashMap<>(this.status);
         status.remove(job);
-        return new DeploymentJobs(projectId, status, issueId);
+        return new DeploymentJobs(projectId, status, issueId, builtInternally);
+    }
+
+    public DeploymentJobs withBuiltInternally(boolean builtInternally) {
+        return new DeploymentJobs(projectId, status, issueId, builtInternally);
     }
 
     /** Returns an immutable map of the status entries in this */
@@ -106,6 +113,8 @@ public class DeploymentJobs {
     public OptionalLong projectId() { return projectId; }
 
     public Optional<IssueId> issueId() { return issueId; }
+
+    public boolean builtInternally() { return builtInternally; }
 
     private static OptionalLong requireId(OptionalLong id, String message) {
         Objects.requireNonNull(id, message);

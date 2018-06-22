@@ -80,6 +80,7 @@ public class ApplicationSerializer {
     private final String projectIdField = "projectId";
     private final String jobStatusField = "jobStatus";
     private final String issueIdField = "jiraIssueId";
+    private final String builtInternallyField = "builtInternally";
 
     // JobStatus field
     private final String jobTypeField = "jobType";
@@ -227,6 +228,7 @@ public class ApplicationSerializer {
         deploymentJobs.projectId().ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
         jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
         deploymentJobs.issueId().ifPresent(jiraIssueId -> cursor.setString(issueIdField, jiraIssueId.value()));
+        cursor.setBool(builtInternallyField, deploymentJobs.builtInternally());
     }
 
     private void jobStatusToSlime(Collection<JobStatus> jobStatuses, Cursor jobStatusArray) {
@@ -374,8 +376,9 @@ public class ApplicationSerializer {
         OptionalLong projectId = optionalLong(object.field(projectIdField));
         List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
         Optional<IssueId> issueId = optionalString(object.field(issueIdField)).map(IssueId::from);
+        boolean builtInternally = object.field(builtInternallyField).asBool();
 
-        return new DeploymentJobs(projectId, jobStatusList, issueId);
+        return new DeploymentJobs(projectId, jobStatusList, issueId, builtInternally);
     }
 
     private Change changeFromSlime(Inspector object) {

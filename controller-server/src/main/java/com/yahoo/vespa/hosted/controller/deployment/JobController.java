@@ -28,11 +28,11 @@ public class JobController {
         this.logs = logStore;
     }
 
-
-// GET:
     /** Returns whether the given application has registered with this build service. */
-    boolean builds(ApplicationId application) {
-        return false;
+    public boolean builds(ApplicationId id) {
+        return controller.applications().get(id)
+                         .map(application -> application.deploymentJobs().builtInternally())
+                         .orElse(false);
     }
 
     /** Returns a list of all application which have registered. */
@@ -41,58 +41,56 @@ public class JobController {
     }
 
     /** Returns all job types which have been run for the given application. */
-    public List<JobType> jobs(ApplicationId application) {
+    public List<JobType> jobs(ApplicationId id) {
         return null;
     }
 
     /** Returns a list of meta information about all known runs of the given job type. */
-    public List<RunStatus> runs(ApplicationId application, JobType type) {
+    public List<RunStatus> runs(ApplicationId id, JobType type) {
         return null;
     }
 
     /** Returns the current status of the given job. */
-    public RunStatus status(RunId job) {
+    public RunStatus status(RunId id) {
         return null;
     }
 
     /** Returns the details for the given job. */
-    public RunDetails details(RunId job) {
+    public RunDetails details(RunId id) {
         return null;
     }
 
-
-// POST:
     /** Registers the given application, such that it may have deployment jobs run here. */
-    void register(ApplicationId application) {
-        ;
+    void register(ApplicationId id) {
+        controller.applications().lockIfPresent(id, application ->
+                controller.applications().store(application.withBuiltInternally(true)));
     }
 
     /** Accepts and stores a new appliaction package and test jar pair, and returns the reference these will have. */
     public ApplicationVersion submit(byte[] applicationPackage, byte[] applicationTestJar) {
+
+        // TODO jvenstad: Return versions with increasing numbers.
+
         return ApplicationVersion.unknown;
     }
 
     /** Orders a run of the given type, and returns the id of the created job. */
-    public RunId run(ApplicationId application, JobType type) {
+    public RunId run(ApplicationId id, JobType type) {
         return null;
     }
 
-
-// PUT:
-    /** Stores the given details for the given job. */
-    public void store(RunDetails details, RunId job) {
-        ;
-    }
-
-
-// DELETE:
     /** Unregisters the given application, and deletes all associated data. */
-    public void unregister(ApplicationId application) {
-        ;
+    public void unregister(ApplicationId id) {
+        controller.applications().lockIfPresent(id, application -> {
+
+            // TODO jvenstad: Clean out data for jobs.
+
+            controller.applications().store(application.withBuiltInternally(false));
+        });
     }
 
     /** Aborts the given job. */
-    public void abort(RunId job) {
+    public void abort(RunId id) {
         ;
     }
 

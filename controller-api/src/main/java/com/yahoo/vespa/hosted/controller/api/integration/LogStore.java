@@ -4,6 +4,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 
+/**
+ * @author freva
+ */
 public interface LogStore {
 
     /** @return the test log of the given deployment job. */
@@ -26,4 +29,5 @@ public interface LogStore {
 
     /** Deletes all data associated with test of a given deployment job */
     void deleteTestData(ApplicationId applicationId, JobType jobType, long buildId);
+
 }

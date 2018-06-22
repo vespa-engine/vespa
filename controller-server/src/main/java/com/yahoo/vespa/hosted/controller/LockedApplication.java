@@ -89,6 +89,12 @@ public class LockedApplication {
                                outstandingChange, ownershipIssueId, metrics, rotation);
     }
 
+    public LockedApplication withBuiltInternally(boolean builtInternally) {
+        return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs.withBuiltInternally(builtInternally), change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation);
+    }
+
     public LockedApplication withProjectId(OptionalLong projectId) {
         return new LockedApplication(lock, id, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs.withProjectId(projectId), change, outstandingChange,

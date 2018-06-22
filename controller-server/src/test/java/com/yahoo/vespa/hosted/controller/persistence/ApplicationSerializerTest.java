@@ -87,7 +87,7 @@ public class ApplicationSerializerTest {
                                 .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, deployments.stream().findFirst(), "Test 3", Instant.ofEpochMilli(6))
                                 .withCompletion(11, empty(), Instant.ofEpochMilli(7)));
 
-        DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, empty());
+        DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, empty(), true);
 
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
                                                deploymentSpec,
