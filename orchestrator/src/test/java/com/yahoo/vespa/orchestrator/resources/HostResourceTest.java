@@ -40,6 +40,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -61,7 +62,7 @@ import static org.mockito.Mockito.when;
  * @author hakonhall
  */
 public class HostResourceTest {
-    private static final Timer timer = mock(Timer.class);
+    private static final Clock clock = mock(Clock.class);
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
@@ -136,7 +137,7 @@ public class HostResourceTest {
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, mockInstanceLookupService,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-            timer
+            clock
     );
 
     private static final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
@@ -144,7 +145,7 @@ public class HostResourceTest {
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyInstanceLookUpService,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-            timer
+            clock
     );
 
     private final UriInfo uriInfo = mock(UriInfo.class);
@@ -242,7 +243,7 @@ public class HostResourceTest {
                 new ClusterControllerClientFactoryMock(),
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,mockInstanceLookupService,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-                timer);
+                clock);
 
         try {
             HostResource hostResource = new HostResource(alwaysRejectResolver, uriInfo);
@@ -261,7 +262,7 @@ public class HostResourceTest {
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
                 mockInstanceLookupService,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-                timer);
+                clock);
 
         try {
             HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysRejectResolver);
