@@ -34,7 +34,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
