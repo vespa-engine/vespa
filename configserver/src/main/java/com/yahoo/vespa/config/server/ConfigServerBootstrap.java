@@ -31,12 +31,17 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private static final ExecutorService rpcServerExecutor  = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
     private static final String vipStatusClusterIdentifier = "configserver";
 
+    enum MainThread {START, DO_NOT_START}
+    enum RedeployingApplicationsFails {EXIT_JVM, CONTINUE}
+
     private final ApplicationRepository applicationRepository;
     private final RpcServer server;
     private final Thread serverThread;
     private final VersionState versionState;
     private final StateMonitor stateMonitor;
     private final VipStatus vipStatus;
+    private final Duration maxDurationOfRedeployment;
+    private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
 
     // The tenants object is injected so that all initial requests handlers are
     // added to the rpc server before it starts answering rpc requests.
@@ -44,20 +49,23 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus, true);
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus, MainThread.START, RedeployingApplicationsFails.EXIT_JVM);
     }
 
     // For testing only
     ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
-                          StateMonitor stateMonitor, VipStatus vipStatus, boolean startMainThread) {
+                          StateMonitor stateMonitor, VipStatus vipStatus, MainThread mainThread,
+                          RedeployingApplicationsFails exitIfRedeployingApplicationsFails) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
         this.stateMonitor = stateMonitor;
         this.serverThread = new Thread(this, "configserver main");
         this.vipStatus = vipStatus;
+        this.maxDurationOfRedeployment = Duration.ofSeconds(applicationRepository.configserverConfig().maxDurationOfBootstrap());
+        this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         initializing(); // Initially take server out of rotation
-        if (startMainThread)
+        if (mainThread == MainThread.START)
             start();
     }
 
@@ -80,11 +88,15 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             log.log(LogLevel.INFO, "Configserver upgrading from " + versionState.storedVersion() + " to "
                     + versionState.currentVersion() + ". Redeploying all applications");
             try {
-                applicationRepository.redeployAllApplications();
+                if ( ! applicationRepository.redeployAllApplications(maxDurationOfRedeployment)) {
+                    redeployingApplicationsFailed();
+                    return; // Status will not be set to 'up' since we return here
+                }
                 versionState.saveNewVersion();
                 log.log(LogLevel.INFO, "All applications redeployed successfully");
             } catch (Exception e) {
                 log.log(LogLevel.ERROR, "Redeployment of applications failed", e);
+                redeployingApplicationsFailed();
                 return; // Status will not be set to 'up' since we return here
             }
         }
@@ -142,6 +154,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         if (!server.isRunning())
             throw new RuntimeException("RPC server not started in 10 seconds");
         log.log(LogLevel.INFO, "RPC server started");
+    }
+
+    private void redeployingApplicationsFailed() {
+        if (exitIfRedeployingApplicationsFails == RedeployingApplicationsFails.EXIT_JVM) System.exit(1);
     }
 
 }

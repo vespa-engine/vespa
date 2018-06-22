@@ -76,7 +76,9 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         VipStatus vipStatus = new VipStatus();
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    createStateMonitor(), vipStatus, false /* do not call run method */);
+                                                                    createStateMonitor(), vipStatus,
+                                                                    ConfigServerBootstrap.MainThread.DO_NOT_START,
+                                                                    ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE);
         assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.run();
@@ -112,7 +114,8 @@ public class ConfigServerBootstrapTest {
                                               .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                                               .hostedVespa(true)
-                                              .multitenant(true));
+                                              .multitenant(true)
+                                              .maxDurationOfBootstrap(1) /* seconds */);
     }
 
     public static class MockRpc extends com.yahoo.vespa.config.server.rpc.MockRpc {
