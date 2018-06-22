@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-import com.google.common.annotations.Beta;
-
 /**
  * Utility class to format a double into a String.
  * <p>
@@ -14,7 +12,7 @@ import com.google.common.annotations.Beta;
  * @author arnej27959
  */
 
-@Beta
+@Deprecated
 public final class DoubleFormatter {
 
     public static StringBuilder fmt(StringBuilder target, double v) {

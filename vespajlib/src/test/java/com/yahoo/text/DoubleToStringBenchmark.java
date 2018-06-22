@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("deprecation")
 /**
  * @author arnej27959
  */

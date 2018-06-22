@@ -12,6 +12,7 @@ package com.yahoo.text;
  *
  * @author arnej27959
  */
+@Deprecated
 public final class DoubleParser {
 
     /**
