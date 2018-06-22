@@ -12,7 +12,6 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
@@ -89,12 +88,12 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
-                      ArtifactRepository artifactRepository, BuildService buildService, LogStore logStore) {
+                      ArtifactRepository artifactRepository, BuildService buildService) {
         this(curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService,
-             logStore, com.yahoo.net.HostName::getLocalhost);
+             com.yahoo.net.HostName::getLocalhost);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
@@ -104,7 +103,7 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
-                      BuildService buildService, LogStore logStore, Supplier<String> hostnameSupplier) {
+                      BuildService buildService, Supplier<String> hostnameSupplier) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -119,7 +118,7 @@ public class Controller extends AbstractComponent {
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "AthenzClientFactory cannot be null");
 
-        jobController = new JobController(this, logStore);
+        jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, athenzClientFactory,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),
