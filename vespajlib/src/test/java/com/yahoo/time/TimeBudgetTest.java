@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
-public class TimeBudgetTestCase {
+public class TimeBudgetTest {
     private final Clock clock = mock(Clock.class);
 
     @Test
