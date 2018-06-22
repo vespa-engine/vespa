@@ -22,9 +22,9 @@ public class JobController {
     private final Controller controller;
     private final LogStore logs;
 
-    public JobController(Controller controller) {
+    public JobController(Controller controller, LogStore logStore) {
         this.controller = controller;
-        this.logs = null;
+        this.logs = logStore;
     }
 
 
