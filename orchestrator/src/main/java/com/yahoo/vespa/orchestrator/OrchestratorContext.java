@@ -6,7 +6,6 @@ import com.yahoo.time.TimeBudget;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Optional;
 
 /**
  * Context for the Orchestrator, e.g. timeout management.
@@ -31,7 +30,7 @@ public class OrchestratorContext {
      * Get number of seconds until the deadline, or empty if there's no deadline, or throw
      * an {@link UncheckedTimeoutException} if timed out.
      */
-    public Optional<Float> getSuboperationTimeoutInSeconds() {
-        return Optional.of((float) (timeBudget.timeLeftOrThrow().toMillis() / 1000.0));
+    public float getSuboperationTimeoutInSeconds() {
+        return (float) (timeBudget.timeLeftOrThrow().get().toMillis() / 1000.0);
     }
 }
