@@ -5,7 +5,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.container.di.ContainerTest;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentNode;
 import com.yahoo.container.di.componentgraph.core.Node;
@@ -48,10 +47,9 @@ public class Base {
         return componentGraph.getInstance(componentClass);
     }
 
-    @SuppressWarnings("unchecked")
     public void complete() {
         componentGraph.complete(injector);
-        componentGraph.setAvailableConfigs(ContainerTest.convertMap(configs));
+        componentGraph.setAvailableConfigs(configs);
     }
 
     public void setInjector(Injector injector) {

@@ -14,6 +14,7 @@ import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.Container;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.config.SubscriberFactory;
+import com.yahoo.container.di.osgi.BundleClasses;
 import com.yahoo.container.di.osgi.OsgiUtil;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.application.OsgiFramework;
@@ -27,13 +28,13 @@ import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.statistics.Statistics;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleWiring;
-import scala.collection.immutable.Set;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
+import java.util.Set;
 
 import static com.yahoo.collections.CollectionUtil.first;
 import static com.yahoo.container.util.Util.quote;
@@ -106,9 +107,6 @@ public class HandlersConfigurerDi {
 
         @Override
         public BundleClasses getBundleClasses(ComponentSpecification bundleSpec, Set<String> packagesToScan) {
-            //Not written in an OO way since FelixFramework resides in JDisc core which for now is pure java,
-            //and to load from classpath one needs classes from scalalib.
-
             //Temporary hack: Using class name since ClassLoaderOsgiFramework is not available at compile time in this bundle.
             if (osgiFramework.getClass().getName().equals("com.yahoo.application.container.impl.ClassLoaderOsgiFramework")) {
                 Bundle syntheticClassPathBundle = first(osgiFramework.bundles());
