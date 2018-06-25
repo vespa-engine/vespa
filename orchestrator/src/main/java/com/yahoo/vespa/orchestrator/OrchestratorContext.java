@@ -26,10 +26,6 @@ public class OrchestratorContext {
         return timeBudget.originalTimeout().get().getSeconds();
     }
 
-    public float getSuboperationTimeoutInSeconds() {
-        return getSuboperationTimeoutInSeconds(60);
-    }
-
     /**
      * Get timeout for a suboperation that should take up {@code shareOfRemaining} of the
      * remaining time, or throw an {@link UncheckedTimeoutException} if timed out.
