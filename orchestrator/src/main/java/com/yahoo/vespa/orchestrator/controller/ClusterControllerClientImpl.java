@@ -30,7 +30,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
     //   timeout(3. request) = T * 0.125
     //
     // which seems fine
-    public static final float SHARE_REMAINING_TIME = 0.6f;
+    public static final float SHARE_REMAINING_TIME = 0.5f;
 
     private final JaxRsStrategy<ClusterControllerJaxRsApi> clusterControllerApi;
     private final String clusterName;
