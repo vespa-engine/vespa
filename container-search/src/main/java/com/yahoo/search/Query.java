@@ -46,7 +46,6 @@ import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.yolean.Exceptions;
 import edu.umd.cs.findbugs.annotations.Nullable;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +55,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * A search query containing all the information required to produce a Result.
@@ -305,9 +303,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @param queryProfile the query profile to use for this query, or null if none.
      */
     public Query(HttpRequest request, CompiledQueryProfile queryProfile) {
-        super(new QueryPropertyAliases(propertyAliases));
-        this.httpRequest = request;
-        init(request.propertyMap(), queryProfile);
+        this(request, request.propertyMap(), queryProfile);
     }
 
     /**
@@ -318,7 +314,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @param queryProfile the query profile to use for this query, or null if none.
      */
     public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
-
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
         init(requestMap, queryProfile);

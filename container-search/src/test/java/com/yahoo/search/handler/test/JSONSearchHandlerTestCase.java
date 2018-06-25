@@ -12,7 +12,6 @@ import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import org.json.JSONObject;
 import org.junit.After;
@@ -20,9 +19,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -332,25 +332,25 @@ public class JSONSearchHandlerTestCase {
 
     private void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
         inspector.traverse((ObjectTraverser) (key, value) -> {
-            String delimiter = parent.equals("") ? "" : ".";
+            String qualifiedKey = parent + key;
             switch (value.type()) {
                 case BOOL:
-                    map.put(parent + delimiter + key, Boolean.toString(value.asBool()));
+                    map.put(qualifiedKey, Boolean.toString(value.asBool()));
                     break;
                 case DOUBLE:
-                    map.put(parent + delimiter + key, Double.toString(value.asDouble()));
+                    map.put(qualifiedKey, Double.toString(value.asDouble()));
                     break;
                 case LONG:
-                    map.put(parent + delimiter + key, Long.toString(value.asLong()));
+                    map.put(qualifiedKey, Long.toString(value.asLong()));
                     break;
                 case STRING:
-                    map.put(parent + delimiter + key, value.asString());
+                    map.put(qualifiedKey , value.asString());
                     break;
                 case OBJECT:
                     if (key.equals("grouping")) {
                         createRequestMapping(value, map, "");
                     } else {
-                        createRequestMapping(value, map, String.join(delimiter, parent, key));
+                        createRequestMapping(value, map, qualifiedKey+".");
                         break;
                     }
             }
@@ -447,6 +447,7 @@ public class JSONSearchHandlerTestCase {
         json.put("nocachewrite", false);
         json.put("hitcountestimate", true);
         json.put("metrics.ignore", false);
+
 
 
         // Create mapping

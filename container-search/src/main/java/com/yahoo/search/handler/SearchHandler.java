@@ -20,8 +20,8 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.protect.FreezeDetector;
+import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.Response;
 import com.yahoo.language.Linguistics;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
@@ -58,20 +58,15 @@ import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.commons.io.IOUtils;
-import org.json.*;
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Handles search request.
@@ -243,9 +238,6 @@ public class SearchHandler extends LoggingRequestHandler {
             } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
                 return internalServerErrorResponse(request, e);
-            } catch (JSONException e) {
-                e.printStackTrace();
-                return invalidJsonResponse(request, e);
             }
         } finally {
             requestsInFlight.decrementAndGet();
@@ -288,11 +280,8 @@ public class SearchHandler extends LoggingRequestHandler {
         return errorResponse(request, ErrorMessage.createInternalServerError(Exceptions.toMessageString(e)));
     }
 
-    private HttpResponse invalidJsonResponse(HttpRequest request, JSONException e) {
-        return errorResponse(request, ErrorMessage.createBadRequest(Exceptions.toMessageString(e)));
-    }
 
-    private HttpSearchResponse handleBody(HttpRequest request) throws JSONException {
+    private HttpSearchResponse handleBody(HttpRequest request){
         // Find query profile
         String queryProfileName = request.getProperty("queryProfile");
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
@@ -303,15 +292,12 @@ public class SearchHandler extends LoggingRequestHandler {
         if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST && request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE).equals(JSON_CONTENT_TYPE)) {
             Inspector inspector = null;
             try {
-                InputStream inputStream = request.getData();
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                byte[] buffer = new byte[0xFFFF];
-                for (int len = inputStream.read(buffer); len != -1; len = inputStream.read(buffer)) {
-                    outputStream.write(buffer, 0, len);
-                }
-                inspector = SlimeUtils.jsonToSlime(outputStream.toByteArray()).get();
+                byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
+                inspector = SlimeUtils.jsonToSlime(byteArray).get();
 
-            } catch (IOException e) { e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new RuntimeException("Could not resolve JSON-query");
             }
 
             // Create request-mapping
@@ -597,25 +583,25 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
         inspector.traverse((ObjectTraverser) (key, value) -> {
-            String delimiter = parent.equals("") ? "" : ".";
+            String qualifiedKey = parent + key;
             switch (value.type()) {
                 case BOOL:
-                    map.put(parent + delimiter + key, Boolean.toString(value.asBool()));
+                    map.put(qualifiedKey, Boolean.toString(value.asBool()));
                     break;
                 case DOUBLE:
-                    map.put(parent + delimiter + key, Double.toString(value.asDouble()));
+                    map.put(qualifiedKey, Double.toString(value.asDouble()));
                     break;
                 case LONG:
-                    map.put(parent + delimiter + key, Long.toString(value.asLong()));
+                    map.put(qualifiedKey, Long.toString(value.asLong()));
                     break;
                 case STRING:
-                    map.put(parent + delimiter + key, value.asString());
+                    map.put(qualifiedKey , value.asString());
                     break;
                 case OBJECT:
                     if (key.equals("grouping")) {
                         createRequestMapping(value, map, "");
                     } else {
-                        createRequestMapping(value, map, String.join(delimiter, parent, key));
+                        createRequestMapping(value, map, qualifiedKey+".");
                         break;
                     }
             }

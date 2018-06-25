@@ -3,16 +3,13 @@ package com.yahoo.search.handler.test;
 
 import com.yahoo.container.Container;
 import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
-import com.yahoo.container.jdisc.AsyncHttpResponse;
 import com.yahoo.container.jdisc.HttpRequest;
-
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.net.HostName;
-import com.yahoo.processing.handler.ResponseStatus;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -23,7 +20,6 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -31,9 +27,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
-import java.util.*;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.containsString;
