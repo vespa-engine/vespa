@@ -23,7 +23,6 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
 
-import java.io.File;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
@@ -155,7 +154,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             final PermanentApplicationPackage permApp = this.permanentApplicationPackage
                     .orElse(new PermanentApplicationPackage(configserverConfig));
             FileDistributionFactory fileDistributionFactory = this.fileDistributionFactory
-                    .orElse(new MockFileDistributionFactory(new File(configserverConfig.fileReferencesDir())));
+                    .orElse(new MockFileDistributionFactory(configserverConfig));
             HostProvisionerProvider hostProvisionerProvider = hostProvisioner.isPresent() ?
                     HostProvisionerProvider.withProvisioner(hostProvisioner.get()) :
                     HostProvisionerProvider.empty();

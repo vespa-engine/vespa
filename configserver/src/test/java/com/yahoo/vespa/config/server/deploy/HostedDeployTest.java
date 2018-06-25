@@ -16,9 +16,9 @@ import com.yahoo.test.ManualClock;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 
 import com.yahoo.vespa.config.server.session.LocalSession;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,7 +38,8 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeployWithVersion() {
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
+        CountingModelFactory modelFactory = DeployTester.createModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
+        DeployTester tester = new DeployTester("src/test/apps/hosted/", Collections.singletonList(modelFactory), createConfigserverConfig());
         tester.deployApp("myApp", "4.5.6", Instant.now());
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
@@ -73,14 +74,14 @@ public class HostedDeployTest {
         modelFactories.add(DeployTester.createModelFactory(Version.fromString("6.2.0"), clock));
         modelFactories.add(DeployTester.createModelFactory(Version.fromString("7.0.0"), clock));
         DeployTester tester = new DeployTester("src/test/apps/hosted/", modelFactories, createConfigserverConfig(), clock, Zone.defaultZone());
-        ApplicationId app = tester.deployApp("myApp", Instant.now());
+        ApplicationId app = tester.deployApp("myApp", "6.2.0", Instant.now());
         assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
 
     }
 
-    /** Test that unused versions are skipped in dev */
+    /** Test that only the minimal set of models are created (model versions used on hosts, the wanted version and the latest version) */
     @Test
-    public void testDeployMultipleVersionsInDev() {
+    public void testCreateOnlyNeededModelVersions() {
         List<Host> hosts = new ArrayList<>();
         hosts.add(createHost("host1", "6.0.0"));
         hosts.add(createHost("host2", "6.0.2"));
@@ -104,14 +105,15 @@ public class HostedDeployTest {
 
         DeployTester tester = new DeployTester("src/test/apps/hosted/", modelFactories, createConfigserverConfig(),
                                                clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
-        ApplicationId app = tester.deployApp("myApp", Instant.now());
+        // Deploy with version that does not exist on hosts, the model for this version should also be created
+        ApplicationId app = tester.deployApp("myApp", "7.0.0", Instant.now());
         assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory600.creationCount() > 0);
         assertFalse(factory610.creationCount() > 0);
         assertTrue(factory620.creationCount() > 0);
-        assertFalse(factory700.creationCount() > 0);
+        assertTrue(factory700.creationCount() > 0);
         assertTrue(factory710.creationCount() > 0);
         assertTrue("Newest is always included", factory720.creationCount() > 0);
     }

@@ -95,6 +95,11 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder vespaVersion(com.yahoo.config.provision.Version vespaVersion) {
+            this.vespaVersion = Optional.ofNullable(Version.fromString(vespaVersion.toSerializedForm()));
+            return this;
+        }
+
         public Builder rotations(String rotationsString) {
             this.rotations = new LinkedHashSet<>();
             if (rotationsString != null && !rotationsString.isEmpty()) {
