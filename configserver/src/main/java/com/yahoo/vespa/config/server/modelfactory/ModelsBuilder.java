@@ -94,9 +94,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         List<MODELRESULT> allApplicationModels = new ArrayList<>();
         for (int i = 0; i < majorVersions.size(); i++) {
             try {
-                allApplicationModels.addAll(buildModelVersion(filterByMajorVersion(majorVersions.get(i), versions),
-                                                              applicationId, wantedNodeVespaVersion, applicationPackage, 
-                                                              allocatedHosts, now));
+                allApplicationModels.addAll(buildModelVersions(filterByMajorVersion(majorVersions.get(i), versions),
+                                                               applicationId, wantedNodeVespaVersion, applicationPackage,
+                                                               allocatedHosts, now));
 
                 // skip old config models if requested after we have found a major version which works
                 if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels(now))
@@ -125,11 +125,13 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         return allApplicationModels;
     }
 
-    private List<MODELRESULT> buildModelVersion(Set<Version> versions, ApplicationId applicationId,
-                                                com.yahoo.component.Version wantedNodeVespaVersion, 
-                                                ApplicationPackage applicationPackage,
-                                                SettableOptional<AllocatedHosts> allocatedHosts,
-                                                Instant now) {
+    // versions is the set of versions for one particular major version
+    private List<MODELRESULT> buildModelVersions(Set<Version> versions,
+                                                 ApplicationId applicationId,
+                                                 com.yahoo.component.Version wantedNodeVespaVersion,
+                                                 ApplicationPackage applicationPackage,
+                                                 SettableOptional<AllocatedHosts> allocatedHosts,
+                                                 Instant now) {
         Version latest = findLatest(versions);
         // load latest application version
         MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), 
@@ -151,6 +153,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         if (Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment())
                 || Arrays.asList("corp-us-east-1", "ap-southeast-1").contains(zone().region().value()))
             versions = keepThoseUsedOn(allocatedHosts.get(), versions);
+
+        // Make sure we build wanted version if we are building models for this major version
+        Version wantedVersion = Version.fromIntValues(wantedNodeVespaVersion.getMajor(), wantedNodeVespaVersion.getMinor(), wantedNodeVespaVersion.getMicro());
+        if (wantedVersion.getMajor() == latest.getMajor())
+            versions.add(wantedVersion);
 
         // TODO: We use the allocated hosts from the newest version when building older model versions.
         // This is correct except for the case where an old model specifies a cluster which the new version

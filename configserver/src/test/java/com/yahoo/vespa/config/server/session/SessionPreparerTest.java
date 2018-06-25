@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
+import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
@@ -49,8 +50,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.*;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SessionPreparerTest {
 
@@ -58,6 +58,10 @@ public class SessionPreparerTest {
     private static final Path sessionsPath = tenantPath.append("sessions").append("testapp");
     private static final File testApp = new File("src/test/apps/app");
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
+    private static final Version version123 = Version.fromIntValues(1, 2, 3);
+    private static final Version version124 = Version.fromIntValues(1, 2, 4);
+    private static final Version version321 = Version.fromIntValues(3, 2, 1);
+    private static final Version version323 = Version.fromIntValues(3, 2, 3);
 
     private MockCurator curator;
     private ConfigCurator configCurator;
@@ -83,9 +87,8 @@ public class SessionPreparerTest {
     }
 
     private SessionPreparer createPreparer(HostProvisionerProvider hostProvisionerProvider) {
-        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Arrays.asList(
-                new TestModelFactory(Version.fromIntValues(1, 2, 3)),
-                new TestModelFactory(Version.fromIntValues(3, 2, 1))));
+        ModelFactoryRegistry modelFactoryRegistry =
+                new ModelFactoryRegistry(Arrays.asList(new TestModelFactory(version123), new TestModelFactory(version321)));
         return createPreparer(modelFactoryRegistry, hostProvisionerProvider);
     }
 
@@ -104,37 +107,29 @@ public class SessionPreparerTest {
 
     @Test(expected = InvalidApplicationException.class)
     public void require_that_application_validation_exception_is_not_caught() throws IOException {
-        FilesApplicationPackage app = getApplicationPackage(invalidTestApp);
-        preparer.prepare(getContext(app), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(invalidTestApp);
     }
 
     @Test
     public void require_that_application_validation_exception_is_ignored_if_forced() throws IOException {
-        FilesApplicationPackage app = getApplicationPackage(invalidTestApp);
-        preparer.prepare(getContext(app), getLogger(),
-                         new PrepareParams.Builder().ignoreValidationErrors(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
-                         Optional.empty(), tenantPath, Instant.now());
+        prepare(invalidTestApp, new PrepareParams.Builder().ignoreValidationErrors(true).timeoutBudget(TimeoutBudgetTest.day()).build());
     }
 
     @Test
     public void require_that_zookeeper_is_not_written_to_if_dryrun() throws IOException {
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(),
-                         new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
-                         Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
         assertFalse(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(),
-                                                       new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
-                                                       Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
         assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(0));
     }
 
     @Test
     public void require_that_application_is_prepared() throws Exception {
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp);
         assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(2));
         assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
@@ -142,19 +137,19 @@ public class SessionPreparerTest {
     @Test
     public void require_that_prepare_succeeds_if_newer_version_fails() throws IOException {
         ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Arrays.asList(
-                new TestModelFactory(Version.fromIntValues(1, 2, 3)),
-                new FailingModelFactory(Version.fromIntValues(3, 2, 1), new IllegalArgumentException("BOOHOO"))));
+                new TestModelFactory(version123),
+                new FailingModelFactory(version321, new IllegalArgumentException("BOOHOO"))));
         preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp);
     }
 
     @Test(expected = InvalidApplicationException.class)
     public void require_that_prepare_fails_if_older_version_fails() throws IOException {
         ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Arrays.asList(
-                new TestModelFactory(Version.fromIntValues(3, 2, 3)),
-                new FailingModelFactory(Version.fromIntValues(1, 2, 1), new IllegalArgumentException("BOOHOO"))));
+                new TestModelFactory(version323),
+                new FailingModelFactory(version123, new IllegalArgumentException("BOOHOO"))));
         preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp);
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -184,7 +179,7 @@ public class SessionPreparerTest {
                                .tenant(tenant)
                                .applicationName("foo").instanceName("quux").build();
         PrepareParams params = new PrepareParams.Builder().applicationId(origId).build();
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, params);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath);
         assertTrue(configCurator.exists(sessionsPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
         assertThat(zkc.readApplicationId(), is(origId));
@@ -194,15 +189,10 @@ public class SessionPreparerTest {
     public void require_that_config_change_actions_are_collected_from_all_models() throws IOException {
         ServiceInfo service = new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName");
         ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Arrays.asList(
-                new ConfigChangeActionsModelFactory(Version.fromIntValues(1, 2, 3),
-                        new MockRestartAction("change", Arrays.asList(service))),
-                new ConfigChangeActionsModelFactory(Version.fromIntValues(1, 2, 4),
-                        new MockRestartAction("other change", Arrays.asList(service)))));
+                new ConfigChangeActionsModelFactory(version123, new MockRestartAction("change", Arrays.asList(service))),
+                new ConfigChangeActionsModelFactory(version124, new MockRestartAction("other change", Arrays.asList(service)))));
         preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        List<RestartActions.Entry> actions =
-                preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(),
-                                 new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now())
-                        .getRestartActions().getEntries();
+        List<RestartActions.Entry> actions = prepare(testApp).getRestartActions().getEntries();
         assertThat(actions.size(), is(1));
         assertThat(actions.get(0).getMessages(), equalTo(ImmutableSet.of("change", "other change")));
     }
@@ -216,15 +206,13 @@ public class SessionPreparerTest {
         final String rotations = "mediasearch.msbe.global.vespa.yahooapis.com";
         final ApplicationId applicationId = applicationId("test");
         PrepareParams params = new PrepareParams.Builder().applicationId(applicationId).rotations(rotations).build();
-        File app = new File("src/test/resources/deploy/app");
-        preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
+        prepare(new File("src/test/resources/deploy/app"), params);
         assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
     }
 
     @Test
     public void require_that_rotations_are_read_from_zookeeper_and_used() throws IOException {
-        final Version vespaVersion = Version.fromIntValues(1, 2, 3);
-        final TestModelFactory modelFactory = new TestModelFactory(vespaVersion);
+        final TestModelFactory modelFactory = new TestModelFactory(version123);
         preparer = createPreparer(new ModelFactoryRegistry(Arrays.asList(modelFactory)),
                 HostProvisionerProvider.empty());
 
@@ -233,7 +221,7 @@ public class SessionPreparerTest {
         new Rotations(curator, tenantPath).writeRotationsToZooKeeper(applicationId, Collections.singleton(new Rotation(rotations)));
         final PrepareParams params = new PrepareParams.Builder().applicationId(applicationId).build();
         final File app = new File("src/test/resources/deploy/app");
-        preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
+        prepare(app, params);
 
         // check that the rotation from zookeeper were used
         final ModelContext modelContext = modelFactory.getModelContext();
@@ -242,6 +230,14 @@ public class SessionPreparerTest {
 
         // Check that the persisted value is still the same
         assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
+    }
+
+    private ConfigChangeActions prepare(File app) throws IOException {
+        return prepare(app, new PrepareParams.Builder().build());
+    }
+
+    private ConfigChangeActions prepare(File app, PrepareParams params) throws IOException {
+        return preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
     }
 
     private SessionContext getContext(FilesApplicationPackage app) throws IOException {

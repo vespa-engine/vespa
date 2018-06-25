@@ -14,9 +14,9 @@ public class MockFileDistributionFactory extends FileDistributionFactory {
 
     public final MockFileDistributionProvider mockFileDistributionProvider;
 
-    public MockFileDistributionFactory(File fileReferencesDir) {
-        super(new ConfigserverConfig(new ConfigserverConfig.Builder()));
-        mockFileDistributionProvider = new MockFileDistributionProvider(fileReferencesDir);
+    public MockFileDistributionFactory(ConfigserverConfig configserverConfig) {
+        super(configserverConfig);
+        mockFileDistributionProvider = new MockFileDistributionProvider(new File(configserverConfig.fileReferencesDir()));
     }
 
     @Override
