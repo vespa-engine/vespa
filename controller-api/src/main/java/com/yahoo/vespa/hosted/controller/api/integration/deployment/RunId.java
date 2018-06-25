@@ -1,12 +1,11 @@
-package com.yahoo.vespa.hosted.controller.deployment;
+package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 
 import java.util.Objects;
 
 /**
- * Immutable ID of a job run by an {@link InternalBuildService}.
+ * Immutable ID of a job run by a {@link com.yahoo.vespa.hosted.controller.api.integration.BuildService}.
  *
  * @author jonmv
  */

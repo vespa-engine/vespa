@@ -15,7 +15,8 @@ public class JobSerializer {
         List<RunStatus> runs = new ArrayList<>();
         Inspector runArray = slime.get();
         runArray.traverse((ArrayTraverser) (__, runObject) ->
-                         runs.add(runFromSlime(runObject)));
+                runs.add(runFromSlime(runObject)));
+
         return runs;
     }
 

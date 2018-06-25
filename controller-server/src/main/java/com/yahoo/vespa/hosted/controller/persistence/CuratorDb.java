@@ -8,12 +8,16 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.log.event.Collection;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -55,6 +59,7 @@ public class CuratorDb {
     private static final Path lockRoot = root.append("locks");
     private static final Path tenantRoot = root.append("tenants");
     private static final Path applicationRoot = root.append("applications");
+    private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
@@ -63,6 +68,7 @@ public class CuratorDb {
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
+    private final JobSerializer jobSerializer = new JobSerializer();
 
     private final Curator curator;
 
@@ -101,6 +107,18 @@ public class CuratorDb {
 
     public Lock lock(ApplicationId id) {
         return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+    }
+
+    public Lock lock(ApplicationId id, JobType type) {
+        return lock(lockPath(id, type), defaultLockTimeout);
+    }
+
+    public Lock lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
+        return tryLock(lockPath(id, type, step));
+    }
+
+    public Lock lockActiveRuns() {
+        return lock(lockRoot.append("activeRuns"), defaultLockTimeout);
     }
 
     public Lock lockRotations() {
@@ -290,6 +308,39 @@ public class CuratorDb {
         curator.delete(applicationPath(application));
     }
 
+    // -------------- Job Runs ------------------------------------------------
+
+    public void writeActiveRun(RunStatus run) {
+        appendRun(run, activeRunsPath());
+    }
+
+    public void writeHistoricRun(RunStatus run) {
+        appendRun(run, jobRunPath(run.id().application(), run.id().type()));
+    }
+
+    public List<RunStatus> readActiveRuns() {
+        return Collections.unmodifiableList(readRuns(activeRunsPath()));
+    }
+
+    public List<RunStatus> readHistoricRuns(ApplicationId id, JobType type) {
+        // TODO jvenstad: Add, somewhere, a retention filter based on age or count.
+        return Collections.unmodifiableList(readRuns(jobRunPath(id, type)));
+    }
+
+    private void appendRun(RunStatus run, Path runsPath) {
+        List<RunStatus> runs = readRuns(runsPath);
+        runs.add(run);
+        writeRuns(runsPath, runs);
+    }
+
+    private List<RunStatus> readRuns(Path runsPath) {
+        return readSlime(runsPath).map(jobSerializer::fromSlime).orElse(Collections.emptyList());
+    }
+
+    private void writeRuns(Path runsPaths, Iterable<RunStatus> runs) {
+        curator.set(runsPaths, asJson(jobSerializer.toSlime(runs)));
+    }
+
     // -------------- Provisioning (called by internal code) ------------------
 
     @SuppressWarnings("unused")
@@ -345,6 +396,27 @@ public class CuratorDb {
         return lockPath;
     }
 
+    private Path lockPath(ApplicationId application, JobType type) {
+        Path lockPath = lockRoot
+                .append(application.tenant().value())
+                .append(application.application().value())
+                .append(application.instance().value())
+                .append(type.jobName());
+        curator.create(lockPath);
+        return lockPath;
+    }
+
+    private Path lockPath(ApplicationId application, JobType type, Step step) {
+        Path lockPath = lockRoot
+                .append(application.tenant().value())
+                .append(application.application().value())
+                .append(application.instance().value())
+                .append(type.jobName())
+                .append(step.name());
+        curator.create(lockPath);
+        return lockPath;
+    }
+
     private Path lockPath(String provisionId) {
         Path lockPath = lockRoot
                 .append(provisionStatePath())
@@ -391,6 +463,14 @@ public class CuratorDb {
 
     private static Path applicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
+    }
+
+    private static Path jobRunPath(ApplicationId id, JobType type) {
+        return jobRoot.append(id.serializedForm()).append(type.jobName());
+    }
+
+    private static Path activeRunsPath() {
+        return jobRoot.append("active");
     }
 
     private static Path controllerPath(String hostname) {
