@@ -14,10 +14,6 @@
   <packaging>container-plugin</packaging>
   <dependencies>
     <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-provisioning</artifactId>
       <version>${project.version}</version>

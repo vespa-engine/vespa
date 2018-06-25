@@ -226,19 +226,6 @@
                     <version>1.0.0</version>
                 </plugin>
                 <plugin>
-                    <groupId>net.alchim31.maven</groupId>
-                    <artifactId>scala-maven-plugin</artifactId>
-                    <version>3.2.2</version>
-                    <configuration>
-                        <args>
-                            <arg>-unchecked</arg>
-                            <arg>-deprecation</arg>
-                            <arg>-feature</arg>
-                            <arg>-Xfatal-warnings</arg>
-                        </args>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>com.yahoo.vespa</groupId>
                     <artifactId>bundle-plugin</artifactId>
                     <version>${project.version}</version>
@@ -316,35 +303,6 @@
                         <configuration>
                             <includePluginDependencies>true</includePluginDependencies>
                         </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>build-helper-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>generate-sources</phase>
-                                <goals>
-                                    <goal>add-source</goal>
-                                </goals>
-                                <configuration>
-                                    <sources>
-                                        <source>src/main/scala</source>
-                                    </sources>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>add-test-source</id>
-                                <phase>generate-test-sources</phase>
-                                <goals>
-                                    <goal>add-test-source</goal>
-                                </goals>
-                                <configuration>
-                                    <sources>
-                                        <source>src/test/scala</source>
-                                    </sources>
-                                </configuration>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
@@ -616,21 +574,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.scala-lang.modules</groupId>
-                <artifactId>scala-parser-combinators_${scala.major-version}</artifactId>
-                <version>1.0.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.scala-lang.modules</groupId>
-                <artifactId>scala-xml_${scala.major-version}</artifactId>
-                <version>1.0.2</version>
-            </dependency>
-            <dependency>
-                <groupId>org.scalatest</groupId>
-                <artifactId>scalatest_${scala.major-version}</artifactId>
-                <version>2.2.2</version>
-            </dependency>
-            <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-test</artifactId>
                 <version>4.0.6.RELEASE</version>
@@ -700,7 +643,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>
     	<doclint>all</doclint>
-        <scala.major-version>2.11</scala.major-version> <!-- TODO: factorylib magic for maven cache bootstrapping prevents moving this to container-dep-versions. -->
         <surefire.version>2.21.0</surefire.version>
     </properties>
 
