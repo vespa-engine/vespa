@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -113,11 +115,8 @@ public class CuratorDb {
         return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
-    public Lock lockMaintenanceJob(String jobName) {
-        // Use a short timeout such that if maintenance jobs are started at about the same time on different nodes
-        // and the maintenance job takes a long time to complete, only one of the nodes will run the job
-        // in each maintenance interval
-        return lock(lockRoot.append("maintenanceJobLocks").append(jobName), Duration.ofSeconds(1));
+    public Lock lockMaintenanceJob(String jobName) throws TimeoutException {
+        return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
     }
 
     @SuppressWarnings("unused") // Called by internal code
@@ -136,6 +135,19 @@ public class CuratorDb {
     }
 
     // -------------- Helpers ------------------------------------------
+
+    /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
+     *
+     * Useful for maintenance jobs, where there is no point in running the jobs back to back.
+     */
+    private Lock tryLock(Path path) throws TimeoutException {
+        try {
+            return lock(path, Duration.ofSeconds(1));
+        }
+        catch (UncheckedTimeoutException e) {
+            throw new TimeoutException(e.getMessage());
+        }
+    }
 
     private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
         return curator.getData(path).filter(data -> data.length > 0).map(mapper);
