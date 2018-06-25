@@ -11,9 +11,11 @@ namespace search {
 using queryeval::MinMaxPostingInfo;
 using fef::TermFieldMatchData;
 
-AttributeIteratorBase::AttributeIteratorBase(TermFieldMatchData * matchData) :
-    _matchData(matchData),
-    _matchPosition(_matchData->populate_fixed())
+AttributeIteratorBase::AttributeIteratorBase(const attribute::ISearchContext &baseSearchCtx,
+                                             TermFieldMatchData *matchData)
+    : _baseSearchCtx(baseSearchCtx),
+      _matchData(matchData),
+      _matchPosition(_matchData->populate_fixed())
 { }
 
 void
@@ -24,8 +26,9 @@ AttributeIteratorBase::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "tfmd.docId", _matchData->getDocId());
 }
 
-FilterAttributeIterator::FilterAttributeIterator(fef::TermFieldMatchData * matchData)
-    : AttributeIteratorBase(matchData)
+FilterAttributeIterator::FilterAttributeIterator(const attribute::ISearchContext &baseSearchCtx,
+                                                 fef::TermFieldMatchData *matchData)
+    : AttributeIteratorBase(baseSearchCtx, matchData)
 {
     _matchPosition->setElementWeight(1);
 }
@@ -44,15 +47,17 @@ FlagAttributeIterator::doUnpack(uint32_t docId)
     _matchData->resetOnlyDocId(docId);
 }
 
-AttributePostingListIterator:: AttributePostingListIterator(bool hasWeight, TermFieldMatchData *matchData)
-    : AttributeIteratorBase(matchData),
+AttributePostingListIterator::AttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx,
+                                                           bool hasWeight,
+                                                           TermFieldMatchData *matchData)
+    : AttributeIteratorBase(baseSearchCtx, matchData),
       _hasWeight(hasWeight)
 {
 }
 
 FilterAttributePostingListIterator::
-FilterAttributePostingListIterator(TermFieldMatchData *matchData)
-    : AttributeIteratorBase(matchData)
+FilterAttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx, TermFieldMatchData *matchData)
+    : AttributeIteratorBase(baseSearchCtx, matchData)
 {
 }
 

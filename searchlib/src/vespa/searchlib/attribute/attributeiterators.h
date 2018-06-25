@@ -9,6 +9,8 @@
 
 namespace search {
 
+namespace attribute { class ISearchContext; }
+
 namespace fef {
     class TermFieldMatchData;
     class TermFieldMatchDataPosition;
@@ -28,12 +30,14 @@ protected:
     template <typename SC>
     std::unique_ptr<BitVector> get_hits(const SC & sc, uint32_t begin_id) const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    const attribute::ISearchContext &_baseSearchCtx;
     fef::TermFieldMatchData * _matchData;
     fef::TermFieldMatchDataPosition * _matchPosition;
 
 public:
-    AttributeIteratorBase(fef::TermFieldMatchData * matchData);
+    AttributeIteratorBase(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData);
     Trinary is_strict() const override { return Trinary::False; }
+    const attribute::ISearchContext *getAttributeSearchContext() const override { return &_baseSearchCtx; }
 };
 
 
@@ -49,8 +53,9 @@ public:
 class AttributeIterator : public AttributeIteratorBase
 {
 public:
-    AttributeIterator(fef::TermFieldMatchData * matchData)
-        : AttributeIteratorBase(matchData),
+    AttributeIterator(const attribute::ISearchContext &baseSearchCtx,
+                      fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData),
           _weight(1)
     { }
 protected:
@@ -62,7 +67,8 @@ protected:
 class FilterAttributeIterator : public AttributeIteratorBase
 {
 public:
-    FilterAttributeIterator(fef::TermFieldMatchData * matchData);
+    FilterAttributeIterator(const attribute::ISearchContext &baseSearchCtx,
+                            fef::TermFieldMatchData *matchData);
 protected:
     void doUnpack(uint32_t docId) override;
 };
@@ -78,13 +84,11 @@ private:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 protected:
-    const SC & _searchContext;
+    const SC &_concreteSearchCtx;
 
 public:
-    AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData);
-    bool seekFast(uint32_t docId) const { return _searchContext.matches(docId); }
-
-    const attribute::ISearchContext * getAttributeSearchContext() const override { return &_searchContext; }
+    AttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData);
+    bool seekFast(uint32_t docId) const { return _concreteSearchCtx.matches(docId); }
 };
 
 template <typename SC>
@@ -98,11 +102,11 @@ private:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 protected:
-    const SC & _searchContext;
+    const SC &_concreteSearchCtx;
 
 public:
-    FilterAttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData);
-    bool seekFast(uint32_t docId) const { return _searchContext.matches(docId); }
+    FilterAttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData);
+    bool seekFast(uint32_t docId) const { return _concreteSearchCtx.matches(docId); }
 };
 
 
@@ -118,7 +122,7 @@ template <typename SC>
 class AttributeIteratorStrict : public AttributeIteratorT<SC>
 {
 private:
-    using AttributeIteratorT<SC>::_searchContext;
+    using AttributeIteratorT<SC>::_concreteSearchCtx;
     using AttributeIteratorT<SC>::setDocId;
     using AttributeIteratorT<SC>::setAtEnd;
     using AttributeIteratorT<SC>::isAtEnd;
@@ -127,8 +131,8 @@ private:
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::True; }
 public:
-    AttributeIteratorStrict(const SC &searchContext, fef::TermFieldMatchData * matchData)
-        : AttributeIteratorT<SC>(searchContext, matchData)
+    AttributeIteratorStrict(const SC &concreteSearchCtx, fef::TermFieldMatchData * matchData)
+        : AttributeIteratorT<SC>(concreteSearchCtx, matchData)
     { }
 };
 
@@ -137,7 +141,7 @@ template <typename SC>
 class FilterAttributeIteratorStrict : public FilterAttributeIteratorT<SC>
 {
 private:
-    using FilterAttributeIteratorT<SC>::_searchContext;
+    using FilterAttributeIteratorT<SC>::_concreteSearchCtx;
     using FilterAttributeIteratorT<SC>::setDocId;
     using FilterAttributeIteratorT<SC>::setAtEnd;
     using FilterAttributeIteratorT<SC>::isAtEnd;
@@ -145,8 +149,8 @@ private:
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::True; }
 public:
-    FilterAttributeIteratorStrict(const SC &searchContext, fef::TermFieldMatchData * matchData)
-        : FilterAttributeIteratorT<SC>(searchContext, matchData)
+    FilterAttributeIteratorStrict(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData)
+        : FilterAttributeIteratorT<SC>(concreteSearchCtx, matchData)
     { }
 };
 
@@ -163,7 +167,8 @@ public:
 class AttributePostingListIterator : public AttributeIteratorBase
 {
 public:
-    AttributePostingListIterator(bool hasWeight, fef::TermFieldMatchData *matchData);
+    AttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx,
+                                 bool hasWeight, fef::TermFieldMatchData *matchData);
     Trinary is_strict() const override { return Trinary::True; }
 protected:
     bool  _hasWeight;
@@ -173,7 +178,7 @@ protected:
 class FilterAttributePostingListIterator : public AttributeIteratorBase
 {
 public:
-    FilterAttributePostingListIterator(fef::TermFieldMatchData *matchData);
+    FilterAttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData);
     Trinary is_strict() const override { return Trinary::True; }
 };
 
@@ -216,7 +221,9 @@ private:
 
 public:
     template <typename... Args>
-    AttributePostingListIteratorT(bool hasWeight, fef::TermFieldMatchData *matchData, Args &&... args);
+    AttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx,
+                                  bool hasWeight, fef::TermFieldMatchData *matchData,
+                                  Args &&... args);
 };
 
 template <typename PL>
@@ -246,7 +253,7 @@ private:
 
 public:
     template <typename... Args>
-    FilterAttributePostingListIteratorT(fef::TermFieldMatchData *matchData, Args &&... args);
+    FilterAttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData, Args &&... args);
 };
 
 
@@ -316,8 +323,8 @@ FilterAttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::set
 class FlagAttributeIterator : public AttributeIteratorBase
 {
 public:
-    FlagAttributeIterator(fef::TermFieldMatchData * matchData)
-        : AttributeIteratorBase(matchData)
+    FlagAttributeIterator(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData)
     { }
 protected:
     void doUnpack(uint32_t docId) override;
@@ -331,21 +338,21 @@ private:
     void doSeek(uint32_t docId) override;
 
 protected:
-    const SC & _sc;
+    const SC &_concreteSearchCtx;
 
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 public:
-    FlagAttributeIteratorT(const SC &sc, fef::TermFieldMatchData * matchData)
-        : FlagAttributeIterator(matchData),
-          _sc(sc)
+    FlagAttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData)
+        : FlagAttributeIterator(concreteSearchCtx, matchData),
+          _concreteSearchCtx(concreteSearchCtx)
     { }
 
     void initRange(uint32_t begin, uint32_t end) override {
         FlagAttributeIterator::initRange(begin, end);
-        if ( _sc._zeroHits ) {
+        if ( _concreteSearchCtx._zeroHits ) {
             setAtEnd();
         }
     }
@@ -356,7 +363,7 @@ template <typename SC>
 class FlagAttributeIteratorStrict : public FlagAttributeIteratorT<SC>
 {
 private:
-    using FlagAttributeIteratorT<SC>::_sc;
+    using FlagAttributeIteratorT<SC>::_concreteSearchCtx;
     using FlagAttributeIteratorT<SC>::setDocId;
     using FlagAttributeIteratorT<SC>::setAtEnd;
     using FlagAttributeIteratorT<SC>::isAtEnd;
@@ -366,9 +373,9 @@ private:
     Trinary is_strict() const override { return Trinary::True; }
 
 public:
-    FlagAttributeIteratorStrict(const SC &sc, fef::TermFieldMatchData *matchData)
-        : FlagAttributeIteratorT<SC>(sc, matchData)
+    FlagAttributeIteratorStrict(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData)
+        : FlagAttributeIteratorT<SC>(concreteSearchCtx, matchData)
     { }
 };
 
-} // namespace search
+}

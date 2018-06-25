@@ -45,8 +45,10 @@ AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
 template <typename PL>
 template <typename... Args>
 AttributePostingListIteratorT<PL>::
-AttributePostingListIteratorT(bool hasWeight, fef::TermFieldMatchData *matchData, Args &&... args)
-    : AttributePostingListIterator(hasWeight, matchData),
+AttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx,
+                              bool hasWeight, fef::TermFieldMatchData *matchData,
+                              Args &&... args)
+    : AttributePostingListIterator(baseSearchCtx, hasWeight, matchData),
       _iterator(std::forward<Args>(args)...),
       _postingInfo(1, 1),
       _postingInfoValid(false)
@@ -68,8 +70,8 @@ void AttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) 
 template <typename PL>
 template<typename... Args>
 FilterAttributePostingListIteratorT<PL>::
-FilterAttributePostingListIteratorT(fef::TermFieldMatchData *matchData, Args &&... args)
-    : FilterAttributePostingListIterator(matchData),
+FilterAttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData, Args &&... args)
+    : FilterAttributePostingListIterator(baseSearchCtx, matchData),
       _iterator(std::forward<Args>(args)...),
       _postingInfo(1, 1),
       _postingInfoValid(false)
@@ -199,8 +201,8 @@ void
 AttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AttributeIterator::visitMembers(visitor);
-    visit(visitor, "searchcontext.attribute", _searchContext.attribute().getName());
-    visit(visitor, "searchcontext.queryterm", _searchContext.queryTerm());
+    visit(visitor, "searchcontext.attribute", _concreteSearchCtx.attribute().getName());
+    visit(visitor, "searchcontext.queryterm", _concreteSearchCtx.queryTerm());
 }
 
 template <typename SC>
@@ -208,21 +210,21 @@ void
 FilterAttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     FilterAttributeIterator::visitMembers(visitor);
-    visit(visitor, "searchcontext.attribute", _searchContext.attribute().getName());
-    visit(visitor, "searchcontext.queryterm", _searchContext.queryTerm());
+    visit(visitor, "searchcontext.attribute", _concreteSearchCtx.attribute().getName());
+    visit(visitor, "searchcontext.queryterm", _concreteSearchCtx.queryTerm());
 }
 
 template <typename SC>
-AttributeIteratorT<SC>::AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
-    : AttributeIterator(matchData),
-      _searchContext(searchContext)
+AttributeIteratorT<SC>::AttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData)
+    : AttributeIterator(concreteSearchCtx, matchData),
+      _concreteSearchCtx(concreteSearchCtx)
 { }
 
 
 template <typename SC>
-FilterAttributeIteratorT<SC>::FilterAttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
-    : FilterAttributeIterator(matchData),
-      _searchContext(searchContext)
+FilterAttributeIteratorT<SC>::FilterAttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData)
+    : FilterAttributeIterator(concreteSearchCtx, matchData),
+      _concreteSearchCtx(concreteSearchCtx)
 { }
 
 
@@ -230,7 +232,7 @@ template <typename SC>
 void
 FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
-    const SC & sc(_sc);
+    const SC & sc(_concreteSearchCtx);
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
@@ -259,7 +261,7 @@ template <typename SC>
 void
 FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
-    const SC & sc(_sc);
+    const SC & sc(_concreteSearchCtx);
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
@@ -274,7 +276,7 @@ template <typename SC>
 void
 FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
     (void) begin_id;
-    const SC & sc(_sc);
+    const SC & sc(_concreteSearchCtx);
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
@@ -287,7 +289,7 @@ FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
 template <typename SC>
 void
 FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) {
-    const SC & sc(_sc);
+    const SC & sc(_concreteSearchCtx);
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     if (sc._low == sc._high) {
         const BitVector * bv = attr.getBitVector(sc._low);
@@ -306,7 +308,7 @@ FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) 
 template <typename SC>
 std::unique_ptr<BitVector>
 FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
-    const SC & sc(_sc);
+    const SC & sc(_concreteSearchCtx);
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     int i = sc._low;
     BitVector::UP result;
@@ -338,7 +340,7 @@ AttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
     if (isAtEnd(docId)) {
         setAtEnd();
-    } else if (_searchContext.matches(docId, _weight)) {
+    } else if (_concreteSearchCtx.matches(docId, _weight)) {
         setDocId(docId);
     }
 }
@@ -349,7 +351,7 @@ FilterAttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
     if (isAtEnd(docId)) {
         setAtEnd();
-    } else if (_searchContext.matches(docId)) {
+    } else if (_concreteSearchCtx.matches(docId)) {
         setDocId(docId);
     }
 }
@@ -359,7 +361,7 @@ void
 AttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
     for (uint32_t nextId = docId; !isAtEnd(nextId); ++nextId) {
-        if (_searchContext.matches(nextId, _weight)) {
+        if (_concreteSearchCtx.matches(nextId, _weight)) {
             setDocId(nextId);
             return;
         }
@@ -372,7 +374,7 @@ void
 FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
     for (uint32_t nextId = docId; !isAtEnd(nextId); ++nextId) {
-        if (_searchContext.matches(nextId)) {
+        if (_concreteSearchCtx.matches(nextId)) {
             setDocId(nextId);
             return;
         }
@@ -383,37 +385,37 @@ FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 template <typename SC>
 void
 AttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
-    AttributeIteratorBase::or_hits_into(_searchContext, result, begin_id);
+    AttributeIteratorBase::or_hits_into(_concreteSearchCtx, result, begin_id);
 }
 
 template <typename SC>
 void
 FilterAttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
-    AttributeIteratorBase::or_hits_into(_searchContext, result, begin_id);
+    AttributeIteratorBase::or_hits_into(_concreteSearchCtx, result, begin_id);
 }
 
 template <typename SC>
 BitVector::UP
 AttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
-    return AttributeIteratorBase::get_hits(_searchContext, begin_id);
+    return AttributeIteratorBase::get_hits(_concreteSearchCtx, begin_id);
 }
 
 template <typename SC>
 BitVector::UP
 FilterAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
-    return AttributeIteratorBase::get_hits(_searchContext, begin_id);
+    return AttributeIteratorBase::get_hits(_concreteSearchCtx, begin_id);
 }
 
 template <typename SC>
 void
 AttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
-    AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
+    AttributeIteratorBase::and_hits_into(_concreteSearchCtx, result, begin_id);
 }
 
 template <typename SC>
 void
 FilterAttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
-    AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
+    AttributeIteratorBase::and_hits_into(_concreteSearchCtx, result, begin_id);
 }
 
 } // namespace search

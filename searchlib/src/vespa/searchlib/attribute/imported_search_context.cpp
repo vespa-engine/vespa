@@ -67,7 +67,7 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
             DocIt postings;
             auto array = _merger.getArray();
             postings.set(&array[0], &array[array.size()]);
-            return std::make_unique<AttributePostingListIteratorT<DocIt>>(true, matchData, postings);
+            return std::make_unique<AttributePostingListIteratorT<DocIt>>(*this, true, matchData, postings);
         }
     } else if (_merger.hasBitVector()) {
         return BitVectorIterator::create(_merger.getBitVector(), _merger.getDocIdLimit(), *matchData, strict);

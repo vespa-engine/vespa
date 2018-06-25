@@ -23,7 +23,8 @@ PostingListSearchContext(const Dictionary &dictionary,
                          bool hasWeight,
                          const EnumStoreBase &esb,
                          uint32_t minBvDocFreq,
-                         bool useBitVector)
+                         bool useBitVector,
+                         const ISearchContext &baseSearchCtx)
     : _frozenDictionary(dictionary.getFrozenView()),
       _lowerDictItr(BTreeNode::Ref(), dictionary.getAllocator()),
       _upperDictItr(BTreeNode::Ref(), dictionary.getAllocator()),
@@ -39,7 +40,8 @@ PostingListSearchContext(const Dictionary &dictionary,
       _PLSTC(0.0),
       _esb(esb),
       _minBvDocFreq(minBvDocFreq),
-      _gbv(nullptr)
+      _gbv(nullptr),
+      _baseSearchCtx(baseSearchCtx)
 {
 }
 

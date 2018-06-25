@@ -36,8 +36,9 @@ private:
 protected:
     const DocumentMetaStore & _store;
 public:
-    GidAllSearchIterator(TermFieldMatchData *matchData, const DocumentMetaStore &store)
-        : AttributeIteratorBase(matchData),
+    GidAllSearchIterator(const search::attribute::ISearchContext &baseSearchCtx,
+                         TermFieldMatchData *matchData, const DocumentMetaStore &store)
+        : AttributeIteratorBase(baseSearchCtx, matchData),
           _store(store)
     {
     }
@@ -64,9 +65,10 @@ private:
     }
 
 public:
-    GidStrictAllSearchIterator(TermFieldMatchData *matchData,
+    GidStrictAllSearchIterator(const search::attribute::ISearchContext &baseSearchCtx,
+                               TermFieldMatchData *matchData,
                                const DocumentMetaStore &store)
-        : GidAllSearchIterator(matchData, store),
+        : GidAllSearchIterator(baseSearchCtx, matchData, store),
           _numDocs(store.getNumDocs())
     {
     }
@@ -88,8 +90,9 @@ private:
         }
     }
 public:
-    GidSearchIterator(TermFieldMatchData *matchData, const DocumentMetaStore &store, const GlobalId &gid)
-        : GidAllSearchIterator(matchData, store),
+    GidSearchIterator(const search::attribute::ISearchContext &baseSearchCtx,
+                      TermFieldMatchData *matchData, const DocumentMetaStore &store, const GlobalId &gid)
+        : GidAllSearchIterator(baseSearchCtx, matchData, store),
           _gid(gid)
     {
     }
@@ -119,10 +122,10 @@ SearchIterator::UP
 SearchContext::createIterator(TermFieldMatchData *matchData, bool strict)
 {
     return _isWord
-        ? std::make_unique<GidSearchIterator>(matchData, getStore(), _gid)
+        ? std::make_unique<GidSearchIterator>(*this, matchData, getStore(), _gid)
         : strict
-            ?  std::make_unique<GidStrictAllSearchIterator>(matchData, getStore())
-            :  std::make_unique<GidAllSearchIterator>(matchData, getStore());
+            ?  std::make_unique<GidStrictAllSearchIterator>(*this, matchData, getStore())
+            :  std::make_unique<GidAllSearchIterator>(*this, matchData, getStore());
 }
 
 const DocumentMetaStore &
