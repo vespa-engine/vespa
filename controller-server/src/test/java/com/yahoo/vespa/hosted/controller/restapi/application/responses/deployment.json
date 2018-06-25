@@ -25,12 +25,12 @@
   "cost": {
     "tco": 74,
     "waste": 0,
-    "utilization": 2.999999999999999,
+    "utilization": 2.9999999999999996,
     "cluster": {
       "cluster1": {
         "count": 2,
         "resource": "cpu",
-        "utilization": 2.999999999999999,
+        "utilization": 2.9999999999999996,
         "tco": 74,
         "waste": 0,
         "flavor": "flavor1",
@@ -40,7 +40,7 @@
         "flavorDisk":50.0,
         "type": "content",
         "util": {
-          "cpu": 2.999999999999999,
+          "cpu": 2.9999999999999996,
           "mem": 0.4285714285714286,
           "disk": 0.5714285714285715,
           "diskBusy": 1.0
