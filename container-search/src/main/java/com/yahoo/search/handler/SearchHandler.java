@@ -33,6 +33,9 @@ import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -58,6 +61,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.io.IOUtils;
 import org.json.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -85,6 +89,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
+
+    private static final String JSON_CONTENT_TYPE = "application/json";
 
     private static Logger log = Logger.getLogger(SearchHandler.class.getName());
 
@@ -292,26 +298,25 @@ public class SearchHandler extends LoggingRequestHandler {
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
 
-
         // Create query
         Query query;
-
-        //SLETT LINJE UNDER
-        Map<String, String> a = null;
-
-        if (checkJSON(request.getData()) && request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST) {
-            JSONObject json = null;
-
+        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST && request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE).equals(JSON_CONTENT_TYPE)) {
+            Inspector inspector = null;
             try {
+                InputStream inputStream = request.getData();
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                byte[] buffer = new byte[0xFFFF];
+                for (int len = inputStream.read(buffer); len != -1; len = inputStream.read(buffer)) {
+                    outputStream.write(buffer, 0, len);
+                }
+                inspector = SlimeUtils.jsonToSlime(outputStream.toByteArray()).get();
 
-                String jsonString = "{" + IOUtils.toString(request.getData(), StandardCharsets.UTF_8);
-                System.out.println("Received JSON: " + jsonString);
-                json = new JSONObject(jsonString);
             } catch (IOException e) { e.printStackTrace();
             }
 
-
-            Map<String, String> requestMap = createRequestMapping(json);
+            // Create request-mapping
+            Map<String, String> requestMap = new HashMap<>();
+            createRequestMapping(inspector, requestMap, "");
             query = new Query(request, requestMap, queryProfile);
 
 
@@ -589,43 +594,33 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
-    private boolean checkJSON(InputStream inputStream) {
-        try {
-            byte[] bytes = new byte[1];
 
-            inputStream.read(bytes);
-            if (bytes[0] == 0x7B) {
-                // InputStream is believed to be JSON
-                return true;
+    private void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
+        inspector.traverse((ObjectTraverser) (key, value) -> {
+            String delimiter = parent.equals("") ? "" : ".";
+            switch (value.type()) {
+                case BOOL:
+                    map.put(parent + delimiter + key, Boolean.toString(value.asBool()));
+                    break;
+                case DOUBLE:
+                    map.put(parent + delimiter + key, Double.toString(value.asDouble()));
+                    break;
+                case LONG:
+                    map.put(parent + delimiter + key, Long.toString(value.asLong()));
+                    break;
+                case STRING:
+                    map.put(parent + delimiter + key, value.asString());
+                    break;
+                case OBJECT:
+                    if (key.equals("grouping")) {
+                        createRequestMapping(value, map, "");
+                    } else {
+                        createRequestMapping(value, map, String.join(delimiter, parent, key));
+                        break;
+                    }
             }
-        } catch (IOException e) {
-            // Something went wrong
-        }
 
-        return false;
-
-    }
-
-    private Map<String, String> createRequestMapping(JSONObject json) {
-        // Create mapping
-        Map<String, String> requestMap = new HashMap<String, String>();
-        Iterator<?> keys = json.keys();
-
-        while( keys.hasNext() ){
-            String key = (String)keys.next();
-            String value = null;
-            try {
-                value = json.getString(key);
-                requestMap.put(key, value);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return requestMap;
-
-
-
+        });
     }
 
 

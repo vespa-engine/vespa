@@ -327,11 +327,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
 
     private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
-        String content = requestMap.entrySet()
-                .stream()
-                .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
-                .collect(Collectors.joining(", "));
-        System.out.println(content);
         startTime = System.currentTimeMillis();
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal

@@ -3,41 +3,28 @@ package com.yahoo.search.handler.test;
 
 import com.yahoo.container.Container;
 import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
-import com.yahoo.container.jdisc.AsyncHttpResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 
-import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
-import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
-import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.net.HostName;
-import com.yahoo.processing.handler.ResponseStatus;
-import com.yahoo.search.Query;
-import com.yahoo.search.Result;
-import com.yahoo.search.Searcher;
-import com.yahoo.search.handler.HttpSearchResponse;
 import com.yahoo.search.handler.SearchHandler;
-import com.yahoo.search.rendering.DefaultRenderer;
-import com.yahoo.search.result.ErrorMessage;
-import com.yahoo.search.result.Hit;
-import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
-import com.yahoo.text.JSON;
-import org.json.JSONException;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
-import java.net.URI;
 import java.util.*;
-import java.util.concurrent.Executors;
 
+import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -52,6 +39,7 @@ public class JSONSearchHandlerTestCase {
     private static String tempDir = "";
     private static String configId = null;
     private static final String uri = "http://localhost?";
+    private static final String JSON_CONTENT_TYPE = "application/json";
 
     @Rule
     public TemporaryFolder tempfolder = new TemporaryFolder();
@@ -98,7 +86,7 @@ public class JSONSearchHandlerTestCase {
         JSONObject json = new JSONObject();
         json.put("query", "test");
         json.put("searchChain", "classLoadingError");
-        assertTrue(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString()).readAll().contains("NoClassDefFoundError"));
+        assertTrue(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll().contains("NoClassDefFoundError"));
     }
 
 
@@ -107,7 +95,7 @@ public class JSONSearchHandlerTestCase {
         JSONObject json = new JSONObject();
         json.put("query", "test");
         json.put("searchChain", "exceptionInPlugin");
-        assertTrue(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString()).readAll().contains("NullPointerException"));
+        assertTrue(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll().contains("NullPointerException"));
     }
 
     @Test
@@ -142,7 +130,7 @@ public class JSONSearchHandlerTestCase {
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             JSONObject json = new JSONObject();
             json.put("yql", "select * from foo where bar > 1453501295");
-            RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString());
+            RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
             responseHandler.readAll();
             assertThat(responseHandler.getStatus(), is(400));
         }
@@ -162,9 +150,8 @@ public class JSONSearchHandlerTestCase {
         json.put("hits", 20);
         json.put("offset", -20);
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
-                testDriver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString());
+                testDriver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
         String response = responseHandler.readAll();
-        System.out.println(response);
         assertThat(responseHandler.getStatus(), is(400));
         assertThat(response, containsString("offset"));
         assertThat(response, containsString("\"code\":" + com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER.code));
@@ -194,7 +181,7 @@ public class JSONSearchHandlerTestCase {
                 "    <field name=\"relevancy\">1.0</field>\n" +
                 "    <field name=\"uri\">testHit</field>\n" +
                 "  </hit>\n" +
-                "</result>\n", driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString()).readAll());
+                "</result>\n", driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll());
     }
 
 
@@ -204,7 +191,7 @@ public class JSONSearchHandlerTestCase {
         JSONObject json = new JSONObject();
         json.put("query", "web_service_status_code");
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
-                driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString());
+                driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
         String response = responseHandler.readAll();
         assertThat(responseHandler.getStatus(), is(406));
         assertThat(response, containsString("\"code\":" + 406));
@@ -277,7 +264,7 @@ public class JSONSearchHandlerTestCase {
                     "</result>\n";
 
     private void assertXmlResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
-        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString()), xmlResult);
+        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), xmlResult);
     }
 
 
@@ -288,7 +275,7 @@ public class JSONSearchHandlerTestCase {
             + "]}}";
 
     private void assertJsonResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
-        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString()), jsonResult);
+        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), jsonResult);
 
     }
 
@@ -304,7 +291,7 @@ public class JSONSearchHandlerTestCase {
                     "</result>\n";
 
     private void assertTiledResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
-        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString()), tiledResult);
+        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), tiledResult);
     }
 
     private static final String pageResult =
@@ -321,7 +308,7 @@ public class JSONSearchHandlerTestCase {
                     "</page>\n";
 
     private void assertPageResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
-        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString()), pageResult);
+        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), pageResult);
     }
 
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
@@ -343,128 +330,146 @@ public class JSONSearchHandlerTestCase {
 
 
 
-    /*
-    private Map<String, String> createRequestMapping(JSONObject json) {
-        // Create mapping
-        Map<String, String> requestMap = new HashMap<String, String>();
-        Iterator<?> keys = json.keys();
-
-        while( keys.hasNext() ){
-            String key = (String)keys.next();
-            String value = null;
-            try {
-                value = json.getString(key);
-                requestMap.put(key, value);
-            } catch (JSONException e) {
-                e.printStackTrace();
+    private void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
+        inspector.traverse((ObjectTraverser) (key, value) -> {
+            String delimiter = parent.equals("") ? "" : ".";
+            switch (value.type()) {
+                case BOOL:
+                    map.put(parent + delimiter + key, Boolean.toString(value.asBool()));
+                    break;
+                case DOUBLE:
+                    map.put(parent + delimiter + key, Double.toString(value.asDouble()));
+                    break;
+                case LONG:
+                    map.put(parent + delimiter + key, Long.toString(value.asLong()));
+                    break;
+                case STRING:
+                    map.put(parent + delimiter + key, value.asString());
+                    break;
+                case OBJECT:
+                    if (key.equals("grouping")) {
+                        createRequestMapping(value, map, "");
+                    } else {
+                        createRequestMapping(value, map, String.join(delimiter, parent, key));
+                        break;
+                    }
             }
-        }
-        return requestMap;
+
+        });
     }
 
     @Test
     public void testRequestMapping() throws Exception {
         JSONObject json = new JSONObject();
-        json.put("yql","select * from sources * where sddocname contains \"blog_post\" limit 0 | all(group(date) max(3) order(-count())each(output(count())));");
-        json.put("hits","10");
-        json.put("offset","5");
-        json.put("queryProfile","foo");
-        json.put("nocache","false");
-        json.put("groupingSessionCache","false");
-        json.put("searchChain","exceptionInPlugin");
-        json.put("timeout","0");
-        json.put("tracelevel","1");
-        json.put("trace.timestamps","false");
+        json.put("yql", "select * from sources * where sddocname contains \"blog_post\" limit 0 | all(group(date) max(3) order(-count())each(output(count())));");
+        json.put("hits", 10.0);
+        json.put("offset", 5);
+        json.put("queryProfile", "foo");
+        json.put("nocache", false);
+        json.put("groupingSessionCache", false);
+        json.put("searchChain", "exceptionInPlugin");
+        json.put("timeout", 0);
+        json.put("tracelevel", 1);
+        json.put("trace.timestamps", false);
 
-            JSONObject model = new JSONObject();
-            model.put("defaultIndex","1");
-            model.put("encoding","json");
-            model.put("filter", "default");
-            model.put("language","en");
-            model.put("queryString", "abc");
-            model.put("restrict", "_doc,json,xml");
-            model.put("searchPath", "node1");
-            model.put("sources", "source1,source2");
-            model.put("type", "yql");
+
+        JSONObject model = new JSONObject();
+        model.put("defaultIndex", 1);
+        model.put("encoding", "json");
+        model.put("filter", "default");
+        model.put("language", "en");
+        model.put("queryString", "abc");
+        model.put("restrict", "_doc,json,xml");
+        model.put("searchPath", "node1");
+        model.put("sources", "source1,source2");
+        model.put("type", "yql");
         json.put("model", model);
-    
-            JSONObject ranking = new JSONObject();
-            ranking.put("location","123789.89123N;128123W");
-            ranking.put("features","none");
-            ranking.put("listFeatures", "boolean");
-            ranking.put("profile","1");
-            ranking.put("properties", "default");
-            ranking.put("sorting", "desc");
-            ranking.put("freshness", "0.05");
-            ranking.put("queryCache", "false");
-    
-                JSONObject matchPhase = new JSONObject();
-                matchPhase.put("maxHits","100");
-                matchPhase.put("attribute","title");
-                matchPhase.put("ascending", "true");
-                
-                    JSONObject diversity = new JSONObject();
-                    diversity.put("attribute","title");
-                    diversity.put("minGroups","1");
-                    matchPhase.put("diversity", diversity);
-                ranking.put("matchPhase", matchPhase);
+
+        JSONObject ranking = new JSONObject();
+        ranking.put("location", "123789.89123N;128123W");
+        ranking.put("features", "none");
+        ranking.put("listFeatures", false);
+        ranking.put("profile", "1");
+        ranking.put("properties", "default");
+        ranking.put("sorting", "desc");
+        ranking.put("freshness", "0.05");
+        ranking.put("queryCache", false);
+
+        JSONObject matchPhase = new JSONObject();
+        matchPhase.put("maxHits", "100");
+        matchPhase.put("attribute", "title");
+        matchPhase.put("ascending", true);
+
+        JSONObject diversity = new JSONObject();
+        diversity.put("attribute", "title");
+        diversity.put("minGroups", 1);
+        matchPhase.put("diversity", diversity);
+        ranking.put("matchPhase", matchPhase);
         json.put("ranking", ranking);
 
-            JSONObject presentation = new JSONObject();
-            presentation.put("bolding","true");
-            presentation.put("format","json");
-            presentation.put("summary", "none");
-            presentation.put("template","json");
-            presentation.put("timing", "false");
+        JSONObject presentation = new JSONObject();
+        presentation.put("bolding", true);
+        presentation.put("format", "json");
+        presentation.put("summary", "none");
+        presentation.put("template", "json");
+        presentation.put("timing", false);
         json.put("presentation", presentation);
 
-            JSONObject grouping = new JSONObject();
-            grouping.put("select","_all");
-            grouping.put("collapsefield","none");
-            grouping.put("collapsesize", "2");
-            grouping.put("collapse.summary","default");
+        JSONObject grouping = new JSONObject();
+        grouping.put("select", "_all");
+        grouping.put("collapsefield", "none");
+        grouping.put("collapsesize", 2);
+        grouping.put("collapse.summary", "default");
         json.put("grouping", grouping);
 
-            JSONObject pos = new JSONObject();
-            pos.put("ll","1263123N;1231.9W");
-            pos.put("radius","71234m");
-            pos.put("bb", "1237123W;123218N");
-            pos.put("attribute","default");
+        JSONObject pos = new JSONObject();
+        pos.put("ll", "1263123N;1231.9W");
+        pos.put("radius", "71234m");
+        pos.put("bb", "1237123W;123218N");
+        pos.put("attribute", "default");
         json.put("pos", pos);
 
-            JSONObject streaming = new JSONObject();
-            streaming.put("userid",";123");
-            streaming.put("groupname","abc");
-            streaming.put("selection", "none");
-            streaming.put("priority","10");
-            streaming.put("maxbucketspervisitor","5");
+        JSONObject streaming = new JSONObject();
+        streaming.put("userid", 123);
+        streaming.put("groupname", "abc");
+        streaming.put("selection", "none");
+        streaming.put("priority", 10);
+        streaming.put("maxbucketspervisitor", 5);
         json.put("streaming", streaming);
 
-            JSONObject rules = new JSONObject();
-            rules.put("off",";false");
-            rules.put("rulebase","default");
+        JSONObject rules = new JSONObject();
+        rules.put("off", false);
+        rules.put("rulebase", "default");
         json.put("rules", rules);
 
-        json.put("recall","none");
-        json.put("user", "123");
-        json.put("nocachewrite", "false");
-        json.put("hitcountestimate", "true");
-        json.put("metrics.ignore", "false");
-
-        //Create reqMap from JSON.
-        //Create URI-Request with same query
-        //Compare maps
-
-        System.out.println(json.toString());
-        assertTrue(false);
+        json.put("recall", "none");
+        json.put("user", 123);
+        json.put("nocachewrite", false);
+        json.put("hitcountestimate", true);
+        json.put("metrics.ignore", false);
 
 
+        // Create mapping
+        Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes("utf-8")).get();
+        Map<String, String> map = new HashMap<>();
+        createRequestMapping(inspector, map, "");
 
+        // Create GET-request with same query
+        String url = uri + "&model.sources=source1%2Csource2&select=_all&model.language=en&presentation.timing=false&pos.attribute=default&pos.radius=71234m&model.searchPath=node1&nocachewrite=false&ranking.matchPhase.maxHits=100&presentation.summary=none" +
+                "&nocache=false&model.type=yql&collapse.summary=default&ranking.matchPhase.diversity.minGroups=1&ranking.location=123789.89123N%3B128123W&ranking.queryCache=false&offset=5&streaming.groupname=abc&groupingSessionCache=false" +
+                "&presentation.template=json&rules.off=false&ranking.properties=default&searchChain=exceptionInPlugin&pos.ll=1263123N%3B1231.9W&ranking.sorting=desc&ranking.matchPhase.ascending=true&ranking.features=none&hitcountestimate=true" +
+                "&model.filter=default&metrics.ignore=false&collapsefield=none&ranking.profile=1&rules.rulebase=default&model.defaultIndex=1&tracelevel=1&ranking.listFeatures=false&timeout=0&presentation.format=json" +
+                "&yql=select+%2A+from+sources+%2A+where+sddocname+contains+%22blog_post%22+limit+0+%7C+all%28group%28date%29+max%283%29+order%28-count%28%29%29each%28output%28count%28%29%29%29%29%3B&recall=none&streaming.maxbucketspervisitor=5" +
+                "&queryProfile=foo&presentation.bolding=true&model.encoding=json&model.queryString=abc&streaming.selection=none&trace.timestamps=false&collapsesize=2&streaming.priority=10&ranking.matchPhase.diversity.attribute=title" +
+                "&ranking.matchPhase.attribute=title&hits=10&streaming.userid=123&pos.bb=1237123W%3B123218N&model.restrict=_doc%2Cjson%2Cxml&ranking.freshness=0.05&user=123";
 
+        final HttpRequest request = HttpRequest.createTestRequest(url, GET);
 
+        // Get mapping
+        Map<String, String> propertyMap = request.propertyMap();
+        assertEquals("Should have same mapping for properties", map, propertyMap);
+    }
 
-
-    }*/
 
 
 }
