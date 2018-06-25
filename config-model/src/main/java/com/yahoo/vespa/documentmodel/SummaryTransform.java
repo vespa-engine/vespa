@@ -24,7 +24,7 @@ public enum SummaryTransform {
 
     private String name;
 
-    private SummaryTransform(String name) {
+    SummaryTransform(String name) {
         this.name=name;
     }
 

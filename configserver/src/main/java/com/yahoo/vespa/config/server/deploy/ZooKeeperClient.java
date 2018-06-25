@@ -360,8 +360,8 @@ public class ZooKeeperClient {
         }
     }
 
-    public void write(AllocatedHosts info) throws IOException {
-        configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(), info.toJson());
+    public void write(AllocatedHosts hosts) throws IOException {
+        configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(), hosts.toJson());
     }
 
     public void write(Map<Version, FileRegistry> fileRegistryMap) {

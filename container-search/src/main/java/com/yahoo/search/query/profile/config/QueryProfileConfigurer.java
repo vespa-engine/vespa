@@ -42,23 +42,23 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
     }
 
     public static QueryProfileRegistry createFromConfig(QueryProfilesConfig config) {
-        QueryProfileRegistry registry=new QueryProfileRegistry();
+        QueryProfileRegistry registry = new QueryProfileRegistry();
 
         // Pass 1: Create all profiles and profile types
         for (QueryProfilesConfig.Queryprofiletype profileTypeConfig : config.queryprofiletype()) {
-            createProfileType(profileTypeConfig,registry.getTypeRegistry());
+            createProfileType(profileTypeConfig, registry.getTypeRegistry());
         }
         for (QueryProfilesConfig.Queryprofile profileConfig : config.queryprofile()) {
-            createProfile(profileConfig,registry);
+            createProfile(profileConfig, registry);
         }
 
         // Pass 2: Resolve references and add content
         for (QueryProfilesConfig.Queryprofiletype profileTypeConfig : config.queryprofiletype()) {
-            fillProfileType(profileTypeConfig,registry.getTypeRegistry());
+            fillProfileType(profileTypeConfig, registry.getTypeRegistry());
         }
 
-        // To ensure topological sorting, using DPS. This will _NOT_ detect cycles (but it will not fail if they
-        // exist either)
+        // To ensure topological sorting, using DPS. This will _NOT_ detect cycles
+        // (but it will not fail if they exist)
         Set<ComponentId> filled = new HashSet<>();
         for (QueryProfilesConfig.Queryprofile profileConfig : config.queryprofile()) {
             fillProfile(profileConfig, config, registry, filled);
@@ -73,29 +73,29 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
         subscriber.close();
     }
 
-    private static void createProfile(QueryProfilesConfig.Queryprofile config,QueryProfileRegistry registry) {
-        QueryProfile profile=new QueryProfile(config.id());
+    private static void createProfile(QueryProfilesConfig.Queryprofile config, QueryProfileRegistry registry) {
+        QueryProfile profile = new QueryProfile(config.id());
         try {
-            String typeId=config.type();
-            if (typeId!=null && !typeId.isEmpty())
+            String typeId = config.type();
+            if (typeId != null && ! typeId.isEmpty())
                 profile.setType(registry.getType(typeId));
 
             if (config.dimensions().size()>0) {
-                String[] dimensions=new String[config.dimensions().size()];
-                for (int i=0; i<config.dimensions().size(); i++)
-                    dimensions[i]=config.dimensions().get(i);
+                String[] dimensions = new String[config.dimensions().size()];
+                for (int i = 0; i < config.dimensions().size(); i++)
+                    dimensions[i] = config.dimensions().get(i);
                 profile.setDimensions(dimensions);
             }
 
             registry.register(profile);
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid " + profile,e);
+            throw new IllegalArgumentException("Invalid " + profile, e);
         }
     }
 
     private static void createProfileType(QueryProfilesConfig.Queryprofiletype config, QueryProfileTypeRegistry registry) {
-        QueryProfileType type=new QueryProfileType(config.id());
+        QueryProfileType type = new QueryProfileType(config.id());
         type.setStrict(config.strict());
         type.setMatchAsPath(config.matchaspath());
         registry.register(type);
@@ -105,46 +105,46 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
                                     QueryProfilesConfig queryProfilesConfig,
                                     QueryProfileRegistry registry,
                                     Set<ComponentId> filled) {
-        QueryProfile profile=registry.getComponent(new ComponentSpecification(config.id()).toId());
+        QueryProfile profile = registry.getComponent(new ComponentSpecification(config.id()).toId());
         if (filled.contains(profile.getId())) return;
         filled.add(profile.getId());
         try {
             for (String inheritedId : config.inherit()) {
-                QueryProfile inherited=registry.getComponent(inheritedId);
-                if (inherited==null)
+                QueryProfile inherited = registry.getComponent(inheritedId);
+                if (inherited == null)
                     throw new IllegalArgumentException("Inherited query profile '" + inheritedId + "' in " + profile + " was not found");
                 fillProfile(inherited, queryProfilesConfig, registry, filled);
                 profile.addInherited(inherited);
             }
 
             for (QueryProfilesConfig.Queryprofile.Reference referenceConfig : config.reference()) {
-                QueryProfile referenced=registry.getComponent(referenceConfig.value());
-                if (referenced==null)
+                QueryProfile referenced = registry.getComponent(referenceConfig.value());
+                if (referenced == null)
                     throw new IllegalArgumentException("Query profile '" + referenceConfig.value() + "' referenced as '" +
                             referenceConfig.name() + "' in " + profile + " was not found");
-                profile.set(referenceConfig.name(),referenced, registry);
-                if (referenceConfig.overridable()!=null && !referenceConfig.overridable().isEmpty())
-                    profile.setOverridable(referenceConfig.name(),BooleanParser.parseBoolean(referenceConfig.overridable()),null);
+                profile.set(referenceConfig.name(), referenced, registry);
+                if (referenceConfig.overridable() != null && !referenceConfig.overridable().isEmpty())
+                    profile.setOverridable(referenceConfig.name(), BooleanParser.parseBoolean(referenceConfig.overridable()), null);
             }
 
             for (QueryProfilesConfig.Queryprofile.Property propertyConfig : config.property()) {
-                profile.set(propertyConfig.name(),propertyConfig.value(), registry);
-                if (propertyConfig.overridable()!=null && !propertyConfig.overridable().isEmpty())
-                    profile.setOverridable(propertyConfig.name(),BooleanParser.parseBoolean(propertyConfig.overridable()),null);
+                profile.set(propertyConfig.name(), propertyConfig.value(), registry);
+                if (propertyConfig.overridable() != null && ! propertyConfig.overridable().isEmpty())
+                    profile.setOverridable(propertyConfig.name(), BooleanParser.parseBoolean(propertyConfig.overridable()), null);
             }
 
             for (QueryProfilesConfig.Queryprofile.Queryprofilevariant variantConfig : config.queryprofilevariant()) {
-                String[] forDimensionValueArray=new String[variantConfig.fordimensionvalues().size()];
-                for (int i=0; i<variantConfig.fordimensionvalues().size(); i++) {
-                    forDimensionValueArray[i]=variantConfig.fordimensionvalues().get(i).trim();
+                String[] forDimensionValueArray = new String[variantConfig.fordimensionvalues().size()];
+                for (int i = 0; i<variantConfig.fordimensionvalues().size(); i++) {
+                    forDimensionValueArray[i] = variantConfig.fordimensionvalues().get(i).trim();
                     if ("*".equals(forDimensionValueArray[i]))
-                        forDimensionValueArray[i]=null;
+                        forDimensionValueArray[i] = null;
                 }
-                DimensionValues forDimensionValues=DimensionValues.createFrom(forDimensionValueArray);
+                DimensionValues forDimensionValues = DimensionValues.createFrom(forDimensionValueArray);
 
                 for (String inheritedId : variantConfig.inherit()) {
-                    QueryProfile inherited=registry.getComponent(inheritedId);
-                    if (inherited==null)
+                    QueryProfile inherited = registry.getComponent(inheritedId);
+                    if (inherited == null)
                         throw new IllegalArgumentException("Inherited query profile '" + inheritedId + "' in " + profile +
                                                            " for '" + forDimensionValues + "' was not found");
                     fillProfile(inherited, queryProfilesConfig, registry, filled);
@@ -153,7 +153,7 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
 
                 for (QueryProfilesConfig.Queryprofile.Queryprofilevariant.Reference referenceConfig : variantConfig.reference()) {
                     QueryProfile referenced=registry.getComponent(referenceConfig.value());
-                    if (referenced==null)
+                    if (referenced == null)
                         throw new IllegalArgumentException("Query profile '" + referenceConfig.value() + "' referenced as '" +
                                 referenceConfig.name() + "' in " + profile + " for '" + forDimensionValues + "' was not found");
                     profile.set(referenceConfig.name(), referenced, forDimensionValues, registry);
@@ -167,7 +167,7 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
 
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid " + profile,e);
+            throw new IllegalArgumentException("Invalid " + profile, e);
         }
     }
 
@@ -218,7 +218,7 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
             type.addField(field, registry);
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid field '" + fieldConfig.name() + "' in " + type,e);
+            throw new IllegalArgumentException("Invalid field '" + fieldConfig.name() + "' in " + type, e);
         }
     }
 

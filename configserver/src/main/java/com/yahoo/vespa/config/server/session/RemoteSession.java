@@ -62,7 +62,7 @@ public class RemoteSession extends Session {
 
         return ApplicationSet.fromList(applicationLoader.buildModels(zooKeeperClient.readApplicationId(),
                                                                      zooKeeperClient.readVespaVersion(),
-                                                                     zooKeeperClient.loadApplicationPackage(),
+                                                                     applicationPackage,
                                                                      new SettableOptional<>(allocatedHosts),
                                                                      clock.instant()));
     }
