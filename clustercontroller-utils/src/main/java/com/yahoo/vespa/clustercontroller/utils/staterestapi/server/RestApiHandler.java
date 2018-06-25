@@ -10,6 +10,7 @@ import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.JsonHttpResult;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.DeadlineExceededException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidOptionValueException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OtherMasterException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
@@ -22,15 +23,18 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RestApiHandler implements HttpRequestHandler {
+    public static final Duration MAX_TIMEOUT = Duration.ofHours(1);
 
     private final static Logger log = Logger.getLogger(RestApiHandler.class.getName());
 
@@ -77,6 +81,7 @@ public class RestApiHandler implements HttpRequestHandler {
                 return new JsonHttpResult().setJson(jsonWriter.createJson(data));
             } else {
                 final JsonReader.SetRequestData setRequestData = jsonReader.getStateRequestData(request);
+                final Optional<Duration> timeout = parseTimeout(request.getOption("timeout", null));
                 SetResponse setResponse = restApi.setUnitState(new SetUnitStateRequest() {
                     @Override
                     public Map<String, UnitState> getNewState() {
@@ -91,7 +96,7 @@ public class RestApiHandler implements HttpRequestHandler {
                     @Override
                     public ResponseWait getResponseWait() { return setRequestData.responseWait; }
                     @Override
-                    public TimeBudget timeBudget() { return TimeBudget.from(clock, start, setRequestData.timeout); }
+                    public TimeBudget timeBudget() { return TimeBudget.from(clock, start, timeout); }
                 });
                 return new JsonHttpResult().setJson(jsonWriter.createJson(setResponse));
             }
@@ -191,4 +196,24 @@ public class RestApiHandler implements HttpRequestHandler {
         return value;
     }
 
+    static Optional<Duration> parseTimeout(String timeoutOption) throws InvalidContentException {
+        if (timeoutOption == null) {
+            return Optional.empty();
+        }
+
+        float timeoutSeconds;
+        try {
+            timeoutSeconds = Float.parseFloat(timeoutOption);
+        } catch (NumberFormatException e) {
+            throw new InvalidContentException("value of timeout->" + timeoutOption + " is not a float");
+        }
+
+        if (timeoutSeconds <= 0.0) {
+            return Optional.of(Duration.ZERO);
+        } else if (timeoutSeconds <= MAX_TIMEOUT.getSeconds()) {
+            return Optional.of(Duration.ofMillis(Math.round(timeoutSeconds * 1000)));
+        } else {
+            throw new InvalidContentException("value of timeout->" + timeoutOption + " exceeds max timeout " + MAX_TIMEOUT);
+        }
+    }
 }

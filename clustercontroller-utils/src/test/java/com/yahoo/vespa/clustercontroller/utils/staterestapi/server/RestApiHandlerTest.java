@@ -9,12 +9,12 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
-public class JsonReaderTest {
+public class RestApiHandlerTest {
     @Test
     public void testParsingOfTimeout() throws InvalidContentException {
-        assertEquals(Optional.empty(), JsonReader.parseTimeout(null));
-        assertEquals(Optional.of(Duration.ofMillis(12500)), JsonReader.parseTimeout("12.5"));
-        assertEquals(Optional.of(Duration.ofMillis(0)), JsonReader.parseTimeout("-1"));
-        assertEquals(Optional.of(Duration.ofMillis(0)), JsonReader.parseTimeout("0.0001"));
+        assertEquals(Optional.empty(), RestApiHandler.parseTimeout(null));
+        assertEquals(Optional.of(Duration.ofMillis(12500)), RestApiHandler.parseTimeout("12.5"));
+        assertEquals(Optional.of(Duration.ofMillis(0)), RestApiHandler.parseTimeout("-1"));
+        assertEquals(Optional.of(Duration.ofMillis(0)), RestApiHandler.parseTimeout("0.0001"));
     }
 }

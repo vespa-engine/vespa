@@ -8,17 +8,10 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 public class JsonReader {
-    public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
-    public static final Duration MAX_TIMEOUT = Duration.ofHours(1);
-    private static final long MICROS_IN_SECOND = TimeUnit.SECONDS.toMillis(1);
-
     private static class UnitStateImpl implements UnitState {
         private final String id;
         private final String reason;
@@ -43,16 +36,13 @@ public class JsonReader {
         final Map<String, UnitState> stateMap;
         final SetUnitStateRequest.Condition condition;
         final SetUnitStateRequest.ResponseWait responseWait;
-        final Optional<Duration> timeout;
 
         public SetRequestData(Map<String, UnitState> stateMap,
                               SetUnitStateRequest.Condition condition,
-                              SetUnitStateRequest.ResponseWait responseWait,
-                              Optional<Duration> timeout) {
+                              SetUnitStateRequest.ResponseWait responseWait) {
             this.stateMap = stateMap;
             this.condition = condition;
             this.responseWait = responseWait;
-            this.timeout = timeout;
         }
     }
 
@@ -110,32 +100,6 @@ public class JsonReader {
             stateMap.put(type, new UnitStateImpl(code, reason));
         }
 
-        final Optional<Duration> timeout = parseTimeout(request.getOption("timeout", null));
-
-        return new SetRequestData(stateMap, condition, responseWait, timeout);
+        return new SetRequestData(stateMap, condition, responseWait);
     }
-
-    public static Optional<Duration> parseTimeout(String timeoutOption) throws InvalidContentException {
-        if (timeoutOption == null) {
-            return Optional.empty();
-        } else {
-            float timeoutSeconds;
-            try {
-                timeoutSeconds = Float.parseFloat(timeoutOption);
-            } catch (NumberFormatException e) {
-                throw new InvalidContentException("value of timeout->" + timeoutOption + " is not a float");
-            }
-
-            if (timeoutSeconds <= 0.0) {
-                return Optional.of(Duration.ZERO);
-            } else if (timeoutSeconds <= MAX_TIMEOUT.getSeconds()) {
-                long micros = Math.round(timeoutSeconds * MICROS_IN_SECOND);
-                long nanoAdjustment = TimeUnit.MILLISECONDS.toNanos(micros % MICROS_IN_SECOND);
-                return Optional.of(Duration.ofSeconds(micros / MICROS_IN_SECOND, nanoAdjustment));
-            } else {
-                throw new InvalidContentException("value of timeout->" + timeoutOption + " exceeds max timeout " + MAX_TIMEOUT);
-            }
-        }
-    }
-
 }
