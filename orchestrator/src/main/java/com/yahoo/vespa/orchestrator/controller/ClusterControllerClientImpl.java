@@ -40,7 +40,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
             return clusterControllerApi.apply(api -> api.setNodeState(
                     clusterName,
                     storageNodeIndex,
-                    context.getSuboperationTimeoutInSeconds().orElse(null),
+                    context.getSuboperationTimeoutInSeconds(),
                     stateRequest)
             );
         } catch (IOException e) {
@@ -69,7 +69,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
         try {
             return clusterControllerApi.apply(api -> api.setClusterState(
                     clusterName,
-                    context.getSuboperationTimeoutInSeconds().orElse(null),
+                    context.getSuboperationTimeoutInSeconds(),
                     stateRequest));
         } catch (IOException e) {
             final String message = String.format(

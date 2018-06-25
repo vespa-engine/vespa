@@ -6,26 +6,31 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 /**
- * A TimeBudget can be used to track the time of an ongoing operation with a timeout.
+ * A TimeBudget can be used to track the time of an ongoing operation, possibly with a timeout.
  *
  * @author hakon
  */
 public class TimeBudget {
     private final Clock clock;
     private final Instant start;
-    private final Duration timeout;
+    private final Optional<Duration> timeout;
 
     /** Returns a TimeBudget with a start time of now, and with the given timeout. */
     public static TimeBudget fromNow(Clock clock, Duration timeout) {
-        return new TimeBudget(clock, clock.instant(), timeout);
+        return new TimeBudget(clock, clock.instant(), Optional.of(timeout));
     }
 
-    private TimeBudget(Clock clock, Instant start, Duration timeout) {
+    public static TimeBudget from(Clock clock, Instant start, Optional<Duration> timeout) {
+        return new TimeBudget(clock, start, timeout);
+    }
+
+    private TimeBudget(Clock clock, Instant start, Optional<Duration> timeout) {
         this.clock = clock;
         this.start = start;
-        this.timeout = makeNonNegative(timeout);
+        this.timeout = timeout.map(TimeBudget::makeNonNegative);
     }
 
     /** Returns time since start. */
@@ -33,26 +38,32 @@ public class TimeBudget {
         return nonNegativeBetween(start, clock.instant());
     }
 
-    /** Returns the original timeout. */
-    public Duration originalTimeout() {
+    /** Returns the original timeout, if any. */
+    public Optional<Duration> originalTimeout() {
         return timeout;
     }
 
+    /** Returns the deadline, if present. */
+    public Optional<Instant> deadline() {
+        return timeout.map(start::plus);
+    }
+
     /**
-     * Returns the time until deadline.
+     * Returns the time until deadline, if there is one.
      *
      * @return time until deadline. It's toMillis() is guaranteed to be positive.
      * @throws UncheckedTimeoutException if the deadline has been reached or passed.
      */
-    public Duration timeLeftOrThrow() {
-        Instant now = clock.instant();
-        Duration left = Duration.between(now, start.plus(timeout));
-        if (left.toMillis() <= 0) {
-            throw new UncheckedTimeoutException("Time since start " + nonNegativeBetween(start, now) +
-                    " exceeds timeout " + timeout);
-        }
+    public Optional<Duration> timeLeftOrThrow() {
+        return timeout.map(timeout -> {
+            Duration passed = timePassed();
+            Duration left = timeout.minus(passed);
+            if (left.toMillis() <= 0) {
+                throw new UncheckedTimeoutException("Time since start " + passed + " exceeds timeout " + this.timeout);
+            }
 
-        return left;
+            return left;
+        });
     }
 
     private static Duration nonNegativeBetween(Instant start, Instant end) {

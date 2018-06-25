@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JsonReader {
-
     private static class UnitStateImpl implements UnitState {
         private final String id;
         private final String reason;
@@ -37,7 +36,9 @@ public class JsonReader {
         final Map<String, UnitState> stateMap;
         final SetUnitStateRequest.Condition condition;
         final SetUnitStateRequest.ResponseWait responseWait;
-        public SetRequestData(Map<String, UnitState> stateMap, SetUnitStateRequest.Condition condition,
+
+        public SetRequestData(Map<String, UnitState> stateMap,
+                              SetUnitStateRequest.Condition condition,
                               SetUnitStateRequest.ResponseWait responseWait) {
             this.stateMap = stateMap;
             this.condition = condition;
@@ -98,7 +99,7 @@ public class JsonReader {
             }
             stateMap.put(type, new UnitStateImpl(code, reason));
         }
+
         return new SetRequestData(stateMap, condition, responseWait);
     }
-
 }

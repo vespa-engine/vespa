@@ -5,6 +5,9 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 
+import java.time.Instant;
+import java.util.Optional;
+
 public abstract class RemoteClusterControllerTask {
 
     public static class Context {
@@ -64,6 +67,10 @@ public abstract class RemoteClusterControllerTask {
      *  error semantics to the caller who initially scheduled the task.
      */
     public void handleFailure(FailureCondition condition) {}
+
+    public Optional<Instant> getDeadline() {
+        return Optional.empty();
+    }
 
     public boolean isCompleted() {
         synchronized (monitor) {
