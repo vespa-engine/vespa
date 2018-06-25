@@ -95,12 +95,12 @@ public class CuratorDb {
         return lock;
     }
 
-    public Lock lock(TenantName name, Duration timeout) {
-        return lock(lockPath(name), timeout);
+    public Lock lock(TenantName name) {
+        return lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
-    public Lock lock(ApplicationId id, Duration timeout) {
-        return lock(lockPath(id), timeout);
+    public Lock lock(ApplicationId id) {
+        return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
     public Lock lockRotations() {

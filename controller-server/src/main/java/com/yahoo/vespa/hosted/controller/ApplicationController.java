@@ -599,7 +599,7 @@ public class ApplicationController {
      * and store the application, and finally release (close) the lock.
      */
     Lock lock(ApplicationId application) {
-        return curator.lock(application, Duration.ofMinutes(10));
+        return curator.lock(application));
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */
