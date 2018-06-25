@@ -15,6 +15,23 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
 
     public static final String REQUEST_REASON = "Orchestrator";
 
+    // On setNodeState calls against the CC ensemble.
+    //
+    // We'd like to set a timeout for the request to the first CC such that if the first
+    // CC is faulty, there's sufficient time to send the request to the second and third CC.
+    // The timeouts would be:
+    //   timeout(1. request) = SHARE_REMAINING_TIME * T
+    //   timeout(2. request) = SHARE_REMAINING_TIME * T * (1 - SHARE_REMAINING_TIME)
+    //   timeout(3. request) = SHARE_REMAINING_TIME * T * (1 - SHARE_REMAINING_TIME)^2
+    //
+    // Using a share of 50% gives approximately:
+    //   timeout(1. request) = T * 0.5
+    //   timeout(2. request) = T * 0.25
+    //   timeout(3. request) = T * 0.125
+    //
+    // which seems fine
+    public static final float SHARE_REMAINING_TIME = 0.6f;
+
     private final JaxRsStrategy<ClusterControllerJaxRsApi> clusterControllerApi;
     private final String clusterName;
 
@@ -40,7 +57,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
             return clusterControllerApi.apply(api -> api.setNodeState(
                     clusterName,
                     storageNodeIndex,
-                    context.getSuboperationTimeoutInSeconds(),
+                    context.getSuboperationTimeoutInSeconds(SHARE_REMAINING_TIME),
                     stateRequest)
             );
         } catch (IOException e) {
@@ -69,7 +86,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
         try {
             return clusterControllerApi.apply(api -> api.setClusterState(
                     clusterName,
-                    context.getSuboperationTimeoutInSeconds(),
+                    context.getSuboperationTimeoutInSeconds(SHARE_REMAINING_TIME),
                     stateRequest));
         } catch (IOException e) {
             final String message = String.format(

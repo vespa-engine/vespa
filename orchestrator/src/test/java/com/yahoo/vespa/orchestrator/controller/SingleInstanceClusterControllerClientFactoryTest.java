@@ -16,6 +16,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
@@ -66,7 +67,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
     public void testCreateClientWithSingleClusterControllerInstance() throws Exception {
         final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1);
 
-        when(context.getSuboperationTimeoutInSeconds()).thenReturn(1.0f);
+        when(context.getSuboperationTimeoutInSeconds(anyFloat())).thenReturn(1.0f);
         clientFactory.createClient(clusterControllers, "clusterName")
                 .setNodeState(context, 0, ClusterControllerNodeState.MAINTENANCE);
 
@@ -94,7 +95,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
     public void testCreateClientWithThreeClusterControllerInstances() throws Exception {
         final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1, HOST_NAME_2, HOST_NAME_3);
 
-        when(context.getSuboperationTimeoutInSeconds()).thenReturn(1.0f);
+        when(context.getSuboperationTimeoutInSeconds(anyFloat())).thenReturn(1.0f);
         clientFactory.createClient(clusterControllers, "clusterName")
                 .setNodeState(context, 0, ClusterControllerNodeState.MAINTENANCE);
 

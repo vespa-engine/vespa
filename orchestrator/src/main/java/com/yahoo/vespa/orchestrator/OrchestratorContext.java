@@ -26,11 +26,19 @@ public class OrchestratorContext {
         return timeBudget.originalTimeout().get().getSeconds();
     }
 
-    /**
-     * Get number of seconds until the deadline, or empty if there's no deadline, or throw
-     * an {@link UncheckedTimeoutException} if timed out.
-     */
     public float getSuboperationTimeoutInSeconds() {
-        return (float) (timeBudget.timeLeftOrThrow().get().toMillis() / 1000.0);
+        return getSuboperationTimeoutInSeconds(60);
+    }
+
+    /**
+     * Get timeout for a suboperation that should take up {@code shareOfRemaining} of the
+     * remaining time, or throw an {@link UncheckedTimeoutException} if timed out.
+     */
+    public float getSuboperationTimeoutInSeconds(float shareOfRemaining) {
+        if (!(0f <= shareOfRemaining && shareOfRemaining <= 1.0f)) {
+            throw new IllegalArgumentException("Share of remaining time must be between 0 and 1: " + shareOfRemaining);
+        }
+
+        return shareOfRemaining * timeBudget.timeLeftOrThrow().get().toMillis() / 1000.0f;
     }
 }
