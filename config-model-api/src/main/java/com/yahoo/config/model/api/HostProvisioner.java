@@ -11,7 +11,7 @@ import java.util.logging.Level;
  * and {@link com.yahoo.config.provision.Provisioner}, is that this interface only exposes methods needed
  * to build the model.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public interface HostProvisioner {
 

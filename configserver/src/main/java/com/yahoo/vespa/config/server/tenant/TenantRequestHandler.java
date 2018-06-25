@@ -123,7 +123,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
 
     private void setLiveApp(ApplicationSet applicationSet) {
         ApplicationId id = applicationSet.getId();
-        final Collection<String> hostsForApp = applicationSet.getAllHosts();
+        Collection<String> hostsForApp = applicationSet.getAllHosts();
         hostRegistry.update(id, hostsForApp);
         applicationSet.updateHostMetrics();
         tenantMetricUpdater.setApplications(applicationMapper.numApplications());

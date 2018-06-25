@@ -9,8 +9,7 @@ import java.util.Set;
 /**
  * Interface representing a reload handler.
  *
- * @author lulf
- * @since 5.1.24
+ * @author Ulf Lilleengen
  */
 public interface ReloadHandler {
 
