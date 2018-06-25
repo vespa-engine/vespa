@@ -6,7 +6,6 @@ import com.yahoo.io.ByteWriter;
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8String;
-import com.yahoo.text.DoubleFormatter;
 
 import java.io.*;
 
@@ -107,10 +106,10 @@ public final class JsonFormat implements SlimeFormat
         }
 
         private void encodeDOUBLE(double value) throws IOException {
-            if (Double.isNaN(value) || Double.isInfinite(value)) {
-                out.write(NULL);
+            if (Double.isFinite(value)) {
+                out.write(String.valueOf(value));
             } else {
-                out.write(DoubleFormatter.stringValue(value));
+                out.write(NULL);
             }
         }
 

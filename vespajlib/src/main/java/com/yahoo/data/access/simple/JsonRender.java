@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.access.simple;
 
-import com.yahoo.text.DoubleFormatter;
 import com.yahoo.data.access.*;
 
 /**
@@ -52,10 +51,10 @@ public final class JsonRender
         }
 
         private void encodeDOUBLE(double value) {
-            if (Double.isNaN(value) || Double.isInfinite(value)) {
-                out.append("null");
+            if (Double.isFinite(value)) {
+                out.append(String.valueOf(value));
             } else {
-                out.append(DoubleFormatter.stringValue(value));
+                out.append("null");
             }
         }
 

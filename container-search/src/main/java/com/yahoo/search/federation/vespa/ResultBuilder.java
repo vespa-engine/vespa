@@ -10,7 +10,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.text.XML;
-import com.yahoo.text.DoubleParser;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
@@ -472,7 +471,7 @@ public class ResultBuilder extends DefaultHandler {
                  //We try to get either uri or documentID and use that as id
                  Object docId = extractDocumentID();
                  Hit newHit = new Hit(docId.toString());
-                 if (hitRelevance != null) newHit.setRelevance(new Relevance(DoubleParser.parse(hitRelevance)));
+                 if (hitRelevance != null) newHit.setRelevance(new Relevance(Double.parseDouble(hitRelevance)));
                  if(hitSource != null) newHit.setSource(hitSource);
                  if(hitType != null) {
                      for(String type: hitType.split(" ")) {

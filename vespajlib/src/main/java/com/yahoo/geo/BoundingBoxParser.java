@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.geo;
 
-import com.yahoo.text.DoubleParser;
-
-
 /**
  * Class for parsing a bounding box in text format:
  * "n=37.44899,s=37.3323,e=-121.98241,w=-122.06566"
@@ -102,7 +99,7 @@ public class BoundingBoxParser {
                 if (nsew != 0 && lastNumStartPos > 0) {
                     String sub = parseString.substring(lastNumStartPos, pos-1);
                     try {
-                        double v = DoubleParser.parse(sub);
+                        double v = Double.parseDouble(sub);
                         if (nsew == 'n') {
                             if (doneN) {
                                 throw new IllegalArgumentException("multiple limits for 'n' boundary");

@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
-import com.yahoo.text.DoubleFormatter;
-
 /**
  * A relevance double value. These values should always be normalized between 0 and 1 (where 1 means perfect),
  * however, this is not enforced.
@@ -47,7 +45,7 @@ public class Relevance implements Comparable<Relevance> {
      */
     @Override
     public String toString() {
-        return DoubleFormatter.stringValue(score);
+        return String.valueOf(score);
     }
 
     /** Compares relevancy values with */

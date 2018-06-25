@@ -64,10 +64,10 @@
       <hit relevance="0.2" source="source5">
         <id>source5-5</id>
       </hit>
-      <hit relevance="0.1666666666666667" source="source5">
+      <hit relevance="0.16666666666666666" source="source5">
         <id>source5-6</id>
       </hit>
-      <hit relevance="0.1428571428571428" source="source5">
+      <hit relevance="0.14285714285714285" source="source5">
         <id>source5-7</id>
       </hit>
     </section>
@@ -87,7 +87,7 @@
       <hit relevance="0.2" source="source4">
         <id>source4-5</id>
       </hit>
-      <hit relevance="0.1666666666666667" source="source4">
+      <hit relevance="0.16666666666666666" source="source4">
         <id>source4-6</id>
       </hit>
     </section>

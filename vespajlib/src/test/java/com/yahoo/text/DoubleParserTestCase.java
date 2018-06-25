@@ -4,6 +4,7 @@ package com.yahoo.text;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("deprecation")
 /**
  * @author arnej27959
  */
