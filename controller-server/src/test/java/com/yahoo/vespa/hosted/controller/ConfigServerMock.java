@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -44,6 +45,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final Map<URI, Version> versions = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
+    private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
 
     private Version initialVersion = new Version(6, 1, 0);
     private Version lastPrepareVersion = null;
@@ -75,6 +77,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 nodeRepository().add(zone, nodes);
             }
         }
+    }
+
+    /** Converge all services belonging to the given application */
+    public void convergeServices(ApplicationId application, ZoneId zone) {
+        serviceStatus.put(new DeploymentId(application, zone), new ServiceConvergence(application, zone, true));
     }
 
     /** The version given in the previous prepare call, or empty if no call has been made */
@@ -118,6 +125,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
+    }
+
+    @Override
+    public Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment) {
+        return Optional.ofNullable(serviceStatus.get(deployment));
     }
 
     @Override
