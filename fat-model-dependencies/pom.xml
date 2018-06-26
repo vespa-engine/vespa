@@ -26,13 +26,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>provided-dependencies</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <!-- Not needed runtime, and a multi-release jar which is currently not supported by maven-bundle-plugin (really bndtools) -->
-          <groupId>javax.xml.bind</groupId>
-          <artifactId>jaxb-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

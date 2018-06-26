@@ -88,7 +88,6 @@
                                                 <include>com.google.inject.extensions:guice-assistedinject:[${guice.version}]:jar:provided</include>
                                                 <include>com.google.inject.extensions:guice-multibindings:[${guice.version}]:jar:provided</include>
                                                 <include>com.google.inject:guice:[${guice.version}]:jar:provided:no_aop</include>
-                                                <include>com.sun.activation:javax.activation:jar[1.2.0]:jar:provided</include>
                                                 <include>commons-codec:commons-codec:[1.4]:jar:provided</include>
                                                 <include>commons-daemon:commons-daemon:[1.0.3]:jar:provided</include>
                                                 <include>commons-logging:commons-logging:[1.1.1]:jar:provided</include>
@@ -97,7 +96,6 @@
                                                 <include>javax.servlet:javax.servlet-api:[3.1.0]:jar:provided</include>
                                                 <include>javax.validation:validation-api:[${javax.validation-api.version}]:jar:provided</include>
                                                 <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
-                                                <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
                                                 <include>net.jcip:jcip-annotations:[1.0]:jar:provided</include>
                                                 <include>net.jpountz.lz4:lz4:[1.3.0]:jar:provided</include>
                                                 <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
