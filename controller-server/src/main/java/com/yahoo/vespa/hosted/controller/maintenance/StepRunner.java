@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.deployment.LockedStep;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 
@@ -16,17 +17,8 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
  */
 public interface StepRunner {
 
-    /**
-     * Attempts to run the given step, and returns the new status.
-     */
-    default RunStatus run(Step step, RunStatus run) {
-        switch (step) {
-            default: throw new AssertionError();
-        }
-    }
-
-    default Step.Status deployInitialReal(ApplicationId id, JobType type) {
-        throw new AssertionError();
-    }
+    /** Attempts to run the given locked step, and returns its new status. */
+    Step.Status run(LockedStep step, RunStatus run);
 
 }
+

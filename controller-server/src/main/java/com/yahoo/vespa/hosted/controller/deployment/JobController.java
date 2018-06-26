@@ -1,19 +1,25 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+
+import static com.google.common.collect.ImmutableList.copyOf;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -28,10 +34,12 @@ import java.util.stream.Stream;
 public class JobController {
 
     private final Controller controller;
+    private final CuratorDb curator;
     private final LogStore logs;
 
     public JobController(Controller controller, LogStore logStore) {
         this.controller = controller;
+        this.curator = controller.curator();
         this.logs = logStore;
     }
 
@@ -44,72 +52,61 @@ public class JobController {
 
     /** Returns a list of all application which have registered. */
     public List<ApplicationId> applications() {
-        return null;
+        return copyOf(controller.applications().asList().stream()
+                                .filter(application -> application.deploymentJobs().builtInternally())
+                                .map(Application::id)
+                                .iterator());
     }
 
     /** Returns all job types which have been run for the given application. */
     public List<JobType> jobs(ApplicationId id) {
-        return ImmutableList.copyOf(Stream.of(JobType.values())
-                                          .filter(type -> ! runs(id, type).isEmpty())
-                                          .iterator());
+        return copyOf(Stream.of(JobType.values())
+                            .filter(type -> last(id, type).isPresent())
+                            .iterator());
+    }
+
+    public Optional<RunStatus> last(ApplicationId id, JobType type) {
+        return curator.readLastRun(id, type);
     }
 
     /** Returns a list of meta information about all known runs of the given job type for the given application. */
-    public List<RunStatus> runs(ApplicationId id, JobType type) {
-        ImmutableList.Builder<RunStatus> runs = ImmutableList.builder();
-        runs.addAll(controller.curator().readHistoricRuns(id, type));
-        activeRuns().stream()
-                    .filter(run -> run.id().application().equals(id) && run.id().type() == type)
-                    .forEach(runs::add);
+    public Map<RunId, RunStatus> runs(ApplicationId id, JobType type) {
+        ImmutableMap.Builder<RunId, RunStatus> runs = ImmutableMap.builder();
+        runs.putAll(curator.readHistoricRuns(id, type));
+        last(id, type).ifPresent(run -> runs.put(run.id(), run));
         return runs.build();
     }
 
-    List<RunStatus> activeRuns() {
-        return controller.curator().readActiveRuns();
+    public List<RunStatus> active() {
+        return copyOf(applications().stream()
+                                    .flatMap(id -> Stream.of(JobType.values())
+                                                         .map(type -> last(id, type))
+                                                         .filter(Optional::isPresent).map(Optional::get)
+                                                         .filter(run -> ! run.end().isPresent()))
+                                    .iterator());
     }
 
-    /** Returns the updated status of the given job, if it is active. */
-    public Optional<RunStatus> currentStatus(RunId id) {
-        try (Lock __ = controller.curator().lockActiveRuns()) {
-            return activeRuns().stream() // TODO jvenstad: Change these to Map<RunId, RunStatus>.
-                               .filter(run -> run.id().equals(id))
-                               .findAny();
-        }
+    public Optional<RunStatus> active(RunId id) {
+        return last(id.application(), id.type())
+                .filter(run -> ! run.end().isPresent())
+                .filter(run -> run.id().equals(id));
     }
 
-    public Optional<RunStatus> update(RunId id, Step.Status status, LockedStep step) {
-        return currentStatus(id).map(run -> {
-            run = run.with(status, step);
-            controller.curator().writeActiveRun(run);
-            return run;
-        });
-    }
-
-    public void locked(RunId id, Step step, Consumer<LockedStep> action) {
-        try (Lock lock = controller.curator().lock(id.application(), id.type(), step)) {
-            for (Step prerequisite : step.prerequisites()) // Check that no prerequisite is still running.
-                try (Lock __ = controller.curator().lock(id.application(), id.type(), prerequisite)) { ; }
-
-            action.accept(new LockedStep(lock, step));
-        }
-        catch (TimeoutException e) {
-            // Something else is already running that step, or a prerequisite -- try again later!
-        }
+    public void update(RunId id, Step.Status status, LockedStep step) {
+        modify(id, run -> run.with(status, step));
     }
 
     public void finish(RunId id) {
-        controller.applications().lockIfPresent(id.application(), __ -> {
-            currentStatus(id).ifPresent(run -> {
-                controller.curator().writeHistoricRun(run.with(controller.clock().instant()));
-            });
+        modify(id, run -> { // Store the modified run after it has been written to the collection, in case the latter fails.
+            RunStatus endedRun = run.finish(controller.clock().instant());
+            modify(id.application(), id.type(), runs -> runs.put(run.id(), endedRun));
+            return endedRun;
         });
     }
 
     /** Returns the details for the given job. */
     public RunDetails details(RunId id) {
-        try (Lock __ = controller.curator().lock(id.application(), id.type())) {
-            return new RunDetails(logs.getPrepareResponse(id), logs.getConvergenceLog(id), logs.getTestLog(id));
-        }
+        return new RunDetails(logs.getPrepareResponse(id), logs.getConvergenceLog(id), logs.getTestLog(id));
     }
 
     /** Registers the given application, such that it may have deployment jobs run here. */
@@ -130,35 +127,30 @@ public class JobController {
     }
 
     /** Orders a run of the given type, and returns the id of the created job. */
-    public RunId run(ApplicationId id, JobType type) {
-        try (Lock __ = controller.curator().lock(id, type);
-             Lock ___ = controller.curator().lockActiveRuns()) {
-            List<RunStatus> runs = controller.curator().readHistoricRuns(id, type);
-        }
-        return null;
+    public void run(ApplicationId id, JobType type) {
+        modify(id, type, runs -> {
+            Optional<RunStatus> last = last(id, type);
+            if (last.flatMap(run -> active(run.id())).isPresent())
+                throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
+
+            RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
+            curator.writeLastRun(RunStatus.initial(newId, controller.clock().instant()));
+        });
     }
 
     /** Unregisters the given application, and deletes all associated data. */
     public void unregister(ApplicationId id) {
         controller.applications().lockIfPresent(id, application -> {
-
-            // TODO jvenstad: Clean out data for jobs.
-
             controller.applications().store(application.withBuiltInternally(false));
         });
+        jobs(id).forEach(type -> modify(id, type, __ -> curator.deleteRuns(id, type)));
     }
 
     /** Aborts the given job. */
     public void abort(RunId id) {
-        ;
+
     }
 
-
-    private void advanceJobs() {
-        activeRuns().forEach(run -> {
-
-        });
-    }
 
     private ApplicationVersion nextVersion(ApplicationId id) {
         throw new AssertionError();
@@ -166,6 +158,31 @@ public class JobController {
 
     private void notifyOfNewSubmission(ApplicationId id) {
         ;
+    }
+
+    private void modify(ApplicationId id, JobType type, Consumer<Map<RunId, RunStatus>> modifications) {
+        try (Lock __ = curator.lock(id, type)) {
+            Map<RunId, RunStatus> runs = curator.readHistoricRuns(id, type);
+            modifications.accept(runs);
+            curator.writeHistoricRuns(id, type, runs.values());
+        }
+    }
+
+    private void modify(RunId id, UnaryOperator<RunStatus> modifications) {
+        try (Lock __ = curator.lock(id.application(), id.type())) {
+            RunStatus run = active(id).orElseThrow(() -> new IllegalArgumentException(id + " is not an active run!"));
+            run = modifications.apply(run);
+            curator.writeLastRun(run);
+        }
+    }
+
+    public void locked(RunId id, Step step, Consumer<LockedStep> action) throws TimeoutException {
+        try (Lock lock = curator.lock(id.application(), id.type(), step)) {
+            for (Step prerequisite : step.prerequisites()) // Check that no prerequisite is still running.
+                try (Lock __ = curator.lock(id.application(), id.type(), prerequisite)) { ; }
+
+            action.accept(new LockedStep(lock, step));
+        }
     }
 
 }

@@ -8,7 +8,6 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.log.event.Collection;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -16,6 +15,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -31,6 +31,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,10 +116,6 @@ public class CuratorDb {
 
     public Lock lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
         return tryLock(lockPath(id, type, step));
-    }
-
-    public Lock lockActiveRuns() {
-        return lock(lockRoot.append("activeRuns"), defaultLockTimeout);
     }
 
     public Lock lockRotations() {
@@ -310,35 +307,26 @@ public class CuratorDb {
 
     // -------------- Job Runs ------------------------------------------------
 
-    public void writeActiveRun(RunStatus run) {
-        appendRun(run, activeRunsPath());
+    public void writeLastRun(RunStatus run) {
+        curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(jobSerializer.toSlime(run)));
     }
 
-    public void writeHistoricRun(RunStatus run) {
-        appendRun(run, jobRunPath(run.id().application(), run.id().type()));
+    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<RunStatus> runs) {
+        curator.set(jobPath(id, type), asJson(jobSerializer.toSlime(runs)));
     }
 
-    public List<RunStatus> readActiveRuns() {
-        return Collections.unmodifiableList(readRuns(activeRunsPath()));
+    public void deleteRuns(ApplicationId id, JobType type) {
+        curator.delete(jobPath(id, type));
+        curator.delete(lastRunPath(id, type));
     }
 
-    public List<RunStatus> readHistoricRuns(ApplicationId id, JobType type) {
+    public Optional<RunStatus> readLastRun(ApplicationId id, JobType type) {
+        return readSlime(jobPath(id, type)).map(jobSerializer::runFromSlime);
+    }
+
+    public Map<RunId, RunStatus> readHistoricRuns(ApplicationId id, JobType type) {
         // TODO jvenstad: Add, somewhere, a retention filter based on age or count.
-        return Collections.unmodifiableList(readRuns(jobRunPath(id, type)));
-    }
-
-    private void appendRun(RunStatus run, Path runsPath) {
-        List<RunStatus> runs = readRuns(runsPath);
-        runs.add(run);
-        writeRuns(runsPath, runs);
-    }
-
-    private List<RunStatus> readRuns(Path runsPath) {
-        return readSlime(runsPath).map(jobSerializer::fromSlime).orElse(Collections.emptyList());
-    }
-
-    private void writeRuns(Path runsPaths, Iterable<RunStatus> runs) {
-        curator.set(runsPaths, asJson(jobSerializer.toSlime(runs)));
+        return readSlime(jobPath(id, type)).map(jobSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
     }
 
     // -------------- Provisioning (called by internal code) ------------------
@@ -465,12 +453,12 @@ public class CuratorDb {
         return applicationRoot.append(application.serializedForm());
     }
 
-    private static Path jobRunPath(ApplicationId id, JobType type) {
+    private static Path jobPath(ApplicationId id, JobType type) {
         return jobRoot.append(id.serializedForm()).append(type.jobName());
     }
 
-    private static Path activeRunsPath() {
-        return jobRoot.append("active");
+    private static Path lastRunPath(ApplicationId id, JobType type) {
+        return jobPath(id, type).append("last");
     }
 
     private static Path controllerPath(String hostname) {
