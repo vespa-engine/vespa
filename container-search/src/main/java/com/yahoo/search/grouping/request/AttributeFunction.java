@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents a document attribute function in a {@link GroupingExpression}. It evaluates to the value of the
  * named attribute in the input {@link com.yahoo.search.result.Hit}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class AttributeFunction extends DocumentValue {
 
@@ -14,7 +14,7 @@ public class AttributeFunction extends DocumentValue {
     /**
      * Constructs a new instance of this class.
      *
-     * @param attributeName The attribute name to assign to this.
+     * @param attributeName the attribute name to assign to this.
      */
     public AttributeFunction(String attributeName) {
         super("attribute(" + attributeName + ")");
@@ -24,9 +24,10 @@ public class AttributeFunction extends DocumentValue {
     /**
      * Returns the name of the attribute to retrieve from the input hit.
      *
-     * @return The attribute name.
+     * @return the attribute name.
      */
     public String getAttributeName() {
         return name;
     }
+
 }

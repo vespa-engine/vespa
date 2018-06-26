@@ -12,6 +12,7 @@ import com.google.common.annotations.Beta;
  * If the index argument is less than 0 returns the first array element;
  * if the index is greater than or equal to size(array) returns the last array element;
  * if the array is empty returns 0 (or NaN?).
+ *
  * @author arnej27959
  */
 @Beta
@@ -28,7 +29,7 @@ public class ArrayAtLookup extends DocumentValue {
     public ArrayAtLookup(String attributeName, GroupingExpression indexArg) {
         super("array.at(" + attributeName + ", " + indexArg + ")");
         this.attributeName = attributeName;
-	this.arg2 = indexArg;
+        this.arg2 = indexArg;
     }
 
     /**
