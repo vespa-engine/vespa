@@ -43,7 +43,7 @@ public class BundleLoader {
 
     private List<Bundle> obtainBundles(FileReference reference, FileAcquirer fileAcquirer)
             throws InterruptedException {
-        File file = fileAcquirer.waitFor(reference, 15, TimeUnit.MINUTES);
+        File file = fileAcquirer.waitFor(reference, 7, TimeUnit.DAYS);
         return osgi.install(file.getAbsolutePath());
     }
 
