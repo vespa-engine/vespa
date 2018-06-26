@@ -64,4 +64,7 @@ public interface ConfigServer {
     /** The node repository on this config server */
     NodeRepository nodeRepository();
 
+    /** Get service convergence status for given deployment */
+    Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment);
+
 }

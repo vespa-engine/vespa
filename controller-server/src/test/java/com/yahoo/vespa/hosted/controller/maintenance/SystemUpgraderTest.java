@@ -77,6 +77,11 @@ public class SystemUpgraderTest {
         assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3, zone4);
         assertWantedVersion(SystemApplication.zone, version1, zone2, zone3, zone4);
 
+        // zone 2 and 3: upgrade does not start until zone 1 zone-application config converges
+        tester.systemUpgrader().maintain();
+        assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3);
+        convergeServices(SystemApplication.zone, zone1);
+
         // zone 2 and 3: zone-config-server upgrades, first in zone 2, then in zone 3
         tester.systemUpgrader().maintain();
         assertWantedVersion(SystemApplication.configServer, version2, zone2, zone3);
@@ -94,6 +99,7 @@ public class SystemUpgraderTest {
         tester.systemUpgrader().maintain();
         assertWantedVersion(SystemApplication.zone, version2, zone2, zone3);
         completeUpgrade(SystemApplication.zone, version2, zone2, zone3);
+        convergeServices(SystemApplication.zone, zone2, zone3);
 
         // zone 4: zone-config-server upgrades
         tester.systemUpgrader().maintain();
@@ -146,6 +152,7 @@ public class SystemUpgraderTest {
         completeUpgrade(allExceptZone, version2, zone1);
         tester.systemUpgrader().maintain();
         completeUpgrade(SystemApplication.zone, version2, zone1);
+        convergeServices(SystemApplication.zone, zone1);
         assertWantedVersion(SystemApplication.all(), version1, zone2, zone3, zone4);
 
         // zone 2 and 3:
@@ -153,6 +160,7 @@ public class SystemUpgraderTest {
         completeUpgrade(allExceptZone, version2, zone2, zone3);
         tester.systemUpgrader().maintain();
         completeUpgrade(SystemApplication.zone, version2, zone2, zone3);
+        convergeServices(SystemApplication.zone, zone2, zone3);
         assertWantedVersion(SystemApplication.all(), version1, zone4);
 
         // zone 4:
@@ -194,7 +202,14 @@ public class SystemUpgraderTest {
                 nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
                                                     node.wantedVersion(), node.wantedVersion()));
             }
+
             assertCurrentVersion(application, version, zone);
+        }
+    }
+
+    private void convergeServices(SystemApplication application, ZoneId... zones) {
+        for (ZoneId zone : zones) {
+            tester.controllerTester().configServer().convergeServices(application.id(), zone);
         }
     }
 
