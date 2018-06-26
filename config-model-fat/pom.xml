@@ -20,20 +20,6 @@
     </dependency>
 
     <dependency>
-      <!-- TODO: remove, we probably don't need version 13. -->
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>13.0.1</version>
-    </dependency>
-    <dependency>
-      <!-- TODO: can probably be removed. Added to get the same set of embedded deps with maven-bundle-plugin 3.5 as with 2.4. -->
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>annotations</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-model-api</artifactId>
       <version>${project.version}</version>
@@ -48,47 +34,6 @@
         <exclusion>
           <groupId>com.google.inject</groupId>
           <artifactId>guice</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <!-- TODO: remove all test deps, should not be needed -->
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-all</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava-testlib</artifactId>
-      <version>17.0</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>jrt</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config-lib</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>testutil</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <!-- OPTIMIZATION: very large (44 MB) and only used for query sorting -->
-          <groupId>com.ibm.icu</groupId>
-          <artifactId>icu4j</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
