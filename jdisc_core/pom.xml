@@ -16,17 +16,6 @@
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <dependencies>
-        <!-- Necessary for jaxb support from java 9. (Could be deployed as bundles since 2.2.11.) -->
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.activation</groupId>
-            <artifactId>javax.activation</artifactId>
-        </dependency>
-        <!-- jaxb end -->
-
         <dependency>
             <!-- Newer version than the one in rt.jar, including the ElementTraversal class needed by Xerces (Aug 2015, still valid Sep 2017) -->
             <groupId>xml-apis</groupId>
@@ -239,8 +228,6 @@
                                 <argument>${project.build.directory}/dependency/log4j-over-slf4j.jar</argument>
                                 <argument>${project.build.directory}/dependency/config-lib.jar</argument>
                                 <argument>${project.build.directory}/dependency/yolean.jar</argument>
-                                <argument>${project.build.directory}/dependency/jaxb-api.jar</argument>
-                                <argument>${project.build.directory}/dependency/javax.activation.jar</argument>
                             </arguments>
                         </configuration>
                     </execution>
