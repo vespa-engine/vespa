@@ -13,6 +13,8 @@
 
 namespace search::attribute {
 
+class ISearchContext;
+
 /**
  * Search context helper for posting list attributes, used to instantiate
  * iterators based on posting lists instead of brute force filtering search.
@@ -42,10 +44,11 @@ protected:
     const EnumStoreBase    &_esb;
     uint32_t                _minBvDocFreq;
     const GrowableBitVector *_gbv; // bitvector if _useBitVector has been set
+    const ISearchContext    &_baseSearchCtx;
 
 
     PostingListSearchContext(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
-                             const EnumStoreBase &esb, uint32_t minBvDocFreq, bool useBitVector);
+                             const EnumStoreBase &esb, uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
 
     ~PostingListSearchContext();
 
@@ -111,7 +114,7 @@ protected:
 
     PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
                               bool hasWeight, const PostingList &postingList, const EnumStoreBase &esb,
-                              uint32_t minBvCocFreq, bool useBitVector);
+                              uint32_t minBvCocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT();
 
     void lookupSingle();
@@ -149,7 +152,7 @@ protected:
 
     PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
                                     bool hasWeight, const PostingList &postingList, const EnumStoreBase &esb,
-                                    uint32_t minBvCocFreq, bool useBitVector);
+                                    uint32_t minBvCocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
 
     unsigned int approximateHits() const override;
 };
@@ -253,7 +256,8 @@ PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &to
               toBeSearched.getPostingList(),
               toBeSearched.getEnumStore(),
               toBeSearched._postingList._minBvDocFreq,
-              useBitVector),
+              useBitVector,
+              *this),
       _toBeSearched(toBeSearched),
       _enumStore(_toBeSearched.getEnumStore())
 {

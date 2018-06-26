@@ -21,8 +21,8 @@ template <typename DataT>
 PostingListSearchContextT<DataT>::
 PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
                           const PostingList &postingList, const EnumStoreBase &esb,
-                          uint32_t minBvDocFreq, bool useBitVector)
-    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, esb, minBvDocFreq, useBitVector),
+                          uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &searchContext)
+    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, esb, minBvDocFreq, useBitVector, searchContext),
       _postingList(postingList),
       _merger(docIdLimit),
       _fetchPostingsDone(false)
@@ -164,9 +164,9 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             vespalib::ConstArrayRef<Posting> array = _merger.getArray();
             postings.set(&array[0], &array[array.size()]);
             if (_postingList._isFilter) {
-                return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(matchData, postings);
+                return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             } else {
-                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_hasWeight, matchData, postings);
+                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_baseSearchCtx, _hasWeight, matchData, postings);
             }
         }
         if (_merger.hasArray()) {
@@ -192,18 +192,18 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             const Posting *array = postingList.getKeyDataEntry(_pidx, clusterSize);
             postings.set(array, array + clusterSize);
             if (postingList._isFilter) {
-                return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(matchData, postings);
+                return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             } else {
-                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_hasWeight, matchData, postings);
+                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_baseSearchCtx, _hasWeight, matchData, postings);
             }
         }
         typename PostingList::BTreeType::FrozenView frozen(_frozenRoot, postingList.getAllocator());
 
         using DocIt = typename PostingList::ConstIterator;
         if (_postingList._isFilter) {
-            return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(matchData, frozen.getRoot(), frozen.getAllocator());
+            return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, frozen.getRoot(), frozen.getAllocator());
         } else {
-            return std::make_unique<AttributePostingListIteratorT<DocIt>> (_hasWeight, matchData, frozen.getRoot(), frozen.getAllocator());
+            return std::make_unique<AttributePostingListIteratorT<DocIt>> (_baseSearchCtx, _hasWeight, matchData, frozen.getRoot(), frozen.getAllocator());
         }
     }
     // returning nullptr will trigger fallback to filter iterator
@@ -287,8 +287,8 @@ template <typename DataT>
 PostingListFoldedSearchContextT<DataT>::
 PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
                                 bool hasWeight, const PostingList &postingList, const EnumStoreBase &esb,
-                                uint32_t minBvDocFreq, bool useBitVector)
-    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, esb, minBvDocFreq, useBitVector)
+                                uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &searchContext)
+    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, esb, minBvDocFreq, useBitVector, searchContext)
 {
 }
 
