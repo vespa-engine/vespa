@@ -409,9 +409,9 @@ public class StorageGroup {
 
             Optional<NodesSpecification> nodeRequirement;
             if (nodesElement.isPresent() && nodesElement.get().getStringAttribute("count") != null ) // request these nodes
-                nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context.getDeployState().getWantedNodeVespaVersion()));
+                nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
             else if (! nodesElement.isPresent() && subGroups.isEmpty() && owner.getRoot().getDeployState().isHosted()) // request one node
-                nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context.getDeployState().getWantedNodeVespaVersion()));
+                nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
             else // Nodes or groups explicitly listed, and/opr not hosted - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
 

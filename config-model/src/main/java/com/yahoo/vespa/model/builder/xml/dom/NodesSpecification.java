@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -34,34 +35,38 @@ public class NodesSpecification {
      * at the discretion of the component fulfilling it
      */
     private final boolean required;
-    
-    /** The flavor the nodes should have, or empty to use the default */        
-    private final Optional<String> flavor;
 
+    private final boolean canFail;
+    
     private final boolean exclusive;
+
+    /** The flavor the nodes should have, or empty to use the default */
+    private final Optional<String> flavor;
 
     /** The identifier of the custom docker image layer to use (not supported yet) */
     private final Optional<String> dockerImage;
 
-    private NodesSpecification(boolean dedicated, int count, int groups, Version version, boolean required,
-                               boolean exclusive,
+    private NodesSpecification(boolean dedicated, int count, int groups, Version version,
+                               boolean required, boolean canFail, boolean exclusive,
                                Optional<String> flavor, Optional<String> dockerImage) {
         this.dedicated = dedicated;
         this.count = count;
         this.groups = groups;
         this.version = version;
         this.required = required;
+        this.canFail = canFail;
         this.exclusive = exclusive;
         this.flavor = flavor;
         this.dockerImage = dockerImage;
     }
 
-    private NodesSpecification(boolean dedicated, Version version, ModelElement nodesElement) {
+    private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement) {
         this(dedicated,
              nodesElement.requiredIntegerAttribute("count"),
              nodesElement.getIntegerAttribute("groups", 1),
              version,
              nodesElement.getBooleanAttribute("required", false),
+             canFail,
              nodesElement.getBooleanAttribute("exclusive", false),
              Optional.ofNullable(nodesElement.getStringAttribute("flavor")),
              Optional.ofNullable(nodesElement.getStringAttribute("docker-image")));
@@ -70,8 +75,11 @@ public class NodesSpecification {
     /**
      * Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element
      */
-    public static NodesSpecification from(ModelElement nodesElement, Version version) {
-        return new NodesSpecification(true, version, nodesElement);
+    public static NodesSpecification from(ModelElement nodesElement, ConfigModelContext context) {
+        return new NodesSpecification(true,
+                                      ! context.getDeployState().getProperties().isBootstrap(),
+                                      context.getDeployState().getWantedNodeVespaVersion(),
+                                      nodesElement);
     }
 
     /**
@@ -79,11 +87,11 @@ public class NodesSpecification {
      * contained in the given parent element, or empty if the parent element is null, or the nodes elements
      * is not present.
      */
-    public static Optional<NodesSpecification> fromParent(ModelElement parentElement, Version version) {
+    public static Optional<NodesSpecification> fromParent(ModelElement parentElement, ConfigModelContext context) {
         if (parentElement == null) return Optional.empty();
         ModelElement nodesElement = parentElement.getChild("nodes");
         if (nodesElement == null) return Optional.empty();
-        return Optional.of(from(nodesElement, version));
+        return Optional.of(from(nodesElement, context));
     }
 
     /**
@@ -91,18 +99,28 @@ public class NodesSpecification {
      * contained in the given parent element, or empty if the parent element is null, or the nodes elements
      * is not present.
      */
-    public static Optional<NodesSpecification> optionalDedicatedFromParent(ModelElement parentElement, Version version) {
+    public static Optional<NodesSpecification> optionalDedicatedFromParent(ModelElement parentElement,
+                                                                           ConfigModelContext context) {
         if (parentElement == null) return Optional.empty();
         ModelElement nodesElement = parentElement.getChild("nodes");
         if (nodesElement == null) return Optional.empty();
         return Optional.of(new NodesSpecification(nodesElement.getBooleanAttribute("dedicated", false),
-                                                  version, nodesElement));
+                                                  ! context.getDeployState().getProperties().isBootstrap(),
+                                                  context.getDeployState().getWantedNodeVespaVersion(),
+                                                  nodesElement));
     }
 
     /** Returns a requirement from <code>count</code> nondedicated nodes in one group */
-    public static NodesSpecification nonDedicated(int count, Version version) {
-        return new NodesSpecification(false, count, 1, version, false, false,
-                                      Optional.empty(), Optional.empty());
+    public static NodesSpecification nonDedicated(int count, ConfigModelContext context) {
+        return new NodesSpecification(false,
+                                      count,
+                                      1,
+                                      context.getDeployState().getWantedNodeVespaVersion(),
+                                      false,
+                                      ! context.getDeployState().getProperties().isBootstrap(),
+                                      false,
+                                      Optional.empty(),
+                                      Optional.empty());
     }
 
     /**
@@ -124,9 +142,12 @@ public class NodesSpecification {
     /** Returns the number of host groups this specifies. Default is 1 */
     public int groups() { return groups; }
 
-    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, DeployLogger logger) {
+    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
+                                                          ClusterSpec.Type clusterType,
+                                                          ClusterSpec.Id clusterId,
+                                                          DeployLogger logger) {
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive);
-        return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor, required), groups, logger);
+        return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor, required, canFail), groups, logger);
     }
 
     @Override

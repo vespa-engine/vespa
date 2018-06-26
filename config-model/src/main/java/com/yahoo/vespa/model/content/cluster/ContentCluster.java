@@ -292,8 +292,8 @@ public class ContentCluster extends AbstractConfigProducer implements
             else if (admin.multitenant()) {
                 String clusterName = contentClusterName + "-controllers";
                 NodesSpecification nodesSpecification =
-                    NodesSpecification.optionalDedicatedFromParent(contentElement.getChild("controllers"), context.getDeployState().getWantedNodeVespaVersion())
-                                      .orElse(NodesSpecification.nonDedicated(3, context.getDeployState().getWantedNodeVespaVersion()));
+                    NodesSpecification.optionalDedicatedFromParent(contentElement.getChild("controllers"), context)
+                                      .orElse(NodesSpecification.nonDedicated(3, context));
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
                                                  drawControllerHosts(nodesSpecification.count(), rootGroup, containers);

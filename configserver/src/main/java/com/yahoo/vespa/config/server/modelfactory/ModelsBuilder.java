@@ -2,29 +2,22 @@
 package com.yahoo.vespa.config.server.modelfactory;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.server.ConfigServerSpec;
-import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -209,22 +202,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                      Optional<AllocatedHosts> allocatedHosts,
                                                      Instant now);
 
-    protected ModelContext.Properties createModelContextProperties(ApplicationId applicationId,
-                                                                   ConfigserverConfig configserverConfig,
-                                                                   Zone zone,
-                                                                   Set<Rotation> rotations) {
-        return new ModelContextImpl.Properties(applicationId,
-                                               configserverConfig.multitenant(),
-                                               ConfigServerSpec.fromConfig(configserverConfig),
-                                               HostName.from(configserverConfig.loadBalancerAddress()),
-                                               configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null,
-                                               configserverConfig.athenzDnsSuffix(),
-                                               configserverConfig.hostedVespa(),
-                                               zone,
-                                               rotations);
-    }
-
-    /** 
+    /**
      * Returns a host provisioner returning the previously allocated hosts if available and when on hosted Vespa,
      * returns empty otherwise, which may either mean that no hosts are allocated or that we are running
      * non-hosted and should default to use hosts defined in the application package, depending on context

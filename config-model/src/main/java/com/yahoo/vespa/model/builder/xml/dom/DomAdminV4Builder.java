@@ -45,17 +45,16 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     protected void doBuildAdmin(Admin admin, Element w3cAdminElement) {
         ModelElement adminElement = new ModelElement(w3cAdminElement);
         admin.addConfigservers(getConfigServersFromSpec(admin));
-        Version version = context.getDeployState().getWantedNodeVespaVersion();
-        
+
         // Note: These two elements only exists in admin version 4.0
         // This build handles admin version 3.0 by ignoring its content (as the content is not useful)
         Optional<NodesSpecification> requestedSlobroks = 
-                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("slobroks"), version);
+                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("slobroks"), context);
         Optional<NodesSpecification> requestedLogservers = 
-                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), version);
+                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), context);
 
-        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, version)), admin);
-        assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, version)), admin);
+        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
+        assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, context)), admin);
 
         addLogForwarders(adminElement.getChild("logforwarding"), admin);
     }

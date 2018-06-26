@@ -118,7 +118,7 @@ public class AllocationSimulator {
 
     public void addCluster(String task, int count, Flavor flavor, String id) {
         // TODO: Implement
-        NodeSpec.CountNodeSpec nodeSpec = new NodeSpec.CountNodeSpec(count, flavor, false);
+        NodeSpec.CountNodeSpec nodeSpec = new NodeSpec.CountNodeSpec(count, flavor, false, true);
         nodes = new NodeList(nodes.asList());
     }
 

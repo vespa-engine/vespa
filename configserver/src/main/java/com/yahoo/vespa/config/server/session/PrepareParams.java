@@ -35,16 +35,18 @@ public final class PrepareParams {
     private final boolean ignoreValidationErrors;
     private final boolean dryRun;
     private final boolean verbose;
+    private final boolean isBootstrap;
     private final Optional<Version> vespaVersion;
     private final Set<Rotation> rotations;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
-                         boolean dryRun, boolean verbose, Optional<Version> vespaVersion, Set<Rotation> rotations) {
+                         boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion, Set<Rotation> rotations) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
         this.dryRun = dryRun;
         this.verbose = verbose;
+        this.isBootstrap = isBootstrap;
         this.vespaVersion = vespaVersion;
         this.rotations = rotations;
     }
@@ -54,6 +56,7 @@ public final class PrepareParams {
         private boolean ignoreValidationErrors = false;
         private boolean dryRun = false;
         private boolean verbose = false;
+        private boolean isBootstrap = false;
         private ApplicationId applicationId = ApplicationId.defaultId();
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(30));
         private Optional<Version> vespaVersion = Optional.empty();
@@ -78,6 +81,11 @@ public final class PrepareParams {
 
         public Builder verbose(boolean verbose) {
             this.verbose = verbose;
+            return this;
+        }
+
+        public Builder isBootstrap(boolean isBootstrap) {
+            this.isBootstrap = isBootstrap;
             return this;
         }
 
@@ -113,7 +121,7 @@ public final class PrepareParams {
 
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun, 
-                                     verbose, vespaVersion, rotations);
+                                     verbose, isBootstrap, vespaVersion, rotations);
         }
 
     }
@@ -169,6 +177,8 @@ public final class PrepareParams {
     public boolean isVerbose() {
         return verbose;
     }
+
+    public boolean isBootstrap() { return isBootstrap; }
 
     public TimeoutBudget getTimeoutBudget() {
         return timeoutBudget;

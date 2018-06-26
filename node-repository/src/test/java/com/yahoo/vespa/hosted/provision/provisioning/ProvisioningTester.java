@@ -136,7 +136,7 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, boolean required, String flavor) {
-        return prepare(application, cluster, Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor), required), groups);
+        return prepare(application, cluster, Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor), required, true), groups);
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {

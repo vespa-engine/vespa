@@ -193,9 +193,9 @@ public class PeriodicApplicationMaintainerTest {
         void runApplicationMaintainer(Optional<List<Node>> overriddenNodesNeedingMaintenance) {
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
             apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, 
-                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false), 1));
+                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false, true), 1));
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
-                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false), 1));
+                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
             MockDeployer deployer = new MockDeployer(provisioner, apps);
             new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), overriddenNodesNeedingMaintenance).run();
         }

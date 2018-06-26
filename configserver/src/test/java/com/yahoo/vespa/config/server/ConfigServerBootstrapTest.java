@@ -2,6 +2,10 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.provision.InMemoryProvisioner;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Version;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
@@ -34,9 +38,10 @@ public class ConfigServerBootstrapTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    public void testBootStrap() throws Exception {
+    public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", configserverConfig);
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3");
+        DeployTester tester = new DeployTester("src/test/apps/hosted/", configserverConfig, provisioner);
         tester.deployApp("myApp", "4.5.6", Instant.now());
 
         File versionFile = temporaryFolder.newFile();
@@ -45,6 +50,13 @@ public class ConfigServerBootstrapTest {
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
         VipStatus vipStatus = new VipStatus();
+        // Take a host away so that there are too few for the application, to verify we can still bootstrap
+        ClusterSpec contentCluster = ClusterSpec.from(ClusterSpec.Type.content,
+                                                      ClusterSpec.Id.from("music"),
+                                                      ClusterSpec.Group.from(0),
+                                                      new com.yahoo.component.Version(4, 5, 6),
+                                                      false);
+        provisioner.allocations().get(contentCluster).remove(0);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState, createStateMonitor(), vipStatus);
         assertFalse(vipStatus.isInRotation());
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
@@ -58,7 +70,7 @@ public class ConfigServerBootstrapTest {
     }
 
     @Test
-    public void testBootStrapWhenRedeploymentFails() throws Exception {
+    public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         DeployTester tester = new DeployTester("src/test/apps/hosted/", configserverConfig);
         tester.deployApp("myApp", "4.5.6", Instant.now());

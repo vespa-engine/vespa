@@ -100,8 +100,8 @@ public class MultigroupProvisioningTest {
 
         tester.makeReadyNodes(10, "small");
 
-        deploy(application1, Capacity.fromNodeCount(1, Optional.of("small"), true), 1, tester);
-        deploy(application1, Capacity.fromNodeCount(2, Optional.of("small"), true), 2, tester);
+        deploy(application1, Capacity.fromNodeCount(1, Optional.of("small"), true, true), 1, tester);
+        deploy(application1, Capacity.fromNodeCount(2, Optional.of("small"), true, true), 2, tester);
     }
 
     @Test
@@ -113,8 +113,8 @@ public class MultigroupProvisioningTest {
         tester.makeReadyNodes(10, "small");
         tester.makeReadyNodes(10, "large");
 
-        deploy(application1, Capacity.fromNodeCount(1, Optional.of("small"), true), 1, tester);
-        deploy(application1, Capacity.fromNodeCount(2, Optional.of("large"), true), 2, tester);
+        deploy(application1, Capacity.fromNodeCount(1, Optional.of("small"), true, true), 1, tester);
+        deploy(application1, Capacity.fromNodeCount(2, Optional.of("large"), true, true), 2, tester);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class MultigroupProvisioningTest {
             new MockDeployer(tester.provisioner(),
                              Collections.singletonMap(application1, 
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
-                                                                                          Capacity.fromNodeCount(8, Optional.of("large"), false), 1)));
+                                                                                          Capacity.fromNodeCount(8, Optional.of("large"), false, true), 1)));
         new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
                 Duration.ofHours(12), new JobControl(tester.nodeRepository().database())).run();
 
@@ -144,10 +144,10 @@ public class MultigroupProvisioningTest {
     }
 
     private void deploy(ApplicationId application, int nodeCount, int groupCount, String flavor, ProvisioningTester tester) {
-        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of(flavor), false), groupCount, tester);
+        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of(flavor), false, true), groupCount, tester);
     }
     private void deploy(ApplicationId application, int nodeCount, int groupCount, ProvisioningTester tester) {
-        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of("default"), false), groupCount, tester);
+        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of("default"), false, true), groupCount, tester);
     }
     private void deploy(ApplicationId application, Capacity capacity, int wantedGroups, ProvisioningTester tester) {
         int nodeCount = capacity.nodeCount();

@@ -109,8 +109,8 @@ public class NodeFailTester {
         assertEquals(wantedNodesApp2, tester.nodeRepository.getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false), 1));
-        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false), 1));
+        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false, true), 1));
+        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
         tester.deployer = new MockDeployer(tester.provisioner, apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
@@ -133,8 +133,8 @@ public class NodeFailTester {
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false);
         ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false);
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
-        Capacity capacity1 = Capacity.fromNodeCount(3, Optional.of("docker"), false);
-        Capacity capacity2 = Capacity.fromNodeCount(5, Optional.of("docker"), false);
+        Capacity capacity1 = Capacity.fromNodeCount(3, Optional.of("docker"), false, true);
+        Capacity capacity2 = Capacity.fromNodeCount(5, Optional.of("docker"), false, true);
         tester.activate(nodeAdminApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);

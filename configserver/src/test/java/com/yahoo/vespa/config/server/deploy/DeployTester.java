@@ -83,6 +83,10 @@ public class DeployTester {
         this(appPath, Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC());
     }
 
+    public DeployTester(String appPath, ConfigserverConfig configserverConfig, HostProvisioner provisioner) {
+        this(appPath, Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC(), provisioner);
+    }
+
     public DeployTester(String appPath, ConfigserverConfig configserverConfig, Clock clock) {
         this(appPath, Collections.singletonList(createModelFactory(clock)), configserverConfig, clock);
     }
@@ -95,8 +99,12 @@ public class DeployTester {
         this(appPath, modelFactories, configserverConfig, clock, Zone.defaultZone());
     }
 
+    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, HostProvisioner provisioner) {
+        this(appPath, modelFactories, configserverConfig, clock, Zone.defaultZone(), provisioner);
+    }
+
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone) {
-        this(appPath, modelFactories, configserverConfig, clock, Zone.defaultZone(), createProvisioner());
+        this(appPath, modelFactories, configserverConfig, clock, zone, createProvisioner());
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone, HostProvisioner provisioner) {

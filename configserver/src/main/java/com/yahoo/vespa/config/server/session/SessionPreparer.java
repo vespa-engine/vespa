@@ -157,7 +157,8 @@ public class SessionPreparer {
                                                               configserverConfig.athenzDnsSuffix(),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
-                                                              rotationsSet);
+                                                              rotationsSet,
+                                                              params.isBootstrap());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,

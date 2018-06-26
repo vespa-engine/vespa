@@ -92,7 +92,7 @@ public class RetiredExpirerTest {
         clock.advance(Duration.ofHours(30)); // Retire period spent
         MockDeployer deployer =
             new MockDeployer(provisioner,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default"), false), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default"), false, true), 1)));
         createRetiredExpirer(deployer).run();
         assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -120,7 +120,7 @@ public class RetiredExpirerTest {
         clock.advance(Duration.ofHours(30)); // Retire period spent
         MockDeployer deployer =
             new MockDeployer(provisioner,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(2, Optional.of("default"), false), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(2, Optional.of("default"), false, true), 1)));
         createRetiredExpirer(deployer).run();
         assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(6, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -153,7 +153,7 @@ public class RetiredExpirerTest {
                 new MockDeployer(provisioner,
                         Collections.singletonMap(
                                 applicationId,
-                                new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default"), false), 1)));
+                                new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default"), false, true), 1)));
 
 
         // Allow the 1st and 3rd retired nodes permission to inactivate

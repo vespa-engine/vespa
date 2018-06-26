@@ -56,9 +56,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private boolean ignoreLockFailure = false;
     private boolean ignoreSessionStaleFailure = false;
 
+    private boolean isBootstrap = false;
+
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
                        Optional<Provisioner> hostProvisioner, Tenant tenant,
-                       Duration timeout, Clock clock, boolean prepared, boolean validate, Version version) {
+                       Duration timeout, Clock clock, boolean prepared, boolean validate, Version version,
+                       boolean isBootstrap) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.hostProvisioner = hostProvisioner;
@@ -68,20 +71,21 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.prepared = prepared;
         this.validate = validate;
         this.version = version;
+        this.isBootstrap = isBootstrap;
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> hostProvisioner, Tenant tenant,
                                         Duration timeout, Clock clock, boolean validate, Version version) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, false, validate, version);
+                              timeout, clock, false, validate, version, false);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> hostProvisioner, Tenant tenant,
                                       Duration timeout, Clock clock) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, true, true, session.getVespaVersion());
+                              timeout, clock, true, true, session.getVespaVersion(), false);
     }
 
     public Deployment setIgnoreLockFailure(boolean ignoreLockFailure) {
@@ -105,6 +109,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                                    .timeoutBudget(timeoutBudget)
                                                    .ignoreValidationErrors( ! validate)
                                                    .vespaVersion(version.toString())
+                                                   .isBootstrap(isBootstrap)
                                                    .build(),
                         Optional.empty(),
                         tenant.getPath(),
@@ -161,9 +166,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
      * This is sometimes needed after activation, but can also be requested without
      * doing prepare and activate in the same session.
      */
+    @Override
     public void restart(HostFilter filter) {
         hostProvisioner.get().restart(session.getApplicationId(), filter);
     }
+
+    /** Set this to true if this deployment is done to bootstrap the config server */
+    public void setBootstrap(boolean isBootstrap) { this.isBootstrap = isBootstrap; }
 
     /** Exposes the session of this for testing only */
     public LocalSession session() { return session; }

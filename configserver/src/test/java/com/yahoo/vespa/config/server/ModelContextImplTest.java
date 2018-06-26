@@ -50,7 +50,8 @@ public class ModelContextImplTest {
                         null,
                         false,
                         Zone.defaultZone(),
-                        rotations),
+                        rotations,
+                        false),
                 Optional.empty(),
                 new Version(6), 
                 new Version(6));

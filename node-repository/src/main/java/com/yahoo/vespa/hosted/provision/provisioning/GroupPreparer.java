@@ -64,7 +64,7 @@ public class GroupPreparer {
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, nodeRepository);
                 allocation.offer(prioritizer.prioritize());
-                if (! allocation.fullfilled())
+                if (! allocation.fullfilled() && requestedNodes.canFail())
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
                                                      " in " + application.toShortString() +
                                                      outOfCapacityDetails(allocation));

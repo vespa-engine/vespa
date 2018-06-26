@@ -294,7 +294,7 @@ public class FailedExpirerTest {
             List<HostSpec> preparedNodes = provisioner.prepare(applicationId,
                                                                clusterSpec,
                                                                Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()),
-                                                                                      false),
+                                                                                      false, true),
                                 1, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
             provisioner.activate(transaction, applicationId, new HashSet<>(preparedNodes));

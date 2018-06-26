@@ -151,7 +151,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addClusterContent(ContainerCluster cluster, Element spec, ConfigModelContext context) {
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
-
         addConfiguredComponents(cluster, spec);
         addSecretStore(cluster, spec);
         addHandlers(cluster, spec);
@@ -514,7 +513,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                               ClusterSpec.Id.from(cluster.getName()),
                                                               context.getDeployState().getWantedNodeVespaVersion(),
                                                               false);
-                return cluster.getHostSystem().allocateHosts(clusterSpec, Capacity.fromNodeCount(1), 1, logger).keySet().iterator().next();
+                Capacity capacity = Capacity.fromNodeCount(1,
+                                                           Optional.empty(),
+                                                           false,
+                                                           ! context.getDeployState().getProperties().isBootstrap());
+                return cluster.getHostSystem().allocateHosts(clusterSpec, capacity, 1, logger).keySet().iterator().next();
             }
         } else {
             return cluster.getHostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
@@ -522,8 +525,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<Container> createNodesFromNodeCount(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
-        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), 
-                                                                        context.getDeployState().getWantedNodeVespaVersion());
+        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
@@ -559,8 +561,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setHostClusterId(referenceId);
 
         Map<HostResource, ClusterMembership> hosts = 
-                StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement), 
-                                                                    context.getDeployState().getWantedNodeVespaVersion()), 
+                StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement), context),
                                             referenceId, 
                                             cluster.getRoot().getHostSystem(),
                                             context.getDeployLogger());
@@ -582,9 +583,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         
         NodesSpecification nodesSpec;
         if (contentNodesElementOrNull == null)
-            nodesSpec = NodesSpecification.nonDedicated(1, context.getDeployState().getWantedNodeVespaVersion());
+            nodesSpec = NodesSpecification.nonDedicated(1, context);
         else
-            nodesSpec = NodesSpecification.from(new ModelElement(contentNodesElementOrNull), context.getDeployState().getWantedNodeVespaVersion());
+            nodesSpec = NodesSpecification.from(new ModelElement(contentNodesElementOrNull), context);
 
         Map<HostResource, ClusterMembership> hosts =
                 StorageGroup.provisionHosts(nodesSpec,

@@ -494,6 +494,19 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void out_of_capacity_but_cannot_fail() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        tester.makeReadyNodes(4, "default");
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("music"),
+                                                  new com.yahoo.component.Version(4, 5, 6),
+                                                 false);
+        tester.prepare(application, cluster, Capacity.fromNodeCount(5, Optional.empty(), false, false), 1);
+        // No exception; Success
+    }
+
+    @Test
     public void out_of_desired_flavor() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
@@ -832,7 +845,7 @@ public class ProvisioningTest {
         allHosts.addAll(content0);
         allHosts.addAll(content1);
 
-        Function<Integer, Capacity> capacity = count -> Capacity.fromNodeCount(count, Optional.empty(), required);
+        Function<Integer, Capacity> capacity = count -> Capacity.fromNodeCount(count, Optional.empty(), required, true);
         int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size));
         int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size));
         int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size));

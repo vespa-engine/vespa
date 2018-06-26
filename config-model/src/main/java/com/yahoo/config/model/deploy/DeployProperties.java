@@ -25,6 +25,7 @@ public class DeployProperties {
     private final String athenzDnsSuffix;
     private final boolean hostedVespa;
     private final Version vespaVersion;
+    private final boolean isBootstrap;
 
     private DeployProperties(boolean multitenant,
                              ApplicationId applicationId,
@@ -33,7 +34,8 @@ public class DeployProperties {
                              boolean hostedVespa,
                              URI ztsUrl,
                              String athenzDnsSuffix,
-                             Version vespaVersion) {
+                             Version vespaVersion,
+                             boolean isBootstrap) {
         this.loadBalancerName = loadBalancerName;
         this.ztsUrl = ztsUrl;
         this.athenzDnsSuffix = athenzDnsSuffix;
@@ -42,8 +44,8 @@ public class DeployProperties {
         this.applicationId = applicationId;
         this.serverSpecs.addAll(configServerSpecs);
         this.hostedVespa = hostedVespa;
+        this.isBootstrap = isBootstrap;
     }
-
 
     public boolean multitenant() {
         return multitenant;
@@ -78,6 +80,9 @@ public class DeployProperties {
         return vespaVersion;
     }
 
+    /** Returns whether this deployment happens during bootstrap *prepare* (not set on activate) */
+    public boolean isBootstrap() { return isBootstrap; }
+
     public static class Builder {
 
         private ApplicationId applicationId = ApplicationId.defaultId();
@@ -88,6 +93,7 @@ public class DeployProperties {
         private String athenzDnsSuffix;
         private boolean hostedVespa = false;
         private Version vespaVersion = Version.fromIntValues(1, 0, 0);
+        private boolean isBootstrap = false;
 
         public Builder applicationId(ApplicationId applicationId) {
             this.applicationId = applicationId;
@@ -129,8 +135,13 @@ public class DeployProperties {
             return this;
         }
 
+        public Builder isBootstrap(boolean isBootstrap) {
+            this.isBootstrap = isBootstrap;
+            return this;
+        }
+
         public DeployProperties build() {
-            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa, ztsUrl, athenzDnsSuffix, vespaVersion);
+            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa, ztsUrl, athenzDnsSuffix, vespaVersion, isBootstrap);
         }
     }
 
