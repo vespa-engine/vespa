@@ -211,10 +211,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.major-version}</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_http_service</artifactId>
       <version>${project.version}</version>

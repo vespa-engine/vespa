@@ -96,10 +96,6 @@
           <artifactId>commons-lang</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.scala-lang</groupId>
-          <artifactId>scala-library</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
         </exclusion>
@@ -121,12 +117,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-jersey2</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.scala-lang</groupId>
-          <artifactId>scala-library</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -197,17 +187,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.scala-lang</groupId>
-          <artifactId>scala-library</artifactId>
-        </exclusion>
-        <exclusion>
-          <!-- TODO: Remove exclusion when scala-xml is excluded in config-bundle pom -->
-          <groupId>org.scala-lang.modules</groupId>
-          <artifactId>scala-xml_${scala.major-version}</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <!-- Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,

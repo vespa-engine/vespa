@@ -34,13 +34,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>configgen</artifactId>
       <version>${project.version}</version>
-      <!-- TODO: uncomment when the oldest available config-model uses the Java version of createClassName()
-      <exclusions>
-        <exclusion>
-          <groupId>org.scala-lang.modules</groupId>
-          <artifactId>scala-xml_${scala.major-version}</artifactId>
-        </exclusion>
-      </exclusions> -->
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
