@@ -166,15 +166,14 @@ sub retrieveModelConfigDefault { # ()
 
     if (defined $CONFIG_REQUEST_TIMEOUT) {
         $cmd .= " -w $CONFIG_REQUEST_TIMEOUT";
+    } else {
+        $cmd .= " -w 2";
     }
-
     if (!defined $CONFIG_SERVER_HOST) {
         my $temp = `${VESPA_HOME}/bin/vespa-print-default configservers`;
-        my @configServerHosts = split(' ', $temp);
-        $CONFIG_SERVER_HOST = $configServerHosts[0];
+        chomp($temp);
+        $CONFIG_SERVER_HOST = $temp;
     }
-    $cmd .= " -s $CONFIG_SERVER_HOST";
-
     if (!defined $CONFIG_SERVER_PORT) {
         my $temp = `${VESPA_HOME}/bin/vespa-print-default configserver_rpc_port`;
         chomp($temp);
@@ -182,16 +181,23 @@ sub retrieveModelConfigDefault { # ()
     }
     $cmd .= " -p $CONFIG_SERVER_PORT";
 
-    printDebug "Fetching model config '$cmd'.\n";
-    my @data = `$cmd 2>&1`;
-    if ($? != 0 || join(' ', @data) =~ /^error/) {
-        printError "Failed to get model config from config command line tool:\n"
-                 . "Command: $cmd\n"
+    my $errors = "";
+    foreach my $cfshost (split(' ', $CONFIG_SERVER_HOST)) {
+        my $hostcmd = $cmd . " -s $cfshost";
+
+        printDebug "Fetching model config '$hostcmd'.\n";
+        my @data = `$cmd 2>&1`;
+        if ($? != 0 || join(' ', @data) =~ /^error/) {
+            $errors .= "Failed to get model config from config command line tool:\n"
+                 . "Command: $hostcmd\n"
                  . "Exit code: $?\n"
                  . "Output: " . join("\n", @data) . "\n";
-        exitApplication(1);
+        } else {
+            return @data;
+        }
     }
-    return @data;
+    printError $errors;
+    exitApplication(1);
 }
 sub fetch { # ()
     my @data = &$RETRIEVE_MODEL_CONFIG();
