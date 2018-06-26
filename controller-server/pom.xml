@@ -49,13 +49,6 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-jersey2</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>serviceview</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
