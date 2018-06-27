@@ -47,6 +47,10 @@ public class JobController {
         this.logs = logStore;
     }
 
+    public LogStore logs() {
+        return logs;
+    }
+
     // TODO jvenstad: Remove this, and let the DeploymentTrigger trigger directly with the correct BuildService.
     /** Returns whether the given application has registered with this build service. */
     public boolean builds(ApplicationId id) {
@@ -111,11 +115,6 @@ public class JobController {
             locked(id.application(), id.type(), runs -> runs.put(run.id(), endedRun));
             return endedRun;
         });
-    }
-
-    /** Returns the details for the given job. */
-    public RunDetails details(RunId id) {
-        return new RunDetails(logs.getPrepareResponse(id), logs.getConvergenceLog(id), logs.getTestLog(id));
     }
 
     /** Registers the given application, such that it may have deployment jobs run here. */

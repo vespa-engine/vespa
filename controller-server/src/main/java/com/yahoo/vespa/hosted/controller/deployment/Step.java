@@ -51,7 +51,10 @@ public enum Step {
     deactivateReal(deployInitialReal, deployReal, startTests),
 
     /** Deactivate the tester. */
-    deactivateTester(deployTester, storeData);
+    deactivateTester(deployTester, storeData),
+
+    /** Report completion to deployment orchestration machinery. */
+    report;
 
 
     private final List<Step> prerequisites;
