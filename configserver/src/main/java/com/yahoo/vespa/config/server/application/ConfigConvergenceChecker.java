@@ -188,7 +188,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
     }
 
-    static class ServiceResponse extends JSONResponse {
+    private static class ServiceResponse extends JSONResponse {
 
         private ServiceResponse(int status, URI uri, String hostname, Long wantedGeneration) {
             super(status);
