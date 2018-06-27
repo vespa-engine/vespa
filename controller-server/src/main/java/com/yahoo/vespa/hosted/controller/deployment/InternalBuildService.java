@@ -1,7 +1,9 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+
+import java.util.Optional;
 
 /**
  * Wraps a JobController as a BuildService.
@@ -20,17 +22,18 @@ public class InternalBuildService implements BuildService {
 
     @Override
     public void trigger(BuildJob buildJob) {
-
+        jobs.run(buildJob.applicationId(), JobType.fromJobName(buildJob.jobName()));
     }
 
     @Override
     public JobState stateOf(BuildJob buildJob) {
-        return null;
+        Optional<RunStatus> run = jobs.last(buildJob.applicationId(), JobType.fromJobName(buildJob.jobName()));
+        return run.isPresent() && ! run.get().end().isPresent() ? JobState.running : JobState.idle;
     }
 
     @Override
     public boolean builds(BuildJob buildJob) {
-        return false;
+        return jobs.builds(buildJob.applicationId());
     }
 
 }

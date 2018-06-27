@@ -315,7 +315,7 @@ public class CuratorDb {
         curator.set(jobPath(id, type), asJson(jobSerializer.toSlime(runs)));
     }
 
-    public void deleteRuns(ApplicationId id, JobType type) {
+    public void deleteJobData(ApplicationId id, JobType type) {
         curator.delete(jobPath(id, type));
         curator.delete(lastRunPath(id, type));
     }

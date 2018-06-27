@@ -9,6 +9,8 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 
 public class RealStepRunner implements StepRunner {
 
+    private static final String prefix = "-test-";
+
     private final ApplicationController applications;
 
     public RealStepRunner(ApplicationController applications) {
@@ -34,7 +36,7 @@ public class RealStepRunner implements StepRunner {
     }
 
     private Step.Status deployInitialReal(RunId id) {
-        throw new AssertionError();
+
     }
 
     private Step.Status installInitialReal(RunId id) {
@@ -71,6 +73,12 @@ public class RealStepRunner implements StepRunner {
 
     private Step.Status deactivateTester(RunId id) {
         throw new AssertionError();
+    }
+
+    private static ApplicationId testerOf(ApplicationId id) {
+        return ApplicationId.from(id.tenant().value(),
+                                  id.application().value(),
+                                  prefix + id.instance().value());
     }
 
 }

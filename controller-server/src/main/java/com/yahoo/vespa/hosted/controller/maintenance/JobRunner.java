@@ -71,7 +71,7 @@ public class JobRunner extends Maintainer {
     void advance(RunId id, Step step) {
         try {
             jobs.locked(id, step, lockedStep -> {
-                jobs.active(id).ifPresent(run -> { // The run may have become inactive, which means we should bail out.
+                jobs.active(id).ifPresent(run -> { // The run may have become inactive, which means we bail out.
                     if ( ! run.readySteps().contains(step))
                         return; // Someone may have updated the run status, making this step obsolete, so we bail out.
 
