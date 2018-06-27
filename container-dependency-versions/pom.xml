@@ -186,7 +186,7 @@
                 <version>${javax.ws.rs-api.version}</version>
             </dependency>
 
-            <!-- TODO: upgrade jaxb-api artifacts to >=2.3.0. Note that from 2.3, these are OSGi bundles.
+            <!-- TODO: upgrade jaxb-api artifacts to >=2.3.0.
             See https://stackoverflow.com/questions/50237516/proper-fix-for-java-10-complaining-about-illegal-reflection-access-by-jaxb-impl  -->
             <dependency>
                 <groupId>javax.xml.bind</groupId>
@@ -204,10 +204,11 @@
                 <version>${jaxb.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>javax.activation-api</artifactId>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>javax.activation</artifactId>
                 <version>1.2.0</version>
             </dependency>
+            <!-- jaxb end -->
 
             <dependency>
                 <groupId>net.jcip</groupId>
@@ -456,7 +457,7 @@
         <findbugs.version>1.3.9</findbugs.version>
         <guava.version>18.0</guava.version>
         <guice.version>3.0</guice.version>
-        <jaxb.version>2.2.7</jaxb.version>
+        <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.10.v20180503</jetty.version>
         <slf4j.version>1.7.5</slf4j.version>
 
