@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 
 import java.io.File;
@@ -12,8 +11,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * File-based session repository for LocalSessions. Contains state for the local instance of the configserver.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
@@ -95,7 +92,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     }
 
     private void deleteSession(LocalSession candidate) {
-        removeSessionOrThrow(candidate.getSessionId());
+        removeSession(candidate.getSessionId());
         candidate.delete();
     }
 
