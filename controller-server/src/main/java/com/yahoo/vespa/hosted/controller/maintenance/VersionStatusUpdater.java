@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import com.yahoo.yolean.Exceptions;
 
-import java.io.UncheckedIOException;
 import java.time.Duration;
 
 /**
@@ -25,8 +26,9 @@ public class VersionStatusUpdater extends Maintainer {
         try {
             VersionStatus newStatus = VersionStatus.compute(controller());
             controller().updateVersionStatus(newStatus);
-        } catch (UncheckedIOException e) {
-            log.warning("Failed to compute version status. This is likely a transient error: " + e.getMessage());
+        } catch (Exception e) {
+            log.log(LogLevel.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
+                                      ". Retrying in " + maintenanceInterval());
         }
     }
 

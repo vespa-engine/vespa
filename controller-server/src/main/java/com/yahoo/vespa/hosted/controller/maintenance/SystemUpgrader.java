@@ -3,9 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -71,19 +69,9 @@ public class SystemUpgrader extends Maintainer {
             if (convergedOn(target, application.dependencies(), zone)) {
                 deploy(target, application, zone);
             }
-            converged &= convergedOn(target, application, zone) & configConverged(application, zone);
+            converged &= convergedOn(target, application, zone) & application.configConvergedIn(zone, controller());
         }
         return converged;
-    }
-
-    /** Returns whether config for given application has converged */
-    private boolean configConverged(SystemApplication application, ZoneId zone) {
-        if (!application.hasApplicationPackage()) {
-            return true;
-        }
-        return controller().configServer().serviceConvergence(new DeploymentId(application.id(), zone))
-                           .map(ServiceConvergence::converged)
-                           .orElse(false);
     }
 
     /** Deploy application on given version idempotently */

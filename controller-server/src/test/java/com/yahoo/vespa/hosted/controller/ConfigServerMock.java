@@ -75,6 +75,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                             ))
                                             .collect(Collectors.toList());
                 nodeRepository().add(zone, nodes);
+                convergeServices(application.id(), zone);
             }
         }
     }
@@ -103,12 +104,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     /** Set version for system applications in given zone */
-    public void setVersion(Version version, ZoneId zone, List<SystemApplication> applications) {
-        for (SystemApplication application : applications) {
-            for (Node node : nodeRepository().list(zone, application.id())) {
-                nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
-                                                    version, version));
-            }
+    public void setVersion(ApplicationId application, ZoneId zone, Version version) {
+        for (Node node : nodeRepository().list(zone, application)) {
+            nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                                                version, version));
         }
     }
 
@@ -174,6 +173,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                      node.currentVersion(),
                                                                      application.version().get()));
                 }
+                serviceStatus.remove(deployment); // Deployment is no longer converging after new deployment
 
                 PrepareResponse prepareResponse = new PrepareResponse();
                 prepareResponse.message = "foo";

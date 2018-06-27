@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -27,7 +28,12 @@ public class SystemUpgraderTest {
     private static final ZoneId zone3 = ZoneId.from("prod", "us-central-1");
     private static final ZoneId zone4 = ZoneId.from("prod", "us-east-3");
 
-    private final DeploymentTester tester = new DeploymentTester();
+    private DeploymentTester tester;
+
+    @Before
+    public void before() {
+        tester = new DeploymentTester();
+    }
 
     @Test
     public void upgrade_system() {
@@ -115,6 +121,11 @@ public class SystemUpgraderTest {
         tester.systemUpgrader().maintain();
         assertWantedVersion(SystemApplication.zone, version2, zone4);
         completeUpgrade(SystemApplication.zone, version2, zone4);
+
+        // zone 4: System version remains unchanged until config converges
+        tester.computeVersionStatus();
+        assertEquals(version1, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        convergeServices(SystemApplication.zone, zone4);
         tester.computeVersionStatus();
         assertEquals(version2, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
