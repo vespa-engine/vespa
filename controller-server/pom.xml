@@ -49,6 +49,13 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-jersey2</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>serviceview</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -111,11 +118,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
         </dependency>
 
         <dependency>
@@ -215,6 +217,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>testutil</artifactId>
             <version>${project.version}</version>
@@ -224,12 +232,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-standalone</artifactId>
             <scope>test</scope>
         </dependency>
 
