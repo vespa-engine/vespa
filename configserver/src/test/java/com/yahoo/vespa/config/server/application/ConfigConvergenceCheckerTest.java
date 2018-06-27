@@ -21,14 +21,13 @@ import org.junit.rules.TemporaryFolder;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -66,7 +65,7 @@ public class ConfigConvergenceCheckerTest {
     public void service_convergence() throws Exception {
         ServiceResponse serviceResponse = checker.checkService(application,
                                                                "localhost:1337",
-                                                               URI.create("http://foo:234/serviceconverge/localhost:1337"));
+                                                               URI.create("http://foo:234/serviceconverge/localhost:1337"), Duration.ofSeconds(5));
         assertEquals(200, serviceResponse.getStatus());
         assertJsonEquals("{\n" +
                          "  \"url\": \"http://foo:234/serviceconverge/localhost:1337\",\n" +
@@ -79,7 +78,7 @@ public class ConfigConvergenceCheckerTest {
 
         ServiceResponse hostMissingResponse = checker.checkService(application,
                                                                    "notPresent:1337",
-                                                                   URI.create("http://foo:234/serviceconverge/notPresent:1337"));
+                                                                   URI.create("http://foo:234/serviceconverge/notPresent:1337"), Duration.ofSeconds(5));
         assertEquals(410, hostMissingResponse.getStatus());
         assertJsonEquals("{\n" +
                          "  \"url\": \"http://foo:234/serviceconverge/notPresent:1337\",\n" +
@@ -92,7 +91,7 @@ public class ConfigConvergenceCheckerTest {
 
     @Test
     public void service_list_convergence() throws Exception {
-        HttpResponse serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"));
+        HttpResponse serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"), Duration.ofSeconds(5));
         assertEquals(200, serviceListResponse.getStatus());
         assertJsonEquals("{\n" +
                          "  \"services\": [\n" +
@@ -120,7 +119,7 @@ public class ConfigConvergenceCheckerTest {
                                                   Version.fromIntValues(0, 0, 0),
                                                   MetricUpdater.createTestUpdater(), appId);
         currentGeneration.put(URI.create("http://host2:1234"), 4L);
-        serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"));
+        serviceListResponse = checker.servicesToCheck(application, URI.create("http://foo:234/serviceconverge"), Duration.ofSeconds(5));
         assertEquals(200, serviceListResponse.getStatus());
         assertJsonEquals("{\n" +
                          "  \"services\": [\n" +

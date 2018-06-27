@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 
 import javax.ws.rs.GET;
@@ -18,6 +19,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
  * @author hmusum
  */
 public class ConfigConvergenceChecker extends AbstractComponent {
+
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
     private final static Set<String> serviceTypesToCheck = new HashSet<>(Arrays.asList(
@@ -45,7 +48,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     ));
 
     private final StateApiFactory stateApiFactory;
-    private final Client client = ClientBuilder.newClient();
 
     @Inject
     public ConfigConvergenceChecker() {
@@ -56,25 +58,25 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         this.stateApiFactory = stateApiFactory;
     }
 
-    public ServiceListResponse servicesToCheck(Application application, URI uri) {
+    public ServiceListResponse servicesToCheck(Application application, URI uri, Duration timeout) {
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
-        long currentGeneration = getServiceGeneration(servicesToCheck);
+        long currentGeneration = getServiceGeneration(servicesToCheck, timeout);
         return new ServiceListResponse(200, servicesToCheck, uri, application.getApplicationGeneration(),
                                        currentGeneration);
     }
 
-    public ServiceResponse checkService(Application application, String hostAndPortToCheck, URI uri) {
+    public ServiceResponse checkService(Application application, String hostAndPortToCheck, URI uri, Duration timeout) {
         Long wantedGeneration = application.getApplicationGeneration();
         try {
             if (! hostInApplication(application, hostAndPortToCheck))
                 return ServiceResponse.createHostNotFoundInAppResponse(uri, hostAndPortToCheck, wantedGeneration);
 
-            long currentGeneration = getServiceGeneration(URI.create("http://" + hostAndPortToCheck));
+            long currentGeneration = getServiceGeneration(URI.create("http://" + hostAndPortToCheck), timeout);
             boolean converged = currentGeneration >= wantedGeneration;
             return ServiceResponse.createOkResponse(uri, hostAndPortToCheck, wantedGeneration, currentGeneration, converged);
         } catch (ProcessingException e) { // e.g. if we cannot connect to the service to find generation
@@ -82,11 +84,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         } catch (Exception e) {
             return ServiceResponse.createErrorResponse(uri, hostAndPortToCheck, wantedGeneration, e.getMessage());
         }
-    }
-
-    @Override
-    public void deconstruct() {
-        client.close();
     }
 
     @Path(statePath)
@@ -98,6 +95,13 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     public interface StateApiFactory {
         StateApi createStateApi(Client client, URI serviceUri);
+    }
+
+    private static Client createClient(Duration timeout) {
+        return ClientBuilder.newBuilder()
+                            .property(ClientProperties.CONNECT_TIMEOUT, (int) timeout.toMillis())
+                            .property(ClientProperties.READ_TIMEOUT, (int) timeout.toMillis())
+                            .build();
     }
 
     private static Optional<Integer> getStatePort(ServiceInfo service) {
@@ -117,7 +121,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Get service generation for a list of services. Returns the minimum generation of all services */
-    private long getServiceGeneration(List<ServiceInfo> services) {
+    private long getServiceGeneration(List<ServiceInfo> services, Duration timeout) {
         List<URI> serviceUris = services.stream()
                                         .map(s -> "http://" + s.getHostName() + ":" + getStatePort(s).get())
                                         .map(URI::create)
@@ -125,7 +129,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         long generation = -1;
         for (URI uri : serviceUris) {
             try {
-                long serviceGeneration = getServiceGeneration(uri);
+                long serviceGeneration = getServiceGeneration(uri, timeout);
                 if (generation == -1 || serviceGeneration < generation) {
                     generation = serviceGeneration;
                 }
@@ -136,9 +140,14 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return generation;
     }
 
-    private long getServiceGeneration(URI serviceUri) {
-        StateApi state = stateApiFactory.createStateApi(client, serviceUri);
-        return generationFromContainerState(state.config());
+    private long getServiceGeneration(URI serviceUri, Duration timeout) {
+        Client client = createClient(timeout);
+        try {
+            StateApi state = stateApiFactory.createStateApi(client, serviceUri);
+            return generationFromContainerState(state.config());
+        } finally {
+            client.close();
+        }
     }
 
     private boolean hostInApplication(Application application, String hostPort) {

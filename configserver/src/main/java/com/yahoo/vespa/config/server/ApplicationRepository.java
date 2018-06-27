@@ -380,12 +380,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Convergence ----------------------------------------------------------------
 
-    public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri) {
-        return convergeChecker.checkService(getApplication(applicationId), hostAndPort, uri);
+    public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri, Duration timeout) {
+        return convergeChecker.checkService(getApplication(applicationId), hostAndPort, uri, timeout);
     }
 
-    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri) {
-        return convergeChecker.servicesToCheck(getApplication(applicationId), uri);
+    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri, Duration timeout) {
+        return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeout);
     }
 
     // ---------------- Session operations ----------------------------------------------------------------
