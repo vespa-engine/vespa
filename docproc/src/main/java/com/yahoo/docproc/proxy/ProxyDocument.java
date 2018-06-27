@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc.proxy;
 
 import com.yahoo.docproc.Accesses;
@@ -275,6 +275,11 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
     @Override
     public void printXml(XmlStream xml) {
         doc.printXml(xml);
+    }
+
+    @Override
+    public String toJson() {
+        return doc.toJson();
     }
 
     @Override
