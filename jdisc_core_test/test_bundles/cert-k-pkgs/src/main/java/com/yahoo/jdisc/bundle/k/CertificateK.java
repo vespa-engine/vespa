@@ -172,6 +172,8 @@ public class CertificateK {
     // Packages made invisible from Java 9
 
     // Added as dep in jdisc_core: com.sun.activation:javax.activation (OSGi bundle)
+    private final com.sun.activation.viewers.ImageViewer imageViewer = null;
+    private final com.sun.activation.registries.MimeTypeFile mimeTypeFile = null;
     private final javax.activation.CommandInfo commandInfo = null;
 
     // Added as dep in jdisc_core: javax.xml.bind:jaxb-api (OSGi bundle)
