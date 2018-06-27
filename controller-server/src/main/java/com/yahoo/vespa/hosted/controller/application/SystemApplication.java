@@ -3,7 +3,12 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +54,20 @@ public enum SystemApplication {
         return nodeType == NodeType.proxy;
     }
 
+    /** Returns whether config for this application has converged in given zone */
+    public boolean configConvergedIn(ZoneId zone, Controller controller) {
+        if (!hasApplicationPackage()) {
+            return true;
+        }
+        // TODO: Remove this hack once Docker hosts are removed from zone-application.
+        if (isAws(zone.region())) {
+            return true; // Skip checking config convergence on AWS as Docker hosts do not have cloud config
+        }
+        return controller.configServer().serviceConvergence(new DeploymentId(id(), zone))
+                         .map(ServiceConvergence::converged)
+                         .orElse(false);
+    }
+
     /** All known system applications */
     public static List<SystemApplication> all() {
         return Arrays.asList(values());
@@ -62,6 +81,10 @@ public enum SystemApplication {
     @Override
     public String toString() {
         return String.format("system application %s of type %s", id, nodeType);
+    }
+
+    private static boolean isAws(RegionName region) {
+        return region.value().startsWith("cd-aws-") || region.value().startsWith("aws-");
     }
 
 }
