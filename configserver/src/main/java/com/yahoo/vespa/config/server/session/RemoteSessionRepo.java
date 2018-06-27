@@ -91,11 +91,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
 
     //---------- START overrides to keep sessions changed in sync 
 
-    public synchronized void addSession(RemoteSession session) {
-        super.addSession(session);
-        sessionAdded(session.getSessionId());
-    }
-
     @Override
     public void removeSession(long id, NestedTransaction transaction) {
         super.removeSession(id, transaction);
