@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -18,6 +19,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -26,6 +28,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static org.junit.Assert.assertEquals;
 
@@ -44,6 +50,9 @@ public class ConfigConvergenceCheckerTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+
+    @Rule
+    public final WireMockRule wireMock = new WireMockRule(options().dynamicPort(), true);
 
     @Before
     public void setup() {
@@ -142,6 +151,42 @@ public class ConfigConvergenceCheckerTest {
                          "  \"converged\": false\n" +
                          "}",
                      SessionHandlerTest.getRenderedString(serviceListResponse));
+    }
+
+    @Test
+    public void service_convergence_timeout() throws Exception {
+        URI service = testServer();
+        Model mockModel = MockModel.createContainer(service.getHost(), service.getPort());
+        application = new Application(mockModel,
+                                      new ServerCache(),
+                                      3,
+                                      false,
+                                      Version.fromIntValues(0, 0, 0),
+                                      MetricUpdater.createTestUpdater(), appId);
+        currentGeneration = new HashMap<>();
+        ConfigConvergenceChecker checker = new ConfigConvergenceChecker();
+
+        URI api = testServer().resolve("/serviceconverge");
+
+        wireMock.stubFor(get(urlEqualTo("/state/v1/config"))
+                                 .willReturn(aResponse().withFixedDelay((int) Duration.ofSeconds(10).toMillis())));
+        ServiceResponse serviceResponse = checker.checkService(application, hostAndPort(service), api, Duration.ofMillis(1));
+
+        ByteArrayOutputStream response = new ByteArrayOutputStream();
+        serviceResponse.render(response);
+
+        assertEquals("{\"url\":\"" + api.toString() + "\",\"host\":\"" + hostAndPort(api) +
+                     "\",\"wantedGeneration\":3,\"error\":\"java.net.SocketTimeoutException: Read timed out\"}",
+                     response.toString());
+        assertEquals(404, serviceResponse.getStatus());
+    }
+
+    private URI testServer() {
+        return URI.create("http://127.0.0.1:" + wireMock.port());
+    }
+
+    private static String hostAndPort(URI uri) {
+        return uri.getHost() + ":" + uri.getPort();
     }
 
     private static void assertJsonEquals(String expected, String actual) {
