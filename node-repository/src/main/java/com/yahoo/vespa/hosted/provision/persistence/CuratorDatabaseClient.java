@@ -49,7 +49,7 @@ public class CuratorDatabaseClient {
 
     private static final Path root = Path.fromString("/provision/v1");
 
-    private static final Duration defaultLockTimeout = Duration.ofMinutes(1);
+    private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
