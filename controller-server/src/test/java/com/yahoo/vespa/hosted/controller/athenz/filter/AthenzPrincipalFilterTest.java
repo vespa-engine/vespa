@@ -39,11 +39,9 @@ import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -146,9 +144,9 @@ public class AthenzPrincipalFilterTest {
     }
 
     private static void assertUnauthorized(ResponseHandlerMock responseHandler, String expectedMessageSubstring) {
-        assertThat(responseHandler.response, notNullValue());
-        assertThat(responseHandler.response.getStatus(), equalTo(UNAUTHORIZED));
-        assertThat(responseHandler.getResponseContent(), containsString(expectedMessageSubstring));
+        assertNotNull(responseHandler.response);;
+        assertEquals(UNAUTHORIZED, responseHandler.response.getStatus());
+        assertTrue(responseHandler.getResponseContent().contains(expectedMessageSubstring));
     }
 
     private static class ResponseHandlerMock implements ResponseHandler {
