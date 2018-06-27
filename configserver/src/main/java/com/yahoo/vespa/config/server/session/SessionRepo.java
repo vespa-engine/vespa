@@ -16,8 +16,7 @@ import java.util.HashMap;
 /**
  * A generic session repository that can store any type of session that extends the abstract interface.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 // TODO: This is a ZK cache. We should probably remove it, or make that explicit
 public class SessionRepo<SESSIONTYPE extends Session> {
@@ -25,35 +24,17 @@ public class SessionRepo<SESSIONTYPE extends Session> {
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
 
     public synchronized void addSession(SESSIONTYPE session) {
-        internalAddSession(session);
-    }
-
-    /** Why is this needed? Because of implementation inheritance - see RemoteSessionRepo */
-    protected synchronized final void internalAddSession(SESSIONTYPE session) {
         if (sessions.containsKey(session.getSessionId()))
             throw new IllegalArgumentException("There already exists a session with id '" + session.getSessionId() + "'");
         sessions.put(session.getSessionId(), session);
     }
 
-    public synchronized void removeSessionOrThrow(long id) {
-        internalRemoveSessionOrThrow(id);
-    }
-
-    /** Why is this needed? Because of implementation inheritance - see RemoteSessionRepo */
-    protected synchronized final void internalRemoveSessionOrThrow(long id) {
+    public synchronized SESSIONTYPE removeSession(long id) {
         if ( ! sessions.containsKey(id))
-            throw new IllegalArgumentException("No such session exists '" + id + "'");
-        sessions.remove(id);
+            throw new IllegalArgumentException("No session with id '" + id + "' exists");
+        return sessions.remove(id);
     }
 
-    /** 
-     * Removes a session in a transaction
-     * 
-     * @param id the id of the session to remove
-     * @return the removed session, or null if none was found
-     */
-    public synchronized SESSIONTYPE removeSession(long id) { return sessions.remove(id); }
-    
     public void removeSession(long id, NestedTransaction nestedTransaction) {
         SessionRepoTransaction transaction = new SessionRepoTransaction();
         transaction.addRemoveOperation(id);
@@ -103,7 +84,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
     
     public class SessionRepoTransaction extends AbstractTransaction {
 
-        public void addRemoveOperation(long sessionIdToRemove) {
+        void addRemoveOperation(long sessionIdToRemove) {
             add(new RemoveOperation(sessionIdToRemove));
         }
         
@@ -124,7 +105,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
                 ((SessionOperation)operation).rollback();
         }
         
-        public abstract class SessionOperation implements Transaction.Operation {
+        abstract class SessionOperation implements Transaction.Operation {
             
             abstract void commit();
             
@@ -137,7 +118,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
             private final long sessionIdToRemove;
             private SESSIONTYPE removed = null;
             
-            public RemoveOperation(long sessionIdToRemove) {
+            RemoveOperation(long sessionIdToRemove) {
                 this.sessionIdToRemove = sessionIdToRemove;
             }
 

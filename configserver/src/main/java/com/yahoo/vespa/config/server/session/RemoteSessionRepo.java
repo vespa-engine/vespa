@@ -91,29 +91,9 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
 
     //---------- START overrides to keep sessions changed in sync 
 
-    @Override
     public synchronized void addSession(RemoteSession session) {
         super.addSession(session);
         sessionAdded(session.getSessionId());
-    }
-
-    @Override
-    public synchronized void removeSessionOrThrow(long id) {
-        super.removeSessionOrThrow(id);
-        sessionRemoved(id);
-    }
-
-    /**
-     * Removes a session
-     *
-     * @param id the id of the session to remove
-     * @return the removed session, or null if none was found
-     */
-    @Override
-    public synchronized RemoteSession removeSession(long id) { 
-        RemoteSession session = super.removeSession(id);
-        sessionRemoved(id);
-        return session;
     }
 
     @Override
@@ -184,7 +164,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
             fileCache.addListener(this);
             loadSessionIfActive(session);
             sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, reloadHandler, session, metrics));
-            internalAddSession(session);
+            addSession(session);
             metrics.incAddedSessions();
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
@@ -194,7 +174,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     private void sessionRemoved(long sessionId) {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         watcher.close();
-        internalRemoveSessionOrThrow(sessionId);
+        removeSession(sessionId);
         metrics.incRemovedSessions();
     }
 
