@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.document.datatypes.Array;
@@ -27,7 +25,6 @@ import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.document.serialization.XmlDocumentWriter;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.vespa.objects.BufferSerializer;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import java.io.FileInputStream;
@@ -53,7 +50,6 @@ import static org.junit.Assert.fail;
  * @author <a href="thomasg@yahoo-inc.com>Thomas Gundersen</a>
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
 public class DocumentTestCase extends DocumentTestCaseBase {
 
     private static final String SERTEST_DOC_AS_XML_HEAD =
