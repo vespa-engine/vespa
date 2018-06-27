@@ -564,14 +564,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     boolean redeployAllApplications(Duration maxDuration) throws InterruptedException {
         Instant end = Instant.now().plus(maxDuration);
-        Set<ApplicationId> applicationIds = listApplications();
+        Set<ApplicationId> applicationsNotRedeployed = listApplications();
         do {
-            applicationIds = redeployApplications(applicationIds);
-        } while ( ! applicationIds.isEmpty() && Instant.now().isBefore(end));
+            applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
+        } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
 
-        if ( ! applicationIds.isEmpty()) {
+        if ( ! applicationsNotRedeployed.isEmpty()) {
             log.log(LogLevel.ERROR, "Redeploying applications not finished after " + maxDuration +
-                    ", exiting, applications that failed redeployment: " + applicationIds);
+                    ", exiting, applications that failed redeployment: " + applicationsNotRedeployed);
             return false;
         }
         return true;
