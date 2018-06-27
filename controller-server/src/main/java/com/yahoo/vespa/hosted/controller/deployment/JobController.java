@@ -85,7 +85,7 @@ public class JobController {
     /** Returns the run with the given id, provided it is still active. */
     public Optional<RunStatus> active(RunId id) {
         return last(id.application(), id.type())
-                .filter(run -> ! run.end().isPresent())
+                .filter(run -> ! run.hasEnded())
                 .filter(run -> run.id().equals(id));
     }
 
@@ -95,7 +95,7 @@ public class JobController {
                                     .flatMap(id -> Stream.of(JobType.values())
                                                          .map(type -> last(id, type))
                                                          .filter(Optional::isPresent).map(Optional::get)
-                                                         .filter(run -> ! run.end().isPresent()))
+                                                         .filter(run -> ! run.hasEnded()))
                                     .iterator());
     }
 

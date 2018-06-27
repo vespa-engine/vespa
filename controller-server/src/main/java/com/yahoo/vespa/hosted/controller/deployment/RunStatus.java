@@ -84,6 +84,10 @@ public class RunStatus {
         return steps.values().contains(failed);
     }
 
+    public boolean hasEnded() {
+        return end.isPresent();
+    }
+
     public List<Step> readySteps() {
         return hasFailed() ? forcedSteps() : normalSteps();
     }

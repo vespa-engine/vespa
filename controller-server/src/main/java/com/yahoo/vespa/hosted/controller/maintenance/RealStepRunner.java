@@ -36,7 +36,7 @@ public class RealStepRunner implements StepRunner {
     }
 
     private Step.Status deployInitialReal(RunId id) {
-
+        throw new AssertionError();
     }
 
     private Step.Status installInitialReal(RunId id) {

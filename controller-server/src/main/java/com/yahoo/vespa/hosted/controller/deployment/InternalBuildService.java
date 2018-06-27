@@ -28,7 +28,7 @@ public class InternalBuildService implements BuildService {
     @Override
     public JobState stateOf(BuildJob buildJob) {
         Optional<RunStatus> run = jobs.last(buildJob.applicationId(), JobType.fromJobName(buildJob.jobName()));
-        return run.isPresent() && ! run.get().end().isPresent() ? JobState.running : JobState.idle;
+        return run.isPresent() && ! run.get().hasEnded() ? JobState.running : JobState.idle;
     }
 
     @Override
