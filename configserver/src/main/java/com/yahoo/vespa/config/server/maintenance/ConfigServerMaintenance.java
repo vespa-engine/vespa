@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.FileDistributionFactory;
 import com.yahoo.vespa.curator.Curator;
@@ -21,7 +22,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
                                    Curator curator,
                                    FileDistributionFactory fileDistributionFactory) {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
-        tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.defaultInterval);
+        tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
         zooKeeperDataMaintainer = new ZooKeeperDataMaintainer(applicationRepository, curator, defaults.defaultInterval);
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig);
     }
@@ -40,9 +41,16 @@ public class ConfigServerMaintenance extends AbstractComponent {
     private static class DefaultTimes {
 
         private final Duration defaultInterval;
+        private final Duration tenantsMaintainerInterval;
 
         DefaultTimes(ConfigserverConfig configserverConfig) {
             this.defaultInterval = Duration.ofMinutes(configserverConfig.maintainerIntervalMinutes());
+            boolean isCd = configserverConfig.system().equals(SystemName.cd.name());
+            // TODO: Want job control or feature flag to control when to run this, for now use a very
+            // long interval to avoid running the maintainer except in CD
+            this.tenantsMaintainerInterval = isCd
+                    ? defaultInterval
+                    : Duration.ofMinutes(configserverConfig.tenantsMaintainerIntervalMinutes());
         }
     }
 

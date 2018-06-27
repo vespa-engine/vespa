@@ -23,6 +23,7 @@ public class TenantsMaintainerTest {
         MaintainerTester tester = new MaintainerTester();
         TenantRepository tenantRepository = tester.tenantRepository();
         ApplicationRepository applicationRepository = tester.applicationRepository();
+        File applicationPackage = new File("src/test/apps/app");
 
         TenantName shouldBeDeleted = TenantName.from("to-be-deleted");
         TenantName shouldNotBeDeleted = TenantName.from("should-not-be-deleted");
@@ -30,10 +31,8 @@ public class TenantsMaintainerTest {
         tenantRepository.addTenant(shouldBeDeleted);
         tenantRepository.addTenant(shouldNotBeDeleted);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
-        applicationRepository.deploy(new File("src/test/apps/app"),
-                new PrepareParams.Builder()
-                        .applicationId(ApplicationId.from(shouldNotBeDeleted, ApplicationName.from("foo"), InstanceName.defaultName()))
-                        .build());
+
+        applicationRepository.deploy(applicationPackage, prepareParams(shouldNotBeDeleted));
         assertNotNull(tenantRepository.getTenant(shouldBeDeleted));
         assertNotNull(tenantRepository.getTenant(shouldNotBeDeleted));
 
@@ -46,5 +45,17 @@ public class TenantsMaintainerTest {
         // System tenants should not be deleted
         assertNotNull(tenantRepository.getTenant(TenantName.defaultName()));
         assertNotNull(tenantRepository.getTenant(TenantRepository.HOSTED_VESPA_TENANT));
+
+        // Add tenant again and deploy
+        tenantRepository.addTenant(shouldBeDeleted);
+        tester.applicationRepository().deploy(applicationPackage, prepareParams(shouldBeDeleted));
+    }
+
+    private PrepareParams prepareParams(TenantName tenantName) {
+        return new PrepareParams.Builder().applicationId(applicationId(tenantName)).build();
+    }
+
+    private ApplicationId applicationId(TenantName tenantName) {
+        return ApplicationId.from(tenantName, ApplicationName.from("foo"), InstanceName.defaultName());
     }
 }
