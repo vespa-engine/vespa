@@ -57,7 +57,10 @@ public class ContainerTester {
     public void upgradeSystem(Version version) {
         controller().curator().writeControllerVersion(controller().hostname(), version);
         for (ZoneId zone : controller().zoneRegistry().zones().all().ids()) {
-            configServer().setVersion(version, zone, SystemApplication.all());
+            for (SystemApplication application : SystemApplication.all()) {
+                configServer().setVersion(application.id(), zone, version);
+                configServer().convergeServices(application.id(), zone);
+            }
         }
         computeVersionStatus();
     }

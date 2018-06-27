@@ -12,18 +12,18 @@ import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import com.yahoo.vespa.hosted.controller.maintenance.VersionStatusUpdater;
 
 import java.time.Duration;
 import java.util.List;
@@ -50,6 +50,7 @@ public class DeploymentTester {
     private final Upgrader upgrader;
     private final SystemUpgrader systemUpgrader;
     private final ReadyJobsTrigger readyJobTrigger;
+    private final VersionStatusUpdater versionStatusUpdater;
 
     public DeploymentTester() {
         this(new ControllerTester());
@@ -58,11 +59,12 @@ public class DeploymentTester {
     public DeploymentTester(ControllerTester tester) {
         this.tester = tester;
         tester.curator().writeUpgradesPerMinute(100);
-        this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, new JobControl(tester.curator()),
-                                     tester.curator());
-        this.systemUpgrader = new SystemUpgrader(tester.controller(), maintenanceInterval, new JobControl(tester.curator()));
-        this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval,
-                                                    new JobControl(tester.curator()));
+
+        JobControl jobControl = new JobControl(tester.curator());
+        this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
+        this.systemUpgrader = new SystemUpgrader(tester.controller(), maintenanceInterval, jobControl);
+        this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
+        this.versionStatusUpdater = new VersionStatusUpdater(tester.controller(), maintenanceInterval, jobControl);
     }
 
     public SystemUpgrader systemUpgrader() {
@@ -99,7 +101,7 @@ public class DeploymentTester {
 
     /** Re-compute and write version status */
     public void computeVersionStatus() {
-        controller().updateVersionStatus(VersionStatus.compute(controller()));
+        versionStatusUpdater.run();
     }
 
     /** Upgrade controller to given version */
@@ -111,7 +113,10 @@ public class DeploymentTester {
     /** Upgrade system applications in all zones to given version */
     public void upgradeSystemApplications(Version version) {
         for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
-            tester.configServer().setVersion(version, zone, SystemApplication.all());
+            for (SystemApplication application : SystemApplication.all()) {
+                tester.configServer().setVersion(application.id(), zone, version);
+                tester.configServer().convergeServices(application.id(), zone);
+            }
         }
         computeVersionStatus();
     }
