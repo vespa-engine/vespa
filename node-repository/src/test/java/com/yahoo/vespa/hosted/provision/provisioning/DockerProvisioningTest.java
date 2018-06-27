@@ -201,7 +201,7 @@ public class DockerProvisioningTest {
     private void prepareAndActivate(ApplicationId application, int nodeCount, boolean exclusive, ProvisioningTester tester) {
         Set<HostSpec> hosts = new HashSet<>(tester.prepare(application,
                                             ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.39"), exclusive),
-                                            Capacity.fromNodeCount(nodeCount, Optional.of(dockerFlavor), false),
+                                            Capacity.fromNodeCount(nodeCount, Optional.of(dockerFlavor), false, true),
                                             1));
         tester.activate(application, hosts);
     }

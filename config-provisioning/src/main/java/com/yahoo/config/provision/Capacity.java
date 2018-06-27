@@ -15,13 +15,16 @@ public final class Capacity {
 
     private final boolean required;
 
+    private final boolean canFail;
+
     private final Optional<String> flavor;
 
     private final NodeType type;
 
-    private Capacity(int nodeCount, Optional<String> flavor, boolean required, NodeType type) {
+    private Capacity(int nodeCount, Optional<String> flavor, boolean required, boolean canFail, NodeType type) {
         this.nodeCount = nodeCount;
         this.required = required;
+        this.canFail = canFail;
         this.flavor = flavor;
         this.type = type;
     }
@@ -39,6 +42,13 @@ public final class Capacity {
     public boolean isRequired() { return required; }
 
     /**
+     * Returns true if an exception should be thrown if the specified capacity can not be satisfied
+     * (to whatever policies are applied and taking required true/false into account).
+     * Returns false if it is preferable to still succeed with partially satisfied capacity.
+     */
+    public boolean canFail() { return canFail; }
+
+    /**
      * Returns the node type (role) requested. This is tenant nodes by default.
      * If some other type is requested the node count and flavor may be ignored
      * and all nodes of the requested type returned instead.
@@ -52,46 +62,22 @@ public final class Capacity {
 
     /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
     public static Capacity fromNodeCount(int capacity) {
-        return fromNodeCount(capacity, Optional.empty(), false);
+        return fromNodeCount(capacity, Optional.empty(), false, true);
     }
 
+    // TODO: Remove after July 2018
+    @Deprecated
     public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required) {
-        return new Capacity(nodeCount, flavor, required, NodeType.tenant);
+        return new Capacity(nodeCount, flavor, required, true, NodeType.tenant);
+    }
+
+    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required, boolean canFail) {
+        return new Capacity(nodeCount, flavor, required, canFail, NodeType.tenant);
     }
 
     /** Creates this from a node type */
     public static Capacity fromRequiredNodeType(NodeType type) {
-        return new Capacity(0,  Optional.empty(), true, type);
-    }
-
-    /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
-    // TODO: Remove after April 2018
-    public static Capacity fromNodeCount(int nodeCount, String flavor) {
-        return fromNodeCount(nodeCount, Optional.of(flavor));
-    }
-
-    /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
-    // TODO: Remove after April 2018
-    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor) {
-        return new Capacity(nodeCount, flavor, false, NodeType.tenant);
-    }
-
-    /** Creates this from a required node count: Requests must fail unless the node count can be satisfied exactly */
-    // TODO: Remove after April 2018
-    public static Capacity fromRequiredNodeCount(int nodeCount) {
-        return fromRequiredNodeCount(nodeCount, Optional.empty());
-    }
-
-    /** Creates this from a required node count: Requests must fail unless the node count can be satisfied exactly */
-    // TODO: Remove after April 2018
-    public static Capacity fromRequiredNodeCount(int nodeCount, String flavor) {
-        return fromRequiredNodeCount(nodeCount, Optional.of(flavor));
-    }
-
-    /** Creates this from a required node count: Requests must fail unless the node count can be satisfied exactly */
-    // TODO: Remove after April 2018
-    public static Capacity fromRequiredNodeCount(int nodeCount, Optional<String> flavor) {
-        return new Capacity(nodeCount, flavor, true, NodeType.tenant);
+        return new Capacity(0,  Optional.empty(), true, false, type);
     }
 
 }

@@ -238,7 +238,8 @@ public class NodeIdentifierTest {
                                                 ClusterSpec.Type.container,
                                                 new ClusterSpec.Id(clusterId),
                                                 ClusterSpec.Group.from(0),
-                                                Version.emptyVersion),
+                                                Version.emptyVersion,
+                                                false),
                                         clusterIndex),
                                 Generation.inital(),
                                 false));

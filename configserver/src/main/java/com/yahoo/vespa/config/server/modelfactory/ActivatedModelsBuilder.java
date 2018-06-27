@@ -10,9 +10,11 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -25,6 +27,7 @@ import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.curator.Curator;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -104,11 +107,16 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     }
 
     private ModelContext.Properties createModelContextProperties(ApplicationId applicationId) {
-        return createModelContextProperties(
-                applicationId,
-                configserverConfig,
-                zone(),
-                new Rotations(curator, TenantRepository.getTenantPath(tenant)).readRotationsFromZooKeeper(applicationId));
+        return new ModelContextImpl.Properties(applicationId,
+                                               configserverConfig.multitenant(),
+                                               ConfigServerSpec.fromConfig(configserverConfig),
+                                               HostName.from(configserverConfig.loadBalancerAddress()),
+                                               configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null,
+                                               configserverConfig.athenzDnsSuffix(),
+                                               configserverConfig.hostedVespa(),
+                                               zone(),
+                                               new Rotations(curator, TenantRepository.getTenantPath(tenant)).readRotationsFromZooKeeper(applicationId),
+                                               false); // We may be bootstrapping, but we only know and care during prepare
     }
 
 }

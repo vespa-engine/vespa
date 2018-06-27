@@ -51,11 +51,6 @@ public final class ClusterSpec {
      */
     public boolean isExclusive() { return exclusive; }
 
-    // TODO: Remove after April 2018
-    public ClusterSpec changeGroup(Optional<Group> newGroup) {
-        return with(newGroup);
-    }
-
     public ClusterSpec with(Optional<Group> newGroup) {
         return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive);
     }
@@ -64,18 +59,10 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive);
     }
 
-    // TODO: Remove after April 2018
-    public static ClusterSpec request(Type type, Id id, Version vespaVersion) {
-        return request(type, id, vespaVersion, false);
-    }
     public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive) {
         return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive);
     }
 
-    // TODO: Remove after April 2018
-    public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion) {
-        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, false);
-    }
     public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive) {
         return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive);
     }

@@ -140,7 +140,7 @@ public class MockNodeRepository extends NodeRepository {
                                                    ClusterSpec.Id.from("id3"),
                                                    Version.fromString("6.42"),
                                                    false);
-        activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2, Optional.of("docker"), false), 1, null), app3, provisioner);
+        activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2, Optional.of("docker"), false, true), 1, null), app3, provisioner);
     }
 
     private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {

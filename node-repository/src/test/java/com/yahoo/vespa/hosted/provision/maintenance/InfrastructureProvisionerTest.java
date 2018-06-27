@@ -100,7 +100,7 @@ public class InfrastructureProvisionerTest {
         Node node = tester.addNode("id-" + id, "node-" + id, "default", NodeType.config);
         Optional<Node> nodeWithAllocation = wantedVespaVersion.map(version -> {
             ConfigServerApplication application = ConfigServerApplication.CONFIG_SERVER_APPLICATION;
-            ClusterSpec clusterSpec = ClusterSpec.from(application.getClusterType(), application.getClusterId(), ClusterSpec.Group.from(0), version);
+            ClusterSpec clusterSpec = ClusterSpec.from(application.getClusterType(), application.getClusterId(), ClusterSpec.Group.from(0), version, false);
             ClusterMembership membership = ClusterMembership.from(clusterSpec, 1);
             Allocation allocation = new Allocation(application.getApplicationId(), membership, new Generation(0, 0), false);
             return node.with(allocation);

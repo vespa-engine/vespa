@@ -147,7 +147,7 @@ public class InactiveAndFailedExpirerTest {
                         new MockDeployer.ApplicationContext(applicationId, cluster,
                                                             Capacity.fromNodeCount(2,
                                                                                    Optional.of("default"),
-                                                                                   false),
+                                                                                   false, true),
                                                             1)
                 )
         );

@@ -90,7 +90,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             log.log(LogLevel.DEBUG, () -> "Decided flavor for requested tenant nodes: " + flavor);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, flavor, exclusive);
+            requestedNodes = NodeSpec.from(nodeCount, flavor, exclusive, requestedCapacity.canFail());
         }
         else {
             requestedNodes = NodeSpec.from(requestedCapacity.type());

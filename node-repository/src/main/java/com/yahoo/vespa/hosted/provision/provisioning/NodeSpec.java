@@ -40,6 +40,9 @@ public interface NodeSpec {
     /** Returns whether the given node count is sufficient to fulfill this spec */
     boolean fulfilledBy(int count);
 
+    /** Returns whether this should throw an exception if the requested nodes are not fully available */
+    boolean canFail();
+
     /** Returns the ideal number of nodes that should be retired to fulfill this spec */
     int idealRetiredCount(int acceptedCount, int currentRetiredCount);
 
@@ -53,8 +56,8 @@ public interface NodeSpec {
      */
     Node assignRequestedFlavor(Node node);
 
-    static NodeSpec from(int nodeCount, Flavor flavor, boolean exclusive) {
-        return new CountNodeSpec(nodeCount, flavor, exclusive);
+    static NodeSpec from(int nodeCount, Flavor flavor, boolean exclusive, boolean canFail) {
+        return new CountNodeSpec(nodeCount, flavor, exclusive, canFail);
     }
 
     static NodeSpec from(NodeType type) {
@@ -67,12 +70,14 @@ public interface NodeSpec {
         private final int count;
         private final Flavor requestedFlavor;
         private final boolean exclusive;
+        private final boolean canFail;
 
-        public CountNodeSpec(int count, Flavor flavor, boolean exclusive) {
+        public CountNodeSpec(int count, Flavor flavor, boolean exclusive, boolean canFail) {
             Objects.requireNonNull(flavor, "A flavor must be specified");
             this.count = count;
             this.requestedFlavor = flavor;
             this.exclusive = exclusive;
+            this.canFail = canFail;
         }
 
         // TODO: Remove usage of this
@@ -102,16 +107,21 @@ public interface NodeSpec {
         public boolean specifiesNonStockFlavor() { return ! requestedFlavor.isStock(); }
 
         @Override
+        public boolean saturatedBy(int count) { return fulfilledBy(count); } // min=max for count specs
+
+        @Override
         public boolean fulfilledBy(int count) { return count >= this.count; }
 
         @Override
-        public boolean saturatedBy(int count) { return fulfilledBy(count); } // min=max for count specs
+        public boolean canFail() { return canFail; }
 
         @Override
         public int idealRetiredCount(int acceptedCount, int currentRetiredCount) { return acceptedCount - this.count; }
 
         @Override
-        public NodeSpec fraction(int divisor) { return new CountNodeSpec(count/divisor, requestedFlavor, exclusive); }
+        public NodeSpec fraction(int divisor) {
+            return new CountNodeSpec(count/divisor, requestedFlavor, exclusive, canFail);
+        }
 
         @Override
         public Node assignRequestedFlavor(Node node) {
@@ -164,6 +174,9 @@ public interface NodeSpec {
 
         @Override
         public boolean saturatedBy(int count) { return false; }
+
+        @Override
+        public boolean canFail() { return false; }
 
         @Override
         public int idealRetiredCount(int acceptedCount, int currentRetiredCount) {

@@ -24,7 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * In memory host provisioner. NB! ATM cannot be reused after allocate has been called.
+ * In memory host provisioner for testing only.
+ * NB! ATM cannot be reused after allocate has been called.
  *
  * @author hmusum
  * @author bratseth
@@ -97,6 +98,9 @@ public class InMemoryProvisioner implements HostProvisioner {
         return hosts;
     }
 
+    /** Returns the current allocations of this as a mutable map */
+    public Map<ClusterSpec, List<HostSpec>> allocations() { return allocations; }
+
     @Override
     public HostSpec allocateHost(String alias) {
         if (legacyMapping.containsKey(alias)) return legacyMapping.get(alias);
@@ -129,14 +133,16 @@ public class InMemoryProvisioner implements HostProvisioner {
             allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(0))),
                                                 flavor,
                                                 capacity,
-                                                startIndexForClusters));
+                                                startIndexForClusters,
+                                                requestedCapacity.canFail()));
         }
         else {
             for (int i = 0; i < groups; i++) {
                 allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(i))),
                                                     flavor,
                                                     capacity / groups,
-                                                    allocation.size()));
+                                                    allocation.size(),
+                                                    requestedCapacity.canFail()));
             }
         }
         for (ListIterator<HostSpec> i = allocation.listIterator(); i.hasNext(); ) {
@@ -155,13 +161,18 @@ public class InMemoryProvisioner implements HostProvisioner {
                             host.version());
     }
 
-    private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, String flavor, int nodesInGroup, int startIndex) {
+    private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, String flavor, int nodesInGroup, int startIndex, boolean canFail) {
         List<HostSpec> allocation = allocations.getOrDefault(clusterGroup, new ArrayList<>());
         allocations.put(clusterGroup, allocation);
 
         int nextIndex = nextIndexInCluster.getOrDefault(new Pair<>(clusterGroup.type(), clusterGroup.id()), startIndex);
         while (allocation.size() < nodesInGroup) {
-            if (freeNodes.get(flavor).isEmpty()) throw new IllegalArgumentException("Insufficient capacity of flavor '" + flavor + "'");
+            if (freeNodes.get(flavor).isEmpty()) {
+                if (canFail)
+                    throw new IllegalArgumentException("Insufficient capacity of flavor '" + flavor + "'");
+                else
+                    break;
+            }
             Host newHost = freeNodes.removeValue(flavor, 0);
             ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
             allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.of(membership), newHost.version()));

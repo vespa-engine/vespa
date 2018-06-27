@@ -209,6 +209,9 @@ public class VespaModelFactoryTest {
                     public String athenzDnsSuffix() {
                         return null;
                     }
+
+                    @Override
+                    public boolean isBootstrap() { return false; }
                 };
             }
         };

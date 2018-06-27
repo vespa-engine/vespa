@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents a document id specific value in a {@link GroupingExpression}. It evaluates to the namespace-
  * specific value of the document id of the input {@link com.yahoo.search.result.Hit}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class DocIdNsSpecificValue extends DocumentValue {
 
@@ -15,5 +15,6 @@ public class DocIdNsSpecificValue extends DocumentValue {
     public DocIdNsSpecificValue() {
         super("docidnsspecific()");
     }
+
 }
 

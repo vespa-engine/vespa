@@ -214,7 +214,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      *         node in the config server cluster)
      */
     @Override
-    public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application, Duration timeout) {
+    public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application,
+                                                                                 Duration timeout) {
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
         LocalSession activeSession = getActiveSession(tenant, application);
@@ -583,8 +584,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         // Keep track of deployment per application
         Map<ApplicationId, Future<?>> futures = new HashMap<>();
         Set<ApplicationId> failedDeployments = new HashSet<>();
-        applicationIds.forEach(appId -> deployFromLocalActive(appId).ifPresent(
-                deployment -> futures.put(appId, executor.submit(deployment::activate))));
+
+        for (ApplicationId appId : applicationIds) {
+            Optional<com.yahoo.config.provision.Deployment> deploymentOptional = deployFromLocalActive(appId);
+            if ( ! deploymentOptional.isPresent()) continue;
+
+            Deployment deployment = (Deployment)deploymentOptional.get();
+            deployment.setBootstrap(true); // Only available inside the config server; hence the cast
+            futures.put(appId, executor.submit(deployment::activate));
+        }
+
         for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
             try {
                 f.getValue().get();

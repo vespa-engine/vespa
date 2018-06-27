@@ -127,6 +127,9 @@ public class MockModelContext implements ModelContext {
             public Set<Rotation> rotations() {
                 return new HashSet<>();
             }
+
+            @Override
+            public boolean isBootstrap() { return false; }
         };
     }
 }
