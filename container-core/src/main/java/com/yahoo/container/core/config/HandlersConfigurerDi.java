@@ -86,11 +86,7 @@ public class HandlersConfigurerDi {
         osgiWrapper = new OsgiWrapper(osgiFramework, vespaContainer.getBundleLoader());
 
         container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
-        try {
-            getNewComponentGraph(discInjector, false);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while setting up handlers for the first time.");
-        }
+        getNewComponentGraph(discInjector, false);
     }
 
     private static class OsgiWrapper extends OsgiImpl implements com.yahoo.container.di.Osgi {
@@ -139,10 +135,10 @@ public class HandlersConfigurerDi {
     /**
      * Wait for new config to arrive and produce the new graph
      */
-    public void getNewComponentGraph(Injector discInjector, boolean restartOnRedeploy) throws InterruptedException {
-        currentGraph = container.getNewComponentGraph(currentGraph, createFallbackInjector(vespaContainer, discInjector), restartOnRedeploy);
-
-        assert (currentGraph.getInstance(RegistriesHack.class) != null); // TODO: Remove, seems quite pointless?
+    public void getNewComponentGraph(Injector discInjector, boolean restartOnRedeploy) {
+        currentGraph = container.getNewComponentGraph(currentGraph,
+                                                      createFallbackInjector(vespaContainer, discInjector),
+                                                      restartOnRedeploy);
     }
 
     @SuppressWarnings("deprecation")

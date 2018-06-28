@@ -73,7 +73,6 @@ public class Container {
     }
 
     public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean restartOnRedeploy) {
-
         try {
             ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, restartOnRedeploy);
             newGraph.reuseNodes(oldGraph);
@@ -87,11 +86,11 @@ public class Container {
         }
     }
 
-    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph) {
+    ComponentGraph getNewComponentGraph(ComponentGraph oldGraph) {
         return getNewComponentGraph(oldGraph, Guice.createInjector(), false);
     }
 
-    public ComponentGraph getNewComponentGraph() {
+    ComponentGraph getNewComponentGraph() {
         return getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), false);
     }
 
@@ -125,10 +124,8 @@ public class Container {
         }
     }
 
-    public ComponentGraph getConfigAndCreateGraph(ComponentGraph graph, Injector fallbackInjector, boolean restartOnRedeploy) {
-
+    private ComponentGraph getConfigAndCreateGraph(ComponentGraph graph, Injector fallbackInjector, boolean restartOnRedeploy) {
         ConfigSnapshot snapshot;
-
         while (true) {
             snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, restartOnRedeploy);
 

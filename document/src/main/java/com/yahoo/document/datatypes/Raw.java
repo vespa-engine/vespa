@@ -17,15 +17,16 @@ import java.util.Arrays;
 /**
  * FieldValue which encapsulates a Raw value
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public final class Raw extends FieldValue {
+
     private static class Factory extends PrimitiveDataType.Factory {
         public FieldValue create() {
             return new Raw();
         }
     }
-    public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
+
     public static final int classId = registerClass(Ids.document + 16, Raw.class);
     private ByteBuffer value;
 
@@ -41,6 +42,8 @@ public final class Raw extends FieldValue {
         this.value = ByteBuffer.wrap(buf);
         value.position(0);
     }
+
+    public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
 
     public ByteBuffer getByteBuffer() {
         return value;
@@ -136,11 +139,11 @@ public final class Raw extends FieldValue {
     }
 
     /* (non-Javadoc)
-      * @see com.yahoo.document.datatypes.FieldValue#deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)
-      */
-
+     * @see com.yahoo.document.datatypes.FieldValue#deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)
+     */
     @Override
     public void deserialize(Field field, FieldReader reader) {
         reader.read(field, this);
     }
+
 }

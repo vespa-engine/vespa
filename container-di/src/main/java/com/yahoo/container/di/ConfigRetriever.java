@@ -47,13 +47,14 @@ public final class ConfigRetriever {
     /**
      * Loop forever until we get config
      */
-    public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys, long leastGeneration,
-            boolean restartOnRedeploy) {
+    public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
+                                     long leastGeneration,
+                                     boolean restartOnRedeploy) {
         while (true) {
-            if (!Sets.intersection(componentConfigKeys, bootstrapKeys).isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Component config keys [" + componentConfigKeys + "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
-            }
+            if (!Sets.intersection(componentConfigKeys, bootstrapKeys).isEmpty())
+                throw new IllegalArgumentException("Component config keys [" + componentConfigKeys +
+                                                   "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
+
             log.log(DEBUG, "getConfigs: " + componentConfigKeys);
             Set<ConfigKey<? extends ConfigInstance>> allKeys = new HashSet<>(componentConfigKeys);
             allKeys.addAll(bootstrapKeys);
@@ -75,8 +76,9 @@ public final class ConfigRetriever {
     /**
      * Try to get config just once
      */
-    public Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys, long leastGeneration,
-            boolean restartOnRedeploy) {
+    Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
+                                            long leastGeneration,
+                                            boolean restartOnRedeploy) {
         if (!Sets.intersection(componentConfigKeys, bootstrapKeys).isEmpty()) {
             throw new IllegalArgumentException(
                     "Component config keys [" + componentConfigKeys + "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
@@ -114,7 +116,7 @@ public final class ConfigRetriever {
                 } else {
                     // This should not be a normal case, and hence a warning to allow investigation.
                     log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration + ") and components configs ("
-                            + newestComponentGeneration + ").");
+                                + newestComponentGeneration + ").");
                     return Optional.empty();
                 }
             }

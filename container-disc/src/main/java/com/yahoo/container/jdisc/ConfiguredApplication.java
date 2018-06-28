@@ -203,7 +203,7 @@ public final class ConfiguredApplication implements Application {
                     // Block until new config arrives, and it should be applied
                     configurer.getNewComponentGraph(builder.guiceModules().activate(), qrConfig.restartOnDeploy());
                     intitializeAndActivateContainer(builder);
-                } catch (ConfigInterruptedException | InterruptedException e) {
+                } catch (ConfigInterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
                     log.log(Level.SEVERE,
@@ -256,13 +256,12 @@ public final class ConfiguredApplication implements Application {
     }
 
     private void configureComponents(Injector discInjector) {
-        configurer = new HandlersConfigurerDi(
-                subscriberFactory,
-                Container.get(),
-                configId,
-                new Deconstructor(true),
-                discInjector,
-                osgiFramework);
+        configurer = new HandlersConfigurerDi(subscriberFactory,
+                                              Container.get(),
+                                              configId,
+                                              new Deconstructor(true),
+                                              discInjector,
+                                              osgiFramework);
     }
 
     private void setupGuiceBindings(GuiceRepository modules) {

@@ -39,12 +39,10 @@ import java.util.logging.Logger;
  * for descriptions of the format.
  *
  * @author lulf
- * @since 5.1.21
  */
 @Beta
 public class MockService extends LoggingRequestHandler {
 
-    private final static Logger log = Logger.getLogger(MockService.class.getName());
     private MockServiceHandler handler;
 
     /**
