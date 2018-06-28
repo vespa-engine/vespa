@@ -144,7 +144,7 @@
                     <configuration>
                         <doclint>${doclint},-missing</doclint>
                     </configuration>
-                    <version>3.0.0</version>
+                    <version>3.0.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
