@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +54,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
         deploymentExecutor.execute(() -> deployWithLock(application));
     }
 
+    protected Deployer deployer() { return deployer; }
+
     /** Block in this method until the next application should be maintained */
     protected abstract void throttle(int applicationCount);
 
@@ -78,7 +81,6 @@ public abstract class ApplicationMaintainer extends Maintainer {
             if ( ! isActive(application)) return; // became inactive since deployment was requested
             Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
             if ( ! deployment.isPresent()) return; // this will be done at another config server
-
             deployment.get().activate();
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Exception on maintenance redeploy", e);

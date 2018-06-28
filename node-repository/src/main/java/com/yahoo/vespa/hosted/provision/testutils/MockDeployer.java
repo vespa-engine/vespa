@@ -13,6 +13,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,11 @@ public class MockDeployer implements Deployer {
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, Duration timeout) {
         return Optional.of(new MockDeployment(provisioner, applications.get(id)));
+    }
+
+    @Override
+    public Optional<Instant> lastDeployTime(ApplicationId application) {
+        return Optional.empty(); // not implemented
     }
 
     public class MockDeployment implements Deployment {
