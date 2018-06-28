@@ -93,6 +93,7 @@
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.status.StatusHandler' bundle='configserver'>
       <binding>http://*/status</binding>
+      <binding>https://*/status</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.TenantHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/</binding>
