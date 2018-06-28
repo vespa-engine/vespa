@@ -175,7 +175,7 @@ public class RealStepRunner implements StepRunner {
                                                                   .lastTriggered().get()
                                                                   .application();
 
-        
+
         // TODO hakonhall: Fetch!
         throw new AssertionError();
     }

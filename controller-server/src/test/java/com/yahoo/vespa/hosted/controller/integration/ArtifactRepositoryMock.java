@@ -63,7 +63,7 @@ public class ArtifactRepositoryMock extends AbstractComponent implements Artifac
 
     @Override
     public byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version) {
-        throw new AssertionError();
+        return new byte[0];
     }
 
     private static int artifactHash(ApplicationId applicationId, String applicationVersion) {
