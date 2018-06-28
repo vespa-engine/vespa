@@ -6,6 +6,7 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -130,12 +131,15 @@ public class VersionStatus {
         ListMap<Version, HostName> versions = new ListMap<>();
         for (ZoneId zone : zones) {
             for (SystemApplication application : SystemApplication.all()) {
-                if (!application.configConvergedIn(zone, controller)) {
-                    throw new IllegalStateException("Config for " + application.id() + " in " + zone + " has not converged");
+                boolean configConverged = application.configConvergedIn(zone, controller);
+                if (!configConverged) {
+                    log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone + " has not converged");
                 }
                 for (Node node : controller.configServer().nodeRepository().list(zone, application.id(),
                                                                                  SystemApplication.activeStates())) {
-                    versions.put(node.currentVersion(), node.hostname());
+                    // Only use current node version if config has converged
+                    Version nodeVersion = configConverged ? node.currentVersion() : controller.systemVersion();
+                    versions.put(nodeVersion, node.hostname());
                 }
             }
         }
