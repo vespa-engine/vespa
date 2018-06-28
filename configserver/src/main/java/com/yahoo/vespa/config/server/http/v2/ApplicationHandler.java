@@ -57,11 +57,12 @@ public class ApplicationHandler extends HttpHandler {
     public HttpResponse handleGET(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
         Tenant tenant = verifyTenantAndApplication(applicationId);
+        Duration timeout = HttpHandler.getRequestTimeout(request, Duration.ofSeconds(5));
 
         if (isServiceConvergeRequest(request)) {
             // Expects both hostname and port in the request (hostname:port)
             String hostAndPort = getHostNameFromRequest(request);
-            return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri());
+            return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri(), timeout);
         }
 
         if (isClusterControllerStatusRequest(request)) {
@@ -88,11 +89,10 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isServiceConvergeListRequest(request)) {
-            return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri());
+            return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri(), timeout);
         }
 
         if (isFiledistributionStatusRequest(request)) {
-            Duration timeout = HttpHandler.getRequestTimeout(request, Duration.ofSeconds(5));
             return applicationRepository.filedistributionStatus(applicationId, timeout);
         }
 
