@@ -23,9 +23,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -33,6 +33,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -182,10 +183,13 @@ public class ConfigConvergenceCheckerTest {
                                                                                 .withFixedDelay((int) Duration.ofSeconds(10).toMillis())
                                                                                 .withBody("response too slow")));
         HttpResponse response = checker.checkService(application, hostAndPort(service), requestUrl, Duration.ofMillis(1));
-        assertResponse("{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
-                       "\",\"wantedGeneration\":3,\"error\":\"java.net.SocketTimeoutException: Read timed out\"}",
-                     404,
-                       response);
+        // Message contained in a SocketTimeoutException may differ across platforms, so we do a partial match of the response here
+        assertResponse((responseBody) -> {
+            assertTrue("Response matches", responseBody.startsWith(
+                    "{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
+                    "\",\"wantedGeneration\":3,\"error\":\"java.net.SocketTimeoutException") &&
+                                          responseBody.endsWith("\"}"));
+        }, 404, response);
     }
 
     private URI testServer() {
@@ -196,13 +200,23 @@ public class ConfigConvergenceCheckerTest {
         return uri.getHost() + ":" + uri.getPort();
     }
 
-    private static void assertResponse(String body, int status, HttpResponse response) {
+    private static void assertResponse(String json, int status, HttpResponse response) {
+        assertResponse((responseBody) -> {
+            Slime expected = SlimeUtils.jsonToSlime(json.getBytes());
+            Slime actual = SlimeUtils.jsonToSlime(responseBody.getBytes());
+            try {
+                assertEquals(new String((SlimeUtils.toJsonBytes(expected))), new String(SlimeUtils.toJsonBytes(actual)));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }, status, response);
+    }
+
+    private static void assertResponse(Consumer<String> assertFunc, int status, HttpResponse response) {
         ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
         try {
             response.render(responseBody);
-            Slime expected = SlimeUtils.jsonToSlime(body.getBytes(StandardCharsets.UTF_8));
-            Slime actual = SlimeUtils.jsonToSlime(responseBody.toByteArray());
-            assertEquals(new String((SlimeUtils.toJsonBytes(expected))), new String(SlimeUtils.toJsonBytes(actual)));
+            assertFunc.accept(responseBody.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
