@@ -1,7 +1,9 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -54,21 +56,7 @@ public class RealStepRunner implements StepRunner {
     }
 
     private Step.Status deployInitialReal(RunId id) {
-        try {
-            // TODO jvenstad: Do whatever is required based on the result, and log all of this.
-            controller.applications().deploy(id.application(),
-                                             id.type().zone(controller.system()).get(),
-                                             Optional.empty(),
-                                             new DeployOptions(false, Optional.empty(), false, true));
-            return succeeded;
-        }
-        catch (ConfigServerException e) {
-            // TODO jvenstad: Consider retrying different things as well.
-            // TODO jvenstad: Log error information.
-            if (id.type().isTest() && e.getErrorCode() == ConfigServerException.ErrorCode.OUT_OF_CAPACITY)
-                return unfinished;
-        }
-        return failed;
+        return deployReal(id, true);
     }
 
     private Step.Status installInitialReal(RunId id) {
@@ -79,7 +67,7 @@ public class RealStepRunner implements StepRunner {
 
     private Step.Status deployReal(RunId id) {
         // Separate out deploy logic from above, and reuse.
-        throw new AssertionError();
+        return deployReal(id,false);
     }
 
     private Step.Status deployTester(RunId id) {
@@ -122,6 +110,31 @@ public class RealStepRunner implements StepRunner {
     private Step.Status report(RunId id) {
         // Easy squeezy.
         throw new AssertionError();
+    }
+
+    private Step.Status deployReal(RunId id, boolean setTheStage) {
+        try {
+            // TODO jvenstad: Do whatever is required based on the result, and log all of this.
+            ActivateResult result = controller.applications().deploy(id.application(),
+                                                                     id.type().zone(controller.system()).get(),
+                                                                     Optional.empty(),
+                                                                     new DeployOptions(false,
+                                                                                       Optional.empty(),
+                                                                                       false,
+                                                                                       setTheStage));
+            return succeeded;
+        }
+        catch (ConfigServerException e) {
+            // TODO jvenstad: Consider retrying different things as well.
+            // TODO jvenstad: Log error information.
+            if (id.type().isTest() && e.getErrorCode() == ConfigServerException.ErrorCode.OUT_OF_CAPACITY)
+                return unfinished;
+        }
+        return failed;
+    }
+
+    private Application application(ApplicationId id) {
+        return controller.applications().require(id);
     }
 
 }

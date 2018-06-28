@@ -1,8 +1,5 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
-
 /**
  * Contains details about a deployment job run.
  *
@@ -10,14 +7,26 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareRes
  */
 public class RunDetails {
 
-    private final PrepareResponse deploymentResult;
+    private final String deploymentLog;
     private final String convergenceLog;
     private final String testLog;
 
-    public RunDetails(PrepareResponse deploymentResult, String convergenceLog, String testLog) {
-        this.deploymentResult = deploymentResult;
+    public RunDetails(String deploymentLog, String convergenceLog, String testLog) {
+        this.deploymentLog = deploymentLog;
         this.convergenceLog = convergenceLog;
         this.testLog = testLog;
+    }
+
+    public String getDeploymentLog() {
+        return deploymentLog;
+    }
+
+    public String getConvergenceLog() {
+        return convergenceLog;
+    }
+
+    public String getTestLog() {
+        return testLog;
     }
 
 }

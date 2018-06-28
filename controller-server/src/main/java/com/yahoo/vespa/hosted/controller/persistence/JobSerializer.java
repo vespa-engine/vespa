@@ -96,15 +96,15 @@ public class JobSerializer {
         run.steps().forEach((step, status) -> stepsObject.setString(valueOf(step), valueOf(status)));
     }
 
-    private static String valueOf(Step step) {
+    static String valueOf(Step step) {
         switch (step) {
             case deployInitialReal  : return "DIR";
             case installInitialReal : return "IIR";
             case deployReal         : return "DR" ;
-            case installReal        : return "ID" ;
+            case installReal        : return "IR" ;
             case deactivateReal     : return "DAR";
             case deployTester       : return "DT" ;
-            case installTester      : return "IR" ;
+            case installTester      : return "IT" ;
             case deactivateTester   : return "DAT";
             case startTests         : return "ST" ;
             case storeData          : return "SD" ;
@@ -113,15 +113,15 @@ public class JobSerializer {
         }
     }
 
-    private static Step stepOf(String step) {
+    static Step stepOf(String step) {
         switch (step) {
             case "DIR" : return deployInitialReal ;
             case "IIR" : return installInitialReal;
             case "DR"  : return deployReal        ;
-            case "ID"  : return installReal       ;
+            case "IR"  : return installReal       ;
             case "DAR" : return deactivateReal    ;
             case "DT"  : return deployTester      ;
-            case "IR"  : return installTester     ;
+            case "IT"  : return installTester     ;
             case "DAT" : return deactivateTester  ;
             case "ST"  : return startTests        ;
             case "SD"  : return storeData         ;
@@ -130,7 +130,7 @@ public class JobSerializer {
         }
     }
 
-    private static String valueOf(Status status) {
+    static String valueOf(Status status) {
         switch (status) {
             case unfinished : return "U";
             case failed     : return "F";
@@ -139,7 +139,7 @@ public class JobSerializer {
         }
     }
 
-    private static Status statusOf(String status) {
+    static Status statusOf(String status) {
         switch (status) {
             case "U" : return unfinished;
             case "F" : return failed    ;

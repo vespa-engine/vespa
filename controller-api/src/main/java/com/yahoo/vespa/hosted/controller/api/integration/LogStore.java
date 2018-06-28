@@ -21,10 +21,10 @@ public interface LogStore {
     void setConvergenceLog(RunId id, String convergenceLog);
 
     /** @return the result of prepare of the test application for the given deployment job. */
-    PrepareResponse getPrepareResponse(RunId id);
+    String getDeploymentLog(RunId id);
 
     /** Stores the given result of prepare of the test application for the given deployment job. */
-    void setPrepareResponse(RunId id, PrepareResponse prepareResponse);
+    void setDeploymentLog(RunId id, String deploymentLog);
 
     /** Deletes all data associated with test of a given deployment job */
     void deleteTestData(RunId id);

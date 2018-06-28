@@ -35,17 +35,12 @@ public class MockLogStore implements LogStore {
     }
 
     @Override
-    public PrepareResponse getPrepareResponse(RunId id) {
-        PrepareResponse prepareResponse = new PrepareResponse();
-        prepareResponse.message = "foo";
-        prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(),
-                                                                      Collections.emptyList());
-        prepareResponse.tenant = new TenantId("tenant");
-        return prepareResponse;
+    public String getDeploymentLog(RunId id) {
+        return "SUCCESS";
     }
 
     @Override
-    public void setPrepareResponse(RunId id, PrepareResponse prepareResponse) {
+    public void setDeploymentLog(RunId id, String deploymentLog) {
 
     }
 

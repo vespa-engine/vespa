@@ -30,8 +30,11 @@ import static com.google.common.collect.ImmutableList.copyOf;
  *
  * Keys are the {@link ApplicationId} of the real application, for which the deployment job is run, and the
  * {@link JobType} of the real deployment to test.
- *
  * Although the deployment jobs are themselves applications, their IDs are not to be referenced.
+ *
+ * Jobs consist of sets of {@link Step}s, defined in {@link JobProfile}s.
+ * Each run is represented by a {@link RunStatus}, which holds the status of each step of the run, as well as
+ * some other meta data.
  *
  * @author jonmv
  */
@@ -45,10 +48,43 @@ public class JobController {
         this.controller = controller;
         this.curator = controller.curator();
         this.logs = logStore;
+
     }
 
-    public LogStore logs() {
-        return logs;
+    /** Rewrite all job data with the newest format. */
+    public void updateStorage() {
+        for (ApplicationId id : applications())
+            for (JobType type : jobs(id)) {
+                locked(id, type, runs -> {
+                });
+                last(id, type).ifPresent(last -> locked(last.id(), run -> run));
+            }
+    }
+
+    /** Returns the details currently logged for the given run. */
+    public RunDetails details(RunId id) {
+        return new RunDetails(logs.getDeploymentLog(id), logs.getConvergenceLog(id), logs.getTestLog(id));
+    }
+
+    /** Appends the given string to the currently stored deployment logs for the given run. */
+    public void logDeployment(RunId id, String appendage) {
+        try (Lock __ = curator.lock(id.application(), id.type())) {
+            logs.setDeploymentLog(id, logs.getDeploymentLog(id).concat(appendage));
+        }
+    }
+
+    /** Appends the given string to the currently stored convergence logs for the given run. */
+    public void logConvergence(RunId id, String appendage) {
+        try (Lock __ = curator.lock(id.application(), id.type())) {
+            logs.setConvergenceLog(id, logs.getConvergenceLog(id).concat(appendage));
+        }
+    }
+
+    /** Appends the given string to the currently stored test logs for the given run. */
+    public void logTest(RunId id, String appendage) {
+        try (Lock __ = curator.lock(id.application(), id.type())) {
+            logs.setTestLog(id, logs.getTestLog(id).concat(appendage));
+        }
     }
 
     // TODO jvenstad: Remove this, and let the DeploymentTrigger trigger directly with the correct BuildService.
