@@ -1,17 +1,28 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.json.JsonWriter;
+import com.yahoo.document.serialization.DocumentReader;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.DocumentWriter;
+import com.yahoo.document.serialization.FieldReader;
+import com.yahoo.document.serialization.FieldWriter;
+import com.yahoo.document.serialization.SerializationException;
+import com.yahoo.document.serialization.XmlSerializationHelper;
+import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.Serializer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -266,6 +277,21 @@ public class Document extends StructuredFieldValue {
         XmlSerializationHelper.printDocumentXml(this, xml);
     }
 
+    /**
+     * Get JSON representation of the document root and its children contained in a JSON object
+     * @return JSON representation of document
+     */
+    public String toJson() {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        JsonWriter writer = new JsonWriter(buffer);
+        writer.write(this);
+        try {
+            return buffer.toString("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /** Returns true if the argument is a document which has the same set of values */
     @Override
     public boolean equals(Object o) {
@@ -314,8 +340,8 @@ public class Document extends StructuredFieldValue {
     @SuppressWarnings("deprecation")
     public void serializeHeader(Serializer data) throws SerializationException {
         if (data instanceof DocumentWriter) {
-            if (data instanceof VespaDocumentSerializer42) {
-                ((VespaDocumentSerializer42)data).setHeaderOnly(true);
+            if (data instanceof com.yahoo.document.serialization.VespaDocumentSerializer42) {
+                ((com.yahoo.document.serialization.VespaDocumentSerializer42)data).setHeaderOnly(true);
             }
             serialize((DocumentWriter)data);
         } else if (data instanceof BufferSerializer) {

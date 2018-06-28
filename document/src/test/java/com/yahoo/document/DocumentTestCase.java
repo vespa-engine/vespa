@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.ByteFieldValue;
@@ -15,7 +17,12 @@ import com.yahoo.document.datatypes.Raw;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.WeightedSet;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.serialization.DocumentDeserializer;
+import com.yahoo.document.serialization.DocumentDeserializerFactory;
+import com.yahoo.document.serialization.DocumentReader;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.XmlDocumentWriter;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Test;
@@ -27,10 +34,13 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -40,7 +50,6 @@ import static org.junit.Assert.fail;
  * @author <a href="thomasg@yahoo-inc.com>Thomas Gundersen</a>
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
 public class DocumentTestCase extends DocumentTestCaseBase {
 
     private static final String SERTEST_DOC_AS_XML_HEAD =
@@ -1199,6 +1208,26 @@ public class DocumentTestCase extends DocumentTestCaseBase {
                 "  <stringattr>hello universe</stringattr>\n" +
                 "</document>\n",
                 doc.toXml());
+    }
+
+    @Test
+    public void testSerializationToJson() throws Exception {
+        setUpSertestDocType();
+        Document doc = getSertestDocument();
+        String json = doc.toJson();
+        Map<String, Object> parsed = new ObjectMapper().readValue(json, new TypeReference<Map<String, Object>>() {
+        });
+        assertEquals(parsed.get("id"), "doc:sertest:foobar");
+        assertThat(parsed.get("fields"), instanceOf(Map.class));
+        Object fieldMap = parsed.get("fields");
+        if (fieldMap instanceof Map) {
+            Map<?, ?> fields = (Map<?, ?>) fieldMap;
+            assertEquals(fields.get("mailid"), "emailfromalicetobob");
+            assertEquals(fields.get("date"), -2013512400);
+            assertThat(fields.get("docindoc"), instanceOf(Map.class));
+            assertThat(fields.keySet(),
+                    containsInAnyOrder("mailid", "date", "attachmentcount", "rawfield", "weightedfield", "docindoc", "mapfield"));
+        }
     }
 
     @Test
