@@ -23,7 +23,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.maintenance.VersionStatusUpdater;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Duration;
 import java.util.List;
@@ -50,7 +50,6 @@ public class DeploymentTester {
     private final Upgrader upgrader;
     private final SystemUpgrader systemUpgrader;
     private final ReadyJobsTrigger readyJobTrigger;
-    private final VersionStatusUpdater versionStatusUpdater;
 
     public DeploymentTester() {
         this(new ControllerTester());
@@ -64,7 +63,6 @@ public class DeploymentTester {
         this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
         this.systemUpgrader = new SystemUpgrader(tester.controller(), maintenanceInterval, jobControl);
         this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
-        this.versionStatusUpdater = new VersionStatusUpdater(tester.controller(), maintenanceInterval, jobControl);
     }
 
     public SystemUpgrader systemUpgrader() {
@@ -101,7 +99,7 @@ public class DeploymentTester {
 
     /** Re-compute and write version status */
     public void computeVersionStatus() {
-        versionStatusUpdater.run();
+        controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
     /** Upgrade controller to given version */
