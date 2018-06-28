@@ -160,9 +160,6 @@ public class SessionHandlerTest {
         }
 
         @Override
-        public void delete() {  }
-
-        @Override
         public void delete(NestedTransaction transaction) {  }
 
     }

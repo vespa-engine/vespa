@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -103,9 +104,7 @@ public class SessionZooKeeperClient {
         return getCompletionWaiter(getWaiterPath(ACTIVE_BARRIER));
     }
 
-    Curator.CompletionWaiter getUploadWaiter() {
-        return getCompletionWaiter(getWaiterPath(UPLOAD_BARRIER));
-    }
+    Curator.CompletionWaiter getUploadWaiter() { return getCompletionWaiter(getWaiterPath(UPLOAD_BARRIER)); }
 
     private static final String PREPARE_BARRIER = "prepareBarrier";
     private static final String ACTIVE_BARRIER = "activeBarrier";
@@ -128,12 +127,15 @@ public class SessionZooKeeperClient {
         return curator.getCompletionWaiter(path, getNumberOfMembers(), serverId);
     }
 
-    public void delete() {
+    public void delete(NestedTransaction transaction ) {
         try {
             log.log(LogLevel.DEBUG, "Deleting " + sessionPath.getAbsolute());
-            configCurator.deleteRecurse(sessionPath.getAbsolute());
+            CuratorTransaction curatorTransaction = new CuratorTransaction(curator);
+            CuratorOperations.deleteAll(sessionPath.getAbsolute(), curator).forEach(curatorTransaction::add);
+            transaction.add(curatorTransaction);
+            transaction.commit();
         } catch (RuntimeException e) {
-            log.log(LogLevel.INFO, "Error deleting session (" + sessionPath.getAbsolute() + ") from zookeeper");
+            log.log(LogLevel.INFO, "Error deleting session (" + sessionPath.getAbsolute() + ") from zookeeper", e);
         }
     }
 

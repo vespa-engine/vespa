@@ -2,10 +2,13 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.lang.SettableOptional;
-import com.yahoo.vespa.config.server.*;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -14,7 +17,7 @@ import org.apache.zookeeper.KeeperException;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.*;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -82,9 +85,13 @@ public class RemoteSession extends Session {
         applicationSet = null;
     }
 
+    public Transaction createDeleteTransaction() {
+        return zooKeeperClient.createWriteStatusTransaction(Status.DELETE);
+    }
+
     public void makeActive(ReloadHandler reloadHandler) {
         Curator.CompletionWaiter waiter = zooKeeperClient.getActiveWaiter();
-        log.log(LogLevel.DEBUG, logPre()+"Getting session from repo: " + getSessionId());
+        log.log(LogLevel.DEBUG, logPre() + "Getting session from repo: " + getSessionId());
         ApplicationSet app = ensureApplicationLoaded();
         log.log(LogLevel.DEBUG, logPre() + "Reloading config for " + app);
         reloadHandler.reloadConfig(app);
@@ -106,7 +113,7 @@ public class RemoteSession extends Session {
         Curator.CompletionWaiter waiter = zooKeeperClient.getUploadWaiter();
         log.log(LogLevel.DEBUG, "Notifying upload waiter for session " + getSessionId());
         notifyCompletion(waiter);
-        log.log(LogLevel.DEBUG, "Done notifying for session " + getSessionId());
+        log.log(LogLevel.DEBUG, "Done notifying upload for session " + getSessionId());
     }
 
     private void notifyCompletion(Curator.CompletionWaiter completionWaiter) {

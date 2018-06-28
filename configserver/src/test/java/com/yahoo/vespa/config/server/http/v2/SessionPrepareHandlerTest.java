@@ -16,6 +16,7 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.path.Path;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -74,7 +75,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     @Before
     public void setupRepo() {
         curator = new MockCurator();
-        localRepo = new LocalSessionRepo(clock);
+        localRepo = new LocalSessionRepo(clock, curator);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
         tenantMessage = ",\"tenant\":\"" + tenant + "\"";
@@ -243,7 +244,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     @Test
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
         // Need different repo for 'test2' tenant
-        LocalSessionRepo localRepoDefault = new LocalSessionRepo(clock);
+        LocalSessionRepo localRepoDefault = new LocalSessionRepo(clock, curator);
         final TenantName defaultTenant = TenantName.from("test2");
         TenantBuilder defaultTenantBuilder = TenantBuilder.create(componentRegistry, defaultTenant)
                 .withLocalSessionRepo(localRepoDefault)
@@ -444,6 +445,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         }
 
         @Override
-        public void delete() {  }
+        public void delete(NestedTransaction transaction) {  }
     }
 }
