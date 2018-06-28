@@ -31,8 +31,8 @@
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
-          <source>1.9</source>
-          <target>1.9</target>
+          <source>10</source>
+          <target>10</target>
           <optimize>true</optimize>
         </configuration>
       </plugin>

@@ -100,10 +100,10 @@
                     <version>3.7.0</version>
                     <configuration>
                         <jdkToolchain>
-                            <version>9</version>
+                            <version>10</version>
                         </jdkToolchain>
-                        <source>1.9</source>
-                        <target>1.9</target>
+                        <source>10</source>
+                        <target>10</target>
                         <showWarnings>true</showWarnings>
                         <optimize>true</optimize>
                         <showDeprecation>false</showDeprecation>
