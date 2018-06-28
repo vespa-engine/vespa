@@ -12,10 +12,19 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
  */
 public interface ArtifactRepository {
 
-    /** Get tenant application package of given version */
+    /** Returns the tenant application package of the given version. */
     byte[] getApplicationPackage(ApplicationId application, String applicationVersion);
 
-    /** Get system application package of given version */
+    /** Stores the given tenant application package of the given version. */
+    void putApplicationPackage(ApplicationId application, String applicationVersion, byte[] applicationPackage);
+
+    /** Returns the system application package of the given version. */
     byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version);
+
+    /** Stores the given tester application fat jar of the given version. */
+    void putTesterJar(ApplicationId tester, String applicationVersion, byte[] fatTestJar);
+
+    /** Returns the tester application fat jar of the given version. */
+    byte[] getTesterJar(ApplicationId tester, String applicationVersion);
 
 }

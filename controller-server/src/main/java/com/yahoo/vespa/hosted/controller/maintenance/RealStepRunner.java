@@ -6,13 +6,21 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.deployment.LockedStep;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.ACTIVATION_CONFLICT;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -27,7 +35,7 @@ public class RealStepRunner implements StepRunner {
     private static ApplicationId testerOf(ApplicationId id) {
         return ApplicationId.from(id.tenant().value(),
                                   id.application().value(),
-                                  "-test-" + id.instance().value());
+                                  id.instance().value() + "-t");
     }
 
     private final Controller controller;
@@ -37,7 +45,7 @@ public class RealStepRunner implements StepRunner {
     }
 
     @Override
-    public Step.Status run(LockedStep step, RunStatus run) {
+    public Status run(LockedStep step, RunStatus run) {
         RunId id = run.id();
         switch (step.get()) {
             case deployInitialReal: return deployInitialReal(id);
@@ -55,86 +63,121 @@ public class RealStepRunner implements StepRunner {
         }
     }
 
-    private Step.Status deployInitialReal(RunId id) {
+    private Status deployInitialReal(RunId id) {
         return deployReal(id, true);
     }
 
-    private Step.Status installInitialReal(RunId id) {
-        // If converged and serviceconverged: succeeded
-        // If timeout, failed
-        return unfinished;
-    }
-
-    private Step.Status deployReal(RunId id) {
+    private Status deployReal(RunId id) {
         // Separate out deploy logic from above, and reuse.
-        return deployReal(id,false);
+        return deployReal(id, false);
     }
 
-    private Step.Status deployTester(RunId id) {
+    private Status deployReal(RunId id, boolean setTheStage) {
+        return deploy(id.application(),
+                      id.type(),
+                      () -> controller.applications().deploy(id.application(),
+                                                             id.type().zone(controller.system()).get(),
+                                                             Optional.empty(),
+                                                             new DeployOptions(false,
+                                                                               Optional.empty(),
+                                                                               false,
+                                                                               setTheStage)));
+    }
+
+    private Status deployTester(RunId id) {
         // Find endpoints of real application. This will move down at a later time.
         // See above.
-        throw new AssertionError();
+        return deploy(testerOf(id.application()),
+                      id.type(),
+                      () -> controller.applications().deployTester(testerOf(id.application()),
+                                                                   testerPackage(id),
+                                                                   id.type().zone(controller.system()).get(),
+                                                                   new DeployOptions(true,
+                                                                                     Optional.of(controller.systemVersion()),
+                                                                                     false,
+                                                                                     false)));
     }
 
-    private Step.Status installReal(RunId id) {
-        // See three above.
-        throw new AssertionError();
-    }
-
-    private Step.Status installTester(RunId id) {
-        // See above.
-        throw new AssertionError();
-    }
-
-    private Step.Status startTests(RunId id) {
-        // Empty for now, but will be: find endpoints and post them.
-        throw new AssertionError();
-    }
-
-    private Step.Status storeData(RunId id) {
-        // Update test logs.
-        // If tests are done, return test results.
-        throw new AssertionError();
-    }
-
-    private Step.Status deactivateReal(RunId id) {
-        // Try to deactivate, and if deactivated, finished.
-        throw new AssertionError();
-    }
-
-    private Step.Status deactivateTester(RunId id) {
-        // See above.
-        throw new AssertionError();
-    }
-
-    private Step.Status report(RunId id) {
-        // Easy squeezy.
-        throw new AssertionError();
-    }
-
-    private Step.Status deployReal(RunId id, boolean setTheStage) {
+    private Status deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deploy) {
         try {
             // TODO jvenstad: Do whatever is required based on the result, and log all of this.
-            ActivateResult result = controller.applications().deploy(id.application(),
-                                                                     id.type().zone(controller.system()).get(),
-                                                                     Optional.empty(),
-                                                                     new DeployOptions(false,
-                                                                                       Optional.empty(),
-                                                                                       false,
-                                                                                       setTheStage));
+            ActivateResult result = deploy.get();
+
             return succeeded;
         }
         catch (ConfigServerException e) {
             // TODO jvenstad: Consider retrying different things as well.
             // TODO jvenstad: Log error information.
-            if (id.type().isTest() && e.getErrorCode() == ConfigServerException.ErrorCode.OUT_OF_CAPACITY)
+            if (   e.getErrorCode() == OUT_OF_CAPACITY && type.isTest()
+                   || e.getErrorCode() == ACTIVATION_CONFLICT
+                   || e.getErrorCode() == APPLICATION_LOCK_FAILURE) {
+
                 return unfinished;
+            }
         }
         return failed;
     }
 
+    private Status installInitialReal(RunId id) {
+        return install(id.application(), id.type());
+    }
+
+    private Status installReal(RunId id) {
+        return install(id.application(), id.type());
+    }
+
+    private Status installTester(RunId id) {
+        return install(testerOf(id.application()), id.type());
+    }
+
+    private Status install(ApplicationId id, JobType type) {
+        // If converged and serviceconverged: succeeded
+        // If timeout, failed
+        return unfinished;
+    }
+
+    private Status startTests(RunId id) {
+        // Empty for now, but will be: find endpoints and post them.
+        throw new AssertionError();
+    }
+
+    private Status storeData(RunId id) {
+        // Update test logs.
+        // If tests are done, return test results.
+        throw new AssertionError();
+    }
+
+    private Status deactivateReal(RunId id) {
+        return deactivate(id.application(), id.type());
+    }
+
+    private Status deactivateTester(RunId id) {
+        return deactivate(testerOf(id.application()), id.type());
+    }
+
+    private Status deactivate(ApplicationId id, JobType type) {
+        // Try to deactivate, and if deactivated, finished.
+        throw new AssertionError();
+    }
+
+    private Status report(RunId id) {
+        // Easy squeezy.
+        throw new AssertionError();
+    }
+
     private Application application(ApplicationId id) {
         return controller.applications().require(id);
+    }
+
+    private ApplicationPackage testerPackage(RunId id) {
+        ApplicationVersion version = application(id.application()).deploymentJobs()
+                                                                  .statusOf(id.type()).get()
+                                                                  .lastTriggered().get()
+                                                                  .application();
+
+        
+        // TODO hakonhall: Fetch!
+        throw new AssertionError();
     }
 
 }

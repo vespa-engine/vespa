@@ -32,7 +32,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.storeData;
-import static java.util.Objects.requireNonNull;
 
 public class JobSerializer {
 

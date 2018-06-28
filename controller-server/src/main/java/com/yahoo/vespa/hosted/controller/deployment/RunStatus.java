@@ -44,7 +44,7 @@ public class RunStatus {
 
     public RunStatus with(Step.Status status, LockedStep step) {
         if (end.isPresent())
-            throw new IllegalStateException("This step ended at " + end.get() + " -- it can't be further modified!");
+            throw new AssertionError("This step ended at " + end.get() + " -- it can't be further modified!");
 
         EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), requireNonNull(status));
@@ -53,7 +53,7 @@ public class RunStatus {
 
     public RunStatus finish(Instant now) {
         if (end.isPresent())
-            throw new IllegalStateException("This step ended at " + end.get() + " -- it can't be ended again!");
+            throw new AssertionError("This step ended at " + end.get() + " -- it can't be ended again!");
 
         return new RunStatus(id, new EnumMap<>(steps), start, Optional.of(now));
     }

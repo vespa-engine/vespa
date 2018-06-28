@@ -231,8 +231,8 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(ApplicationId id, Optional<NToken> token) {
-        if ( ! (id.instance().isDefault() || id.instance().value().matches("\\d+"))) // TODO: Support instances properly
-            throw new UnsupportedOperationException("Only the instance names 'default' and names which are just the PR number are supported at the moment");
+        if ( ! (id.instance().isDefault())) // TODO: Support instances properly
+            throw new UnsupportedOperationException("Only the instance name 'default' is supported at the moment");
         try (Lock lock = lock(id)) {
             // Validate only application names which do not already exist.
             if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
@@ -351,6 +351,14 @@ public class ApplicationController {
             // Deploy by calling node repository directly
             configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
         }
+    }
+
+    /** Assembles and deploys a tester application to the given zone. */
+    public ActivateResult deployTester(ApplicationId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
+        if ( ! tester.instance().value().endsWith("-t"))
+            throw new IllegalArgumentException("'" + tester + "' is not a tester application!");
+
+        return deploy(tester, applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
