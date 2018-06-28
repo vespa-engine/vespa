@@ -330,34 +330,6 @@ public class JSONSearchHandlerTestCase {
 
 
 
-    private void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
-        inspector.traverse((ObjectTraverser) (key, value) -> {
-            String qualifiedKey = parent + key;
-            switch (value.type()) {
-                case BOOL:
-                    map.put(qualifiedKey, Boolean.toString(value.asBool()));
-                    break;
-                case DOUBLE:
-                    map.put(qualifiedKey, Double.toString(value.asDouble()));
-                    break;
-                case LONG:
-                    map.put(qualifiedKey, Long.toString(value.asLong()));
-                    break;
-                case STRING:
-                    map.put(qualifiedKey , value.asString());
-                    break;
-                case OBJECT:
-                    if (key.equals("grouping")) {
-                        createRequestMapping(value, map, "");
-                    } else {
-                        createRequestMapping(value, map, qualifiedKey+".");
-                        break;
-                    }
-            }
-
-        });
-    }
-
     @Test
     public void testRequestMapping() throws Exception {
         JSONObject json = new JSONObject();
@@ -369,8 +341,7 @@ public class JSONSearchHandlerTestCase {
         json.put("groupingSessionCache", false);
         json.put("searchChain", "exceptionInPlugin");
         json.put("timeout", 0);
-        json.put("tracelevel", 1);
-        json.put("trace.timestamps", false);
+        json.put("select", "_all");
 
 
         JSONObject model = new JSONObject();
@@ -415,12 +386,17 @@ public class JSONSearchHandlerTestCase {
         presentation.put("timing", false);
         json.put("presentation", presentation);
 
-        JSONObject grouping = new JSONObject();
-        grouping.put("select", "_all");
-        grouping.put("collapsefield", "none");
-        grouping.put("collapsesize", 2);
-        grouping.put("collapse.summary", "default");
-        json.put("grouping", grouping);
+        JSONObject collapse = new JSONObject();
+        collapse.put("field", "none");
+        collapse.put("size", 2);
+        collapse.put("summary", "default");
+        json.put("collapse", collapse);
+
+        JSONObject trace = new JSONObject();
+        trace.put("level", 1);
+        trace.put("timestamps", false);
+        trace.put("rules", "none");
+        json.put("trace", trace);
 
         JSONObject pos = new JSONObject();
         pos.put("ll", "1263123N;1231.9W");
@@ -442,27 +418,32 @@ public class JSONSearchHandlerTestCase {
         rules.put("rulebase", "default");
         json.put("rules", rules);
 
+        JSONObject metrics = new JSONObject();
+        metrics.put("ignore", "_all");
+        json.put("metrics", metrics);
+
         json.put("recall", "none");
         json.put("user", 123);
         json.put("nocachewrite", false);
         json.put("hitcountestimate", true);
-        json.put("metrics.ignore", false);
 
 
 
         // Create mapping
         Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes("utf-8")).get();
         Map<String, String> map = new HashMap<>();
-        createRequestMapping(inspector, map, "");
+        searchHandler.createRequestMapping(inspector, map, "");
 
         // Create GET-request with same query
         String url = uri + "&model.sources=source1%2Csource2&select=_all&model.language=en&presentation.timing=false&pos.attribute=default&pos.radius=71234m&model.searchPath=node1&nocachewrite=false&ranking.matchPhase.maxHits=100&presentation.summary=none" +
                 "&nocache=false&model.type=yql&collapse.summary=default&ranking.matchPhase.diversity.minGroups=1&ranking.location=123789.89123N%3B128123W&ranking.queryCache=false&offset=5&streaming.groupname=abc&groupingSessionCache=false" +
-                "&presentation.template=json&rules.off=false&ranking.properties=default&searchChain=exceptionInPlugin&pos.ll=1263123N%3B1231.9W&ranking.sorting=desc&ranking.matchPhase.ascending=true&ranking.features=none&hitcountestimate=true" +
-                "&model.filter=default&metrics.ignore=false&collapsefield=none&ranking.profile=1&rules.rulebase=default&model.defaultIndex=1&tracelevel=1&ranking.listFeatures=false&timeout=0&presentation.format=json" +
+                "&presentation.template=json&trace.rules=none&rules.off=false&ranking.properties=default&searchChain=exceptionInPlugin&pos.ll=1263123N%3B1231.9W&ranking.sorting=desc&ranking.matchPhase.ascending=true&ranking.features=none&hitcountestimate=true" +
+                "&model.filter=default&metrics.ignore=_all&collapse.field=none&ranking.profile=1&rules.rulebase=default&model.defaultIndex=1&trace.level=1&ranking.listFeatures=false&timeout=0&presentation.format=json" +
                 "&yql=select+%2A+from+sources+%2A+where+sddocname+contains+%22blog_post%22+limit+0+%7C+all%28group%28date%29+max%283%29+order%28-count%28%29%29each%28output%28count%28%29%29%29%29%3B&recall=none&streaming.maxbucketspervisitor=5" +
-                "&queryProfile=foo&presentation.bolding=true&model.encoding=json&model.queryString=abc&streaming.selection=none&trace.timestamps=false&collapsesize=2&streaming.priority=10&ranking.matchPhase.diversity.attribute=title" +
+                "&queryProfile=foo&presentation.bolding=true&model.encoding=json&model.queryString=abc&streaming.selection=none&trace.timestamps=false&collapse.size=2&streaming.priority=10&ranking.matchPhase.diversity.attribute=title" +
                 "&ranking.matchPhase.attribute=title&hits=10&streaming.userid=123&pos.bb=1237123W%3B123218N&model.restrict=_doc%2Cjson%2Cxml&ranking.freshness=0.05&user=123";
+
+
 
         final HttpRequest request = HttpRequest.createTestRequest(url, GET);
 

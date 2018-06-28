@@ -59,6 +59,7 @@ import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -290,14 +291,14 @@ public class SearchHandler extends LoggingRequestHandler {
         // Create query
         Query query;
         if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST && request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE).equals(JSON_CONTENT_TYPE)) {
-            Inspector inspector = null;
+            Inspector inspector;
             try {
                 byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
                 inspector = SlimeUtils.jsonToSlime(byteArray).get();
 
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new RuntimeException("Could not resolve JSON-query");
+                throw new RuntimeException("Problem with reading from input-stream", e);
             }
 
             // Create request-mapping
@@ -581,7 +582,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
 
-    private void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
+    public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String qualifiedKey = parent + key;
             switch (value.type()) {
@@ -597,13 +598,12 @@ public class SearchHandler extends LoggingRequestHandler {
                 case STRING:
                     map.put(qualifiedKey , value.asString());
                     break;
+                case ARRAY:
+                    map.put(qualifiedKey, value.asString());
+                    break;
                 case OBJECT:
-                    if (key.equals("grouping")) {
-                        createRequestMapping(value, map, "");
-                    } else {
-                        createRequestMapping(value, map, qualifiedKey+".");
-                        break;
-                    }
+                    createRequestMapping(value, map, qualifiedKey+".");
+                    break;
             }
 
         });
