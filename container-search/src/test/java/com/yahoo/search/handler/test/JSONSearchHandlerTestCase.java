@@ -11,7 +11,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
 import org.json.JSONObject;
 import org.junit.After;
