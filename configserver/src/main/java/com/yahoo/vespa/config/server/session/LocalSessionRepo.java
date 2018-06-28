@@ -3,14 +3,21 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -30,25 +37,37 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     // One executor for all instances of this class
     private static final ScheduledExecutorService purgeOldSessionsExecutor =
             new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getDaemonThreadFactory("purge-old-sessions"));
+    private final Map<Long, LocalSessionStateWatcher> sessionStateWatchers = new HashMap<>();
     private final long sessionLifetime; // in seconds
     private final Clock clock;
+    private final Curator curator;
 
     public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader,
-                            Clock clock, long sessionLifeTime) {
-        this(clock, sessionLifeTime);
+                            Clock clock, long sessionLifeTime, Curator curator) {
+        this(clock, curator, sessionLifeTime);
         loadSessions(tenantFileSystemDirs.sessionsPath(), loader);
         purgeOldSessionsExecutor.scheduleWithFixedDelay(this::purgeOldSessions, delay.getSeconds(), delay.getSeconds(), TimeUnit.SECONDS);
     }
 
     // Constructor public only for testing
-    public LocalSessionRepo(Clock clock) {
-        this(clock, TimeUnit.DAYS.toMillis(1));
+    public LocalSessionRepo(Clock clock, Curator curator) {
+        this(clock, curator, TimeUnit.DAYS.toMillis(1));
     }
 
     // Constructor public only for testing
-    private LocalSessionRepo(Clock clock, long sessionLifetime) {
-        this.sessionLifetime = sessionLifetime;
+    private LocalSessionRepo(Clock clock, Curator curator, long sessionLifetime) {
         this.clock = clock;
+        this.curator = curator;
+        this.sessionLifetime = sessionLifetime;
+    }
+
+    @Override
+    public synchronized void addSession(LocalSession session) {
+        super.addSession(session);
+        Path sessionsPath = TenantRepository.getSessionsPath(session.getTenantName());
+        long sessionId = session.getSessionId();
+        Curator.FileCache fileCache = curator.createFileCache(sessionsPath.append(String.valueOf(sessionId)).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+        sessionStateWatchers.put(sessionId, new LocalSessionStateWatcher(fileCache, session, this));
     }
 
     private void loadSessions(File applicationsDir, LocalSessionLoader loader) {
@@ -91,9 +110,15 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         return candidate.getStatus() == Session.Status.ACTIVATE;
     }
 
-    private void deleteSession(LocalSession candidate) {
-        removeSession(candidate.getSessionId());
-        candidate.delete();
+    void deleteSession(LocalSession session) {
+        long sessionId = session.getSessionId();
+        log.log(LogLevel.DEBUG, "Deleting local session " + sessionId);
+        LocalSessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
+        if (watcher != null)  watcher.close();
+        removeSession(sessionId);
+        NestedTransaction transaction = new NestedTransaction();
+        session.delete(transaction);
+        transaction.commit();
     }
 
     public void deleteAllSessions() {

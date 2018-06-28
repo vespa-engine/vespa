@@ -14,7 +14,6 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
@@ -47,7 +46,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     private final Curator curator;
     private final Path sessionsPath;
     private final RemoteSessionFactory remoteSessionFactory;
-    private final Map<Long, SessionStateWatcher> sessionStateWatchers = new HashMap<>();
+    private final Map<Long, RemoteSessionStateWatcher> sessionStateWatchers = new HashMap<>();
     private final ReloadHandler reloadHandler;
     private final MetricUpdater metrics;
     private final Curator.DirectoryCache directoryCache;
@@ -89,16 +88,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.applicationRepo = null;
     }
 
-    //---------- START overrides to keep sessions changed in sync 
-
-    @Override
-    public void removeSession(long id, NestedTransaction transaction) {
-        super.removeSession(id, transaction);
-        transaction.onCommitted(() -> sessionRemoved(id));
-    }
-
-    //---------- END overrides to keep sessions changed in sync 
-
     private void loadActiveSession(RemoteSession session) {
         tryReload(session.ensureApplicationLoaded(), session.logPre());
     }
@@ -106,9 +95,9 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     private void tryReload(ApplicationSet applicationSet, String logPre) {
         try {
             reloadHandler.reloadConfig(applicationSet);
-            log.log(LogLevel.INFO, logPre+"Application activated successfully: " + applicationSet.getId());
+            log.log(LogLevel.INFO, logPre + "Application activated successfully: " + applicationSet.getId());
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, logPre+"Skipping loading of application '" + applicationSet.getId() + "': " + Exceptions.toMessageString(e));
+            log.log(LogLevel.WARNING, logPre + "Skipping loading of application '" + applicationSet.getId() + "': " + Exceptions.toMessageString(e));
         }
     }
 
@@ -158,7 +147,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
             Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
             fileCache.addListener(this);
             loadSessionIfActive(session);
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, reloadHandler, session, metrics));
+            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics));
             addSession(session);
             metrics.incAddedSessions();
         } catch (Exception e) {
@@ -167,8 +156,8 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     }
 
     private void sessionRemoved(long sessionId) {
-        SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
-        watcher.close();
+        RemoteSessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
+        if (watcher != null)  watcher.close();
         removeSession(sessionId);
         metrics.incRemovedSessions();
     }

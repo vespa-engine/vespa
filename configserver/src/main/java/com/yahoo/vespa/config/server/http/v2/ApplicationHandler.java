@@ -46,8 +46,8 @@ public class ApplicationHandler extends HttpHandler {
     @Override
     public HttpResponse handleDELETE(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
-        boolean removed = applicationRepository.remove(applicationId);
-        if ( ! removed)
+        boolean deleted = applicationRepository.delete(applicationId);
+        if ( ! deleted)
             return HttpErrorResponse.notFoundError("Unable to delete " + applicationId + ": Not found");
         return new DeleteApplicationResponse(Response.Status.OK, applicationId);
     }

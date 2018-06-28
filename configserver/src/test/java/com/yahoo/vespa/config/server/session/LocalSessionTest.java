@@ -2,12 +2,12 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.io.Files;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.*;
 import com.yahoo.path.Path;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.slime.Slime;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
@@ -115,7 +115,9 @@ public class LocalSessionTest {
         assertTrue(configCurator.exists(sessionNode));
         assertTrue(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
         long gen = superModelGenerationCounter.get();
-        session.delete();
+        NestedTransaction transaction = new NestedTransaction();
+        session.delete(transaction);
+        transaction.commit();
         assertThat(superModelGenerationCounter.get(), is(gen + 1));
         assertFalse(configCurator.exists(sessionNode));
         assertFalse(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());

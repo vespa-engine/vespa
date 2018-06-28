@@ -41,6 +41,7 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
+import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
@@ -252,17 +253,77 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // ---------------- Application operations ----------------------------------------------------------------
 
     /**
-     * Removes a previously deployed application
+     * Deletes an application
      *
-     * @return true if the application was found and removed, false if it was not present
-     * @throws RuntimeException if the remove transaction fails. This method is exception safe.
+     * @return true if the application was found and deleted, false if it was not present
+     * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
-    public boolean remove(ApplicationId applicationId) {
+    public boolean delete(ApplicationId applicationId) {
+        // TODO: Use deleteApplication() in all zones, for now use it only in non-hosted
+        if (configserverConfig.hostedVespa()) {
+            return deleteApplicationLegacy(applicationId);
+        } else {
+            return deleteApplication(applicationId);
+        }
+    }
+
+    /**
+     * Deletes an application
+     *
+     * @return true if the application was found and deleted, false if it was not present
+     * @throws RuntimeException if the delete transaction fails. This method is exception safe.
+     */
+    public boolean deleteApplication(ApplicationId applicationId) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        if (tenant == null) return false;
+
+        TenantApplications tenantApplications = tenant.getApplicationRepo();
+        if (!tenantApplications.listApplications().contains(applicationId)) return false;
+
+        // Deleting an application is done by deleting the remote session and waiting
+        // until the config server where the deployment happened picks it up and deletes
+        // the local session
+        long sessionId = tenantApplications.getSessionIdForApplication(applicationId);
+        RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
+        remoteSession.createDeleteTransaction().commit();
+
+        log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
+        // TODO: Add support for timeout in request
+        Duration waitTime = Duration.ofSeconds(60);
+        if (localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
+            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
+        } else {
+            log.log(LogLevel.ERROR, TenantRepository.logPre(applicationId) + "Session " + sessionId + " was not deleted (waited " + waitTime + ")");
+            return false;
+        }
+
+        NestedTransaction transaction = new NestedTransaction();
+        transaction.add(new Rotations(tenant.getCurator(), tenant.getPath()).delete(applicationId)); // TODO: Not unit tested
+        // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
+        // this is done asynchronously in application maintenance by the node repository)
+        transaction.add(tenantApplications.deleteApplication(applicationId));
+
+        hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
+        transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
+        transaction.commit();
+
+        return true;
+    }
+
+    /**
+     * Deletes an application the legacy way (if there is more than one config server, the call needs to be done
+     * on the config server the application was deployed)
+     *
+     * @return true if the application was found and deleted, false if it was not present
+     * @throws RuntimeException if the delete transaction fails. This method is exception safe.
+     */
+    // TODO: Remove this method, use delete(ApplicationId) instead
+    boolean deleteApplicationLegacy(ApplicationId applicationId) {
         Optional<Tenant> owner = Optional.ofNullable(tenantRepository.getTenant(applicationId.tenant()));
-        if ( ! owner.isPresent()) return false;
+        if (!owner.isPresent()) return false;
 
         TenantApplications tenantApplications = owner.get().getApplicationRepo();
-        if ( ! tenantApplications.listApplications().contains(applicationId)) return false;
+        if (!tenantApplications.listApplications().contains(applicationId)) return false;
 
         // TODO: Push lookup logic down
         long sessionId = tenantApplications.getSessionIdForApplication(applicationId);
@@ -277,7 +338,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         transaction.add(new Rotations(owner.get().getCurator(), owner.get().getPath()).delete(applicationId)); // TODO: Not unit tested
         // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
         // this is done asynchronously in application maintenance by the node repository)
-
         transaction.add(tenantApplications.deleteApplication(applicationId));
 
         hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
@@ -376,6 +436,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private boolean localSessionHasBeenDeleted(ApplicationId applicationId, long sessionId, Duration waitTime) {
+        RemoteSessionRepo remoteSessionRepo = tenantRepository.getTenant(applicationId.tenant()).getRemoteSessionRepo();
+        Instant end = Instant.now().plus(waitTime);
+        do {
+            if (remoteSessionRepo.getSession(sessionId) == null) return true;
+            try { Thread.sleep(10); } catch (InterruptedException e) { /* ignored */}
+        } while (Instant.now().isBefore(end));
+
+        return false;
     }
 
     // ---------------- Convergence ----------------------------------------------------------------

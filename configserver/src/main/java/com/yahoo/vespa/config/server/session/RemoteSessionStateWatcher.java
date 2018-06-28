@@ -15,16 +15,16 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
- * Watches one particular session (/vespa/config/apps/n/sessionState in ZK)
+ * Watches one particular session (/config/v2/tenants/&lt;tenantName&gt;/sessions/&lt;n&gt;/sessionState in ZooKeeper)
  * The session must be in the session repo.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
-public class SessionStateWatcher implements NodeCacheListener {
+public class RemoteSessionStateWatcher implements NodeCacheListener {
 
-    private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
+    private static final Logger log = Logger.getLogger(RemoteSessionStateWatcher.class.getName());
     // One thread pool for all instances of this class
-    private static final Executor executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(SessionStateWatcher.class.getName()));
+    private static final Executor executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(RemoteSessionStateWatcher.class.getName()));
 
     private final Curator.FileCache fileCache;
     private final ReloadHandler reloadHandler;
@@ -32,10 +32,10 @@ public class SessionStateWatcher implements NodeCacheListener {
     private final MetricUpdater metrics;
 
 
-    public SessionStateWatcher(Curator.FileCache fileCache,
-                               ReloadHandler reloadHandler,
-                               RemoteSession session,
-                               MetricUpdater metrics) {
+    RemoteSessionStateWatcher(Curator.FileCache fileCache,
+                              ReloadHandler reloadHandler,
+                              RemoteSession session,
+                              MetricUpdater metrics) {
         this.fileCache = fileCache;
         this.reloadHandler = reloadHandler;
         this.session = session;
@@ -45,7 +45,7 @@ public class SessionStateWatcher implements NodeCacheListener {
     }
 
     private void sessionChanged(Session.Status status) {
-        log.log(LogLevel.DEBUG, session.logPre()+"Session change: Session " + session.getSessionId() + " changed status to " + status);
+        log.log(LogLevel.DEBUG, session.logPre() + "Session change: Remote session " + session.getSessionId() + " changed status to " + status);
 
         // valid for NEW -> PREPARE transitions, not ACTIVATE -> PREPARE.
         if (status.equals(Session.Status.PREPARE)) {
@@ -54,6 +54,8 @@ public class SessionStateWatcher implements NodeCacheListener {
         } else if (status.equals(Session.Status.ACTIVATE)) {
             session.makeActive(reloadHandler);
         } else if (status.equals(Session.Status.DEACTIVATE)) {
+            session.deactivate();
+        } else if (status.equals(Session.Status.DELETE)) {
             session.deactivate();
         }
     }
