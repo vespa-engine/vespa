@@ -22,6 +22,7 @@ import com.yahoo.vespa.objects.Serializer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -284,7 +285,11 @@ public class Document extends StructuredFieldValue {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         JsonWriter writer = new JsonWriter(buffer);
         writer.write(this);
-        return buffer.toString();
+        try {
+            return buffer.toString("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Returns true if the argument is a document which has the same set of values */
