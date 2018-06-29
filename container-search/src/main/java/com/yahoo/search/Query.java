@@ -184,7 +184,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static final CompoundName HITS = new CompoundName("hits");
 
     public static final CompoundName SEARCH_CHAIN = new CompoundName("searchChain");
-    public static final CompoundName TRACE_LEVEL = new CompoundName("traceLevel");
+    public static final CompoundName TRACE_LEVEL = new CompoundName("trace.level");
     public static final CompoundName NO_CACHE = new CompoundName("noCache");
     public static final CompoundName GROUPING_SESSION_CACHE = new CompoundName("groupingSessionCache");
     public static final CompoundName TIMEOUT = new CompoundName("timeout");
@@ -198,7 +198,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(HITS.toString(), "integer", "hits count"));
         // TODO: Should this be added to com.yahoo.search.query.properties.QueryProperties? If not, why not?
         argumentType.addField(new FieldDescription(SEARCH_CHAIN.toString(), "string"));
-        argumentType.addField(new FieldDescription(TRACE_LEVEL.toString(), "integer", "tracelevel"));
+        argumentType.addField(new FieldDescription(TRACE_LEVEL.toString(), "integer", "tracelevel, traceLevel"));
         argumentType.addField(new FieldDescription(NO_CACHE.toString(), "boolean", "nocache"));
         argumentType.addField(new FieldDescription(GROUPING_SESSION_CACHE.toString(), "boolean", "groupingSessionCache"));
         argumentType.addField(new FieldDescription(TIMEOUT.toString(), "string", "timeout"));

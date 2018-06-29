@@ -29,8 +29,8 @@ import java.util.Map;
 public class FieldCollapsingSearcher extends Searcher {
 
     private static final CompoundName collapse = new CompoundName("collapse");
-    private static final CompoundName collapsefield=new CompoundName("collapsefield");
-    private static final CompoundName collapsesize=new CompoundName("collapsesize");
+    private static final CompoundName collapsefield=new CompoundName("collapse.field");
+    private static final CompoundName collapsesize=new CompoundName("collapse.size");
     private static final CompoundName collapseSummaryName=new CompoundName("collapse.summary");
 
     /** Maximum number of queries to send next searcher */

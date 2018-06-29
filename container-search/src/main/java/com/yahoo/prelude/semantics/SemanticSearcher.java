@@ -29,7 +29,7 @@ public class SemanticSearcher extends Searcher {
 
     private static final CompoundName rulesRulebase=new CompoundName("rules.rulebase");
     private static final CompoundName rulesOff=new CompoundName("rules.off");
-    private static final CompoundName tracelevelRules=new CompoundName("tracelevel.rules");
+    private static final CompoundName tracelevelRules=new CompoundName("trace.rules");
 
     /** The default rule base of this */
     private RuleBase defaultRuleBase;
