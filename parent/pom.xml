@@ -82,6 +82,12 @@
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>3.5.0</version>
+                    <configuration>
+                        <!-- TODO: this should be a temporary workaround until bundle-plugin understands java 10 -->
+                        <instructions>
+                            <_noee>true</_noee>
+                        </instructions>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
