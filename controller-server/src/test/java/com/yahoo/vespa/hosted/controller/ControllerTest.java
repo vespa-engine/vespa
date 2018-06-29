@@ -71,11 +71,6 @@ import static org.junit.Assert.fail;
  */
 public class ControllerTest {
 
-    private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .environment(Environment.prod)
-            .region("corp-us-east-1")
-            .build();
-
     @Test
     public void testDeployment() {
         // Setup system
@@ -289,33 +284,6 @@ public class ControllerTest {
         assertEquals(newSystemVersion, tester.configServer().lastPrepareVersion().get());
     }
 
-    /** Adds a new version, higher than the current system version, makes it the system version and returns it */
-    private Version incrementSystemVersion(Controller controller) {
-        Version systemVersion = controller.versionStatus().systemVersion().get().versionNumber();
-        Version newSystemVersion = new Version(systemVersion.getMajor(), systemVersion.getMinor()+1, 0);
-        VespaVersion newSystemVespaVersion = new VespaVersion(DeploymentStatistics.empty(newSystemVersion),
-                                                              "commit1",
-                                                              Instant.now(),
-                                                              true,
-                                                              true,
-                                                              Collections.emptyList(),
-                                                              VespaVersion.Confidence.low
-        );
-        List<VespaVersion> versions = new ArrayList<>(controller.versionStatus().versions());
-        for (int i = 0; i < versions.size(); i++) {
-            VespaVersion c = versions.get(i);
-            if (c.isSystemVersion())
-                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.committedAt(),
-                                                 false,
-                                                 false,
-                                                 c.systemApplicationHostnames(),
-                                                 c.confidence()));
-        }
-        versions.add(newSystemVespaVersion);
-        controller.updateVersionStatus(new VersionStatus(versions));
-        return newSystemVersion;
-    }
-
     @Test
     public void testPullRequestDeployment() {
         // Setup system
@@ -360,13 +328,6 @@ public class ControllerTest {
                      tester.controller().applications().asList(app1.tenant()).stream()
                            .filter(app -> app.id().application().equals(app2.application()))
                            .count());
-    }
-
-    private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
-        Application app = controller.applications().get(id).get();
-        JobStatus existingStatus = app.deploymentJobs().jobStatus().get(expectedStatus.type());
-        assertNotNull("Status of type " + expectedStatus.type() + " is present", existingStatus);
-        assertEquals(expectedStatus, existingStatus);
     }
 
     @Test
@@ -652,65 +613,6 @@ public class ControllerTest {
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
     }
 
-    private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
-        Version next = Version.fromString("6.2");
-        tester.upgradeSystem(next);
-        runDeployment(tester, tester.applications().require(application), version, Optional.of(next), Optional.empty());
-    }
-
-    private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion version,
-                               ApplicationPackage applicationPackage, SourceRevision sourceRevision, long buildNumber) {
-        Application app = tester.applications().require(application);
-        tester.jobCompletion(component)
-              .application(app)
-              .buildNumber(buildNumber)
-              .sourceRevision(sourceRevision)
-              .uploadArtifact(applicationPackage)
-              .submit();
-
-        ApplicationVersion change = ApplicationVersion.from(sourceRevision, buildNumber);
-        assertEquals(change.id(), tester.controller().applications()
-                                        .require(application)
-                                        .change().application().get().id());
-        runDeployment(tester, app, version, Optional.empty(), Optional.of(applicationPackage));
-    }
-
-    private void runDeployment(DeploymentTester tester, Application app, ApplicationVersion version,
-                               Optional<Version> upgrade, Optional<ApplicationPackage> applicationPackage) {
-        Version vespaVersion = upgrade.orElseGet(tester::defaultPlatformVersion);
-
-        // Deploy in test
-        tester.deployAndNotify(app, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        JobStatus expected = JobStatus.initial(stagingTest)
-                             .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant().truncatedTo(MILLIS))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
-        assertStatus(expected, app.id(), tester.controller());
-
-        // Deploy in production
-        expected = JobStatus.initial(productionCorpUsEast1)
-                             .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant().truncatedTo(MILLIS))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
-        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
-        assertStatus(expected, app.id(), tester.controller());
-
-        expected = JobStatus.initial(productionUsEast3)
-                             .withTriggering(vespaVersion, version, productionUsEast3.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant().truncatedTo(MILLIS))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
-        tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
-        assertStatus(expected, app.id(), tester.controller());
-
-        // Verify deployed version
-        app = tester.controller().applications().require(app.id());
-        for (Deployment deployment : app.productionDeployments().values()) {
-            assertEquals(version, deployment.applicationVersion());
-            upgrade.ifPresent(v -> assertEquals(v, deployment.version()));
-        }
-    }
-
     @Test
     public void testDeploymentOfNewInstanceWithIllegalApplicationName() {
         ControllerTester tester = new ControllerTester();
@@ -738,6 +640,99 @@ public class ControllerTest {
         // Deploy a PR instance for the application, with no NToken.
         tester.controller().applications().deploy(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options);
         assertTrue(tester.controller().applications().get(ApplicationId.from("tenant", application, "456")).isPresent());
+    }
+
+    /** Adds a new version, higher than the current system version, makes it the system version and returns it */
+    private Version incrementSystemVersion(Controller controller) {
+        Version systemVersion = controller.versionStatus().systemVersion().get().versionNumber();
+        Version newSystemVersion = new Version(systemVersion.getMajor(), systemVersion.getMinor()+1, 0);
+        VespaVersion newSystemVespaVersion = new VespaVersion(DeploymentStatistics.empty(newSystemVersion),
+                                                              "commit1",
+                                                              Instant.now(),
+                                                              true,
+                                                              true,
+                                                              Collections.emptyList(),
+                                                              VespaVersion.Confidence.low
+        );
+        List<VespaVersion> versions = new ArrayList<>(controller.versionStatus().versions());
+        for (int i = 0; i < versions.size(); i++) {
+            VespaVersion c = versions.get(i);
+            if (c.isSystemVersion())
+                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.committedAt(),
+                                                 false,
+                                                 false,
+                                                 c.systemApplicationHostnames(),
+                                                 c.confidence()));
+        }
+        versions.add(newSystemVespaVersion);
+        controller.updateVersionStatus(new VersionStatus(versions));
+        return newSystemVersion;
+    }
+
+    private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
+        Version next = Version.fromString("6.2");
+        tester.upgradeSystem(next);
+        runDeployment(tester, tester.applications().require(application), version, Optional.of(next), Optional.empty());
+    }
+
+    private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion version,
+                               ApplicationPackage applicationPackage, SourceRevision sourceRevision, long buildNumber) {
+        Application app = tester.applications().require(application);
+        tester.jobCompletion(component)
+              .application(app)
+              .buildNumber(buildNumber)
+              .sourceRevision(sourceRevision)
+              .uploadArtifact(applicationPackage)
+              .submit();
+
+        ApplicationVersion change = ApplicationVersion.from(sourceRevision, buildNumber);
+        assertEquals(change.id(), tester.controller().applications()
+                                        .require(application)
+                                        .change().application().get().id());
+        runDeployment(tester, app, version, Optional.empty(), Optional.of(applicationPackage));
+    }
+
+    private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
+        Application app = controller.applications().get(id).get();
+        JobStatus existingStatus = app.deploymentJobs().jobStatus().get(expectedStatus.type());
+        assertNotNull("Status of type " + expectedStatus.type() + " is present", existingStatus);
+        assertEquals(expectedStatus, existingStatus);
+    }
+
+    private void runDeployment(DeploymentTester tester, Application app, ApplicationVersion version,
+                               Optional<Version> upgrade, Optional<ApplicationPackage> applicationPackage) {
+        Version vespaVersion = upgrade.orElseGet(tester::defaultPlatformVersion);
+
+        // Deploy in test
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        JobStatus expected = JobStatus.initial(stagingTest)
+                                      .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                                      tester.clock().instant().truncatedTo(MILLIS))
+                                      .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
+        assertStatus(expected, app.id(), tester.controller());
+
+        // Deploy in production
+        expected = JobStatus.initial(productionCorpUsEast1)
+                            .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                            tester.clock().instant().truncatedTo(MILLIS))
+                            .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
+        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
+        assertStatus(expected, app.id(), tester.controller());
+
+        expected = JobStatus.initial(productionUsEast3)
+                            .withTriggering(vespaVersion, version, productionUsEast3.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                            tester.clock().instant().truncatedTo(MILLIS))
+                            .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
+        tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
+        assertStatus(expected, app.id(), tester.controller());
+
+        // Verify deployed version
+        app = tester.controller().applications().require(app.id());
+        for (Deployment deployment : app.productionDeployments().values()) {
+            assertEquals(version, deployment.applicationVersion());
+            upgrade.ifPresent(v -> assertEquals(v, deployment.version()));
+        }
     }
 
 }
