@@ -30,7 +30,8 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinishe
  */
 public class InternalStepRunner implements StepRunner {
 
-    private static ApplicationId testerOf(ApplicationId id) {
+    // TODO jvenstad: Move this tester logic to the application controller, perhaps?
+    public static ApplicationId testerOf(ApplicationId id) {
         return ApplicationId.from(id.tenant().value(),
                                   id.application().value(),
                                   id.instance().value() + "-t");

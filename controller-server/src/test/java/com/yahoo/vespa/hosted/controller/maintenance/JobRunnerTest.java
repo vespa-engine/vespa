@@ -32,6 +32,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
@@ -51,8 +52,10 @@ public class JobRunnerTest {
     public void testMultiThreadedExecutionFinishes() throws InterruptedException {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
+        // Fail the installation of the initial version of the real application in staging tests, and succeed everything else.
+        StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == installInitialReal ? failed : succeeded;
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         Executors.newFixedThreadPool(32), sleepy(new DummyStepRunner()));
+                                         Executors.newFixedThreadPool(32), sleepy(stepRunner));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
         jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
@@ -68,8 +71,11 @@ public class JobRunnerTest {
         assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(unfinished::equals));
         runner.maintain();
         assertFalse(jobs.last(id, systemTest).get().hasEnded());
-        Thread.sleep(1000); // I'm so sorry, but I want to test this. Takes ~100ms "on my machine".
+        assertFalse(jobs.last(id, stagingTest).get().hasEnded());
+        Thread.sleep(500); // I'm so sorry, but I want to test this. Takes ~100ms "on my machine".
         assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(succeeded::equals));
+        assertTrue(jobs.last(id, stagingTest).get().hasEnded());
+        assertTrue(jobs.last(id, stagingTest).get().hasFailed());
     }
 
     @Test

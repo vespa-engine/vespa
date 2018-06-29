@@ -5,7 +5,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
@@ -24,6 +26,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
+import static com.yahoo.vespa.hosted.controller.maintenance.InternalStepRunner.testerOf;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -198,16 +201,35 @@ public class JobController {
         });
     }
 
-    /** Unregisters the given application and deletes all associated data. */
+    /** Unregisters the given application and makes all associated data eligible for garbage collection. */
     public void unregister(ApplicationId id) {
         controller.applications().lockIfPresent(id, application -> {
             controller.applications().store(application.withBuiltInternally(false));
-            for (JobType type : jobs(id))
-                try (Lock __ = curator.lock(id, type)) {
-                    curator.deleteJobData(id, type);
-                    // TODO jvenstad: Deactivate tester applications?
-                }
         });
+    }
+
+    public void collectGarbage() {
+        controller.applications().asList().stream()
+                  .filter(application -> ! application.deploymentJobs().builtInternally())
+                  .map(Application::id)
+                  .forEach(id -> {
+                      for (JobType type : jobs(id))
+                          try (Lock __ = curator.lock(id, type)) {
+                          if ( ! active(last(id, type).get().id()).isPresent())
+                              deactivateTester(id, type);
+                              curator.deleteJobData(id, type);
+                          }
+                  });
+    }
+
+    // TODO jvenstad: Urgh, clean this up somehow?
+    public void deactivateTester(ApplicationId id, JobType type) {
+        try {
+            controller.configServer().deactivate(new DeploymentId(testerOf(id), type.zone(controller.system()).get()));
+        }
+        catch (NoInstanceException ignored) {
+            // ok; already gone
+        }
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.

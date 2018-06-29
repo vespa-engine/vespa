@@ -133,6 +133,9 @@ public class Controller extends AbstractComponent {
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);
+
+        jobController.collectGarbage();
+        jobController.updateStorage();
     }
     
     /** Returns the instance controlling tenants */
