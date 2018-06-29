@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller;
+package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -11,22 +11,22 @@ import java.util.TreeMap;
 /**
  * @author mpolden
  */
-public class MockSecretStore extends AbstractComponent implements SecretStore {
+public class SecretStoreMock extends AbstractComponent implements SecretStore {
 
     private final Map<String, TreeMap<Integer, String>> secrets = new HashMap<>();
 
-    public MockSecretStore setSecret(String name, String value, int version) {
+    public SecretStoreMock setSecret(String name, String value, int version) {
         TreeMap<Integer, String> values = secrets.getOrDefault(name, new TreeMap<>());
         values.put(version, value);
         secrets.put(name, values);
         return this;
     }
 
-    public MockSecretStore setSecret(String name, String value) {
+    public SecretStoreMock setSecret(String name, String value) {
         return setSecret(name, value, 1);
     }
 
-    public MockSecretStore clear() {
+    public SecretStoreMock clear() {
         secrets.clear();
         return this;
     }

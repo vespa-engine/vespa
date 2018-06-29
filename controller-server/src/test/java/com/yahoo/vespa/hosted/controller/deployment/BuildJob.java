@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
+import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;

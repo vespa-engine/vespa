@@ -11,11 +11,11 @@ import java.util.Map;
 /**
  * @author bratseth
  */
-public class MockMetricsService implements MetricsService {
+public class MetricsServiceMock implements MetricsService {
 
     private final Map<String, Double> metrics = new HashMap<>();
 
-    public MockMetricsService setMetric(String key, Double value) {
+    public MetricsServiceMock setMetric(String key, Double value) {
         metrics.put(key, value);
         return this;
     }

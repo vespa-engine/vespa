@@ -8,7 +8,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
+import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
