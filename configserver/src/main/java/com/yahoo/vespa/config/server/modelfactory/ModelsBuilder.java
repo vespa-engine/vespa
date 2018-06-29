@@ -8,7 +8,6 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
@@ -20,7 +19,6 @@ import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -142,10 +140,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         List<MODELRESULT> allApplicationVersions = new ArrayList<>();
         allApplicationVersions.add(latestModelVersion);
 
-        // TODO: Enable for all zones
-        if (Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment())
-                || Arrays.asList("corp-us-east-1", "ap-southeast-1").contains(zone().region().value()))
-            versions = keepThoseUsedOn(allocatedHosts.get(), versions);
+        versions = keepThoseUsedOn(allocatedHosts.get(), versions);
 
         // Make sure we build wanted version if we are building models for this major version
         Version wantedVersion = Version.fromIntValues(wantedNodeVespaVersion.getMajor(), wantedNodeVespaVersion.getMinor(), wantedNodeVespaVersion.getMicro());
