@@ -599,7 +599,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 f.getValue().get();
             } catch (ExecutionException e) {
                 ApplicationId app = f.getKey();
-                log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry");
+                log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);
                 failedDeployments.add(app);
             }
         }
