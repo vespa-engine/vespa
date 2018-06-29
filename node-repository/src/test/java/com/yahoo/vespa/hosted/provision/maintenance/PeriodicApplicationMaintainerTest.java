@@ -32,7 +32,9 @@ import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +65,7 @@ public class PeriodicApplicationMaintainerTest {
     }
 
     @Test
-    public void test_application_maintenance() throws InterruptedException {
+    public void test_application_maintenance() {
         createReadyNodes(15, nodeRepository, nodeFlavors);
         createHostNodes(2, nodeRepository, nodeFlavors);
 
@@ -101,6 +103,7 @@ public class PeriodicApplicationMaintainerTest {
                      0, fixture.getNodes(Node.State.active).retired().size());
 
         // Cause maintenance deployment which will update the applications with the re-activated nodes
+        ((ManualClock)nodeRepository.clock()).advance(Duration.ofMinutes(35)); // Otherwise redeploys are inhibited
         fixture.runApplicationMaintainer();
         assertEquals("Superflous content nodes are retired",
                      reactivatedInApp2, fixture.getNodes(Node.State.active).retired().size());
@@ -129,6 +132,31 @@ public class PeriodicApplicationMaintainerTest {
                      nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
     }
 
+    @Test
+    public void application_deploy_inhibits_redeploy_for_a_while() {
+        ManualClock clock = (ManualClock)nodeRepository.clock();
+        createReadyNodes(15, nodeRepository, nodeFlavors);
+        createHostNodes(2, nodeRepository, nodeFlavors);
+
+        // Create applications
+        fixture.activate();
+        fixture.runApplicationMaintainer();
+        Instant firstDeployTime = clock.instant();
+        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
+        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+        ((ManualClock) nodeRepository.clock()).advance(Duration.ofMinutes(5));
+        fixture.runApplicationMaintainer();
+        // Too soo: Not redeployed:
+        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
+        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+
+        ((ManualClock) nodeRepository.clock()).advance(Duration.ofMinutes(30));
+        fixture.runApplicationMaintainer();
+        // Redeployed:
+        assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app1).get());
+        assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app2).get());
+    }
+
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
@@ -152,6 +180,7 @@ public class PeriodicApplicationMaintainerTest {
         final NodeRepository nodeRepository;
         final NodeRepositoryProvisioner provisioner;
         final Curator curator;
+        final Deployer deployer;
 
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
@@ -164,6 +193,13 @@ public class PeriodicApplicationMaintainerTest {
             this.nodeRepository = nodeRepository;
             this.curator = curator;
             this.provisioner =  new NodeRepositoryProvisioner(nodeRepository, flavors, zone);
+
+            Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
+            apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1,
+                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false, true), 1));
+            apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2,
+                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
+            this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
         }
 
         void activate() {
@@ -191,12 +227,6 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         void runApplicationMaintainer(Optional<List<Node>> overriddenNodesNeedingMaintenance) {
-            Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-            apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, 
-                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false, true), 1));
-            apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
-                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
-            MockDeployer deployer = new MockDeployer(provisioner, apps);
             new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), overriddenNodesNeedingMaintenance).run();
         }
 

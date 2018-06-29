@@ -97,6 +97,7 @@ public class NodeTypeProvisioningTest {
     public void retire_proxy() {
         MockDeployer deployer = new MockDeployer(
                 tester.provisioner(),
+                tester.clock(),
                 Collections.singletonMap(
                         application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer,
@@ -161,6 +162,7 @@ public class NodeTypeProvisioningTest {
     public void retire_multiple_proxy_simultaneously() {
         MockDeployer deployer = new MockDeployer(
                 tester.provisioner(),
+                tester.clock(),
                 Collections.singletonMap(
                         application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer,

@@ -12,9 +12,11 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,22 +29,28 @@ public class MockDeployer implements Deployer {
 
     private final NodeRepositoryProvisioner provisioner;
     private final Map<ApplicationId, ApplicationContext> applications;
+    private final Map<ApplicationId, Instant> lastDeployTimes = new HashMap<>();
 
     /** The number of redeployments done to this */
     public int redeployments = 0;
 
+    private final Clock clock;
+
     @Inject
     @SuppressWarnings("unused")
     public MockDeployer() {
-        this(null, Collections.emptyMap());
+        this(null, Clock.systemUTC(), Collections.emptyMap());
     }
 
     /**
      * Create a mock deployer which contains a substitute for an application repository, fullfilled to
      * be able to call provision with the right parameters.
      */
-    public MockDeployer(NodeRepositoryProvisioner provisioner, Map<ApplicationId, ApplicationContext> applications) {
+    public MockDeployer(NodeRepositoryProvisioner provisioner,
+                        Clock clock,
+                        Map<ApplicationId, ApplicationContext> applications) {
         this.provisioner = provisioner;
+        this.clock = clock;
         this.applications = applications;
     }
 
@@ -53,12 +61,13 @@ public class MockDeployer implements Deployer {
 
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, Duration timeout) {
+        lastDeployTimes.put(id, clock.instant());
         return Optional.of(new MockDeployment(provisioner, applications.get(id)));
     }
 
     @Override
     public Optional<Instant> lastDeployTime(ApplicationId application) {
-        return Optional.empty(); // not implemented
+        return Optional.ofNullable(lastDeployTimes.get(application));
     }
 
     public class MockDeployment implements Deployment {

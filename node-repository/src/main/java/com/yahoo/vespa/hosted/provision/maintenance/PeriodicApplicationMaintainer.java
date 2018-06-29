@@ -32,13 +32,12 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     }
 
     @Override
-    protected void deploy(ApplicationId application) {
+    protected boolean canDeployNow(ApplicationId application) {
         Optional<Instant> lastDeploy = deployer().lastDeployTime(application);
         if (lastDeploy.isPresent() &&
             lastDeploy.get().isAfter(nodeRepository().clock().instant().minus(interval())))
-            return; // Don't deploy if a regular deploy just happened
-
-        super.deploy(application);
+            return false; // Don't deploy if a regular deploy just happened
+        return true;
     }
 
     @Override

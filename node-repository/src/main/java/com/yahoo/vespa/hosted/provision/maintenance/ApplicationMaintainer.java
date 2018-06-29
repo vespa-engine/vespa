@@ -39,15 +39,20 @@ public abstract class ApplicationMaintainer extends Maintainer {
     protected final void maintain() {
         Set<ApplicationId> applications = applicationsNeedingMaintenance();
         for (ApplicationId application : applications) {
-            deploy(application);
+            if (canDeployNow(application))
+                deploy(application);
             throttle(applications.size());
         }
+    }
+
+    protected boolean canDeployNow(ApplicationId application) {
+        return true;
     }
 
     /**
      * Redeploy this application.
      *
-     * The default implementation deploys asynchronously to make sure we do all applications timely 
+     * The default implementation deploys asynchronously to make sure we do all applications timely
      * even when deployments are slow.
      */
     protected void deploy(ApplicationId application) {

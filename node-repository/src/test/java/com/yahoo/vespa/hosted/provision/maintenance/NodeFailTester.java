@@ -35,6 +35,7 @@ import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
 import com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,7 +112,7 @@ public class NodeFailTester {
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
         apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false, true), 1));
         apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
-        tester.deployer = new MockDeployer(tester.provisioner, apps);
+        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
         tester.failer = tester.createFailer();
@@ -147,7 +148,7 @@ public class NodeFailTester {
         apps.put(nodeAdminApp, new MockDeployer.ApplicationContext(nodeAdminApp, clusterNodeAdminApp, allHosts, 1));
         apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1, 1));
         apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2, 1));
-        tester.deployer = new MockDeployer(tester.provisioner, apps);
+        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
         tester.failer = tester.createFailer();
@@ -170,7 +171,7 @@ public class NodeFailTester {
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
         apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allProxies, 1));
-        tester.deployer = new MockDeployer(tester.provisioner, apps);
+        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
         tester.failer = tester.createFailer();
@@ -179,7 +180,7 @@ public class NodeFailTester {
 
     public static NodeFailTester withNoApplications() {
         NodeFailTester tester = new NodeFailTester();
-        tester.deployer = new MockDeployer(tester.provisioner, Collections.emptyMap());
+        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), Collections.emptyMap());
         tester.serviceMonitor = new ServiceMonitorStub(Collections.emptyMap(), tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
         tester.failer = tester.createFailer();
@@ -209,6 +210,8 @@ public class NodeFailTester {
                 hostLivenessTracker.receivedRequestFrom(node.hostname());
         }
     }
+
+    public Clock clock() { return clock; }
 
     public List<Node> createReadyNodes(int count) {
         return createReadyNodes(count, 0);
