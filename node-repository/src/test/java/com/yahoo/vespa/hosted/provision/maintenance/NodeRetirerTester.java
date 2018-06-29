@@ -75,7 +75,7 @@ public class NodeRetirerTester {
                                             new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
         jobControl = new JobControl(nodeRepository.database());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
-        deployer = new MockDeployer(provisioner, apps);
+        deployer = new MockDeployer(provisioner, clock, apps);
         flavors = nodeFlavors.getFlavors().stream().sorted(Comparator.comparing(Flavor::name)).collect(Collectors.toList());
 
         try {

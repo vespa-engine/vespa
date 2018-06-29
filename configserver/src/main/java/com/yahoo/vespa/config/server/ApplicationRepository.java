@@ -233,6 +233,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                  false /* don't validate as this is already deployed */, version));
     }
 
+    @Override
+    public Optional<Instant> lastDeployTime(ApplicationId application) {
+        Tenant tenant = tenantRepository.getTenant(application.tenant());
+        if (tenant == null) return Optional.empty();
+        LocalSession activeSession = getActiveSession(tenant, application);
+        if (activeSession == null) return Optional.empty();
+        return Optional.of(Instant.ofEpochSecond(activeSession.getCreateTime()));
+    }
+
     public ApplicationId activate(Tenant tenant,
                                   long sessionId,
                                   TimeoutBudget timeoutBudget,

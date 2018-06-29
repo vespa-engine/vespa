@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -32,5 +33,8 @@ public interface Deployer {
      *         node in the config server cluster)
      */
     Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout);
+
+    /** Returns the time the current local active session was created, or empty if there is no local active session */
+    Optional<Instant> lastDeployTime(ApplicationId application);
 
 }

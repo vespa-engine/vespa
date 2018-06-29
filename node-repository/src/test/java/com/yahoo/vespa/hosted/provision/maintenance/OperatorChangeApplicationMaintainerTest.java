@@ -136,7 +136,7 @@ public class OperatorChangeApplicationMaintainerTest {
                                                                Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false, true), 1));
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2,
                                                                Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
-            this.deployer = new MockDeployer(provisioner, apps);
+            this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
         }
 
         private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodeCount, NodeRepositoryProvisioner provisioner) {

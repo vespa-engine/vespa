@@ -133,6 +133,7 @@ public class MultigroupProvisioningTest {
         tester.advanceTime(Duration.ofDays(7));
         MockDeployer deployer =
             new MockDeployer(tester.provisioner(),
+                             tester.clock(),
                              Collections.singletonMap(application1, 
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
                                                                                           Capacity.fromNodeCount(8, Optional.of("large"), false, true), 1)));

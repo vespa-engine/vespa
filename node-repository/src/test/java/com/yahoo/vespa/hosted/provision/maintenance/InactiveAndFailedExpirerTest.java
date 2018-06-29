@@ -13,6 +13,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -142,6 +143,7 @@ public class InactiveAndFailedExpirerTest {
         tester.advanceTime(Duration.ofMinutes(11)); // Trigger RetiredExpirer
         MockDeployer deployer = new MockDeployer(
                 tester.provisioner(),
+                tester.clock(),
                 Collections.singletonMap(
                         applicationId,
                         new MockDeployer.ApplicationContext(applicationId, cluster,
