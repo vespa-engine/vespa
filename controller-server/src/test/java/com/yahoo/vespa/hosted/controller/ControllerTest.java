@@ -16,17 +16,15 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -51,10 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCorpUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -364,108 +360,6 @@ public class ControllerTest {
                      tester.controller().applications().asList(app1.tenant()).stream()
                            .filter(app -> app.id().application().equals(app2.application()))
                            .count());
-    }
-
-    @Test
-    public void requeueOutOfCapacityStagingJob() {
-        DeploymentTester tester = new DeploymentTester();
-
-        long project1 = 1;
-        long project2 = 2;
-        long project3 = 3;
-        Application app1 = tester.createApplication("app1", "tenant1", project1, 1L);
-        Application app2 = tester.createApplication("app2", "tenant2", project2, 1L);
-        Application app3 = tester.createApplication("app3", "tenant3", project3, 1L);
-        MockBuildService mockBuildService = tester.buildService();
-
-        // all applications: system-test completes successfully with some time in between, to determine trigger order.
-        tester.jobCompletion(component).application(app2).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app2, applicationPackage, true, systemTest);
-        tester.clock().advance(Duration.ofMinutes(1));
-
-        tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.clock().advance(Duration.ofMinutes(1));
-
-        tester.jobCompletion(component).application(app3).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
-
-        // all applications: staging test jobs queued
-        assertEquals(3, mockBuildService.jobs().size());
-
-        // Abort all running jobs, so we have three candidate jobs, of which only one should be triggered at a time.
-        tester.buildService().clear();
-
-        List<BuildService.BuildJob> jobs = new ArrayList<>();
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        tester.triggerUntilQuiescence();
-        jobs.add(buildJob(app2, stagingTest));
-        jobs.add(buildJob(app1, stagingTest));
-        jobs.add(buildJob(app3, stagingTest));
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
-        // All three jobs are now eligible, but the one for app3 should trigger first as an outOfCapacity-retry.
-        tester.buildService().remove(buildJob(app1, stagingTest));
-        tester.buildService().remove(buildJob(app2, stagingTest));
-        jobs.remove(buildJob(app1, stagingTest));
-        jobs.remove(buildJob(app2, stagingTest));
-        tester.jobCompletion(stagingTest).application(app3).error(JobError.outOfCapacity).submit();
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        tester.triggerUntilQuiescence();
-        jobs.add(buildJob(app2, stagingTest));
-        jobs.add(buildJob(app1, stagingTest));
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
-        tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app2, applicationPackage, true, productionCorpUsEast1);
-        tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
-
-        tester.upgradeSystem(new Version("6.2"));
-        // app1 also gets a new application change, so its time of availability is after the version upgrade.
-        tester.clock().advance(Duration.ofMinutes(1));
-        tester.buildService().clear();
-        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        jobs.clear();
-        jobs.add(buildJob(app1, stagingTest));
-        jobs.add(buildJob(app1, systemTest));
-        // Tests for app1 trigger before the others since it carries an application upgrade.
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        // Let the test jobs start, remove everything expect system test for app3, which fails with outOfCapacity again.
-        tester.triggerUntilQuiescence();
-        tester.buildService().remove(buildJob(app1, systemTest));
-        tester.buildService().remove(buildJob(app2, systemTest));
-        tester.buildService().remove(buildJob(app1, stagingTest));
-        tester.buildService().remove(buildJob(app2, stagingTest));
-        tester.buildService().remove(buildJob(app3, stagingTest));
-        tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
-        jobs.clear();
-        jobs.add(buildJob(app1, stagingTest));
-        jobs.add(buildJob(app3, systemTest));
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        tester.triggerUntilQuiescence();
-        jobs.add(buildJob(app2, stagingTest));
-        jobs.add(buildJob(app1, systemTest));
-        jobs.add(buildJob(app3, stagingTest));
-        jobs.add(buildJob(app2, systemTest));
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-    }
-
-    /** Verifies that the given job lists have the same jobs, ignoring order of jobs that may have been triggered concurrently. */
-    private static void assertJobsInOrder(List<BuildService.BuildJob> expected, List<BuildService.BuildJob> actual) {
-        assertEquals(expected.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()),
-                     actual.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()));
-        assertEquals(expected.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()),
-                     actual.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()));
-        assertTrue(expected.containsAll(actual));
-        assertTrue(actual.containsAll(expected));
     }
 
     private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
