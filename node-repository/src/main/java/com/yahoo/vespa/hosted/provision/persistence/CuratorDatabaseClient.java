@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -325,18 +324,6 @@ public class CuratorDatabaseClient {
 
     private Lock lock(Path path, Duration timeout) {
         return curatorDatabase.lock(path, timeout);
-    }
-
-    /**
-     * Returns a default flavor specific for an application, or empty if not available.
-     */
-    public Optional<String> getDefaultFlavorForApplication(ApplicationId applicationId) {
-        Optional<byte[]> utf8DefaultFlavor = curatorDatabase.getData(defaultFlavorPath(applicationId));
-        return utf8DefaultFlavor.map((flavor) -> new String(flavor, StandardCharsets.UTF_8));
-    }
-
-    private Path defaultFlavorPath(ApplicationId applicationId) {
-        return root.append("defaultFlavor").append(applicationId.serializedForm());
     }
 
     public Set<String> readInactiveJobs() {
