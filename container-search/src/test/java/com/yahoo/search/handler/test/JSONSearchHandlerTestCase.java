@@ -6,6 +6,7 @@ import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
 import com.yahoo.container.jdisc.HttpRequest;
 
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
+import com.yahoo.container.protect.Error;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.search.handler.SearchHandler;
@@ -79,6 +80,15 @@ public class JSONSearchHandlerTestCase {
         return (SearchHandler) configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
     }
 
+    @Test
+    public void testBadJSON() throws Exception{
+        String json = "Not a valid JSON-string";
+        RequestHandlerTestDriver.MockResponseHandler responseHandler = driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json, JSON_CONTENT_TYPE);
+        String response = responseHandler.readAll();
+        assertThat(responseHandler.getStatus(), is(400));
+        assertThat(response, containsString("errors"));
+        assertThat(response, containsString("\"code\":" + Error.ILLEGAL_QUERY.code));
+    }
 
     @Test
     public void testFailing() throws Exception {
