@@ -82,6 +82,12 @@
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>3.5.0</version>
+                    <configuration>
+                        <!-- TODO: this should be a temporary workaround until bundle-plugin understands java 10 -->
+                        <instructions>
+                            <_noee>true</_noee>
+                        </instructions>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -138,14 +144,15 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <configuration>
+                        <additionalJOption>-html4</additionalJOption>
                         <doclint>${doclint},-missing</doclint>
                     </configuration>
-                    <version>3.0.0</version>
+                    <version>3.0.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <version>3.5</version>
+                    <version>3.5.2</version>
                     <configuration>
                         <!-- see http://jira.codehaus.org/browse/MNG-5346 -->
                         <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
@@ -171,6 +178,14 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>3.1.1</version>
+                    <dependencies>
+                        <!-- TODO: Remove for shade-plugin 3.1.2 - https://issues.apache.org/jira/browse/MSHADE-289 -->
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -364,7 +379,7 @@
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
-                <version>6.1.1</version>
+                <version>${asm.version}</version>
             </dependency>
             <dependency>
               <groupId>com.google.guava</groupId>
@@ -629,6 +644,7 @@
     <properties>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
+        <asm.version>6.2</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
         <athenz.version>1.7.43</athenz.version>
         <commons-lang.version>2.6</commons-lang.version>
