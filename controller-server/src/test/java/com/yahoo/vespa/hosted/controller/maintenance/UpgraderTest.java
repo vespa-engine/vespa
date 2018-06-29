@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -34,11 +35,16 @@ import static org.junit.Assert.assertTrue;
  */
 public class UpgraderTest {
 
+    private DeploymentTester tester;
+
+    @Before
+    public void before() {
+        tester = new DeploymentTester();
+    }
+
     @Test
     public void testUpgrading() {
         // --- Setup
-        DeploymentTester tester = new DeploymentTester();
-
         Version version = Version.fromString("5.0");
         tester.upgradeSystem(version);
 
@@ -251,7 +257,6 @@ public class UpgraderTest {
     @Test
     public void testUpgradingToVersionWhichBreaksSomeNonCanaries() {
         // --- Setup
-        DeploymentTester tester = new DeploymentTester();
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
         assertEquals("No system version: Nothing to do", 0, tester.buildService().jobs().size());
@@ -322,7 +327,6 @@ public class UpgraderTest {
 
     @Test
     public void testDeploymentAlreadyInProgressForUpgrade() {
-        DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")
                 .environment(Environment.prod)
@@ -377,7 +381,6 @@ public class UpgraderTest {
 
     @Test
     public void testUpgradeCancelledWithDeploymentInProgress() {
-        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("5.0");
         tester.upgradeSystem(version);
 
@@ -443,7 +446,6 @@ public class UpgraderTest {
      */
     @Test
     public void testVersionIsBrokenAfterAZoneIsLive() {
-        DeploymentTester tester = new DeploymentTester();
         Version v0 = Version.fromString("5.0");
         tester.upgradeSystem(v0);
 
@@ -527,7 +529,6 @@ public class UpgraderTest {
 
     @Test
     public void testConfidenceIgnoresFailingApplicationChanges() {
-        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("5.0");
         tester.upgradeSystem(version);
 
@@ -734,7 +735,6 @@ public class UpgraderTest {
 
     @Test
     public void testReschedulesUpgradeAfterTimeout() {
-        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("5.0");
         tester.upgradeSystem(version);
 
@@ -838,7 +838,6 @@ public class UpgraderTest {
 
     @Test
     public void testThrottlesUpgrades() {
-        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("5.0");
         tester.upgradeSystem(version);
 
@@ -890,7 +889,6 @@ public class UpgraderTest {
 
     @Test
     public void testAllowApplicationChangeDuringFailingUpgrade() {
-        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("5.0");
         tester.upgradeSystem(version);
 
