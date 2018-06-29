@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -33,18 +32,12 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
-import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
-import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +47,6 @@ import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCorpUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -216,72 +208,6 @@ public class ControllerTest {
         // Application is upgraded. This makes deployment orchestration pick the last successful application version in
         // zones which do not have permanent deployments, e.g. test and staging
         runUpgrade(tester, app.id(), applicationVersion);
-    }
-
-    @Test
-    public void testDeployVersion() {
-        // Setup system
-        DeploymentTester tester = new DeploymentTester();
-        ApplicationController applications = tester.controller().applications();
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("us-west-1")
-                .build();
-        Version systemVersion = tester.controller().versionStatus().systemVersion().get().versionNumber();
-
-        Application app1 = tester.createApplication("application1", "tenant1", 1, 1L);
-
-        // First deployment: An application change
-        tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
-
-        app1 = applications.require(app1.id());
-        assertEquals("First deployment gets system version", systemVersion, app1.oldestDeployedPlatform().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
-
-        // Unexpected deployment
-        tester.deploy(productionUsWest1, app1, applicationPackage);
-        // applications are immutable, so any change to one, including deployment changes, would give rise to a new instance.
-        assertEquals("Unexpected deployment is ignored", app1, applications.require(app1.id()));
-
-        // Application change after a new system version, and a region added
-        Version newSystemVersion = incrementSystemVersion(tester.controller());
-        assertTrue(newSystemVersion.isAfter(systemVersion));
-
-        applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("us-west-1")
-                .region("us-east-3")
-                .build();
-        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
-
-        app1 = applications.require(app1.id());
-        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedPlatform().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
-
-        // A deployment to the new region gets the same version
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
-        app1 = applications.require(app1.id());
-        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedPlatform().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
-        assertFalse("Change deployed", app1.change().isPresent());
-
-        // Version upgrade changes system version
-        applications.deploymentTrigger().triggerChange(app1.id(), Change.of(newSystemVersion));
-        tester.deploymentTrigger().triggerReadyJobs();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
-
-        app1 = applications.require(app1.id());
-        assertEquals("Version upgrade changes version", newSystemVersion, app1.oldestDeployedPlatform().get());
-        assertEquals(newSystemVersion, tester.configServer().lastPrepareVersion().get());
     }
 
     @Test
@@ -640,33 +566,6 @@ public class ControllerTest {
         // Deploy a PR instance for the application, with no NToken.
         tester.controller().applications().deploy(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options);
         assertTrue(tester.controller().applications().get(ApplicationId.from("tenant", application, "456")).isPresent());
-    }
-
-    /** Adds a new version, higher than the current system version, makes it the system version and returns it */
-    private Version incrementSystemVersion(Controller controller) {
-        Version systemVersion = controller.versionStatus().systemVersion().get().versionNumber();
-        Version newSystemVersion = new Version(systemVersion.getMajor(), systemVersion.getMinor()+1, 0);
-        VespaVersion newSystemVespaVersion = new VespaVersion(DeploymentStatistics.empty(newSystemVersion),
-                                                              "commit1",
-                                                              Instant.now(),
-                                                              true,
-                                                              true,
-                                                              Collections.emptyList(),
-                                                              VespaVersion.Confidence.low
-        );
-        List<VespaVersion> versions = new ArrayList<>(controller.versionStatus().versions());
-        for (int i = 0; i < versions.size(); i++) {
-            VespaVersion c = versions.get(i);
-            if (c.isSystemVersion())
-                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.committedAt(),
-                                                 false,
-                                                 false,
-                                                 c.systemApplicationHostnames(),
-                                                 c.confidence()));
-        }
-        versions.add(newSystemVespaVersion);
-        controller.updateVersionStatus(new VersionStatus(versions));
-        return newSystemVersion;
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

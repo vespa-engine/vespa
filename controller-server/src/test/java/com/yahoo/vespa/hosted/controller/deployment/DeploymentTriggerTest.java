@@ -53,6 +53,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
+ * Tests a wide variety of deployment scenarios and configurations
+ *
  * @author bratseth
  * @author mpolden
  * @author jonmv
@@ -871,6 +873,71 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void testPlatformVersionSelection() {
+        // Setup system
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        Version version1 = tester.controller().versionStatus().systemVersion().get().versionNumber();
+
+        Application app1 = tester.createApplication("application1", "tenant1", 1, 1L);
+
+        // First deployment: An application change
+        tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
+
+        app1 = tester.application(app1.id());
+        assertEquals("First deployment gets system version", version1, app1.oldestDeployedPlatform().get());
+        assertEquals(version1, tester.configServer().lastPrepareVersion().get());
+
+        // Unexpected deployment
+        tester.deploy(productionUsWest1, app1, applicationPackage);
+        // applications are immutable, so any change to one, including deployment changes, would give rise to a new instance.
+        assertEquals("Unexpected deployment is ignored", app1, tester.application(app1.id()));
+
+        // Application change after a new system version, and a region added
+        Version version2 = new Version(version1.getMajor(), version1.getMinor() + 1);
+        tester.upgradeController(version2);
+        tester.upgradeSystemApplications(version2);
+
+        applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .region("us-east-3")
+                .build();
+        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
+
+        app1 = tester.application(app1.id());
+        assertEquals("Application change preserves version", version1, app1.oldestDeployedPlatform().get());
+        assertEquals(version1, tester.configServer().lastPrepareVersion().get());
+
+        // A deployment to the new region gets the same version
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
+        app1 = tester.application(app1.id());
+        assertEquals("Application change preserves version", version1, app1.oldestDeployedPlatform().get());
+        assertEquals(version1, tester.configServer().lastPrepareVersion().get());
+        assertFalse("Change deployed", app1.change().isPresent());
+
+        // Version upgrade changes system version
+        tester.deploymentTrigger().triggerChange(app1.id(), Change.of(version2));
+        tester.deploymentTrigger().triggerReadyJobs();
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
+
+        app1 = tester.application(app1.id());
+        assertEquals("Version upgrade changes version", version2, app1.oldestDeployedPlatform().get());
+        assertEquals(version2, tester.configServer().lastPrepareVersion().get());
+    }
+
+    @Test
     public void requeueOutOfCapacityStagingJob() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -962,15 +1029,14 @@ public class DeploymentTriggerTest {
         jobs.add(buildJob(app3, stagingTest));
         jobs.add(buildJob(app2, systemTest));
         assertJobsInOrder(jobs, tester.buildService().jobs());
-
     }
 
     /** Verifies that the given job lists have the same jobs, ignoring order of jobs that may have been triggered concurrently. */
     private static void assertJobsInOrder(List<BuildService.BuildJob> expected, List<BuildService.BuildJob> actual) {
-        assertEquals(expected.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()),
-                     actual.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()));
-        assertEquals(expected.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()),
-                     actual.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()));
+        assertEquals(expected.stream().filter(job -> job.jobName().equals(systemTest.jobName())).collect(Collectors.toList()),
+                     actual.stream().filter(job -> job.jobName().equals(systemTest.jobName())).collect(Collectors.toList()));
+        assertEquals(expected.stream().filter(job -> job.jobName().equals(stagingTest.jobName())).collect(Collectors.toList()),
+                     actual.stream().filter(job -> job.jobName().equals(stagingTest.jobName())).collect(Collectors.toList()));
         assertTrue(expected.containsAll(actual));
         assertTrue(actual.containsAll(expected));
     }
