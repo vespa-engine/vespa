@@ -782,7 +782,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployWithoutProjectId() {
+    public void testDeployDirectly() {
         DeploymentTester tester = new DeploymentTester();
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
         tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "cd-us-central-1"));
@@ -794,7 +794,7 @@ public class ControllerTest {
         // Create application
         Application app = tester.createApplication("app1", "tenant1", 1, 2L);
 
-        // Direct deploy is allowed when project ID is missing
+        // Direct deploy is allowed when deployDirectly is true
         ZoneId zone = ZoneId.from("prod", "cd-us-central-1");
         // Same options as used in our integration tests
         DeployOptions options = new DeployOptions(true, Optional.empty(), false,
@@ -806,7 +806,6 @@ public class ControllerTest {
 
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
-
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
