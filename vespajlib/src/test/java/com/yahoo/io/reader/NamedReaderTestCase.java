@@ -4,10 +4,11 @@ package com.yahoo.io.reader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.util.Collections;
+import java.util.List;
 
-import com.yahoo.io.reader.NamedReader;
 import com.yahoo.protect.ClassValidator;
 import org.junit.Test;
 
