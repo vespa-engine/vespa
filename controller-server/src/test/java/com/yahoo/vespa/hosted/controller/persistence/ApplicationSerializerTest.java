@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
@@ -27,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import org.junit.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -219,43 +217,6 @@ public class ApplicationSerializerTest {
         byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
         applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(applicationJson));
         // ok if no error
-    }
-
-    private Slime applicationSlime(boolean error) {
-        return applicationSlime(123, error);
-    }
-
-    private Slime applicationSlime(long projectId, boolean error) {
-        return SlimeUtils.jsonToSlime(applicationJson(projectId, error).getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String applicationJson(long projectId, boolean error) {
-        return
-                "{\n" +
-                "  \"id\": \"t1:a1:i1\",\n" +
-                "  \"deploymentSpecField\": \"<deployment version='1.0'/>\",\n" +
-                "  \"deploymentJobs\": {\n" +
-                "    \"projectId\": " + projectId + ",\n" +
-                "    \"jobStatus\": [\n" +
-                "      {\n" +
-                "        \"jobType\": \"system-test\",\n" +
-                (error ? "        \"jobError\": \"" + JobError.unknown + "\",\n" : "") +
-                "        \"lastCompleted\": {\n" +
-                "          \"version\": \"6.1\",\n" +
-                "          \"revision\": {\n" +
-                "            \"applicationPackageHash\": \"dead\",\n" +
-                "            \"sourceRevision\": {\n" +
-                "              \"repositoryField\": \"git@git.foo\",\n" +
-                "              \"branchField\": \"origin/master\",\n" +
-                "              \"commitField\": \"cafe\"\n" +
-                "            }\n" +
-                "          },\n" +
-                "          \"at\": 1505725189469\n" +
-                "        }\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  }\n" +
-                "}\n";
     }
 
 }
