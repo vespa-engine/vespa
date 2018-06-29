@@ -59,6 +59,7 @@ import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -294,9 +295,11 @@ public class SearchHandler extends LoggingRequestHandler {
             try {
                 byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
                 inspector = SlimeUtils.jsonToSlime(byteArray).get();
+                if (inspector.field("error_message").valid()){
+                    throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
+                }
 
             } catch (IOException e) {
-                e.printStackTrace();
                 throw new RuntimeException("Problem with reading from input-stream", e);
             }
 
