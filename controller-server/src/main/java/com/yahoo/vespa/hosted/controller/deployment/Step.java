@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -19,6 +20,7 @@ import java.util.List;
  *   2. A step will never run concurrently with its prerequisites. This is to ensure, e.g., that relevant
  *      information from a failed run is stored, and that deployment does not occur after deactivation.
  *
+ * @see JobController
  * @author jonmv
  */
 public enum Step {
@@ -44,17 +46,17 @@ public enum Step {
     /** Ask the tester to run its tests. */
     startTests(installReal, installTester),
 
-    /** Download data from the tester and store it. */
-    storeData(startTests),
+    /** See that the tests are done running and store the test results. */
+    runTests(startTests),
 
     /** Delete the real application -- used for test deployments. */
-    deactivateReal(deployInitialReal, deployReal, startTests),
+    deactivateReal(deployInitialReal, deployReal, runTests),
 
     /** Deactivate the tester. */
-    deactivateTester(deployTester, storeData),
+    deactivateTester(deployTester, runTests),
 
     /** Report completion to deployment orchestration machinery. */
-    report;
+    report(deactivateReal, deactivateTester);
 
 
     private final List<Step> prerequisites;

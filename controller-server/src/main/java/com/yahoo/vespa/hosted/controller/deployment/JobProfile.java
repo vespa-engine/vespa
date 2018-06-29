@@ -20,9 +20,10 @@ public enum JobProfile {
                           deployTester,
                           installTester,
                           startTests),
-               EnumSet.of(storeData,
+               EnumSet.of(runTests,
                           deactivateTester,
-                          deactivateReal)),
+                          deactivateReal,
+                          report)),
 
     stagingTest(EnumSet.of(deployInitialReal,
                            installInitialReal,
@@ -31,17 +32,19 @@ public enum JobProfile {
                            deployTester,
                            installTester,
                            startTests),
-                EnumSet.of(storeData,
+                EnumSet.of(runTests,
                            deactivateTester,
-                           deactivateReal)),
+                           deactivateReal,
+                           report)),
 
     production(EnumSet.of(deployReal,
                           installReal,
                           deployTester,
                           installTester,
                           startTests),
-               EnumSet.of(storeData,
-                          deactivateTester));
+               EnumSet.of(runTests,
+                          deactivateTester,
+                          report));
 
 
     private final Set<Step> steps;

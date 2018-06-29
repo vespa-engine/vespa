@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.LockedStep;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -17,8 +18,8 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
  */
 public interface StepRunner {
 
-    /** Attempts to run the given locked step, and returns its new status. */
-    Step.Status run(LockedStep step, RunStatus run);
+    /** Attempts to run the given locked step in the given run, and returns its new status. */
+    Step.Status run(LockedStep step, RunId id);
 
 }
 

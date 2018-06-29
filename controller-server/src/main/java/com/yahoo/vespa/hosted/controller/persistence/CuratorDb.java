@@ -69,7 +69,7 @@ public class CuratorDb {
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
-    private final JobSerializer jobSerializer = new JobSerializer();
+    private final RunSerializer runSerializer = new RunSerializer();
 
     private final Curator curator;
 
@@ -308,25 +308,25 @@ public class CuratorDb {
     // -------------- Job Runs ------------------------------------------------
 
     public void writeLastRun(RunStatus run) {
-        curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(jobSerializer.toSlime(run)));
+        curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(runSerializer.toSlime(run)));
     }
 
     public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<RunStatus> runs) {
-        curator.set(jobPath(id, type), asJson(jobSerializer.toSlime(runs)));
+        curator.set(jobPath(id, type), asJson(runSerializer.toSlime(runs)));
+    }
+
+    public Optional<RunStatus> readLastRun(ApplicationId id, JobType type) {
+        return readSlime(lastRunPath(id, type)).map(runSerializer::runFromSlime);
+    }
+
+    public Map<RunId, RunStatus> readHistoricRuns(ApplicationId id, JobType type) {
+        // TODO jvenstad: Add, somewhere, a retention filter based on age or count.
+        return readSlime(jobPath(id, type)).map(runSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
     }
 
     public void deleteJobData(ApplicationId id, JobType type) {
         curator.delete(jobPath(id, type));
         curator.delete(lastRunPath(id, type));
-    }
-
-    public Optional<RunStatus> readLastRun(ApplicationId id, JobType type) {
-        return readSlime(jobPath(id, type)).map(jobSerializer::runFromSlime);
-    }
-
-    public Map<RunId, RunStatus> readHistoricRuns(ApplicationId id, JobType type) {
-        // TODO jvenstad: Add, somewhere, a retention filter based on age or count.
-        return readSlime(jobPath(id, type)).map(jobSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
     }
 
     // -------------- Provisioning (called by internal code) ------------------

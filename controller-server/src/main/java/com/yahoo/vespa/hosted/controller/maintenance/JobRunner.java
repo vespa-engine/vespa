@@ -15,11 +15,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
  * Advances the set of {@link RunStatus}es for an {@link InternalBuildService}.
  *
+ * @see JobController
  * @author jonmv
  */
 public class JobRunner extends Maintainer {
@@ -70,18 +72,21 @@ public class JobRunner extends Maintainer {
     /** Attempts to advance the status of the given step, for the given run. */
     void advance(RunId id, Step step) {
         try {
+            AtomicBoolean changed = new AtomicBoolean(false);
             jobs.locked(id, step, lockedStep -> {
                 jobs.active(id).ifPresent(run -> { // The run may have become inactive, which means we bail out.
                     if ( ! run.readySteps().contains(step))
                         return; // Someone may have updated the run status, making this step obsolete, so we bail out.
 
-                    Step.Status status = runner.run(lockedStep, run);
+                    Step.Status status = runner.run(lockedStep, run.id());
                     if (run.steps().get(step) != status) {
                         jobs.update(run.id(), status, lockedStep);
-                        advance(run);
+                        changed.set(true);
                     }
                 });
             });
+            if (changed.get())
+                jobs.active(id).ifPresent(this::advance);
         }
         catch (TimeoutException e) {
             // Something else is already advancing this step, or a prerequisite -- try again later!

@@ -26,36 +26,45 @@ public class RunStatus {
     private final Map<Step, Step.Status> steps;
     private final Instant start;
     private final Optional<Instant> end;
+    private final boolean aborted;
     // TODO jvenstad: Add a Versions object and a reason String. Requires shortcutting of triggering of these runs.
 
     // For deserialisation only -- do not use!
-    public RunStatus(RunId id, Map<Step, Step.Status> steps, Instant start, Optional<Instant> end) {
+    public RunStatus(RunId id, Map<Step, Step.Status> steps, Instant start, Optional<Instant> end, boolean aborted) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.start = start;
         this.end = end;
+        this.aborted = aborted;
     }
 
     public static RunStatus initial(RunId id, Instant now) {
         EnumMap<Step, Step.Status> steps = new EnumMap<>(Step.class);
         JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, unfinished));
-        return new RunStatus(id, steps, requireNonNull(now), Optional.empty());
+        return new RunStatus(id, steps, requireNonNull(now), Optional.empty(), false);
     }
 
     public RunStatus with(Step.Status status, LockedStep step) {
-        if (end.isPresent())
+        if (hasEnded())
             throw new AssertionError("This step ended at " + end.get() + " -- it can't be further modified!");
 
         EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), requireNonNull(status));
-        return new RunStatus(id, steps, start, end);
+        return new RunStatus(id, steps, start, end, aborted);
     }
 
-    public RunStatus finish(Instant now) {
-        if (end.isPresent())
+    public RunStatus finished(Instant now) {
+        if (hasEnded())
             throw new AssertionError("This step ended at " + end.get() + " -- it can't be ended again!");
 
-        return new RunStatus(id, new EnumMap<>(steps), start, Optional.of(now));
+        return new RunStatus(id, new EnumMap<>(steps), start, Optional.of(now), aborted);
+    }
+
+    public RunStatus aborted() {
+        if (hasEnded())
+            throw new AssertionError("This step ended at " + end.get() + " -- it can't be aborted now!");
+
+        return new RunStatus(id, new EnumMap<>(steps), start, end, true);
     }
 
     /** Returns the id of this run. */
@@ -86,7 +95,12 @@ public class RunStatus {
 
     /** Returns whether the run has failed, and should switch to its run-always steps. */
     public boolean hasFailed() {
-        return steps.values().contains(failed);
+        return aborted || steps.values().contains(failed);
+    }
+
+    /** Returns whether the run has been forcefully aborted. */
+    public boolean isAborted() {
+        return aborted;
     }
 
     /** Returns whether the run has ended, i.e., has become inactive, and can no longer be updated. */
@@ -115,6 +129,7 @@ public class RunStatus {
                "id=" + id +
                ", start=" + start +
                ", end=" + end +
+               ", aborted=" + aborted +
                ", steps=" + steps +
                '}';
     }

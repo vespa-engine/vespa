@@ -147,10 +147,15 @@ public class JobController {
     /** Changes the status of the given run to inactive, and stores it as a historic run. */
     public void finish(RunId id) {
         locked(id, run -> { // Store the modified run after it has been written to the collection, in case the latter fails.
-            RunStatus endedRun = run.finish(controller.clock().instant());
-            locked(id.application(), id.type(), runs -> runs.put(run.id(), endedRun));
-            return endedRun;
+            RunStatus finishedRun = run.finished(controller.clock().instant());
+            locked(id.application(), id.type(), runs -> runs.put(run.id(), finishedRun));
+            return finishedRun;
         });
+    }
+
+    /** Marks the given run as aborted; no further normal steps will run, but run-always steps will try to succeed. */
+    public void abort(RunId id) {
+        locked(id, run -> run.aborted());
     }
 
     /** Registers the given application, such that it may have deployment jobs run here. */
@@ -164,8 +169,7 @@ public class JobController {
                                      byte[] applicationPackage, byte[] applicationTestJar) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
-            if ( ! application.get().deploymentJobs().builtInternally())
-                throw new IllegalArgumentException(id + " is not built here!");
+            controller.applications().store(application.withBuiltInternally(true));
 
             long run = nextBuild(id);
             version.set(ApplicationVersion.from(revision, run));
@@ -177,7 +181,7 @@ public class JobController {
         return version.get();
     }
 
-    /** Orders a run of the given type, and returns the id of the created job. */
+    /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void run(ApplicationId id, JobType type) {
         controller.applications().lockIfPresent(id, application -> {
             if ( ! application.get().deploymentJobs().builtInternally())
@@ -201,6 +205,7 @@ public class JobController {
             for (JobType type : jobs(id))
                 try (Lock __ = curator.lock(id, type)) {
                     curator.deleteJobData(id, type);
+                    // TODO jvenstad: Deactivate tester applications?
                 }
         });
     }
@@ -218,7 +223,7 @@ public class JobController {
     private void notifyOfNewSubmission(ApplicationId id, SourceRevision revision, long number) {
         DeploymentJobs.JobReport report = new DeploymentJobs.JobReport(id,
                                                                        JobType.component,
-                                                                       0,
+                                                                       Long.MAX_VALUE, // TODO jvenstad: Clean up this!
                                                                        number,
                                                                        Optional.of(revision),
                                                                        Optional.empty());
