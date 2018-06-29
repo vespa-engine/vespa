@@ -57,7 +57,7 @@ public class LocalSessionRepoTest {
                                                            new MemoryTenantApplications(),
                                                            tenantFileSystemDirs, new HostRegistry<>(),
                                                            tenantName);
-        repo = new LocalSessionRepo(tenantFileSystemDirs, loader, clock, 5);
+        repo = new LocalSessionRepo(tenantFileSystemDirs, loader, clock, 5, globalComponentRegistry.getCurator());
     }
 
     @Test

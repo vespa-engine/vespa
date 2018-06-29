@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -69,7 +70,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Before
     public void setupRepo() {
         applicationRepo = new MemoryTenantApplications();
-        localSessionRepo = new LocalSessionRepo(Clock.systemUTC());
+        localSessionRepo = new LocalSessionRepo(Clock.systemUTC(), new MockCurator());
         tenantRepository = new TenantRepository(componentRegistry, false);
         sessionFactory = new MockSessionFactory();
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenant)

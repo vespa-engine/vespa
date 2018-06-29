@@ -120,14 +120,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         return getSessionId() > sessionId;
     }
 
-    /** Delete this session */
-    // TODO: Use transactional delete instead
-    public void delete() {
-        superModelGenerationCounter.increment();
-        IOUtils.recursiveDeleteDir(serverDB);
-        zooKeeperClient.delete();
-    }
-
     /** Add transactions to delete this session to the given nested transaction */
     public void delete(NestedTransaction transaction) {
         transaction.add(zooKeeperClient.deleteTransaction(), FileTransaction.class);
@@ -174,6 +166,8 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     public AllocatedHosts getAllocatedHosts() {
         return zooKeeperClient.getAllocatedHosts();
     }
+
+    public TenantName getTenantName() { return tenant; }
 
     @Override
     public String logPre() {

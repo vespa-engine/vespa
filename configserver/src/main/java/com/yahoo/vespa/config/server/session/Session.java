@@ -43,7 +43,7 @@ public abstract class Session {
      * Represents the status of this session.
      */
     public enum Status {
-        NEW, PREPARE, ACTIVATE, DEACTIVATE, NONE;
+        NEW, PREPARE, ACTIVATE, DEACTIVATE, DELETE, NONE;
 
         public static Status parse(String data) {
             for (Status status : Status.values()) {

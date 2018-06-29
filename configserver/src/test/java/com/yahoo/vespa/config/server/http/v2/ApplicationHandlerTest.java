@@ -19,7 +19,6 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.StaticResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
@@ -33,12 +32,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -78,25 +74,9 @@ public class ApplicationHandlerTest {
     @Test
     public void testDelete() throws Exception {
         {
-            // This block is a real test of the interplay of (most of) the components of the config server
-            // TODO: Extract it to ApplicationRepositoryTest, rewrite to bypass the HTTP layer and extend
-            //       as login is moved from the HTTP layer into ApplicationRepository
-
-            PrepareResult result = applicationRepository.deploy(testApp, prepareParams(applicationId));
-            long sessionId = result.sessionId();
+            applicationRepository.deploy(testApp, prepareParams(applicationId));
             Tenant mytenant = tenantRepository.getTenant(applicationId.tenant());
-            LocalSession applicationData = mytenant.getLocalSessionRepo().getSession(sessionId);
-            assertNotNull(applicationData);
-            assertNotNull(applicationData.getApplicationId());
-            assertFalse(provisioner.removed);
-
             deleteAndAssertOKResponse(mytenant, applicationId);
-            assertTrue(provisioner.removed);
-            assertThat(provisioner.lastApplicationId.tenant(), is(mytenantName));
-            assertThat(provisioner.lastApplicationId, is(applicationId));
-
-            assertNull(mytenant.getLocalSessionRepo().getSession(sessionId));
-            assertNull(mytenant.getRemoteSessionRepo().getSession(sessionId));
         }
         
         {
@@ -114,7 +94,6 @@ public class ApplicationHandlerTest {
 
             assertApplicationExists(fooId, Zone.defaultZone());
             deleteAndAssertOKResponseMocked(fooId, true);
-            assertThat(provisioner.lastApplicationId, is(fooId));
             assertApplicationExists(applicationId, Zone.defaultZone());
 
             deleteAndAssertOKResponseMocked(applicationId, true);

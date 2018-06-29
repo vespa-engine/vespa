@@ -100,7 +100,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
-        localRepo = new LocalSessionRepo(clock);
+        localRepo = new LocalSessionRepo(clock, curator);
         pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
         hostProvisioner = new MockProvisioner();
         modelFactory = new VespaModelFactory(new NullConfigModelRegistry());

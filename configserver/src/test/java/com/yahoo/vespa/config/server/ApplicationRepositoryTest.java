@@ -15,7 +15,9 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -32,8 +34,12 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -52,6 +58,7 @@ public class ApplicationRepositoryTest {
 
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
+    private SessionHandlerTest.MockProvisioner  provisioner;
     private TimeoutBudget timeoutBudget;
 
     @Rule
@@ -66,7 +73,7 @@ public class ApplicationRepositoryTest {
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
         tenantRepository.addTenant(tenant3);
-        Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
+        provisioner = new SessionHandlerTest.MockProvisioner();
         applicationRepository = new ApplicationRepository(tenantRepository, provisioner, clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
@@ -110,7 +117,7 @@ public class ApplicationRepositoryTest {
         assertEquals(tenant3, applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, now).iterator().next());
 
         // Delete app used by tenant1, tenant2 still has an application
-        applicationRepository.remove(applicationId());
+        applicationRepository.delete(applicationId());
         Set<TenantName> tenantsDeleted = applicationRepository.deleteUnusedTenants(Duration.ofMillis(1), now);
         assertTrue(tenantsDeleted.contains(tenant1));
         assertFalse(tenantsDeleted.contains(tenant2));
@@ -170,6 +177,59 @@ public class ApplicationRepositoryTest {
         IOUtils.writeFile(bar, Utf8.toBytes("test"));
         assertTrue(filereferenceDir.setLastModified(lastModifiedTime.toEpochMilli()));
         return filereferenceDir;
+    }
+
+    @Test
+    public void delete() {
+        {
+            PrepareResult result = deployApp(testApp);
+            long sessionId = result.sessionId();
+            Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
+            LocalSession applicationData = tenant.getLocalSessionRepo().getSession(sessionId);
+            assertNotNull(applicationData);
+            assertNotNull(applicationData.getApplicationId());
+            assertNotNull(tenant.getRemoteSessionRepo().getSession(sessionId));
+            assertNotNull(applicationRepository.getActiveSession(applicationId()));
+
+            // Delete app and verify that it has been deleted from repos and provisioner
+            assertTrue(applicationRepository.deleteApplication(applicationId()));
+            assertNull(applicationRepository.getActiveSession(applicationId()));
+            assertNull(tenant.getLocalSessionRepo().getSession(sessionId));
+            assertNull(tenant.getRemoteSessionRepo().getSession(sessionId));
+            assertTrue(provisioner.removed);
+            assertThat(provisioner.lastApplicationId.tenant(), is(tenant.getName()));
+            assertThat(provisioner.lastApplicationId, is(applicationId()));
+
+            assertFalse(applicationRepository.deleteApplication(applicationId()));
+        }
+
+        {
+            deployApp(testApp);
+            assertTrue(applicationRepository.deleteApplication(applicationId()));
+            deployApp(testApp);
+
+            // Deploy another app (with id fooId)
+            ApplicationId fooId = applicationId(tenant2);
+            PrepareParams prepareParams2 = new PrepareParams.Builder().applicationId(fooId).build();
+            deployApp(testApp, prepareParams2);
+            assertNotNull(applicationRepository.getActiveSession(fooId));
+
+            // Delete app with id fooId, should not affect original app
+            assertTrue(applicationRepository.deleteApplication(fooId));
+            assertThat(provisioner.lastApplicationId, is(fooId));
+            assertNotNull(applicationRepository.getActiveSession(applicationId()));
+
+            assertTrue(applicationRepository.deleteApplication(applicationId()));
+        }
+    }
+
+    @Test
+    public void deleteLegacy() {
+        deployApp(testApp);
+        assertNotNull(applicationRepository.getActiveSession(applicationId()));
+        assertTrue(applicationRepository.deleteApplicationLegacy(applicationId()));
+        assertNull(applicationRepository.getActiveSession(applicationId()));
+        assertFalse(applicationRepository.deleteApplicationLegacy(applicationId()));
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
