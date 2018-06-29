@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 
@@ -109,21 +110,17 @@ public class BuildJob {
         if (job != JobType.component) {
             throw new IllegalStateException(job + " cannot upload artifact");
         }
-        artifactRepository.put(applicationId, applicationPackage, applicationVersion());
+        artifactRepository.put(applicationId, applicationPackage, ApplicationVersion.from(sourceRevision.get(), buildNumber).id());
         return this;
     }
 
     /** Send report for this build job to the controller */
     public void submit() {
         if (job == JobType.component &&
-            !artifactRepository.contains(applicationId, applicationVersion())) {
+            !artifactRepository.contains(applicationId, ApplicationVersion.from(sourceRevision.get(), buildNumber).id())) {
             throw new IllegalStateException(job + " must upload artifact before reporting completion");
         }
         reportConsumer.accept(report());
-    }
-
-    private String applicationVersion() {
-        return String.format("1.0.%d-%s", buildNumber, sourceRevision.get().commit());
     }
 
 }
