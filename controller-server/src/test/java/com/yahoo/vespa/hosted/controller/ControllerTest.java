@@ -367,56 +367,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testFailingSinceUpdates() {
-        // Setup system
-        DeploymentTester tester = new DeploymentTester();
-
-        // Setup application
-        Application app = tester.createApplication("app1", "foo", 1, 1L);
-
-        // Initial failure
-        Instant initialFailure = tester.clock().instant().truncatedTo(MILLIS);
-        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at initial failure",
-                     initialFailure, firstFailing(app, tester).get().at());
-
-        // Failure again -- failingSince should remain the same
-        tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at second consecutive failure",
-                     initialFailure, firstFailing(app, tester).get().at());
-
-        // Success resets failingSince
-        tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(app, applicationPackage, true, systemTest);
-        assertFalse(firstFailing(app, tester).isPresent());
-
-        // Complete deployment
-        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
-
-        // Two repeated failures again.
-        // Initial failure
-        tester.clock().advance(Duration.ofMillis(1000));
-        initialFailure = tester.clock().instant().truncatedTo(MILLIS);
-        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at initial failure",
-                     initialFailure, firstFailing(app, tester).get().at());
-
-        // Failure again -- failingSince should remain the same
-        tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at second consecutive failure",
-                     initialFailure, firstFailing(app, tester).get().at());
-    }
-
-    private Optional<JobStatus.JobRun> firstFailing(Application application, DeploymentTester tester) {
-        return tester.controller().applications().get(application.id()).get().deploymentJobs().jobStatus().get(systemTest).firstFailing();
-    }
-
-    @Test
     public void requeueOutOfCapacityStagingJob() {
         DeploymentTester tester = new DeploymentTester();
 

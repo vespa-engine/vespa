@@ -10,12 +10,12 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
@@ -33,12 +33,14 @@ import java.util.function.Supplier;
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCorpUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -778,6 +780,53 @@ public class DeploymentTriggerTest {
 
         // Cancellation of outdated version and triggering on a new version is done by the upgrader.
         assertEquals(version, tester.application(app.id()).deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
+    }
+
+    @Test
+    public void testUpdatesFailingJobStatus() {
+        // Setup application
+        Application app = tester.createApplication("app1", "foo", 1, 1L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("corp-us-east-1")
+                .build();
+
+        // Initial failure
+        Instant initialFailure = tester.clock().instant().truncatedTo(MILLIS);
+        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
+        assertEquals("Failure age is right at initial failure",
+                     initialFailure, tester.firstFailing(app, systemTest).get().at());
+
+        // Failure again -- failingSince should remain the same
+        tester.clock().advance(Duration.ofMillis(1000));
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
+        assertEquals("Failure age is right at second consecutive failure",
+                     initialFailure, tester.firstFailing(app, systemTest).get().at());
+
+        // Success resets failingSince
+        tester.clock().advance(Duration.ofMillis(1000));
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        assertFalse(tester.firstFailing(app, systemTest).isPresent());
+
+        // Complete deployment
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
+
+        // Two repeated failures again.
+        // Initial failure
+        tester.clock().advance(Duration.ofMillis(1000));
+        initialFailure = tester.clock().instant().truncatedTo(MILLIS);
+        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
+        assertEquals("Failure age is right at initial failure",
+                     initialFailure, tester.firstFailing(app, systemTest).get().at());
+
+        // Failure again -- failingSince should remain the same
+        tester.clock().advance(Duration.ofMillis(1000));
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
+        assertEquals("Failure age is right at second consecutive failure",
+                     initialFailure, tester.firstFailing(app, systemTest).get().at());
     }
 
     @Test
