@@ -245,11 +245,6 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    /** Get default flavor override for an application, if present. */
-    public Optional<String> getDefaultFlavorOverride(ApplicationId applicationId) {
-        return db.getDefaultFlavorForApplication(applicationId);
-    }
-
     public NodeFlavors getAvailableFlavors() {
         return flavors;
     }
