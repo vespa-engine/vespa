@@ -45,7 +45,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final TenantName tenant;
     private final long appGeneration;
     private final SessionZooKeeperClient zkClient;
-    private final Optional<PermanentApplicationPackage> permanentApplicationPackage;
+    private final PermanentApplicationPackage permanentApplicationPackage;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
@@ -59,7 +59,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.tenant = tenant;
         this.appGeneration = appGeneration;
         this.zkClient = zkClient;
-        this.permanentApplicationPackage = Optional.of(globalComponentRegistry.getPermanentApplicationPackage());
+        this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
         this.configserverConfig = globalComponentRegistry.getConfigserverConfig();
         this.configDefinitionRepo = globalComponentRegistry.getConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
@@ -79,7 +79,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 Optional.empty(),
-                permanentApplicationPackage.get().applicationPackage(),
+                permanentApplicationPackage.applicationPackage(),
                 logger,
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistryMap(), modelFactory.getVersion()).orElse(new MockFileRegistry()),

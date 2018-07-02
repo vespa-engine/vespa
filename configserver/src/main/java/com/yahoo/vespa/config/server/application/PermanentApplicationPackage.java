@@ -14,8 +14,7 @@ import java.util.logging.Logger;
 /**
  * A global permanent application package containing configuration info that is always used during deploy.
  *
- * @author lulf
- * @since 5.15
+ * @author Ulf Lilleengen
  */
 public class PermanentApplicationPackage {
 
@@ -24,7 +23,7 @@ public class PermanentApplicationPackage {
 
     public PermanentApplicationPackage(ConfigserverConfig config) {
         File app = new File(getDefaults().underVespaHome(config.applicationDirectory()));
-        applicationPackage = Optional.<ApplicationPackage>ofNullable(app.exists() ? FilesApplicationPackage.fromFile(app) : null);
+        applicationPackage = Optional.ofNullable(app.exists() ? FilesApplicationPackage.fromFile(app) : null);
         if (applicationPackage.isPresent()) {
             log.log(LogLevel.DEBUG, "Detected permanent application package in '" +
                                     getDefaults().underVespaHome(config.applicationDirectory()) +
