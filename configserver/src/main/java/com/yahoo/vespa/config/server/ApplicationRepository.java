@@ -15,6 +15,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
@@ -268,11 +269,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId) {
-        // TODO: Use deleteApplication() in all zones, for now use it only in non-hosted
-        if (configserverConfig.hostedVespa()) {
-            return deleteApplicationLegacy(applicationId);
-        } else {
+        // TODO: Use deleteApplication() in all zones
+        if ( ! configserverConfig.hostedVespa() || SystemName.from(configserverConfig.system()) == SystemName.cd) {
             return deleteApplication(applicationId);
+        } else {
+            return deleteApplicationLegacy(applicationId);
         }
     }
 
