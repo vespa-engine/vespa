@@ -32,12 +32,7 @@ public class SystemUpgrader extends Maintainer {
 
     @Override
     protected void maintain() {
-        Optional<Version> target = targetVersion();
-        if (!target.isPresent()) {
-            return;
-        }
-
-        deployAll(target.get(), SystemApplication.all());
+        targetVersion().ifPresent(target -> deployAll(target, SystemApplication.all()));
     }
 
     /** Deploy a list of system applications until they converge on the given version */
@@ -76,10 +71,11 @@ public class SystemUpgrader extends Maintainer {
 
     /** Deploy application on given version idempotently */
     private void deploy(Version target, SystemApplication application, ZoneId zone) {
-        if (!wantedVersion(zone, application, target).equals(target)) {
-            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
-            controller().applications().deploy(application, zone, target);
+        if (wantedVersion(zone, application, target).equals(target)) {
+            return;
         }
+        log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
+        controller().applications().deploy(application, zone, target);
     }
 
     private boolean convergedOn(Version target, List<SystemApplication> applications, ZoneId zone) {
