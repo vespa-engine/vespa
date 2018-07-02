@@ -80,7 +80,7 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentMetricsMaintainer.deconstruct();
         applicationOwnershipConfirmer.deconstruct();
         dnsMaintainer.deconstruct();
-        systemUpgrader.maintain();
+        systemUpgrader.deconstruct();
     }
 
 }
