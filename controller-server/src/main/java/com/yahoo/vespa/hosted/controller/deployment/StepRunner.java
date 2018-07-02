@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.maintenance;
+package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;

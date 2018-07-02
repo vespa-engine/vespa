@@ -1,18 +1,29 @@
-package com.yahoo.vespa.hosted.controller.maintenance;
+package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.deployment.LockedStep;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -66,7 +77,6 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Status deployReal(RunId id) {
-        // Separate out deploy logic from above, and reuse.
         return deployReal(id, false);
     }
 
@@ -83,12 +93,14 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Status deployTester(RunId id) {
-        // Find endpoints of real application. This will move down at a later time.
-        // See above.
+        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application());
+        if ( ! endpoints.containsKey(id.type().zone(controller.system()).get()))
+            return unfinished;
+
         return deploy(testerOf(id.application()),
                       id.type(),
                       () -> controller.applications().deployTester(testerOf(id.application()),
-                                                                   testerPackage(id),
+                                                                   testerPackage(id, endpoints),
                                                                    id.type().zone(controller.system()).get(),
                                                                    new DeployOptions(true,
                                                                                      Optional.of(controller.systemVersion()),
@@ -167,15 +179,53 @@ public class InternalStepRunner implements StepRunner {
         return controller.applications().require(id);
     }
 
-    private ApplicationPackage testerPackage(RunId id) {
+    private ApplicationPackage testerPackage(RunId id, Map<ZoneId, List<URI>> endpoints) {
         ApplicationVersion version = application(id.application()).deploymentJobs()
                                                                   .statusOf(id.type()).get()
                                                                   .lastTriggered().get()
                                                                   .application();
 
+        byte[] testConfig = testConfig(id.application(), id.type().zone(controller.system()).get(), controller.system(), endpoints);
+        byte[] testJar = controller.applications().artifacts().getTesterJar(testerOf(id.application()), version.id());
+        byte[] servicesXml = servicesXml();
 
-        // TODO hakonhall: Fetch!
+        // TODO hakonhall: Assemble!
+
         throw new AssertionError();
+    }
+
+    private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id) {
+        ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
+        controller.applications().require(id).deployments().keySet()
+                  .forEach(zone -> controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
+                                             .ifPresent(endpoints -> deployments.put(zone, endpoints)));
+        return deployments.build();
+    }
+
+    private byte[] servicesXml() {
+        //TODO hakonhall: Create!
+        return "".getBytes();
+    }
+
+    /** Returns the config for the tests to run for the given job. */
+    private static byte[] testConfig(ApplicationId id, ZoneId testerZone, SystemName system, Map<ZoneId, List<URI>> deployments) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("application", id.serializedForm());
+        root.setString("zone", testerZone.value());
+        root.setString("system", system.name());
+        Cursor endpointsObject = root.setObject("endpoints");
+        deployments.forEach((zone, endpoints) -> {
+            Cursor endpointArray = endpointsObject.setArray(zone.value());
+            for (URI endpoint : endpoints)
+                endpointArray.addString(endpoint.toString());
+        });
+        try {
+            return SlimeUtils.toJsonBytes(slime);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

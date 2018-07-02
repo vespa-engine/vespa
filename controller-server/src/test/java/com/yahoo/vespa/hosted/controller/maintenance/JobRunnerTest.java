@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -8,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
+import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -16,13 +18,18 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
@@ -78,7 +85,7 @@ public class JobRunnerTest {
         latch.await(1, TimeUnit.SECONDS);
         assertEquals(0, latch.getCount());
 
-        jobs.active().forEach(run -> jobs.active(run.id())); // Wait for locks of jobs which haven't yet been written through.
+        jobs.updateStorage(); // Holding the lock of each job ensures data read below is fresh.
         assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(succeeded::equals));
         assertTrue(jobs.last(id, stagingTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().hasFailed());
@@ -162,6 +169,44 @@ public class JobRunnerTest {
         assertEquals(succeeded, run.get().steps().get(report));
     }
 
+    @Test
+    public void stepLocking() throws InterruptedException, BrokenBarrierException {
+        DeploymentTester tester = new DeploymentTester();
+        JobController jobs = tester.controller().jobController();
+        // Hang during tester deployment, until notified.
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
+                                         Executors.newFixedThreadPool(32), waitingRunner(barrier));
+
+        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
+        jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
+
+        RunId runId = new RunId(id, systemTest, 1);
+        jobs.run(id, systemTest);
+        runner.maintain();
+        barrier.await();
+        try {
+            jobs.locked(id, systemTest, deactivateTester, step -> { });
+            fail("deployTester step should still be locked!");
+        }
+        catch (TimeoutException e) { }
+
+        // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
+        assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
+        tester.controller().applications().deleteApplication(id, Optional.of(TestIdentities.userNToken));
+        assertEquals(Collections.emptyList(), jobs.active());
+        assertEquals(runId, jobs.last(id, systemTest).get().id());
+
+        // Deployment still ongoing, so garbage is not yet collected.
+        runner.maintain();
+        assertEquals(runId, jobs.last(id, systemTest).get().id());
+
+        // Deployment lets go, deactivation may now run, and trash is thrown out.
+        barrier.await();
+        runner.maintain();
+        assertEquals(Optional.empty(), jobs.last(id, systemTest));
+    }
+
     private static ExecutorService inThreadExecutor() {
         return new AbstractExecutorService() {
             AtomicBoolean shutDown = new AtomicBoolean(false);
@@ -187,6 +232,22 @@ public class JobRunnerTest {
 
     private static StepRunner mappedRunner(Map<Step, Status> outcomes) {
         return (step, id) -> outcomes.getOrDefault(step.get(), Status.unfinished);
+    }
+
+    private static StepRunner waitingRunner(CyclicBarrier barrier) {
+        return (step, id) -> {
+            try {
+                if (step.get() == deployTester) {
+                    barrier.await(); // Wake up the main thread, which waits for this step to be locked.
+                    barrier.reset();
+                    barrier.await(); // Then wait while holding the lock for this step, until the main thread wakes us up.
+                }
+            }
+            catch (InterruptedException | BrokenBarrierException e) {
+                throw new AssertionError(e);
+            }
+            return succeeded;
+        };
     }
 
 }

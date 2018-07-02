@@ -28,7 +28,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
-import static com.yahoo.vespa.hosted.controller.maintenance.InternalStepRunner.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -61,7 +62,7 @@ public class JobController {
         for (ApplicationId id : applications())
             for (JobType type : jobs(id)) {
                 locked(id, type, runs -> {
-                    last(id, type).ifPresent(last -> locked(last.id(), run -> run));
+                    curator.readLastRun(id, type).ifPresent(curator::writeLastRun);
                 });
             }
     }
@@ -209,7 +210,7 @@ public class JobController {
             controller.applications().store(application.withBuiltInternally(false));
             jobs(id).forEach(type -> {
                 try (Lock __ = curator.lock(id, type)) {
-                    last(id, type).ifPresent(last -> active(last.id()).ifPresent(active -> finish(active.id())));
+                    last(id, type).ifPresent(last -> active(last.id()).ifPresent(active -> abort(active.id())));
                 }
             });
         });
@@ -223,10 +224,11 @@ public class JobController {
                .forEach(id -> {
                    try {
                        for (JobType type : jobs(id))
-                           try (Lock __ = curator.lock(id, type);
-                                Lock ___ = curator.lock(id, type, Step.deactivateTester)) {
-                               deactivateTester(id, type);
-                               curator.deleteJobData(id, type);
+                           try (Lock __ = curator.lock(id, type)) {
+                               locked(id, type, deactivateTester, ___ -> {
+                                   deactivateTester(id, type);
+                                   curator.deleteJobData(id, type);
+                               });
                            }
                    }
                    catch (TimeoutException e) {
@@ -284,11 +286,11 @@ public class JobController {
         }
     }
 
-    /** Locks the given step, and checks none of its prerequisites are running, then performs the given actions. */
-    public void locked(RunId id, Step step, Consumer<LockedStep> action) throws TimeoutException {
-        try (Lock lock = curator.lock(id.application(), id.type(), step)) {
+    /** Locks the given step and checks none of its prerequisites are running, then performs the given actions. */
+    public void locked(ApplicationId id, JobType type, Step step, Consumer<LockedStep> action) throws TimeoutException {
+        try (Lock lock = curator.lock(id, type, step)) {
             for (Step prerequisite : step.prerequisites()) // Check that no prerequisite is still running.
-                try (Lock __ = curator.lock(id.application(), id.type(), prerequisite)) { ; }
+                try (Lock __ = curator.lock(id, type, prerequisite)) { ; }
 
             action.accept(new LockedStep(lock, step));
         }

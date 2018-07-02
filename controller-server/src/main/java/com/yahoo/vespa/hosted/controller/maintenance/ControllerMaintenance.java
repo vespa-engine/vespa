@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
+import com.yahoo.vespa.hosted.controller.deployment.DummyStepRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 

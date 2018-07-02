@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import org.jetbrains.annotations.TestOnly;
 
 import java.time.Duration;
@@ -74,8 +75,8 @@ public class JobRunner extends Maintainer {
     void advance(RunId id, Step step) {
         try {
             AtomicBoolean changed = new AtomicBoolean(false);
-            jobs.locked(id, step, lockedStep -> {
-                jobs.active(id).ifPresent(run -> { // The run may have become inactive, which means we bail out.
+            jobs.locked(id.application(), id.type(), step, lockedStep -> {
+                jobs.active(id).ifPresent(run -> { // The run may have become inactive, so we bail out.
                     if ( ! run.readySteps().contains(step))
                         return; // Someone may have updated the run status, making this step obsolete, so we bail out.
 

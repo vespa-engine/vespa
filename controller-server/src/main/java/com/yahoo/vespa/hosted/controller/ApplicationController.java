@@ -140,6 +140,8 @@ public class ApplicationController {
         return sort(curator.readApplications(tenant));
     }
 
+    public ArtifactRepository artifacts() { return artifactRepository; }
+
     /**
      * Set the rotations marked as 'global' either 'in' or 'out of' service.
      *

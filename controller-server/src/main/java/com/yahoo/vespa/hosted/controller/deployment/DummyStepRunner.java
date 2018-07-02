@@ -1,9 +1,6 @@
-package com.yahoo.vespa.hosted.controller.maintenance;
+package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.deployment.LockedStep;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
-import com.yahoo.vespa.hosted.controller.deployment.Step;
 
 public class DummyStepRunner implements StepRunner {
 
