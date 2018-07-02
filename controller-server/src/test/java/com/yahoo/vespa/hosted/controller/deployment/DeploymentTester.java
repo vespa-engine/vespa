@@ -8,8 +8,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
-import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
-import com.yahoo.vespa.hosted.controller.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
+import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
@@ -281,6 +282,11 @@ public class DeploymentTester {
             controller().applications().deactivate(application, job.zone(controller().system()).get());
         }
         jobCompletion(job).application(application).success(success).submit();
+    }
+
+    public Optional<JobStatus.JobRun> firstFailing(Application application, JobType job) {
+        return tester.controller().applications().get(application.id()).get()
+                     .deploymentJobs().jobStatus().get(job).firstFailing();
     }
 
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {

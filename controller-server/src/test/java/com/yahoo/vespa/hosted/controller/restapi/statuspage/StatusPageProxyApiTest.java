@@ -6,7 +6,7 @@ import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
-import com.yahoo.vespa.hosted.controller.MockSecretStore;
+import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -70,8 +70,8 @@ public class StatusPageProxyApiTest {
         assertEquals("application/json; charset=UTF-8", response.getHeaders().getFirst("Content-Type"));
     }
 
-    private MockSecretStore secretStore() {
-        return (MockSecretStore) container.components().getComponent(MockSecretStore.class.getName());
+    private SecretStoreMock secretStore() {
+        return (SecretStoreMock) container.components().getComponent(SecretStoreMock.class.getName());
     }
 
     private String servicesXml() {
@@ -80,7 +80,7 @@ public class StatusPageProxyApiTest {
                "  <config name='vespa.hosted.controller.statuspage.config.statuspage'>\n" +
                "    <apiUrl>" + statusPageApiUrl + "</apiUrl>\n" +
                "  </config>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.MockSecretStore'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.SecretStoreMock'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.statuspage.StatusPageProxyHandler'>\n" +
                "    <binding>http://*/statuspage/v1/*</binding>\n" +
                "  </handler>\n" +

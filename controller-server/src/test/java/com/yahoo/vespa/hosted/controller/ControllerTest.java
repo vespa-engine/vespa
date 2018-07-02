@@ -16,17 +16,14 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -35,30 +32,21 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
-import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
-import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCorpUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -74,11 +62,6 @@ import static org.junit.Assert.fail;
  * @author mpolden
  */
 public class ControllerTest {
-
-    private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .environment(Environment.prod)
-            .region("corp-us-east-1")
-            .build();
 
     @Test
     public void testDeployment() {
@@ -228,99 +211,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployVersion() {
-        // Setup system
-        DeploymentTester tester = new DeploymentTester();
-        ApplicationController applications = tester.controller().applications();
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("us-west-1")
-                .build();
-        Version systemVersion = tester.controller().versionStatus().systemVersion().get().versionNumber();
-
-        Application app1 = tester.createApplication("application1", "tenant1", 1, 1L);
-
-        // First deployment: An application change
-        tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
-
-        app1 = applications.require(app1.id());
-        assertEquals("First deployment gets system version", systemVersion, app1.oldestDeployedPlatform().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
-
-        // Unexpected deployment
-        tester.deploy(productionUsWest1, app1, applicationPackage);
-        // applications are immutable, so any change to one, including deployment changes, would give rise to a new instance.
-        assertEquals("Unexpected deployment is ignored", app1, applications.require(app1.id()));
-
-        // Application change after a new system version, and a region added
-        Version newSystemVersion = incrementSystemVersion(tester.controller());
-        assertTrue(newSystemVersion.isAfter(systemVersion));
-
-        applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("us-west-1")
-                .region("us-east-3")
-                .build();
-        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
-
-        app1 = applications.require(app1.id());
-        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedPlatform().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
-
-        // A deployment to the new region gets the same version
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
-        app1 = applications.require(app1.id());
-        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedPlatform().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
-        assertFalse("Change deployed", app1.change().isPresent());
-
-        // Version upgrade changes system version
-        applications.deploymentTrigger().triggerChange(app1.id(), Change.of(newSystemVersion));
-        tester.deploymentTrigger().triggerReadyJobs();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
-        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
-
-        app1 = applications.require(app1.id());
-        assertEquals("Version upgrade changes version", newSystemVersion, app1.oldestDeployedPlatform().get());
-        assertEquals(newSystemVersion, tester.configServer().lastPrepareVersion().get());
-    }
-
-    /** Adds a new version, higher than the current system version, makes it the system version and returns it */
-    private Version incrementSystemVersion(Controller controller) {
-        Version systemVersion = controller.versionStatus().systemVersion().get().versionNumber();
-        Version newSystemVersion = new Version(systemVersion.getMajor(), systemVersion.getMinor()+1, 0);
-        VespaVersion newSystemVespaVersion = new VespaVersion(DeploymentStatistics.empty(newSystemVersion),
-                                                              "commit1",
-                                                              Instant.now(),
-                                                              true,
-                                                              true,
-                                                              Collections.emptyList(),
-                                                              VespaVersion.Confidence.low
-        );
-        List<VespaVersion> versions = new ArrayList<>(controller.versionStatus().versions());
-        for (int i = 0; i < versions.size(); i++) {
-            VespaVersion c = versions.get(i);
-            if (c.isSystemVersion())
-                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.committedAt(),
-                                                 false,
-                                                 false,
-                                                 c.systemApplicationHostnames(),
-                                                 c.confidence()));
-        }
-        versions.add(newSystemVespaVersion);
-        controller.updateVersionStatus(new VersionStatus(versions));
-        return newSystemVersion;
-    }
-
-    @Test
     public void testPullRequestDeployment() {
         // Setup system
         ControllerTester tester = new ControllerTester();
@@ -367,165 +257,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testFailingSinceUpdates() {
-        // Setup system
-        DeploymentTester tester = new DeploymentTester();
-
-        // Setup application
-        Application app = tester.createApplication("app1", "foo", 1, 1L);
-
-        // Initial failure
-        Instant initialFailure = tester.clock().instant().truncatedTo(MILLIS);
-        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at initial failure",
-                     initialFailure, firstFailing(app, tester).get().at());
-
-        // Failure again -- failingSince should remain the same
-        tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at second consecutive failure",
-                     initialFailure, firstFailing(app, tester).get().at());
-
-        // Success resets failingSince
-        tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(app, applicationPackage, true, systemTest);
-        assertFalse(firstFailing(app, tester).isPresent());
-
-        // Complete deployment
-        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
-
-        // Two repeated failures again.
-        // Initial failure
-        tester.clock().advance(Duration.ofMillis(1000));
-        initialFailure = tester.clock().instant().truncatedTo(MILLIS);
-        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at initial failure",
-                     initialFailure, firstFailing(app, tester).get().at());
-
-        // Failure again -- failingSince should remain the same
-        tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at second consecutive failure",
-                     initialFailure, firstFailing(app, tester).get().at());
-    }
-
-    private Optional<JobStatus.JobRun> firstFailing(Application application, DeploymentTester tester) {
-        return tester.controller().applications().get(application.id()).get().deploymentJobs().jobStatus().get(systemTest).firstFailing();
-    }
-
-    @Test
-    public void requeueOutOfCapacityStagingJob() {
-        DeploymentTester tester = new DeploymentTester();
-
-        long project1 = 1;
-        long project2 = 2;
-        long project3 = 3;
-        Application app1 = tester.createApplication("app1", "tenant1", project1, 1L);
-        Application app2 = tester.createApplication("app2", "tenant2", project2, 1L);
-        Application app3 = tester.createApplication("app3", "tenant3", project3, 1L);
-        MockBuildService mockBuildService = tester.buildService();
-
-        // all applications: system-test completes successfully with some time in between, to determine trigger order.
-        tester.jobCompletion(component).application(app2).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app2, applicationPackage, true, systemTest);
-        tester.clock().advance(Duration.ofMinutes(1));
-
-        tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.clock().advance(Duration.ofMinutes(1));
-
-        tester.jobCompletion(component).application(app3).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
-
-        // all applications: staging test jobs queued
-        assertEquals(3, mockBuildService.jobs().size());
-
-        // Abort all running jobs, so we have three candidate jobs, of which only one should be triggered at a time.
-        tester.buildService().clear();
-
-        List<BuildService.BuildJob> jobs = new ArrayList<>();
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        tester.triggerUntilQuiescence();
-        jobs.add(buildJob(app2, stagingTest));
-        jobs.add(buildJob(app1, stagingTest));
-        jobs.add(buildJob(app3, stagingTest));
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
-        // All three jobs are now eligible, but the one for app3 should trigger first as an outOfCapacity-retry.
-        tester.buildService().remove(buildJob(app1, stagingTest));
-        tester.buildService().remove(buildJob(app2, stagingTest));
-        jobs.remove(buildJob(app1, stagingTest));
-        jobs.remove(buildJob(app2, stagingTest));
-        tester.jobCompletion(stagingTest).application(app3).error(JobError.outOfCapacity).submit();
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        tester.triggerUntilQuiescence();
-        jobs.add(buildJob(app2, stagingTest));
-        jobs.add(buildJob(app1, stagingTest));
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
-        tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app2, applicationPackage, true, productionCorpUsEast1);
-        tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
-
-        tester.upgradeSystem(new Version("6.2"));
-        // app1 also gets a new application change, so its time of availability is after the version upgrade.
-        tester.clock().advance(Duration.ofMinutes(1));
-        tester.buildService().clear();
-        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        jobs.clear();
-        jobs.add(buildJob(app1, stagingTest));
-        jobs.add(buildJob(app1, systemTest));
-        // Tests for app1 trigger before the others since it carries an application upgrade.
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        // Let the test jobs start, remove everything expect system test for app3, which fails with outOfCapacity again.
-        tester.triggerUntilQuiescence();
-        tester.buildService().remove(buildJob(app1, systemTest));
-        tester.buildService().remove(buildJob(app2, systemTest));
-        tester.buildService().remove(buildJob(app1, stagingTest));
-        tester.buildService().remove(buildJob(app2, stagingTest));
-        tester.buildService().remove(buildJob(app3, stagingTest));
-        tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
-        jobs.clear();
-        jobs.add(buildJob(app1, stagingTest));
-        jobs.add(buildJob(app3, systemTest));
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-        tester.triggerUntilQuiescence();
-        jobs.add(buildJob(app2, stagingTest));
-        jobs.add(buildJob(app1, systemTest));
-        jobs.add(buildJob(app3, stagingTest));
-        jobs.add(buildJob(app2, systemTest));
-        assertJobsInOrder(jobs, tester.buildService().jobs());
-
-    }
-
-    /** Verifies that the given job lists have the same jobs, ignoring order of jobs that may have been triggered concurrently. */
-    private static void assertJobsInOrder(List<BuildService.BuildJob> expected, List<BuildService.BuildJob> actual) {
-        assertEquals(expected.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()),
-                     actual.stream().filter(job -> job.jobName().equals("system-test")).collect(Collectors.toList()));
-        assertEquals(expected.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()),
-                     actual.stream().filter(job -> job.jobName().equals("staging-test")).collect(Collectors.toList()));
-        assertTrue(expected.containsAll(actual));
-        assertTrue(actual.containsAll(expected));
-    }
-
-    private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
-        Application app = controller.applications().get(id).get();
-        JobStatus existingStatus = app.deploymentJobs().jobStatus().get(expectedStatus.type());
-        assertNotNull("Status of type " + expectedStatus.type() + " is present", existingStatus);
-        assertEquals(expectedStatus, existingStatus);
-    }
-
-    @Test
     public void testGlobalRotations() throws IOException {
         // Setup tester and app def
         ControllerTester tester = new ControllerTester();
@@ -537,18 +268,18 @@ public class ControllerTest {
         Map<String, EndpointStatus> rotationStatus = tester.controller().applications().getGlobalRotationStatus(deployId);
         assertEquals(1, rotationStatus.size());
 
-        assertTrue(rotationStatus.get("qrs-endpoint").getStatus().equals(EndpointStatus.Status.in));
+        assertEquals(rotationStatus.get("qrs-endpoint").getStatus(), EndpointStatus.Status.in);
 
         // Set the global rotations out of service
-        EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "Testing I said", "Test", tester.clock().instant().getEpochSecond());
+        EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "unit-test", "Test", tester.clock().instant().getEpochSecond());
         List<String> overrides = tester.controller().applications().setGlobalRotationStatus(deployId, status);
         assertEquals(1, overrides.size());
 
         // Recheck the override rotation status
         rotationStatus = tester.controller().applications().getGlobalRotationStatus(deployId);
         assertEquals(1, rotationStatus.size());
-        assertTrue(rotationStatus.get("qrs-endpoint").getStatus().equals(EndpointStatus.Status.out));
-        assertTrue(rotationStatus.get("qrs-endpoint").getReason().equals("Testing I said"));
+        assertEquals(rotationStatus.get("qrs-endpoint").getStatus(), EndpointStatus.Status.out);
+        assertEquals("unit-test", rotationStatus.get("qrs-endpoint").getReason());
     }
 
     @Test
@@ -782,7 +513,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployWithoutProjectId() {
+    public void testDeployDirectly() {
         DeploymentTester tester = new DeploymentTester();
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
         tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "cd-us-central-1"));
@@ -794,7 +525,7 @@ public class ControllerTest {
         // Create application
         Application app = tester.createApplication("app1", "tenant1", 1, 2L);
 
-        // Direct deploy is allowed when project ID is missing
+        // Direct deploy is allowed when deployDirectly is true
         ZoneId zone = ZoneId.from("prod", "cd-us-central-1");
         // Same options as used in our integration tests
         DeployOptions options = new DeployOptions(true, Optional.empty(), false,
@@ -806,66 +537,6 @@ public class ControllerTest {
 
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
-
-    }
-
-    private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
-        Version next = Version.fromString("6.2");
-        tester.upgradeSystem(next);
-        runDeployment(tester, tester.applications().require(application), version, Optional.of(next), Optional.empty());
-    }
-
-    private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion version,
-                               ApplicationPackage applicationPackage, SourceRevision sourceRevision, long buildNumber) {
-        Application app = tester.applications().require(application);
-        tester.jobCompletion(component)
-              .application(app)
-              .buildNumber(buildNumber)
-              .sourceRevision(sourceRevision)
-              .uploadArtifact(applicationPackage)
-              .submit();
-
-        ApplicationVersion change = ApplicationVersion.from(sourceRevision, buildNumber);
-        assertEquals(change.id(), tester.controller().applications()
-                                        .require(application)
-                                        .change().application().get().id());
-        runDeployment(tester, app, version, Optional.empty(), Optional.of(applicationPackage));
-    }
-
-    private void runDeployment(DeploymentTester tester, Application app, ApplicationVersion version,
-                               Optional<Version> upgrade, Optional<ApplicationPackage> applicationPackage) {
-        Version vespaVersion = upgrade.orElseGet(tester::defaultPlatformVersion);
-
-        // Deploy in test
-        tester.deployAndNotify(app, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        JobStatus expected = JobStatus.initial(stagingTest)
-                             .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant().truncatedTo(MILLIS))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
-        assertStatus(expected, app.id(), tester.controller());
-
-        // Deploy in production
-        expected = JobStatus.initial(productionCorpUsEast1)
-                             .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant().truncatedTo(MILLIS))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
-        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
-        assertStatus(expected, app.id(), tester.controller());
-
-        expected = JobStatus.initial(productionUsEast3)
-                             .withTriggering(vespaVersion, version, productionUsEast3.zone(main).map(tester.application(app.id()).deployments()::get), "",
-                                             tester.clock().instant().truncatedTo(MILLIS))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
-        tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
-        assertStatus(expected, app.id(), tester.controller());
-
-        // Verify deployed version
-        app = tester.controller().applications().require(app.id());
-        for (Deployment deployment : app.productionDeployments().values()) {
-            assertEquals(version, deployment.applicationVersion());
-            upgrade.ifPresent(v -> assertEquals(v, deployment.version()));
-        }
     }
 
     @Test
@@ -895,6 +566,72 @@ public class ControllerTest {
         // Deploy a PR instance for the application, with no NToken.
         tester.controller().applications().deploy(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options);
         assertTrue(tester.controller().applications().get(ApplicationId.from("tenant", application, "456")).isPresent());
+    }
+
+    private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
+        Version next = Version.fromString("6.2");
+        tester.upgradeSystem(next);
+        runDeployment(tester, tester.applications().require(application), version, Optional.of(next), Optional.empty());
+    }
+
+    private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion version,
+                               ApplicationPackage applicationPackage, SourceRevision sourceRevision, long buildNumber) {
+        Application app = tester.applications().require(application);
+        tester.jobCompletion(component)
+              .application(app)
+              .buildNumber(buildNumber)
+              .sourceRevision(sourceRevision)
+              .uploadArtifact(applicationPackage)
+              .submit();
+
+        ApplicationVersion change = ApplicationVersion.from(sourceRevision, buildNumber);
+        assertEquals(change.id(), tester.controller().applications()
+                                        .require(application)
+                                        .change().application().get().id());
+        runDeployment(tester, app, version, Optional.empty(), Optional.of(applicationPackage));
+    }
+
+    private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
+        Application app = controller.applications().get(id).get();
+        JobStatus existingStatus = app.deploymentJobs().jobStatus().get(expectedStatus.type());
+        assertNotNull("Status of type " + expectedStatus.type() + " is present", existingStatus);
+        assertEquals(expectedStatus, existingStatus);
+    }
+
+    private void runDeployment(DeploymentTester tester, Application app, ApplicationVersion version,
+                               Optional<Version> upgrade, Optional<ApplicationPackage> applicationPackage) {
+        Version vespaVersion = upgrade.orElseGet(tester::defaultPlatformVersion);
+
+        // Deploy in test
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        JobStatus expected = JobStatus.initial(stagingTest)
+                                      .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                                      tester.clock().instant().truncatedTo(MILLIS))
+                                      .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
+        assertStatus(expected, app.id(), tester.controller());
+
+        // Deploy in production
+        expected = JobStatus.initial(productionCorpUsEast1)
+                            .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                            tester.clock().instant().truncatedTo(MILLIS))
+                            .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
+        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
+        assertStatus(expected, app.id(), tester.controller());
+
+        expected = JobStatus.initial(productionUsEast3)
+                            .withTriggering(vespaVersion, version, productionUsEast3.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                            tester.clock().instant().truncatedTo(MILLIS))
+                            .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
+        tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
+        assertStatus(expected, app.id(), tester.controller());
+
+        // Verify deployed version
+        app = tester.controller().applications().require(app.id());
+        for (Deployment deployment : app.productionDeployments().values()) {
+            assertEquals(version, deployment.applicationVersion());
+            upgrade.ifPresent(v -> assertEquals(v, deployment.version()));
+        }
     }
 
 }

@@ -15,8 +15,8 @@ import org.junit.Before;
 import java.io.UncheckedIOException;
 import java.nio.charset.CharacterCodingException;
 
-import static com.yahoo.vespa.hosted.controller.AthenzFilterMock.ATHENZ_NTOKEN_HEADER_NAME;
-import static com.yahoo.vespa.hosted.controller.AthenzFilterMock.IDENTITY_HEADER_NAME;
+import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.ATHENZ_NTOKEN_HEADER_NAME;
+import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.IDENTITY_HEADER_NAME;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -70,17 +70,17 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockLogStore'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.NodeRepositoryClientMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.ZoneRegistryMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerProxyMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.MockMetricsService'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.routing.MockRoutingGenerator'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock'/>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
             "    <binding>http://*/application/v4/*</binding>\n" +
             "  </handler>\n" +
@@ -105,7 +105,7 @@ public class ControllerContainerTest {
             "    <server id='default' port='8080' />\n" +
             "    <filtering>\n" +
             "      <request-chain id='default'>\n" +
-            "        <filter id='com.yahoo.vespa.hosted.controller.AthenzFilterMock'/>\n" +
+            "        <filter id='com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock'/>\n" +
             "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>\n" +
             "        <binding>http://*/*</binding>\n" +
             "      </request-chain>\n" +

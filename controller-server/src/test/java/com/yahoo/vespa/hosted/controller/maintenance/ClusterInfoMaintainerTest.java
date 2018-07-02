@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.NodeRepositoryClientMock;
+import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
