@@ -37,7 +37,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.runTests;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
 public class JobRunnerTest {
 
     @Test
-    public void testMultiThreadedExecutionFinishes() throws InterruptedException {
+    public void multiThreadedExecutionFinishes() throws InterruptedException {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         // Fail the installation of the initial version of the real application in staging tests, and succeed everything else.
@@ -79,7 +79,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void testStepLogic() {
+    public void stepLogic() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, Status> outcomes = new EnumMap<>(Step.class);
@@ -122,10 +122,10 @@ public class JobRunnerTest {
         // Starting tests allows storing data.
         outcomes.put(startTests, succeeded);
         runner.maintain();
-        assertEquals(Arrays.asList(runTests), run.get().readySteps());
+        assertEquals(Arrays.asList(endTests), run.get().readySteps());
 
         // Storing data allows deactivating tester.
-        outcomes.put(runTests, succeeded);
+        outcomes.put(endTests, succeeded);
         runner.maintain();
         assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
 

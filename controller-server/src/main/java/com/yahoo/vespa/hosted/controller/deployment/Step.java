@@ -2,7 +2,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -46,16 +45,16 @@ public enum Step {
     /** Ask the tester to run its tests. */
     startTests(installReal, installTester),
 
-    /** See that the tests are done running and store the test results. */
-    runTests(startTests),
+    /** See that the tests are done running. */
+    endTests(startTests),
 
     /** Delete the real application -- used for test deployments. */
-    deactivateReal(deployInitialReal, deployReal, runTests),
+    deactivateReal(deployInitialReal, deployReal, endTests),
 
     /** Deactivate the tester. */
-    deactivateTester(deployTester, runTests),
+    deactivateTester(deployTester, endTests),
 
-    /** Report completion to deployment orchestration machinery. */
+    /** Report completion to the deployment orchestration machinery. */
     report(deactivateReal, deactivateTester);
 
 

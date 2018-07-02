@@ -29,7 +29,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.runTests;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -70,7 +70,7 @@ public class RunSerializerTest {
                     .put(installTester, unfinished)
                     .put(deactivateTester, failed)
                     .put(startTests, succeeded)
-                    .put(runTests, unfinished)
+                    .put(endTests, unfinished)
                     .put(report, failed)
                     .build(),
                      run.steps());

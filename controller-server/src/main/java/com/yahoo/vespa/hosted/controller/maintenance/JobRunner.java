@@ -47,6 +47,7 @@ public class JobRunner extends Maintainer {
     @Override
     protected void maintain() {
         jobs.active().forEach(this::advance);
+        jobs.collectGarbage();
     }
 
     @Override

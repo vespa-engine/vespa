@@ -53,7 +53,7 @@ public class InternalStepRunner implements StepRunner {
             case installReal: return installReal(id);
             case installTester: return installTester(id);
             case startTests: return startTests(id);
-            case runTests: return storeData(id);
+            case endTests: return endTests(id);
             case deactivateReal: return deactivateReal(id);
             case deactivateTester: return deactivateTester(id);
             case report: return report(id);
@@ -139,7 +139,7 @@ public class InternalStepRunner implements StepRunner {
         throw new AssertionError();
     }
 
-    private Status storeData(RunId id) {
+    private Status endTests(RunId id) {
         // Update test logs.
         // If tests are done, return test results.
         throw new AssertionError();

@@ -329,6 +329,16 @@ public class CuratorDb {
         curator.delete(lastRunPath(id, type));
     }
 
+    public void deleteJobData(ApplicationId id) {
+        curator.delete(jobRoot.append(id.serializedForm()));
+    }
+
+    public List<ApplicationId> applicationsWithJobs() {
+        return curator.getChildren(jobRoot).stream()
+                      .map(ApplicationId::fromSerializedForm)
+                      .collect(Collectors.toList());
+    }
+
     // -------------- Provisioning (called by internal code) ------------------
 
     @SuppressWarnings("unused")

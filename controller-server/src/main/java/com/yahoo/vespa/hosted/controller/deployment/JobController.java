@@ -16,9 +16,11 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -59,8 +61,8 @@ public class JobController {
         for (ApplicationId id : applications())
             for (JobType type : jobs(id)) {
                 locked(id, type, runs -> {
+                    last(id, type).ifPresent(last -> locked(last.id(), run -> run));
                 });
-                last(id, type).ifPresent(last -> locked(last.id(), run -> run));
             }
     }
 
@@ -205,21 +207,33 @@ public class JobController {
     public void unregister(ApplicationId id) {
         controller.applications().lockIfPresent(id, application -> {
             controller.applications().store(application.withBuiltInternally(false));
+            jobs(id).forEach(type -> {
+                try (Lock __ = curator.lock(id, type)) {
+                    last(id, type).ifPresent(last -> active(last.id()).ifPresent(active -> finish(active.id())));
+                }
+            });
         });
     }
 
+    /** Deletes stale data and tester deployments for applications which are unknown, or no longer built internally. */
     public void collectGarbage() {
-        controller.applications().asList().stream()
-                  .filter(application -> ! application.deploymentJobs().builtInternally())
-                  .map(Application::id)
-                  .forEach(id -> {
-                      for (JobType type : jobs(id))
-                          try (Lock __ = curator.lock(id, type)) {
-                          if ( ! active(last(id, type).get().id()).isPresent())
-                              deactivateTester(id, type);
-                              curator.deleteJobData(id, type);
-                          }
-                  });
+        Set<ApplicationId> applicationsToBuild = new HashSet<>(applications());
+        curator.applicationsWithJobs().stream()
+               .filter(id -> ! applicationsToBuild.contains(id))
+               .forEach(id -> {
+                   try {
+                       for (JobType type : jobs(id))
+                           try (Lock __ = curator.lock(id, type);
+                                Lock ___ = curator.lock(id, type, Step.deactivateTester)) {
+                               deactivateTester(id, type);
+                               curator.deleteJobData(id, type);
+                           }
+                   }
+                   catch (TimeoutException e) {
+                       return; // Don't remove the data if we couldn't deactivate all testers.
+                   }
+                   curator.deleteJobData(id);
+               });
     }
 
     // TODO jvenstad: Urgh, clean this up somehow?

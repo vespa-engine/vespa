@@ -15,12 +15,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.*;
  */
 public enum JobProfile {
 
+    // TODO jvenstad: runTests is not a run-always step, as it really means: check if tests are done, and store whatever is ready.
     systemTest(EnumSet.of(deployReal,
                           installReal,
                           deployTester,
                           installTester,
                           startTests),
-               EnumSet.of(runTests,
+               EnumSet.of(endTests,
                           deactivateTester,
                           deactivateReal,
                           report)),
@@ -32,7 +33,7 @@ public enum JobProfile {
                            deployTester,
                            installTester,
                            startTests),
-                EnumSet.of(runTests,
+                EnumSet.of(endTests,
                            deactivateTester,
                            deactivateReal,
                            report)),
@@ -42,7 +43,7 @@ public enum JobProfile {
                           deployTester,
                           installTester,
                           startTests),
-               EnumSet.of(runTests,
+               EnumSet.of(endTests,
                           deactivateTester,
                           report));
 

@@ -31,7 +31,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.runTests;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 
 /**
  * Serialises and deserialises RunStatus objects for persistent storage.
@@ -113,7 +113,7 @@ public class RunSerializer {
             case installTester      : return "IT" ;
             case deactivateTester   : return "DAT";
             case startTests         : return "ST" ;
-            case runTests           : return "RT" ;
+            case endTests           : return "ET" ;
             case report             : return "R"  ;
             default                 : throw new AssertionError("No value defined for '" + step + "'!");
         }
@@ -130,7 +130,7 @@ public class RunSerializer {
             case "IT"  : return installTester     ;
             case "DAT" : return deactivateTester  ;
             case "ST"  : return startTests        ;
-            case "RT"  : return runTests;
+            case "ET"  : return endTests          ;
             case "R"   : return report            ;
             default    : throw new IllegalArgumentException("No step defined by '" + step + "'!");
         }
