@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -61,7 +63,7 @@ public enum Step {
     private final List<Step> prerequisites;
 
     Step(Step... prerequisites) {
-        this.prerequisites = Collections.unmodifiableList(Arrays.asList(prerequisites));
+        this.prerequisites = ImmutableList.copyOf(prerequisites);
     }
 
     public List<Step> prerequisites() { return prerequisites; }

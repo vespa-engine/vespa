@@ -20,9 +20,9 @@ public enum JobProfile {
                           installReal,
                           deployTester,
                           installTester,
-                          startTests),
-               EnumSet.of(endTests,
-                          deactivateTester,
+                          startTests,
+                          endTests),
+               EnumSet.of(deactivateTester,
                           deactivateReal,
                           report)),
 
@@ -32,9 +32,9 @@ public enum JobProfile {
                            installReal,
                            deployTester,
                            installTester,
-                           startTests),
-                EnumSet.of(endTests,
-                           deactivateTester,
+                           startTests,
+                           endTests),
+                EnumSet.of(deactivateTester,
                            deactivateReal,
                            report)),
 
@@ -42,9 +42,9 @@ public enum JobProfile {
                           installReal,
                           deployTester,
                           installTester,
-                          startTests),
-               EnumSet.of(endTests,
-                          deactivateTester,
+                          startTests,
+                          endTests),
+               EnumSet.of(deactivateTester,
                           report));
 
 

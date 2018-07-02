@@ -17,6 +17,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,8 +55,9 @@ public class JobRunnerTest {
         JobController jobs = tester.controller().jobController();
         // Fail the installation of the initial version of the real application in staging tests, and succeed everything else.
         StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == installInitialReal ? failed : succeeded;
+        CountDownLatch latch = new CountDownLatch(14); // Number of steps that will run, below.
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         Executors.newFixedThreadPool(32), sleepy(stepRunner));
+                                         Executors.newFixedThreadPool(32), notifying(stepRunner, latch));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
         jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
@@ -72,7 +74,11 @@ public class JobRunnerTest {
         runner.maintain();
         assertFalse(jobs.last(id, systemTest).get().hasEnded());
         assertFalse(jobs.last(id, stagingTest).get().hasEnded());
-        Thread.sleep(500); // I'm so sorry, but I want to test this. Takes ~100ms "on my machine".
+
+        latch.await(1, TimeUnit.SECONDS);
+        assertEquals(0, latch.getCount());
+
+        jobs.active().forEach(run -> jobs.active(run.id())); // Wait for locks of jobs which haven't yet been written through.
         assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(succeeded::equals));
         assertTrue(jobs.last(id, stagingTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().hasFailed());
@@ -93,38 +99,31 @@ public class JobRunnerTest {
         jobs.run(id, systemTest);
         RunId first = run.get().id();
 
-        // Unfinished steps change nothing.
         Map<Step, Status> steps = run.get().steps();
         runner.maintain();
         assertEquals(steps, run.get().steps());
         assertEquals(Arrays.asList(deployReal), run.get().readySteps());
 
-        // Deployment allows installation.
         outcomes.put(deployReal, succeeded);
         runner.maintain();
         assertEquals(Arrays.asList(installReal), run.get().readySteps());
 
-        // Installation allows tester deployment.
         outcomes.put(installReal, succeeded);
         runner.maintain();
         assertEquals(Arrays.asList(deployTester), run.get().readySteps());
 
-        // Tester deployment allows tester installation.
         outcomes.put(deployTester, succeeded);
         runner.maintain();
         assertEquals(Arrays.asList(installTester), run.get().readySteps());
 
-        // Tester installation allows starting tests.
         outcomes.put(installTester, succeeded);
         runner.maintain();
         assertEquals(Arrays.asList(startTests), run.get().readySteps());
 
-        // Starting tests allows storing data.
         outcomes.put(startTests, succeeded);
         runner.maintain();
         assertEquals(Arrays.asList(endTests), run.get().readySteps());
 
-        // Storing data allows deactivating tester.
         outcomes.put(endTests, succeeded);
         runner.maintain();
         assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
@@ -134,15 +133,12 @@ public class JobRunnerTest {
         runner.maintain();
         assertTrue(run.get().hasFailed());
         assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
-        runner.maintain();
-        assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
 
-        // Aborting the run now does nothing, as only run-always steps are left.
+        // Abortion does nothing, as the run has already failed.
         jobs.abort(run.get().id());
         runner.maintain();
         assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
 
-        // Success of the remaining run-always steps ends the run.
         outcomes.put(deactivateReal, succeeded);
         outcomes.put(deactivateTester, succeeded);
         outcomes.put(report, succeeded);
@@ -178,16 +174,14 @@ public class JobRunnerTest {
         };
     }
 
-
-    private static StepRunner sleepy(StepRunner runner) {
+    private static StepRunner notifying(StepRunner runner, CountDownLatch latch) {
         return (step, id) -> {
-            try {
-                Thread.sleep(10);
+            Status status = runner.run(step, id);
+            synchronized (latch) {
+                assertTrue(latch.getCount() > 0);
+                latch.countDown();
             }
-            catch (InterruptedException e) {
-                throw new AssertionError("Not supposed to happen.");
-            }
-            return runner.run(step, id);
+            return status;
         };
     }
 
