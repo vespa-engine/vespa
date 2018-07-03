@@ -1,52 +1,35 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
-import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author freva
+ * @author jonmv
  */
 public class MockLogStore implements LogStore {
 
+    private final Map<RunId, Map<String, byte[]>> storage = new ConcurrentHashMap<>();
+
     @Override
-    public String getTestLog(RunId id) {
-        return "SUCCESS";
+    public byte[] getLog(RunId id, String step) {
+        return storage.containsKey(id) && storage.get(id).containsKey(step)
+                ? storage.get(id).get(step)
+                : new byte[0];
     }
 
     @Override
-    public void setTestLog(RunId id, String testLog) {
-
-    }
-
-    @Override
-    public String getConvergenceLog(RunId id) {
-        return "SUCCESS";
-    }
-
-    @Override
-    public void setConvergenceLog(RunId id, String convergenceLog) {
-
-    }
-
-    @Override
-    public String getDeploymentLog(RunId id) {
-        return "SUCCESS";
-    }
-
-    @Override
-    public void setDeploymentLog(RunId id, String deploymentLog) {
-
+    public void setLog(RunId id, String step, byte[] log) {
+        storage.putIfAbsent(id, new ConcurrentHashMap<>());
+        storage.get(id).put(step, log);
     }
 
     @Override
     public void deleteTestData(RunId id) {
-
+        storage.remove(id);
     }
 
 }

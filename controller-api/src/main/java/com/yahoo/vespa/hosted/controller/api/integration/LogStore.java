@@ -3,30 +3,20 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
+import java.util.Optional;
+
 /**
  * @author freva
  */
 public interface LogStore {
 
-    /** @return the test log of the given deployment job. */
-    String getTestLog(RunId id);
+    /** @return the log of the given step of the given deployment job, or an empty byte array if non-existent. */
+    byte[] getLog(RunId id, String step);
 
-    /** Stores the given test log for the given deployment job. */
-    void setTestLog(RunId id, String testLog);
+    /** Stores the given log for the given step of the given deployment job. */
+    void setLog(RunId id, String step, byte[] log);
 
-    /** @return the convergence log of the given deployment job. */
-    String getConvergenceLog(RunId id);
-
-    /** Stores the given convergence log for the given deployment job. */
-    void setConvergenceLog(RunId id, String convergenceLog);
-
-    /** @return the result of prepare of the test application for the given deployment job. */
-    String getDeploymentLog(RunId id);
-
-    /** Stores the given result of prepare of the test application for the given deployment job. */
-    void setDeploymentLog(RunId id, String deploymentLog);
-
-    /** Deletes all data associated with test of a given deployment job */
+    /** Deletes all data associated with the given deployment job */
     void deleteTestData(RunId id);
 
 }

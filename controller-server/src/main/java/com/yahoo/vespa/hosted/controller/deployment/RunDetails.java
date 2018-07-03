@@ -1,5 +1,10 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.collect.ImmutableMap;
+
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * Contains details about a deployment job run.
  *
@@ -7,26 +12,14 @@ package com.yahoo.vespa.hosted.controller.deployment;
  */
 public class RunDetails {
 
-    private final String deploymentLog;
-    private final String convergenceLog;
-    private final String testLog;
+    private final Map<Step, byte[]> logs;
 
-    public RunDetails(String deploymentLog, String convergenceLog, String testLog) {
-        this.deploymentLog = deploymentLog;
-        this.convergenceLog = convergenceLog;
-        this.testLog = testLog;
+    public RunDetails(Map<Step, byte[]> logs) {
+        this.logs = ImmutableMap.copyOf(logs);
     }
 
-    public String getDeploymentLog() {
-        return deploymentLog;
-    }
-
-    public String getConvergenceLog() {
-        return convergenceLog;
-    }
-
-    public String getTestLog() {
-        return testLog;
+    public Optional<byte[]> get(Step step) {
+        return Optional.ofNullable(logs.get(step));
     }
 
 }

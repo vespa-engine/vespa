@@ -16,6 +16,8 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
+import java.io.ByteArrayInputStream;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,29 +69,32 @@ public class JobController {
             }
     }
 
-    /** Returns the details currently logged for the given run. */
-    public RunDetails details(RunId id) {
-        return new RunDetails(logs.getDeploymentLog(id), logs.getConvergenceLog(id), logs.getTestLog(id));
-    }
+    /** Returns the details currently logged for the given run, if known. */
+    public Optional<RunDetails> details(RunId id) {
+        RunStatus run = runs(id.application(), id.type()).get(id);
+        if (run == null)
+            return Optional.empty();
 
-    /** Appends the given string to the currently stored deployment logs for the given run. */
-    public void logDeployment(RunId id, String appendage) {
-        try (Lock __ = curator.lock(id.application(), id.type())) {
-            logs.setDeploymentLog(id, logs.getDeploymentLog(id).concat(appendage));
+        Map<Step, byte[]> details = new HashMap<>();
+        for (Step step : run.steps().keySet()) {
+            byte[] log = logs.getLog(id, step.name());
+            if (log.length > 0)
+                details.put(step, log);
         }
+        return Optional.of(new RunDetails(details));
     }
 
-    /** Appends the given string to the currently stored convergence logs for the given run. */
-    public void logConvergence(RunId id, String appendage) {
+    /** Appends the given log bytes to the currently stored bytes for the given run and step. */
+    public void log(RunId id, Step step, byte[] log) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
-            logs.setConvergenceLog(id, logs.getConvergenceLog(id).concat(appendage));
-        }
-    }
-
-    /** Appends the given string to the currently stored test logs for the given run. */
-    public void logTest(RunId id, String appendage) {
-        try (Lock __ = curator.lock(id.application(), id.type())) {
-            logs.setTestLog(id, logs.getTestLog(id).concat(appendage));
+            byte[] stored = logs.getLog(id, step.name());
+            if (stored.length > 0) {
+                byte[] addition = log;
+                log = new byte[stored.length + addition.length];
+                System.arraycopy(stored, 0, log, 0, stored.length);
+                System.arraycopy(addition, 0, log, stored.length, addition.length);
+            }
+            logs.setLog(id, step.name(), log);
         }
     }
 
