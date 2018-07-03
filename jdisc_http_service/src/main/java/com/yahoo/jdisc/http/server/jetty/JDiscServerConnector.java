@@ -9,6 +9,7 @@ import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.ServerConnector;
 
 import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.Socket;
@@ -30,6 +31,9 @@ class JDiscServerConnector extends ServerConnector {
     private final boolean tcpKeepAlive;
     private final boolean tcpNoDelay;
     private final ServerSocketChannel channelOpenedByActivator;
+    private final Metric metric;
+    private final String connectorName;
+    private final int listenPort;
 
     JDiscServerConnector(ConnectorConfig config, Metric metric, Server server,
                          ServerSocketChannel channelOpenedByActivator, ConnectionFactory... factories) {
@@ -38,6 +42,9 @@ class JDiscServerConnector extends ServerConnector {
         this.tcpKeepAlive = config.tcpKeepAliveEnabled();
         this.tcpNoDelay = config.tcpNoDelay();
         this.metricCtx = createMetricContext(config, metric);
+        this.metric = metric;
+        this.connectorName = config.name();
+        this.listenPort = config.listenPort();
 
         this.statistics = new ServerConnectionStatistics();
         addBean(statistics);
@@ -116,7 +123,16 @@ class JDiscServerConnector extends ServerConnector {
         return metricCtx;
     }
 
+    public Metric.Context getRequestMetricContext(HttpServletRequest request) {
+        Map<String, Object> props = new TreeMap<>();
+        props.put(JettyHttpServer.Metrics.NAME_DIMENSION, connectorName);
+        props.put(JettyHttpServer.Metrics.PORT_DIMENSION, listenPort);
+        props.put(JettyHttpServer.Metrics.METHOD_DIMENSION, request.getMethod());
+        return metric.createContext(props);
+    }
+
     public static JDiscServerConnector fromRequest(ServletRequest request) {
         return (JDiscServerConnector) request.getAttribute(REQUEST_ATTRIBUTE);
     }
+
 }

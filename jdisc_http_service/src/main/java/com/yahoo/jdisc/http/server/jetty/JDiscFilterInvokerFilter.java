@@ -127,7 +127,7 @@ class JDiscFilterInvokerFilter implements Filter {
             final AccessLogEntry accessLogEntry = null; // Not used in this context.
             return new HttpRequestDispatch(jDiscContext,
                                            accessLogEntry,
-                                           getConnector(request).getMetricContext(),
+                                           getConnector(request).getRequestMetricContext(request),
                                            request, response);
         } catch (IOException e) {
             throw throwUnchecked(e);

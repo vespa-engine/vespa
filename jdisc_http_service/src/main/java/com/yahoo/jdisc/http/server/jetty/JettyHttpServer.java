@@ -66,6 +66,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     public interface Metrics {
         String NAME_DIMENSION = "serverName";
         String PORT_DIMENSION = "serverPort";
+        String METHOD_DIMENSION = "httpMethod";
 
         String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
         String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";

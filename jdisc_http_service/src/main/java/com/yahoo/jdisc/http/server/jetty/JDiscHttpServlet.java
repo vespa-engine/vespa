@@ -6,7 +6,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.OverloadException;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -130,8 +129,8 @@ class JDiscHttpServlet extends HttpServlet {
         }
     }
 
-    private static Metric.Context getMetricContext(ServletRequest request) {
-        return JDiscServerConnector.fromRequest(request).getMetricContext();
+    private static Metric.Context getMetricContext(HttpServletRequest request) {
+        return JDiscServerConnector.fromRequest(request).getRequestMetricContext(request);
     }
 
     private static String formatAttributes(final HttpServletRequest request) {
