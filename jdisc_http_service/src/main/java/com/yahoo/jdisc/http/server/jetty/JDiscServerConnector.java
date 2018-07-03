@@ -119,7 +119,7 @@ class JDiscServerConnector extends ServerConnector {
         return statistics;
     }
 
-    public Metric.Context getMetricContext() {
+    public Metric.Context getConnectorMetricContext() {
         return metricCtx;
     }
 

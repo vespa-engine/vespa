@@ -347,12 +347,12 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private void setConnectorMetrics(JDiscServerConnector connector) {
         ServerConnectionStatistics statistics = connector.getStatistics();
-        metric.set(Metrics.NUM_CONNECTIONS, statistics.getConnectionsTotal(), connector.getMetricContext());
-        metric.set(Metrics.NUM_OPEN_CONNECTIONS, statistics.getConnections(), connector.getMetricContext());
-        metric.set(Metrics.NUM_CONNECTIONS_OPEN_MAX, statistics.getConnectionsMax(), connector.getMetricContext());
-        metric.set(Metrics.CONNECTION_DURATION_MAX, statistics.getConnectionDurationMax(), connector.getMetricContext());
-        metric.set(Metrics.CONNECTION_DURATION_MEAN, statistics.getConnectionDurationMean(), connector.getMetricContext());
-        metric.set(Metrics.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getMetricContext());
+        metric.set(Metrics.NUM_CONNECTIONS, statistics.getConnectionsTotal(), connector.getConnectorMetricContext());
+        metric.set(Metrics.NUM_OPEN_CONNECTIONS, statistics.getConnections(), connector.getConnectorMetricContext());
+        metric.set(Metrics.NUM_CONNECTIONS_OPEN_MAX, statistics.getConnectionsMax(), connector.getConnectorMetricContext());
+        metric.set(Metrics.CONNECTION_DURATION_MAX, statistics.getConnectionDurationMax(), connector.getConnectorMetricContext());
+        metric.set(Metrics.CONNECTION_DURATION_MEAN, statistics.getConnectionDurationMean(), connector.getConnectorMetricContext());
+        metric.set(Metrics.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getConnectorMetricContext());
     }
 
     private StatisticsHandler newStatisticsHandler() {
