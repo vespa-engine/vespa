@@ -62,58 +62,56 @@ public class DeployTester {
 
     private final Clock clock;
     private final TenantRepository tenantRepository;
-    private final File testApp;
     private final ApplicationRepository applicationRepository;
 
     private ApplicationId id;
 
-    public DeployTester(String appPath) {
-        this(appPath, Collections.singletonList(createModelFactory(Clock.systemUTC())));
+    public DeployTester() {
+        this(Collections.singletonList(createModelFactory(Clock.systemUTC())));
     }
 
-    public DeployTester(String appPath, List<ModelFactory> modelFactories) {
-        this(appPath, modelFactories,
+    public DeployTester(List<ModelFactory> modelFactories) {
+        this(modelFactories,
              new ConfigserverConfig(new ConfigserverConfig.Builder()
                      .configServerDBDir(Files.createTempDir().getAbsolutePath())
                      .configDefinitionsDir(Files.createTempDir().getAbsolutePath())),
              Clock.systemUTC());
     }
 
-    public DeployTester(String appPath, ConfigserverConfig configserverConfig) {
-        this(appPath, Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC());
+    public DeployTester(ConfigserverConfig configserverConfig) {
+        this(Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC());
     }
 
-    public DeployTester(String appPath, ConfigserverConfig configserverConfig, HostProvisioner provisioner) {
-        this(appPath, Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC(), provisioner);
+    public DeployTester(ConfigserverConfig configserverConfig, HostProvisioner provisioner) {
+        this(Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC(), provisioner);
     }
 
-    public DeployTester(String appPath, ConfigserverConfig configserverConfig, Clock clock) {
-        this(appPath, Collections.singletonList(createModelFactory(clock)), configserverConfig, clock);
+    public DeployTester(ConfigserverConfig configserverConfig, Clock clock) {
+        this(Collections.singletonList(createModelFactory(clock)), configserverConfig, clock);
     }
 
-    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig) {
-        this(appPath, modelFactories, configserverConfig, Clock.systemUTC());
+    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig) {
+        this(modelFactories, configserverConfig, Clock.systemUTC());
     }
 
-    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
-        this(appPath, modelFactories, configserverConfig, clock, Zone.defaultZone());
+    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
+        this(modelFactories, configserverConfig, clock, Zone.defaultZone());
     }
 
-    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, HostProvisioner provisioner) {
-        this(appPath, modelFactories, configserverConfig, clock, Zone.defaultZone(), provisioner);
+    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, HostProvisioner provisioner) {
+        this(modelFactories, configserverConfig, clock, Zone.defaultZone(), provisioner);
     }
 
-    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone) {
-        this(appPath, modelFactories, configserverConfig, clock, zone, createProvisioner());
+    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone) {
+        this(modelFactories, configserverConfig, clock, zone, createProvisioner());
     }
 
-    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone, HostProvisioner provisioner) {
+    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone, HostProvisioner provisioner) {
         this.clock = clock;
         TestComponentRegistry componentRegistry = createComponentRegistry(new MockCurator(), Metrics.createTestMetrics(),
                                                                           modelFactories, configserverConfig, clock, zone,
                                                                           provisioner);
         try {
-            this.testApp = new File(appPath);
             this.tenantRepository = new TenantRepository(componentRegistry);
             tenantRepository.addTenant(tenantName);
         }
@@ -133,6 +131,11 @@ public class DeployTester {
     }
 
     /** Create a model factory for a particular version */
+    public static CountingModelFactory createModelFactory(Version version) {
+        return new CountingModelFactory(version, Clock.systemUTC());
+    }
+
+    /** Create a model factory for a particular version */
     public static CountingModelFactory createModelFactory(Version version, Clock clock) {
         return new CountingModelFactory(version, clock);
     }
@@ -143,14 +146,14 @@ public class DeployTester {
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String appName, Instant now) {
-        return deployApp(appName, null, now);
+    public ApplicationId deployApp(String applicationPath, String appName, Instant now) {
+        return deployApp(applicationPath, appName, null, now);
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String appName, String vespaVersion, Instant now)  {
+    public ApplicationId deployApp(String applicationPath, String appName, String vespaVersion, Instant now)  {
         Tenant tenant = tenant();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
@@ -158,7 +161,7 @@ public class DeployTester {
         if (vespaVersion != null)
             paramsBuilder.vespaVersion(vespaVersion);
 
-        long sessionId = applicationRepository.createSession(id, timeoutBudget, testApp);
+        long sessionId = applicationRepository.createSession(id, timeoutBudget, new File(applicationPath));
         applicationRepository.prepare(tenant, sessionId, paramsBuilder.build(), now);
         applicationRepository.activate(tenant, sessionId, timeoutBudget, false, false);
         this.id = id;
