@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Vespa. Big data. Real time.</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="  Your big data processing and serving system - deep learning,
+      search applications, ad selection system, personalized
+      recommendation systems, and more...">
+
+    <!-- Site icons - generated using http://realfavicongenerator.net/ -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/querybuilder/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/querybuilder/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/querybuilder/icons/favicon-16x16.png">
+    <link rel="manifest" href="/querybuilder/icons/manifest.json">
+    <link rel="mask-icon" href="/querybuilder/icons/safari-pinned-tab.svg" color="#3f9dd8">
+    <link rel="shortcut icon" href="/querybuilder/icons/favicon.ico" type="image/x-icon">
+    <meta name="msapplication-config" content="/querybuilder/icons/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Custom CSS & Bootstrap Core CSS - Uses Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+
+    <!-- Custom Fonts -->
+    <link rel="stylesheet" href="/querybuilder/css/font-awesome/css/font-awesome.min.css">
+    <!-- <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css"> -->
+    <link href='https://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700' rel='stylesheet' type='text/css'>
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+        <title>Vespa - Big Data. Real time.</title>
+
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+        <!--[if lt IE 9]>
+          <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+
+    </head>
+
+
+<body id="page-top" class="index">
+
+<style type="text/css"></style>
+
+
+<link href="/querybuilder/_includes/css/agency.css" rel="stylesheet" type="text/css">
+<link href="/querybuilder/_includes/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/querybuilder/_includes/css/vespa.css" rel="stylesheet" type="text/css">
+<nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://www.vespa.ai">Vespa. Big data. Real time.</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="hidden"><a href="#page-top"></a>
+                    <li><a href="http://blog.vespa.ai/">Blog</a>
+                    <li><a href="https://twitter.com/vespaengine">Twitter</a>
+                    <li><a href="http://docs.vespa.ai">Docs</a>
+                    <li><a href="https://github.com/vespa-engine">GitHub</a>
+                    <li><a href="http://docs.vespa.ai/documentation/vespa-quick-start.html">Get Started Now</a>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container-fluid -->
+    </nav>
+
+    <!-- Header -->
+    <header>
+        <div class="layer">
+            <div class="intro container">
+              <div class="intro-lead-in">Vespa Search Engine</div>
+              <div class="intro-long">Select the method for sending requests and construct a query.</div>
+              <select class="methodselector" onchange="chooseMethod();" id="method">
+                	<option class="options" value="POST">POST</option>
+                	<option class="options" value="GET">GET</option>
+              </select>
+              <input type="text" class="textbox" name="value" value="http://httpbin.org/post" id="url" size="30">
+              <button class="button" onclick="startSending();" id="send">Send</button>
+
+              <br/>
+              <div id="request">
+              </br>
+                <div class="intro-param">Construct a query by adding parameters or pasting a JSON.</div>
+              </div>
+              <br/>
+              <button class="addRow"onclick="addNewRow()" id="addRow">+</button>
+              <br/>
+              <button class="pasteJSON"onclick="pasteJSON();" id="pasteJSON"><img src="/querybuilder/img/paste.svg" height="16" width="16" style="margin-top:-2px; margin-right: 3px;"/>   Paste JSON</button>
+            </br>
+              <button class="showJSON"onclick="showJSON();" id="showJSON">Show query JSON</button>
+              </br>
+              <textarea class="responsebox" id="jsonquery" cols=70 rows=15 style="display:none;"readonly></textarea>
+              </br>
+              <button class="copyJSON"onclick="copyToClipboard(jsonquery);" id="copyJSON"><img src="/querybuilder/img/copy.svg" height="17" width="17" /> Copy as JSON</button>
+              <button class="copyURL"onclick="copyURL();" id="copyURL"><img src="/querybuilder/img/copy.svg" height="17" width="17" /> Copy as URL</button>
+              <br/>
+
+              <div class="response">Response</div>
+              <input class="responseinfo" id="reponsestatus" value="" readonly></input></br>
+              <textarea class="responsebox" id="response" cols=70 rows=25 readonly></textarea>
+              <div id="div" >
+                  <div >
+                    <div class="intro-copy" onclick="copyToClipboard(response);" style="cursor:pointer;">
+                      <img src="/querybuilder/img/copy.svg" height="30" width="30" />
+                    </div>
+                    <div class="intro-refresh" onclick="changeInformation();" style="cursor:pointer;">
+                      <img src="/querybuilder/img/reload.svg" height="30" width="30" />
+                    </div>
+                  </div>
+              </div>
+            </div>
+        </div>
+    </header>
+    <footer>
+          <div class="container">
+              <div class="row">
+                  <div class="col-xs-2 quicklink-section">
+                      <div class="footer-title">Resources</div>
+                      <ul class="quicklinks">
+                          <li><a href="http://docs.vespa.ai/documentation/vespa-quick-start.html">Getting Started</a>
+                          <li><a href="http://docs.vespa.ai">Documentation</a>
+                          <li><a href="https://github.com/vespa-engine/vespa">Open source</a>
+                      </ul>
+                  </div>
+                  <div class="col-xs-2 quicklink-section">
+                      <div class="footer-title">Contact</div>
+                      <ul class="quicklinks">
+                          <li><a href="https://twitter.com/vespaengine">Twitter</a>
+                          <li><a href="mailto:info@vespa.ai">info@vespa.ai</a>
+                          <li><a href="https://github.com/vespa-engine/vespa/issues">Issues</a>
+                      </ul>
+                  </div>
+                  <div class="col-xs-2 quicklink-section">
+                      <div class="footer-title">Community</div>
+                      <ul class="quicklinks">
+                          <li><a href="https://github.com/vespa-engine/vespa/blob/master/CONTRIBUTING.md">Contributing</a>
+                          <li><a href="http://stackoverflow.com/questions/tagged/vespa">Stack Overflow</a>
+                          <li><a href="https://gitter.im/vespa-engine/Lobby">Gitter</a>
+                      </ul>
+                  </div>
+                  <div class="col-xs-6 quicklink-section">
+                      <div class="credits">
+                          <span>Copyright Yahoo Holdings 2018</span>
+                          Licensed under <a href="https://github.com/vespa-engine/vespa/blob/master/LICENSE">Apache License 2.0</a>
+                          , <a href="https://github.com/y7kim/agency-jekyll-theme">Theme</a> by Rick K.
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </footer>
+
+      <!-- jQuery Version 1.11.0 -->
+      <script src="/querybuilder/js/jquery-1.11.0.js"></script>
+
+      <!-- Bootstrap Core JavaScript -->
+      <script src="/querybuilder/js/bootstrap.min.js"></script>
+
+      <!-- Plugin JavaScript -->
+      <script src="/querybuilder/js/jquery.easing.min.js"></script>
+      <script src="/querybuilder/js/classie.js"></script>
+
+      <!-- Custom Theme JavaScript -->
+      <script src="/querybuilder/js/agency.js"></script>
+
+      <script language="javascript" type="text/javascript" src="/querybuilder/editarea/edit_area/edit_area_full.js"></script>
+      <script language="javascript" type="text/javascript">
+
+      function fEALoaded() {
+        $('#frame_'+window.yqlID).contents().find('.area_toolbar').hide();
+        var iframe = document.getElementById("frame_"+window.yqlID);
+        iframe.style = "vertical-align: middle; height: 117px; width: 350px; margin-bottom: 5px; ";
+      }
+      </script>
+
+
+
+
+
+      <SCRIPT language="javascript">
+
+      	method = "POST";
+      	var number = 0;
+      	var childno = {};
+      	var json = JSON.parse("{}");
+      	window.onload = function() {addNewRow();};
+
+      	var possible = ["yql", "hits", "offset", "queryProfile", "nocache", "groupingSessionCache", "searchChain", "timeout", "trace", "",
+      , "model", "ranking", "presentation", "pos", "streaming", "rules", "recall", "user", "nocachewrite", "metrics"];
+
+      	var usedProps = [];
+      	var hasChilds = ["model", "ranking", "trace", "matchPhase", "diversity", "presentation","collapse", "pos", "streaming", "rules"];
+      	var removedIndexes = [0];
+      	var childrenProps = {
+      		"model" : ["defaultIndex", "encoding", "language", "queryString", "restrict", "searchPath", "sources", "type"],
+      		"ranking" : ["location", "features", "listFeatures", "profile", "properties", "sorting", "freshness", "queryCache", "matchPhase"],
+      		"matchPhase" : ["maxHits", "attribute", "ascending", "diversity"],
+      		"diversity" : ["attribute", "minGroups"],
+      		"presentation" : ["bolding", "format", "summary", "template", "timing"],
+          "trace" : ["level", "timestamps", "rules"],
+          "metrics" : ["ignore"],
+      		"collapse":["field", "size", "summary"],
+      		"pos" : ["ll", "radius", "bb", "attribute"],
+      		"streaming" : ["userid", "groupname", "selection", "priority", "maxbucketspervisitor"],
+      		"rules" : ["off", "rulebase"]
+      	};
+
+        var stringType = ["yql", "queryProfile", "searchChain", "defaultIndex", "encoding", "language",
+         "queryString", "searchPath", "type", "features", "profile", "properties", "sorting", "attribute", "summary",
+         "template", "select", "field", "summary", "ll", "radius", "priority", "groupname", "selection", "rulebase",
+         "user", "format"];
+        var booleanType = ["nocache", "groupingSessionCache", "timestamps", "listFeatures", "queryCache", "ascending",
+         "bolding", "timing", "off", "nocachewrite", "ignore"];
+        var listType = ["filter", "restrict", "sources", "bb", "recall"];
+        var integerType = ["hits","offset", "level", "freshness", "collapsesize", "userid", "maxbucketspervisitor", "rules"];
+        var floatType = ["timeout"];
+        var longType = ["maxHits", "minGroups"];
+        var latlongType = ["location"];
+        var yqlID = "v1";
+
+
+      function updateFields(){
+      	var temp = number;
+      	while (temp > 0){
+      		if (!contains(removedIndexes, temp)){
+      			var datalist = document.getElementById("prop"+temp);
+      			datalist.innerHTML = "";
+      			possible.forEach(function(item){
+      				if (!contains(usedProps, item)){
+      					var option = document.createElement("option");
+      					option.value = item;
+      					datalist.appendChild(option);
+      				}
+      			});
+      		}
+      		temp -= 1;
+      	}
+      }
+
+      function pasteJSON(){
+        var button = document.getElementById("pasteJSON");
+        if (button.innerHTML === "Press CMD+V"){
+          button.innerHTML = '<img src="/querybuilder/img/paste.svg" height="16" width="16" style="margin-top:-2px; margin-right: 3px;"/>   Paste JSON';
+          button.style = "background-color: #99C1DA;"
+        }else{
+          var textarea = document.getElementById("response");
+          var button = document.getElementById("pasteJSON");
+          button.innerHTML = "Press CMD+V";
+          button.style = "background-color: #5791d7;"
+          textarea.focus();
+          document.getElementById('response').addEventListener('paste', handlePaste);
+        }
+      }
+
+      function handlePaste (e) {
+          var clipboardData, pastedData;
+
+          // Stop data actually being pasted into div
+          e.stopPropagation();
+          e.preventDefault();
+
+          // Get pasted data via clipboard API
+          clipboardData = e.clipboardData || window.clipboardData;
+          pastedData = clipboardData.getData('Text');
+
+          // Do whatever with pasteddata
+          alert("Converting JSON: \n\n "+pastedData);
+
+          //Removing eventlistener
+          var oldResponse = document.getElementById('response');
+          var newResponse = oldResponse.cloneNode(true);
+          oldResponse.parentNode.replaceChild(newResponse, oldResponse);
+
+          //Returning to old button and
+          pasteJSON();
+          convertPastedJSON(pastedData);
+      }
+
+      function convertPastedJSON(pastedData){
+        try {
+          document.getElementById("request").innerHTML = "</br> <div class=\"intro-param\">Construct a query by adding parameters or pasting a JSON.</div>";
+          number = 0;
+          //console.log(JSON.stringify(pastedData));
+          var json = JSON.parse(pastedData);
+          console.log(JSON.stringify(json));
+          buildFromJSON(json, 0);
+        }
+        catch (err) {
+          alert("Could not parse JSON, with error-message: \n\n"+err.message);
+        }
+      }
+
+      function buildFromJSON(obj,parentNo) {
+        Object.keys(obj).forEach(function(key) {
+          if ( typeof(eval('obj.'+key)) === "object" ) {
+            if (parentNo != 0){
+              var newNo = addChildProp(parentNo, key);
+              buildFromJSON(eval('obj.'+key), newNo);
+            }
+            if (parentNo === 0){
+              var newNo = addNewRow(key);
+              buildFromJSON(eval('obj.'+key), newNo);
+            }
+          }
+          else {
+            if (parentNo != 0){
+              var newNo = addChildProp(parentNo, key, eval('obj.'+key));
+            }
+            if (parentNo === 0){
+              var newNo = addNewRow(key, eval('obj.'+key));
+            }
+          }
+        });
+      }
+
+      function copyURL(){
+        generateJSON();
+        var urlMap = dotNotate(window.json);
+        var url = buildURL(urlMap);
+        console.log("URL: "+url);
+        var el = document.createElement("textarea");
+        el.value = url;
+        document.body.appendChild(el);
+        copyToClipboard(el);
+        document.body.removeChild(el);
+      }
+
+      function buildURL(map){
+        var url = document.getElementById("url").value + "?";
+        var parameters = "";
+        Object.keys(map).forEach(function(key) {
+          parameters += "&" + encodeToURI(key) + "=" + encodeToURI(map[key]);
+        });
+        parameters = parameters.substr(1)
+        return url+parameters
+
+      }
+
+      function encodeToURI(string){
+        string = encodeURIComponent(string);
+        string = string.replace(/%20/g, '+');
+        return string;
+      }
+
+
+        function dotNotate(obj,target,prefix) {
+          target = target || {},
+          prefix = prefix || "";
+
+          Object.keys(obj).forEach(function(key) {
+            if ( typeof(obj[key]) === "object" ) {
+              dotNotate(obj[key],target,prefix + key + ".");
+            } else {
+              return target[prefix + key] = obj[key];
+            }
+          });
+
+          return target;
+        }
+
+      function copyToClipboard(id){
+        id.select();
+        document.execCommand('copy');
+        clearSelection();
+      }
+
+
+
+      function clearSelection()
+      {
+       if (window.getSelection) {window.getSelection().removeAllRanges();}
+       else if (document.selection) {document.selection.empty();}
+      }
+
+      function chooseMethod(method) {
+      	var selectBox = document.getElementById("method");
+      	var selectedMethod = selectBox.options[selectBox.selectedIndex].value;
+      	if (selectedMethod != method){
+      		window.method = selectedMethod
+      		console.log("Method: "+selectedMethod);
+      		changeDiv(selectedMethod);
+      	}
+      }
+
+      function changeDiv(selectedMethod){
+      	changeVisibility();
+      	if (selectedMethod === "GET"){
+      			console.log(selectedMethod);
+      		document.getElementById("request").innerHTML = "</br><textarea class=\"responsebox\" cols=70 rows=4 id=\"url2\">http://www.google.no/</textarea>";
+      	}
+      	else if (selectedMethod === "POST") {
+      			console.log(selectedMethod);
+      		document.getElementById("request").innerHTML = "</br> <div class=\"intro-param\">Construct a query by adding parameters or pasting a JSON.</div>";
+      		number = 0;
+      		addNewRow();
+
+      	}
+      }
+      function stripMyHTML(html)
+      {
+         var tmp = document.createElement("DIV");
+         tmp.innerHTML = html
+         console.log("hello");
+         for (var i = 0; i < tmp.children.length; i++){
+           console.log(tmp.children[i]);
+           tmp.children[i].classList = [];
+           console.log(tmp.children[i]);
+         }
+         return tmp.innerHTML.replace('<code>','').replace('</code>','');
+      }
+
+      function addNewRow(key, value){
+      	number += 1;
+      	const temp = number;
+      	childno[temp] = 0;
+      	var newInput = document.createElement("input");
+      	newInput.id = "i"+temp;
+      	newInput.setAttribute("list", "prop"+temp);
+      	newInput.onchange = function(){keySelected(temp);};
+        newInput.classList.add("input")
+      	var newDatalist = document.createElement("datalist");
+      	newDatalist.id = "prop"+temp;
+      	newInputVal = document.createElement("input");
+      	newInputVal.type = "text";
+      	newInputVal.id = "v"+temp;
+        newInputVal.classList.add("propvalue");
+      	var newButton = document.createElement("button");
+      	newButton.id = "b"+temp;
+      	newButton.innerHTML = "-";
+      	newButton.onclick = function(){removeRow(temp);};
+        newButton.classList.add("removeRow");
+      	var br = document.createElement("br");
+      	br.id = "br"+temp
+
+        var img = document.createElement("img");
+        img.src = "/querybuilder/img/information.svg";
+        img.height = "15";
+        img.width = "15";
+        img.classList.add("information");
+
+        var span = document.createElement("span");
+        span.id = "span"+temp;
+        span.innerHTML = stripMyHTML('Choose a parameter for information');
+
+        var a = document.createElement("a");
+        a.href = "#";
+        a.classList.add("tip");
+        a.id = "inf"+temp
+
+        a.appendChild(img);
+        a.appendChild(span);
+
+
+      	var div = document.createElement("div");
+      	div.id = number;
+      	div.appendChild(newInput);
+      	div.appendChild(newDatalist);
+
+        div.appendChild(a);
+
+      	div.appendChild(newInputVal);
+      	div.appendChild(newButton);
+      	div.appendChild(br);
+
+      	var bigdiv = document.getElementById("request");
+      	bigdiv.appendChild(div);
+      	updateFields();
+        value2 = ""+ value;
+        if (key){
+          newInput.value = key;
+          keySelected(temp, value)
+        }
+        if (value || value2==="false"){
+          newInputVal.value= value;
+        }
+        generateJSON();
+        return temp;
+      }
+
+      function showInformation(no, key){
+        var a = document.getElementById("inf"+no);
+        console.log(a);
+
+        if(validKey(key)){
+        a.style = "visibility: visible;";
+        changeInformation(no);
+        }
+        else{
+        a.style = "visibility: hidden;"
+        }
+      }
+
+      function validKey(possibleKey){
+        if (contains(possible, possibleKey)){return true;}
+        for (var key in childrenProps){
+          if (contains(childrenProps[key],possibleKey )){
+            console.log(true);
+            return true;
+          }
+        }
+        return false;
+      }
+
+
+
+
+
+      	function keySelected(no, value){
+      		console.log(no);
+      		var key = document.getElementById("i"+no).value;
+          showInformation(no, key);
+          document.getElementById("span"+no).innerHTML = changeInformation(key);
+      		findUsedProps();
+      		if(contains(hasChilds, key)){
+      			var input = document.getElementById("v"+no);
+            if ($(input).is("textarea")){
+              console.log("Nå går vi tilbake til en annen key")
+              editAreaLoader.delete_instance(window.yqlID);
+            }
+      			console.log(input);
+      			var button = document.createElement("button");
+      			button.id="propb"+no
+      			button.innerHTML=" +   Add property";
+      			button.onclick = function(){addChildProp(no);};
+            button.classList.add("addpropsbutton");
+      			var parent = input.parentNode;
+      			parent.replaceChild(button, input);
+      			console.log("Changed");
+      		} else {
+      			if (document.getElementById("propb"+no) != null){
+      				var button = document.getElementById("propb"+no)
+      				var newInputVal = document.createElement("input");
+      				newInputVal.type = "text";
+      				newInputVal.id = "v"+no;
+              newInputVal.classList.add("propvalue");
+              console.log("finner far");
+              var parent = button.parentNode;
+              showType(newInputVal, no);
+              if (key === "yql"){
+                console.log("Bytter til yql");
+                newInputVal = document.createElement("textarea");
+                newInputVal.id = "v"+no;
+                window.yqlID = "v"+no;
+                newInputVal.class = "yql";
+                newInputVal.name = "content";
+                newInputVal.cols = "80";
+                newInputVal.rows = "15";
+                newInputVal.innerHTML = "\n\n\n\n\n";
+        				parent.replaceChild(newInputVal, button);
+                editAreaLoader.init({
+                  id : "v"+no		// textarea id
+                  ,syntax: "yql"			// syntax to be uses for highgliting
+                  ,start_highlight: true		// to display with highlight mode on start-up
+                  ,autocompletion: true
+                  ,plugins: 'autocompletion'
+                  ,gecko_spellcheck: true
+                  ,allow_toggle: false
+                  ,browsers: "all"
+                  ,replace_tab_by_spaces: 2
+                  ,EA_load_callback: "fEALoaded"
+                });
+              }
+              if (key != "yql"){
+        				parent.replaceChild(newInputVal, button);
+              }
+      				console.log("Changed back");
+      			}else if (true) {
+              var inputval = document.getElementById("v"+no);
+              showType(inputval, no);
+              if ($(inputval).is("textarea")){
+                console.log("Nå går vi tilbake til en annen key")
+                var newInputVal = document.createElement("input");
+                editAreaLoader.delete_instance(window.yqlID);
+                newInputVal.type = "text";
+                newInputVal.id = "v"+no;
+                newInputVal.classList.add("propvalue");
+                showType(newInputVal, no);
+                var parent = inputval.parentNode;
+                parent.replaceChild(newInputVal, inputval);
+              }
+
+              if (key === "yql"){
+                console.log("Bytter til yql");
+                newInputVal = document.createElement("textarea");
+                newInputVal.id = "v"+no;
+                window.yqlID = "v"+no;
+                newInputVal.name = "content";
+                newInputVal.cols = "80";
+                newInputVal.rows = "15";
+                newInputVal.class = "yql";
+                newInputVal.innerHTML = "\n\n\n\n\n";
+                var parent = inputval.parentNode;
+                console.log(parent);
+                parent.replaceChild(newInputVal, inputval);
+                editAreaLoader.init({
+                    id : "v"+no		// textarea id
+                    ,syntax: "yql"			// syntax to be uses for highgliting
+                    ,start_highlight: true		// to display with highlight mode on start-up
+                    ,autocompletion: true
+                    ,plugins: 'autocompletion'
+                    ,gecko_spellcheck: true
+                    ,font_family: 'Tahoma'
+                    ,allow_toggle: false
+                    ,browsers: "all"
+                    ,replace_tab_by_spaces: 2
+                    ,EA_load_callback: "fEALoaded"
+                });
+              }
+              if(value){
+                inputval.value = value;
+              }
+
+            }
+      		}
+          if (!validKey(key)){
+            var keyInput = document.getElementById("i"+no);
+            keyInput.style = "border-width: 1px; border-color: red;"
+            var valueInput = document.getElementById("v"+no);
+            valueInput.placeholder = "Invalid parameter";
+          }
+          if (validKey(key)){
+            var keyInput = document.getElementById("i"+no);
+            keyInput.style = "border-width: 0px;"
+          }
+
+      	}
+
+      function showType(inputVal, no){
+        var key = document.getElementById("i"+no).value;
+        if (contains(stringType, key)){
+          inputVal.placeholder = "String";
+        }
+        else if (contains(booleanType, key)){
+          inputVal.placeholder = "Boolean";
+        }
+        else if (contains(integerType, key)){
+          inputVal.placeholder = "Int";
+        }
+        else if (contains(listType, key)){
+          inputVal.placeholder = "Array";
+        }
+        else if (contains(longType, key)){
+          inputVal.placeholder = "Long";
+        }
+        else if (contains(latlongType, key)){
+          inputVal.placeholder = "Latlong";
+        }
+        else if (contains(floatType, key)){
+          inputVal.placeholder = "Float";
+        }
+        else {
+          inputVal.placeholder = "";
+        }
+      }
+
+      function removeRow(no){
+      	console.log("remove row");
+      	var div = document.getElementById(no);
+      	var key = document.getElementById("i"+no).value;
+      	var bigdiv = document.getElementById("request");
+      	console.log(bigdiv);
+      	bigdiv.removeChild(div);
+      	removedIndexes.push(no);
+      	findUsedProps();
+      	updateFields();
+        generateJSON();
+      }
+
+      function removeChild(no){
+      	var a = "" + no;
+      	console.log("remove row");
+      	console.log(no);
+      	var parentIndexes;
+      	var length = no.length;
+      	switch (length) {
+      		case 2: parentIndexes = 1; break;
+      		case 3: parentIndexes = 2; break;
+      		case 4: parentIndexes = 3; break;
+      		case 5: parentIndexes = 4; break;
+      	}
+      	var div = document.getElementById(no);
+      	var bigdiv = document.getElementById(no.substr(0,parentIndexes));
+      	console.log(bigdiv);
+      	bigdiv.removeChild(div);
+      	removedIndexes.push(parseInt(no));
+      	findUsedProps();
+      	updateFields();
+        generateJSON();
+      	console.log(removedIndexes)
+      }
+
+      function addChildProp(no, key, value){
+        generateJSON();
+      	childno[no] += 1;
+      	console.log("NUMMMER:"+no);
+      	console.log(childno[no]);
+      	var temp = ""+no+childno[no];
+      	childno[temp] = 0;
+      	console.log("TEMP:"+temp);
+      	var parentNode = document.getElementById(no);
+
+      	var newInput = document.createElement("input");
+      	newInput.id = "i"+temp;
+      	newInput.setAttribute("list", "prop"+temp);
+      	newInput.onchange = function(){keySelected(temp);};
+        newInput.classList.add("input")
+
+      	var newDatalist = document.createElement("datalist");
+      	newDatalist.id = "prop"+temp;
+      	newInputVal = document.createElement("input");
+      	newInputVal.type = "text";
+      	newInputVal.id = "v"+temp;
+        newInputVal.classList.add("propvalue");
+      	var newButton = document.createElement("button");
+      	newButton.id = "b"+temp;
+      	newButton.innerHTML = "-";
+      	newButton.onclick = function(){removeChild(temp);};
+        newButton.classList.add("removeRow");
+      	var br = document.createElement("br");
+      	br.id = "br"+temp
+      	var div = document.createElement("div");
+      	div.id = temp;
+      	var b = document.createElement('b');
+      	b.innerHTML = ' ↳   ';
+      	var margin = 20*(temp).length;
+      	b.style = "padding-left:"+margin+"px;";
+      	div.appendChild(b);
+      	div.appendChild(newInput);
+      	div.appendChild(newDatalist);
+      	div.appendChild(newInputVal);
+      	div.appendChild(newButton);
+      	div.appendChild(br);
+      	parentNode.appendChild(div);
+      	updateChildrenFields(no);
+        let value2 = "" + value;
+        if (key){
+          newInput.value = key;
+          keySelected(temp, value)
+        }
+        if (value2==="false" || value){
+          newInputVal.value= value;
+        }
+        return temp;
+      }
+
+      function updateChildrenFields(parentNo){
+      	parentKey = document.getElementById("i"+parentNo).value
+      	var temp = parseInt(""+parentNo+childno[parentNo]);
+      	var minNumber = parseInt(""+parentNo+0);
+      	console.log(temp);
+      	console.log(minNumber);
+      	while (temp > minNumber){
+      		if (!contains(removedIndexes, temp)){
+      			var datalist = document.getElementById("prop"+temp);
+      			datalist.innerHTML = "";
+      			var list = childrenProps[parentKey];
+      			console.log(list);
+      			list.forEach(function(item){
+      				var option = document.createElement("option");
+      				option.value = item;
+      				datalist.appendChild(option);
+      			});
+      		}
+      		temp -= 1;
+      	}
+      }
+
+      function contains(a, obj) {
+          for (var i = 0; i < a.length; i++) {
+              if (a[i] === obj) {
+                  return true;
+              }
+          }
+          return false;
+      }
+
+      function refresh(){
+      	document.location.reload(true);
+      }
+
+
+      function generateJSON(){
+      	json = JSON.parse("{}");
+      	buildJSON(json, number, 0);
+        var textarea = document.getElementById("jsonquery");
+        textarea.innerHTML = JSON.stringify(window.json, undefined, 4);
+      	console.log("Ferdig json: "+JSON.stringify(json));
+      }
+
+      function buildJSON(parent, no, thresh){
+      	var temp = no;
+      	while (temp > thresh){
+      		if (!contains(removedIndexes, temp)){
+      			var key = document.getElementById("i"+temp).value;
+      			if (document.getElementById("v"+temp) != null){
+      				var value = document.getElementById("v"+temp).value
+              if (key === "yql"){
+                value = $.trim(editAreaLoader.getValue(window.yqlID).replace(/\n/g, " "));
+              }
+              if (contains(booleanType, key)){
+                if (value === 'true'){
+                  value = true;
+              } if (value === 'false'){
+                  value = false;
+              }}
+              if (contains(integerType, key) || contains(longType, key)){
+                value = parseInt(value);
+                value = isNaN(value) ? 0 : value;
+              }
+              if (contains(floatType, key)){
+                value = parseFloat(value);
+                value = isNaN(value) ? 0 : value;
+              }
+      				parent[key] = value
+      			} else {
+      				parent[key] = JSON.parse("{}");
+      				const newParent = parent[key];
+      				const tempJSON = json;
+      				var newNo = parseInt(""+temp+childno[temp]);
+      				var newThresh = parseInt(""+temp+0);
+      				buildJSON(newParent, newNo, newThresh);
+      			}
+      		}
+      		temp --;
+      	}
+      }
+
+      function findUsedProps(){
+      	usedProps = [];
+      	addUsedProps(number, 0);
+      	console.log(usedProps);
+      }
+
+      function addUsedProps(no, thresh){
+      	var temp = no;
+      	while (temp > thresh){
+      		if (!contains(removedIndexes, temp)){
+      			var key = document.getElementById("i"+temp).value;
+      			usedProps.push(key);
+      			if (childno[temp] != -1){
+      				var temp2 = parseInt(""+temp+childno[temp]);
+      				var thresh2 = parseInt(""+temp+0);
+      				addUsedProps(temp2, thresh2);
+      			}
+      		}
+      	temp--;
+      	}
+      }
+
+
+      function startSending(){
+      	if (method === "POST"){
+      		var url = document.getElementById("url").value;
+      		generateJSON();
+      		var jsonobj = JSON.stringify(json);
+      		var xmlhttp = new XMLHttpRequest();
+          xmlhttp.open("POST", url, false);
+          xmlhttp.setRequestHeader("Content-Type", "application/json");
+          xmlhttp.send(jsonobj);
+      		document.getElementById("reponsestatus").value = ""+xmlhttp.status+" "+xmlhttp.statusText;
+      		document.getElementById("response").innerHTML = JSON.stringify(JSON.parse(xmlhttp.responseText), undefined, 4);
+      	}else if (method === "GET") {
+      		var url = document.getElementById("url2").value;
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function() {
+              if (this.readyState == 4 && this.status == 200) {
+                 // Typical action to be performed when the document is ready:
+                 document.getElementById("responsebox").innerHTML = xhttp.responseText;
+                 console.log(xhttp.responseText);
+              }
+          };
+          xhttp.open("GET", url, true);
+          xhttp.send();
+      	}
+      }
+
+
+      function changeVisibility() {
+          var x = document.getElementById("url");
+      		var y = document.getElementById("addRow")
+          var z = document.getElementById("showJSON")
+          if (x.style.display === "none") {
+              x.style.display = "inline-block";
+              y.style.display = "inline-block";
+              z.style.display = "inline-block";
+          } else {
+              x.style.display = "none";
+              y.style.display = "none";
+              z.style.display = "none";
+          }
+      }
+
+
+      function showJSON(){
+        var textarea = document.getElementById("jsonquery");
+        var copyJSON = document.getElementById("copyJSON");
+        var showJSON = document.getElementById("showJSON");
+        var copyURL = document.getElementById("copyURL")
+        if (textarea.style.display === "none") {
+            textarea.style.display = "inline-block";
+            copyJSON.style.display = "inline-block";
+            showJSON.innerHTML = "Hide query JSON";
+            copyURL.style.display = "inline-block";
+            generateJSON();
+        } else {
+            copyJSON.style.display = "none";
+            textarea.style.display = "none";
+            showJSON.innerHTML = "Show query JSON";
+            copyURL.style.display = "none";
+        }
+
+
+      }
+
+      function changeInformation(key){
+        if (key===""){return "Choose a parameter for information"}
+         // MISSING
+        return stripMyHTML('<table class="table table-striped"> <tr><td>Alias</td><td>count</td></tr> <tr><td>Values</td> <td> A positive integer, or 0. The sum of <a href="#offset">offset</a> and <a href="#hits">hits</a> should be lower than the configured maxoffset value, and will be adjusted to fit. See also comment at <code>offset</code>. </td> </tr> <tr><td>Default</td><td>10</td></tr> </table>');
+      }
+
+      </script>
+
+      <!-- Global Site Tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-107187180-1"></script>
+      <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments)};
+          gtag('js', new Date());
+          gtag('config', 'UA-107187180-1');
+      </script>
+  </body>
+</html>
