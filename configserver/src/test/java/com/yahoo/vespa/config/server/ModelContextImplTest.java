@@ -51,6 +51,7 @@ public class ModelContextImplTest {
                         false,
                         Zone.defaultZone(),
                         rotations,
+                        false,
                         false),
                 Optional.empty(),
                 new Version(6), 
@@ -67,5 +68,6 @@ public class ModelContextImplTest {
         assertTrue(context.properties().zone() instanceof Zone);
         assertFalse(context.properties().hostedVespa());
         assertThat(context.properties().rotations(), equalTo(rotations));
+        assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
     }
 }

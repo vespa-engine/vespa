@@ -212,6 +212,9 @@ public class VespaModelFactoryTest {
 
                     @Override
                     public boolean isBootstrap() { return false; }
+
+                    @Override
+                    public boolean isFirstTimeDeployment() { return false; }
                 };
             }
         };

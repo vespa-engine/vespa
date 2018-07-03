@@ -26,6 +26,7 @@ public class DeployProperties {
     private final boolean hostedVespa;
     private final Version vespaVersion;
     private final boolean isBootstrap;
+    private final boolean isFirstTimeDeployment;
 
     private DeployProperties(boolean multitenant,
                              ApplicationId applicationId,
@@ -35,7 +36,8 @@ public class DeployProperties {
                              URI ztsUrl,
                              String athenzDnsSuffix,
                              Version vespaVersion,
-                             boolean isBootstrap) {
+                             boolean isBootstrap,
+                             boolean isFirstTimeDeployment) {
         this.loadBalancerName = loadBalancerName;
         this.ztsUrl = ztsUrl;
         this.athenzDnsSuffix = athenzDnsSuffix;
@@ -45,6 +47,7 @@ public class DeployProperties {
         this.serverSpecs.addAll(configServerSpecs);
         this.hostedVespa = hostedVespa;
         this.isBootstrap = isBootstrap;
+        this.isFirstTimeDeployment = isFirstTimeDeployment;
     }
 
     public boolean multitenant() {
@@ -83,6 +86,9 @@ public class DeployProperties {
     /** Returns whether this deployment happens during bootstrap *prepare* (not set on activate) */
     public boolean isBootstrap() { return isBootstrap; }
 
+    /** Returns whether this is the first deployment for this application (used during *prepare*, not set on activate) */
+    public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
+
     public static class Builder {
 
         private ApplicationId applicationId = ApplicationId.defaultId();
@@ -94,6 +100,7 @@ public class DeployProperties {
         private boolean hostedVespa = false;
         private Version vespaVersion = Version.fromIntValues(1, 0, 0);
         private boolean isBootstrap = false;
+        private boolean isFirstTimeDeployment = false;
 
         public Builder applicationId(ApplicationId applicationId) {
             this.applicationId = applicationId;
@@ -140,8 +147,14 @@ public class DeployProperties {
             return this;
         }
 
+        public Builder isFirstTimeDeployment(boolean isFirstTimeDeployment) {
+            this.isFirstTimeDeployment = isFirstTimeDeployment;
+            return this;
+        }
+
         public DeployProperties build() {
-            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa, ztsUrl, athenzDnsSuffix, vespaVersion, isBootstrap);
+            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa,
+                                        ztsUrl, athenzDnsSuffix, vespaVersion, isBootstrap, isFirstTimeDeployment);
         }
     }
 
