@@ -73,6 +73,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         String CONNECTION_DURATION_MAX = "serverConnectionDurationMax";
         String CONNECTION_DURATION_MEAN = "serverConnectionDurationMean";
         String CONNECTION_DURATION_STD_DEV = "serverConnectionDurationStdDev";
+        String NUM_PREMATURELY_CLOSED_CONNECTIONS = "jdisc.http.request.prematurely_closed";
 
         String NUM_BYTES_RECEIVED = "serverBytesReceived";
         String NUM_BYTES_SENT     = "serverBytesSent";

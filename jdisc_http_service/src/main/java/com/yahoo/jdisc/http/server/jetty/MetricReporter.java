@@ -72,6 +72,10 @@ public class MetricReporter {
         metric.add(Metrics.NUM_FAILED_RESPONSES, 1, context);
     }
 
+    public void prematurelyClosed() {
+        metric.add(Metrics.NUM_PREMATURELY_CLOSED_CONNECTIONS, 1, context);
+    }
+
     @SuppressWarnings("deprecation")
     public void successfulRead(int bytes_received) {
         metric.set(JettyHttpServer.Metrics.NUM_BYTES_RECEIVED, bytes_received, context);

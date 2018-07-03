@@ -122,6 +122,8 @@ public class VespaMetricSet {
 
         metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last", "athenz-tenant-cert.expiry.seconds"));
 
+        metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
+
         return metrics;
     }
 

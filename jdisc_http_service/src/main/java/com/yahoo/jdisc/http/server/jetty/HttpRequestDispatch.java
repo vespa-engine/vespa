@@ -129,6 +129,7 @@ class HttpRequestDispatch {
                     log.log(Level.FINE,
                             error,
                             () -> "Network connection was unexpectedly terminated: " + parent.servletRequest.getRequestURI());
+                    parent.metricReporter.prematurelyClosed();
                 } else if (!(error instanceof OverloadException || error instanceof BindingNotFoundException)) {
                     log.log(Level.WARNING, "Request failed: " + parent.servletRequest.getRequestURI(), error);
                 }
