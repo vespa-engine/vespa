@@ -95,14 +95,6 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         this.prepareException = prepareException;
     }
 
-    /**
-     * Returns the (initially empty) mutable map of config server urls to versions.
-     * This API will return defaultVersion as response to any version(url) call for versions not added to the map.
-     */
-    public Map<URI, Version> versions() {
-        return versions;
-    }
-
     /** Set version for system applications in given zone */
     public void setVersion(ApplicationId application, ZoneId zone, Version version) {
         for (Node node : nodeRepository().list(zone, application)) {

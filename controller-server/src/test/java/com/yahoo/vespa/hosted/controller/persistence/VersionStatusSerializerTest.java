@@ -12,6 +12,7 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,7 @@ public class VersionStatusSerializerTest {
         List<VespaVersion> vespaVersions = new ArrayList<>();
         DeploymentStatistics statistics = new DeploymentStatistics(
                 Version.fromString("5.0"),
-                Arrays.asList(ApplicationId.from("tenant1", "failing1", "default")),
+                Collections.singletonList(ApplicationId.from("tenant1", "failing1", "default")),
                 Arrays.asList(ApplicationId.from("tenant2", "success1", "default"),
                               ApplicationId.from("tenant2", "success2", "default")),
                 Arrays.asList(ApplicationId.from("tenant1", "failing1", "default"),

@@ -107,14 +107,14 @@ public class DeploymentApiTest extends ControllerContainerTest {
               .projectId(projectId)
               .uploadArtifact(applicationPackage)
               .submit();
-        tester.deploy(application, applicationPackage, ZoneId.from(Environment.test, RegionName.from("us-east-1")),
-                      projectId);
+        tester.deploy(application, applicationPackage, ZoneId.from(Environment.test, RegionName.from("us-east-1"))
+        );
         tester.jobCompletion(JobType.systemTest)
               .application(application)
               .projectId(projectId)
               .submit();
-        tester.deploy(application, applicationPackage, ZoneId.from(Environment.staging, RegionName.from("us-east-3")),
-                      projectId);
+        tester.deploy(application, applicationPackage, ZoneId.from(Environment.staging, RegionName.from("us-east-3"))
+        );
         tester.jobCompletion(JobType.stagingTest)
               .application(application)
               .projectId(projectId)
@@ -122,7 +122,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
               .submit();
         if (success) {
             tester.deploy(application, applicationPackage, ZoneId.from(Environment.prod,
-                                                                       RegionName.from("corp-us-east-1")), projectId);
+                                                                       RegionName.from("corp-us-east-1")));
             tester.jobCompletion(JobType.productionCorpUsEast1)
                   .application(application)
                   .projectId(projectId)
