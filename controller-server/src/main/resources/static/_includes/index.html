@@ -206,7 +206,8 @@
       	var number = 0;
       	var childno = {};
       	var json = JSON.parse("{}");
-      	window.onload = function() {addNewRow();};
+        var searchApiReference = null;
+      	window.onload = function() {addNewRow(); getSearchApiReference();};
 
       	var possible = ["yql", "hits", "offset", "queryProfile", "nocache", "groupingSessionCache", "searchChain", "timeout", "trace", "",
       , "model", "ranking", "presentation", "pos", "streaming", "rules", "recall", "user", "nocachewrite", "metrics"];
@@ -303,9 +304,7 @@
         try {
           document.getElementById("request").innerHTML = "</br> <div class=\"intro-param\">Construct a query by adding parameters or pasting a JSON.</div>";
           number = 0;
-          //console.log(JSON.stringify(pastedData));
           var json = JSON.parse(pastedData);
-          console.log(JSON.stringify(json));
           buildFromJSON(json, 0);
         }
         catch (err) {
@@ -340,7 +339,6 @@
         generateJSON();
         var urlMap = dotNotate(window.json);
         var url = buildURL(urlMap);
-        console.log("URL: "+url);
         var el = document.createElement("textarea");
         el.value = url;
         document.body.appendChild(el);
@@ -400,7 +398,6 @@
       	var selectedMethod = selectBox.options[selectBox.selectedIndex].value;
       	if (selectedMethod != method){
       		window.method = selectedMethod
-      		console.log("Method: "+selectedMethod);
       		changeDiv(selectedMethod);
       	}
       }
@@ -423,11 +420,9 @@
       {
          var tmp = document.createElement("DIV");
          tmp.innerHTML = html
-         console.log("hello");
+         console.log(tmp)
          for (var i = 0; i < tmp.children.length; i++){
-           console.log(tmp.children[i]);
            tmp.children[i].classList = [];
-           console.log(tmp.children[i]);
          }
          return tmp.innerHTML.replace('<code>','').replace('</code>','');
       }
@@ -502,11 +497,9 @@
 
       function showInformation(no, key){
         var a = document.getElementById("inf"+no);
-        console.log(a);
-
         if(validKey(key)){
         a.style = "visibility: visible;";
-        changeInformation(no);
+        document.getElementById("span"+no).innerHTML = changeInformation(no, key);
         }
         else{
         a.style = "visibility: hidden;"
@@ -517,30 +510,21 @@
         if (contains(possible, possibleKey)){return true;}
         for (var key in childrenProps){
           if (contains(childrenProps[key],possibleKey )){
-            console.log(true);
             return true;
           }
         }
         return false;
       }
 
-
-
-
-
       	function keySelected(no, value){
-      		console.log(no);
       		var key = document.getElementById("i"+no).value;
           showInformation(no, key);
-          document.getElementById("span"+no).innerHTML = changeInformation(key);
       		findUsedProps();
       		if(contains(hasChilds, key)){
       			var input = document.getElementById("v"+no);
             if ($(input).is("textarea")){
-              console.log("Nå går vi tilbake til en annen key")
               editAreaLoader.delete_instance(window.yqlID);
             }
-      			console.log(input);
       			var button = document.createElement("button");
       			button.id="propb"+no
       			button.innerHTML=" +   Add property";
@@ -548,7 +532,6 @@
             button.classList.add("addpropsbutton");
       			var parent = input.parentNode;
       			parent.replaceChild(button, input);
-      			console.log("Changed");
       		} else {
       			if (document.getElementById("propb"+no) != null){
       				var button = document.getElementById("propb"+no)
@@ -556,11 +539,9 @@
       				newInputVal.type = "text";
       				newInputVal.id = "v"+no;
               newInputVal.classList.add("propvalue");
-              console.log("finner far");
               var parent = button.parentNode;
               showType(newInputVal, no);
               if (key === "yql"){
-                console.log("Bytter til yql");
                 newInputVal = document.createElement("textarea");
                 newInputVal.id = "v"+no;
                 window.yqlID = "v"+no;
@@ -586,12 +567,10 @@
               if (key != "yql"){
         				parent.replaceChild(newInputVal, button);
               }
-      				console.log("Changed back");
       			}else if (true) {
               var inputval = document.getElementById("v"+no);
               showType(inputval, no);
               if ($(inputval).is("textarea")){
-                console.log("Nå går vi tilbake til en annen key")
                 var newInputVal = document.createElement("input");
                 editAreaLoader.delete_instance(window.yqlID);
                 newInputVal.type = "text";
@@ -603,7 +582,6 @@
               }
 
               if (key === "yql"){
-                console.log("Bytter til yql");
                 newInputVal = document.createElement("textarea");
                 newInputVal.id = "v"+no;
                 window.yqlID = "v"+no;
@@ -613,7 +591,6 @@
                 newInputVal.class = "yql";
                 newInputVal.innerHTML = "\n\n\n\n\n";
                 var parent = inputval.parentNode;
-                console.log(parent);
                 parent.replaceChild(newInputVal, inputval);
                 editAreaLoader.init({
                     id : "v"+no		// textarea id
@@ -677,11 +654,9 @@
       }
 
       function removeRow(no){
-      	console.log("remove row");
       	var div = document.getElementById(no);
       	var key = document.getElementById("i"+no).value;
       	var bigdiv = document.getElementById("request");
-      	console.log(bigdiv);
       	bigdiv.removeChild(div);
       	removedIndexes.push(no);
       	findUsedProps();
@@ -691,8 +666,6 @@
 
       function removeChild(no){
       	var a = "" + no;
-      	console.log("remove row");
-      	console.log(no);
       	var parentIndexes;
       	var length = no.length;
       	switch (length) {
@@ -703,23 +676,18 @@
       	}
       	var div = document.getElementById(no);
       	var bigdiv = document.getElementById(no.substr(0,parentIndexes));
-      	console.log(bigdiv);
       	bigdiv.removeChild(div);
       	removedIndexes.push(parseInt(no));
       	findUsedProps();
       	updateFields();
         generateJSON();
-      	console.log(removedIndexes)
       }
 
       function addChildProp(no, key, value){
         generateJSON();
       	childno[no] += 1;
-      	console.log("NUMMMER:"+no);
-      	console.log(childno[no]);
       	var temp = ""+no+childno[no];
       	childno[temp] = 0;
-      	console.log("TEMP:"+temp);
       	var parentNode = document.getElementById(no);
 
       	var newInput = document.createElement("input");
@@ -747,9 +715,29 @@
       	b.innerHTML = ' ↳   ';
       	var margin = 20*(temp).length;
       	b.style = "padding-left:"+margin+"px;";
+
+        var img = document.createElement("img");
+        img.src = "/querybuilder/img/information.svg";
+        img.height = "15";
+        img.width = "15";
+        img.classList.add("information");
+
+        var span = document.createElement("span");
+        span.id = "span"+temp;
+        span.innerHTML = stripMyHTML('Choose a parameter for information');
+
+        var a = document.createElement("a");
+        a.href = "#";
+        a.classList.add("tip");
+        a.id = "inf"+temp
+
+        a.appendChild(img);
+        a.appendChild(span);
+
       	div.appendChild(b);
       	div.appendChild(newInput);
-      	div.appendChild(newDatalist);
+      	div.appendChild(newDatalist);3
+        div.append(a)
       	div.appendChild(newInputVal);
       	div.appendChild(newButton);
       	div.appendChild(br);
@@ -770,14 +758,11 @@
       	parentKey = document.getElementById("i"+parentNo).value
       	var temp = parseInt(""+parentNo+childno[parentNo]);
       	var minNumber = parseInt(""+parentNo+0);
-      	console.log(temp);
-      	console.log(minNumber);
       	while (temp > minNumber){
       		if (!contains(removedIndexes, temp)){
       			var datalist = document.getElementById("prop"+temp);
       			datalist.innerHTML = "";
       			var list = childrenProps[parentKey];
-      			console.log(list);
       			list.forEach(function(item){
       				var option = document.createElement("option");
       				option.value = item;
@@ -807,7 +792,7 @@
       	buildJSON(json, number, 0);
         var textarea = document.getElementById("jsonquery");
         textarea.innerHTML = JSON.stringify(window.json, undefined, 4);
-      	console.log("Ferdig json: "+JSON.stringify(json));
+      	console.log("Build json: "+JSON.stringify(json));
       }
 
       function buildJSON(parent, no, thresh){
@@ -851,7 +836,6 @@
       function findUsedProps(){
       	usedProps = [];
       	addUsedProps(number, 0);
-      	console.log(usedProps);
       }
 
       function addUsedProps(no, thresh){
@@ -934,13 +918,40 @@
 
 
       }
-
-      function changeInformation(key){
-        if (key===""){return "Choose a parameter for information"}
-         // MISSING
-        return stripMyHTML('<table class="table table-striped"> <tr><td>Alias</td><td>count</td></tr> <tr><td>Values</td> <td> A positive integer, or 0. The sum of <a href="#offset">offset</a> and <a href="#hits">hits</a> should be lower than the configured maxoffset value, and will be adjusted to fit. See also comment at <code>offset</code>. </td> </tr> <tr><td>Default</td><td>10</td></tr> </table>');
+      function getSearchApiReference(){
+        var div = document.getElementById("div");
+        var object = document.createElement("object");
+        object.data = "/querybuilder/_includes/search-api-reference.html";
+        object.type ="text/html";
+        div.appendChild(object);
+        setTimeout(function(){
+          searchApiReference = object.contentDocument;
+          div.removeChild(object);
+        }, 120);
       }
 
+      function changeInformation(no,key){
+        if (key===""){return "Choose a parameter for information"}
+        if (contains(hasChilds, key)){return "Add parameters under the parent ''" + getFullName(no,key) + "'"}
+        var refId = getFullName(no,key)
+        var ref = searchApiReference;
+        var tag = document.createElement('div');
+        tag.appendChild(ref.getElementById(refId).nextElementSibling);
+        var tabletext = stripMyHTML(tag.innerHTML);
+        return tabletext;
+      }
+
+      function getFullName(no, key){
+          var name = key;
+          no = ""+no;
+          no = no.substring(0,(no.length - 1));
+          while (no.length > 0){
+            var parentName = document.getElementById("i"+no).value;
+            name = parentName + "." + name;
+            no = no.substring(0,(no.length - 1));
+          }
+          return name;
+      }
       </script>
 
       <!-- Global Site Tag (gtag.js) - Google Analytics -->

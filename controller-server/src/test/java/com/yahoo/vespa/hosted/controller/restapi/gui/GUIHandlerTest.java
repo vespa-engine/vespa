@@ -25,7 +25,7 @@ public class GUIHandlerTest {
 
     @After
     public void stopContainer() {
-        /*
+    /*
         try {
             Thread.sleep(120_000);
         } catch (InterruptedException e) {

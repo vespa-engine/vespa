@@ -5,20 +5,16 @@ import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserTokenManager;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.statuspage.StatusPageClient;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.NoSuchFileException;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 import java.util.logging.Level;
 
 
@@ -113,7 +109,6 @@ public class GUIHandler extends LoggingRequestHandler {
             }else if (path.toString().endsWith(".ttf")) {
                 return "font/ttf";
             }
-
             return "text/html";
         }
     }

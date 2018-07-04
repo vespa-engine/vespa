@@ -468,13 +468,6 @@ header .intro .btn-xl {
     font-family: HelveticaNeue,Helvetica,Arial,sans-serif;
 }
 
-header .intro-down-arrow {
-    display: inherit;
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-}
 
 header .intro-copy {
     display:inline-block
@@ -571,80 +564,6 @@ footer .credits {
 #description p {
     font-weight: 300;
     font-size: 25px;
-}
-
-#features .feature-text {
-    color: #303030;
-    font-family: HelveticaNeue,Helvetica,Arial,sans-serif;
-    font-size: 16px;
-    text-align: center;
-    padding-bottom: 5px;
-}
-
-#features .feature-title {
-    font-weight: bold;
-    padding-bottom: 10px;
-}
-
-#features .feature-icon {
-    height: 130px;
-    position: relative;
-}
-
-#features .feature-icon img {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    height: 80px;
-}
-
-#features .link {
-    min-height: 235px;
-}
-
-#features .link a {
-    text-decoration: none;
-}
-
-#features .link:hover {
-    background: #E1F3FD;
-}
-
-#features .feature-row {
-    padding-bottom: 30px;
-}
-
-#features .features-button {
-    text-align: center;
-    padding-top: 20px;
-}
-
-#features .features-button a {
-    background: #FFFFFF;
-    border: 1px solid #3C99EF;
-    border-radius: 2px;
-    color: #3C99EF;
-    padding-left: 50px;
-    padding-right: 50px;
-}
-
-#featurematrix .table {
-    font-weight: normal;
-    line-height: 57px;
-    font-family: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
-
-}
-
-#featurematrix .table th {
-    text-transform: uppercase;
-    font-size: 12px;
-    font-weight: bold;
-    color: rgba(48, 48, 48, 0.5);
-}
-
-#featurematrix .table tbody tr {
-    border-top: 1px solid #D8D8D8;
 }
 
 footer {
