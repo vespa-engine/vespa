@@ -198,6 +198,15 @@ public class JsonFormatTestCase {
     }
 
     @Test
+    public void testDecodeUnicodeAmp() {
+        final String json = "{\"body\":\"some text\\u0026more text\"}";
+        Slime slime = new Slime();
+        new JsonDecoder().decode(slime, Utf8.toBytesStd(json));
+        Cursor a = slime.get().field("body");
+        assertThat(a.asString(), is("some text&more text"));
+    }
+
+    @Test
     public void testDecodeEncodeUtf8() {
         final String json = "{\n" +
                 " \"rules\": \"# Use unicode equivalents in java source:\\n" +
