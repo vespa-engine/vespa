@@ -11,12 +11,12 @@ import java.util.Optional;
 public interface LogStore {
 
     /** @return the log of the given step of the given deployment job, or an empty byte array if non-existent. */
-    byte[] getLog(RunId id, String step);
+    byte[] get(RunId id, String step);
 
     /** Stores the given log for the given step of the given deployment job. */
-    void setLog(RunId id, String step, byte[] log);
+    void append(RunId id, String step, byte[] log);
 
     /** Deletes all data associated with the given deployment job */
-    void deleteTestData(RunId id);
+    void delete(RunId id);
 
 }

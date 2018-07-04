@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,24 +13,26 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MockLogStore implements LogStore {
 
-    private final Map<RunId, Map<String, byte[]>> storage = new ConcurrentHashMap<>();
+    private final Map<RunId, Map<String, byte[]>> logs = new ConcurrentHashMap<>();
 
     @Override
-    public byte[] getLog(RunId id, String step) {
-        return storage.containsKey(id) && storage.get(id).containsKey(step)
-                ? storage.get(id).get(step)
-                : new byte[0];
+    public byte[] get(RunId id, String step) {
+        return logs.getOrDefault(id, Collections.emptyMap()).getOrDefault(step, new byte[0]);
     }
 
     @Override
-    public void setLog(RunId id, String step, byte[] log) {
-        storage.putIfAbsent(id, new ConcurrentHashMap<>());
-        storage.get(id).put(step, log);
+    public void append(RunId id, String step, byte[] log) {
+        logs.putIfAbsent(id, new ConcurrentHashMap<>());
+        byte[] old = get(id, step);
+        byte[] union = new byte[old.length + log.length];
+        System.arraycopy(old, 0, union, 0, old.length);
+        System.arraycopy(log, 0, union, old.length, log.length);
+        logs.get(id).put(step, union);
     }
 
     @Override
-    public void deleteTestData(RunId id) {
-        storage.remove(id);
+    public void delete(RunId id) {
+        logs.remove(id);
     }
 
 }

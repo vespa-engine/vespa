@@ -85,7 +85,7 @@ public class JobRunnerTest {
         latch.await(1, TimeUnit.SECONDS);
         assertEquals(0, latch.getCount());
 
-        jobs.updateStorage(); // Holding the lock of each job ensures data read below is fresh.
+        runner.deconstruct(); // Ensures all workers have finished writing to the curator.
         assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(succeeded::equals));
         assertTrue(jobs.last(id, stagingTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().hasFailed());
@@ -170,7 +170,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void stepLocking() throws InterruptedException, BrokenBarrierException {
+    public void locksAndGarbage() throws InterruptedException, BrokenBarrierException {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         // Hang during tester deployment, until notified.
