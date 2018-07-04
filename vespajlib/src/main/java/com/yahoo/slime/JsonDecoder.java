@@ -210,6 +210,7 @@ public class JsonDecoder {
 
     private static byte[] unicodeStart = {'\\', 'u'};
     private long dequoteUtf16() {
+        next();
         long codepoint = readHexValue(4);
         if (codepoint >= 0xd800) {
             if (codepoint < 0xdc00) { // high
