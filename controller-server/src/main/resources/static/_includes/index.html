@@ -344,6 +344,7 @@
         document.body.appendChild(el);
         copyToClipboard(el);
         document.body.removeChild(el);
+        return url;
       }
 
       function buildURL(map){
@@ -403,16 +404,22 @@
       }
 
       function changeDiv(selectedMethod){
-      	changeVisibility();
       	if (selectedMethod === "GET"){
       			console.log(selectedMethod);
-      		document.getElementById("request").innerHTML = "</br><textarea class=\"responsebox\" cols=70 rows=4 id=\"url2\">http://www.google.no/</textarea>";
+      		document.getElementById("request").innerHTML = '</br><textarea class=\"responsebox\" cols=70 rows=4 id=\"url2\">'+copyURL();+'</textarea>';
+        	changeVisibility();
       	}
       	else if (selectedMethod === "POST") {
       			console.log(selectedMethod);
       		document.getElementById("request").innerHTML = "</br> <div class=\"intro-param\">Construct a query by adding parameters or pasting a JSON.</div>";
       		number = 0;
-      		addNewRow();
+        	changeVisibility();
+          let jsonString = JSON.stringify(window.json);
+          if (jsonString === "{}" || jsonString=== '{"":""}'){
+        		addNewRow();
+          } else {
+            buildFromJSON(window.json, 0);
+          }
 
       	}
       }
@@ -876,16 +883,7 @@
       		document.getElementById("response").innerHTML = JSON.stringify(JSON.parse(xmlhttp.responseText), undefined, 4);
       	}else if (method === "GET") {
       		var url = document.getElementById("url2").value;
-          var xhttp = new XMLHttpRequest();
-          xhttp.onreadystatechange = function() {
-              if (this.readyState == 4 && this.status == 200) {
-                 // Typical action to be performed when the document is ready:
-                 document.getElementById("responsebox").innerHTML = xhttp.responseText;
-                 console.log(xhttp.responseText);
-              }
-          };
-          xhttp.open("GET", url, true);
-          xhttp.send();
+          window.open(url);
       	}
       }
 
@@ -894,14 +892,17 @@
           var x = document.getElementById("url");
       		var y = document.getElementById("addRow")
           var z = document.getElementById("showJSON")
+          var a = document.getElementById("pasteJSON")
           if (x.style.display === "none") {
               x.style.display = "inline-block";
               y.style.display = "inline-block";
               z.style.display = "inline-block";
+              a.style.display = "inline-block";
           } else {
               x.style.display = "none";
               y.style.display = "none";
               z.style.display = "none";
+              a.style.display = "none";
           }
       }
 
