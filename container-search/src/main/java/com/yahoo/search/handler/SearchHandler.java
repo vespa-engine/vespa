@@ -288,32 +288,7 @@ public class SearchHandler extends LoggingRequestHandler {
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
 
-        // Create query
-        Query query;
-        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST && request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE).equals(JSON_CONTENT_TYPE)) {
-            Inspector inspector;
-            try {
-                byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
-                inspector = SlimeUtils.jsonToSlime(byteArray).get();
-                if (inspector.field("error_message").valid()){
-                    throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
-                }
-
-            } catch (IOException e) {
-                throw new RuntimeException("Problem with reading from input-stream", e);
-            }
-
-            // Create request-mapping
-            Map<String, String> requestMap = new HashMap<>();
-            createRequestMapping(inspector, requestMap, "");
-            query = new Query(request, requestMap, queryProfile);
-
-
-        } else {
-            query = new Query(request, queryProfile);
-
-        }
-
+        Query query = queryFromRequest(request, queryProfile);
 
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
 
@@ -583,6 +558,32 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
+
+    private Query queryFromRequest(HttpRequest request, CompiledQueryProfile queryProfile){
+        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST && request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE).equals(JSON_CONTENT_TYPE)) {
+            Inspector inspector;
+            try {
+                byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
+                inspector = SlimeUtils.jsonToSlime(byteArray).get();
+                if (inspector.field("error_message").valid()){
+                    throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
+                }
+
+            } catch (IOException e) {
+                throw new RuntimeException("Problem with reading from input-stream", e);
+            }
+
+            // Create request-mapping
+            Map<String, String> requestMap = new HashMap<>();
+            createRequestMapping(inspector, requestMap, "");
+            return new Query(request, requestMap, queryProfile);
+
+
+        } else {
+            return new Query(request, queryProfile);
+
+        }
+    }
 
     public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
         inspector.traverse((ObjectTraverser) (key, value) -> {

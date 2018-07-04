@@ -307,7 +307,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     /**
-     * Creates a query from a request containing a JSON-query.
+     * Creates a query from a request
      *
      * @param request the HTTP request from which this is created.
      * @param requestMap the property map of the query.
