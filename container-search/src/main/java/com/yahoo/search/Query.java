@@ -12,6 +12,8 @@ import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
+import com.yahoo.prelude.searcher.FieldCollapsingSearcher;
+import com.yahoo.prelude.semantics.SemanticSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.federation.FederationSearcher;
 import com.yahoo.search.query.Model;
@@ -207,6 +209,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(Presentation.PRESENTATION, new QueryProfileFieldType(Presentation.getArgumentType())));
         argumentType.addField(new FieldDescription(Ranking.RANKING, new QueryProfileFieldType(Ranking.getArgumentType())));
         argumentType.addField(new FieldDescription(Model.MODEL, new QueryProfileFieldType(Model.getArgumentType())));
+        argumentType.addField(new FieldDescription(FieldCollapsingSearcher.collapsefield.toString(), "string", "collapsefield"));
+        argumentType.addField(new FieldDescription(FieldCollapsingSearcher.collapsesize.toString(), "string", "collapsesize"));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
