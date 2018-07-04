@@ -124,6 +124,12 @@ public class VespaMetricSet {
 
         metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
 
+        metrics.add(new Metric("http.status.1xx.rate"));
+        metrics.add(new Metric("http.status.2xx.rate"));
+        metrics.add(new Metric("http.status.3xx.rate"));
+        metrics.add(new Metric("http.status.4xx.rate"));
+        metrics.add(new Metric("http.status.5xx.rate"));
+
         return metrics;
     }
 
@@ -191,11 +197,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("error.result_with_errors.rate","error.result_with_errors"));
         metrics.add(new Metric("error.unspecified.rate","error.unspecified"));
         metrics.add(new Metric("error.unhandled_exception.rate","error.unhandled_exception"));
-        metrics.add(new Metric("http.status.1xx.rate"));
-        metrics.add(new Metric("http.status.2xx.rate"));
-        metrics.add(new Metric("http.status.3xx.rate"));
-        metrics.add(new Metric("http.status.4xx.rate"));
-        metrics.add(new Metric("http.status.5xx.rate"));
 
         return metrics;
     }
