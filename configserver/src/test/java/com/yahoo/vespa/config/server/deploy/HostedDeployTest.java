@@ -120,8 +120,6 @@ public class HostedDeployTest {
         assertTrue("Newest is always included", factory720.creationCount() > 0);
     }
 
-    // TODO: Test works now, but will fail when only building the minimal set of config model
-    // versions in prod, see ModelsBuilder.buildModelVersions()
     @Test
     public void testAccessControlIsOnlyCheckedWhenNoProdDeploymentExists() {
         // Provisioner does not reuse hosts, so need twice as many hosts as app requires
