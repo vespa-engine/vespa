@@ -18,6 +18,7 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -123,7 +124,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      *        to instantiate config models
      */
     public VespaModel(ApplicationPackage app, ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
-        this(configModelRegistry, new DeployState.Builder().applicationPackage(app).build(true));
+        this(configModelRegistry, new DeployState.Builder().applicationPackage(app).build());
     }
 
     /**

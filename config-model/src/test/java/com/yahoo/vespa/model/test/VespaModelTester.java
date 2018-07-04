@@ -124,7 +124,7 @@ public class VespaModelTester {
                 .applicationPackage(appPkg)
                 .modelHostProvisioner(provisioner)
                 .properties(properties)
-                .build(true);
+                .build();
         return modelCreatorWithMockPkg.create(false, deployState, configModelRegistry);
     }
 }

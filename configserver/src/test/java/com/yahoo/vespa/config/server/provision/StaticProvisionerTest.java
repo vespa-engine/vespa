@@ -54,7 +54,7 @@ public class StaticProvisionerTest {
                         .multitenant(true)
                         .hostedVespa(true)
                         .build())
-                .build(true);
+                .build();
         return new VespaModel(new NullConfigModelRegistry(), deployState);
     }
 
