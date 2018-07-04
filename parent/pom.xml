@@ -83,7 +83,7 @@
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>3.5.0</version>
                     <configuration>
-                        <!-- TODO: this should be a temporary workaround until bundle-plugin understands java 10 -->
+                        <!-- TODO: remove when bundle-plugin understands java 10, https://issues.apache.org/jira/browse/FELIX-5879 -->
                         <instructions>
                             <_noee>true</_noee>
                         </instructions>
