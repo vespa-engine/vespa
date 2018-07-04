@@ -158,7 +158,8 @@ public class SessionPreparer {
                                                               configserverConfig.hostedVespa(),
                                                               zone,
                                                               rotationsSet,
-                                                              params.isBootstrap());
+                                                              params.isBootstrap(),
+                                                              ! currentActiveApplicationSet.isPresent());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,

@@ -21,8 +21,8 @@ import com.yahoo.vespa.model.application.validation.change.StreamingSearchCluste
 import com.yahoo.vespa.model.application.validation.first.AccessControlValidator;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,13 +60,16 @@ public class Validation {
         new RankingConstantsValidator().validate(model, deployState);
         new SecretStoreValidator().validate(model, deployState);
 
-        Optional<Model> currentActiveModel = deployState.getPreviousModel();
-        if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel))
-            return validateChanges((VespaModel)currentActiveModel.get(), model,
-                                   deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
-        else
+        List<ConfigChangeAction> result = Collections.emptyList();;
+        if (deployState.getProperties().isFirstTimeDeployment()) {
             validateFirstTimeDeployment(model, deployState);
-            return new ArrayList<>();
+        } else {
+            Optional<Model> currentActiveModel = deployState.getPreviousModel();
+            if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel))
+                result = validateChanges((VespaModel) currentActiveModel.get(), model,
+                                         deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
+        }
+        return result;
     }
 
     private static List<ConfigChangeAction> validateChanges(VespaModel currentModel, VespaModel nextModel,

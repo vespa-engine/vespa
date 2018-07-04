@@ -130,6 +130,9 @@ public class MockModelContext implements ModelContext {
 
             @Override
             public boolean isBootstrap() { return false; }
+
+            @Override
+            public boolean isFirstTimeDeployment() { return false; }
         };
     }
 }

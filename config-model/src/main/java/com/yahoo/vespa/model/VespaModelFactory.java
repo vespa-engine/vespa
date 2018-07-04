@@ -154,6 +154,7 @@ public class VespaModelFactory implements ModelFactory {
                 .hostedVespa(properties.hostedVespa())
                 .vespaVersion(getVersion())
                 .isBootstrap(properties.isBootstrap())
+                .isFirstTimeDeployment(properties.isFirstTimeDeployment())
                 .build();
     }
 

@@ -124,6 +124,7 @@ public class ModelContextImpl implements ModelContext {
         private final Zone zone;
         private final Set<Rotation> rotations;
         private final boolean isBootstrap;
+        private final boolean isFirstTimeDeployment;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenant,
@@ -134,7 +135,8 @@ public class ModelContextImpl implements ModelContext {
                           boolean hostedVespa,
                           Zone zone,
                           Set<Rotation> rotations,
-                          boolean isBootstrap) {
+                          boolean isBootstrap,
+                          boolean isFirstTimeDeployment) {
             this.applicationId = applicationId;
             this.multitenant = multitenant;
             this.configServerSpecs = configServerSpecs;
@@ -145,6 +147,7 @@ public class ModelContextImpl implements ModelContext {
             this.zone = zone;
             this.rotations = rotations;
             this.isBootstrap = isBootstrap;
+            this.isFirstTimeDeployment = isFirstTimeDeployment;
         }
 
         @Override
@@ -181,6 +184,8 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean isBootstrap() { return isBootstrap; }
 
+        @Override
+        public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
     }
 
 }
