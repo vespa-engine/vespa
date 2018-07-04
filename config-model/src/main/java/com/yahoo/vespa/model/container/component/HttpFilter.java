@@ -12,7 +12,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
  *
  * TODO: Remove when 'filter' directly under 'jdisc' can be removed from services.xml
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class HttpFilter extends SimpleComponent {
     private static final ComponentSpecification filterConfigProviderClass =

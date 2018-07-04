@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class OsgiImpl implements Osgi {
 

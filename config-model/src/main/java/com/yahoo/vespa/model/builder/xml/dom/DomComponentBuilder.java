@@ -12,7 +12,7 @@ import org.w3c.dom.Element;
 
 /**
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Component> {
 

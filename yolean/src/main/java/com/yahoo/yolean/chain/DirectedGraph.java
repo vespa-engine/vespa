@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * TODO: prioritize vertices in edge map.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class DirectedGraph {
 

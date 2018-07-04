@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Container> {
 

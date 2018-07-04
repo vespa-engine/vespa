@@ -3,7 +3,7 @@ package com.yahoo.container.di;
 
 /**
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface ComponentDeconstructor {
     void deconstruct(Object component);

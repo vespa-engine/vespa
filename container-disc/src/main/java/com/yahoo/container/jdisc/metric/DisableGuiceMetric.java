@@ -6,7 +6,7 @@ import com.yahoo.jdisc.Metric;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DisableGuiceMetric implements Metric {
 

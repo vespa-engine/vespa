@@ -2,7 +2,7 @@
 package com.yahoo.container.plugin.classanalysis.sampleclasses;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ClassWithMethod {
     public static void test() {}

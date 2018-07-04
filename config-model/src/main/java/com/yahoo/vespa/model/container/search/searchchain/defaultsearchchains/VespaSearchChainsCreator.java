@@ -18,7 +18,7 @@ import java.util.*;
  * Creates the search chains vespaPhases, vespa and native.
  *
  * <p>TODO: refactor</p>
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class VespaSearchChainsCreator {
     private static class PhasesCreator {

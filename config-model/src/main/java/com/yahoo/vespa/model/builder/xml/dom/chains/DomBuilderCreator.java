@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * Utility class for instantiating a builder using reflection.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomBuilderCreator {
     public static <T> T create(Class<T> builderClass, Object... parameters) {

@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  *
  * Must be placed in a file called package-info.java in the
  * package that is to be public.
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  * @since 5.1.5
  */

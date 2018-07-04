@@ -31,7 +31,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class JDiscFilterForServletTest extends ServletTestBase {
     @Test

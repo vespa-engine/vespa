@@ -7,7 +7,7 @@ import com.yahoo.container.StatisticsConfig;
  * Interface used for registering statistics values and counters for logging.
  *
  * @author steinar
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface Statistics {
     /**

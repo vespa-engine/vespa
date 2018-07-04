@@ -6,7 +6,7 @@ import com.yahoo.searchdefinition.Search;
 import java.util.Collection;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SearchDefinition {
 

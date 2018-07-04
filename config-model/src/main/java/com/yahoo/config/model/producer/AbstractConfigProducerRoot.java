@@ -13,7 +13,7 @@ import java.util.Optional;
 /**
  * The parent class of classes having the role as the root of a config producer tree.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public abstract class AbstractConfigProducerRoot extends AbstractConfigProducer<AbstractConfigProducer<?>>
         implements ConfigProducerRoot {

@@ -7,7 +7,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ItemIdMapper {
     private final Map<Item, String> idByItem = new IdentityHashMap<>();

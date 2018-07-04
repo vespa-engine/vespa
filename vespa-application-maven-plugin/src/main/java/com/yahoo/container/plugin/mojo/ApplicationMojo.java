@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Mojo(name = "packageApplication", defaultPhase = LifecyclePhase.PACKAGE, threadSafe = true)
 public class ApplicationMojo extends AbstractMojo {

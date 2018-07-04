@@ -4,7 +4,7 @@ package com.yahoo.search.query.textserialize.item;
 import com.yahoo.prelude.query.PrefixItem;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class PrefixConverter extends WordConverter {
     @Override

@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ComponentGroup <CHILD extends Component<?, ?>> extends ConfigProducerGroup<CHILD> {
 

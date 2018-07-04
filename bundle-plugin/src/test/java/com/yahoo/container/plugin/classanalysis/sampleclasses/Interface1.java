@@ -8,7 +8,7 @@ import java.awt.image.Kernel;
 
 /**
  * Input for class analysis tests.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface Interface1 extends Interface2 {
     Image methodSignatureTest(Kernel kernel, BufferedImage image);

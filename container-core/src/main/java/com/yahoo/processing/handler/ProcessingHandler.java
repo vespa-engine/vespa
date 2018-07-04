@@ -15,7 +15,7 @@ import java.util.concurrent.Executor;
 /**
  * A jDisc request handler which invokes a processing chain to produce the response.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @since 5.1.7
  */
 public class ProcessingHandler extends AbstractProcessingHandler<Processor> {

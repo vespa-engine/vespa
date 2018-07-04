@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * Owns all the source groups in the search chains model.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class SourceGroupRegistry {
     private final ComponentRegistry<ComponentAdaptor<SourceGroup>> sourceGroups

@@ -18,7 +18,7 @@ import java.util.Collection;
  * 1) call modifyTargetQuery(target, query)
  * 2) call modifyTargetResult(target, result)
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface TargetSelector<T> {
 

@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  * Base functionality for all target chain builders (provider, source)
  */

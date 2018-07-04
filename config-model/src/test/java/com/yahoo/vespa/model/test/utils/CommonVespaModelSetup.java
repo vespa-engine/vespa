@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.VespaModel;
 import java.io.File;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 //TODO Remove, use VespaModelCreatorWithMockPkg or VespaModelCreatorWithFilePkg instead
 public class CommonVespaModelSetup {

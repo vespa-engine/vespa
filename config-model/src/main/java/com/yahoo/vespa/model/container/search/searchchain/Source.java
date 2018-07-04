@@ -12,7 +12,7 @@ import java.util.Arrays;
 /**
  * Config producer for source, which is contained in a provider.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Source extends GenericTarget {
 

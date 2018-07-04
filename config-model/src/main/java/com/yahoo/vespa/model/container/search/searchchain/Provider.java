@@ -11,7 +11,7 @@ import java.util.Collection;
 /**
  * Base config producer for search chains that communicate with backends.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Provider extends GenericTarget {
 

@@ -16,7 +16,7 @@ import org.w3c.dom.Element;
 import java.util.*;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FilterChainsBuilder extends DomChainsBuilder<Filter, Chain<Filter>, FilterChains>  {
     private static final Collection<ComponentType<Filter>> allowedComponentTypes =

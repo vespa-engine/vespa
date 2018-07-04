@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * Root config producer of the whole search chains model (contains searchchains and searchers).
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SearchChains extends Chains<SearchChain> {
 

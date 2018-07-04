@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Handles timeout of a task.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class Timer {
     private final long endTime;

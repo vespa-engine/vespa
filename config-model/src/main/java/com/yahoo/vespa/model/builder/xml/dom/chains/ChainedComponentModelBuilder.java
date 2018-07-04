@@ -8,7 +8,7 @@ import org.w3c.dom.Element;
 
 /**
  * Builds a regular ChainedComponentModel from an element.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ChainedComponentModelBuilder extends GenericChainedComponentModelBuilder {
     protected final BundleInstantiationSpecification bundleInstantiationSpec;

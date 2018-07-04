@@ -28,7 +28,7 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 
 /**
  * Test for SourceRefResolver.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SourceRefResolverTestCase {
     private static final String cluster1 = "cluster1";

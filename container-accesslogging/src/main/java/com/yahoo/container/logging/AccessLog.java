@@ -11,7 +11,7 @@ import java.net.URI;
 /**
  * Logs to all the configured access logs.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class AccessLog {
 

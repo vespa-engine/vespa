@@ -16,7 +16,7 @@ import static com.yahoo.container.logging.AccessLogEntry.CookieType;
 /**
  * Formatting of an {@link AccessLogEntry} in the yapache access log format.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bakksjo
  */
 public class YApacheFormatter {

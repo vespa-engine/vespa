@@ -7,7 +7,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class BlockingSearcher extends Searcher {
     @Override

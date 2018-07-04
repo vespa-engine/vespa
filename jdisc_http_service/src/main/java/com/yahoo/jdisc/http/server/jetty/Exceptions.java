@@ -4,7 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 /**
  * Utility methods for exceptions
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Exceptions {
 

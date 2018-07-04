@@ -29,7 +29,7 @@ import java.util.List;
  *   <li>State mutated during rendering shall be initialized in the init method.
  * </ol>
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 abstract public class SectionedRenderer<WRITER> extends Renderer {
     /**

@@ -16,7 +16,7 @@ import net.jcip.annotations.Immutable;
 /**
  * Specifies how a local provider is to be set up.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Immutable
 public class LocalProviderSpec {

@@ -23,7 +23,7 @@ import java.util.*;
 
 /**
  * Creates component models and component references from xml for a given scope.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ComponentsBuilder<T extends ChainedComponent<?>> {
 

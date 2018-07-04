@@ -9,7 +9,7 @@ import java.util.Objects;
  * Options for controlling federation to a single source.
  * This is a value object.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Immutable
 public class FederationOptions implements Cloneable {

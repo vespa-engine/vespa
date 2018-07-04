@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.container.component.Component;
 
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  *
  * Base class for all ChainedComponent config producers.

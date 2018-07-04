@@ -10,7 +10,7 @@ import org.w3c.dom.Element;
 
 /**
  * Builds a Searcher from XML.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Searcher<?>> {
 

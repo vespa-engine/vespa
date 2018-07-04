@@ -23,7 +23,7 @@ import java.util.*;
 /**
  * Config producer for search chain responsible for sending queries to a local cluster.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class LocalProvider extends Provider implements
         DocumentdbInfoConfig.Producer,

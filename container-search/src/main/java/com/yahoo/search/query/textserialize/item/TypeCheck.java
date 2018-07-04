@@ -4,7 +4,7 @@ package com.yahoo.search.query.textserialize.item;
 import com.yahoo.protect.Validator;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class TypeCheck {
     public static void ensureInstanceOf(Object object, Class<?> c) {

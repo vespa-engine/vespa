@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 
 /**
  * Test generated config for federation.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FederationTest extends SearchChainsTestBase {
     @Override

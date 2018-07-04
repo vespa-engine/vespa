@@ -4,7 +4,7 @@ package com.yahoo.config.model.api;
 /**
  * Provides information about a configserver instance.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface ConfigServerSpec {
 

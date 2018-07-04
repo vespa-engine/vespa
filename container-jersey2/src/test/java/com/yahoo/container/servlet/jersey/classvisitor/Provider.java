@@ -2,7 +2,7 @@
 package com.yahoo.container.servlet.jersey.classvisitor;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @javax.ws.rs.ext.Provider
 public class Provider {

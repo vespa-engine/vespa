@@ -25,7 +25,7 @@ import java.util.*;
 
 /**
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ContainerSearch extends ContainerSubsystem<SearchChains>
     implements

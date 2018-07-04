@@ -5,7 +5,7 @@ package com.yahoo.config.application.api;
 /**
  * Describes a component residing in the components directory.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 // TODO: add support for component versions.
 public class ComponentInfo {

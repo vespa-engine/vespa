@@ -3,7 +3,7 @@ package com.yahoo.binaryprefix;
 
 /**
  * Represents binary prefixes.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public enum BinaryPrefix {
     //represents the binary prefix 2^(k*10)

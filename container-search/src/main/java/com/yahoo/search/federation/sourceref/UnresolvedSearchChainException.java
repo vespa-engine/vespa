@@ -3,7 +3,7 @@ package com.yahoo.search.federation.sourceref;
 
 /**
  * Thrown if a search chain can not be resolved from one or more ids.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings("serial")
 public class UnresolvedSearchChainException extends Exception {

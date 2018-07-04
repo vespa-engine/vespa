@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * Base functionality for all chain builders (docprocChain, searchChain, provider, source)
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>, CHAIN extends Chain<COMPONENT>>
         extends VespaDomBuilder.DomConfigProducerBuilder<CHAIN> {

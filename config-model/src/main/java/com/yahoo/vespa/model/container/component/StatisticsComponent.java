@@ -5,7 +5,7 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.container.StatisticsConfig;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class StatisticsComponent extends SimpleComponent implements StatisticsConfig.Producer {
 

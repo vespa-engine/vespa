@@ -10,7 +10,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomSearcherBuilderTest extends DomBuilderTest {
 

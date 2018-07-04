@@ -2,6 +2,6 @@
 package com.yahoo.vespa.model.container.xml;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class InconsistentSchemaAndCodeError extends Error {}

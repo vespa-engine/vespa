@@ -4,7 +4,7 @@ package com.yahoo.search.query.textserialize.item;
 import com.yahoo.prelude.query.SubstringItem;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SubStringConverter extends WordConverter {
     @Override

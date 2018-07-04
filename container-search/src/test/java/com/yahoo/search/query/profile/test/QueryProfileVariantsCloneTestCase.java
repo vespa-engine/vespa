@@ -14,7 +14,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class QueryProfileVariantsCloneTestCase {
 

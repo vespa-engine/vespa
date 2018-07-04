@@ -20,7 +20,7 @@ import com.yahoo.search.searchchain.SearchChainRegistry;
 /**
  * A search chain consisting of two searchers.
  * @author bratseth
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SimpleSearchChain {
 

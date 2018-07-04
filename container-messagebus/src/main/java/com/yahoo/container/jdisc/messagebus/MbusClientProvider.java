@@ -13,7 +13,7 @@ import com.yahoo.messagebus.shared.SharedIntermediateSession;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class MbusClientProvider implements Provider<MbusClient> {

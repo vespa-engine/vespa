@@ -5,7 +5,7 @@ import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public class Filter extends ChainedComponent<ChainedComponentModel> {

@@ -7,7 +7,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
  * Read-only view of statuses for the application instance and its hosts.
  *
  * @author oyving
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bakksjo
  */
 public interface ReadOnlyStatusRegistry {

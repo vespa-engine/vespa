@@ -6,7 +6,7 @@ import com.yahoo.prelude.query.Item;
 /**
  * Allows an item to disclose its properties and children/value.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface Discloser {
     void addProperty(String key, Object value);

@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 import static com.yahoo.text.Lowercase.toLowerCase;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class BinaryUnit {
     //The pattern must match the one given in the schema

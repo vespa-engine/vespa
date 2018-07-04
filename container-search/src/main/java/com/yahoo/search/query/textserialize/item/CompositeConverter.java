@@ -9,7 +9,7 @@ import com.yahoo.search.query.textserialize.serializer.ItemIdMapper;
 import java.util.ListIterator;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class CompositeConverter<T extends CompositeItem> implements ItemFormConverter {
     private final Class<T> itemClass;

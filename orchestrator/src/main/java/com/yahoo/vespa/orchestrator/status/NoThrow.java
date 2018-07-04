@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * They are still allowed to throw Errors, such as AssertionError
  *
  * TODO: move to vespajlib or find a suitable replacement
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.SOURCE)

@@ -20,7 +20,7 @@ import java.util.Iterator;
 /**
  * Renders a search result using the old templates API.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @deprecated do not use
  */
 @SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })

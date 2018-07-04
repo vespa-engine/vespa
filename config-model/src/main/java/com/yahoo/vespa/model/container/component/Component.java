@@ -13,7 +13,7 @@ import java.util.Set;
 
 /**
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends ComponentModel>
         extends AbstractConfigProducer<CHILD> implements Comparable<Component<?, ?>> {

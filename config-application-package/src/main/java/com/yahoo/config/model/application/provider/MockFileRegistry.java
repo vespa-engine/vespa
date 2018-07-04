@@ -12,7 +12,7 @@ import java.util.Set;
 /**
  * A file registry for testing, and, it seems, doubling as a null registry in some code paths.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class MockFileRegistry implements FileRegistry {
 

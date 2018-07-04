@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Intended to be used as an external interface to the vespa model root.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface ConfigProducerRoot extends ConfigProducer {
 

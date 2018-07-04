@@ -7,7 +7,7 @@ import java.io.IOException;
 
 /**
  * Interface for async listeners only interested in onComplete.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @FunctionalInterface
 interface AsyncCompleteListener extends AsyncListener {

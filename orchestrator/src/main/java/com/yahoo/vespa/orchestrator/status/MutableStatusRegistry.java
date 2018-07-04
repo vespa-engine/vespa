@@ -7,7 +7,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
  * Registry of the suspension and host statuses for an application instance.
  *
  * @author oyving
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bakksjo
  */
 public interface MutableStatusRegistry extends ReadOnlyStatusRegistry, AutoCloseable {

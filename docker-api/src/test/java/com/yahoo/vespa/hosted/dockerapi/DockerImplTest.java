@@ -29,7 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DockerImplTest {
 

@@ -6,7 +6,7 @@ import com.yahoo.search.query.textserialize.serializer.DispatchForm;
 import com.yahoo.search.query.textserialize.serializer.ItemIdMapper;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface ItemFormConverter {
     Object formToItem(String name, ItemArguments arguments, ItemContext context);

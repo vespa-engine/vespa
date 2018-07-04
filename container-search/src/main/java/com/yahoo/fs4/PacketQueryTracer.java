@@ -9,7 +9,7 @@ import com.yahoo.search.Query;
 /**
  * Adds packets to the query context
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class PacketQueryTracer implements PacketListener {
 

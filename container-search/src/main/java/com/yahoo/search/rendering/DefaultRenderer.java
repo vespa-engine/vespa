@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * XML rendering of search results. This is NOT the default (but it once was).
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @deprecated use JsonRenderer instead
  */
 @SuppressWarnings({ "rawtypes", "deprecation" })

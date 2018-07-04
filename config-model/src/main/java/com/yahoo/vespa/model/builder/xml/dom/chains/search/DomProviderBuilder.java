@@ -31,7 +31,7 @@ import java.util.Map;
  * since the mangling is an intrinsic of the configuration language,
  * not the model itself.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
 

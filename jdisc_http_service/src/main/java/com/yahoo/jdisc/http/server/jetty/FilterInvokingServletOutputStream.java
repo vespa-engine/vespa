@@ -11,7 +11,7 @@ import java.io.IOException;
  * to be committed, i.e. locked and potentially put on the wire.
  * Any changes to the response after it has been committed might be ignored or cause exceptions.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class FilterInvokingServletOutputStream extends ServletOutputStream {
     private final ServletOutputStream delegate;

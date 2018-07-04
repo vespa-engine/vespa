@@ -5,7 +5,7 @@ import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.TermItem;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class IntConverter extends TermConverter {
     @Override

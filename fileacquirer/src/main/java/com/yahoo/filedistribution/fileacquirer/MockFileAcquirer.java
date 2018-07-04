@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * For use when testing searchers that uses file distribution.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public abstract class MockFileAcquirer implements FileAcquirer {
     /** Creates a FileAcquirer that always returns the given file. **/

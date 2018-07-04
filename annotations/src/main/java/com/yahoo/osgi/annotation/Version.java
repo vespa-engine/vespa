@@ -5,7 +5,7 @@ package com.yahoo.osgi.annotation;
  * Version of an exported package
  * The default version is 1.0.0
  * @see <a href="http://www.osgi.org/javadoc/r4v43/org/osgi/framework/Version.html">Osgi version documentation</a>
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public @interface Version {
 

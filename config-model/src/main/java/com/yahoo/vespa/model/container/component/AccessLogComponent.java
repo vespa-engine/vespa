@@ -11,7 +11,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  * @since 5.1.4
  */

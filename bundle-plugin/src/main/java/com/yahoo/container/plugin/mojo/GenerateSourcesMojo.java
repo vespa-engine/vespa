@@ -27,7 +27,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 /**
  * Calls the generate-sources phase in the container lifecycle defined in lifecycle.xml.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Mojo(name = "generateSources", requiresDependencyResolution = ResolutionScope.COMPILE, threadSafe = true)
 public class GenerateSourcesMojo extends AbstractMojo {

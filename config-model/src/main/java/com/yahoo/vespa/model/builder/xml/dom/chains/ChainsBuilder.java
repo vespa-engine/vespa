@@ -10,7 +10,7 @@ import org.w3c.dom.Element;
 import java.util.*;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public class ChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chain<COMPONENT>> {

@@ -17,7 +17,7 @@ import static org.junit.Assert.fail;
 import static org.hamcrest.Matchers.containsString;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SourceGroupTest {
     private MockRoot root;

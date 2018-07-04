@@ -13,7 +13,7 @@ import java.util.List;
 import static com.yahoo.container.core.ChainsConfig.Chains.*;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  *
  * Generates config for a all the chains.

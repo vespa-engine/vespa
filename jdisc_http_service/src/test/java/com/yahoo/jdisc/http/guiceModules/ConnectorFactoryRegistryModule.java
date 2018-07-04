@@ -17,7 +17,7 @@ import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreConfigurator;
 /**
  * Guice module for test ConnectorFactories
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ConnectorFactoryRegistryModule implements Module {
 

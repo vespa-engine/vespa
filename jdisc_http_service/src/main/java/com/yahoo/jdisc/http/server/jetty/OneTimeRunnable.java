@@ -4,7 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class OneTimeRunnable {
     private final Runnable runnable;

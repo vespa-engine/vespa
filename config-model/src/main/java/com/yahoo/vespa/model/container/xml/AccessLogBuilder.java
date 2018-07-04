@@ -17,7 +17,7 @@ import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalAttribute;
 import static com.yahoo.config.model.builder.xml.XmlHelper.nullIfEmpty;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class AccessLogBuilder {
     /*

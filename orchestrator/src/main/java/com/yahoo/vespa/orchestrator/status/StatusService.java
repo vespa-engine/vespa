@@ -13,7 +13,7 @@ import java.util.Set;
  * TODO Remove readonly registry class (replace with actual methods) - only adds complexity.
  *
  * @author oyving
- * @author tonytv
+ * @author Tony Vaagenes
  * @author smorgrav
  */
 public interface StatusService {

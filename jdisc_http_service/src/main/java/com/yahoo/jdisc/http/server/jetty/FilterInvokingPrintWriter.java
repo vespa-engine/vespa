@@ -11,7 +11,7 @@ import java.util.Locale;
  * The filter must be invoked before the first output call since this might cause the response
  * to be committed, i.e. locked and potentially put on the wire.
  * Any changes to the response after it has been committed might be ignored or cause exceptions.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 final class FilterInvokingPrintWriter extends PrintWriter {
     private final PrintWriter delegate;

@@ -16,7 +16,7 @@ import java.util.Set;
 /**
  * A context providing all the fields of a hit, and falls back to MapContext behavior for all other keys.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @deprecated use a Renderer instead
  */
 @SuppressWarnings("deprecation")

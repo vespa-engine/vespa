@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class MockOsgi extends NonWorkingOsgiFramework implements Osgi {
 

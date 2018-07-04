@@ -19,7 +19,7 @@ import java.io.OutputStream;
  * <li>State mutated during rendering shall be initialized in the init method.</li>
  * </ol>
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author Steinar Knutsen
  */
 public abstract class Renderer<RESPONSE extends Response> extends AbstractComponent implements Cloneable {
