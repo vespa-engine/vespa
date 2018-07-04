@@ -64,7 +64,7 @@ public class SystemUpgrader extends Maintainer {
             if (convergedOn(target, application.dependencies(), zone)) {
                 deploy(target, application, zone);
             }
-            converged &= convergedOn(target, application, zone) & application.configConvergedIn(zone, controller());
+            converged &= convergedOn(target, application, zone);
         }
         return converged;
     }
@@ -83,7 +83,7 @@ public class SystemUpgrader extends Maintainer {
     }
 
     private boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
-        return currentVersion(zone, application, target).equals(target);
+        return currentVersion(zone, application, target).equals(target) && application.configConvergedIn(zone, controller());
     }
 
     private Version wantedVersion(ZoneId zone, SystemApplication application, Version defaultVersion) {
