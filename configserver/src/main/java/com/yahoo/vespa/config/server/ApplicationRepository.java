@@ -650,6 +650,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Set<ApplicationId> applicationsNotRedeployed = listApplications();
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
+            if ( ! applicationsNotRedeployed.isEmpty()) {
+                Thread.sleep(Duration.ofSeconds(30).toMillis());
+            }
         } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
 
         if ( ! applicationsNotRedeployed.isEmpty()) {
