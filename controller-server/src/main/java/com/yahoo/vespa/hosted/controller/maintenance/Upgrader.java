@@ -117,15 +117,15 @@ public class Upgrader extends Maintainer {
 
     /** Returns the number of applications to upgrade in this run */
     private int numberOfApplicationsToUpgrade() {
-        return Math.max(1, (int)(maintenanceInterval().getSeconds() * (upgradesPerMinute() / 60)));
+        return Math.max(1, (int) (maintenanceInterval().getSeconds() * (upgradesPerMinute() / 60)));
     }
 
-    /** Returns number upgrades per minute */
+    /** Returns number of upgrades per minute */
     public double upgradesPerMinute() {
         return curator.readUpgradesPerMinute();
     }
 
-    /** Sets the number upgrades per minute */
+    /** Sets the number of upgrades per minute */
     public void setUpgradesPerMinute(double n) {
         curator.writeUpgradesPerMinute(n);
     }
