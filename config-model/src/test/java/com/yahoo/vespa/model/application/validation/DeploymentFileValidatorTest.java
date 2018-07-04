@@ -56,7 +56,7 @@ public class DeploymentFileValidatorTest {
                 .build();
         DeployState.Builder builder = new DeployState.Builder().applicationPackage(app);
         try {
-            final DeployState deployState = builder.build(true);
+            final DeployState deployState = builder.build();
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
             new DeploymentFileValidator().validate(model, deployState);
             fail("Did not get expected exception");

@@ -116,7 +116,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .properties(new DeployProperties.Builder()
                         .hostedVespa(true)
                         .build())
-                .build(true));
+                .build());
         assertFalse(logger.msgs.isEmpty());
         assertThat(logger.msgs.get(0).getSecond(), containsString(String.format("You cannot set port to anything else than %d", Container.BASEPORT)));
     }
@@ -512,7 +512,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  </nodes>",
                 "</jdisc>");
 
-        DeployState deployState = new DeployState.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east-1"))).build(true);
+        DeployState deployState = new DeployState.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east-1"))).build();
         createModel(root, deployState, clusterElem);
         assertEquals(0, getContainerCluster("default").serviceAliases().size());
         assertEquals(0, getContainerCluster("default").endpointAliases().size());
@@ -532,7 +532,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                         .multitenant(true)
                         .hostedVespa(true)
                         .build())
-                .build(true));
+                .build());
         assertEquals(1, model.getHostSystem().getHosts().size());
     }
 
@@ -565,7 +565,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .properties(new DeployProperties.Builder()
                         .hostedVespa(true)
                         .build())
-                .build(true));
+                .build());
 
         AbstractConfigProducerRoot modelRoot = model.getRoot();
         VipStatusConfig vipStatusConfig = modelRoot.getConfig(VipStatusConfig.class, "jdisc/component/status.html-status-handler");
@@ -593,7 +593,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .properties(new DeployProperties.Builder().build())
-                .build(true));
+                .build());
 
         String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
 

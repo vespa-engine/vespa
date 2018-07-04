@@ -6,6 +6,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ValidationParameters;
+import com.yahoo.config.model.api.ValidationParameters.CheckRouting;
 import com.yahoo.config.model.application.provider.SchemaValidators;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -38,12 +40,12 @@ public class VespaModelCreatorWithMockPkg {
     }
 
     public VespaModel create() {
-        DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).build(true);
+        DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).build();
         return create(true, deployState);
     }
 
     public VespaModel create(DeployState.Builder deployStateBuilder) {
-        return create(true, deployStateBuilder.applicationPackage(appPkg).build(true));
+        return create(true, deployStateBuilder.applicationPackage(appPkg).build());
     }
 
     public VespaModel create(boolean validate, DeployState deployState) {
@@ -72,7 +74,8 @@ public class VespaModelCreatorWithMockPkg {
                 // Validate, but without checking configSources or routing (routing
                 // is constructed in a special way and cannot always be validated in
                 // this step for unit tests)
-                configChangeActions = Validation.validate(model, false, false, deployState);
+                ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
+                configChangeActions = Validation.validate(model, validationParameters, deployState);
             }
             return model;
         } catch (Exception e) {

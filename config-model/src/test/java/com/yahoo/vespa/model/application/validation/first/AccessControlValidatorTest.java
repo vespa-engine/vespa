@@ -144,7 +144,7 @@ public class AccessControlValidatorTest  {
                 .properties(new DeployProperties.Builder()
                                     .hostedVespa(true)
                                     .build());
-        final DeployState deployState = builder.build(true);
+        final DeployState deployState = builder.build();
 
         assertTrue("Test must emulate a hosted deployment.", deployState.isHosted());
         assertEquals("Test must emulate a prod environment.", prod, deployState.zone().environment());

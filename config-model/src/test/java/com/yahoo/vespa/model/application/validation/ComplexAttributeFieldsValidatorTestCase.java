@@ -3,6 +3,8 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ValidationParameters;
+import com.yahoo.config.model.api.ValidationParameters.CheckRouting;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
@@ -49,7 +51,8 @@ public class ComplexAttributeFieldsValidatorTestCase {
     private static void createModelAndValidate(String searchDefinition) throws IOException, SAXException {
         DeployState deployState = createDeployState(servicesXml(), searchDefinition);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        Validation.validate(model, false, false, deployState);
+        ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
+        Validation.validate(model, validationParameters, deployState);
     }
 
     private static DeployState createDeployState(String servicesXml, String searchDefinition) {
@@ -57,7 +60,7 @@ public class ComplexAttributeFieldsValidatorTestCase {
                 .withServices(servicesXml)
                 .withSearchDefinition(searchDefinition)
                 .build();
-        return new DeployState.Builder().applicationPackage(app).build(true);
+        return new DeployState.Builder().applicationPackage(app).build();
     }
 
     private static String servicesXml() {

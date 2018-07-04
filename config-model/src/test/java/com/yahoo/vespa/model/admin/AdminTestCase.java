@@ -161,7 +161,7 @@ public class AdminTestCase {
                                                            .instanceName("bim")
                                                            .build())
                                     .build())
-                .build(true);
+                .build();
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig config = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
@@ -293,7 +293,7 @@ public class AdminTestCase {
                                         applicationName("foo").instanceName("bim")
                                                       .build())
                                 .build())
-                .build(true);
+                .build();
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig sentinelConfig = root.getConfig(SentinelConfig.class, "hosts/" + localhost);

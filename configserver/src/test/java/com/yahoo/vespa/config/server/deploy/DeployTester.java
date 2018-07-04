@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -259,7 +260,7 @@ public class DeployTester {
             try {
                 Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
                 ApplicationPackage application = new MockApplicationPackage.Builder().withEmptyHosts().withEmptyServices().build();
-                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(now).build(true);
+                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(now).build();
                 return new VespaModel(deployState);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -267,8 +268,8 @@ public class DeployTester {
         }
 
         @Override
-        public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
-            if ( ! ignoreValidationErrors)
+        public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
+            if ( ! validationParameters.ignoreValidationErrors())
                 throw new IllegalArgumentException("Validation fails");
             return new ModelCreateResult(createModel(modelContext), Collections.emptyList());
         }
@@ -303,8 +304,8 @@ public class DeployTester {
         }
 
         @Override
-        public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
-            ModelCreateResult result = wrapped.createAndValidateModel(modelContext, ignoreValidationErrors);
+        public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
+            ModelCreateResult result = wrapped.createAndValidateModel(modelContext, validationParameters);
             creationCount++;
             return result;
         }

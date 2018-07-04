@@ -80,7 +80,7 @@ public class TestDriver {
      * @return a producer root capable of answering getConfig requests.
      */
     public TestRoot buildModel(ApplicationPackage applicationPackage) {
-        return buildModel(new DeployState.Builder().applicationPackage(applicationPackage).build(true));
+        return buildModel(new DeployState.Builder().applicationPackage(applicationPackage).build());
     }
 
     /**

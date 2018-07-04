@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
@@ -70,11 +71,11 @@ public class DeployState implements ConfigDefinitionStore {
     private final HostProvisioner provisioner;
 
     public static DeployState createTestState() {
-        return new Builder().build(true);
+        return new Builder().build();
     }
 
     public static DeployState createTestState(ApplicationPackage applicationPackage) {
-        return new Builder().applicationPackage(applicationPackage).build(true);
+        return new Builder().applicationPackage(applicationPackage).build();
     }
 
     private DeployState(ApplicationPackage applicationPackage, SearchDocumentModel searchDocumentModel, RankProfileRegistry rankProfileRegistry,
@@ -227,7 +228,6 @@ public class DeployState implements ConfigDefinitionStore {
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
-        private boolean isFirstTimeDeployment = false;
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -289,11 +289,15 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public DeployState build(boolean validate) {
+        public DeployState build() {
+            return build(new ValidationParameters());
+        }
+
+        public DeployState build(ValidationParameters validationParameters) {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
             QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
-            SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles, validate);
+            SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles, validationParameters);
             return new DeployState(applicationPackage, searchDocumentModel, rankProfileRegistry, fileRegistry, logger, hostProvisioner,
                                    properties, permanentApplicationPackage, configDefinitionRepo, previousModel, rotations,
                                    zone, queryProfiles, semanticRules, now, wantedNodeVespaVersion);
@@ -302,7 +306,7 @@ public class DeployState implements ConfigDefinitionStore {
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
                                                               DeployLogger logger,
                                                               QueryProfiles queryProfiles,
-                                                              boolean validate) {
+                                                              ValidationParameters validationParameters) {
             Collection<NamedReader> readers = applicationPackage.getSearchDefinitions();
             Map<String, String> names = new LinkedHashMap<>();
             SearchBuilder builder = new SearchBuilder(applicationPackage, rankProfileRegistry, queryProfiles.getRegistry());
@@ -325,7 +329,7 @@ public class DeployState implements ConfigDefinitionStore {
                     closeIgnoreException(reader.getReader());
                 }
             }
-            builder.build(validate, logger);
+            builder.build(! validationParameters.ignoreValidationErrors(), logger);
             return SearchDocumentModel.fromBuilderAndNames(builder, names);
         }
 

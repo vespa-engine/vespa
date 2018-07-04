@@ -1523,7 +1523,7 @@ public class ModelProvisioningTest {
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
         DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).
                 properties((new DeployProperties.Builder()).multitenant(multitenant).build()).
-                build(true);
+                build();
         return modelCreatorWithMockPkg.create(false, deployState);
     }
 
