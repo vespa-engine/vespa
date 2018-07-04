@@ -284,13 +284,13 @@ public final class ConfiguredApplication implements Application {
         startShutdownDeadlineExecutor();
         shutdownReconfigurerThread();
 
-        configurer.shutdown(new Deconstructor(false));
-
         for (ServerProvider server : Container.get().getServerProviderRegistry().allComponents()) {
             if (startedServers.contains(server)) {
                 closeServer(server);
             }
         }
+
+        configurer.shutdown(new Deconstructor(false));
         Container.get().shutdown();
     }
 

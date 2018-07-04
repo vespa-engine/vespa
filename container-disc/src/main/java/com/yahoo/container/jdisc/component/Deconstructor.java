@@ -45,7 +45,7 @@ public class Deconstructor implements ComponentDeconstructor {
         } else if (component instanceof Provider) {
             // TODO Providers should most likely be deconstructed similarily to AbstractComponent
             log.info("Starting deconstruction of provider " + component);
-            ((Provider)component).deconstruct();
+            ((Provider<?>)component).deconstruct();
             log.info("Finished deconstruction of provider " + component);
         } else if (component instanceof SharedResource) {
             log.info("Releasing container reference to resource " + component);
