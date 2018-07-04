@@ -427,7 +427,6 @@
       {
          var tmp = document.createElement("DIV");
          tmp.innerHTML = html
-         console.log(tmp)
          for (var i = 0; i < tmp.children.length; i++){
            tmp.children[i].classList = [];
          }
@@ -932,6 +931,7 @@
         var object = document.createElement("object");
         object.data = "/querybuilder/_includes/search-api-reference.html";
         object.type ="text/html";
+        object.style = "visibility: hidden; height: 1px; width: 200px;"
         div.appendChild(object);
         setTimeout(function(){
           searchApiReference = object.contentDocument;
