@@ -7,18 +7,21 @@ import com.yahoo.application.container.handler.Response;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.container.http.filter.FilterChainRepository;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
-import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.ComparisonFailure;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.CharacterCodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -65,26 +68,31 @@ public class ContainerTester {
         computeVersionStatus();
     }
 
-    public void assertResponse(Supplier<Request> request, File responseFile) throws IOException {
+    public void assertResponse(Supplier<Request> request, File responseFile) {
         assertResponse(request.get(), responseFile);
     }
 
-    public void assertResponse(Request request, File responseFile) throws IOException {
+    public void assertResponse(Request request, File responseFile) {
         assertResponse(request, responseFile, 200);
     }
 
-    public void assertResponse(Supplier<Request> request, File responseFile, int expectedStatusCode) throws IOException {
+    public void assertResponse(Supplier<Request> request, File responseFile, int expectedStatusCode) {
         assertResponse(request.get(), responseFile, expectedStatusCode);
     }
 
-    public void assertResponse(Request request, File responseFile, int expectedStatusCode) throws IOException {
-        String expectedResponse = IOUtils.readFile(new File(responseFilePath + responseFile.toString()));
+    public void assertResponse(Request request, File responseFile, int expectedStatusCode) {
+        String expectedResponse = readTestFile(responseFile.toString());
         expectedResponse = include(expectedResponse);
         expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
-        String responseString = response.getBodyAsString();
+        String responseString;
+        try {
+            responseString = response.getBodyAsString();
+        } catch (CharacterCodingException e) {
+            throw new UncheckedIOException(e);
+        }
         if (expectedResponse.contains("(ignore)")) {
             // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
             // until the first stop character
@@ -141,7 +149,7 @@ public class ContainerTester {
     }
 
     /** Replaces @include(localFile) with the content of the file */
-    private String include(String response) throws IOException {
+    private String include(String response) {
         // Please don't look at this code
         int includeIndex = response.indexOf("@include(");
         if (includeIndex < 0) return response;
@@ -149,14 +157,22 @@ public class ContainerTester {
         String rest = response.substring(includeIndex + "@include(".length());
         int filenameEnd = rest.indexOf(")");
         String includeFileName = rest.substring(0, filenameEnd);
-        String includedContent = IOUtils.readFile(new File(responseFilePath + includeFileName));
+        String includedContent = readTestFile(includeFileName);
         includedContent = include(includedContent);
         String postFix = rest.substring(filenameEnd + 1);
         postFix = include(postFix);
         return prefix + includedContent + postFix;
     }
 
-    static class FilterResult {
+    private String readTestFile(String name) {
+        try {
+            return new String(Files.readAllBytes(Paths.get(responseFilePath, name)));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static class FilterResult {
         final Request request;
         final Response response;
 
@@ -165,5 +181,6 @@ public class ContainerTester {
             this.response = response;
         }
     }
+
 }
     
