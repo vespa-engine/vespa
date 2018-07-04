@@ -144,7 +144,7 @@ public class AthenzPrincipalFilterTest {
     }
 
     private static void assertUnauthorized(ResponseHandlerMock responseHandler, String expectedMessageSubstring) {
-        assertNotNull(responseHandler.response);;
+        assertNotNull(responseHandler.response);
         assertEquals(UNAUTHORIZED, responseHandler.response.getStatus());
         assertTrue(responseHandler.getResponseContent().contains(expectedMessageSubstring));
     }

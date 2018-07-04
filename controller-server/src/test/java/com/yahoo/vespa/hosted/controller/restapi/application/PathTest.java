@@ -15,12 +15,12 @@ public class PathTest {
     
     @Test
     public void testPath() {
-        assertFalse(new Path("").matches("/a/{foo}/bar/{b}"));;
-        assertFalse(new Path("///").matches("/a/{foo}/bar/{b}"));;
-        assertFalse(new Path("///foo").matches("/a/{foo}/bar/{b}"));;
-        assertFalse(new Path("///bar/").matches("/a/{foo}/bar/{b}"));;
+        assertFalse(new Path("").matches("/a/{foo}/bar/{b}"));
+        assertFalse(new Path("///").matches("/a/{foo}/bar/{b}"));
+        assertFalse(new Path("///foo").matches("/a/{foo}/bar/{b}"));
+        assertFalse(new Path("///bar/").matches("/a/{foo}/bar/{b}"));
         Path path = new Path("/a/1/bar/fuz");
-        assertTrue(path.matches("/a/{foo}/bar/{b}"));;
+        assertTrue(path.matches("/a/{foo}/bar/{b}"));
         assertEquals("1", path.get("foo"));
         assertEquals("fuz", path.get("b"));
     }
