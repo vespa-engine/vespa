@@ -14,6 +14,7 @@ import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.HttpConnection;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletInputStream;
@@ -45,7 +46,7 @@ class HttpRequestDispatch {
 
     private final JDiscContext jDiscContext;
     private final AsyncContext async;
-    private final HttpServletRequest servletRequest;
+    private final Request jettyRequest;
 
     private final ServletResponseController servletResponseController;
     private final RequestHandler requestHandler;
@@ -60,9 +61,8 @@ class HttpRequestDispatch {
 
         requestHandler = newRequestHandler(jDiscContext, accessLogEntry, servletRequest);
 
-        this.metricReporter = new MetricReporter(jDiscContext.metric, metricContext,
-                ((org.eclipse.jetty.server.Request) servletRequest).getTimeStamp());
-        this.servletRequest = servletRequest;
+        this.jettyRequest = (Request) servletRequest;
+        this.metricReporter = new MetricReporter(jDiscContext.metric, metricContext, jettyRequest.getTimeStamp());
         honourMaxKeepAliveRequests();
         this.servletResponseController = new ServletResponseController(
                 servletRequest,
@@ -73,6 +73,7 @@ class HttpRequestDispatch {
 
         this.async = servletRequest.startAsync();
         async.setTimeout(0);
+        metricReporter.uriLength(jettyRequest.getOriginalURI().length());
     }
 
     public void dispatch() throws IOException {
@@ -102,7 +103,7 @@ class HttpRequestDispatch {
 
     private void honourMaxKeepAliveRequests() {
         if (jDiscContext.serverConfig.maxKeepAliveRequests() > 0) {
-            HttpConnection connection = getConnection(servletRequest);
+            HttpConnection connection = getConnection(jettyRequest);
             if (connection.getMessagesIn() >= jDiscContext.serverConfig.maxKeepAliveRequests()) {
                 connection.getGenerator().setPersistent(false);
             }
@@ -123,15 +124,16 @@ class HttpRequestDispatch {
             }
 
             boolean reportedError = false;
+            parent.metricReporter.contentSize((int) parent.jettyRequest.getContentRead());
 
             if (error != null) {
                 if (error instanceof CompletionException && error.getCause() instanceof EofException) {
                     log.log(Level.FINE,
                             error,
-                            () -> "Network connection was unexpectedly terminated: " + parent.servletRequest.getRequestURI());
+                            () -> "Network connection was unexpectedly terminated: " + parent.jettyRequest.getRequestURI());
                     parent.metricReporter.prematurelyClosed();
                 } else if (!(error instanceof OverloadException || error instanceof BindingNotFoundException)) {
-                    log.log(Level.WARNING, "Request failed: " + parent.servletRequest.getRequestURI(), error);
+                    log.log(Level.WARNING, "Request failed: " + parent.jettyRequest.getRequestURI(), error);
                 }
                 reportedError = true;
                 parent.metricReporter.failedResponse();
@@ -141,7 +143,7 @@ class HttpRequestDispatch {
 
             try {
                 parent.async.complete();
-                log.finest(() -> "Request completed successfully: " + parent.servletRequest.getRequestURI());
+                log.finest(() -> "Request completed successfully: " + parent.jettyRequest.getRequestURI());
             } catch (Throwable throwable) {
                 Level level = reportedError ? Level.FINE: Level.WARNING;
                 log.log(level, "async.complete failed", throwable);
@@ -151,15 +153,15 @@ class HttpRequestDispatch {
 
     @SuppressWarnings("try")
     private ServletRequestReader handleRequest() throws IOException {
-        HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container, servletRequest);
+        HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container, jettyRequest);
         ContentChannel requestContentChannel;
 
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
-            HttpRequestFactory.copyHeaders(servletRequest, jdiscRequest);
+            HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
             requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler);
         }
 
-        ServletInputStream servletInputStream = servletRequest.getInputStream();
+        ServletInputStream servletInputStream = jettyRequest.getInputStream();
 
         ServletRequestReader servletRequestReader =
                 new ServletRequestReader(
@@ -182,7 +184,7 @@ class HttpRequestDispatch {
 
     ContentChannel handleRequestFilterResponse(Response response) {
         try {
-            servletRequest.getInputStream().close();
+            jettyRequest.getInputStream().close();
             ContentChannel responseContentChannel = servletResponseController.responseHandler.handleResponse(response);
             servletResponseController.finishedFuture().whenComplete(completeRequestCallback);
             return responseContentChannel;

@@ -85,4 +85,12 @@ public class MetricReporter {
     private long getRequestLatency() {
         return System.currentTimeMillis() - requestStartTime;
     }
+
+    public void uriLength(int length) {
+        metric.set(Metrics.URI_LENGTH, length, context);
+    }
+
+    public void contentSize(int size) {
+        metric.set(Metrics.CONTENT_SIZE, size, context);
+    }
 }

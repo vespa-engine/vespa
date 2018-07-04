@@ -106,6 +106,9 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         String STARTED_MILLIS = "serverStartedMillis";
         @Deprecated String MANHATTAN_STARTED_MILLIS = "proc.uptime";
+
+        String URI_LENGTH = "jdisc.http.request.uri_length";
+        String CONTENT_SIZE = "jdisc.http.request.content_size";
     }
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
