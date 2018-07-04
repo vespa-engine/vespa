@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.statuspage;
 
+import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -36,8 +38,8 @@ public class StatusPageClient {
         this.key = Objects.requireNonNull(key, "key cannot be null");
     }
 
-    /** GET given page and return response body */
-    public byte[] get(String page, Optional<String> since) {
+    /** GET given page and return response body as slime */
+    public Slime get(String page, Optional<String> since) {
         HttpGet get = new HttpGet(pageUrl(page, since));
         try (CloseableHttpClient client = client()) {
             try (CloseableHttpResponse response = client.execute(get)) {
@@ -45,7 +47,8 @@ public class StatusPageClient {
                     throw new IllegalArgumentException("Received status " + response.getStatusLine().getStatusCode() +
                                                        " from StatusPage");
                 }
-                return EntityUtils.toByteArray(response.getEntity());
+                byte[] body = EntityUtils.toByteArray(response.getEntity());
+                return SlimeUtils.jsonToSlime(body);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
