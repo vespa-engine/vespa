@@ -6,13 +6,13 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
+import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.statuspage.config.StatuspageConfig;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -60,28 +60,8 @@ public class StatusPageProxyHandler extends LoggingRequestHandler {
         }
         StatusPageClient client = StatusPageClient.create(apiUrl, secretStore.getSecret(secretKey));
         Optional<String> since = Optional.ofNullable(request.getProperty("since"));
-        byte[] response = client.get(path.get("page"), since);
-        return new ByteArrayHttpResponse(response);
-    }
-
-    private static class ByteArrayHttpResponse extends HttpResponse {
-
-        private final byte[] data;
-
-        public ByteArrayHttpResponse(byte[] data) {
-            super(200);
-            this.data = data;
-        }
-
-        @Override
-        public void render(OutputStream out) throws IOException {
-            out.write(data);
-        }
-
-        @Override
-        public String getContentType() {
-            return "application/json";
-        }
+        Slime statusPageResponse = client.get(path.get("page"), since);
+        return new SlimeJsonResponse(statusPageResponse);
     }
 
 }
