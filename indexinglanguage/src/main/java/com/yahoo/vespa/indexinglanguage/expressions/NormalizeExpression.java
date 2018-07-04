@@ -8,7 +8,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Transformer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class NormalizeExpression extends Expression {
 

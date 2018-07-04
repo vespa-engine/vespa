@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ForEachExpression extends CompositeExpression {
 

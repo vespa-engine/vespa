@@ -19,7 +19,7 @@ import java.util.Map;
  * <p>The usage pattern of the Response is similar to that of the Request in that the {@link ResponseHandler} returns a
  * {@link ContentChannel} into which to write the Response content.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @see Request
  * @see ResponseHandler
  */

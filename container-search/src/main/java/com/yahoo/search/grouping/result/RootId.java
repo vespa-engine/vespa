@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.result;
 /**
  * This class is used in {@link RootGroup} instances.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RootId extends GroupId {
 

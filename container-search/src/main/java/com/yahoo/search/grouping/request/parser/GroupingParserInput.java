@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.request.parser;
 import com.yahoo.javacc.FastCharStream;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class GroupingParserInput extends FastCharStream implements CharStream {
 

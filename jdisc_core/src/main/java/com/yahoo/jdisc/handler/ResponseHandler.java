@@ -15,7 +15,7 @@ import com.yahoo.jdisc.service.ClientProvider;
  * corresponding Request, but rather leave that to the implementation of context-aware ResponseHandlers. By creating
  * light-weight ResponseHandlers on a per-Request basis, any necessary reference can be embedded within.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface ResponseHandler {
 

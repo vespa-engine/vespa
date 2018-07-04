@@ -51,7 +51,7 @@ import java.util.logging.Logger;
  * </ul>
  *
  * @author bratseth
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, ReplyHandler {
 

@@ -4,7 +4,7 @@ package com.yahoo.document.annotation;
 /**
  * This is a container for all {@link SpanTree}s constants used by built-in Vespa features.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings({ "UnusedDeclaration" })
 // TODO: Remove. This is the wrong place.

@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * This class holds the specifications of an application running message bus services. It is used for ensuring that a
  * {@link RoutingSpec} holds valid routing specifications.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ApplicationSpec {
 

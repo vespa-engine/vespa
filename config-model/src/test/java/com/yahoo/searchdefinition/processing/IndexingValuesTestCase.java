@@ -11,7 +11,7 @@ import static com.yahoo.searchdefinition.processing.AssertSearchBuilder.assertBu
 import static com.yahoo.searchdefinition.processing.AssertSearchBuilder.assertBuilds;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class IndexingValuesTestCase {
 

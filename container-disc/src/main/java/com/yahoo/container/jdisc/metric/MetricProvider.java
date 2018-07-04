@@ -10,7 +10,7 @@ import com.yahoo.jdisc.application.MetricConsumer;
  * MetricConsumerProvider}, any change to the consumer configuration will trigger reconfiguration of this component,
  * which in turn triggers reconfiguration of any component that depends on <tt>Metric</tt>.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public final class MetricProvider implements Provider<Metric> {
 

@@ -14,7 +14,7 @@ import java.util.Arrays;
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ErrorTestCase {
 

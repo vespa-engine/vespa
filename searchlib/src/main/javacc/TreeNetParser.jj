@@ -2,7 +2,7 @@
 /**
  * A best-effort treenet parser.
  *
- * @author  <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id: TreeNetParser.jj,v 1.1 2009-02-24 10:06:32 arnej Exp $
  */
 options {

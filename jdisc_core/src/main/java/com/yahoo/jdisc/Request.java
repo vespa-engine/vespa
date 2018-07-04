@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * <p>For every successfully dispatched Request (i.e. a non-null ContentChannel has been retrieved), there will be
  * exactly one {@link Response} returned to the provided {@link ResponseHandler}.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @see Container
  * @see Response
  */

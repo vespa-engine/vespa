@@ -7,7 +7,7 @@ import java.util.List;
  * This class represents a cat-function in a {@link GroupingExpression}. It evaluates to a byte array that equals the
  * concatenation of the binary result of all arguments in the order they were given to the constructor.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class CatFunction extends FunctionNode {
 

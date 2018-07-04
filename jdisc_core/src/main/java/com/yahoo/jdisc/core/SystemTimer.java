@@ -6,7 +6,7 @@ import com.yahoo.jdisc.Timer;
 /**
  * A timer which returns the System time
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SystemTimer implements Timer {
 

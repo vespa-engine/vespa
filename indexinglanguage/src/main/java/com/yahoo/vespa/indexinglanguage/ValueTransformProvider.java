@@ -7,7 +7,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 /**
  * Inserts a "newTransform()" before expressions that "requiresTransform()"
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class ValueTransformProvider extends ExpressionConverter {
 

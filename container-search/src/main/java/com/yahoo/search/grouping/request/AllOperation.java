@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This is a grouping operation that processes the input list as a whole, as opposed to {@link EachOperation} which
  * processes each element of that list separately.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class AllOperation extends GroupingOperation {
 

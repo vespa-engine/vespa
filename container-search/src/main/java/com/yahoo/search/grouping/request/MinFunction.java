@@ -7,7 +7,7 @@ import java.util.List;
  * This class represents a min-function in a {@link GroupingExpression}. It evaluates to a number that equals the
  * smallest of the results of all arguments.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MinFunction extends FunctionNode {
 

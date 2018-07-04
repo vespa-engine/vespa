@@ -8,7 +8,7 @@ import java.util.*;
  * to {@link AggregatorNode} and {@link DocumentValue} that operate on inputs), this expression type can be used at any
  * input level (see {@link GroupingExpression#resolveLevel(int)}).
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class FunctionNode extends GroupingExpression implements Iterable<GroupingExpression> {
 

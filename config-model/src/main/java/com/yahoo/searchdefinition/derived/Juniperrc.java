@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * Generated juniperrc-config for controlling juniper.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
 

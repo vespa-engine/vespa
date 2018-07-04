@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents an xor-function in a {@link GroupingExpression}. It evaluates to a long that equals the xor of
  * 'width' bits over the binary representation of the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class XorBitFunction extends FunctionNode {
 

@@ -10,7 +10,7 @@ package com.yahoo.search.grouping.result;
  * The {@link #toString()} method of this class generates a URI-compatible string on the form
  * "group:&lt;typeName&gt;:&lt;subclassSpecific&gt;".
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class GroupId {
 

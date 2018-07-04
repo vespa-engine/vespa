@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * Converts all accented characters into their de-accented counterparts followed by their combining diacritics, then
  * strips off the diacritics using a regex.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class SimpleTransformer implements Transformer {
 

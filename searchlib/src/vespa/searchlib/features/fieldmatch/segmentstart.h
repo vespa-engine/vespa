@@ -17,7 +17,7 @@ namespace fieldmatch {
  * starting point (skipI and previousJ).</p>
  *
  * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class SegmentStart {

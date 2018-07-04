@@ -8,7 +8,7 @@ import com.yahoo.jdisc.application.ContainerActivator;
 import com.yahoo.jdisc.service.CurrentContainer;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ApplicationH extends AbstractApplication {
 

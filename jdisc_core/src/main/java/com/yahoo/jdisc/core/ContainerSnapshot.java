@@ -16,7 +16,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import java.util.Objects;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 class ContainerSnapshot extends AbstractResource implements Container {
 

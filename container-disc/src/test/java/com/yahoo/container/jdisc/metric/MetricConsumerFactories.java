@@ -8,7 +8,7 @@ import org.mockito.Mockito;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class MetricConsumerFactories {
 

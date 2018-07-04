@@ -12,7 +12,7 @@ import java.util.Map;
  * forwarded to all the underlying <tt>MetricConsumers</tt>. That is the responsibility of this class. Instances of this
  * class is created by the {@link MetricConsumerProvider} in those cases.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public final class ForwardingMetricConsumer implements MetricConsumer {
 

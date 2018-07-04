@@ -42,7 +42,7 @@ import com.yahoo.config.subscription.ConfigSubscriber;
  *
  * @author bratseth
  * @author Einar Rosenvinge
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class DocumentAccess {
 

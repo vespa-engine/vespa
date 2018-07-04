@@ -7,7 +7,7 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.container.QrSearchersConfig;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class IndexFactsFactory {
 

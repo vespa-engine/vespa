@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents an md5-function in a {@link GroupingExpression}. It evaluates to a long that equals the md5 of
  * the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Md5Function extends FunctionNode {
 

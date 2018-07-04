@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * A conditional branch of a ranking expression.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bratseth
  */
 public final class IfNode extends CompositeNode {

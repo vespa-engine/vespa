@@ -11,7 +11,7 @@ import com.yahoo.collections.Tuple2;
  * measured at a point in time. This metric value contains some additional information about the distribution
  * of this gauge value in the time interval this metric is for.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public final class GaugeMetric extends MetricValue {
 

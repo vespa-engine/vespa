@@ -8,7 +8,7 @@ import java.util.HashSet;
 /**
  * A set of bucket ids covered by a document selector.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class BucketSet extends HashSet<BucketId> {
 

@@ -6,7 +6,7 @@ import com.yahoo.document.datatypes.*;
 import com.yahoo.document.update.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings("rawtypes")
 public abstract class FieldUpdateHelper {

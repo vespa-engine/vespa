@@ -17,7 +17,7 @@ import java.util.Map;
  * of this class, you must 1) create a {@link BindingRepository}, 2) configure it using the {@link
  * BindingRepository#bind(String, Object)} method, and finally 3) call {@link BindingRepository#activate()}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class BindingSet<T> implements Iterable<Map.Entry<UriPattern, T>>  {
 

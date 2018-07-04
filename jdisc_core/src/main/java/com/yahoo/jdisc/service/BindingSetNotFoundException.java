@@ -10,7 +10,7 @@ import java.net.URI;
  * thrown by the {@link CurrentContainer#newReference(URI)} method when a BindingSet with the specified name does not
  * exist.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class BindingSetNotFoundException extends RuntimeException {
 

@@ -7,7 +7,7 @@ import com.yahoo.document.serialization.DocumentDeserializer;
 import java.nio.ByteBuffer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class GetDocumentReply extends DocumentAcceptedReply {
 

@@ -14,7 +14,7 @@ import com.yahoo.search.predicate.optimization.PredicateOptions;
 import com.yahoo.search.predicate.optimization.PredicateProcessor;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class OptimizePredicateExpression extends Expression {
 

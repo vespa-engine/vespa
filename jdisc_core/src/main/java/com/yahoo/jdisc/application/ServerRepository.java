@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  * This is a repository of {@link ServerProvider}s. An instance of this class is owned by the {@link ContainerBuilder},
  * and is used to configure the set of ServerProviders that eventually become part of the active {@link Container}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ServerRepository implements Iterable<ServerProvider> {
 

@@ -5,7 +5,7 @@ package com.yahoo.searchlib.expression;
  * This function is a request to calculate the MD5 of the result of its argument.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MD5BitFunctionNode extends UnaryBitFunctionNode {
 

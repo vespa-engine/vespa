@@ -7,7 +7,7 @@ import java.util.List;
  * This class represents an and-function in a {@link GroupingExpression}. It evaluates to a long that equals the result
  * of and'ing the results of all arguments together in the order they were given to the constructor.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class AndFunction extends FunctionNode {
 

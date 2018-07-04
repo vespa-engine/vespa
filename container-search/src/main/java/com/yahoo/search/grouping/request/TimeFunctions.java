@@ -6,7 +6,7 @@ package com.yahoo.search.grouping.request;
  * per-function factory methods, this class also contains a {@link #newInstance(com.yahoo.search.grouping.request.TimeFunctions.Type,
  * GroupingExpression)} method which is useful for runtime construction of grouping requests.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class TimeFunctions {
 

@@ -21,7 +21,7 @@ import static org.junit.Assert.fail;
 
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author Einar M R Rosenvinge
  */
 public class HeadersTestCase {

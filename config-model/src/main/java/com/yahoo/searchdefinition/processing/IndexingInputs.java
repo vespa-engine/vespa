@@ -18,7 +18,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * This processor modifies all indexing scripts so that they input the value of the owning field by default. It also
  * ensures that all fields used as input exist.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class IndexingInputs extends Processor {
 

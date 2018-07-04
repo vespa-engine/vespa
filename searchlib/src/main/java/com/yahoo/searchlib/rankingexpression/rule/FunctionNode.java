@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Invocation of a native function.
  *
- * @author simon
+ * @author Simon Thoresen Hult
  * @author bratseth
  */
 public final class FunctionNode extends CompositeNode {

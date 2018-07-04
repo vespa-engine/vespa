@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a minute-of-hour timestamp-function in a {@link GroupingExpression}. It evaluates to a long
  * that equals the minute of hour (0-59) of the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MinuteOfHourFunction extends FunctionNode {
 

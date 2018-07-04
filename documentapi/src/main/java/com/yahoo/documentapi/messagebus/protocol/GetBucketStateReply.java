@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * This is a reply to a {@link GetBucketStateMessage}. It contains the state of the bucket id requested by the message.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class GetBucketStateReply extends DocumentReply {
 

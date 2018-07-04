@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.core;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface BootstrapLoader {
 

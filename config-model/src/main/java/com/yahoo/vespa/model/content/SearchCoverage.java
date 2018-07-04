@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.content;
 import com.google.common.base.Preconditions;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class SearchCoverage {
 

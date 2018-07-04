@@ -4,7 +4,7 @@ package com.yahoo.messagebus;
 /**
  * This interface contains the reserved error codes that are used for errors that occur within the messagebus.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class ErrorCode {
 

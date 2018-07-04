@@ -14,7 +14,7 @@ import com.yahoo.messagebus.SourceSessionParams;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SharedSourceSession extends AbstractResource implements ClientSession, ReplyHandler {
 

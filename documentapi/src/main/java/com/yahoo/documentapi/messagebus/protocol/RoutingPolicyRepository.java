@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 class RoutingPolicyRepository {
 

@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * corresponding message. There are no error-replies defined, as errors can instead piggyback any reply by the {@link
  * #errors} member variable.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class Reply extends Routable {
 

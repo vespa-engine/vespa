@@ -5,7 +5,7 @@ package com.yahoo.jdisc.handler;
  * This class extends {@link UnsafeContentInputStream} and adds a finalizer to it that calls {@link #close()}. This
  * has a performance impact, but ensures that an unclosed stream does not prevent shutdown.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class ContentInputStream extends UnsafeContentInputStream {
 

@@ -5,7 +5,7 @@ package com.yahoo.messagebus;
  * To facilitate several configuration parameters to the {@link MessageBus#createDestinationSession(DestinationSessionParams)},
  * all parameters are held by this class. This class has reasonable default values for each parameter.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DestinationSessionParams {
 

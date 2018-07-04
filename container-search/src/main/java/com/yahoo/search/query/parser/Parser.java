@@ -6,7 +6,7 @@ import com.yahoo.search.query.QueryTree;
 /**
  * Defines the interface of a query parser. To construct an instance of this class, use the {@link ParserFactory}.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface Parser {
 

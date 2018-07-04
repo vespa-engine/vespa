@@ -4,7 +4,7 @@ package com.yahoo.messagebus.jdisc;
 import com.yahoo.jdisc.handler.CompletionHandler;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 enum IgnoredCompletionHandler implements CompletionHandler {
 

@@ -10,7 +10,7 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.geo.ZCurve;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ZCurveExpression extends Expression {
 

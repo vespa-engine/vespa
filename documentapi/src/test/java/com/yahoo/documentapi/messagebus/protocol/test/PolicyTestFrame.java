@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
  * This is a utility class to allow easier policy test cases. The most important reason to use this is to make sure that
  * each test uses a "clean" mbus and slobrok instance.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings("deprecation")
 public class PolicyTestFrame {

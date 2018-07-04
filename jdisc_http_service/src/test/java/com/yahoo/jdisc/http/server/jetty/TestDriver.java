@@ -19,7 +19,7 @@ import static com.google.inject.name.Names.named;
  * This class is based on the class by the same name in the jdisc_http_service module.
  * It provides functionality for setting up a jdisc container with an HTTP server and handlers.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  * @author bakksjo
  */
 public class TestDriver {

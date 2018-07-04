@@ -11,7 +11,7 @@ import java.time.Instant;
  * instance of this class into any component that needs to access time, instead of using
  * <code>System.currentTimeMillis()</code>.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @ImplementedBy(SystemTimer.class)
 public interface Timer {

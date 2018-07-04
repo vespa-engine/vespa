@@ -4,7 +4,7 @@ package com.yahoo.jrt.slobrok.api;
 /**
  * Defines an interface for the name server lookup.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface IMirror {
 

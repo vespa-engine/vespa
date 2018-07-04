@@ -5,7 +5,7 @@ package com.yahoo.searchlib.expression;
  * This function is an instruction to modulo the arguments in order.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ModuloFunctionNode extends NumericFunctionNode {
 

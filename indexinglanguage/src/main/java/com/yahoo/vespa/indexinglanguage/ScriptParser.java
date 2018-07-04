@@ -11,7 +11,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import com.yahoo.vespa.indexinglanguage.parser.TokenMgrError;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class ScriptParser {
 

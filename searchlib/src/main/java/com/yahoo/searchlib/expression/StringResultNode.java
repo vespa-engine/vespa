@@ -10,7 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
  * This result holds a string.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class StringResultNode extends SingleResultNode {
 

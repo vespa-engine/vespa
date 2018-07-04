@@ -4,7 +4,7 @@ package com.yahoo.language;
 import java.util.Locale;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class LocaleFactory {
 

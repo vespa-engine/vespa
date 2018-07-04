@@ -12,7 +12,7 @@ import com.yahoo.messagebus.test.SimpleProtocol;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RemoteServer {
 

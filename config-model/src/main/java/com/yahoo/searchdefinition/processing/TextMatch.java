@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class TextMatch extends Processor {
 

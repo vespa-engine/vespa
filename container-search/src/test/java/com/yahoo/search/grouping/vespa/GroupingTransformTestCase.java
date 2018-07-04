@@ -7,7 +7,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class GroupingTransformTestCase {
 

@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * This class owns a message that is being sent by message bus. Once a reply is received, the message is attached to it
  * and returned to the application. This also implements the discard policy of {@link RoutingNode}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SendProxy implements MessageHandler, ReplyHandler {
 

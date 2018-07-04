@@ -7,7 +7,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import java.nio.ByteBuffer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class NonWorkingContentChannel implements ContentChannel {
 

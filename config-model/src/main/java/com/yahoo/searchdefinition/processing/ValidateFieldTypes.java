@@ -19,7 +19,7 @@ import java.util.Map;
  * explicitly disregards whether a field is an index field, an attribute or a summary field. This is a requirement if we
  * hope to move to a model where index fields, attributes and summary fields share a common field class.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ValidateFieldTypes extends Processor {
 

@@ -13,7 +13,7 @@ import java.net.URI;
  * class will be thrown by the {@link CurrentContainer#newReference(URI)} method if it is called before a Container has
  * been activated, or after a <em>null</em> argument has been passed to {@link ContainerActivator#activateContainer(ContainerBuilder)}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class ContainerNotReadyException extends RuntimeException {
 

@@ -4,7 +4,7 @@ package com.yahoo.searchlib.treenet.rule;
 /**
  * Represents a condition which comparing two values
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ComparisonCondition extends Condition {
 

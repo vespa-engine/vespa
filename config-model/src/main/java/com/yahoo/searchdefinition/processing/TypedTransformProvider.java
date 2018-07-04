@@ -9,7 +9,7 @@ import com.yahoo.vespa.indexinglanguage.ValueTransformProvider;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class TypedTransformProvider extends ValueTransformProvider {
 

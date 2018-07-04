@@ -6,7 +6,7 @@ import java.util.Queue;
 
 /**
  * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class ScheduledQueue {
 

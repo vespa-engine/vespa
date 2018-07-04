@@ -12,7 +12,7 @@ import java.util.*;
  * <p>
  * This class contains the spec for a single routing table, which corresponds to exactly one protocol.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RoutingTableSpec {
 

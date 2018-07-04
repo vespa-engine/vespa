@@ -2,7 +2,7 @@
 package com.yahoo.metrics;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class AveragedLongValueMetric extends ValueMetric<Long> {
 

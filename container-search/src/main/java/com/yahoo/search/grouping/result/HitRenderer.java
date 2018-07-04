@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * This is a helper class for rendering grouping results.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class HitRenderer {
 

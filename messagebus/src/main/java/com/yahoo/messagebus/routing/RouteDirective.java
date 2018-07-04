@@ -5,7 +5,7 @@ package com.yahoo.messagebus.routing;
  * This class represents a route directive within a {@link Hop}'s selector. This will be replaced by the named route
  * when evaluated. If the route is not present in the running protocol's routing table, routing will fail.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RouteDirective implements HopDirective {
 

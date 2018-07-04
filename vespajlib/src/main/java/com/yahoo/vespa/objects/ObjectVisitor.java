@@ -6,7 +6,7 @@ package com.yahoo.vespa.objects;
  * overridden by subclasses. As an extension to this class, the visit.hpp file contains various versions of the visit
  * method that maps visitation of various types into invocations of the basic interface defined by this class.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class ObjectVisitor {
 

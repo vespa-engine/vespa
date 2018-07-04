@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a timestamp-formatter function in a {@link GroupingExpression}. It evaluates to a string on the
  * form "YYYY-MM-DD" of the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DateFunction extends FunctionNode {
 

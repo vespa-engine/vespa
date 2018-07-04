@@ -7,7 +7,7 @@ package com.yahoo.messagebus.routing;
  * com.yahoo.messagebus.Message}. The policy is passed to the message bus at creation time using the {@link
  * com.yahoo.messagebus.MessageBusParams#setRetryPolicy(RetryPolicy)} method.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface RetryPolicy {
 

@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class Main {
 

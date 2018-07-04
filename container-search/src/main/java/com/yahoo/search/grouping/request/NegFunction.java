@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a negate-function in a {@link GroupingExpression}. It evaluates to a number that equals the
  * negative of the results of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class NegFunction extends FunctionNode {
 

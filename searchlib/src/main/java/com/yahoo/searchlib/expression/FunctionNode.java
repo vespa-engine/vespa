@@ -9,7 +9,7 @@ import com.yahoo.vespa.objects.Serializer;
  * This abstract expression node represents a function to execute.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class FunctionNode extends ExpressionNode {
 

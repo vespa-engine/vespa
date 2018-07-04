@@ -25,7 +25,7 @@ import com.yahoo.language.simple.SimpleLinguistics;
  * for each thread.</p>
  *
  * @author Mathias Mølster Lidal
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bratseth
  */
 public interface Linguistics {

@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author havardpe
  * @author baldersheim
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class HitsAggregationResult extends AggregationResult {
 

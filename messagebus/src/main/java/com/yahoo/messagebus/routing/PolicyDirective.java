@@ -5,7 +5,7 @@ package com.yahoo.messagebus.routing;
  * This class represents a policy directive within a {@link Hop}'s selector. This means to create the named protocol
  * using the given parameter string, and the running that protocol within the context of this directive.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class PolicyDirective implements HopDirective {
 

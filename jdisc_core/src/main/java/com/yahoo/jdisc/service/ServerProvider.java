@@ -28,7 +28,7 @@ import java.net.URI;
  * <p>All implementations of this interface will need to have a {@link CurrentContainer} injected into its constructor
  * so that it is able to create and dispatch new {@link Request}s.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ServerProvider extends SharedResource {
 

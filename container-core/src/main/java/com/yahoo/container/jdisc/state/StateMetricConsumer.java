@@ -7,7 +7,7 @@ import com.yahoo.jdisc.application.MetricConsumer;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 final class StateMetricConsumer implements MetricConsumer {
 

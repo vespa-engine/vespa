@@ -11,7 +11,7 @@ import java.util.Date;
  * has the ability to trace information will have a predefined level attached to that information. If the level on the
  * information is lower or equal to the level set in the Trace object, the information will be traced.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Trace {
 

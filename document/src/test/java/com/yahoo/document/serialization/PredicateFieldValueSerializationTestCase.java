@@ -21,7 +21,7 @@ import static com.yahoo.document.serialization.SerializationTestUtils.serializeD
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class PredicateFieldValueSerializationTestCase {
 

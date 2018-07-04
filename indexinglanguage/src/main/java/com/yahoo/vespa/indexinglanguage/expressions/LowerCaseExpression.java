@@ -8,7 +8,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class LowerCaseExpression extends Expression {
 

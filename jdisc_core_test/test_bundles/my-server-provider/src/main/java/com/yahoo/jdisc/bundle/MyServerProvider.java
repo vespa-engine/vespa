@@ -9,7 +9,7 @@ import com.yahoo.jdisc.service.ServerProvider;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MyServerProvider extends AbstractResource implements ServerProvider {
 

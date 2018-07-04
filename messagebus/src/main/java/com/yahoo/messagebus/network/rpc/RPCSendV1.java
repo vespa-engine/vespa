@@ -25,7 +25,7 @@ import com.yahoo.text.Utf8Array;
 /**
  * Implements the request adapter for method "mbus.send1".
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RPCSendV1 extends RPCSend {
 

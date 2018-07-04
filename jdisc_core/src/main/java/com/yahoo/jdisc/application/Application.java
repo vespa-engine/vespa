@@ -11,7 +11,7 @@ import com.yahoo.jdisc.service.ServerProvider;
  * will always have its {@link #destroy()} method called, regardless of whether {@link #start()} or {@link #stop()}
  * threw any exceptions.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface Application {
 

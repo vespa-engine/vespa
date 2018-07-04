@@ -3,7 +3,7 @@
  * A system state parser.
  * When this file is changed, do "ant compileparser" to rebuild the parser.
  *
- * @author  <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id: StateParser.jj,v 1.7 2007-11-15 13:24:45 simon Exp $
  */
 options {

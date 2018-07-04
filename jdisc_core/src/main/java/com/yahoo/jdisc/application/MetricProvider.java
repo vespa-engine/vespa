@@ -6,7 +6,7 @@ import com.google.inject.Provider;
 import com.yahoo.jdisc.Metric;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class MetricProvider implements Provider<Metric> {
 

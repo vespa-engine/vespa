@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents a document summary in a {@link GroupingExpression}. It evaluates to the summary of the input
  * {@link com.yahoo.search.result.Hit} that corresponds to the named summary class.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class SummaryValue extends DocumentValue {
 

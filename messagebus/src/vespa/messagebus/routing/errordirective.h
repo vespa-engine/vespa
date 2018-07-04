@@ -9,7 +9,7 @@ namespace mbus {
  * This class represents an error directive within a {@link Hop}'s selector. This means to stop whatever is being
  * resolved, and instead return a reply containing a specified error.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class ErrorDirective : public IHopDirective {

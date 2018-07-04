@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * tasks. Tasks are enqueued using the synchronized {@link #enqueue(Task)}
  * method, and are run in the order they were enqueued.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Messenger implements Runnable {
 

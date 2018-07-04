@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.result;
  * This class is used in {@link Group} instances where the identifying expression evaluated to a {@link
  * com.yahoo.search.grouping.request.DoubleBucket}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DoubleBucketId extends BucketGroupId<Double> {
 

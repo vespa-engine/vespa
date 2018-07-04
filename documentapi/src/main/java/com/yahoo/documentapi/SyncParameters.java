@@ -8,7 +8,7 @@ import java.util.Optional;
  * Parameters for creating a synchronous session
  *
  * @author bjorncs
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class SyncParameters extends Parameters {
     private final Duration defaultTimeout;

@@ -16,7 +16,7 @@ import java.util.Set;
  * @see Request
  * @see Response
  * @author Einar M R Rosenvinge
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @NotThreadSafe
 @Beta

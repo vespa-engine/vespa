@@ -8,7 +8,7 @@ import com.yahoo.search.yql.YqlParser;
 /**
  * Implements a factory for {@link Parser}.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class ParserFactory {
 

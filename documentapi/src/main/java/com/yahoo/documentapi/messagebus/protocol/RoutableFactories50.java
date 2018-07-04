@@ -29,7 +29,7 @@ public abstract class RoutableFactories50 {
      * Implements the shared factory logic required for {@link DocumentMessage} objects, and it offers a more convenient
      * interface for implementing {@link RoutableFactory}.
      *
-     * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+     * @author Simon Thoresen Hult
      */
     public static abstract class DocumentMessageFactory extends AbstractRoutableFactory {
 
@@ -85,7 +85,7 @@ public abstract class RoutableFactories50 {
      * Implements the shared factory logic required for {@link DocumentReply} objects, and it offers a more convenient
      * interface for implementing {@link RoutableFactory}.
      *
-     * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+     * @author Simon Thoresen Hult
      */
     public static abstract class DocumentReplyFactory extends AbstractRoutableFactory {
 

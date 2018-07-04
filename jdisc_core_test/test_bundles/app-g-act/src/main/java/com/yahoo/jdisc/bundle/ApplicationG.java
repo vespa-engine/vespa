@@ -4,7 +4,7 @@ package com.yahoo.jdisc.bundle;
 import com.yahoo.jdisc.application.Application;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class ApplicationG implements Application {
 

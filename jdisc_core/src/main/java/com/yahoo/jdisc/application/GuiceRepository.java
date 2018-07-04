@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * This is a repository of {@link Module}s. An instance of this class is owned by the {@link ContainerBuilder}, and is
  * used to configure the set of Modules that eventually form the {@link Injector} of the active {@link Container}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class GuiceRepository implements Iterable<Module> {
 

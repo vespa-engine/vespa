@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.vespa;
 import com.yahoo.search.grouping.Continuation;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 abstract class EncodableContinuation extends Continuation {
 

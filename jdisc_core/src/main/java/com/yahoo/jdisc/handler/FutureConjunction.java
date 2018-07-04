@@ -15,7 +15,7 @@ import java.util.concurrent.*;
  * simply create an instance of it and add operands to it using the {@link #addOperand(ListenableFuture)} method.</p>
  * TODO: consider rewriting usage of FutureConjunction to use CompletableFuture instead.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class FutureConjunction implements ListenableFuture<Boolean> {
 

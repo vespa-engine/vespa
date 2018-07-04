@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * This policy implements the logic to select a subset of services that matches a slobrok pattern.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SubsetServicePolicy implements DocumentProtocolRoutingPolicy {
 

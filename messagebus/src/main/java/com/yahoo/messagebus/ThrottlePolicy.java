@@ -7,7 +7,7 @@ package com.yahoo.messagebus;
  * All messages accepted are passed through the {@link #processMessage(Message)} method, and the corresponding replies
  * are passed through the {@link #processReply(Reply)} method.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ThrottlePolicy {
 

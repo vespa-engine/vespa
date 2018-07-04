@@ -4,7 +4,7 @@ package com.yahoo.jdisc.http.filter;
 import com.yahoo.jdisc.handler.ResponseHandler;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface SecurityRequestFilter extends RequestFilterBase {
 

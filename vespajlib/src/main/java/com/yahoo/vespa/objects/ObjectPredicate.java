@@ -5,7 +5,7 @@ package com.yahoo.vespa.objects;
  * A predicate that is able to say either true or false when presented with a
  * generic object.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ObjectPredicate {
 

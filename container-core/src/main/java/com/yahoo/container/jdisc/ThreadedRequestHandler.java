@@ -37,7 +37,7 @@ import javax.annotation.concurrent.GuardedBy;
  * Note that this means that subclass handlers are synchronous - the request io can
  * continue after completion of the worker thread.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 

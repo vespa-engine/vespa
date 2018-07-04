@@ -5,7 +5,7 @@ import com.yahoo.vespa.model.content.SearchCoverage;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class DomSearchCoverageBuilder {
 
