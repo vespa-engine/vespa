@@ -26,12 +26,13 @@ import java.util.zip.ZipOutputStream;
  */
 public class ApplicationPackageBuilder {
 
-    private String upgradePolicy = null;
-    private Environment environment = Environment.prod;
-    private String globalServiceId = null;
     private final StringBuilder environmentBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
     private final StringBuilder blockChange = new StringBuilder();
+
+    private String upgradePolicy = null;
+    private Environment environment = Environment.prod;
+    private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
 
@@ -145,8 +146,7 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackage build() {
         ByteArrayOutputStream zip = new ByteArrayOutputStream();
-        ZipOutputStream out = new ZipOutputStream(zip);
-        try {
+        try (ZipOutputStream out = new ZipOutputStream(zip)) {
             out.putNextEntry(new ZipEntry("deployment.xml"));
             out.write(deploymentSpec());
             out.closeEntry();
@@ -158,10 +158,6 @@ public class ApplicationPackageBuilder {
             out.closeEntry();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } finally {
-            try {
-                out.close();
-            } catch (IOException ignored) {}
         }
         return new ApplicationPackage(zip.toByteArray());
     }
