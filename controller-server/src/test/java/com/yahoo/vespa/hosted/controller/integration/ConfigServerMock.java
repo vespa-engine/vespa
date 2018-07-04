@@ -46,8 +46,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<URI, Version> versions = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
+    private final Version initialVersion = new Version(6, 1, 0);
 
-    private Version initialVersion = new Version(6, 1, 0);
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
 

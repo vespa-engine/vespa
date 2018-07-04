@@ -12,14 +12,14 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.RegionId;
  */
 public class TestIdentities {
 
-    public static EnvironmentId environment = new EnvironmentId("dev");
+    public static final EnvironmentId environment = new EnvironmentId("dev");
 
-    public static RegionId region = new RegionId("us-east-1");
+    public static final RegionId region = new RegionId("us-east-1");
 
-    public static InstanceId instance = new InstanceId("default");
+    public static final InstanceId instance = new InstanceId("default");
 
-    public static Property property = new Property("property");
+    public static final Property property = new Property("property");
 
-    public static NToken userNToken = new NToken("dummy");
+    public static final NToken userNToken = new NToken("dummy");
 
 }
