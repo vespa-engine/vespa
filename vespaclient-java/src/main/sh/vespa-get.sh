@@ -74,7 +74,7 @@ export MALLOC_ARENA_MAX=1 #Does not need fast allocation
 exec java \
 -server -enableassertions \
 -XX:ThreadStackSize=512 \
--XX:MaxJavaStackTraceDepth=-1 \
+-XX:MaxJavaStackTraceDepth=1000000 \
 -Djava.awt.headless=true \
 -DVESPA_LOG_LEVEL="all -debug -spam -config -info -event" \
 -Xms128m -Xmx1024m $(getJavaOptionsIPV46) \
