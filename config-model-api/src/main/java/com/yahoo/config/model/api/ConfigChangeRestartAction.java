@@ -5,7 +5,6 @@ package com.yahoo.config.model.api;
  * Represents an action to restart services in order to handle a config change.
  *
  * @author geirst
- * @since 5.43
  */
 public interface ConfigChangeRestartAction extends ConfigChangeAction {
 

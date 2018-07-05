@@ -6,7 +6,7 @@ import java.util.Collection;
 /*
  * Contains information about a host and what services are running on it.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class HostInfo {
 

@@ -7,7 +7,6 @@ import java.util.List;
  * The result after creating and validating a Model.
  *
  * @author geirst
- * @since 5.39
  */
 public class ModelCreateResult {
 

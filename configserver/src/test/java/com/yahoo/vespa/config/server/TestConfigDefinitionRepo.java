@@ -11,8 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author lulf
- * @since 5.
+ * @author Ulf Lilleengen
  */
 public class TestConfigDefinitionRepo implements ConfigDefinitionRepo {
     private final Map<ConfigDefinitionKey, ConfigDefinition> repo = new LinkedHashMap<>();
@@ -27,4 +26,7 @@ public class TestConfigDefinitionRepo implements ConfigDefinitionRepo {
     public Map<ConfigDefinitionKey, ConfigDefinition> getConfigDefinitions() {
         return repo;
     }
+
+    @Override
+    public ConfigDefinition get(ConfigDefinitionKey key) { return null; }
 }

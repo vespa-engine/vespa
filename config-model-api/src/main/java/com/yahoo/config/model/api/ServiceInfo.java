@@ -9,8 +9,7 @@ import java.util.Collection;
 /**
  * Contains information about a service.
  *
- * @author lulf
- * @since 5.37
+ * @author Ulf Lilleengen
  */
 public class ServiceInfo {
     private final String serviceName;

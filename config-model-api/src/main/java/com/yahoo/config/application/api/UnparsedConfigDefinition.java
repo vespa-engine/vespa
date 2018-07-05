@@ -6,8 +6,7 @@ import com.yahoo.vespa.config.ConfigDefinition;
 /**
  * A config definition that has not been parsed.
  * 
- * @author lulf
- * @since 5.20
+ * @author Ulf Lilleengen
 */
 public interface UnparsedConfigDefinition {
 

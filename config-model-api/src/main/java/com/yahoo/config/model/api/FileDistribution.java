@@ -2,7 +2,6 @@
 package com.yahoo.config.model.api;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
 import java.util.Set;
@@ -22,18 +21,6 @@ public interface FileDistribution {
      * @param fileReferences set of file references to start downloading
      */
     void startDownload(String hostName, int port, Set<FileReference> fileReferences);
-
-    // TODO: Remove when 6.244 is oldest version in use
-    @Deprecated
-    static String getDefaultFileDBRoot() {
-        return Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution");
-    }
-
-    // TODO: Remove when 6.244 is oldest version in use
-    @Deprecated
-    static File getDefaultFileDBPath() {
-        return new File(getDefaultFileDBRoot());
-    }
 
     File getFileReferencesDir();
 

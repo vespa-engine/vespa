@@ -2,7 +2,7 @@
 package com.yahoo.config.model.api;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public interface ModelState {
 

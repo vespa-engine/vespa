@@ -5,8 +5,7 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public interface ConfigDefinitionStore {
     ConfigDefinition getConfigDefinition(ConfigDefinitionKey defKey);
