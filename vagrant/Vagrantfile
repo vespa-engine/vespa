@@ -47,7 +47,8 @@ Vagrant.configure("2") do |config|
         valgrind \
         sudo \
         firefox \
-        vim
+        vim \
+        emacs
     yum-builddep -y /vagrant/dist/vespa.spec
     echo -e "* soft nproc 409600\n* hard nproc 409600" > /etc/security/limits.d/99-nproc.conf
     echo -e "* soft nofile 262144\n* hard nofile 262144" > /etc/security/limits.d/99-nofile.conf
