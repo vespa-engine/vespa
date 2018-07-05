@@ -935,8 +935,10 @@
         div.appendChild(object);
         setTimeout(function(){
           searchApiReference = object.contentDocument;
-          div.removeChild(object);
-        }, 120);
+          setTimeout(function(){
+            div.removeChild(object);
+          }, 20);
+        }, 150);
       }
 
       function changeInformation(no,key){
@@ -944,9 +946,9 @@
         if (contains(hasChilds, key)){return "Add parameters under the parent ''" + getFullName(no,key) + "'"}
         var refId = getFullName(no,key)
         var ref = searchApiReference;
-        var tag = document.createElement('div');
-        tag.appendChild(ref.getElementById(refId).nextElementSibling);
-        var tabletext = stripMyHTML(tag.innerHTML);
+        //var tag = document.createElement('div');
+        //tag.appendChild(ref.getElementById(refId).nextElementSibling);
+        var tabletext = stripMyHTML(ref.getElementById(refId).nextElementSibling.outerHTML);
         return tabletext;
       }
 

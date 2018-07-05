@@ -19,7 +19,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Uri;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyJsonResponse;
-import com.yahoo.vespa.hosted.controller.restapi.Path;
+import com.yahoo.restapi.Path;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Optional;

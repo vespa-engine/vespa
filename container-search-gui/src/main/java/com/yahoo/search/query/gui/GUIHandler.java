@@ -1,22 +1,28 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.restapi.gui;
+package com.yahoo.search.query.gui;
 
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
+
+
+import com.yahoo.search.query.restapi.ErrorResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 
+/**
+ * Takes requests on Querybuilder
+ *
+ * @author  Henrik Høiness
+ */
 
 public class GUIHandler extends LoggingRequestHandler {
 
@@ -41,7 +47,7 @@ public class GUIHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        com.yahoo.vespa.hosted.controller.restapi.Path path = new com.yahoo.vespa.hosted.controller.restapi.Path(request.getUri().getPath());
+         com.yahoo.restapi.Path path = new com.yahoo.restapi.Path(request.getUri().getPath());
         if (path.matches("/querybuilder/")) {
             return new FileResponse("_includes/index.html");
         }
@@ -49,7 +55,7 @@ public class GUIHandler extends LoggingRequestHandler {
             return ErrorResponse.notFoundError("Nothing at " + path);
         }
         String filepath = path.getRest();
-        if (!isValidPath(GUIHandler.class.getClassLoader().getResource("static").getFile()+"/"+filepath)){
+        if (!isValidPath(GUIHandler.class.getClassLoader().getResource("gui").getFile()+"/"+filepath)){
             return ErrorResponse.notFoundError("Nothing at " + path);
         }
         return new FileResponse(filepath);
@@ -66,7 +72,7 @@ public class GUIHandler extends LoggingRequestHandler {
 
         public FileResponse(String relativePath) {
             super(200);
-            this.path = Paths.get(GUIHandler.class.getClassLoader().getResource("static").getFile(), relativePath);
+            this.path = Paths.get(GUIHandler.class.getClassLoader().getResource("gui").getFile(), relativePath);
         }
 
         @Override
@@ -77,7 +83,6 @@ public class GUIHandler extends LoggingRequestHandler {
 
         @Override
         public String getContentType() {
-            System.out.println("HELE PATH: "+path.toString());
             if (path.toString().endsWith(".css")) {
                 return "text/css";
             } else if (path.toString().endsWith(".js")) {

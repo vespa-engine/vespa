@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.Path;
+import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.yolean.Exceptions;
 

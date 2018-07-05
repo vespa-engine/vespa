@@ -1,17 +1,17 @@
-package com.yahoo.vespa.hosted.controller.restapi.gui;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.search.query.gui;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 
-
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class GUIHandlerTest {
@@ -25,12 +25,12 @@ public class GUIHandlerTest {
 
     @After
     public void stopContainer() {
-
+        /*
         try {
             Thread.sleep(120_000);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
         container.close();
     }
 
@@ -59,8 +59,8 @@ public class GUIHandlerTest {
 
     private void assertResponse(Request.Method method, String path, String expectedStartString, String expectedContentType, int expectedStatusCode) throws IOException {
         Response response = container.handleRequest(new Request("http://localhost:8080" + path, new byte[0], method));
-        assertEquals("Status code", expectedStatusCode, response.getStatus());
-        assertEquals(expectedContentType, response.getHeaders().getFirst("Content-Type"));
+        Assert.assertEquals("Status code", expectedStatusCode, response.getStatus());
+        Assert.assertEquals(expectedContentType, response.getHeaders().getFirst("Content-Type"));
         if(expectedStartString != null){
             assertTrue(response.getBodyAsString().startsWith(expectedStartString));
         }
@@ -68,7 +68,7 @@ public class GUIHandlerTest {
 
     private String servicesXml() {
         return "<jdisc version='1.0'>\n" +
-                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.gui.GUIHandler'>\n" +
+                "  <handler id='com.yahoo.search.query.gui.GUIHandler'>\n" +
                 "    <binding>http://*/querybuilder/*</binding>\n" +
                 "  </handler>\n" +
                 "  <http>\n" +
