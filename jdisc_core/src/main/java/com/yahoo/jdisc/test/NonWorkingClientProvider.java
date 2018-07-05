@@ -8,7 +8,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class NonWorkingClientProvider extends NoopSharedResource implements ClientProvider {
 

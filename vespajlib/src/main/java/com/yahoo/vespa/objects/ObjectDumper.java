@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * This is a concrete object visitor that will build up a structured human-readable string representation of an object.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ObjectDumper extends ObjectVisitor {
 

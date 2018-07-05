@@ -6,7 +6,7 @@ package com.yahoo.messagebus;
  * opposed to the {@link MessageHandler} which handles messages as they travel from the sender to the receiver, this
  * interface is intended for handling replies as they return from the receiver to the sender.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ReplyHandler {
 

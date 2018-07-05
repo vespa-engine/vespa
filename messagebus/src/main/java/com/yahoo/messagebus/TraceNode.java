@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * The most important feature to notice is the {@link #normalize()} method that will compact, sort and 'rootify' the
  * trace tree so that trees become well-formed (and can be compared for equality).
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class TraceNode implements Comparable<TraceNode> {
 

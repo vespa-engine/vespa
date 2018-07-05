@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a size-function in a {@link GroupingExpression}. It evaluates to a number that equals the
  * number of elements in the result of the argument (e.g. the number of elements in an array).
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SizeFunction extends FunctionNode {
 

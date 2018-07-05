@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * Builds a source from xml.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomSourceBuilder extends DomGenericTargetBuilder<Source> {
     DomSourceBuilder(Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {

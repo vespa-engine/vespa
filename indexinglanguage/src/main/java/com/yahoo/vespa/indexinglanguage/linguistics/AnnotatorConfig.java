@@ -6,7 +6,7 @@ import com.yahoo.language.process.StemMode;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class AnnotatorConfig implements Cloneable {
 

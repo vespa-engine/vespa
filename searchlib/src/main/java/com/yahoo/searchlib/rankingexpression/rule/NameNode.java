@@ -13,7 +13,7 @@ import java.util.Deque;
  * An opaque name in a ranking expression. This is used to represent names passed to the context
  * and interpreted by the given context in a way which is opaque to the ranking expressions.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 // TODO: This is achieved by ReferenceNode in almost all cases - remove this
 public final class NameNode extends ExpressionNode {

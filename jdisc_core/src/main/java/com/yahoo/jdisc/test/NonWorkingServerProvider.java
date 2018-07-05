@@ -5,7 +5,7 @@ import com.yahoo.jdisc.NoopSharedResource;
 import com.yahoo.jdisc.service.ServerProvider;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class NonWorkingServerProvider extends NoopSharedResource implements ServerProvider {
 

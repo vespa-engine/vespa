@@ -8,7 +8,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class SetHitCountsSearcher extends Searcher {
 

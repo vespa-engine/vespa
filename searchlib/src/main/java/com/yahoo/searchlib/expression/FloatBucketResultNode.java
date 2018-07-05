@@ -9,7 +9,7 @@ import com.yahoo.vespa.objects.Serializer;
  * This result holds a float value.
  *
  * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class FloatBucketResultNode extends BucketResultNode {
 

@@ -8,7 +8,7 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
  * This interface defines the necessary api for {@link Routing} to prepare and combine routing tables for all available
  * protocols.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface Protocol {
 

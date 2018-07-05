@@ -15,7 +15,7 @@ import java.util.*;
 
 /**
  * Config producer for the FederationSearcher.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FederationSearcher extends Searcher<FederationSearcherModel> implements FederationConfig.Producer {
 

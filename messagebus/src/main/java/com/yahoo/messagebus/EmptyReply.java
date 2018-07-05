@@ -8,7 +8,7 @@ import com.yahoo.text.Utf8String;
  * generate replies to events that occur within the messagebus, and since the messagebus by design knows nothing about
  * the messages that have been implemented by the users it requires a class such as this.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class EmptyReply extends Reply {
 

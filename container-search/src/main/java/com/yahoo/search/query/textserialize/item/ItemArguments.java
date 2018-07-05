@@ -8,7 +8,7 @@ import java.util.Map;
 import static com.yahoo.search.query.textserialize.item.ListUtil.firstInstanceOf;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ItemArguments {
     public final Map<?, ?> properties;

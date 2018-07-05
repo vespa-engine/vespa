@@ -5,7 +5,7 @@ package com.yahoo.search.grouping;
  * This exception is thrown by the {@link GroupingValidator} if it a {@link GroupingRequest} contains a reference to an
  * unavailable attribute.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings("serial")
 public class UnavailableAttributeException extends RuntimeException {

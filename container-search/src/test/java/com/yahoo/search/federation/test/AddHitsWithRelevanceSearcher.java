@@ -8,7 +8,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class AddHitsWithRelevanceSearcher extends Searcher {
     public static final int numHitsAdded = 5;

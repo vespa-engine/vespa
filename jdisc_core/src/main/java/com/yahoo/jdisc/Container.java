@@ -26,7 +26,7 @@ import java.net.URI;
  * <p>The only way to <u>create</u> a new instance of this class is to 1) create and configure a {@link
  * ContainerBuilder}, and 2) pass that to the {@link ContainerActivator#activateContainer(ContainerBuilder)} method.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface Container extends SharedResource, Timer {
 

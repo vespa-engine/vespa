@@ -18,7 +18,7 @@ import java.util.List;
  * This policy implements the necessary logic to communicate with an external Vespa application and resolve its list of
  * recipients using that other application's slobrok servers.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ExternPolicy implements DocumentProtocolRoutingPolicy {
 

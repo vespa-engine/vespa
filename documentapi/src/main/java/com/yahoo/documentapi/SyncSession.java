@@ -14,7 +14,7 @@ import java.time.Duration;
  * <p>A session for synchronous access to a document repository. This class
  * provides simple document access where throughput is not a concern.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bjorncs
  */
 public interface SyncSession extends Session {

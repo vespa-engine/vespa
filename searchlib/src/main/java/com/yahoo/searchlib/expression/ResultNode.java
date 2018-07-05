@@ -7,7 +7,7 @@ import com.yahoo.vespa.objects.Identifiable;
  * This abstract expression node represents the result value of execution.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class ResultNode extends Identifiable implements Comparable<ResultNode> {
 

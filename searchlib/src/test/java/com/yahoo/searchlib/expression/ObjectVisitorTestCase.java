@@ -9,7 +9,7 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ObjectVisitorTestCase {
 

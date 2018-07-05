@@ -12,7 +12,7 @@ namespace documentapi {
 /**
  * This policy implements the logic to prefer round robins that matches a slobrok pattern.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class RoundRobinPolicy : public mbus::IRoutingPolicy {

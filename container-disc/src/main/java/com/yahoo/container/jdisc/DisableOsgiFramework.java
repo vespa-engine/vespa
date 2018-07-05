@@ -9,7 +9,7 @@ import org.osgi.framework.BundleException;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class DisableOsgiFramework implements OsgiFramework {
     private final RestrictedBundleContext restrictedBundleContext;

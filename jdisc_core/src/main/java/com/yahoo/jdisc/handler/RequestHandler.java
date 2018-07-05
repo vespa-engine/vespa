@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * {@link ContainerBuilder}, and that builder must be {@link ContainerActivator#activateContainer(ContainerBuilder)
  * activated}.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface RequestHandler extends SharedResource {
 

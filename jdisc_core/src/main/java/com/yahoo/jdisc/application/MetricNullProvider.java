@@ -4,7 +4,7 @@ package com.yahoo.jdisc.application;
 import com.google.inject.Provider;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 class MetricNullProvider implements Provider<MetricConsumer> {
 

@@ -15,7 +15,7 @@ import java.util.Set;
 import static java.util.Collections.sort;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class ContainsSameElements<T> extends TypeSafeMatcher<Collection<? super T>> {
 

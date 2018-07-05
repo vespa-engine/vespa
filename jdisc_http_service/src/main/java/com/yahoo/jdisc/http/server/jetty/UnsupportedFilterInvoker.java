@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class UnsupportedFilterInvoker implements FilterInvoker {
     @Override

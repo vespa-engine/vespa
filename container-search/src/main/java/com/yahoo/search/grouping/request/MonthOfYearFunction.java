@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a month-of-year timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
  * equals the month of year (1-12) of the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MonthOfYearFunction extends FunctionNode {
 

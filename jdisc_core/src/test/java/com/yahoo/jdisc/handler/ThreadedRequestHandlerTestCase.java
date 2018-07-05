@@ -26,7 +26,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ThreadedRequestHandlerTestCase {
 

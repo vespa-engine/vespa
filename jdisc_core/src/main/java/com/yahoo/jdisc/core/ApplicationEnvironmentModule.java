@@ -13,7 +13,7 @@ import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 class ApplicationEnvironmentModule extends AbstractModule {
 

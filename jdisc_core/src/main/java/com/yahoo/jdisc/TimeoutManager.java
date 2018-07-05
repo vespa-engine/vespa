@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
  * handler is registered at the time where the target {@link RequestHandler} is called, the default timeout manager will
  * be injected.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public interface TimeoutManager {
 

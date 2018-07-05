@@ -74,7 +74,7 @@ context.put("one",1d);
 double result=expression.evaluate(context);
 </code></pre>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bratseth
  */
 public class RankingExpression implements Serializable {

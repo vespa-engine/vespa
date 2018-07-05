@@ -2,7 +2,7 @@
 package com.yahoo.filedistribution.fileacquirer;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FileReferenceDoesNotExistException extends RuntimeException {
 

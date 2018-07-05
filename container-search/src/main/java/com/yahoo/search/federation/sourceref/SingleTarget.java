@@ -7,7 +7,7 @@ import com.yahoo.processing.request.Properties;
 /**
  * TODO: What is this?
  *
-* @author tonytv
+* @author Tony Vaagenes
 */
 public class SingleTarget extends Target {
     private final SearchChainInvocationSpec searchChainInvocationSpec;

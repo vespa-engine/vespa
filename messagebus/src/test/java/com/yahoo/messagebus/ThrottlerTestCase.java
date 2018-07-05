@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ThrottlerTestCase {
 

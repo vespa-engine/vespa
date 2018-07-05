@@ -4,7 +4,7 @@ package com.yahoo.container.util;
 /**
  * TODO: What is this?
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 // TODO: Move to a a more appropriate package in vespajlib
 // TODO: Fix name

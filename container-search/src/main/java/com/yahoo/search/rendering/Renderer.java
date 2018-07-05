@@ -26,7 +26,7 @@ import java.nio.charset.CharsetEncoder;
  * <li>State mutated during rendering shall be initialized in the init method.</li>
  * </ol>
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 abstract public class Renderer extends com.yahoo.processing.rendering.Renderer<Result> {
 

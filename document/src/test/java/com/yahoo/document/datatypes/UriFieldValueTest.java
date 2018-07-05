@@ -8,7 +8,7 @@ import java.net.URI;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class UriFieldValueTest {
 

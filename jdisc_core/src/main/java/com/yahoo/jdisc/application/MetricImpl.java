@@ -8,7 +8,7 @@ import com.yahoo.jdisc.Metric;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 class MetricImpl implements Metric {
 

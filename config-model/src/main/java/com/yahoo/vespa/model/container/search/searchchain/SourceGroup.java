@@ -12,7 +12,7 @@ import java.util.Set;
  * A set of sources with the same name,
  * each associated with a different provider,
  * that fills the same role.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 final class SourceGroup {
     private final ComponentId id;

@@ -12,7 +12,7 @@ import org.w3c.dom.Element;
 import java.util.*;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  * Creates top level search chains(searchchain, provider) from xml.
  */

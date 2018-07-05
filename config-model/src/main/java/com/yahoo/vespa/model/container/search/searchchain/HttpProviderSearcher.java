@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
 
-* @author tonytv
+* @author Tony Vaagenes
 */
 public class HttpProviderSearcher extends Searcher<ChainedComponentModel> {
 

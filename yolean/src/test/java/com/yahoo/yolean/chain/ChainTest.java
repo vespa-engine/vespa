@@ -8,7 +8,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ChainTest {
 

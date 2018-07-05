@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for injecting jdisc container components into jaxrs resources and providers
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)

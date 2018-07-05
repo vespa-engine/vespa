@@ -10,7 +10,7 @@ import java.util.Set;
 import static com.yahoo.container.core.ChainsConfig.Components;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  *
  * Generates config for all the chained components.

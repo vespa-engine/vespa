@@ -17,7 +17,7 @@ import java.util.TreeMap;
 /**
  * A model of a container cluster.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ContainerModel extends ConfigModel {
 

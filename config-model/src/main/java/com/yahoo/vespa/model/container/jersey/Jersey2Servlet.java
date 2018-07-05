@@ -9,7 +9,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.Servlet;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Jersey2Servlet extends Servlet {
 

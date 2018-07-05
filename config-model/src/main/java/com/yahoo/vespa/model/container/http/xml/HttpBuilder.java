@@ -26,7 +26,7 @@ import java.util.Optional;
 import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> {

@@ -4,7 +4,7 @@ package com.yahoo.searchlib.treenet.rule;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Tree {
 

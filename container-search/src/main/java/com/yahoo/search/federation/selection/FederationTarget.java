@@ -13,7 +13,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * along with a timeout and
  * custom data reserved for use by the TargetSelector.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class FederationTarget<T> {
 

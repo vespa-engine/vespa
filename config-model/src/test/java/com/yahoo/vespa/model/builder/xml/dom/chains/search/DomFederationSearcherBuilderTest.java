@@ -21,7 +21,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Test of DomFederationSearcherBuilder.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomFederationSearcherBuilderTest extends DomBuilderTest {
 

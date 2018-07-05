@@ -9,7 +9,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
  * <p>This is a convenient parent class for {@link ClientProvider} with default implementations for all but the
  * essential {@link #handleRequest(Request, ResponseHandler)} method.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class AbstractClientProvider extends AbstractRequestHandler implements ClientProvider {
 

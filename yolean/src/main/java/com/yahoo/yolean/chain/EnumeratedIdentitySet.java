@@ -18,7 +18,7 @@ import java.util.TreeMap;
  * A set using identity comparison.
  * Keeps track of insertion order, which is available by calling insertionOrderedList.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class EnumeratedIdentitySet<T> implements Set<T> {
 

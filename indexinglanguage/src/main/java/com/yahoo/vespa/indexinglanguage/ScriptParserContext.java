@@ -7,7 +7,7 @@ import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.parser.CharStream;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ScriptParserContext {
 

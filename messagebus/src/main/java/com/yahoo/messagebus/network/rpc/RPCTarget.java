@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  * target. Instances of this class are returned by {@link RPCService}, and
  * cached by {@link RPCTargetPool}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RPCTarget implements RequestWaiter {
 

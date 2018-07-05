@@ -13,7 +13,7 @@ import java.util.Set;
 
 /**
  * Root config producer the whole chains model(contains chains and components).
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public class Chains<CHAIN extends Chain<?>>

@@ -11,7 +11,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class ConsoleLogFormatter {
 

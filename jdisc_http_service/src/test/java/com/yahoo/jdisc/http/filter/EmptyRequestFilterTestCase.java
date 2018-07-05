@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class EmptyRequestFilterTestCase {
 

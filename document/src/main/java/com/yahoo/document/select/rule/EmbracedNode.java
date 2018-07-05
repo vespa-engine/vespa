@@ -8,7 +8,7 @@ import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Visitor;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class EmbracedNode implements ExpressionNode {
 

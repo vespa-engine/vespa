@@ -8,7 +8,7 @@ import com.yahoo.messagebus.routing.RoutingNode;
  * This interface defines the necessary methods to process incoming and send outgoing RPC requests. The {@link
  * RPCNetwork} maintains a list of supported RPC signatures, and dispatches requests to the corresponding adapter.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface RPCSendAdapter {
 

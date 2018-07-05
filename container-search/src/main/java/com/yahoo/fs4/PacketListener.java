@@ -8,7 +8,7 @@ import com.yahoo.fs4.mplex.FS4Channel;
 /**
  * Interface for recieving notifications of packets sent or recieved.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface PacketListener {
     void packetSent(FS4Channel channel, BasicPacket packet, ByteBuffer serializedForm);

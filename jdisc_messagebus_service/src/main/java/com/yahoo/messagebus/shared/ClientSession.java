@@ -6,7 +6,7 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Result;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ClientSession extends SharedResource {
 

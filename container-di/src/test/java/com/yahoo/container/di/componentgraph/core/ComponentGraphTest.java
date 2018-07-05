@@ -47,7 +47,7 @@ import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  * @author ollivir
  */
 public class ComponentGraphTest {

@@ -6,7 +6,7 @@ package com.yahoo.search.grouping.request;
  * 'from' and 'to'. The range is inclusive-from and exclusive-to. All supported data types are represented as subclasses
  * of this.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class BucketValue extends GroupingExpression implements Comparable<BucketValue> {
 

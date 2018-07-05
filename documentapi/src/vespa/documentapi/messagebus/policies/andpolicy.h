@@ -13,7 +13,7 @@ namespace documentapi {
  * all configured recipients, or it can be configured using the policy parameter (i.e. a string following the name of
  * the policy). Note that configured recipients take precedence over recipients configured in the parameter string.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class ANDPolicy : public mbus::IRoutingPolicy {

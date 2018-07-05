@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.bundle.s;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class CertificateS {
 

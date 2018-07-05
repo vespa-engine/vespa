@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.parser;
 import com.yahoo.javacc.FastCharStream;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings("deprecation")
 public class SimpleCharStream extends FastCharStream implements com.yahoo.searchdefinition.parser.CharStream,

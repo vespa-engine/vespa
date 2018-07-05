@@ -11,7 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class ExpressionList<T extends Expression> extends CompositeExpression implements Iterable<T> {
 

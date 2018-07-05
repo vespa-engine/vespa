@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * <p>A session supporting sending new messages.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class SourceSession implements ReplyHandler, MessageBus.SendBlockedMessages {
 

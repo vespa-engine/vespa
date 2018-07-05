@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 import static com.yahoo.text.Lowercase.toLowerCase;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class UrlTokenizerTestCase {
 

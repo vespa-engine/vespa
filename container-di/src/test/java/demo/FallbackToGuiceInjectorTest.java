@@ -20,7 +20,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 @SuppressWarnings("unused")

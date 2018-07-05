@@ -4,7 +4,7 @@ package com.yahoo.messagebus;
 /**
  * This class defines the {@link Trace} levels used by message bus.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class TraceLevel {
 

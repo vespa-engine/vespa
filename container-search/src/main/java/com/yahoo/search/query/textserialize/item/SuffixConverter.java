@@ -4,7 +4,7 @@ package com.yahoo.search.query.textserialize.item;
 import com.yahoo.prelude.query.SuffixItem;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SuffixConverter extends WordConverter {
     @Override

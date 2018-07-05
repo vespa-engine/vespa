@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage.parser;
 import com.yahoo.javacc.FastCharStream;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class IndexingInput extends FastCharStream implements CharStream {
 

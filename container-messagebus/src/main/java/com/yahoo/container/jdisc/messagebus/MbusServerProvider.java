@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * TODO: Javadoc
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class MbusServerProvider implements Provider<MbusServer> {
     private static final Logger log = Logger.getLogger(MbusServerProvider.class.getName());

@@ -56,7 +56,7 @@ import static org.mockito.Mockito.times;
  *
  * @author bratseth
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ProcessingHandlerTestCase {
 

@@ -11,7 +11,7 @@ import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class TokenizeExpression extends Expression {
 

@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.function.Predicate;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class CloverChecker {
     private final Log log;

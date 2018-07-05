@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test of HexByteIterator
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class HexByteIteratorTestCase {
 

@@ -6,7 +6,7 @@ package com.yahoo.search.grouping.request;
  * this expression type can be used at any input level (see {@link GroupingExpression#resolveLevel(int)}). All supported
  * data types are represented as subclasses of this.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings("rawtypes")
 public abstract class ConstantValue<T extends Comparable> extends GroupingExpression {

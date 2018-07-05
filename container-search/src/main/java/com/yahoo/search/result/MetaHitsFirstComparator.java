@@ -7,7 +7,7 @@ import java.util.Comparator;
  * Ensures that meta hits are sorted before normal hits. All meta hits are
  * considered equal.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class MetaHitsFirstComparator extends ChainableComparator {
 

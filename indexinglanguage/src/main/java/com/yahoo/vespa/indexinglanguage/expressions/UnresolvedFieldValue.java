@@ -10,7 +10,7 @@ import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlStream;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class UnresolvedFieldValue extends FieldValue {
     private static class Factory extends PrimitiveDataType.Factory {

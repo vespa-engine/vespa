@@ -30,7 +30,7 @@ import static org.junit.Assert.assertThat;
 
 /**
  * Verifies the bundle jar file built and its manifest.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class BundleIT {
     private JarFile jarFile;

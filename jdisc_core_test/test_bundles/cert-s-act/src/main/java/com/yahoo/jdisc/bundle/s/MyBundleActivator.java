@@ -6,7 +6,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MyBundleActivator implements BundleActivator {
 

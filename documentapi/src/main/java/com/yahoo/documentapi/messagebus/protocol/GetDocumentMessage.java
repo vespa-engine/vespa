@@ -6,7 +6,7 @@ import com.yahoo.document.DocumentId;
 import java.util.Arrays;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class GetDocumentMessage extends DocumentMessage {
 

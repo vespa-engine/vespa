@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadFactory;
  * attach an arbitrary object to a Container, which will be available in the corresponding {@link
  * DeactivatedContainer}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ContainerBuilder {
 

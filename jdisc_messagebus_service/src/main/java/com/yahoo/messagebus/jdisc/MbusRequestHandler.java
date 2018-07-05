@@ -12,7 +12,7 @@ import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class MbusRequestHandler extends AbstractRequestHandler implements MessageHandler {
 

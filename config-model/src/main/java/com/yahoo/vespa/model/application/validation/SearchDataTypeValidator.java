@@ -15,7 +15,7 @@ import java.util.List;
  * This Validator iterates through all search cluster in the given VespaModel to make sure that there are no custom
  * structs defined in any of its search definitions.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SearchDataTypeValidator extends Validator {
 

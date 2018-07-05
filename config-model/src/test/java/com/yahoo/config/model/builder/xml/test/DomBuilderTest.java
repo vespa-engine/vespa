@@ -12,7 +12,7 @@ import org.w3c.dom.Element;
  * For an example,
  * @see com.yahoo.vespa.model.builder.xml.dom.chains.DependenciesBuilderTest
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 abstract public class DomBuilderTest {
 

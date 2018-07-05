@@ -5,7 +5,7 @@ package com.yahoo.messagebus.network;
  * This interface represents an abstract network service; i.e. somewhere to send messages. An instance of this is
  * retrieved by calling {@link Network#allocServiceAddress(com.yahoo.messagebus.routing.RoutingNode)}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ServiceAddress {
     // empty

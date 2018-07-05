@@ -11,7 +11,7 @@ import com.yahoo.jdisc.handler.RequestHandler;
  * {@link ContainerBuilder}, and that builder must be {@link ContainerActivator#activateContainer(ContainerBuilder)
  * activated}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ClientProvider extends RequestHandler {
 

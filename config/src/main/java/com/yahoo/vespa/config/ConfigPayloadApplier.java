@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  *
  * TODO: This can be refactored a lot, since many of the reflection methods are duplicated
  *
- * @author lulf, hmusum, tonyv
+ * @author lulf, hmusum, Tony Vaagenes
  * @since 5.1.6
  */
 public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {

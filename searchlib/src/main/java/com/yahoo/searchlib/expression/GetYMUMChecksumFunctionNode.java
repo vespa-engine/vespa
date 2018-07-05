@@ -9,7 +9,7 @@ import com.yahoo.vespa.objects.Serializer;
  * This node is a request to retrieve the YMUM checksum of a document.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class GetYMUMChecksumFunctionNode extends DocumentAccessorNode {
 

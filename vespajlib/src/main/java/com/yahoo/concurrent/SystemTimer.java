@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This is an implementation of {@link Timer} that is backed by an actual system timer.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public enum SystemTimer implements Timer {
 

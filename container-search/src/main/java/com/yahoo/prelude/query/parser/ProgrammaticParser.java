@@ -12,7 +12,7 @@ import com.yahoo.search.query.textserialize.TextSerialize;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @since 5.1.4
  */
 public final class ProgrammaticParser implements CustomParser {

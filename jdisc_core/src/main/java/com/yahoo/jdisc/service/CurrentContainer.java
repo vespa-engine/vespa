@@ -17,7 +17,7 @@ import java.net.URI;
  * Request#Request(CurrentContainer, URI) appropriate Request constructor} to avoid having to worry about the keep-alive
  * issue.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface CurrentContainer {
 

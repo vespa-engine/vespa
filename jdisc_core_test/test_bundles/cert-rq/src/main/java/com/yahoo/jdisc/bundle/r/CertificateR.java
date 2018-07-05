@@ -4,7 +4,7 @@ package com.yahoo.jdisc.bundle.r;
 import com.yahoo.jdisc.bundle.q.CertificateQ;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class CertificateR {
 

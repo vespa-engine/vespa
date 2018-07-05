@@ -16,7 +16,7 @@ import com.yahoo.messagebus.Routable;
  * you may NOT share a factory across multiple routable types. To share serialization logic between factory use a common
  * superclass or composition with a common serialization utility.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface RoutableFactory {
 

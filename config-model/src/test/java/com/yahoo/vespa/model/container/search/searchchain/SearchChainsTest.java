@@ -21,7 +21,7 @@ import static org.junit.Assert.*;
 /**
  * Test of search chains config
  * <p>TODO: examine the actual values in the configs.</p>
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SearchChainsTest extends SearchChainsTestBase {
     private ChainsConfig chainsConfig;

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ZooKeepersConfigProvider implements ZookeepersConfig.Producer {
 

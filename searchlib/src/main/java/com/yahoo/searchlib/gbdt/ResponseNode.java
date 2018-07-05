@@ -6,7 +6,7 @@ import org.w3c.dom.Node;
 import java.util.Optional;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ResponseNode extends TreeNode {
 

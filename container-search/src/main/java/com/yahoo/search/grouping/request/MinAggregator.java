@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents an minimum-aggregator in a {@link GroupingExpression}. It evaluates to the minimum value that
  * the contained expression evaluated to over all the inputs.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MinAggregator extends AggregatorNode {
 

@@ -29,7 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bjorncs
  */
 public class ApplicationLoader implements BootstrapLoader, ContainerActivator, CurrentContainer {

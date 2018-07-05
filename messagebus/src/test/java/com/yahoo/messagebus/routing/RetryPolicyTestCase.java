@@ -9,7 +9,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class RetryPolicyTestCase {
 

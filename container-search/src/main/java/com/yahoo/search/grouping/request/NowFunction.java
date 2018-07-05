@@ -7,7 +7,7 @@ import java.util.Collections;
  * This class represents a now-function in a {@link GroupingExpression}. It evaluates to a long that equals the number
  * of seconds since midnight, January 1, 1970 UTC.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class NowFunction extends FunctionNode {
 

@@ -9,7 +9,7 @@ import java.util.logging.Level;
  * Log a message in Vespa JSON access log format.
  *
  * @author frodelu
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class JSONAccessLog implements  AccessLogInterface {
 

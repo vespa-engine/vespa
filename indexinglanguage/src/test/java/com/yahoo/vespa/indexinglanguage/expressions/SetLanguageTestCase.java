@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class SetLanguageTestCase {
 

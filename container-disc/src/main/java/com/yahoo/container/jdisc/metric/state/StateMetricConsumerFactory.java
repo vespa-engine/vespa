@@ -6,7 +6,7 @@ import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.jdisc.application.MetricConsumer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class StateMetricConsumerFactory implements MetricConsumerFactory {
 

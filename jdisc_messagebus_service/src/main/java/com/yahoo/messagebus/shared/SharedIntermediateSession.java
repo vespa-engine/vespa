@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SharedIntermediateSession extends AbstractResource
         implements ClientSession, ServerSession, MessageHandler, ReplyHandler

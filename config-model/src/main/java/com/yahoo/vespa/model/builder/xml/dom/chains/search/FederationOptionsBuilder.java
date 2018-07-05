@@ -7,7 +7,7 @@ import org.w3c.dom.Element;
 
 /**
  * Builds federation options from a federations options element
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FederationOptionsBuilder {
     public static final String federationOptionsElement = "federationoptions";

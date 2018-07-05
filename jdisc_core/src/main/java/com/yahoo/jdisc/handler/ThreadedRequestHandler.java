@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * }
  * </pre>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 

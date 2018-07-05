@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * Builds Dependencies (provides, before, after) from an element.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DependenciesBuilder {
     private final Dependencies dependencies;

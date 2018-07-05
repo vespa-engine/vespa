@@ -156,7 +156,7 @@ import com.yahoo.searchlib.expression.ZCurveFunctionNode;
  * This is a helper class for {@link RequestBuilder} that offloads the code to convert {@link GroupingExpression} type
  * objects to back-end specific expressions. This is a straightforward one-to-one conversion.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 class ExpressionConverter {
 

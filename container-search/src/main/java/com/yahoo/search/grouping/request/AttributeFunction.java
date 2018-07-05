@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents a document attribute function in a {@link GroupingExpression}. It evaluates to the value of the
  * named attribute in the input {@link com.yahoo.search.result.Hit}.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class AttributeFunction extends DocumentValue {
 

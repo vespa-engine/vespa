@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Results<DATA, ERROR> {
 

@@ -16,7 +16,7 @@ import java.net.URI;
  * {@link BindingSet#DEFAULT} regardless of input. To specify your own selector you need to {@link
  * GuiceRepository#install(Module) install} a Guice {@link Module} that provides a binding for this interface.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 @ImplementedBy(DefaultBindingSelector.class)
 public interface BindingSetSelector {

@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * For testing purposes only.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class VespaModelCreatorWithMockPkg {
 

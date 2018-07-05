@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuild
 import org.w3c.dom.Element;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomFilterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Component> {
     @Override

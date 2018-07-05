@@ -8,7 +8,7 @@ import com.yahoo.document.TestAndSetCondition;
 import java.util.Arrays;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RemoveDocumentMessage extends TestAndSetMessage {
     private DocumentRemove remove = null;

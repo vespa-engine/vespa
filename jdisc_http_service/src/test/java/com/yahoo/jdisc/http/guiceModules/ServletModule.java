@@ -9,7 +9,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ServletModule implements Module {
     @Override

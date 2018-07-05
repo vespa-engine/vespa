@@ -37,7 +37,7 @@ import java.util.TreeSet;
  *                    o: SearchChainInvocationSpec
  * </pre>
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SearchChainResolver {
 

@@ -11,7 +11,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Compression {
     static public void zipDirectory(File dir) throws Exception {

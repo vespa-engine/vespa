@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 /**
  * Registry of files added earlier (i.e. during deployment)
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class PreGeneratedFileRegistry implements FileRegistry {
 

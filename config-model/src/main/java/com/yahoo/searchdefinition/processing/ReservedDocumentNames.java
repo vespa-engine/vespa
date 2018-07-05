@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ReservedDocumentNames extends Processor {
 

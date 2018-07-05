@@ -15,7 +15,7 @@ import java.util.Map;
 import static com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FilterChainBuilder extends DomChainBuilderBase<Filter, Chain<Filter>> {
     private static Collection<ComponentType<Filter>> allowedComponentTypes = Collections.singleton(ComponentType.filter);

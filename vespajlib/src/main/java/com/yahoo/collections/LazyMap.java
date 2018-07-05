@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:simon@hult-thoresen.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class LazyMap<K, V> implements Map<K, V> {
 

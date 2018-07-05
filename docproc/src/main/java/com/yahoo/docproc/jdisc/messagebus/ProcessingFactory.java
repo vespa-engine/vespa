@@ -23,7 +23,7 @@ import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.Message;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class ProcessingFactory {
 

@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
  * This result holds a float value.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class FloatResultNode extends NumericResultNode {
 

@@ -12,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * Basic tests of DependencyBuilder
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DependenciesBuilderTest extends DomBuilderTest {
     private Set<String> set(String str) {

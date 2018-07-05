@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Represents a search chain in the vespa model.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SearchChain extends Chain<Searcher<?>> {
 

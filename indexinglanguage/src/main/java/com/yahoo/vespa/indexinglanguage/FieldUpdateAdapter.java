@@ -10,7 +10,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
 import java.util.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings("rawtypes")
 public class FieldUpdateAdapter implements UpdateAdapter {

@@ -13,7 +13,7 @@ import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.asse
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings({ "rawtypes" })
 public class SplitTestCase {

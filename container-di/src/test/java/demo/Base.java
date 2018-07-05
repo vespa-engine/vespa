@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public class Base {

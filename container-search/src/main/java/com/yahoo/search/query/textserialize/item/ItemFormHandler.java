@@ -6,7 +6,7 @@ import com.yahoo.search.query.textserialize.parser.DispatchFormHandler;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ItemFormHandler implements DispatchFormHandler{
     @Override

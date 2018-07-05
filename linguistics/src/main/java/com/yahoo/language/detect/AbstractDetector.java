@@ -6,7 +6,7 @@ import com.yahoo.text.Utf8;
 import java.nio.ByteBuffer;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class AbstractDetector implements Detector {
 

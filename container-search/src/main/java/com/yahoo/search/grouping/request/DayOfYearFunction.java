@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a day-of-year timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
  * equals the day of year (0-365) of the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DayOfYearFunction extends FunctionNode {
 

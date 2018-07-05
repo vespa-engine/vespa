@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * It is used by jDisc to hand out metric update API endpoints to workers through {@link #newMetricConsumer},
  * and to inspect the current accumulated state of metrics through {@link #snapshot}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class StateMonitor extends AbstractComponent {
 

@@ -6,7 +6,7 @@ package com.yahoo.search.grouping.request;
  * GroupingOperation}. It is used by the {@link com.yahoo.search.grouping.GroupingValidator} to ensure that all
  * referenced attributes are valid for the cluster being queried.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ExpressionVisitor {
 

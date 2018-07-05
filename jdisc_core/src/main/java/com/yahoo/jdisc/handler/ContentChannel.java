@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
  * requirement is regardless of any errors that may occur while calling any of its other methods or its derived {@link
  * CompletionHandler}s.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface ContentChannel {
 

@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class ExpressionVisitor {
 

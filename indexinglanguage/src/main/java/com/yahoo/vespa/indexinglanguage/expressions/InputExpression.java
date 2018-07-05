@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class InputExpression extends Expression {
 

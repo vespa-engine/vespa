@@ -13,7 +13,7 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
  * This class implements subscription to message bus config. To use configuration one must implement the {@link
  * ConfigHandler} interface.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ConfigAgent implements ConfigSubscriber.SingleSubscriber<MessagebusConfig>{
 

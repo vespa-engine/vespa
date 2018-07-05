@@ -9,7 +9,7 @@ import com.yahoo.jdisc.application.Application;
  * provides a {@link Runnable#run()} method that will be invoked once the Application has been created and {@link
  * Application#start() started}. When run() returns, the {@link ClientDriver} will initiate Application shutdown.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ClientApplication extends Application, Runnable {
 

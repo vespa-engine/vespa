@@ -4,7 +4,7 @@ package com.yahoo.document.predicate;
 import java.util.List;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 abstract public class PredicateOperator extends Predicate {
 

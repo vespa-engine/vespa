@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bjorncs
  */
 public class ServletResponseController {

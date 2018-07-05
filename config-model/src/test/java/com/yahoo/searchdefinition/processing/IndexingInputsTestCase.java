@@ -9,7 +9,7 @@ import java.io.IOException;
 import static com.yahoo.searchdefinition.processing.AssertSearchBuilder.assertBuildFails;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class IndexingInputsTestCase {
 

@@ -4,7 +4,7 @@ package com.yahoo.jdisc.core;
 import com.yahoo.jdisc.application.DeactivatedContainer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ContainerTermination implements DeactivatedContainer, Runnable {
 

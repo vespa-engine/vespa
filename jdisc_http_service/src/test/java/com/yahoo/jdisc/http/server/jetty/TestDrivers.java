@@ -20,7 +20,7 @@ import java.io.IOException;
 import static com.google.inject.name.Names.named;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class TestDrivers {
 

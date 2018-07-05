@@ -2,7 +2,7 @@
 package com.yahoo.yolean.chain;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 interface Vertex {
 

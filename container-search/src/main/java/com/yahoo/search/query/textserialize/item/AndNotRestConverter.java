@@ -10,7 +10,7 @@ import static com.yahoo.search.query.textserialize.item.ListUtil.butFirst;
 import static com.yahoo.search.query.textserialize.item.ListUtil.first;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class AndNotRestConverter extends CompositeConverter<NotItem> {
     static final String andNotRest = "AND-NOT-REST";

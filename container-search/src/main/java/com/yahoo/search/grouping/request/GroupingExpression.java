@@ -9,7 +9,7 @@ import java.util.List;
  * This class represents an expression in a {@link GroupingOperation}. You may manually construct this expression, or
  * you may use the {@link com.yahoo.search.grouping.request.parser.GroupingParser} to generate one from a query-string.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class GroupingExpression extends GroupingNode {
 

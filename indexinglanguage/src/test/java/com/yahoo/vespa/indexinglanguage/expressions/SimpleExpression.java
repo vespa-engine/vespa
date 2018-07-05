@@ -6,7 +6,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.FieldValue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class SimpleExpression extends Expression {
 

@@ -6,7 +6,7 @@ package com.yahoo.search.grouping.request;
  * can not be used as a document-level expression (i.e. level 0, see {@link GroupingExpression#resolveLevel(int)}). The
  * contained expression is evaluated at the level of the aggregator minus 1.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class AggregatorNode extends GroupingExpression {
 

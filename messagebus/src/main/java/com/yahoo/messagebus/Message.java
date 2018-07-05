@@ -9,7 +9,7 @@ import com.yahoo.messagebus.routing.Route;
  * contains a retry counter that holds what retry the message is currently on. See the method comment {@link #getRetry}
  * for more information.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class Message extends Routable {
 

@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author vekterli
  */
 @SuppressWarnings("deprecation")

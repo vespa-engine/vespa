@@ -14,7 +14,7 @@ import static com.yahoo.searchdefinition.processing.AssertIndexingScript.assertI
 import static com.yahoo.searchdefinition.processing.AssertSearchBuilder.assertBuildFails;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class IndexingValidationTestCase extends AbstractExportingTestCase {
 

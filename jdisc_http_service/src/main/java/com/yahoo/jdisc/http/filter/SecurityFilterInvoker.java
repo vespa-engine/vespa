@@ -25,7 +25,7 @@ import java.util.Optional;
  *
  * Assumes that SecurityResponseFilters mutate DiscFilterResponse in the thread they are invoked from.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Beta
 public class SecurityFilterInvoker implements FilterInvoker {

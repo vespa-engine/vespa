@@ -7,7 +7,7 @@ import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 
 /**
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Searcher<T extends ChainedComponentModel> extends ChainedComponent<T> {
 

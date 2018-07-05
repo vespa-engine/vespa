@@ -11,7 +11,7 @@ import java.util.List;
  * {@link #resolve(GroupingExpression)} to retrieve the list of corresponding
  * grouping expression object.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class BucketResolver {
 

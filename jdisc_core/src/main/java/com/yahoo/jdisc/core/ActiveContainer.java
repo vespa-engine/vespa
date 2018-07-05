@@ -19,7 +19,7 @@ import java.net.URI;
 import java.util.Map;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bjorncs
  */
 public class ActiveContainer extends AbstractResource implements CurrentContainer {

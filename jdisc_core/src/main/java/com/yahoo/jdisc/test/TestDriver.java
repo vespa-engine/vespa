@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * FALSE, it means that either your components or the test case itself does not conform to the reference counting
  * requirements of {@link Request}, {@link RequestHandler}, {@link ContentChannel}, or {@link CompletionHandler}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class TestDriver implements ContainerActivator, CurrentContainer {
 

@@ -16,7 +16,7 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  * @since 5.1.26
  */
 public class FilterChainsTest extends DomBuilderTest {

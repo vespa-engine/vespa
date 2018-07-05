@@ -7,7 +7,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import org.apache.commons.codec.binary.Base64;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Base64DecodeExpression extends Expression {
 

@@ -55,7 +55,7 @@ import java.util.List;
  *
  * <p>This class is not thread-safe.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public final class ResourcePool extends AbstractResource implements AutoCloseable {
 

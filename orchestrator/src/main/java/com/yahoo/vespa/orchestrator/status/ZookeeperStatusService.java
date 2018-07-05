@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * Stores instance suspension status and which hosts are allowed to go down in zookeeper.
  *
  * TODO: expiry of old application instances
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ZookeeperStatusService implements StatusService {
 

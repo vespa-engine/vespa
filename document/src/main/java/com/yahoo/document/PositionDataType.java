@@ -12,7 +12,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class PositionDataType {
 

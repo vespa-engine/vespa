@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  * Input for class analysis tests.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings("unused")
 public class Methods {

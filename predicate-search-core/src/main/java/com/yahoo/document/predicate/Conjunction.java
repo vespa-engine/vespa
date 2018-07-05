@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class Conjunction extends PredicateOperator {
 

@@ -13,7 +13,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import com.yahoo.vespa.objects.Selectable;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class Expression extends Selectable {
 

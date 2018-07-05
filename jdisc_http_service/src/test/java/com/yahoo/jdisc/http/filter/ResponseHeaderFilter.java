@@ -6,7 +6,7 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ResponseHeaderFilter extends AbstractResource implements ResponseFilter {
 

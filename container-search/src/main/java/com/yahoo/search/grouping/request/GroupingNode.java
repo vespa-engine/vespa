@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This is the abstract super class of both {@link GroupingOperation} and {@link GroupingExpression}. All nodes can be
  * assigned a {@link String} label which in turn can be used to identify the corresponding result objects.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class GroupingNode {
 

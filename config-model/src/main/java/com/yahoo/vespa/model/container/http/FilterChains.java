@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.container.component.chain.Chains;
 import java.util.Collections;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FilterChains extends Chains<Chain<Filter>>  {
 

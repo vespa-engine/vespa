@@ -9,7 +9,7 @@ import com.yahoo.document.select.Visitor;
 import com.yahoo.document.select.parser.SelectParserUtils;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class LiteralNode implements ExpressionNode {
 

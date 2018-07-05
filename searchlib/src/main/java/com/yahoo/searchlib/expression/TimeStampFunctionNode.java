@@ -9,7 +9,7 @@ import com.yahoo.vespa.objects.Serializer;
  * <p>This function assign a fixed width bucket to each input value.</p>
  *
  * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class TimeStampFunctionNode extends UnaryFunctionNode {
 

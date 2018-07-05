@@ -4,7 +4,7 @@ package com.yahoo.jdisc.test;
 import com.yahoo.jdisc.handler.CompletionHandler;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class NonWorkingCompletionHandler implements CompletionHandler {
 

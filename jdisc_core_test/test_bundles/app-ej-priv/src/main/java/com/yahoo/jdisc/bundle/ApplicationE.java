@@ -5,7 +5,7 @@ import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.bundle.j.CertificateJ;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ApplicationE implements Application {
 

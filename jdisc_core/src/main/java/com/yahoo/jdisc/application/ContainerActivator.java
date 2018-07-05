@@ -13,7 +13,7 @@ import com.yahoo.jdisc.Container;
  * #newContainerBuilder()}, 2) configure the returned {@link ContainerBuilder}, and 3) pass the builder to the {@link
  * #activateContainer(ContainerBuilder)} method.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface ContainerActivator {
 

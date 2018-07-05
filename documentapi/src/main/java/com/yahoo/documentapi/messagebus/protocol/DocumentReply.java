@@ -8,7 +8,7 @@ import com.yahoo.text.Utf8String;
  * This class implements a generic document protocol reply that can be reused by document messages that require no
  * special reply implementation while still allowing applications to distinguish between types.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DocumentReply extends Reply {
 

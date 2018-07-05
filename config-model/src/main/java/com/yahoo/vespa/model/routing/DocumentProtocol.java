@@ -29,7 +29,7 @@ import java.util.TreeMap;
  * the code within could really be part of {@link Routing}, but it has been partitioned out to allow better readability
  * and also more easily maintainable as the number of protocols increase.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class DocumentProtocol implements Protocol, DocumentrouteselectorpolicyConfig.Producer {
 

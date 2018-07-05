@@ -4,7 +4,7 @@ package com.yahoo.language.simple;
 import com.yahoo.language.process.Normalizer;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class SimpleNormalizer implements Normalizer {
 

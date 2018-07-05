@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents an hour-of-day timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
  * equals the hour of day (0-23) of the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class HourOfDayFunction extends FunctionNode {
 

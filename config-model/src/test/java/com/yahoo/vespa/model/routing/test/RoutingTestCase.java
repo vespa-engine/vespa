@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class RoutingTestCase {
 

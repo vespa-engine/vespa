@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 /**
  * Configures which slobrok nodes the container should register with.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SlobrokConfigurator {
     public SlobrokConfigurator(SlobroksConfig config) {

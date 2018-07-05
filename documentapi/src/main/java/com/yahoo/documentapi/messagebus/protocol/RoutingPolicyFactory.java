@@ -7,7 +7,7 @@ import com.yahoo.messagebus.routing.RoutingPolicy;
  * This interface defines the necessary methods of a routing policy factory that can be plugged into a {@link
  * DocumentProtocol} using the {@link DocumentProtocol#putRoutingPolicyFactory(String, RoutingPolicyFactory)} method.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface RoutingPolicyFactory {
 

@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  *
  * <b>NOTE:</b> By context, "pending" is refering to the number of sent messages that have not been replied to yet.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DynamicThrottlePolicy extends StaticThrottlePolicy {
 

@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.request;
 /**
  * This class represents a constant {@link Long} value in a {@link GroupingExpression}.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class LongValue extends ConstantValue<Long> {
 

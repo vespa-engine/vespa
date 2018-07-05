@@ -16,7 +16,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Messages51TestCase extends Messages50TestCase {
 

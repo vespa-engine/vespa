@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * A function defined by a ranking expression
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bratseth
  */
 public class ExpressionFunction {

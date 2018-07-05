@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.util.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class ApplicationConfigModule extends AbstractModule {
 

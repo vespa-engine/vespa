@@ -19,7 +19,7 @@ import java.io.IOException;
 /**
  * For testing purposes only
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class VespaModelCreatorWithFilePkg {
 

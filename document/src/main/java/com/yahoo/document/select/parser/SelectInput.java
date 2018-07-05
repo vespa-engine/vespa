@@ -4,7 +4,7 @@ package com.yahoo.document.select.parser;
 import com.yahoo.javacc.FastCharStream;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class SelectInput extends FastCharStream implements CharStream {
 

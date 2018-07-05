@@ -18,7 +18,7 @@ import java.util.*;
  * {@link GroupingOperation} using {@link #setRootOperation(GroupingOperation)}. Once the search returns, access the
  * result {@link Group} using the {@link #getResultGroup(Result)} method.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class GroupingRequest {
 

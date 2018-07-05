@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * This class represents another expression enclosed in braces.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class EmbracedNode extends CompositeNode {
 

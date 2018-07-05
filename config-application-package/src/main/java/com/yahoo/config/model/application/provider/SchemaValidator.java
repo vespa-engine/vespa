@@ -22,7 +22,7 @@ import java.util.logging.Level;
 /**
  * Validates xml files against a schema.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SchemaValidator {
 

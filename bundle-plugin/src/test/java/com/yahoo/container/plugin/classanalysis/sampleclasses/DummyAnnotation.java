@@ -3,7 +3,7 @@ package com.yahoo.container.plugin.classanalysis.sampleclasses;
 
 /**
  * Input for class analysis tests.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public @interface DummyAnnotation {
 }

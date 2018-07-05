@@ -8,7 +8,7 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ToWsetExpression extends Expression {
 

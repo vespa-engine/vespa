@@ -19,7 +19,7 @@ import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @Provides({ IndexingProcessor.PROVIDED_NAME })
 @Before({ IndexingProcessor.INDEXING_END })

@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * A set of metric dimensions, which are key-value string pairs.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public interface MetricDimensions extends Iterable<Map.Entry<String, String>> {
 

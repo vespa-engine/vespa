@@ -8,7 +8,7 @@ import com.yahoo.processing.request.Properties;
 /**
  * TODO: What's this?
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public abstract class Target extends AbstractComponent {
 

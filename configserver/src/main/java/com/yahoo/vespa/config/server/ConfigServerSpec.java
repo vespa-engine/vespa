@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ConfigServerSpec implements com.yahoo.config.model.api.ConfigServerSpec {
 

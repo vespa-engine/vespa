@@ -5,7 +5,7 @@ import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class MockHosts {
 

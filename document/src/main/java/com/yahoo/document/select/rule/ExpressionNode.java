@@ -11,7 +11,7 @@ import com.yahoo.document.select.Visitor;
  * This is the interface of all expression nodes. It declares the methods requires by all expression nodes to maintain
  * a working document selector language.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ExpressionNode {
 

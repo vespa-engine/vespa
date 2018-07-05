@@ -13,7 +13,7 @@ import com.yahoo.searchlib.aggregation.VdsHit;
 /**
  * Implementation of the {@link ResultBuilder.HitConverter} interface for {@link GroupingExecutor}.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 class HitConverter implements ResultBuilder.HitConverter {
 

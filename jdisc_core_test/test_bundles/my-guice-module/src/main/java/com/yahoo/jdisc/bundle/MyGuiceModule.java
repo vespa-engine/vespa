@@ -8,7 +8,7 @@ import com.google.inject.name.Named;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MyGuiceModule extends AbstractModule {
 

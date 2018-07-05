@@ -16,7 +16,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Test of public API of MockFileAcquirer, since it is intended to be used by 3rd parties.
  * Do not place it in the same package as MockFileAcquirer.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class MockFileAcquirerTest {
     @org.junit.Test

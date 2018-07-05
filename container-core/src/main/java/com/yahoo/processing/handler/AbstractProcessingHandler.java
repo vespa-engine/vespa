@@ -48,7 +48,7 @@ import static com.yahoo.component.chain.ChainsConfigurer.prepareChainRegistry;
  * COMPONENT: The type of the processing components of which this executes a chain
  *
  * @author  bratseth
- * @author  tonyv
+ * @author  Tony Vaagenes
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @since   5.1.6
  */

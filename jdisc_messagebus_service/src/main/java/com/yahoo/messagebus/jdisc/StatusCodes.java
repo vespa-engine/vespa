@@ -7,7 +7,7 @@ import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Reply;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class StatusCodes {
 

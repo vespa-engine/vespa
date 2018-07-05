@@ -6,7 +6,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.PositionDataType;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ToPositionExpression extends Expression {
 

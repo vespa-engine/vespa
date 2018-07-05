@@ -9,7 +9,7 @@ import com.yahoo.language.process.*;
 import com.yahoo.language.simple.SimpleLinguistics;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class TestLinguistics implements Linguistics {
 

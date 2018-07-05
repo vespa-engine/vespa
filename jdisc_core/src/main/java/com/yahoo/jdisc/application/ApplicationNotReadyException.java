@@ -6,7 +6,7 @@ package com.yahoo.jdisc.application;
  * thrown by the {@link ContainerActivator#activateContainer(ContainerBuilder)} method if it is called before the call
  * to {@link Application#start()} or after the call to {@link Application#stop()}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class ApplicationNotReadyException extends RuntimeException {
 
