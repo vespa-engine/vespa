@@ -58,4 +58,18 @@ Vagrant.configure("2") do |config|
     yum update -y
     hostname localhost
   SHELL
+
+  # Add settings for Vespa and dev tools as the default user, usually 'vagrant' (privileged: false)
+  # NOTE: adding these settings to .bashrc would break vagrant suspend/resume/provision
+  #       due to env vars modified by /opt/rh/devtoolset-7/enable.
+  config.vm.provision "shell", privileged: false, inline: <<-SCRIPT
+    grep -l VESPA_HOME ~/.bash_profile >/dev/null || (\
+      printf "%s\n" \
+        'export VESPA_HOME=$HOME/vespa' \
+        'export PATH=$PATH:$VESPA_HOME/bin' \
+        'source /opt/rh/rh-maven35/enable' \
+        'source /opt/rh/devtoolset-7/enable' \
+        >> ~/.bash_profile )
+  SCRIPT
+
 end
