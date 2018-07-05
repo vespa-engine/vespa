@@ -16,6 +16,7 @@ import com.yahoo.prelude.searcher.FieldCollapsingSearcher;
 import com.yahoo.prelude.semantics.SemanticSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.federation.FederationSearcher;
+import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.query.Presentation;
@@ -182,11 +183,24 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     //---------------- Static property handling ------------------------------------
 
+    //Creating trace's query profile type
+    private static final QueryProfileType traceArgumentType;
+    public static final String TRACE = "trace";
+    public static final CompoundName TRACE_LEVEL = new CompoundName("level");
+    static {
+        traceArgumentType = new QueryProfileType(TRACE);
+        traceArgumentType.setStrict(true);
+        traceArgumentType.setBuiltin(true);
+        traceArgumentType.addField(new FieldDescription(TRACE_LEVEL.toString(), "integer", "tracelevel traceLevel"));
+        traceArgumentType.addField(new FieldDescription(SearchHandler.FORCE_TIMESTAMPS.toString(), "boolean"));
+        traceArgumentType.addField(new FieldDescription(SemanticSearcher.tracelevelRules.toString(), "integer"));
+        traceArgumentType.freeze();
+    }
+
     public static final CompoundName OFFSET = new CompoundName("offset");
     public static final CompoundName HITS = new CompoundName("hits");
 
     public static final CompoundName SEARCH_CHAIN = new CompoundName("searchChain");
-    public static final CompoundName TRACE_LEVEL = new CompoundName("trace.level");
     public static final CompoundName NO_CACHE = new CompoundName("noCache");
     public static final CompoundName GROUPING_SESSION_CACHE = new CompoundName("groupingSessionCache");
     public static final CompoundName TIMEOUT = new CompoundName("timeout");
@@ -200,7 +214,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(HITS.toString(), "integer", "hits count"));
         // TODO: Should this be added to com.yahoo.search.query.properties.QueryProperties? If not, why not?
         argumentType.addField(new FieldDescription(SEARCH_CHAIN.toString(), "string"));
-        argumentType.addField(new FieldDescription(TRACE_LEVEL.toString(), "integer", "trace.level tracelevel traceLevel"));
         argumentType.addField(new FieldDescription(NO_CACHE.toString(), "boolean", "nocache"));
         argumentType.addField(new FieldDescription(GROUPING_SESSION_CACHE.toString(), "boolean", "groupingSessionCache"));
         argumentType.addField(new FieldDescription(TIMEOUT.toString(), "string", "timeout"));
@@ -209,8 +222,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(Presentation.PRESENTATION, new QueryProfileFieldType(Presentation.getArgumentType())));
         argumentType.addField(new FieldDescription(Ranking.RANKING, new QueryProfileFieldType(Ranking.getArgumentType())));
         argumentType.addField(new FieldDescription(Model.MODEL, new QueryProfileFieldType(Model.getArgumentType())));
-        argumentType.addField(new FieldDescription(FieldCollapsingSearcher.collapsefield.toString(), "string", "collapsefield"));
-        argumentType.addField(new FieldDescription(FieldCollapsingSearcher.collapsesize.toString(), "string", "collapsesize"));
+        argumentType.addField(new FieldDescription(TRACE, new QueryProfileFieldType(traceArgumentType)));
+        argumentType.addField(new FieldDescription(FieldCollapsingSearcher.COLLAPSE, new QueryProfileFieldType(FieldCollapsingSearcher.getArgumentType())));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }

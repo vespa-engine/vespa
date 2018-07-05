@@ -10,6 +10,8 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
@@ -28,10 +30,28 @@ import java.util.Map;
 @Before(PhaseNames.TRANSFORMED_QUERY)
 public class FieldCollapsingSearcher extends Searcher {
 
-    public static final CompoundName collapse = new CompoundName("collapse");
-    public static final CompoundName collapsefield=new CompoundName("collapse.field");
-    public static final CompoundName collapsesize=new CompoundName("collapse.size");
-    public static final CompoundName collapseSummaryName=new CompoundName("collapse.summary");
+
+    //Creating collapse's query profile type
+    private static final QueryProfileType argumentType;
+    public static final String COLLAPSE = "collapse";
+
+    private static final CompoundName collapse=new CompoundName("field");
+    private static final CompoundName collapsefield=new CompoundName("field");
+    private static final CompoundName collapsesize=new CompoundName("size");
+    private static final CompoundName collapseSummaryName=new CompoundName("summary");
+
+    static {
+        argumentType = new QueryProfileType(COLLAPSE);
+        argumentType.setStrict(true);
+        argumentType.setBuiltin(true);
+        argumentType.addField(new FieldDescription(collapsefield.toString(), "string", "collapsefield"));
+        argumentType.addField(new FieldDescription(collapsesize.toString(), "string", "collapsesize"));
+        argumentType.addField(new FieldDescription(collapseSummaryName.toString(), "string"));
+        argumentType.freeze();
+    }
+
+    /** QueryProfileType for the QueryProfileType collapse */
+    public static QueryProfileType getArgumentType() { return argumentType; }
 
     /** Maximum number of queries to send next searcher */
     private int maxQueries = 4;

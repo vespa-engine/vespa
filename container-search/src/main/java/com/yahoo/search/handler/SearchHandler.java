@@ -96,7 +96,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     public static final String defaultSearchChainName = "default";
     private static final String fallbackSearchChain = "vespa";
-    private static final CompoundName FORCE_TIMESTAMPS = new CompoundName("trace.timestamps");;
+    public static final CompoundName FORCE_TIMESTAMPS = new CompoundName("timestamps");;
 
     private final Linguistics linguistics;
 
