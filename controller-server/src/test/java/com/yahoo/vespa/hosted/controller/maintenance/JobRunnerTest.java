@@ -61,21 +61,21 @@ public class JobRunnerTest {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         // Fail the installation of the initial version of the real application in staging tests, and succeed everything else.
-        StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == installInitialReal ? failed : succeeded;
-        CountDownLatch latch = new CountDownLatch(14); // Number of steps that will run, below.
+        StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? failed : succeeded;
+        CountDownLatch latch = new CountDownLatch(19); // Number of steps that will run, below: all but endTests in staging and all 9 in system.
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          Executors.newFixedThreadPool(32), notifying(stepRunner, latch));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
         jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
 
-        jobs.run(id, systemTest);
+        jobs.start(id, systemTest);
         try {
-            jobs.run(id, systemTest);
+            jobs.start(id, systemTest);
             fail("Job is already running, so this should not be allowed!");
         }
         catch (IllegalStateException e) { }
-        jobs.run(id, stagingTest);
+        jobs.start(id, stagingTest);
 
         assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(unfinished::equals));
         runner.maintain();
@@ -103,17 +103,17 @@ public class JobRunnerTest {
         jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
         Supplier<RunStatus> run = () -> jobs.last(id, systemTest).get();
 
-        jobs.run(id, systemTest);
+        jobs.start(id, systemTest);
         RunId first = run.get().id();
 
         Map<Step, Status> steps = run.get().steps();
         runner.maintain();
         assertEquals(steps, run.get().steps());
-        assertEquals(Arrays.asList(deployReal), run.get().readySteps());
+        assertEquals(Arrays.asList(deployReal, deployTester), run.get().readySteps());
 
         outcomes.put(deployReal, succeeded);
         runner.maintain();
-        assertEquals(Arrays.asList(installReal), run.get().readySteps());
+        assertEquals(Arrays.asList(installReal, deployTester), run.get().readySteps());
 
         outcomes.put(installReal, succeeded);
         runner.maintain();
@@ -155,7 +155,7 @@ public class JobRunnerTest {
         assertTrue(run.get().isAborted());
 
         // A new run is attempted.
-        jobs.run(id, systemTest);
+        jobs.start(id, systemTest);
         assertEquals(first.number() + 1, run.get().id().number());
 
         // Run fails on tester deployment -- remaining run-always steps succeed, and the run finishes.
@@ -167,6 +167,15 @@ public class JobRunnerTest {
         assertEquals(failed, run.get().steps().get(deployTester));
         assertEquals(unfinished, run.get().steps().get(installTester));
         assertEquals(succeeded, run.get().steps().get(report));
+
+        assertEquals(2, jobs.runs(id, systemTest).size());
+
+        // Start a third run, then unregister and wait for data to be deleted.
+        jobs.start(id, systemTest);
+        jobs.unregister(id);
+        runner.maintain();
+        assertFalse(jobs.last(id, systemTest).isPresent());
+        assertTrue(jobs.runs(id, systemTest).isEmpty());
     }
 
     @Test
@@ -182,7 +191,7 @@ public class JobRunnerTest {
         jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
 
         RunId runId = new RunId(id, systemTest, 1);
-        jobs.run(id, systemTest);
+        jobs.start(id, systemTest);
         runner.maintain();
         barrier.await();
         try {

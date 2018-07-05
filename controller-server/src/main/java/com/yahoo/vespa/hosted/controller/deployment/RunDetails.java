@@ -12,6 +12,7 @@ import java.util.Optional;
  */
 public class RunDetails {
 
+    // TODO jvenstad: Store a serialised structure, rather than a flat text.
     private final Map<Step, byte[]> logs;
 
     public RunDetails(Map<Step, byte[]> logs) {
