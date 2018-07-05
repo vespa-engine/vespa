@@ -35,8 +35,9 @@ public interface ModelFactory {
      * @return a {@link ModelCreateResult} instance.
      * @deprecated use {@link #createAndValidateModel(ModelContext, ValidationParameters)}
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
-    // TODO: Remove when 6.258 is latest version in use
+    // TODO: Remove when 6.259 is latest version in use
     default ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
         return createAndValidateModel(modelContext, new ValidationParameters(ignoreValidationErrors
                                                                                      ? IgnoreValidationErrors.FALSE
@@ -51,5 +52,8 @@ public interface ModelFactory {
      * @param validationParameters validation parameters
      * @return a {@link ModelCreateResult} instance.
      */
-    ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters);
+    // TODO: Remove default implementation when 6.259 is latest version in use
+    default ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
+        return createAndValidateModel(modelContext, validationParameters.ignoreValidationErrors());
+    }
 }
