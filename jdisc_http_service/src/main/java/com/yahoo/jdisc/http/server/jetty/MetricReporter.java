@@ -3,20 +3,25 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Metric.Context;
-
+import com.yahoo.jdisc.application.BindingMatch;
+import com.yahoo.jdisc.application.UriPattern;
+import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
-import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
  * Responsible for metric reporting for JDisc http request handler support.
- * @author tonytv
+ *
+ * @author Tony Vaagenes
  */
 public class MetricReporter {
     private final Metric metric;
-    private final @Nullable Context context;
+    private volatile Context context;
+    private final Map<String, Object> requestDimensions;
 
     private final long requestStartTime;
 
@@ -24,10 +29,20 @@ public class MetricReporter {
     private final AtomicBoolean firstSetOfTimeToFirstByte = new AtomicBoolean(true);
 
 
-    public MetricReporter(Metric metric, @Nullable Context context, long requestStartTime) {
+    public MetricReporter(Metric metric, Map<String, Object> requestDimensions, long requestStartTime) {
         this.metric = metric;
-        this.context = context;
+        this.context = metric.createContext(requestDimensions);
+        this.requestDimensions = requestDimensions;
         this.requestStartTime = requestStartTime;
+    }
+
+    public void setBindingMatch(BindingMatch<?> bindingMatch) {
+        if (bindingMatch == null) return;
+        UriPattern pattern = bindingMatch.matched();
+        if (pattern == null) return;
+        Map<String, Object> combinedDimensions = new HashMap<>(requestDimensions);
+        combinedDimensions.put(Metrics.HANDLER_DIMENSION, bindingMatch.toString());
+        this.context = metric.createContext(combinedDimensions);
     }
 
     @SuppressWarnings("deprecation")
@@ -72,6 +87,10 @@ public class MetricReporter {
         metric.add(Metrics.NUM_FAILED_RESPONSES, 1, context);
     }
 
+    public void prematurelyClosed() {
+        metric.add(Metrics.NUM_PREMATURELY_CLOSED_CONNECTIONS, 1, context);
+    }
+
     @SuppressWarnings("deprecation")
     public void successfulRead(int bytes_received) {
         metric.set(JettyHttpServer.Metrics.NUM_BYTES_RECEIVED, bytes_received, context);
@@ -80,5 +99,13 @@ public class MetricReporter {
 
     private long getRequestLatency() {
         return System.currentTimeMillis() - requestStartTime;
+    }
+
+    public void uriLength(int length) {
+        metric.set(Metrics.URI_LENGTH, length, context);
+    }
+
+    public void contentSize(int size) {
+        metric.set(Metrics.CONTENT_SIZE, size, context);
     }
 }
