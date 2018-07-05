@@ -2,9 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.slime.Slime;
 
-import java.io.IOException;
 import java.io.OutputStream;
 
 /**
@@ -17,7 +15,7 @@ public class EmptyJsonResponse extends HttpResponse {
     }
 
     @Override
-    public void render(OutputStream stream) throws IOException { }
+    public void render(OutputStream stream) {}
 
     @Override
     public String getContentType() { return "application/json"; }

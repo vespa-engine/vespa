@@ -897,7 +897,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .application(app)
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
-        tester.deploy(app, applicationPackage, TEST_ZONE, projectId);
+        tester.deploy(app, applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
 
         // Notifying about unknown job fails
@@ -945,9 +945,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
 
-        tester.deploy(app, applicationPackage, TEST_ZONE, projectId);
+        tester.deploy(app, applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
-        tester.deploy(app, applicationPackage, STAGING_ZONE, projectId);
+        tester.deploy(app, applicationPackage, STAGING_ZONE);
         job.type(JobType.stagingTest).error(DeploymentJobs.JobError.outOfCapacity).submit();
 
         // Appropriate error is recorded
@@ -1140,8 +1140,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * Cluster info, utilization and application and deployment metrics are maintained async by maintainers.
      *
      * This sets these values as if the maintainers has been ran.
-     *
-     * @param controllerTester
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {

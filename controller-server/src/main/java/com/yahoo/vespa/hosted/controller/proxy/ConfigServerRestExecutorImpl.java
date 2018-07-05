@@ -145,7 +145,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         try (
                 CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
-                CloseableHttpResponse response = client.execute(requestBase);
+                CloseableHttpResponse response = client.execute(requestBase)
         ) {
             String content = getContent(response);
             int status = response.getStatusLine().getStatusCode();
@@ -246,7 +246,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setSocketTimeout(timeout).build();
         try (
                 CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
-                CloseableHttpResponse response = client.execute(httpget);
+                CloseableHttpResponse response = client.execute(httpget)
 
         ) {
             if (response.getStatusLine().getStatusCode() == 200) {

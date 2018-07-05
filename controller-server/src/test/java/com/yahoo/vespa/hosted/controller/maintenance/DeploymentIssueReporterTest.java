@@ -168,8 +168,8 @@ public class DeploymentIssueReporterTest {
 
     class MockDeploymentIssues extends LoggingDeploymentIssues {
 
-        Map<ApplicationId, IssueId> applicationIssues = new HashMap<>();
-        Map<IssueId, Integer> issueLevels = new HashMap<>();
+        private final Map<ApplicationId, IssueId> applicationIssues = new HashMap<>();
+        private final Map<IssueId, Integer> issueLevels = new HashMap<>();
 
         MockDeploymentIssues() {
             super(tester.clock());

@@ -11,6 +11,7 @@ import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 /**
  * @author bjorncs
  */
+@SuppressWarnings("unused") // Injected
 public class BlockingRequestFilter implements SecurityRequestFilter {
 
     @Override

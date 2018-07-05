@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.time.Instant;
 import java.util.Optional;
@@ -34,7 +33,7 @@ public class NTokenValidatorTest {
     public ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
-    public void valid_token_is_accepted() throws NoSuchAlgorithmException, InvalidTokenException {
+    public void valid_token_is_accepted() throws InvalidTokenException {
         NTokenValidator validator = new NTokenValidator(createKeystore());
         NToken token = createNToken(IDENTITY, Instant.now(), TRUSTED_KEY.getPrivate(), "0");
         AthenzPrincipal principal = validator.validate(token);
