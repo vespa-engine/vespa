@@ -3,10 +3,12 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,6 +33,11 @@ public class AthenzClientFactoryMock extends AbstractComponent implements Athenz
 
     public AthenzDbMock getSetup() {
         return athenz;
+    }
+
+    @Override
+    public AthenzIdentity getControllerIdentity() {
+        return new AthenzService("vespa.hosting");
     }
 
     @Override
