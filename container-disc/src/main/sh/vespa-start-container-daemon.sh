@@ -193,7 +193,7 @@ exec_jsvc () {
         -XX:MaxJavaStackTraceDepth=1000000 \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
-        -XX:OnOutOfMemoryError='kill -9 %p' \
+        -XX:+ExitOnOutOfMemoryError \
         -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
@@ -265,7 +265,7 @@ exec $numactlcmd $envcmd java \
         -XX:MaxJavaStackTraceDepth=1000000 \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
-        -XX:OnOutOfMemoryError='kill -9 %p' \
+        -XX:+ExitOnOutOfMemoryError \
         -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
