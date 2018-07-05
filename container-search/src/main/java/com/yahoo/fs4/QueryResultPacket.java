@@ -125,7 +125,7 @@ public class QueryResultPacket extends Packet {
         soonActiveDocs = buffer.getLong();
         degradedReason = buffer.getInt();
 
-        decodeDocuments(buffer,documentCount);
+        decodeDocuments(buffer, documentCount);
         if (propsFeature) {
             int numMaps = buffer.getInt();
             propsArray = new FS4Properties[numMaps];

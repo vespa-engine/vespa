@@ -62,8 +62,7 @@ public class Dispatcher extends AbstractComponent {
         this.client = new RpcClient();
         this.searchCluster = new SearchCluster(dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus);
 
-        // Create node rpc connections, indexed by the legacy "partid", which allows us to bridge
-        // between fs4 calls (for search) and rpc calls (for summary fetch)
+        // Create node rpc connections, indexed by the node distribution key
         ImmutableMap.Builder<Integer, Client.NodeConnection> nodeConnectionsBuilder = new ImmutableMap.Builder<>();
         for (DispatchConfig.Node node : dispatchConfig.node()) {
             nodeConnectionsBuilder.put(node.key(), client.createConnection(node.host(), node.port()));

@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.fs4.mplex;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -16,23 +16,18 @@ import com.yahoo.fs4.ChannelTimeoutException;
 import com.yahoo.fs4.Packet;
 import com.yahoo.search.Query;
 
-
-
 /**
- *
  * This class is used to represent a "channel" in the FS4 protocol.
  * A channel represents a session between a client and the fdispatch.
  * Internally this class has a  response queue used by the backend
  * for queueing up FS4 packets that belong to this channel (or
  * <em>session</em>, which might be a more appropriate name for it).
- *
- * <P>
  * Outbound packets are handed off to the FS4Connection.
  *
  * @author Bjorn Borud
  */
-public class FS4Channel
-{
+public class FS4Channel {
+
     private static Logger log = Logger.getLogger(FS4Channel.class.getName());
 
     private Integer channelId;
@@ -67,12 +62,13 @@ public class FS4Channel
         return query;
     }
 
-    /**
-     * @return returns an Integer representing the (fs4) channel id
-     */
+    /** Returns the (fs4) channel id */
     public Integer getChannelId () {
         return channelId;
     }
+
+    /** Returns the distribution key of the content node this represents, or empty if it is a dispatch node */
+    public Optional<Integer> distributionKey() { return backend == null ? Optional.empty() : backend.distributionKey(); }
 
     /**
      * Closes the channel

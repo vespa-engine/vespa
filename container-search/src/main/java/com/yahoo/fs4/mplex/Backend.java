@@ -61,7 +61,7 @@ public class Backend implements ConnectionFactory {
     private final ConnectionPool connectionPool;
     private final PacketDumper packetDumper;
     private final AtomicInteger connectionCount = new AtomicInteger(0);
-
+    private final Optional<Integer> distributionKey;
 
     /**
      * For unit testing.  do not use
@@ -74,9 +74,15 @@ public class Backend implements ConnectionFactory {
         packetDumper = null;
         address = null;
         connectionPool = new ConnectionPool();
+        distributionKey = Optional.empty();
     }
 
-    public Backend(String host, int port, String serverDiscriminator, ListenerPool listenerPool, ConnectionPool connectionPool) {
+    public Backend(String host,
+                   int port,
+                   String serverDiscriminator,
+                   ListenerPool listenerPool,
+                   ConnectionPool connectionPool,
+                   Optional<Integer> distributionKey) {
         String fileNamePattern = "qrs." + serverDiscriminator + '.' + host + ":" + port + ".%s" + ".dump";
         packetDumper = new PacketDumper(new File(Defaults.getDefaults().underVespaHome("logs/vespa/qrs/")),
                                         fileNamePattern);
@@ -86,6 +92,7 @@ public class Backend implements ConnectionFactory {
         this.port = port;
         address = new InetSocketAddress(host, port);
         this.connectionPool = connectionPool;
+        this.distributionKey = distributionKey;
     }
 
     private void logWarning(String attemptDescription, Exception e) {
@@ -96,10 +103,12 @@ public class Backend implements ConnectionFactory {
         log.log(Level.INFO, "Exception on " + attemptDescription + " '" + host + ":" + port + "': " + Exceptions.toMessageString(e));
     }
 
+    /** Returns the distribution key of the content node this represents, or empty if it is a dispatch node */
+    public Optional<Integer> distributionKey() { return distributionKey; }
+
     // ============================================================
     // ==== connection pool stuff
     // ============================================================
-
 
     /**
      * Fetch a connection from the connection pool.  If the pool
@@ -187,10 +196,7 @@ public class Backend implements ConnectionFactory {
     //==== channel management
     //============================================================
 
-    /**
-     * Open a new channel to fdispatch.  Analogous to the "Channel"
-     * concept as used in FS4.
-     */
+    /** Opens a new channel to fdispatch.  Analogous to the "Channel" concept as used in FS4. */
     public FS4Channel openChannel () {
         int cachedChannelId;
         synchronized (this) {
