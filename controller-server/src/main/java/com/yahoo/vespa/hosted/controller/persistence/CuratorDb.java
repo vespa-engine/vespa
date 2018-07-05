@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
@@ -13,6 +14,10 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -26,11 +31,13 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -53,6 +60,7 @@ public class CuratorDb {
     private static final Path lockRoot = root.append("locks");
     private static final Path tenantRoot = root.append("tenants");
     private static final Path applicationRoot = root.append("applications");
+    private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
@@ -61,6 +69,7 @@ public class CuratorDb {
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
+    private final RunSerializer runSerializer = new RunSerializer();
 
     private final Curator curator;
 
@@ -93,12 +102,20 @@ public class CuratorDb {
         return lock;
     }
 
-    public Lock lock(TenantName name, Duration timeout) {
-        return lock(lockPath(name), timeout);
+    public Lock lock(TenantName name) {
+        return lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
-    public Lock lock(ApplicationId id, Duration timeout) {
-        return lock(lockPath(id), timeout);
+    public Lock lock(ApplicationId id) {
+        return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+    }
+
+    public Lock lock(ApplicationId id, JobType type) {
+        return lock(lockPath(id, type), defaultLockTimeout);
+    }
+
+    public Lock lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
+        return tryLock(lockPath(id, type, step));
     }
 
     public Lock lockRotations() {
@@ -113,11 +130,8 @@ public class CuratorDb {
         return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
-    public Lock lockMaintenanceJob(String jobName) {
-        // Use a short timeout such that if maintenance jobs are started at about the same time on different nodes
-        // and the maintenance job takes a long time to complete, only one of the nodes will run the job
-        // in each maintenance interval
-        return lock(lockRoot.append("maintenanceJobLocks").append(jobName), Duration.ofSeconds(1));
+    public Lock lockMaintenanceJob(String jobName) throws TimeoutException {
+        return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
     }
 
     @SuppressWarnings("unused") // Called by internal code
@@ -136,6 +150,19 @@ public class CuratorDb {
     }
 
     // -------------- Helpers ------------------------------------------
+
+    /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
+     *
+     * Useful for maintenance jobs, where there is no point in running the jobs back to back.
+     */
+    private Lock tryLock(Path path) throws TimeoutException {
+        try {
+            return lock(path, Duration.ofSeconds(1));
+        }
+        catch (UncheckedTimeoutException e) {
+            throw new TimeoutException(e.getMessage());
+        }
+    }
 
     private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
         return curator.getData(path).filter(data -> data.length > 0).map(mapper);
@@ -278,6 +305,40 @@ public class CuratorDb {
         curator.delete(applicationPath(application));
     }
 
+    // -------------- Job Runs ------------------------------------------------
+
+    public void writeLastRun(RunStatus run) {
+        curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(runSerializer.toSlime(run)));
+    }
+
+    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<RunStatus> runs) {
+        curator.set(jobPath(id, type), asJson(runSerializer.toSlime(runs)));
+    }
+
+    public Optional<RunStatus> readLastRun(ApplicationId id, JobType type) {
+        return readSlime(lastRunPath(id, type)).map(runSerializer::runFromSlime);
+    }
+
+    public Map<RunId, RunStatus> readHistoricRuns(ApplicationId id, JobType type) {
+        // TODO jvenstad: Add, somewhere, a retention filter based on age or count.
+        return readSlime(jobPath(id, type)).map(runSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
+    }
+
+    public void deleteJobData(ApplicationId id, JobType type) {
+        curator.delete(jobPath(id, type));
+        curator.delete(lastRunPath(id, type));
+    }
+
+    public void deleteJobData(ApplicationId id) {
+        curator.delete(jobRoot.append(id.serializedForm()));
+    }
+
+    public List<ApplicationId> applicationsWithJobs() {
+        return curator.getChildren(jobRoot).stream()
+                      .map(ApplicationId::fromSerializedForm)
+                      .collect(Collectors.toList());
+    }
+
     // -------------- Provisioning (called by internal code) ------------------
 
     @SuppressWarnings("unused")
@@ -333,6 +394,27 @@ public class CuratorDb {
         return lockPath;
     }
 
+    private Path lockPath(ApplicationId application, JobType type) {
+        Path lockPath = lockRoot
+                .append(application.tenant().value())
+                .append(application.application().value())
+                .append(application.instance().value())
+                .append(type.jobName());
+        curator.create(lockPath);
+        return lockPath;
+    }
+
+    private Path lockPath(ApplicationId application, JobType type, Step step) {
+        Path lockPath = lockRoot
+                .append(application.tenant().value())
+                .append(application.application().value())
+                .append(application.instance().value())
+                .append(type.jobName())
+                .append(step.name());
+        curator.create(lockPath);
+        return lockPath;
+    }
+
     private Path lockPath(String provisionId) {
         Path lockPath = lockRoot
                 .append(provisionStatePath())
@@ -379,6 +461,14 @@ public class CuratorDb {
 
     private static Path applicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
+    }
+
+    private static Path jobPath(ApplicationId id, JobType type) {
+        return jobRoot.append(id.serializedForm()).append(type.jobName());
+    }
+
+    private static Path lastRunPath(ApplicationId id, JobType type) {
+        return jobPath(id, type).append("last");
     }
 
     private static Path controllerPath(String hostname) {

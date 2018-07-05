@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
  *
  * @author jonmv
  */
-public enum JobOutcome {
+public enum RunResult {
 
     /** Deployment of the real application was rejected due to missing capacity. */
     outOfCapacity,
@@ -13,8 +13,8 @@ public enum JobOutcome {
     /** Deployment of the real application was rejected. */
     deploymentFailed,
 
-    /** Convergence of the real application timed out. */
-    convergenceFailed,
+    /** Installation of the real application timed out. */
+    installationFailed,
 
     /** Real application was deployed, but the tester application was not. */
     testError,

@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,7 +51,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
                 }
             }
         }
-        catch (UncheckedTimeoutException e) {
+        catch (TimeoutException e) {
             // another controller instance is running this job at the moment; ok
         }
         catch (Throwable t) {

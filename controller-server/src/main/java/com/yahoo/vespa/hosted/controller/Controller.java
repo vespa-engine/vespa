@@ -133,6 +133,8 @@ public class Controller extends AbstractComponent {
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);
+
+        jobController.updateStorage();
     }
     
     /** Returns the instance controlling tenants */
@@ -140,6 +142,9 @@ public class Controller extends AbstractComponent {
 
     /** Returns the instance controlling applications */
     public ApplicationController applications() { return applicationController; }
+
+    /** Returns the instance controlling deployment jobs. */
+    public JobController jobController() { return jobController; }
 
     public List<AthenzDomain> getDomainList(String prefix) {
         return athenzClientFactory.createZmsClientWithServicePrincipal().getDomainList(prefix);

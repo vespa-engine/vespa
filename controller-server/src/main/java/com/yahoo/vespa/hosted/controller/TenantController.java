@@ -203,7 +203,7 @@ public class TenantController {
      * and store the tenant, and finally release (close) the lock.
      */
     private Lock lock(TenantName tenant) {
-        return curator.lock(tenant, Duration.ofMinutes(10));
+        return curator.lock(tenant);
     }
 
     private static boolean inDomain(Tenant tenant, AthenzDomain domain) {

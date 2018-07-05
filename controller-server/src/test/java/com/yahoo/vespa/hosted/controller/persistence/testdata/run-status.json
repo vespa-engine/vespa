@@ -1,0 +1,21 @@
+[
+  {
+    "id": "tenant:application:default",
+    "type": "production-us-east-3",
+    "number": 112358,
+    "start": 1196676930000,
+    "steps": {
+      "DIR": "U",
+      "IIR": "F",
+      "DR":  "S",
+      "IR":  "U",
+      "DAR": "F",
+      "DT":  "S",
+      "IT":  "U",
+      "DAT": "F",
+      "ST":  "S",
+      "ET":  "U",
+      "R":   "F"
+    }
+  }
+]

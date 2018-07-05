@@ -55,7 +55,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -140,6 +139,8 @@ public class ApplicationController {
     public List<Application> asList(TenantName tenant) {
         return sort(curator.readApplications(tenant));
     }
+
+    public ArtifactRepository artifacts() { return artifactRepository; }
 
     /**
      * Set the rotations marked as 'global' either 'in' or 'out of' service.
@@ -232,8 +233,8 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(ApplicationId id, Optional<NToken> token) {
-        if ( ! (id.instance().isDefault() || id.instance().value().matches("\\d+"))) // TODO: Support instances properly
-            throw new UnsupportedOperationException("Only the instance names 'default' and names which are just the PR number are supported at the moment");
+        if ( ! (id.instance().isDefault())) // TODO: Support instances properly
+            throw new UnsupportedOperationException("Only the instance name 'default' is supported at the moment");
         try (Lock lock = lock(id)) {
             // Validate only application names which do not already exist.
             if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
@@ -352,6 +353,14 @@ public class ApplicationController {
             // Deploy by calling node repository directly
             configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
         }
+    }
+
+    /** Assembles and deploys a tester application to the given zone. */
+    public ActivateResult deployTester(ApplicationId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
+        if ( ! tester.instance().value().endsWith("-t"))
+            throw new IllegalArgumentException("'" + tester + "' is not a tester application!");
+
+        return deploy(tester, applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
@@ -599,7 +608,7 @@ public class ApplicationController {
      * and store the application, and finally release (close) the lock.
      */
     Lock lock(ApplicationId application) {
-        return curator.lock(application, Duration.ofMinutes(10));
+        return curator.lock(application);
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */

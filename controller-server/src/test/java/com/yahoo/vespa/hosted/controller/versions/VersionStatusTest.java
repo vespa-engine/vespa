@@ -170,11 +170,6 @@ public class VersionStatusTest {
         // Application without deployment
         Application ignored0 = tester.createApplication("ignored0", "tenant1", 1000, 1000L);
 
-        // Pull request builds
-        tester.controllerTester().createApplication(TenantName.from("tenant1"),
-                                                    "ignored1",
-                                                    "43", 1000);
-
         assertEquals("All applications running on this version: High",
                      Confidence.high, confidence(tester.controller(), version0));
 

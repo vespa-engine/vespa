@@ -211,52 +211,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testPullRequestDeployment() {
-        // Setup system
-        ControllerTester tester = new ControllerTester();
-        ApplicationController applications = tester.controller().applications();
-
-        // staging deployment
-        long app1ProjectId = 22;
-        ApplicationId app1 = tester.createAndDeploy("tenant1",  "domain1",
-                                                    "application1", Environment.staging,
-                                                    app1ProjectId).id();
-
-        // pull-request deployment - uses different instance id
-        ApplicationId app1pr = tester.createAndDeploy("tenant1",  "domain1",
-                                                      "application1", "1",
-                                                      Environment.staging, app1ProjectId, null).id();
-
-        assertTrue(applications.get(app1).isPresent());
-        assertEquals(app1, applications.get(app1).get().id());
-        assertTrue(applications.get(app1pr).isPresent());
-        assertEquals(app1pr, applications.get(app1pr).get().id());
-
-        // Simulate restart
-        tester.createNewController();
-        applications = tester.controller().applications();
-
-        assertTrue(applications.get(app1).isPresent());
-        assertEquals(app1, applications.get(app1).get().id());
-        assertTrue(applications.get(app1pr).isPresent());
-        assertEquals(app1pr, applications.get(app1pr).get().id());
-
-        // Deleting application also removes PR instance
-        ApplicationId app2 = tester.createAndDeploy("tenant1",  "domain1",
-                                                    "application2", Environment.staging,
-                                                    33).id();
-        tester.controller().applications().deleteApplication(app1, Optional.of(new NToken("ntoken")));
-        assertEquals("All instances deleted", 0,
-                     tester.controller().applications().asList(app1.tenant()).stream()
-                                                    .filter(app -> app.id().application().equals(app1.application()))
-                                                    .count());
-        assertEquals("Other application survives", 1,
-                     tester.controller().applications().asList(app1.tenant()).stream()
-                           .filter(app -> app.id().application().equals(app2.application()))
-                           .count());
-    }
-
-    @Test
     public void testGlobalRotations() throws IOException {
         // Setup tester and app def
         ControllerTester tester = new ControllerTester();
@@ -537,35 +491,6 @@ public class ControllerTest {
 
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
-    }
-
-    @Test
-    public void testDeploymentOfNewInstanceWithIllegalApplicationName() {
-        ControllerTester tester = new ControllerTester();
-        String application = "this_application_name_is_far_too_long_and_has_underscores";
-        ZoneId zone = ZoneId.from("test", "us-east-1");
-        DeployOptions options = new DeployOptions(false,
-                                                  Optional.empty(),
-                                                  false,
-                                                  false);
-
-        tester.createTenant("tenant", "domain", null);
-
-        // Deploy an application which doesn't yet exist, and which has an illegal application name.
-        try {
-            tester.controller().applications().deploy(ApplicationId.from("tenant", application, "123"), zone, Optional.empty(), options);
-            fail("Illegal application name should cause validation exception.");
-        }
-        catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Invalid id"));
-        }
-
-        // Sneak an illegal application in the back door.
-        tester.createApplication(new ApplicationSerializer().toSlime(new Application(ApplicationId.from("tenant", application, "default"))));
-
-        // Deploy a PR instance for the application, with no NToken.
-        tester.controller().applications().deploy(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options);
-        assertTrue(tester.controller().applications().get(ApplicationId.from("tenant", application, "456")).isPresent());
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

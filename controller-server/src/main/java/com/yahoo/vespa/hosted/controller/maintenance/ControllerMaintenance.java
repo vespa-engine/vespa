@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
+import com.yahoo.vespa.hosted.controller.deployment.DummyStepRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -38,6 +39,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
     private final DnsMaintainer dnsMaintainer;
     private final SystemUpgrader systemUpgrader;
+    private final JobRunner jobRunner;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
@@ -59,6 +61,7 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
+        jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl, new DummyStepRunner());
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -81,6 +84,7 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationOwnershipConfirmer.deconstruct();
         dnsMaintainer.deconstruct();
         systemUpgrader.deconstruct();
+        jobRunner.deconstruct();
     }
 
 }
