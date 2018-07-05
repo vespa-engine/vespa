@@ -46,7 +46,6 @@ import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.yolean.Exceptions;
 import edu.umd.cs.findbugs.annotations.Nullable;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -270,12 +269,23 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         this("");
     }
 
+
     /**
      * Construct a query from a string formatted in the http style, e.g <code>?query=test&amp;offset=10&amp;hits=13</code>
      * The query must be uri encoded.
      */
     public Query(String query) {
         this(query, null);
+    }
+
+
+    /**
+     * Creates a query from a request
+     *
+     * @param request the HTTP request from which this is created
+     */
+    public Query(HttpRequest request) {
+        this(request, null);
     }
 
     /**
@@ -293,19 +303,23 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @param queryProfile the query profile to use for this query, or null if none.
      */
     public Query(HttpRequest request, CompiledQueryProfile queryProfile) {
-        super(new QueryPropertyAliases(propertyAliases));
-        this.httpRequest = request;
-        init(request.propertyMap(), queryProfile);
+        this(request, request.propertyMap(), queryProfile);
     }
 
     /**
      * Creates a query from a request
      *
-     * @param request the HTTP request from which this is created
+     * @param request the HTTP request from which this is created.
+     * @param requestMap the property map of the query.
+     * @param queryProfile the query profile to use for this query, or null if none.
      */
-    public Query(HttpRequest request) {
-        this(request, null);
+    public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
+        super(new QueryPropertyAliases(propertyAliases));
+        this.httpRequest = request;
+        init(requestMap, queryProfile);
     }
+
+
 
     private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         startTime = System.currentTimeMillis();

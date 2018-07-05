@@ -63,14 +63,32 @@ public class RequestHandlerTestDriver implements AutoCloseable {
         return sendRequest(uri, method, "");
     }
 
+    /** Send a POST request */
     public MockResponseHandler sendRequest(String uri, HttpRequest.Method method, String body) {
         return sendRequest(uri, method, ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    /** Send a POST request with defined content type */
+    public MockResponseHandler sendRequest(String uri, HttpRequest.Method method, String body, String contentType) {
+        return sendRequest(uri, method, ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)), contentType);
     }
 
     public MockResponseHandler sendRequest(String uri, HttpRequest.Method method, ByteBuffer body) {
         responseHandler = new MockResponseHandler();
         Request request = HttpRequest.newServerRequest(driver, URI.create(uri), method);
         request.context().put("contextVariable", 37); // TODO: Add a method for accepting a Request instead
+        ContentChannel requestContent = request.connect(responseHandler);
+        requestContent.write(body, null);
+        requestContent.close(null);
+        request.release();
+        return responseHandler;
+    }
+
+    public MockResponseHandler sendRequest(String uri, HttpRequest.Method method, ByteBuffer body, String contentType) {
+        responseHandler = new MockResponseHandler();
+        Request request = HttpRequest.newServerRequest(driver, URI.create(uri), method);
+        request.context().put("contextVariable", 37); // TODO: Add a method for accepting a Request instead
+        request.headers().put(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE, contentType);
         ContentChannel requestContent = request.connect(responseHandler);
         requestContent.write(body, null);
         requestContent.close(null);
