@@ -190,7 +190,7 @@ exec_jsvc () {
         ${jsvc_opts} \
         ${memory_options} \
         ${jvm_gcopts} \
-        -XX:MaxJavaStackTraceDepth=-1 \
+        -XX:MaxJavaStackTraceDepth=1000000 \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
         -XX:OnOutOfMemoryError='kill -9 %p' \
@@ -262,7 +262,7 @@ exec $numactlcmd $envcmd java \
         -XX:+PreserveFramePointer \
         ${memory_options} \
         ${jvm_gcopts} \
-        -XX:MaxJavaStackTraceDepth=-1 \
+        -XX:MaxJavaStackTraceDepth=1000000 \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
         -XX:OnOutOfMemoryError='kill -9 %p' \
