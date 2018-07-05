@@ -4,7 +4,6 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.provision.*;
 
 import java.util.List;
-import java.util.logging.Level;
 
 /**
  * Interface towards the host provisioner used to build a {@link Model}. The difference between this provisioner

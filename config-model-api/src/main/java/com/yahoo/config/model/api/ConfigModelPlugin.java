@@ -4,7 +4,7 @@ package com.yahoo.config.model.api;
 /**
  * Interface of config model plugins.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public interface ConfigModelPlugin {
 }

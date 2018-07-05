@@ -8,7 +8,6 @@ import java.util.List;
  * between the current active model and the next model to prepare.
  *
  * @author geirst
- * @since 5.40
  */
 public interface ConfigChangeAction {
 

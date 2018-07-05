@@ -21,7 +21,6 @@ public interface ConfigDefinitionRepo {
     /**
      * Gets a config definition from repo or null if not found
      */
-    // TODO: Remove default implementation when 6.246 is the oldest version in use
-    default ConfigDefinition get(ConfigDefinitionKey key) { return null; }
+    ConfigDefinition get(ConfigDefinitionKey key);
 
 }
