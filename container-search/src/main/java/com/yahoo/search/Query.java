@@ -497,11 +497,15 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * Get the appropriate timeout for the query.
      *
      * @return timeout in milliseconds
-     **/
+     */
     public long getTimeLeft() {
         return getTimeout() - getDurationTime();
     }
 
+    /**
+     * @deprecated do not use
+     */
+    @Deprecated // TODO: Remove on Vespa 7
     public boolean requestHasProperty(String name) {
         return httpRequest.hasProperty(name);
     }

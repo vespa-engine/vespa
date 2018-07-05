@@ -1,0 +1,327 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search rankexpression {
+  
+  document rankexpression {
+
+    field artist type string {
+      indexing: summary | index
+    }
+
+    field title type string {
+      indexing: summary | index
+    }
+
+    field surl type string {
+      indexing: summary
+    }
+
+    field year type int {
+      indexing: summary | attribute
+    }
+
+    field foo1 type int {
+      indexing: attribute
+    }
+
+    field foo2 type int {
+      indexing: attribute
+    }
+
+    field foo3 type int {
+      indexing: attribute
+    }
+
+    field foo4 type int {
+      indexing: attribute
+    }
+
+    field bar1 type int {
+      indexing: attribute
+    }
+
+    field bar2 type int {
+      indexing: attribute
+    }
+
+    field bar3 type int {
+      indexing: attribute
+    }
+
+    field bar4 type int {
+      indexing: attribute
+    }
+
+  }
+
+  rank-profile default {
+      first-phase {
+        expression: classicRank
+        keep-rank-count: 20
+        rank-score-drop-limit: -0.5
+      }
+      second-phase {
+        expression: if(3>2,4,2)
+        rerank-count: 10
+      }
+      rank-features: attribute(foo1).out attribute(bar1)
+      rank-features { attribute(foo2).out attribute(bar2).out }
+      rank-features {
+        attribute(foo3).out attribute(bar3).out }
+      rank-features {
+        attribute(foo4).out
+        attribute(bar4).out 
+      }
+      ignore-default-rank-features
+
+      rank-properties {
+          foo: "bar, baz"
+          qux: "quux"
+          foo: "foobar"
+          foo.bar: "foo.bar"
+          foo.bar.baz: 123
+          foo ( bar ) . baz.2  : 123.4
+          foo(bar).baz.qux: "foo(bar)"
+          "nud":"ity"
+      }
+
+  }
+
+  rank-profile static {
+      first-phase {
+        expression { attribute }
+      }
+      second-phase {
+        expression {
+            file:rankexpression
+        }
+      }
+      summary-features: attribute(foo1).out attribute(bar1)
+      summary-features { attribute(foo2).out attribute(bar2).out }
+      summary-features {
+        attribute(foo3).out attribute(bar3).out }
+      summary-features {
+        attribute(foo4).out
+        attribute(bar4).out
+      }
+  }
+
+  rank-profile overflow {
+      first-phase {
+        expression: file:overflow.expression
+        keep-rank-count: 201
+        rank-score-drop-limit: 501.5
+      }
+      second-phase {
+        expression {
+            exp(0) + 
+            mysum(attribute(foo),
+                "attribute( bar )",
+                "attribute( \"baz\" )") 
+        }
+        rerank-count: 101
+      }
+  }
+
+  rank-profile duplicates {
+    rank-properties {
+      fieldMatch(a).proximityLimit: 4
+      fieldMatch(a).proximityTable: 0.2
+      fieldMatch(a).proximityTable: 0.4
+      fieldMatch(a).proximityTable: 0.6
+      fieldMatch(a).proximityTable: 0.8
+      fieldMatch(a).proximityTable: 1
+      fieldMatch(a).proximityTable: 0.8
+      fieldMatch(a).proximityTable: 0.6
+      fieldMatch(a).proximityTable: 0.4
+      fieldMatch(a).proximityTable: 0.2
+    }
+  }
+
+  rank-profile whitespace1 {
+    first-phase {
+      expression
+        	{
+
+        1
+        }}}
+
+  rank-profile whitespace2 {
+    first-phase
+    {
+      expression		{ 1 }
+    }
+  }
+
+  rank-profile macros {
+    first-phase {
+      expression: match + fieldMatch(title) + myfeature
+    }
+    second-phase {
+      expression: fourtimessum(match,rankBoost)
+    }
+    macro fourtimessum(var1, var2) {
+      expression: 4*(var1+var2)
+    }
+    macro myfeature() {
+       expression {
+         70 * fieldMatch(title).completeness * pow(0 - fieldMatch(title).earliness, 2) +
+         30 * pow(0 - fieldMatch(description).earliness, 2)
+       }
+    }
+    summary-features { 
+      fieldMatch(title)
+    }
+  }
+
+  rank-profile macros2 {
+    first-phase {
+      expression: classicRank
+    }
+    rank-properties {
+      foo: "some, list"
+    }
+    
+    second-phase {
+      expression: fourtimessum(match,match) + mysummaryfeature + myfeature
+    }
+    macro fourtimessum(var1, var2) {
+      expression: 4*(var1+var2)
+    }
+    macro myfeature() {
+       expression {
+         70 * fieldMatch(title).completeness * pow(0 - fieldMatch(title).earliness, 2) +
+         30 * pow(0 - fieldMatch(description).earliness, 2)
+       }
+    }
+    macro mysummaryfeature() {
+       expression {
+         70 * fieldMatch(title).completeness
+       }
+    }
+    macro mysummaryfeature2() {
+       expression {
+         71 * fieldMatch(title).completeness
+       }
+    }    
+    summary-features { 
+      mysummaryfeature
+      rankingExpression(mysummaryfeature2) # Required form earlier
+    }
+  }
+
+  rank-profile macros3 {
+    macro onlyusedinsummaryfeature() {
+      expression: 5
+    }
+    summary-features {
+      rankingExpression(matches(title,rankingExpression(onlyusedinsummaryfeature)))
+    }
+      
+  }
+
+  rank-profile macros3-inherited inherits macros3 {
+    summary-features {
+      rankingExpression(matches(title,rankingExpression(onlyusedinsummaryfeature)))
+    }
+  }
+
+  rank-profile macros-inherited inherits macros2 {
+    macro mysummaryfeature() {
+       expression {
+         80 * fieldMatch(title).completeness
+       }
+    }
+    first-phase {
+      expression {
+        20000 * myfeature + mysummaryfeature
+      }
+    }
+  }
+  
+  rank-profile macros-inherited2 inherits macros-inherited {
+    first-phase {
+      expression {
+        30000 * mysummaryfeature + myfeature
+      }
+    }
+  }
+
+ rank-profile macros-inherited3 inherits macros-inherited2 {
+    macro myfeature() {
+       expression {
+         700 * fieldMatch(title).completeness
+       }
+    }
+    second-phase {
+       expression {
+         40000 * mysummaryfeature + myfeature
+       }
+    }
+  }
+
+  rank-profile macros-refering-macros {
+    macro m2() {
+      expression: m1 * 67
+    }    
+
+    macro m1() {
+      expression {
+         700 * fieldMatch(title).completeness
+       }
+    }
+
+    macro m4() {
+      expression: file:macro.expression
+    }
+    
+    second-phase {
+      expression {
+        40000 * m2
+      }
+    }
+    
+  }
+
+  rank-profile macros-refering-macros-inherited inherits macros-refering-macros {
+    macro m3() {
+      expression {
+        if(isNan(attribute(nrtgmp))==1,
+          0.0,
+          (m2)
+        )
+      }
+    }
+    macro m4() {
+      expression {
+         701 * fieldMatch(title).completeness
+       }
+    }
+    second-phase {
+      expression {
+        3000 * m2
+      }
+    }
+  }
+
+  rank-profile macros-refering-macros-inherited2 inherits macros-refering-macros {
+    second-phase {
+      expression {
+        3002 * m2
+      }
+    }
+  }
+
+  rank-profile macros-refering-macros-inherited-two-levels inherits macros-refering-macros-inherited {
+    macro m5() {
+      expression {
+        if(isNan(attribute(glmpfw))==1,
+          m1,
+          (m4)
+        )
+      }          
+    }
+  }
+
+}
+
+
