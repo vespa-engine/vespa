@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * <p>An instance of this class can be injected anywhere.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @ProvidedBy(MetricProvider.class)
 public interface Metric {

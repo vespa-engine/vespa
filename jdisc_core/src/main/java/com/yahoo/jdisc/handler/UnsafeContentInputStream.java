@@ -13,7 +13,7 @@ import java.util.Objects;
  * always call {@link #close()} before discarding it. Failure to do so will prevent the Container from ever shutting
  * down.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class UnsafeContentInputStream extends InputStream {
 

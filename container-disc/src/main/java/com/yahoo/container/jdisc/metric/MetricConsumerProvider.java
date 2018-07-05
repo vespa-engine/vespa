@@ -20,7 +20,7 @@ import com.yahoo.metrics.MetricsPresentationConfig;
  * this class, which means any component that uses <tt>Metric</tt> will be reconfigured. Any component that depends
  * directly on <tt>MetricConsumer</tt> will also be reconfigured.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class MetricConsumerProvider {
 

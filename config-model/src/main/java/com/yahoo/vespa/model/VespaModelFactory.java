@@ -14,6 +14,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployProperties;
@@ -88,15 +89,15 @@ public class VespaModelFactory implements ModelFactory {
 
     @Override
     public Model createModel(ModelContext modelContext) {
-        return buildModel(createDeployState(modelContext, false));
+        return buildModel(createDeployState(modelContext, new ValidationParameters(ValidationParameters.IgnoreValidationErrors.TRUE)));
     }
 
     @Override
-    public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
-        validateXml(modelContext, ignoreValidationErrors);
-        DeployState deployState = createDeployState(modelContext, true);
+    public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
+        validateXml(modelContext, validationParameters.ignoreValidationErrors());
+        DeployState deployState = createDeployState(modelContext, validationParameters);
         VespaModel model = buildModel(deployState);
-        List<ConfigChangeAction> changeActions = validateModel(model, deployState, ignoreValidationErrors);
+        List<ConfigChangeAction> changeActions = validateModel(model, deployState, validationParameters);
         return new ModelCreateResult(model, changeActions);
     }
     
@@ -126,7 +127,7 @@ public class VespaModelFactory implements ModelFactory {
         }
     }
 
-    private DeployState createDeployState(ModelContext modelContext, boolean validate) {
+    private DeployState createDeployState(ModelContext modelContext, ValidationParameters validationParameters) {
         DeployState.Builder builder = new DeployState.Builder()
             .applicationPackage(modelContext.applicationPackage())
             .deployLogger(modelContext.deployLogger())
@@ -140,7 +141,7 @@ public class VespaModelFactory implements ModelFactory {
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
         modelContext.previousModel().ifPresent(builder::previousModel);
-        return builder.build(validate);
+        return builder.build(validationParameters);
     }
 
     private DeployProperties createDeployProperties(ModelContext.Properties properties) {
@@ -154,6 +155,7 @@ public class VespaModelFactory implements ModelFactory {
                 .hostedVespa(properties.hostedVespa())
                 .vespaVersion(getVersion())
                 .isBootstrap(properties.isBootstrap())
+                .isFirstTimeDeployment(properties.isFirstTimeDeployment())
                 .build();
     }
 
@@ -172,11 +174,11 @@ public class VespaModelFactory implements ModelFactory {
         }
     }
 
-    private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, boolean ignoreValidationErrors) {
+    private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, ValidationParameters validationParameters) {
         try {
-            return Validation.validate(model, ignoreValidationErrors, deployState);
+            return Validation.validate(model, validationParameters, deployState);
         } catch (IllegalArgumentException e) {
-            rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);
+            rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

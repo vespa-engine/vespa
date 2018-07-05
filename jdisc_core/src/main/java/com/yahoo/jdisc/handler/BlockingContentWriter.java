@@ -11,7 +11,7 @@ import java.util.Objects;
  * {@link ContentChannel} calls, and wait for these to be called before returning. If {@link
  * CompletionHandler#failed(Throwable)} is called, the corresponding Throwable is thrown to the caller.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @see FastContentWriter
  */
 public final class BlockingContentWriter {

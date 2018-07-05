@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bakksjo
  */
 public class ServletTestBase {

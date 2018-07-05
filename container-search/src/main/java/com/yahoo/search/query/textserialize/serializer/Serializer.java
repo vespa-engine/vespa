@@ -11,7 +11,7 @@ import static com.yahoo.search.query.textserialize.item.ListUtil.butFirst;
 import static com.yahoo.search.query.textserialize.item.ListUtil.first;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class Serializer {
     static String serialize(Object child, ItemIdMapper itemIdMapper) {

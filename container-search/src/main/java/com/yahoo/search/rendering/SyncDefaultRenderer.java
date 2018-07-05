@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings({ "rawtypes", "deprecation" })
 public final class SyncDefaultRenderer extends Renderer {

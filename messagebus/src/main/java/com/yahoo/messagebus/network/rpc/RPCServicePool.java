@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Class used to reuse services for the same address when sending messages over the rpc network.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RPCServicePool {
 

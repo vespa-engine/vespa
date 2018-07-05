@@ -5,7 +5,7 @@ import com.yahoo.container.jdisc.MetricConsumerFactory;
 import com.yahoo.jdisc.application.MetricConsumer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class MetricProviders {
 

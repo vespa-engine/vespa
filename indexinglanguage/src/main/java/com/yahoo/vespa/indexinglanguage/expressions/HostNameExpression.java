@@ -7,7 +7,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class HostNameExpression extends Expression {
 

@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * The component that is annotated with this must be placed earlier than the components or phases providing names
  * contained in the given list.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

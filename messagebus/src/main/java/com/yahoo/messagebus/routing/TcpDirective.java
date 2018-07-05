@@ -5,7 +5,7 @@ package com.yahoo.messagebus.routing;
  * This class represents a tcp directive within a {@link Hop}'s selector. This is a connection string used to establish
  * a direct connection to a host, bypassing service lookups through Slobrok.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class TcpDirective implements HopDirective {
 

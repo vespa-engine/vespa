@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.Serializer;
  * <p>This is the aggregation super-class from which all types of aggregation inherits.</p>
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class AggregationResult extends ExpressionNode {
 

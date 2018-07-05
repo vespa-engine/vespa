@@ -16,7 +16,7 @@ import java.util.List;
  * <p>Please see commentary on {@link OsgiFramework#installBundle(String)} for a description of exception-safety issues
  * to consider when installing bundles that use the {@link OsgiHeader#PREINSTALL_BUNDLE} manifest instruction.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class BundleInstaller {
 

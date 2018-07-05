@@ -13,7 +13,7 @@ namespace documentapi {
 /**
  * This policy implements the logic to select a subset of services that matches a slobrok pattern.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class SubsetServicePolicy : public mbus::IRoutingPolicy {

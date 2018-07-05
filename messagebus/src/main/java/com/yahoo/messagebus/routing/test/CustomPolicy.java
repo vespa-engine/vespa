@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class CustomPolicy implements RoutingPolicy  {
 

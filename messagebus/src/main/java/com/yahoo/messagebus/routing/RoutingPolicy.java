@@ -18,7 +18,7 @@ package com.yahoo.messagebus.routing;
  * This class is pluggable per template point in the address of a hop.
  *
  * @author bratseth
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface RoutingPolicy {
 

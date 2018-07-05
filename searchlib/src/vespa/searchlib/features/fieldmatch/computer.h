@@ -53,7 +53,7 @@ namespace fieldmatch {
  * <p>This class is not multithread safe, but is reusable across queries for a single thread.</p>
  *
  * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class Computer {

@@ -19,7 +19,7 @@ import static com.yahoo.search.federation.ProviderConfig.Yca;
 
 /**
  * A provider containing a http searcher.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class HttpProvider extends Provider implements ProviderConfig.Producer,
         QrBinaryCacheConfig.Producer,

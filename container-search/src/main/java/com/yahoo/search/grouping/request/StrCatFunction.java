@@ -7,7 +7,7 @@ import java.util.List;
  * This class represents a strcat-function in a {@link GroupingExpression}. It evaluates to a string that equals the
  * contatenation of the string results of all arguments in the order they were given to the constructor.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class StrCatFunction extends FunctionNode {
 

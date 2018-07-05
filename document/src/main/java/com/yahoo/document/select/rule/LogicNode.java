@@ -16,7 +16,7 @@ import java.util.Stack;
  * This class defines a logical expression of nodes. This implementation uses a stack to evaluate its content as to
  * avoid deep recursions when building the parse tree.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class LogicNode implements ExpressionNode {
 

@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * names to a document selector and a feed name of every search cluster. This can very well be extended to include
  * storage at a later time.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DocumentRouteSelectorPolicy
         implements DocumentProtocolRoutingPolicy, ConfigSubscriber.SingleSubscriber<DocumentrouteselectorpolicyConfig> {

@@ -108,7 +108,7 @@ case $1 in
         if [ "$userargs" == "" ]; then
             userargs=$services__jvmargs_configproxy
         fi
-        jvmopts="-Xms32M -Xmx256M -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=-1"
+        jvmopts="-Xms32M -Xmx256M -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000000"
 
         VESPA_SERVICE_NAME=configproxy
         export VESPA_SERVICE_NAME

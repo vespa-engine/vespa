@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * This policy implements the logic to prefer local services that matches a slobrok pattern.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
 

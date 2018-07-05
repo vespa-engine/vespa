@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.Serializer;
  * This is an aggregated result holding the maximum result of the matching hits.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MaxAggregationResult extends AggregationResult {
 

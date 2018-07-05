@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * Input for class analysis tests.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Fields {
     @DummyAnnotation

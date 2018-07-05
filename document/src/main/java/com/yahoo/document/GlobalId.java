@@ -14,7 +14,7 @@ import java.util.Arrays;
  *
  * This is immutable (by contract - not enforcable due to exposing the raw byte array).
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class GlobalId implements Comparable {
 

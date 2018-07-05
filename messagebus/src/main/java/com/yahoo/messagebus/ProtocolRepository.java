@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  * Implements a thread-safe repository for protocols and their routing policies. This manages an internal cache of
  * routing policies so that similarly referenced policy directives share the same instance of a policy.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ProtocolRepository {
 

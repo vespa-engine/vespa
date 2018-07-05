@@ -20,7 +20,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SerializeItemTestCase {
     @Test

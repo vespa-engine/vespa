@@ -12,7 +12,7 @@ import java.util.Deque;
 /**
  * A node which holds a constant (frozen) value.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class ConstantNode extends ExpressionNode {
 

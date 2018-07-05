@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class BinaryScaledAmountParser {
     //The pattern must match the one given in the schema

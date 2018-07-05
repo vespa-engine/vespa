@@ -7,7 +7,7 @@ import java.util.List;
  * This class represents a mul-function in a {@link GroupingExpression}. It evaluates to a number that equals the result
  * of multiplying the results of all arguments together in the order they were given to the constructor.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MulFunction extends FunctionNode {
 

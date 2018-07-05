@@ -8,7 +8,7 @@ import java.util.List;
  * of dividing the results of all arguments in the order they were given to the constructor (divide first argument by
  * second, result by third, ...).
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DivFunction extends FunctionNode {
 

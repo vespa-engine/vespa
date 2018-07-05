@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Encapsulates the production rule 'featureList()' int the RankingExpressionParser.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @Beta
 public class FeatureList implements Iterable<ReferenceNode> {

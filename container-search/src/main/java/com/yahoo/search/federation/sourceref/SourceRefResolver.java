@@ -15,7 +15,7 @@ import com.yahoo.processing.request.Properties;
 /**
  * Maps a source reference to search chain invocation specs.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SourceRefResolver {
 

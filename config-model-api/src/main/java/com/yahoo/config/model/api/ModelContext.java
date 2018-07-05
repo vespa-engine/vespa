@@ -50,6 +50,7 @@ public interface ModelContext {
         Zone zone();
         Set<Rotation> rotations();
         boolean isBootstrap();
+        boolean isFirstTimeDeployment();
     }
 
 }

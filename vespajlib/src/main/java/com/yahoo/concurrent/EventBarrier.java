@@ -17,7 +17,7 @@ import java.util.List;
  * other threads to complete.
  *
  * @author Haavard Pettersen
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class EventBarrier {
 

@@ -6,7 +6,7 @@ import java.util.Arrays;
 /**
  * This class is used in {@link Group} instances where the identifying expression evaluated to a {@link Byte} array.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RawId extends ValueGroupId<byte[]> {
 

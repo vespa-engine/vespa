@@ -7,7 +7,7 @@ import java.awt.image.Kernel;
 
 /**
  * Input for class analysis tests.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Base implements Interface1, Interface2 {
     @Override

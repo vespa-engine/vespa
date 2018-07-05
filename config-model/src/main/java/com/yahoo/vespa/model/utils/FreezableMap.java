@@ -11,7 +11,7 @@ import java.util.Set;
  * Delegates to a map that can be frozen.
  * Not thread safe.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FreezableMap<K, V> implements Map<K, V> {
     private boolean frozen = false;

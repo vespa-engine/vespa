@@ -39,10 +39,10 @@ public class ContentClusterUtils {
 
     private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions, DeployState.Builder deployStateBuilder) {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSearchDefinitions(searchDefinitions).build();
-        deployStateBuilder.applicationPackage(applicationPackage)
+        DeployState deployState = deployStateBuilder.applicationPackage(applicationPackage)
                           .modelHostProvisioner(provisioner)
-                          .build(true);
-        return new MockRoot("", deployStateBuilder.build(true));
+                          .build();
+        return new MockRoot("", deployState);
     }
 
     public static MockRoot createMockRoot(String[] hosts, List<String> searchDefinitions) {

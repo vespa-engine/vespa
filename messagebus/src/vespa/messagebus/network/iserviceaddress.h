@@ -9,7 +9,7 @@ namespace mbus {
  * This interface represents an abstract network service; i.e. somewhere to send messages. An instance of this is
  * retrieved by calling {@link Network#lookup(String)}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class IServiceAddress {

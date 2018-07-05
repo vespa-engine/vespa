@@ -2,7 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class AttributeExpression extends OutputExpression {
 

@@ -13,7 +13,7 @@ import java.util.Map;
  * <p>
  * This class is the root spec class for configuring message bus routing.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RoutingSpec {
 

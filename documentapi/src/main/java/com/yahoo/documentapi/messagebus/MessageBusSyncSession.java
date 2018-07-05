@@ -30,7 +30,7 @@ import java.time.Duration;
 /**
  * An implementation of the SyncSession interface running over message bus.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bjorncs
  */
 public class MessageBusSyncSession implements MessageBusSession, SyncSession, ReplyHandler {

@@ -16,7 +16,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ParseItemTestCase {
 

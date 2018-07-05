@@ -4,7 +4,7 @@ package com.yahoo.filedistribution.fileacquirer;
 /**
  * Hides the real file acquirer type from 3rd party developers.
  * Not intended to be used by 3rd parties.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FileAcquirerFactory {
     public static FileAcquirer create(String configId) {

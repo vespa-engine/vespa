@@ -17,7 +17,7 @@ import java.util.Set;
 
 /**
  * Creates a partial ChainSpecification without inner components
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ChainSpecificationBuilder {
     private final ComponentId componentId;

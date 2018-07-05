@@ -4,6 +4,10 @@ package com.yahoo.vespa.model.test.utils;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ValidationParameters;
+import com.yahoo.config.model.api.ValidationParameters.CheckRouting;
+import com.yahoo.config.model.api.ValidationParameters.FailOnIncompatibleChange;
+import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
@@ -15,7 +19,7 @@ import java.io.IOException;
 /**
  * For testing purposes only
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class VespaModelCreatorWithFilePkg {
 
@@ -56,12 +60,13 @@ public class VespaModelCreatorWithFilePkg {
             if (validateApplicationWithSchema) {
                 validate();
             }
-            DeployState deployState = new DeployState.Builder().applicationPackage(applicationPkg).build(true);
+            DeployState deployState = new DeployState.Builder().applicationPackage(applicationPkg).build();
             VespaModel model = new VespaModel(configModelRegistry, deployState);
             // Validate, but without checking configSources or routing (routing
             // is constructed in a special way and cannot always be validated in
             // this step for unit tests)
-            Validation.validate(model, false, false, deployState);
+            ValidationParameters validationParameters = new ValidationParameters(IgnoreValidationErrors.TRUE, FailOnIncompatibleChange.TRUE, CheckRouting.FALSE);
+            Validation.validate(model, validationParameters, deployState);
             return model;
         } catch (Exception e) {
             throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);

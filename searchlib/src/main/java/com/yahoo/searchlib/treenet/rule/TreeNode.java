@@ -2,7 +2,7 @@
 package com.yahoo.searchlib.treenet.rule;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class TreeNode {
 

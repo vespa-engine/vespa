@@ -25,7 +25,7 @@ import java.util.Set;
  * <p>In case you are parsing the content of a {@link Model}, you can use the {@link #fromQueryModel(Model)} factory for
  * convenience.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class Parsable {
 

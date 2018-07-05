@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class FilterConfigProvider implements Provider<FilterConfig> {
 

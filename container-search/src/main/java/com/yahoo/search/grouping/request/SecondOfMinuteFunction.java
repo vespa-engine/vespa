@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a second-of-minute timestamp-function in a {@link GroupingExpression}. It evaluates to a long
  * that equals the second of minute (0-59) of the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SecondOfMinuteFunction extends FunctionNode {
 

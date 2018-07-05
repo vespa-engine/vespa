@@ -5,7 +5,7 @@ package com.yahoo.searchlib.expression;
  * This is an abstract super-class for all functions that accept only a single argument.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class UnaryFunctionNode extends MultiArgFunctionNode {
 

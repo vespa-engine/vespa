@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a day-of-week timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
  * equals the day of week (0 - 6) of the result of the argument, Monday being 0.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DayOfWeekFunction extends FunctionNode {
 

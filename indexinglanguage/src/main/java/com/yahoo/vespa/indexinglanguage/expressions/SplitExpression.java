@@ -10,7 +10,7 @@ import com.yahoo.text.StringUtilities;
 import java.util.regex.Pattern;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SplitExpression extends Expression {
 

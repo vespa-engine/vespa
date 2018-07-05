@@ -8,7 +8,7 @@ package com.yahoo.searchlib.expression;
  * the result.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class XorBitFunctionNode extends UnaryBitFunctionNode {
 

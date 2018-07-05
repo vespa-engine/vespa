@@ -5,7 +5,7 @@ package com.yahoo.documentapi;
  * This response is provided for successful document remove operations. Use the
  * wasFound() method to check whether or not the document was actually found.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RemoveResponse extends Response {
 

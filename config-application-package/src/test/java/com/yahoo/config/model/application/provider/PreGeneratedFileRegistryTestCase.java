@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class PreGeneratedFileRegistryTestCase {
     @Test

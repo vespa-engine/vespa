@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * ContainerBuilder} has a mapping of named instances of this class for {@link RequestHandler}s, and is used to
  * configure the set of {@link BindingSet}s that eventually become part of the active {@link Container}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class BindingRepository<T> implements Iterable<Map.Entry<UriPattern, T>> {
 

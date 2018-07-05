@@ -270,10 +270,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      */
     public boolean delete(ApplicationId applicationId) {
         // TODO: Use deleteApplication() in all zones
-        if ( ! configserverConfig.hostedVespa() || SystemName.from(configserverConfig.system()) == SystemName.cd) {
-            return deleteApplication(applicationId);
-        } else {
+        if (configserverConfig.deleteApplicationLegacy() ||
+                (configserverConfig.hostedVespa() && SystemName.from(configserverConfig.system()) == SystemName.main
+                        && !Arrays.asList("corp-us-east-1", "aws-us-east-1a").contains(configserverConfig.region()))) {
             return deleteApplicationLegacy(applicationId);
+        } else {
+            return deleteApplication(applicationId);
         }
     }
 
@@ -648,6 +650,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Set<ApplicationId> applicationsNotRedeployed = listApplications();
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
+            if ( ! applicationsNotRedeployed.isEmpty()) {
+                Thread.sleep(Duration.ofSeconds(30).toMillis());
+            }
         } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
 
         if ( ! applicationsNotRedeployed.isEmpty()) {

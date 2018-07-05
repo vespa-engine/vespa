@@ -345,13 +345,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, Application application, HttpRequest request) {
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
+
         // Currently deploying change
         if (application.change().isPresent()) {
-            Cursor deployingObject = object.setObject("deploying");
-            application.change().platform().ifPresent(v -> deployingObject.setString("version", v.toString()));
-            application.change().application()
-                                   .filter(v -> v != ApplicationVersion.unknown)
-                                   .ifPresent(v -> toSlime(v, deployingObject.setObject("revision")));
+            toSlime(object.setObject("deploying"), application.change());
+        }
+
+        // Outstanding change
+        if (application.outstandingChange().isPresent()) {
+            toSlime(object.setObject("outstandingChange"), application.outstandingChange());
         }
 
         // Jobs sorted according to deployment spec
@@ -452,6 +454,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         toSlime(slime.setObject(), deploymentId, deployment, request);
         return new SlimeJsonResponse(slime);
+    }
+
+    private void toSlime(Cursor object, Change change) {
+        change.platform().ifPresent(version -> object.setString("version", version.toString()));
+        change.application()
+              .filter(version -> !version.isUnknown())
+              .ifPresent(version -> toSlime(version, object.setObject("revision")));
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {

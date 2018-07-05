@@ -46,8 +46,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<URI, Version> versions = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
+    private final Version initialVersion = new Version(6, 1, 0);
 
-    private Version initialVersion = new Version(6, 1, 0);
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
 
@@ -93,14 +93,6 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     /** The exception to throw on the next prepare run, or null to continue normally */
     public void throwOnNextPrepare(RuntimeException prepareException) {
         this.prepareException = prepareException;
-    }
-
-    /**
-     * Returns the (initially empty) mutable map of config server urls to versions.
-     * This API will return defaultVersion as response to any version(url) call for versions not added to the map.
-     */
-    public Map<URI, Version> versions() {
-        return versions;
     }
 
     /** Set version for system applications in given zone */

@@ -13,7 +13,7 @@ import java.util.Set;
  * transformed into a list {@link com.yahoo.searchlib.aggregation.Grouping} objects, so that the results of those
  * queries can be transformed into something that corresponds to the original request.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 class GroupingTransform {
 

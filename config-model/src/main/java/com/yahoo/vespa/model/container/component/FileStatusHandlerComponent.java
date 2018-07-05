@@ -6,7 +6,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 
 /**
  * Sets up VipStatusHandler that answers OK when a certain file is present.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FileStatusHandlerComponent extends Handler implements VipStatusConfig.Producer {
     public static final String CLASS = "com.yahoo.container.handler.VipStatusHandler";

@@ -5,7 +5,7 @@ import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.document.datatypes.FieldValue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 final class UnresolvedDataType extends PrimitiveDataType {
 

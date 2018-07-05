@@ -6,7 +6,7 @@ package com.yahoo.search.grouping.result;
  * fall outside the buckets of a {@link com.yahoo.search.grouping.request.PredefinedFunction} are added to an
  * auto-generated group with this id.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class NullId extends GroupId {
 

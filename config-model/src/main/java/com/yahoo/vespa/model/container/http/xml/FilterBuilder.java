@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.http.FilterConfigProvider;
 import org.w3c.dom.Element;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public class FilterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Filter> {

@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class ClusterUtilizationMaintainer extends Maintainer {
 
-    Controller controller;
+    private final Controller controller;
 
     public ClusterUtilizationMaintainer(Controller controller, Duration duration, JobControl jobControl) {
         super(controller, duration, jobControl);

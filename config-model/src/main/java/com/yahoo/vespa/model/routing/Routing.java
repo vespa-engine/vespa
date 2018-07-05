@@ -14,7 +14,7 @@ import java.util.*;
  * explicitly by the user in the optional &lt;routing&gt; element. If there is no such element, only default routes and
  * hops will be available.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Routing extends ConfigModel {
 

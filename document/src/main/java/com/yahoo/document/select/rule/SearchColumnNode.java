@@ -6,7 +6,7 @@ import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SearchColumnNode implements ExpressionNode {
 

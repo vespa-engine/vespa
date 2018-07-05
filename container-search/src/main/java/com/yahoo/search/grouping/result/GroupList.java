@@ -9,7 +9,7 @@ import com.yahoo.search.grouping.GroupingRequest;
  * contains one or more {@link Group groups} itself, allowing for a hierarchy of grouping results. Use the {@link
  * GroupingRequest#getResultGroup(Result)} to retrieve grouping results.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class GroupList extends AbstractList {
 

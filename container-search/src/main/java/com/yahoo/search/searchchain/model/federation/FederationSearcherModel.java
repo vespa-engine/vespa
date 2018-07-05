@@ -15,7 +15,7 @@ import com.yahoo.search.federation.FederationSearcher;
 /**
  * Specifies how a federation searcher is to be set up.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Immutable
 public class FederationSearcherModel extends ChainedComponentModel {

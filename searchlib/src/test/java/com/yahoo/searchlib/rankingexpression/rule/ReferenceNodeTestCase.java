@@ -9,7 +9,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ReferenceNodeTestCase {
 

@@ -2,7 +2,7 @@
 package com.yahoo.filedistribution.fileacquirer;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FileReferenceRemovedException extends RuntimeException {
     public final String fileReference;

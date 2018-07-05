@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
@@ -24,7 +25,6 @@ import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.model.ConfigProducer;
-import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Configserver;
@@ -246,9 +246,9 @@ public class VespaModelTestCase {
                 .withHosts(simpleHosts)
                 .withServices(services)
                 .build();
-        DeployState deployState = builder.deployLogger(logger).applicationPackage(app).build(true);
+        DeployState deployState = builder.deployLogger(logger).applicationPackage(app).build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        Validation.validate(model, true, deployState);
+        Validation.validate(model, new ValidationParameters(ValidationParameters.IgnoreValidationErrors.TRUE), deployState);
         assertFalse(logger.msgs.isEmpty());
     }
 
@@ -283,7 +283,7 @@ public class VespaModelTestCase {
                         .configServerSpecs(Arrays.asList(new Configserver.Spec("cfghost", 1234, 1235, 1236)))
                         .multitenant(true)
                         .build())
-                .build(true);
+                .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         AllocatedHosts info = model.allocatedHosts();
         assertEquals("Admin version 3 is ignored, and there are no other hosts to borrow for admin services", 0, info.getHosts().size());
@@ -302,9 +302,9 @@ public class VespaModelTestCase {
     public void testPermanentServices() throws IOException, SAXException {
         ApplicationPackage app = MockApplicationPackage.createEmpty();
         DeployState.Builder builder = new DeployState.Builder().applicationPackage(app);
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), builder.build(true));
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), builder.build());
         assertThat(model.getContainerClusters().size(), is(0));
-        model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build(true));
+        model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build());
         assertThat(model.getContainerClusters().size(), is(1));
     }
 

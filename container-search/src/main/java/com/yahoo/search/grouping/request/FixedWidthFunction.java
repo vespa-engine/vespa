@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a fixed-width bucket-function in a {@link GroupingExpression}. It maps the input into the given
  * number of buckets by the result of the argument expression.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class FixedWidthFunction extends FunctionNode {
 

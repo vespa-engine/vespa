@@ -16,7 +16,7 @@ import java.util.Set;
 
 /**
  * Adds default search chains for all local clusters not mentioned explicitly
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class LocalClustersCreator {
     static ChainSpecification emptySearchChainSpecification(String componentName) {

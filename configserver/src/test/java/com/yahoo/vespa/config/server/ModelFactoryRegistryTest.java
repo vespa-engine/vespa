@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -88,7 +89,7 @@ public class ModelFactoryRegistryTest {
         }
 
         @Override
-        public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
+        public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
             return null;
         }
     }

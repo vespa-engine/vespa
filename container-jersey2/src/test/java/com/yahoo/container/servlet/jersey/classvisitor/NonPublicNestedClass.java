@@ -4,7 +4,7 @@ package com.yahoo.container.servlet.jersey.classvisitor;
 import javax.ws.rs.Path;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class NonPublicNestedClass {
     @Path("ignored")

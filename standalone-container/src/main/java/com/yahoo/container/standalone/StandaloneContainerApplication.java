@@ -230,7 +230,7 @@ public class StandaloneContainerApplication implements Application {
         ApplicationPackage applicationPackage = rawApplicationPackage.preprocess(Zone.defaultZone(), logger);
         validateApplication(applicationPackage);
         DeployState deployState = new DeployState.Builder().applicationPackage(applicationPackage).fileRegistry(fileRegistry)
-                .deployLogger(logger).configDefinitionRepo(configDefinitionRepo).build(true);
+                .deployLogger(logger).configDefinitionRepo(configDefinitionRepo).build();
 
         VespaModel root = VespaModel.createIncomplete(deployState);
         ApplicationConfigProducerRoot vespaRoot = new ApplicationConfigProducerRoot(root, "vespa", deployState.getDocumentModel(),

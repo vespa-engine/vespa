@@ -18,7 +18,6 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
@@ -33,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrgani
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -43,6 +43,7 @@ import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
+import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -97,6 +98,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .build();
 
     private static final AthenzDomain ATHENZ_TENANT_DOMAIN = new AthenzDomain("domain1");
+    private static final AthenzDomain ATHENZ_TENANT_DOMAIN_2 = new AthenzDomain("domain2");
     private static final ScrewdriverId SCREWDRIVER_ID = new ScrewdriverId("12345");
     private static final UserId USER_ID = new UserId("myuser");
     private static final UserId HOSTED_VESPA_OPERATOR = new UserId("johnoperator");
@@ -145,7 +147,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
 
         // Add another Athens domain, so we can try to create more tenants
-        createAthenzDomainWithAdmin(new AthenzDomain("domain2"), USER_ID); // New domain to test tenant w/property ID
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN_2, USER_ID); // New domain to test tenant w/property ID
         // Add property info for that property id, as well, in the mock organization.
         addPropertyData((MockOrganization) controllerTester.controller().organization(), "1234");
         // POST (add) a tenant with property ID
@@ -194,7 +196,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        ATHENZ_TENANT_DOMAIN,
                                        new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value())); // (Necessary but not provided in this API)
 
-        // Trigger deployment from completion of component job
+        // Pipeline notifies about completed component job
         controllerTester.jobCompletion(JobType.component)
                         .application(id)
                         .projectId(screwdriverProjectId)
@@ -203,13 +205,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // ... systemtest
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
-                                      .data(createApplicationDeployData(applicationPackage, false))
+                                      .data(createApplicationDeployData(Optional.empty(), false))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default", DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default");
-        // Called through the separate screwdriver/v1 API
+
         controllerTester.jobCompletion(JobType.systemTest)
                         .application(id)
                         .projectId(screwdriverProjectId)
@@ -217,7 +219,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // ... staging
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default/", POST)
-                                      .data(createApplicationDeployData(applicationPackage, false))
+                                      .data(createApplicationDeployData(Optional.empty(), false))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default", DELETE)
@@ -230,7 +232,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // ... prod zone
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/", POST)
-                                      .data(createApplicationDeployData(applicationPackage, false))
+                                      .data(createApplicationDeployData(Optional.empty(), false))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         controllerTester.jobCompletion(JobType.productionCorpUsEast1)
@@ -238,6 +240,43 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .projectId(screwdriverProjectId)
                         .unsuccessful()
                         .submit();
+
+        // POST (create) another application
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", POST)
+                                      .userIdentity(USER_ID)
+                                      .nToken(N_TOKEN),
+                              new File("application-reference-2.json"));
+
+        ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
+        long screwdriverProjectId2 = 456;
+        addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
+                                       ATHENZ_TENANT_DOMAIN_2,
+                                       new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(app2.application().value()));
+
+        // Trigger upgrade and then application change
+        controllerTester.controller().applications().deploymentTrigger().triggerChange(app2, Change.of(Version.fromString("7.0")));
+
+        controllerTester.jobCompletion(JobType.component)
+                        .application(app2)
+                        .projectId(screwdriverProjectId2)
+                        .uploadArtifact(applicationPackage)
+                        .submit();
+
+        // GET application having both change and outstanding change
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
+                                      .userIdentity(USER_ID),
+                              new File("application2.json"));
+
+        // DELETE application
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", DELETE)
+                                      .userIdentity(USER_ID)
+                                      .nToken(N_TOKEN),
+                              "");
 
         // GET tenant screwdriver projects
         tester.assertResponse(request("/application/v4/tenant-pipeline/", GET)
@@ -383,8 +422,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)
                                       .nToken(N_TOKEN),
                               new File("tenant-without-applications.json"));
-
-        controllerTester.controller().deconstruct();
     }
 
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
@@ -395,7 +432,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void testDeployDirectly() throws Exception {
+    public void testDeployDirectly() {
         // Setup
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
@@ -427,11 +464,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
     }
 
-
     // Tests deployment to config server when using just on API call
     // For now this depends on a switch in ApplicationController that does this for by- tenants in CD only
     @Test
-    public void testDeployDirectlyUsingOneCallForDeploy() throws Exception {
+    public void testDeployDirectlyUsingOneCallForDeploy() {
         // Setup
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
@@ -813,7 +849,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void deployment_succeeds_when_correct_domain_is_used() throws IOException {
+    public void deployment_succeeds_when_correct_domain_is_used() {
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -844,7 +880,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void testJobStatusReporting() throws Exception {
+    public void testJobStatusReporting() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
         tester.containerTester().computeVersionStatus();
@@ -861,7 +897,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .application(app)
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
-        tester.deploy(app, applicationPackage, TEST_ZONE, projectId);
+        tester.deploy(app, applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
 
         // Notifying about unknown job fails
@@ -909,9 +945,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
 
-        tester.deploy(app, applicationPackage, TEST_ZONE, projectId);
+        tester.deploy(app, applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
-        tester.deploy(app, applicationPackage, STAGING_ZONE, projectId);
+        tester.deploy(app, applicationPackage, STAGING_ZONE);
         job.type(JobType.stagingTest).error(DeploymentJobs.JobError.outOfCapacity).submit();
 
         // Appropriate error is recorded
@@ -1104,8 +1140,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * Cluster info, utilization and application and deployment metrics are maintained async by maintainers.
      *
      * This sets these values as if the maintainers has been ran.
-     *
-     * @param controllerTester
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {

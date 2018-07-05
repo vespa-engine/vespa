@@ -20,7 +20,7 @@ import java.util.Objects;
  * Represents the bundles in a maven project and the classpath elements
  * corresponding to code that would end up in the bundle.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bjorncs
  */
 

@@ -10,7 +10,7 @@ import java.util.Stack;
  * move the content of itself to another, never to copy, since a callback is unique and might be counted by
  * implementations such as Resender.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class CallStack {
 

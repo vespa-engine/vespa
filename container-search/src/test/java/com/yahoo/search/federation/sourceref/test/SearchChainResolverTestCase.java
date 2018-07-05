@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SearchChainResolverTestCase {
 

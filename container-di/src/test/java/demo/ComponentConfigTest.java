@@ -13,7 +13,7 @@ import static org.junit.Assert.assertNotNull;
 
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public class ComponentConfigTest extends Base {

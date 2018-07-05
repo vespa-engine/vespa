@@ -21,7 +21,7 @@ import java.util.stream.Stream;
  * RoutableFactory}. It is owned and accessed through a {@link DocumentProtocol} instance. This class uses a factory
  * cache to reduce the latency of matching version specifications to actual versions when resolving factories.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 final class RoutableRepository {
 

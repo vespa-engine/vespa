@@ -7,7 +7,7 @@ import com.yahoo.messagebus.Routable;
 import com.yahoo.text.Utf8String;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class DocumentMessage extends Message {
 

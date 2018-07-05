@@ -20,8 +20,8 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.protect.FreezeDetector;
+import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.Response;
 import com.yahoo.language.Linguistics;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
@@ -33,6 +33,9 @@ import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -55,9 +58,10 @@ import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
-
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -81,6 +85,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
+
+    private static final String JSON_CONTENT_TYPE = "application/json";
 
     private static Logger log = Logger.getLogger(SearchHandler.class.getName());
 
@@ -275,14 +281,14 @@ public class SearchHandler extends LoggingRequestHandler {
         return errorResponse(request, ErrorMessage.createInternalServerError(Exceptions.toMessageString(e)));
     }
 
-    private HttpSearchResponse handleBody(HttpRequest request) {
+
+    private HttpSearchResponse handleBody(HttpRequest request){
         // Find query profile
         String queryProfileName = request.getProperty("queryProfile");
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
 
-        // Create query
-        Query query = new Query(request, queryProfile);
+        Query query = queryFromRequest(request, queryProfile);
 
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
 
@@ -552,4 +558,62 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
+
+    private Query queryFromRequest(HttpRequest request, CompiledQueryProfile queryProfile){
+        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST && request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE).equals(JSON_CONTENT_TYPE)) {
+            Inspector inspector;
+            try {
+                byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
+                inspector = SlimeUtils.jsonToSlime(byteArray).get();
+                if (inspector.field("error_message").valid()){
+                    throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
+                }
+
+            } catch (IOException e) {
+                throw new RuntimeException("Problem with reading from input-stream", e);
+            }
+
+            // Create request-mapping
+            Map<String, String> requestMap = new HashMap<>();
+            createRequestMapping(inspector, requestMap, "");
+            return new Query(request, requestMap, queryProfile);
+
+
+        } else {
+            return new Query(request, queryProfile);
+
+        }
+    }
+
+    public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
+        inspector.traverse((ObjectTraverser) (key, value) -> {
+            String qualifiedKey = parent + key;
+            switch (value.type()) {
+                case BOOL:
+                    map.put(qualifiedKey, Boolean.toString(value.asBool()));
+                    break;
+                case DOUBLE:
+                    map.put(qualifiedKey, Double.toString(value.asDouble()));
+                    break;
+                case LONG:
+                    map.put(qualifiedKey, Long.toString(value.asLong()));
+                    break;
+                case STRING:
+                    map.put(qualifiedKey , value.asString());
+                    break;
+                case ARRAY:
+                    map.put(qualifiedKey, value.asString());
+                    break;
+                case OBJECT:
+                    createRequestMapping(value, map, qualifiedKey+".");
+                    break;
+            }
+
+        });
+    }
+
+
+
 }
+
+

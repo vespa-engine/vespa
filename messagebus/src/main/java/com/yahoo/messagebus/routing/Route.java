@@ -16,7 +16,7 @@ import java.util.List;
  * you may build one programatically through the hop accessors.</p>
  *
  * @author bratseth
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Route {
 

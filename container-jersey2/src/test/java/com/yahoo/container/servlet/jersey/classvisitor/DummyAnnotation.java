@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DummyAnnotation {}

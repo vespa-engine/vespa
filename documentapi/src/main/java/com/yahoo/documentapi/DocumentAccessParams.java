@@ -8,7 +8,7 @@ import java.util.Optional;
 /**
  * Superclass of the classes which contains the parameters for creating or opening a document access.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DocumentAccessParams {
 

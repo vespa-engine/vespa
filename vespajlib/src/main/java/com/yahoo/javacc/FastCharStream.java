@@ -4,7 +4,7 @@ package com.yahoo.javacc;
 import java.io.IOException;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class FastCharStream {
 

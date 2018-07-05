@@ -37,7 +37,7 @@ import com.yahoo.vespa.objects.ObjectPredicate;
  * transformation from the abstract request to Vespa grouping expressions (using {@link RequestBuilder}), and the
  * corresponding transformation of results (using {@link ResultBuilder}).
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @After({ GroupingValidator.GROUPING_VALIDATED,
          "com.yahoo.search.querytransform.WandSearcher",

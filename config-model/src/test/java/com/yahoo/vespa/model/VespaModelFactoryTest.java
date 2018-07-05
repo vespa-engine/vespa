@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -65,14 +66,14 @@ public class VespaModelFactoryTest {
     @Test(expected = IllegalArgumentException.class)
     public void testThatFactoryModelValidationFailsWithIllegalArgumentException() {
         VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
-        modelFactory.createAndValidateModel(new MockModelContext(createApplicationPackageThatFailsWhenValidating()), false);
+        modelFactory.createAndValidateModel(new MockModelContext(createApplicationPackageThatFailsWhenValidating()), new ValidationParameters());
     }
 
     // Uses a MockApplicationPackage that throws throws UnsupportedOperationException (rethrown as RuntimeException) when validating
     @Test(expected = RuntimeException.class)
     public void testThatFactoryModelValidationFails() {
         VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
-        modelFactory.createAndValidateModel(testModelContext, false);
+        modelFactory.createAndValidateModel(testModelContext, new ValidationParameters());
     }
 
     @Test
@@ -80,7 +81,7 @@ public class VespaModelFactoryTest {
         VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
         ModelCreateResult createResult = modelFactory.createAndValidateModel(
                 new MockModelContext(createApplicationPackageThatFailsWhenValidating()),
-                true);
+                new ValidationParameters(ValidationParameters.IgnoreValidationErrors.TRUE));
         assertNotNull(createResult.getModel());
         assertNotNull(createResult.getConfigChangeActions());
         assertTrue(createResult.getConfigChangeActions().isEmpty());
@@ -212,6 +213,9 @@ public class VespaModelFactoryTest {
 
                     @Override
                     public boolean isBootstrap() { return false; }
+
+                    @Override
+                    public boolean isFirstTimeDeployment() { return false; }
                 };
             }
         };

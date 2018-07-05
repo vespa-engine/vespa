@@ -16,7 +16,7 @@ import static com.yahoo.container.core.ChainsConfig.Chains.Type;
  * Represents a component chain in the vespa model.
  * The inner components are represented as children.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public class Chain<T extends ChainedComponent<?>> extends AbstractConfigProducer<AbstractConfigProducer<?>> {

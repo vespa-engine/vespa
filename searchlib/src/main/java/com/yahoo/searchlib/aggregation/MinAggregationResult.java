@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.Serializer;
  * This is an aggregated result holding the minimum result of the matching hits.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MinAggregationResult extends AggregationResult {
 

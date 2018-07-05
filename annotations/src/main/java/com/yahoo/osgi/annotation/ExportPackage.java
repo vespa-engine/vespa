@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
  * Must be placed in a file called package-info.java in the
  * package that is to be exported.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.PACKAGE)

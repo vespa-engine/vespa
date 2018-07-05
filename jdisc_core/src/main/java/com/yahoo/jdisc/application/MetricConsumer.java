@@ -33,7 +33,7 @@ import java.util.Map;
  * }
  * </pre>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 @ProvidedBy(MetricNullProvider.class)
 public interface MetricConsumer {

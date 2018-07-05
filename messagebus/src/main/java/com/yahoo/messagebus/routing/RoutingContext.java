@@ -13,7 +13,7 @@ import java.util.*;
  * a policy is expected to need. An instance of this is created for every {@link
  * RoutingNode} that contains a policy.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RoutingContext {
 

@@ -9,7 +9,7 @@ import com.yahoo.jdisc.application.Application;
 import java.net.URI;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class NonWorkingRequest {
 

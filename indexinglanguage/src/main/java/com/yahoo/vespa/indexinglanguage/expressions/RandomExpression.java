@@ -8,7 +8,7 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RandomExpression extends Expression {
 

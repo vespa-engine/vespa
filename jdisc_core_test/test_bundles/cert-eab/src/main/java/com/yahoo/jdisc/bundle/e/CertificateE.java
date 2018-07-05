@@ -5,7 +5,7 @@ import com.yahoo.jdisc.bundle.a.CertificateA;
 import com.yahoo.jdisc.bundle.b.CertificateB;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class CertificateE {
 

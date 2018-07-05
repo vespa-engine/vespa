@@ -9,7 +9,7 @@ import java.util.*;
 /**
  * A group of config producers that have a component id.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ConfigProducerGroup<CHILD extends AbstractConfigProducer<?>> extends AbstractConfigProducer<CHILD> {
 

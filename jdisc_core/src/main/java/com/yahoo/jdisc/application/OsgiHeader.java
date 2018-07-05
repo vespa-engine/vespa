@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * This interface acts as a namespace for the supported OSGi bundle headers.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class OsgiHeader {
 

@@ -7,7 +7,7 @@ import java.util.List;
  * This class represents a predefined bucket-function in a {@link GroupingExpression} for expressions that evaluate to a
  * string.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class StringPredefined extends PredefinedFunction {
 

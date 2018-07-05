@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * id, and messages are only sent when they are at the front of their list. When a reply arrives, the current front of
  * the list is removed and the next message, if any, is sent.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Sequencer implements MessageHandler, ReplyHandler {
 

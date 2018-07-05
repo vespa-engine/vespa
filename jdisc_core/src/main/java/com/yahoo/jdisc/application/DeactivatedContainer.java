@@ -11,7 +11,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
  * the {@link ContainerActivator#activateContainer(ContainerBuilder)} method, and is used to schedule a cleanup task
  * that is executed once the the deactivated Container has terminated.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface DeactivatedContainer {
 

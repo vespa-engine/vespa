@@ -9,7 +9,7 @@ import java.util.Map;
  * At any time there may only ever be zero or one routing table registered in message bus for each protocol. This class
  * contains a list of named hops and routes that may be used to substitute references to these during route resolving.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RoutingTable {
 

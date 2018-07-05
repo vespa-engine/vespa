@@ -12,20 +12,17 @@
     </parent>
     <artifactId>cert-b</artifactId>
     <version>6-SNAPSHOT</version>
-    <packaging>bundle</packaging>
+    <packaging>container-plugin</packaging>
     <name>${project.artifactId}</name>
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <instructions>
-                        <Export-Package>
-                            com.yahoo.jdisc.bundle.b
-                        </Export-Package>
-                    </instructions>
+                    <!-- The Vespa bundle-plugin doesn't include groupId. TODO Vespa 7: remove if that is fixed. -->
+                    <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                 </configuration>
             </plugin>
         </plugins>

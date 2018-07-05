@@ -34,8 +34,8 @@ public class RedeployTest {
 
     @Test
     public void testRedeploy() {
-        DeployTester tester = new DeployTester("src/test/apps/app");
-        tester.deployApp("myapp", Instant.now());
+        DeployTester tester = new DeployTester();
+        tester.deployApp("src/test/apps/app", "myapp", Instant.now());
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 
         assertTrue(deployment.isPresent());
@@ -54,7 +54,7 @@ public class RedeployTest {
         List<ModelFactory> modelFactories = new ArrayList<>();
         modelFactories.add(DeployTester.createModelFactory(Clock.systemUTC()));
         modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0)));
-        DeployTester tester = new DeployTester("ignored/app/path", modelFactories);
+        DeployTester tester = new DeployTester(modelFactories);
         ApplicationId id = ApplicationId.from(tester.tenant().getName(),
                                               ApplicationName.from("default"),
                                               InstanceName.from("default"));
@@ -70,8 +70,8 @@ public class RedeployTest {
                                                                                .configDefinitionsDir(Files.createTempDir()
                                                                                                           .getAbsolutePath())
                                                                                .sessionLifetime(60));
-        DeployTester tester = new DeployTester("src/test/apps/app", configserverConfig, clock);
-        tester.deployApp("myapp", Instant.now()); // session 2 (numbering starts at 2)
+        DeployTester tester = new DeployTester(configserverConfig, clock);
+        tester.deployApp("src/test/apps/app", "myapp", Instant.now()); // session 2 (numbering starts at 2)
 
         clock.advance(Duration.ofSeconds(10));
         Optional<com.yahoo.config.provision.Deployment> deployment2 = tester.redeployFromLocalActive();

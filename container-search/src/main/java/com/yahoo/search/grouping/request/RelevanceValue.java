@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents a document relevance score in a {@link GroupingExpression}. It evaluates to the relevance of
  * the input {@link com.yahoo.search.result.Hit}.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class RelevanceValue extends DocumentValue {
 

@@ -26,7 +26,7 @@ import static com.yahoo.searchdefinition.processing.AssertIndexingScript.assertI
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
 

@@ -4,7 +4,7 @@ package com.yahoo.vespa.objects;
 /**
  * An operation that is able to operate on a generic object.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ObjectOperation {
 

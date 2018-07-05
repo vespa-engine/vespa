@@ -4,7 +4,7 @@ package com.yahoo.container.jdisc.state;
 /**
  * A metric which is counting an accumulative value
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public final class CountMetric extends MetricValue {
 

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Test of TextualQueryRepresentation.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class TextualQueryRepresentationTestCase {

@@ -20,7 +20,7 @@ import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ClientTestDriver {
 

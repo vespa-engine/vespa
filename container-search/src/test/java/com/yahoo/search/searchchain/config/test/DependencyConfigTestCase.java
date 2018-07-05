@@ -24,7 +24,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DependencyConfigTestCase {
 

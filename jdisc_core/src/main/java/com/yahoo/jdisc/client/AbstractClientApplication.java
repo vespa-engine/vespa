@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * {@link #start()} (and optionally {@link #stop()}), and provide a reference to it to whatever component is responsible
  * for signaling shutdown.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class AbstractClientApplication extends AbstractApplication implements ClientApplication {
 

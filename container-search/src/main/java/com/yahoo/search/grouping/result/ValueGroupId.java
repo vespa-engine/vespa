@@ -6,7 +6,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 /**
  * This abstract class is used in {@link Group} instances where the identifying expression evaluated to a singe value.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class ValueGroupId<T> extends GroupId {
 

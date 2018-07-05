@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a day-of-month timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
  * equals the day of month (1-31) of the result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DayOfMonthFunction extends FunctionNode {
 

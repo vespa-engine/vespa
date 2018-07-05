@@ -29,7 +29,7 @@ import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
  *
  * If the "recall" property is unset, this searcher does nothing.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @After("com.yahoo.search.querytransform.WandSearcher")
 @Before({STEMMING, ACCENT_REMOVAL})

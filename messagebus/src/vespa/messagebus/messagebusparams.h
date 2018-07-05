@@ -14,7 +14,7 @@ class MessageBus;
  * To facilitate several configuration parameters to the {@link MessageBus} constructor, all parameters are held by this
  * class. This class has reasonable default values for each parameter.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class MessageBusParams {

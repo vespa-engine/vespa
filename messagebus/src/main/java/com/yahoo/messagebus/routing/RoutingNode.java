@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * modification of the route. For every {@link RoutingPolicy} there will be an instance of this that has its policy and
  * {@link RoutingContext} member set. A policy is oblivious to this class, it can only access the context object.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RoutingNode implements ReplyHandler {
 

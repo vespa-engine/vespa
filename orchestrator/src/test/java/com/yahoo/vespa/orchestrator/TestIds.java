@@ -7,7 +7,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.TenantId;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class TestIds {
     public static final ApplicationInstanceReference APPLICATION_INSTANCE_REFERENCE =

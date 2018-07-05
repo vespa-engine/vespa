@@ -8,7 +8,7 @@ import com.yahoo.jdisc.application.Application;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ApplicationB implements Application {
 

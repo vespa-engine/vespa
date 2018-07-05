@@ -9,7 +9,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SetValueExpression extends Expression {
 

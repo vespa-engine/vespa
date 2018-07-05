@@ -18,7 +18,7 @@ import java.util.Map;
 
 /**
  * NOTE: This class _must_ be abstract, due to calling subclass method in ctor.
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public abstract

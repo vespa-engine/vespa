@@ -11,7 +11,7 @@ import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.core.SystemTimer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class MetricConsumerProviders {
 

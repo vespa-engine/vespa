@@ -7,7 +7,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * This abstract class is used in {@link Group} instances where the identifying expression evaluated to a {@link
  * com.yahoo.search.grouping.request.BucketValue}. The range is inclusive-from and exclusive-to.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class BucketGroupId<T> extends GroupId {
 

@@ -23,7 +23,7 @@ import com.yahoo.jdisc.service.ServerProvider;
  * in terms of resource ownership. You retain a resource to prevent it from being destroyed while you are using it, and
  * you release a resource once you are done using it.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface SharedResource {
 

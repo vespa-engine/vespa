@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 /**
  * A set of metrics.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public final class MetricSet implements Iterable<Map.Entry<String, MetricValue>> {
 

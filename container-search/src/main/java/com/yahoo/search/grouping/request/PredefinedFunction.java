@@ -9,7 +9,7 @@ import java.util.List;
  * This class represents a predefined bucket-function in a {@link GroupingExpression}. It maps the input into one of the
  * given buckets by the result of the argument expression.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class PredefinedFunction extends FunctionNode {
 

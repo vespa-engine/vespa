@@ -16,7 +16,7 @@ import java.util.HashMap;
  * methods.
  *
  * @author baldersheim
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class Identifiable extends Selectable implements Cloneable {
 

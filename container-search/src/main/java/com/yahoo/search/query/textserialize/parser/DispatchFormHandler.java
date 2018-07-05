@@ -4,7 +4,7 @@ package com.yahoo.search.query.textserialize.parser;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface DispatchFormHandler {
     Object dispatch(String name, List<Object> arguments, Object dispatchContext);

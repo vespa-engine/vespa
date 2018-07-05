@@ -17,7 +17,7 @@ import java.util.*;
  * This class implements the necessary logic to build a list of {@link Grouping} objects from an instance of {@link
  * GroupingOperation}. It is used by the {@link GroupingExecutor}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 class RequestBuilder {
 

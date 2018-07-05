@@ -83,7 +83,7 @@ public class ContainerControllerTester {
         return controller().applications().createApplication(app, Optional.of(TestIdentities.userNToken));
     }
 
-    public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone, long projectId) {
+    public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone) {
         controller().applications().deploy(application.id(), zone, Optional.of(applicationPackage),
                                            new DeployOptions(false, Optional.empty(), false, false));
         return application;

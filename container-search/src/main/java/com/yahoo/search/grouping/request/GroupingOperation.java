@@ -16,7 +16,7 @@ import java.util.*;
  * com.yahoo.search.grouping.GroupingRequest} using the {@link com.yahoo.search.grouping.GroupingRequest#setRootOperation(GroupingOperation)}
  * method.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class GroupingOperation extends GroupingNode {
 

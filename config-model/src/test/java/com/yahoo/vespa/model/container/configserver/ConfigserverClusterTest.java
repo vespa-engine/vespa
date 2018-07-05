@@ -38,7 +38,7 @@ public class ConfigserverClusterTest {
         new ConfigServerContainerModelBuilder(new TestOptions().rpcPort(12345).useVespaVersionInRequest(true)
                                                                .hostedVespa(true).environment("test").region("bar")
                                                                .numParallelTenantLoaders(99))
-                .build(new DeployState.Builder().build(true), null, root, XML.getDocument(services).getDocumentElement());
+                .build(new DeployState.Builder().build(), null, root, XML.getDocument(services).getDocumentElement());
         root.freezeModelTopology();
     }
 

@@ -7,7 +7,7 @@ import com.yahoo.language.Language;
 /**
  * Sets the language in the execution context.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class SetLanguageExpression extends Expression {
 

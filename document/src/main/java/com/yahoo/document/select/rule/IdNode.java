@@ -7,7 +7,7 @@ import com.yahoo.document.select.*;
 import com.yahoo.document.idstring.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class IdNode implements ExpressionNode {
 

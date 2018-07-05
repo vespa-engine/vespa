@@ -15,7 +15,7 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import java.util.Collections;
 
 /**
-* @author tonytv
+* @author Tony Vaagenes
 */
 class FederationTester {
 

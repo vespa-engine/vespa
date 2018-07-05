@@ -106,9 +106,7 @@ public class MetricsReporter extends Maintainer {
 
             node.getValue("tenant").ifPresent(tenant -> dimensions.put("tenantName", tenant));
             Optional<String> application = node.getValue("application");
-            if (application.isPresent()) {
-                dimensions.put("app",String.format("%s.%s", application.get(), node.getValue("instance").orElse("default")));
-            }
+            application.ifPresent(app -> dimensions.put("app", String.format("%s.%s", app, node.getValue("instance").orElse("default"))));
             Metric.Context context = metric.createContext(dimensions);
             metric.set(convergeMetric, secondsSinceConverge, context);
         }

@@ -17,7 +17,7 @@ import java.util.Optional;
 /**
  * Represents the http servers and filters of a Jdisc cluster.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
         implements HttpServerConfig.Producer, ServerConfig.Producer {

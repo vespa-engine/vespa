@@ -10,7 +10,7 @@ import com.yahoo.search.grouping.vespa.ContinuationDecoder;
  *
  * <p>To render a Cookie within a result set, you simply need to call {@link #toString()}.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class Continuation {
 

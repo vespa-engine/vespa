@@ -5,7 +5,7 @@ package com.yahoo.concurrent;
  * This interface wraps access to some timer that can be used to measure elapsed time, in milliseconds. This
  * abstraction allows for unit testing the behavior of time-based constructs.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface Timer {
 

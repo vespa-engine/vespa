@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  * Creates a detailed, QED inspired representation of a query tree.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class TextualQueryRepresentation {
     private Map<Item, Integer> itemReferences = new IdentityHashMap<>();

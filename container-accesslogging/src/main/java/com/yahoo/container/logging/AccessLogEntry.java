@@ -31,7 +31,7 @@ import static java.util.stream.Collectors.toMap;
  *
  * This class is thread-safe, but the inner class {@link AdInfo} is not.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bakksjo
  * @author bjorncs
  */

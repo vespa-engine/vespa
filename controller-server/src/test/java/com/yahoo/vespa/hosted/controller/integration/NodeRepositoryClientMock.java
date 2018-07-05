@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -17,28 +16,29 @@ import java.util.Collection;
  * @author bjorncs
  */
 public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
+
     @Override
-    public void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes) throws IOException {
+    public void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public NodeRepositoryNode getNode(ZoneId zone, String hostname) throws IOException {
+    public NodeRepositoryNode getNode(ZoneId zone, String hostname) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteNode(ZoneId zone, String hostname) throws IOException {
+    public void deleteNode(ZoneId zone, String hostname) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public NodeList listNodes(ZoneId zone, boolean recursive) throws IOException {
+    public NodeList listNodes(ZoneId zone, boolean recursive) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public NodeList listNodes(ZoneId zone, String tenant, String applicationId, String instance) throws IOException {
+    public NodeList listNodes(ZoneId zone, String tenant, String applicationId, String instance) {
         NodeRepositoryNode nodeA = createNodeA();
         NodeRepositoryNode nodeB = createNodeB();
         return new NodeList(Arrays.asList(nodeA, nodeB));
@@ -69,57 +69,58 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
     }
 
     @Override
-    public String resetFailureInformation(ZoneId zone, String nodename) throws IOException {
+    public String resetFailureInformation(ZoneId zone, String nodename) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String restart(ZoneId zone, String nodename) throws IOException {
+    public String restart(ZoneId zone, String nodename) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String reboot(ZoneId zone, String nodename) throws IOException {
+    public String reboot(ZoneId zone, String nodename) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String cancelReboot(ZoneId zone, String nodename) throws IOException {
+    public String cancelReboot(ZoneId zone, String nodename) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String wantTo(ZoneId zone, String nodename, WantTo... actions) throws IOException {
+    public String wantTo(ZoneId zone, String nodename, WantTo... actions) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String cancelRestart(ZoneId zone, String nodename) throws IOException {
+    public String cancelRestart(ZoneId zone, String nodename) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String setHardwareFailureDescription(ZoneId zone, String nodename, String hardwareFailureDescription) throws IOException {
+    public String setHardwareFailureDescription(ZoneId zone, String nodename, String hardwareFailureDescription) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setState(ZoneId zone, NodeState nodeState, String nodename) throws IOException {
+    public void setState(ZoneId zone, NodeState nodeState, String nodename) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String enableMaintenanceJob(ZoneId zone, String jobName) throws IOException {
+    public String enableMaintenanceJob(ZoneId zone, String jobName) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String disableMaintenanceJob(ZoneId zone, String jobName) throws IOException {
+    public String disableMaintenanceJob(ZoneId zone, String jobName) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public MaintenanceJobList listMaintenanceJobs(ZoneId zone) throws IOException {
+    public MaintenanceJobList listMaintenanceJobs(ZoneId zone) {
         throw new UnsupportedOperationException();
     }
+
 }

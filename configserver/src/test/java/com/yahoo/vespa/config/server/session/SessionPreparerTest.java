@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -267,7 +268,7 @@ public class SessionPreparerTest {
         }
 
         @Override
-        public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
+        public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
             throw exception;
         }
     }
@@ -285,8 +286,8 @@ public class SessionPreparerTest {
         }
 
         @Override
-        public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
-            ModelCreateResult result = super.createAndValidateModel(modelContext, ignoreValidationErrors);
+        public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
+            ModelCreateResult result = super.createAndValidateModel(modelContext, validationParameters);
             return new ModelCreateResult(result.getModel(), Arrays.asList(action));
         }
     }

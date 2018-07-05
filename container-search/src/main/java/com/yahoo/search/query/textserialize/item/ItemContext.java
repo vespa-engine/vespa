@@ -9,7 +9,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ItemContext {
     private class Connectivity {

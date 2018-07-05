@@ -7,7 +7,7 @@ import com.yahoo.component.ComponentSpecification;
 import static com.yahoo.container.util.Util.quote;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings("serial")
 class UnresolvedProviderException extends UnresolvedSearchChainException {

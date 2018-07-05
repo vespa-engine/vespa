@@ -5,7 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class OutputExpression extends Expression {
 

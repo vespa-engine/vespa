@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ItemInitializer {
 

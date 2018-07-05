@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 /**
  * Test of Search chains builder.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomSearchChainsBuilderTest extends DomBuilderTest {
 

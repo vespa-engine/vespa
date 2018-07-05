@@ -31,7 +31,7 @@ import com.yahoo.processing.request.ErrorMessage;
  *
  * @author Einar M R Rosenvinge
  * @author Steinar Knutsen
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bratseth
  */
 public final class VespaHeaders {

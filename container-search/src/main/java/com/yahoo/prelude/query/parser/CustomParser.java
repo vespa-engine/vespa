@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @since 5.1.4
  */
 public interface CustomParser extends Parser {

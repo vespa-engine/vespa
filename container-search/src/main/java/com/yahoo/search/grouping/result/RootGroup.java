@@ -8,7 +8,7 @@ import com.yahoo.search.result.Relevance;
  * This class represents the root {@link Group} in the grouping result model. This class adds a {@link Continuation}
  * object that can be used to paginate the result.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RootGroup extends Group {
 

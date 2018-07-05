@@ -8,7 +8,7 @@ import com.yahoo.net.HostName;
  * contains a servicePrefix identifier, which is the configuration id of the current servicePrefix, and the canonical
  * host name of the host running this.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Identity {
 

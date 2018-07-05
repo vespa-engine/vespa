@@ -22,7 +22,7 @@ import java.util.Optional;
 
 /**
  * Builds a federation searcher config producer from an element.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Searcher<?>> {
     static class FederationSearcherModelBuilder extends GenericChainedComponentModelBuilder {

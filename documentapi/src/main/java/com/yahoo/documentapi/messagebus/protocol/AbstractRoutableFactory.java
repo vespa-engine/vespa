@@ -6,7 +6,7 @@ import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.Serializer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class AbstractRoutableFactory implements RoutableFactory {
 

@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadFactory;
  * application should use this class instead of Thread. The {@link ContainerThread.Factory} class is a helper-class for
  * working with the {@link Executors} framework.</p>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ContainerThread extends Thread {
 

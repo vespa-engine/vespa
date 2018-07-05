@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * Utilities for java collections
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  * @since 5.1.8
  */

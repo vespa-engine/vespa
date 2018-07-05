@@ -8,7 +8,7 @@ import java.util.Iterator;
  * Provides sequential access to each byte of a buffer
  * as a hexadecimal string of length 2.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class HexByteIterator implements Iterator<String> {
     private final ByteBuffer buffer;

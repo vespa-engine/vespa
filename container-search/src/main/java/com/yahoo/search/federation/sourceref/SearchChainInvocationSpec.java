@@ -12,7 +12,7 @@ import java.util.Objects;
  * Specifices which search chain should be run and how it should be run.
  * This is a value object.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class SearchChainInvocationSpec implements Cloneable {
 

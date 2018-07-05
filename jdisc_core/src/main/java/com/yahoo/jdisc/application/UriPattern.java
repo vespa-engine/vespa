@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  * <li><code>http://host/path/*</code> evaluated before <code>http://host/path</code></li>
  * </ul>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class UriPattern implements Comparable<UriPattern> {
 

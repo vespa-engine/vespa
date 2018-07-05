@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Test of MultipleResultsSearcher
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings("deprecation")
 public class MultipleResultsTestCase {

@@ -15,7 +15,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * An immutable and ordered list of components
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class Chain<T> implements Iterable<T> {
 

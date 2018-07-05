@@ -20,7 +20,7 @@ import java.util.*;
  * any output expression from writing to any field except for the owning field. Finally, for <tt>SummaryExpression</tt>,
  * this processor expands to write all appropriate summary fields.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class IndexingOutputs extends Processor {
 

@@ -61,3 +61,6 @@ tenantsMaintainerIntervalMinutes int default=525600
 
 # How long bootstrapping can take before giving up (in seconds)
 maxDurationOfBootstrap long default=7200
+
+# Feature Flags (poor man's feature flags, to be overridden in configserver-config.xml if needed)
+deleteApplicationLegacy bool default=false

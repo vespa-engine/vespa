@@ -10,7 +10,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import java.util.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class FlattenExpression extends Expression {
 

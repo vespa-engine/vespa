@@ -13,7 +13,7 @@ import java.util.List;
  * is owned by {@link com.yahoo.messagebus.MessageBus}. Because this class does not have any internal thread, it depends
  * on message bus to keep polling it whenever it has time.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class Resender {
 

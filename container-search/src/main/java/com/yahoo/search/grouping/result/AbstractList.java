@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class AbstractList extends HitGroup {
 

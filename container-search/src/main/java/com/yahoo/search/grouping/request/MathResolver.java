@@ -10,7 +10,7 @@ import java.util.Stack;
  * operation simply push operator-expression pairs onto it, before calling {@link #resolve()} to retrieve the single
  * corresponding grouping expression object.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class MathResolver {
 

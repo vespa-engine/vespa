@@ -8,7 +8,7 @@ import com.yahoo.fs4.mplex.FS4Channel;
 /**
  * Broadcasts packet notifications to a list of listeners.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class PacketNotificationsBroadcaster implements PacketListener {
 

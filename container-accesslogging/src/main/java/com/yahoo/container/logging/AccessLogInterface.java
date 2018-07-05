@@ -2,7 +2,7 @@
 package com.yahoo.container.logging;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface AccessLogInterface {
     void log(AccessLogEntry accessLogEntry);

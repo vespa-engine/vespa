@@ -20,7 +20,7 @@ import com.yahoo.search.Query;
 /**
  * Responsible for dumping query &amp; query result packets
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class PacketDumper implements PacketListener {
     /** High level representation of packet types (e.g. query, result, ...) */

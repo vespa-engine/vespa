@@ -11,7 +11,7 @@ import com.yahoo.language.process.TokenType;
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ExactExpression extends Expression {
 

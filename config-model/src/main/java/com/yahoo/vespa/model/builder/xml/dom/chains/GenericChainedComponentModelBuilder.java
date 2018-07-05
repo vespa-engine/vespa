@@ -9,7 +9,7 @@ import org.w3c.dom.Element;
 
 /**
  * reads the common attributes and elements of all chained component elements.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public abstract class GenericChainedComponentModelBuilder {
     //The componentId might be used as a spec later(for example as class or

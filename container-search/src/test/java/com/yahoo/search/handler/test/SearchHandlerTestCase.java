@@ -3,16 +3,13 @@ package com.yahoo.search.handler.test;
 
 import com.yahoo.container.Container;
 import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
-import com.yahoo.container.jdisc.AsyncHttpResponse;
 import com.yahoo.container.jdisc.HttpRequest;
-
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.net.HostName;
-import com.yahoo.processing.handler.ResponseStatus;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -30,12 +27,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -186,6 +180,8 @@ public class SearchHandlerTestCase {
             assertThat(responseHandler.getStatus(), is(400));
         }
     }
+
+
 
     // Query handling takes a different code path when a query profile is active, so we test both paths.
     @Test

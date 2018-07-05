@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  * A session which supports receiving, forwarding and acknowledgement of messages. An intermediate session is expacted
  * to either forward or acknowledge every message received.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class IntermediateSession implements MessageHandler, ReplyHandler {
 

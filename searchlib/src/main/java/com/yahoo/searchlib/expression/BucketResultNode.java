@@ -6,7 +6,7 @@ package com.yahoo.searchlib.expression;
  *
  * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 abstract public class BucketResultNode extends ResultNode {
 

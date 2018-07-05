@@ -8,7 +8,7 @@ namespace mbus {
 /**
  * This class is the base class for the primitives that make up a {@link Hop}'s selector.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class IHopDirective {

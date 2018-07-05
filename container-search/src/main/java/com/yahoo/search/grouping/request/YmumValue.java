@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents a document checksum in a {@link GroupingExpression}. It evaluates to the YMUM checksum of the
  * input {@link com.yahoo.search.result.Hit}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class YmumValue extends DocumentValue {
 

@@ -5,7 +5,7 @@ package com.yahoo.messagebus.routing;
  * This class represents a verbatim match within a {@link Hop}'s selector. This is nothing more than a string that will
  * be used as-is when performing service name lookups.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class VerbatimDirective implements HopDirective {
 

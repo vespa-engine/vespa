@@ -10,7 +10,7 @@ import java.io.IOException;
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class TreeNodeTestCase {
 

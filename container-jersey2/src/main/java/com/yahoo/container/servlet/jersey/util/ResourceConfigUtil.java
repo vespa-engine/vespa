@@ -4,7 +4,7 @@ package com.yahoo.container.servlet.jersey.util;
 import org.glassfish.jersey.server.ResourceConfig;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ResourceConfigUtil {
     /**

@@ -11,7 +11,7 @@ import java.net.URI;
  * class will be thrown by the {@link CurrentContainer#newReference(URI)} method if {@link
  * BindingSetSelector#select(URI)} returned <em>null</em>.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class NoBindingSetSelectedException extends RuntimeException {
 

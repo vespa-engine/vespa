@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * Implements the message bus protocol that is used by all components of Vespa.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DocumentProtocol implements Protocol {
 

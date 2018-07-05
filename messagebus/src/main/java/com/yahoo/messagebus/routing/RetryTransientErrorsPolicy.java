@@ -7,7 +7,7 @@ import com.yahoo.messagebus.ErrorCode;
  * Implements a retry policy that allows resending of any error that is not fatal. It also does progressive back-off,
  * delaying each attempt by the given time multiplied by the retry attempt.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RetryTransientErrorsPolicy implements RetryPolicy {
 

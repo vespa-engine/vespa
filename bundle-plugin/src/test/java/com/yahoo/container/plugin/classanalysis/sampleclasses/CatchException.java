@@ -4,7 +4,7 @@ package com.yahoo.container.plugin.classanalysis.sampleclasses;
 import javax.security.auth.login.LoginException;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class CatchException {
     void ignored() throws Exception{

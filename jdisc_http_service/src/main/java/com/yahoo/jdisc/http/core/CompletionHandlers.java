@@ -6,7 +6,7 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import java.util.Arrays;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class CompletionHandlers {
 

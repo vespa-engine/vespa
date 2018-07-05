@@ -12,7 +12,7 @@ namespace mbus {
  * ReplyHandler, IntermediateSessionParams)}, all parameters are held by this class. This class has reasonable default
  * values for each parameter.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  * @version $Id$
  */
 class IntermediateSessionParams {

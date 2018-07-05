@@ -9,7 +9,7 @@ import org.osgi.framework.ServiceReference;
 import java.util.List;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface Osgi {
 

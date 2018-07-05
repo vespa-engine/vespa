@@ -8,7 +8,7 @@ package com.yahoo.binaryprefix;
  * Examples: 2 kilo, 2 mega, ...
  * </p>
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class BinaryScaledAmount {
     public final double amount;

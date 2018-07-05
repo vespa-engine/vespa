@@ -4,7 +4,7 @@ package com.yahoo.search.query.textserialize.item;
 import java.util.*;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ListUtil {
     public static <T> List<T> rest(List<T> list) {

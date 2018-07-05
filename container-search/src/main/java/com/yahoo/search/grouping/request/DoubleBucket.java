@@ -5,7 +5,7 @@ import java.text.ChoiceFormat;
 /**
  * This class represents a {@link Double} bucket in a {@link PredefinedFunction}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DoubleBucket extends BucketValue {
 

@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class ComparisonNode implements ExpressionNode {
 

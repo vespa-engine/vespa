@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.request;
 /**
  * This class represents a constant {@link Double} value in a {@link GroupingExpression}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DoubleValue extends ConstantValue<Double> {
 

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings({ "UnusedDeclaration" })
 public abstract class ExpressionConverter implements Cloneable {

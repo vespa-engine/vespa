@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Specifies how a http provider is to be set up.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Immutable
 public class HttpProviderSpec {

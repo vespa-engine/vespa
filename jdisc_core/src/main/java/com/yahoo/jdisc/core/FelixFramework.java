@@ -26,7 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class FelixFramework implements OsgiFramework {
 

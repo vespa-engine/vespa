@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:simon@hult-thoresen.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class LazySet<E> implements Set<E> {
 

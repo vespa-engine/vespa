@@ -10,7 +10,7 @@ import java.util.Arrays;
  * <p>This class encapsulates a byte array into a cloneable and comparable object. It also implements a sane {@link
  * #hashCode()} and {@link #toString()}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RawData implements Cloneable, Comparable<RawData> {
 

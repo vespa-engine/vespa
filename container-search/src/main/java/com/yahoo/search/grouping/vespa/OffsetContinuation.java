@@ -2,7 +2,7 @@
 package com.yahoo.search.grouping.vespa;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 class OffsetContinuation extends EncodableContinuation {
 

@@ -5,7 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents a document value in a {@link GroupingExpression}. As such, the subclasses of this can only be
  * used as document-level expressions (i.e. level 0, see {@link GroupingExpression#resolveLevel(int)}).
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class DocumentValue extends GroupingExpression {
 

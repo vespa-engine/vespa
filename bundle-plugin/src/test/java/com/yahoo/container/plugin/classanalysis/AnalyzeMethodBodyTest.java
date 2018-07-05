@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Tests that classes used in method bodies are included in the imports list.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class AnalyzeMethodBodyTest {
     @Test

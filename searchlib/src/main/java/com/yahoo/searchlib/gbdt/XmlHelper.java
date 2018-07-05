@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 abstract class XmlHelper {
 

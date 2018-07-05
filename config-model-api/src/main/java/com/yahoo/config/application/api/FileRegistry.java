@@ -7,7 +7,7 @@ import com.yahoo.config.FileReference;
 
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface FileRegistry {
 

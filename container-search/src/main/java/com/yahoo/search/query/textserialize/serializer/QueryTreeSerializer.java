@@ -6,7 +6,7 @@ import com.yahoo.search.query.textserialize.item.ItemExecutorRegistry;
 
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class QueryTreeSerializer {
     public String serialize(Item root) {

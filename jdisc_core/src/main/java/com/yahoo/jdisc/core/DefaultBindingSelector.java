@@ -7,7 +7,7 @@ import com.yahoo.jdisc.application.BindingSetSelector;
 import java.net.URI;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class DefaultBindingSelector implements BindingSetSelector {
 

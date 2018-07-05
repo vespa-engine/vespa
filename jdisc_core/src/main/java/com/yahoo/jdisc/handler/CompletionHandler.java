@@ -18,7 +18,7 @@ import com.yahoo.jdisc.Container;
  * throughout its lifetime. This also means that the either {@link #completed()} or {@link #failed(Throwable)} MUST be
  * called in order to release that reference. Failure to do so will prevent the Container from ever shutting down.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public interface CompletionHandler {
 

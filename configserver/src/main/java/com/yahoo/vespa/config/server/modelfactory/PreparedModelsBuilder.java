@@ -10,6 +10,8 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.ValidationParameters;
+import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -104,7 +106,9 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 wantedNodeVespaVersion);
 
         log.log(LogLevel.DEBUG, "Create and validate model " + modelVersion + " for " + applicationId);
-        ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, params.ignoreValidationErrors());
+        ValidationParameters validationParameters =
+                new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
+        ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, validationParameters);
         validateModelHosts(context.getHostValidator(), applicationId, result.getModel());
         log.log(LogLevel.DEBUG, "Done building model " + modelVersion + " for " + applicationId);
         return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());

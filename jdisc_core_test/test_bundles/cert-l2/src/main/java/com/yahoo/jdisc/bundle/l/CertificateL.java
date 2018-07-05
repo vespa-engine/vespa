@@ -4,7 +4,7 @@ package com.yahoo.jdisc.bundle.l;
 import java.util.concurrent.Callable;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class CertificateL implements Callable<Integer> {
 

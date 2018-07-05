@@ -12,7 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class BootstrapDaemon implements Daemon {
 

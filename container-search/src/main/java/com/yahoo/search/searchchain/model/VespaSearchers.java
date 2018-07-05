@@ -17,7 +17,7 @@ import java.util.*;
 /**
  * Defines the searcher models used in the vespa and native search chains, except for federation.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings({"rawtypes", "deprecation", "unchecked"})
 public class VespaSearchers {

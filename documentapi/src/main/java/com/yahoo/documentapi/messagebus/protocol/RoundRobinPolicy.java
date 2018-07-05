@@ -19,7 +19,7 @@ import java.util.Map;
 /**
  * This policy implements round-robin selection of the configured recipients that are currently registered in slobrok.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RoundRobinPolicy implements DocumentProtocolRoutingPolicy {
 

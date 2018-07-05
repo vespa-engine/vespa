@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Harald Musum</a>
+ * @author Harald Musum
  */
 public class NoPrefixForIndexesTest {
 

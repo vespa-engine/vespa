@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.request;
 /**
  * This class represents a {@link Long} bucket in a {@link PredefinedFunction}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class LongBucket extends BucketValue {
 

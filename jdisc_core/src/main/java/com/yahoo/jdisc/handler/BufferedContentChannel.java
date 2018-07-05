@@ -12,7 +12,7 @@ import java.util.Objects;
  * {@link #connectTo(ContentChannel)} is called. Once connected, this class becomes a non-buffering proxy for the
  * connected ContentChannel.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class BufferedContentChannel implements ContentChannel {
 

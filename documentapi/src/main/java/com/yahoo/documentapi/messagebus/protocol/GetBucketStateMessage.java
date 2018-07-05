@@ -7,7 +7,7 @@ import com.yahoo.document.BucketId;
  * This message is a request to return the state of a given bucket. The corresponding reply is {@link
  * GetBucketStateReply}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class GetBucketStateMessage extends DocumentMessage {
 

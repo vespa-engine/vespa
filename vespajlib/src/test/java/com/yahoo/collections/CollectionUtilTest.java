@@ -12,7 +12,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class CollectionUtilTest {
     List<Integer> l1 = Arrays.asList(1, 2, 4, 5, 6, 7);

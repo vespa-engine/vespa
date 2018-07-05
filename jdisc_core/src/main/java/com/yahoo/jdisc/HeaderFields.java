@@ -10,7 +10,7 @@ import java.util.*;
  * a multimap from String to String, with some additional methods for convenience. The keys of this map are compared by
  * ignoring their case, so that <tt>get("foo")</tt> returns the same entry as <tt>get("FOO")</tt>.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class HeaderFields implements Map<String, List<String>> {
 

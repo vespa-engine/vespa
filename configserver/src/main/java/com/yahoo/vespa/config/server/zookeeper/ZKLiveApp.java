@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * Note: The application revision ("session") stored in this tree is not necessarily live, just complete,
  * preparable, prepared or active.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ZKLiveApp {
 

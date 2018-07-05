@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class Benchmark {
 

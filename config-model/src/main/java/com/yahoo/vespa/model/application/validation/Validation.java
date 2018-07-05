@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
@@ -21,8 +22,8 @@ import com.yahoo.vespa.model.application.validation.change.StreamingSearchCluste
 import com.yahoo.vespa.model.application.validation.first.AccessControlValidator;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,18 +36,14 @@ import static java.util.stream.Collectors.toList;
  */
 public class Validation {
 
-    /** Validate everything */
-    public static List<ConfigChangeAction> validate(VespaModel model, boolean force, DeployState deployState) {
-        return validate(model, true, force, deployState);
-    }
-
     /**
-     * Validate with optional checking of routing, which cannot always be valid in unit tests
+     * Validates the model supplied, and if there already exists a model for the application validates changes
+     * between the previous and current model
      *
      * @return a list of required changes needed to make this configuration live
      */
-    public static List<ConfigChangeAction> validate(VespaModel model, boolean checkRouting, boolean force, DeployState deployState) {
-        if (checkRouting) {
+    public static List<ConfigChangeAction> validate(VespaModel model, ValidationParameters validationParameters, DeployState deployState) {
+        if (validationParameters.checkRouting()) {
             new RoutingValidator().validate(model, deployState);
             new RoutingSelectorValidator().validate(model, deployState);
         }
@@ -54,19 +51,22 @@ public class Validation {
         new SearchDataTypeValidator().validate(model, deployState);
         new ComplexAttributeFieldsValidator().validate(model, deployState);
         new StreamingValidator().validate(model, deployState);
-        new RankSetupValidator(force).validate(model, deployState);
+        new RankSetupValidator(validationParameters.ignoreValidationErrors()).validate(model, deployState);
         new NoPrefixForIndexes().validate(model, deployState);
         new DeploymentFileValidator().validate(model, deployState);
         new RankingConstantsValidator().validate(model, deployState);
         new SecretStoreValidator().validate(model, deployState);
 
-        Optional<Model> currentActiveModel = deployState.getPreviousModel();
-        if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel))
-            return validateChanges((VespaModel)currentActiveModel.get(), model,
-                                   deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
-        else
+        List<ConfigChangeAction> result = Collections.emptyList();
+        if (deployState.getProperties().isFirstTimeDeployment()) {
             validateFirstTimeDeployment(model, deployState);
-            return new ArrayList<>();
+        } else {
+            Optional<Model> currentActiveModel = deployState.getPreviousModel();
+            if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel))
+                result = validateChanges((VespaModel) currentActiveModel.get(), model,
+                                         deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
+        }
+        return result;
     }
 
     private static List<ConfigChangeAction> validateChanges(VespaModel currentModel, VespaModel nextModel,

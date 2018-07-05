@@ -52,7 +52,7 @@ public class MetricsReporterTest {
 
     @Test
     public void test_chef_metrics() {
-        Clock clock = Clock.fixed(Instant.ofEpochSecond(1475497913), ZoneId.systemDefault());;
+        Clock clock = Clock.fixed(Instant.ofEpochSecond(1475497913), ZoneId.systemDefault());
         ControllerTester tester = new ControllerTester();
         MetricsReporter metricsReporter = createReporter(clock, tester.controller(), metrics, SystemName.cd);
         metricsReporter.maintain();

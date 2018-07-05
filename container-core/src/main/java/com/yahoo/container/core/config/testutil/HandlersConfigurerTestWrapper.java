@@ -23,7 +23,7 @@ import java.util.Set;
  * Not for public use.
  *
  * If possible, please avoid using this class and HandlersConfigurer in your tests
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  *
 */

@@ -15,7 +15,7 @@ import java.util.List;
  * all configured recipients, or it can be configured using the policy parameter (i.e. a string following the name of
  * the policy). Note that configured recipients take precedence over recipients configured in the parameter string.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public class ANDPolicy implements DocumentProtocolRoutingPolicy {
 

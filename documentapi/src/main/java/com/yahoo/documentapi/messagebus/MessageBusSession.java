@@ -4,7 +4,7 @@ package com.yahoo.documentapi.messagebus;
 /**
  * This class defines a common interface for message bus sessions.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface MessageBusSession {
 

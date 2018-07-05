@@ -8,7 +8,7 @@ import com.yahoo.messagebus.routing.RoutingSpec;
  * Instead of declaring separate subscribers and handlers for all types of configurations, this pair is intended to hold
  * everything. Extend this handler whenever new configs are added to {@link ConfigAgent}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public interface ConfigHandler {
 

@@ -6,7 +6,7 @@ import com.yahoo.javacc.UnicodeUtilities;
 import java.math.BigInteger;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class SelectParserUtils {
 

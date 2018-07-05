@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * The RPCMessageBus class wraps a MessageBus with an RPCNetwork and handles reconfiguration. Please note that according
  * to the object shutdown order, you must shut down all sessions before shutting down this object.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RPCMessageBus extends NetworkMessageBus {
 

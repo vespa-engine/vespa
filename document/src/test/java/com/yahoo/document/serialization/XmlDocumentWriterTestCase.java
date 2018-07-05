@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class XmlDocumentWriterTestCase {
 

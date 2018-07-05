@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 /**
  * Utility class for parsing timeout fields.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class TimeParser {

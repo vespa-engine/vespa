@@ -8,7 +8,7 @@ import com.yahoo.jdisc.Response;
  * This class provides an implementation of {@link ResponseHandler} that allows you to wait for a {@link Response} to
  * be returned.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public final class FutureResponse extends AbstractFuture<Response> implements ResponseHandler {
 

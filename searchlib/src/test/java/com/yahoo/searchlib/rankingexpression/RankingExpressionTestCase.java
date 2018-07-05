@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 /**
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  * @author bratseth
  */
 public class RankingExpressionTestCase {

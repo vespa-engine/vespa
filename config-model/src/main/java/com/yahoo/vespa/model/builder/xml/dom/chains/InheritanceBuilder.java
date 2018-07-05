@@ -11,7 +11,7 @@ import java.util.*;
 
 /**
  * Build an Inheritance object from an inheritance section.
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class InheritanceBuilder {
     final ChainSpecification.Inheritance inheritance;

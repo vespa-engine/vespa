@@ -5,7 +5,7 @@ import java.util.Optional;
 
 /**
  * Utility methods for doing casting
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Casting {
     /**

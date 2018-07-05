@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.bundle.k;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 @SuppressWarnings({ "UnusedDeclaration", "deprecation" })
 public class CertificateK {

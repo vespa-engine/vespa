@@ -90,7 +90,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *
  * @author Steinar Knutsen
  * @author Stian Kristoffersen
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @Beta
 public class YqlParser implements Parser {

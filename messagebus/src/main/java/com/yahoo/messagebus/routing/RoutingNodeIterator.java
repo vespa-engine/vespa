@@ -10,7 +10,7 @@ import java.util.List;
  * Implements an iterator for routing nodes. Use {@link RoutingContext#getChildIterator()} to retrieve an instance of
  * this.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class RoutingNodeIterator {
 

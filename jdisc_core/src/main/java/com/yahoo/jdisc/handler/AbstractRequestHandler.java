@@ -25,7 +25,7 @@ import com.yahoo.jdisc.Response;
  * }
  * </pre>
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 public abstract class AbstractRequestHandler extends com.yahoo.jdisc.AbstractResource implements RequestHandler {
 

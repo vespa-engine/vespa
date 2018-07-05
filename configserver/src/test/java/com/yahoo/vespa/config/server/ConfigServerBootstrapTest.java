@@ -2,10 +2,8 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Version;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
@@ -41,8 +39,8 @@ public class ConfigServerBootstrapTest {
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3");
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", configserverConfig, provisioner);
-        tester.deployApp("myApp", "4.5.6", Instant.now());
+        DeployTester tester = new DeployTester(configserverConfig, provisioner);
+        tester.deployApp("src/test/apps/hosted/", "myApp", "4.5.6", Instant.now());
 
         File versionFile = temporaryFolder.newFile();
         VersionState versionState = new VersionState(versionFile);
@@ -72,8 +70,8 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", configserverConfig);
-        tester.deployApp("myApp", "4.5.6", Instant.now());
+        DeployTester tester = new DeployTester(configserverConfig);
+        tester.deployApp("src/test/apps/hosted/", "myApp", "4.5.6", Instant.now());
 
         File versionFile = temporaryFolder.newFile();
         VersionState versionState = new VersionState(versionFile);

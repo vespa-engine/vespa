@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  * A session supporting receiving and replying to messages. A destination is expected to reply to every message
  * received.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public final class DestinationSession implements MessageHandler {
 

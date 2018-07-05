@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 /**
  * Delegates to another UserTemplate, but handles any exceptions(except IOException) by logging them.
  * 
- * @author tonytv
+ * @author Tony Vaagenes
  * @deprecated use a renderer instead
  */
 @SuppressWarnings("deprecation")

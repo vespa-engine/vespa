@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a strcat-function in a {@link GroupingExpression}. It evaluates to a long that equals the
  * number of bytes in the string result of the argument.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class StrLenFunction extends FunctionNode {
 

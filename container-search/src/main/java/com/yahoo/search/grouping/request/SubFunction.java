@@ -8,7 +8,7 @@ import java.util.List;
  * of subtracting the results of all arguments in the order they were given to the constructor (subtract second argument
  * from first, third from result, ...).
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen Hult
  */
 public class SubFunction extends FunctionNode {
 

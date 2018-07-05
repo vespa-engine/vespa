@@ -12,7 +12,7 @@ import com.yahoo.search.query.textserialize.serializer.QueryTreeSerializer;
 import java.io.StringReader;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * Facade
  * Allows serializing/deserializing  a query to the programmatic format.
  */

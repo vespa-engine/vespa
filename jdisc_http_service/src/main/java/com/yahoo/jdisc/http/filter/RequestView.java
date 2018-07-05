@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * Read-only view of the request for use by SecurityResponseFilters.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface RequestView {
 

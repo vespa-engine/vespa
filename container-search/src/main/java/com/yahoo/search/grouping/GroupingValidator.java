@@ -28,7 +28,7 @@ import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PAR
  * cluster for which this searcher has been deployed. This searcher uses exceptions to signal invalid grouping
  * requests.
  *
- * @author Simon Thoresen
+ * @author Simon Thoresen Hult
  */
 @Before(PhaseNames.BACKEND)
 @After(SELECT_PARAMETER_PARSING)

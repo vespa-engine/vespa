@@ -238,7 +238,7 @@ public class ApplicationDeployTest {
     }
 
     private List<SearchDefinition> getSearchDefinitions(FilesApplicationPackage app) {
-        return new DeployState.Builder().applicationPackage(app).build(true).getSearchDefinitions();
+        return new DeployState.Builder().applicationPackage(app).build().getSearchDefinitions();
     }
 
     public FilesApplicationPackage createAppPkg(String appPkg) throws IOException {
@@ -374,7 +374,7 @@ public class ApplicationDeployTest {
         final File appDir = new File("src/test/cfg/application/configdeftest");
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
 
-        DeployState deployState = new DeployState.Builder().applicationPackage(app).build(true);
+        DeployState deployState = new DeployState.Builder().applicationPackage(app).build();
 
         ConfigDefinition def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", CNode.DEFAULT_NAMESPACE)).get();
         assertThat(def.getNamespace(), is(CNode.DEFAULT_NAMESPACE));
@@ -394,7 +394,7 @@ public class ApplicationDeployTest {
     @Test(expected=IllegalArgumentException.class)
     public void testDifferentNameOfSdFileAndSearchName() throws IOException {
         FilesApplicationPackage app = createAppPkg(TESTDIR + "sdfilenametest");
-        new DeployState.Builder().applicationPackage(app).build(true);
+        new DeployState.Builder().applicationPackage(app).build();
     }
 
 }
