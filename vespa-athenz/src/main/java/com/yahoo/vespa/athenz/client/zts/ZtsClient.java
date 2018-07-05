@@ -1,7 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zts;
 
+import com.yahoo.athenz.zts.TenantDomains;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.ZToken;
@@ -10,6 +12,7 @@ import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.List;
 
 /**
  * Interface for a ZTS client.
@@ -102,6 +105,16 @@ public interface ZtsClient extends AutoCloseable {
     X509Certificate getRoleCertificate(AthenzRole role,
                                        KeyPair keyPair,
                                        String cloud);
+
+    /**
+     * For a given provider, get a list of tenant domains that the user is a member of
+     *
+     * @param providerIdentity Provider identity
+     * @param userIdentity User identity
+     * @param roleName Role name
+     * @return List of domains
+     */
+    List<AthenzDomain> getTenantDomains(AthenzIdentity providerIdentity, AthenzIdentity userIdentity, String roleName);
 
     void close();
 }
