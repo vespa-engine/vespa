@@ -666,13 +666,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    boolean redeployAllApplications(Duration maxDuration) throws InterruptedException {
+    boolean redeployAllApplications(Duration maxDuration, Duration sleepBetweenRetries) throws InterruptedException {
         Instant end = Instant.now().plus(maxDuration);
         Set<ApplicationId> applicationsNotRedeployed = listApplications();
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
             if ( ! applicationsNotRedeployed.isEmpty()) {
-                Thread.sleep(Duration.ofSeconds(30).toMillis());
+                Thread.sleep(sleepBetweenRetries.toMillis());
             }
         } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
 
