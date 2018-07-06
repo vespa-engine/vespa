@@ -7,6 +7,7 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A named collection of functions
@@ -39,6 +40,16 @@ public class Model {
     /** Returns an immutable list of the free (callable) functions of this */
     public List<ExpressionFunction> functions() { return functions; }
 
+    /** Returns the given function, or throws a IllegalArgumentException if it does not exist */
+    ExpressionFunction requireFunction(String name) {
+        ExpressionFunction function = function(name);
+        if (function == null)
+            throw new IllegalArgumentException("No function named '" + name + " in " + this + ". Available functions: " +
+                                               functions.stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
+        return function;
+    }
+
+
     /** Returns an immutable list of the bound function instances of this */
     List<ExpressionFunction> boundFunctions() { return boundFunctions; }
 
@@ -59,6 +70,6 @@ public class Model {
     }
 
     @Override
-    public String toString() { return "Model '" + name + "'"; }
+    public String toString() { return "model '" + name + "'"; }
 
 }
