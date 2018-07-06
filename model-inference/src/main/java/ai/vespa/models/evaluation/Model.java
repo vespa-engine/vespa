@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,17 +17,37 @@ public class Model {
 
     private final String name;
 
+    /** Free functions */
     private final ImmutableList<ExpressionFunction> functions;
 
+    /** An instance of each usage of the above function, where variables are replaced by their bindings */
+    private final ImmutableList<ExpressionFunction> boundFunctions;
+
     public Model(String name, Collection<ExpressionFunction> functions) {
+        this(name, functions, Collections.emptyList());
+    }
+
+    Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> boundFunctions) {
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
+        this.boundFunctions = ImmutableList.copyOf(boundFunctions);
     }
 
     public String name() { return name; }
 
-    /** Returns an immutable list of the expression functions of this */
+    /** Returns an immutable list of the free (callable) functions of this */
     public List<ExpressionFunction> functions() { return functions; }
+
+    /** Returns an immutable list of the bound function instances of this */
+    List<ExpressionFunction> boundFunctions() { return functions; }
+
+    /** Returns the function withe the given name, or null if none */ // TODO: Parameter overloading?
+    ExpressionFunction function(String name) {
+        for (ExpressionFunction function : functions)
+            if (function.getName().equals(name))
+                return function;
+        return null;
+    }
 
     @Override
     public String toString() { return "Model '" + name + "'"; }
