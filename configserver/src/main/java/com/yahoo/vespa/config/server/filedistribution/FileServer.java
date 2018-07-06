@@ -28,6 +28,7 @@ import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -143,23 +144,24 @@ public class FileServer {
             return new LazyFileReferenceData(reference, file.getName(), FileReferenceData.Type.file, file);
         }
     }
-    public void serveFile(Request request, Receiver receiver) {
-        pullExecutor.execute(() -> serveFile(request.parameters().get(0).asString(), request, receiver));
+
+    public void serveFile(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
+        pullExecutor.execute(() -> serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, request, receiver));
     }
-    private void serveFile(String fileReference, Request request, Receiver receiver) {
+
+    private void serveFileInternal(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
+        log.log(LogLevel.DEBUG, () -> "Received request for reference '" + fileReference + "' from " + request.target());
+
         FileApiErrorCodes result;
         try {
-            log.log(LogLevel.DEBUG, () -> "Received request for reference '" + fileReference + "' from " + request.target());
-            result = hasFile(fileReference)
-                    ? FileApiErrorCodes.OK
-                    : FileApiErrorCodes.NOT_FOUND;
+            result = hasFile(fileReference) ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND;
             if (result == FileApiErrorCodes.OK) {
                 startFileServing(fileReference, receiver);
             } else {
                 // Non-zero second parameter means that the request should never lead
                 // to a new download typically because the request comes from another config server.
                 // This is to avoid config servers asking each other for a file that does not exist
-                if (request.parameters().size() == 1 || request.parameters().get(1).asInt32() == 0) {
+                if (downloadFromOtherSourceIfNotFound) {
                     log.log(LogLevel.DEBUG, "File not found, downloading from another source");
                     downloader.getFile(new FileReferenceDownload(new FileReference(fileReference), false /* downloadFromOtherSourceIfNotFound */));
                 } else {
