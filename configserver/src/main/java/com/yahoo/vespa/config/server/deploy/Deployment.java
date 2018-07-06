@@ -48,6 +48,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** The Vespa version this application should run on */
     private final Version version;
 
+    /** True if this deployment is done to bootstrap the config server */
+    private final boolean isBootstrap;
+
     private boolean prepared = false;
     
     /** Whether this model should be validated (only takes effect if prepared=false) */
@@ -55,8 +58,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private boolean ignoreLockFailure = false;
     private boolean ignoreSessionStaleFailure = false;
-
-    private boolean isBootstrap = false;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
                        Optional<Provisioner> hostProvisioner, Tenant tenant,
@@ -76,16 +77,17 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> hostProvisioner, Tenant tenant,
-                                        Duration timeout, Clock clock, boolean validate, Version version) {
+                                        Duration timeout, Clock clock, boolean validate, Version version,
+                                        boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, false, validate, version, false);
+                              timeout, clock, false, validate, version, isBootstrap);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> hostProvisioner, Tenant tenant,
-                                      Duration timeout, Clock clock) {
+                                      Duration timeout, Clock clock, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, true, true, session.getVespaVersion(), false);
+                              timeout, clock, true, true, session.getVespaVersion(), isBootstrap);
     }
 
     public Deployment setIgnoreLockFailure(boolean ignoreLockFailure) {
@@ -170,9 +172,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     public void restart(HostFilter filter) {
         hostProvisioner.get().restart(session.getApplicationId(), filter);
     }
-
-    /** Set this to true if this deployment is done to bootstrap the config server */
-    public void setBootstrap(boolean isBootstrap) { this.isBootstrap = isBootstrap; }
 
     /** Exposes the session of this for testing only */
     public LocalSession session() { return session; }

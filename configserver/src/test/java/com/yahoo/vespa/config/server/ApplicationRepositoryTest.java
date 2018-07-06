@@ -130,14 +130,16 @@ public class ApplicationRepositoryTest {
         Version targetVersion = Version.fromString("5.0");
 
         // Always use target for system application
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.prod, targetVersion));
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.dev, targetVersion));
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.perf, targetVersion));
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.prod, targetVersion, false));
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.dev, targetVersion, false));
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.perf, targetVersion, false));
 
         // Target for regular application depends on environment
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(regularApp, Environment.prod, targetVersion));
-        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, targetVersion));
-        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, targetVersion));
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(regularApp, Environment.prod, targetVersion, false));
+        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, targetVersion, false));
+        // If bootstrap, version should be target version
+        assertEquals(targetVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, targetVersion, true));
+        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, targetVersion, false));
     }
 
     @Test

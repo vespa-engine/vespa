@@ -55,14 +55,19 @@ public class MockDeployer implements Deployer {
     }
 
     @Override
-    public Optional<Deployment> deployFromLocalActive(ApplicationId application) {
-        return deployFromLocalActive(application, Duration.ofSeconds(60));
+    public Optional<Deployment> deployFromLocalActive(ApplicationId id, boolean bootstrap) {
+        return deployFromLocalActive(id, Duration.ofSeconds(60));
     }
 
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, Duration timeout) {
         lastDeployTimes.put(id, clock.instant());
         return Optional.of(new MockDeployment(provisioner, applications.get(id)));
+    }
+
+    @Override
+    public Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout, boolean bootstrap) {
+        return deployFromLocalActive(application, timeout);
     }
 
     @Override
