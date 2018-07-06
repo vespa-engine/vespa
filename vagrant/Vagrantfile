@@ -47,7 +47,8 @@ Vagrant.configure("2") do |config|
         valgrind \
         sudo \
         firefox \
-        vim
+        vim \
+        emacs
     yum-builddep -y /vagrant/dist/vespa.spec
     echo -e "* soft nproc 409600\n* hard nproc 409600" > /etc/security/limits.d/99-nproc.conf
     echo -e "* soft nofile 262144\n* hard nofile 262144" > /etc/security/limits.d/99-nofile.conf
@@ -55,5 +56,20 @@ Vagrant.configure("2") do |config|
     wget -q -O - https://download.jetbrains.com/cpp/CLion-2017.3.3.tar.gz | tar -C /opt -zx
     ln -sf /opt/clion-2017.3.3/bin/clion.sh /usr/bin/clion
     yum update -y
+    hostname localhost
   SHELL
+
+  # Add settings for Vespa and dev tools as the default user, usually 'vagrant' (privileged: false)
+  # NOTE: adding these settings to .bashrc would break vagrant suspend/resume/provision
+  #       due to env vars modified by /opt/rh/devtoolset-7/enable.
+  config.vm.provision "shell", privileged: false, inline: <<-SCRIPT
+    grep -l VESPA_HOME ~/.bash_profile >/dev/null || (\
+      printf "%s\n" \
+        'export VESPA_HOME=$HOME/vespa' \
+        'export PATH=$PATH:$VESPA_HOME/bin' \
+        'source /opt/rh/rh-maven35/enable' \
+        'source /opt/rh/devtoolset-7/enable' \
+        >> ~/.bash_profile )
+  SCRIPT
+
 end
