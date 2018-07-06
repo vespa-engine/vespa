@@ -159,8 +159,6 @@ class HttpRequestDispatch {
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
             HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
             requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler);
-            // Note: The matched binding is only available after FilteringRequestHandler has called resolveHandler() on the current Container instance.
-            //       resolveHandler() will assigned the matched binding on the Request object.
             metricReporter.setBindingMatch(jdiscRequest.getBindingMatch());
         }
 
