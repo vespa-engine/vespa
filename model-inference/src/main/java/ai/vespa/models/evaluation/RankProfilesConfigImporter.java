@@ -37,7 +37,6 @@ class RankProfilesConfigImporter {
     }
 
     private Model importProfile(RankProfilesConfig.Rankprofile profile) {
-        System.out.println("Importing " + profile.name());
         List<ExpressionFunction> functions = new ArrayList<>();
         List<ExpressionFunction> boundFunctions = new ArrayList<>();
         ExpressionFunction firstPhase = null;
@@ -47,16 +46,13 @@ class RankProfilesConfigImporter {
             if ( expressionMatcher.matches()) {
                 String name = expressionMatcher.group(1);
                 String instance = expressionMatcher.group(2);
-                List<String> arguments = new ArrayList<>();
+                List<String> arguments = new ArrayList<>(); // TODO: Arguments?
                 RankingExpression expression = RankingExpression.from(property.value());
 
-                if (instance == null) {
-                    System.out.println("    " + name + ": " + expression);
+                if (instance == null)
                     functions.add(new ExpressionFunction(name, arguments, expression));
-                } else {
-                    System.out.println("    Binding of " + name + ": " + expression);
+                else
                     boundFunctions.add(new ExpressionFunction(name + instance, arguments, expression));
-                }
             }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to macros
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(), RankingExpression.from(property.value()));

@@ -26,8 +26,10 @@ public class RankProfilesImporterTest {
         RankProfilesConfig config = new ConfigGetter<>(new FileSource(new File(configPath)), RankProfilesConfig.class).getConfig("");
         Map<String, Model> models = new RankProfilesConfigImporter().importFrom(config);
         assertEquals(18, models.size());
+
         Model macros = models.get("macros");
         assertNotNull(macros);
+        assertEquals("macros", macros.name());
         assertEquals(4, macros.functions().size());
         assertFunction("fourtimessum", "4 * (var1 + var2)", macros);
         assertFunction("firstphase", "match + fieldMatch(title) + rankingExpression(myfeature)", macros);
@@ -36,10 +38,19 @@ public class RankProfilesImporterTest {
                        "70 * fieldMatch(title).completeness * pow(0 - fieldMatch(title).earliness,2) + " +
                        "30 * pow(0 - fieldMatch(description).earliness,2)",
                        macros);
+        assertEquals(1, macros.boundFunctions().size());
+        assertBoundFunction("fourtimessum@5cf279212355b980.67f1e87166cfef86", "4 * (match + rankBoost)", macros);
     }
 
     private void assertFunction(String name, String expression, Model model) {
         ExpressionFunction function = model.function(name);
+        assertNotNull(function);
+        assertEquals(name, function.getName());
+        assertEquals(expression, function.getBody().toString());
+    }
+
+    private void assertBoundFunction(String name, String expression, Model model) {
+        ExpressionFunction function = model.boundFunction(name);
         assertNotNull(function);
         assertEquals(name, function.getName());
         assertEquals(expression, function.getBody().toString());

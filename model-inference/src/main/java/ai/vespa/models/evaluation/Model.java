@@ -21,6 +21,7 @@ public class Model {
     private final ImmutableList<ExpressionFunction> functions;
 
     /** An instance of each usage of the above function, where variables are replaced by their bindings */
+    // TODO: Separate name and instance id?
     private final ImmutableList<ExpressionFunction> boundFunctions;
 
     public Model(String name, Collection<ExpressionFunction> functions) {
@@ -39,11 +40,19 @@ public class Model {
     public List<ExpressionFunction> functions() { return functions; }
 
     /** Returns an immutable list of the bound function instances of this */
-    List<ExpressionFunction> boundFunctions() { return functions; }
+    List<ExpressionFunction> boundFunctions() { return boundFunctions; }
 
     /** Returns the function withe the given name, or null if none */ // TODO: Parameter overloading?
     ExpressionFunction function(String name) {
         for (ExpressionFunction function : functions)
+            if (function.getName().equals(name))
+                return function;
+        return null;
+    }
+
+    /** Returns the function withe the given name, or null if none */ // TODO: Parameter overloading?
+    ExpressionFunction boundFunction(String name) {
+        for (ExpressionFunction function : boundFunctions)
             if (function.getName().equals(name))
                 return function;
         return null;
