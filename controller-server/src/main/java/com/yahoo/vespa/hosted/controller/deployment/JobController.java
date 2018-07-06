@@ -228,12 +228,12 @@ public class JobController {
                .forEach(id -> {
                    try {
                        for (JobType type : jobs(id))
-                           try (Lock __ = curator.lock(id, type)) {
-                               locked(id, type, deactivateTester, ___ -> {
+                           locked(id, type, deactivateTester, __ -> {
+                               try (Lock ___ = curator.lock(id, type)) {
                                    deactivateTester(id, type);
                                    curator.deleteJobData(id, type);
-                               });
-                           }
+                               }
+                           });
                    }
                    catch (TimeoutException e) {
                        return; // Don't remove the data if we couldn't deactivate all testers.
