@@ -38,8 +38,8 @@ public enum Step {
     /** See that real application has had its nodes converge to the wanted version and generation. */
     installReal(deployReal),
 
-    /** Find test endpoints, download test-jar, and assemble and deploy tester application. */
-    deployTester(installReal), // TODO jvenstad: Move this up when config can be POSTed.
+    /** Download test-jar and assemble and deploy tester application. */
+    deployTester,
 
     /** See that tester is done deploying, and is ready to serve. */
     installTester(deployTester),

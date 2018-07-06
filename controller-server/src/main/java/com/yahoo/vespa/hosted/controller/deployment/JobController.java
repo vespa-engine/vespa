@@ -120,6 +120,13 @@ public class JobController {
         return ImmutableMap.copyOf(runs);
     }
 
+    /** Returns the run with the given id, if it exists. */
+    public Optional<RunStatus> run(RunId id) {
+        return runs(id.application(), id.type()).values().stream()
+                                                .filter(run -> run.id().equals(id))
+                                                .findAny();
+    }
+
     /** Returns the last run of the given type, for the given application, if one has been run. */
     public Optional<RunStatus> last(ApplicationId id, JobType type) {
         return curator.readLastRun(id, type);
@@ -185,7 +192,7 @@ public class JobController {
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void run(ApplicationId id, JobType type) {
+    public void start(ApplicationId id, JobType type) {
         controller.applications().lockIfPresent(id, application -> {
             if ( ! application.get().deploymentJobs().builtInternally())
                 throw new IllegalArgumentException(id + " is not built here!");

@@ -22,7 +22,7 @@ public class InternalBuildService implements BuildService {
 
     @Override
     public void trigger(BuildJob buildJob) {
-        jobs.run(buildJob.applicationId(), JobType.fromJobName(buildJob.jobName()));
+        jobs.start(buildJob.applicationId(), JobType.fromJobName(buildJob.jobName()));
     }
 
     @Override
