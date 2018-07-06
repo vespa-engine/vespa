@@ -28,9 +28,9 @@ public class DocumentInfo implements Cloneable {
     }
 
     public DocumentInfo(GlobalId globalId, int metric, int partId, int distributionKey) {
-        this.globalId=globalId;
-        this.metric=metric;
-        this.partId=partId;
+        this.globalId = globalId;
+        this.metric = metric;
+        this.partId = partId;
         this.distributionKey = distributionKey;
     }
 

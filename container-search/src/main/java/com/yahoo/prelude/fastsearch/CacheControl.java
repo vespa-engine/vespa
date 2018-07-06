@@ -8,6 +8,8 @@ import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.search.Query;
 import com.yahoo.processing.request.CompoundName;
 
+import java.util.Optional;
+
 
 /**
  * The cache control logic for FastSearcher
@@ -84,7 +86,7 @@ public class CacheControl {
         }
     }
 
-    void cache(CacheKey key, Query query, DocsumPacketKey[] packetKeys, Packet[] packets) {
+    void cache(CacheKey key, Query query, DocsumPacketKey[] packetKeys, Packet[] packets, Optional<Integer> distributionKey) {
         if ( ! activeCache) return;
 
         if (query.getNoCache()) return;
@@ -92,7 +94,7 @@ public class CacheControl {
 
         PacketWrapper wrapper = lookup(key, query);
         if (wrapper == null) {
-            wrapper = new PacketWrapper(key, packetKeys,packets);
+            wrapper = new PacketWrapper(key, packetKeys, packets, distributionKey);
             long now = System.currentTimeMillis();
             synchronized (packetCache) {
                 packetCache.put(key, wrapper, now);

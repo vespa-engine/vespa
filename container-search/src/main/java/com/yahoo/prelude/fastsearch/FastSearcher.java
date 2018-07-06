@@ -229,8 +229,9 @@ public class FastSearcher extends VespaBackEndSearcher {
 
         // Dispatch directly to the single, local search node
         query.trace(false, 2, "Dispatching directly to ", directDispatchRecipient.get());
-        return fs4ResourcePool.getBackend(directDispatchRecipient.get().hostname(), 
-                                          directDispatchRecipient.get().fs4port());
+        return fs4ResourcePool.getBackend(directDispatchRecipient.get().hostname(),
+                                          directDispatchRecipient.get().fs4port(),
+                                          Optional.of(directDispatchRecipient.get().key()));
     }
 
     /**
@@ -373,7 +374,6 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     private Result searchTwoPhase(FS4Channel channel, Query query, QueryPacket queryPacket, CacheKey cacheKey) throws IOException {
-
         if (isLoggingFine())
             getLogger().finest("sending query packet");
 
@@ -417,7 +417,8 @@ public class FastSearcher extends VespaBackEndSearcher {
 
         addMetaInfo(query, queryPacket.getQueryPacketData(), resultPacket, result, false);
 
-        addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey);
+        addUnfilledHits(result, resultPacket.getDocuments(), false,
+                        queryPacket.getQueryPacketData(), cacheKey, channel.distributionKey());
         Packet[] packets;
         PacketWrapper packetWrapper = cacheControl.lookup(cacheKey, query);
 
@@ -432,7 +433,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             } else {
                 packets = new Packet[1];
                 packets[0] = resultPacket;
-                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets);
+                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, channel.distributionKey());
             }
         }
         return result;

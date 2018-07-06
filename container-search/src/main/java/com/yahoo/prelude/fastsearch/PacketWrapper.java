@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import com.yahoo.fs4.BasicPacket;
@@ -31,10 +32,13 @@ public class PacketWrapper implements Cloneable {
 
     private static Logger log = Logger.getLogger(PacketWrapper.class.getName());
 
-    final int keySize;
+    private final int keySize;
     // associated result packets, sorted in regard to offset
     private ArrayList<BasicPacket> resultPackets = new ArrayList<>(3); // length = "some small number"
-    LinkedHashMap<DocsumPacketKey, BasicPacket> packets;
+
+    private LinkedHashMap<DocsumPacketKey, BasicPacket> packets;
+
+    private final Optional<Integer> distributionKey;
 
     private static class ResultPacketComparator<T extends BasicPacket> implements Comparator<T> {
         @Override
@@ -47,11 +51,12 @@ public class PacketWrapper implements Cloneable {
 
     private static ResultPacketComparator<BasicPacket> resultPacketComparator = new ResultPacketComparator<>();
 
-    public PacketWrapper(CacheKey key, DocsumPacketKey[] packetKeys, BasicPacket[] bpackets) {
+    public PacketWrapper(CacheKey key, DocsumPacketKey[] packetKeys, BasicPacket[] bpackets, Optional<Integer> distributionKey) {
         // Should not support key == null
         this.keySize = key.byteSize();
         resultPackets.add(bpackets[0]);
         this.packets = new LinkedHashMap<>();
+        this.distributionKey = distributionKey;
         Packet[] ppackets = new Packet[packetKeys.length];
 
         for (int i = 0; i < packetKeys.length; i++) {
@@ -72,6 +77,7 @@ public class PacketWrapper implements Cloneable {
         }
         resultPackets.add(packets[0]);
         this.packets = new LinkedHashMap<>();
+        this.distributionKey = Optional.empty();
         for (int i = 0; i < packets.length - 1; i++) {
             this.packets.put(new DocsumPacketKey(new GlobalId(new DocumentId("doc:test:" + i).getGlobalId()), i, null), packets[i + 1]);
         }
@@ -87,7 +93,13 @@ public class PacketWrapper implements Cloneable {
     }
 
     /**
-     * @return list of documents, null if not all are available
+     * Returns the distribution key of the content node producing these hits,
+     * or empty if the hits were returned through dispatch
+     */
+    public Optional<Integer> distributionKey() { return distributionKey; }
+
+    /**
+     * Returns the list of documents, null if not all are available
      */
     public List<DocumentInfo> getDocuments(int offset, int hits) {
         // speculatively allocate list for the hits

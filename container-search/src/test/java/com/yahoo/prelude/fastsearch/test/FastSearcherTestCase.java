@@ -115,8 +115,8 @@ public class FastSearcherTestCase {
                                 .name("simpler").hasRankFeatures(false).hasSummaryFeatures(false))));
 
         List<SearchCluster.Node> nodes = new ArrayList<>();
-        nodes.add(new SearchCluster.Node("host1", 5000, 0));
-        nodes.add(new SearchCluster.Node("host2", 5000, 0));
+        nodes.add(new SearchCluster.Node(0, "host1", 5000, 0));
+        nodes.add(new SearchCluster.Node(2, "host2", 5000, 0));
 
         MockFS4ResourcePool mockFs4ResourcePool = new MockFS4ResourcePool();
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
@@ -442,7 +442,7 @@ public class FastSearcherTestCase {
     public void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(new SearchCluster.Node("host0", 123, 0)),
+                                                     new MockDispatcher(new SearchCluster.Node(0, "host0", 123, 0)),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
@@ -465,8 +465,8 @@ public class FastSearcherTestCase {
     @Test
     public void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
         MockDispatcher dispatcher = 
-                new MockDispatcher(ImmutableList.of(new SearchCluster.Node("host0", 123, 0),
-                                                    new SearchCluster.Node("host1", 123, 0)));
+                new MockDispatcher(ImmutableList.of(new SearchCluster.Node(0, "host0", 123, 0),
+                                                    new SearchCluster.Node(2, "host1", 123, 0)));
 
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),

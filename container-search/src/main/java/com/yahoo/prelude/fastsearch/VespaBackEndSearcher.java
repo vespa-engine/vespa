@@ -137,7 +137,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
         addMetaInfo(query, queryPacketData, resultPacket, result, true);
         if (packetWrapper.getNumPackets() == 0)
-            addUnfilledHits(result, documents, true, queryPacketData, key);
+            addUnfilledHits(result, documents, true, queryPacketData, key, packetWrapper.distributionKey());
         else
             addCachedHits(result, packetWrapper, summaryClass, documents);
         return result;
@@ -616,8 +616,16 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      *
      * @param queryPacketData binary data from first phase of search, or null
      * @param cacheKey the key this hit should match in the packet cache, or null
+     * @param channelDistributionKey distribution key of the node producing these hits.
+     *                               Only set if produced directly by a search node, not dispatch
+     *                               (in which case it is not set in the received packets.)
      */
-    boolean addUnfilledHits(Result result, List<DocumentInfo> documents, boolean fromCache, QueryPacketData queryPacketData, CacheKey cacheKey) {
+    boolean addUnfilledHits(Result result,
+                            List<DocumentInfo> documents,
+                            boolean fromCache,
+                            QueryPacketData queryPacketData,
+                            CacheKey cacheKey,
+                            Optional<Integer> channelDistributionKey) {
         boolean allHitsOK = true;
         Query myQuery = result.getQuery();
 
@@ -634,6 +642,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                 hit.setCached(fromCache);
 
                 extractDocumentInfo(hit, document);
+                channelDistributionKey.ifPresent(hit::setDistributionKey);
 
                 result.hits().add(hit);
             } catch (ConfigurationException e) {

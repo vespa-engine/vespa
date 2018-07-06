@@ -58,9 +58,10 @@ class FastSearcherTester {
 
     private static List<SearchCluster.Node> toNodes(String... hostAndPortAndGroupStrings) {
         List<SearchCluster.Node> nodes = new ArrayList<>();
+        int key = 0;
         for (String s : hostAndPortAndGroupStrings) {
             String[] parts = s.split(":");
-            nodes.add(new SearchCluster.Node(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2])));
+            nodes.add(new SearchCluster.Node(key++, parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2])));
         }
         return nodes;
     }

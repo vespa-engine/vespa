@@ -7,6 +7,7 @@ import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -25,7 +26,7 @@ public class MockFS4ResourcePool extends FS4ResourcePool {
     }
 
     @Override
-    public Backend getBackend(String hostname, int port) {
+    public Backend getBackend(String hostname, int port, Optional<Integer> distributionKey) {
         countRequest(hostname + ":" + port);
         if (nonRespondingBackends.contains(hostname))
             return new MockBackend(hostname, NonWorkingMockFSChannel::new);

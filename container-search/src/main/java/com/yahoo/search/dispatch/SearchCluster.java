@@ -137,7 +137,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private static ImmutableList<Node> toNodes(DispatchConfig dispatchConfig) {
         ImmutableList.Builder<Node> nodesBuilder = new ImmutableList.Builder<>();
         for (DispatchConfig.Node node : dispatchConfig.node())
-            nodesBuilder.add(new Node(node.host(), node.fs4port(), node.group()));
+            nodesBuilder.add(new Node(node.key(), node.host(), node.fs4port(), node.group()));
         return nodesBuilder.build();
     }
 
@@ -360,6 +360,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     /** A node in a search cluster. This class is multithread safe. */
     public static class Node {
 
+        private final int key;
         private final String hostname;
         private final int fs4port;
         private final int group;
@@ -367,11 +368,15 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         private final AtomicBoolean working = new AtomicBoolean(true);
         private final AtomicLong activeDocuments = new AtomicLong(0);
 
-        public Node(String hostname, int fs4port, int group) {
+        public Node(int key, String hostname, int fs4port, int group) {
+            this.key = key;
             this.hostname = hostname;
             this.fs4port = fs4port;
             this.group = group;
         }
+
+        /** Returns the unique and stable distribution key of this node */
+        public int key() { return key; }
 
         public String hostname() { return hostname; }
 
