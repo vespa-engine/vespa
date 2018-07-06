@@ -261,12 +261,18 @@ public class InternalStepRunner implements StepRunner {
         List<Node> nodes = controller.configServer().nodeRepository().list(zone(type), id, Arrays.asList(active, reserved));
         for (Node node : nodes)
             // TODO jvenstad: Add ALLOWED_TO_BE_DOWN and reboot and restart generation information as well.
-            logger.get().log(String.format("%70s: %s%s",
+            logger.get().log(String.format("%70s: %-12s%-25s%-32s%s",
                                            node.hostname(),
-                                           node.wantedVersion(),
-                                           node.currentVersion().equals(node.wantedVersion()) ? "" : " <-- " + node.currentVersion()));
+                                           node.serviceState(),
+                                           node.wantedVersion() + (node.currentVersion().equals(node.wantedVersion()) ? "" : " <-- " + node.currentVersion()),
+                                           node.restartGeneration() == node.wantedRestartGeneration() ? ""
+                                                   : "restart pending (" + node.wantedRestartGeneration() + " <-- " + node.restartGeneration() + ")",
+                                           node.rebootGeneration() == node.wantedRebootGeneration() ? ""
+                                                   : "reboot pending (" + node.wantedRebootGeneration() + " <-- " + node.rebootGeneration() + ")"));
 
-        return nodes.stream().allMatch(node -> target.equals(node.currentVersion()));
+        return nodes.stream().allMatch(node ->    node.currentVersion().equals(target)
+                                               && node.restartGeneration() == node.wantedRestartGeneration()
+                                               && node.rebootGeneration() == node.wantedRebootGeneration());
     }
 
     private boolean servicesConverged(ApplicationId id, JobType type) {
