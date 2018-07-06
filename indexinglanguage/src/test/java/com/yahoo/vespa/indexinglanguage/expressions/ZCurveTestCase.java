@@ -41,8 +41,12 @@ public class ZCurveTestCase {
     }
 
     @Test
-    public void requireThatMissingFieldEvaluatesToNull() {
-        assertNull(new ZCurveExpression().execute(PositionDataType.valueOf(null, 9)));
-        assertNull(new ZCurveExpression().execute(PositionDataType.valueOf(6, null)));
+    public void requireThatMissingFieldEvaluatesToDefaultValue() {
+        assertEquals(DataType.LONG.createFieldValue(),
+                new ZCurveExpression().execute(PositionDataType.valueOf(null, 9)));
+        assertEquals(DataType.LONG.createFieldValue(),
+                new ZCurveExpression().execute(PositionDataType.valueOf(6, null)));
+        assertEquals(DataType.LONG.createFieldValue(),
+                new ZCurveExpression().execute(PositionDataType.valueOf(null, null)));
     }
 }

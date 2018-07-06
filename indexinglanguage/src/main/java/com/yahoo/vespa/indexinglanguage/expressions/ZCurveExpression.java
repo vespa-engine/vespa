@@ -22,7 +22,7 @@ public class ZCurveExpression extends Expression {
         if (x != null && y != null) {
             ctx.setValue(new LongFieldValue(ZCurve.encode(x, y)));
         } else {
-            ctx.setValue(null);
+            ctx.setValue(DataType.LONG.createFieldValue());
         }
     }
 
