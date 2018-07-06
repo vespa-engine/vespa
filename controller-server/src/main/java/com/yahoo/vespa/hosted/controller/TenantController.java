@@ -5,6 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
@@ -69,12 +70,13 @@ public class TenantController {
     /** Returns a list of all tenants accessible by the given user */
     public List<Tenant> asList(UserId user) {
         AthenzUser athenzUser = AthenzUser.fromUserId(user.id());
-        Set<AthenzDomain> userDomains = new HashSet<>(athenzClientFactory.createZtsClientWithServicePrincipal()
-                                                                         .getTenantDomainsForUser(athenzUser));
-        return asList().stream()
-                       .filter(tenant -> isUser(tenant, user) ||
-                                         userDomains.stream().anyMatch(domain -> inDomain(tenant, domain)))
-                       .collect(Collectors.toList());
+        try (ZtsClient ztsClient = athenzClientFactory.createZtsClientWithServicePrincipal()) {
+            Set<AthenzDomain> userDomains = new HashSet<>(ztsClient.getTenantDomains(athenzClientFactory.getControllerIdentity(), athenzUser, "admin"));
+            return asList().stream()
+                           .filter(tenant -> isUser(tenant, user) ||
+                                             userDomains.stream().anyMatch(domain -> inDomain(tenant, domain)))
+                           .collect(Collectors.toList());
+        }
     }
 
     /** Create an user tenant with given username */

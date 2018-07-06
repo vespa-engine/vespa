@@ -8,16 +8,19 @@ import com.yahoo.athenz.auth.impl.SimplePrincipal;
 import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zms.ZMSClient;
-import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
+import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
+import java.net.URI;
 import java.security.PrivateKey;
 
 /**
@@ -38,6 +41,11 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
         this.athenzPrincipalAuthority = new AthenzPrincipalAuthority(config.principalHeaderName());
     }
 
+    @Override
+    public AthenzIdentity getControllerIdentity() {
+        return identityProvider.identity();
+    }
+
     /**
      * @return A ZMS client instance with the service identity as principal.
      */
@@ -51,7 +59,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
      */
     @Override
     public ZtsClient createZtsClientWithServicePrincipal() {
-        return new ZtsClientImpl(new ZTSClient(config.ztsUrl(), identityProvider.getIdentitySslContext()), config);
+        return new DefaultZtsClient(URI.create(config.ztsUrl()), identityProvider);
     }
 
     /**

@@ -18,6 +18,7 @@ import com.yahoo.vespa.athenz.client.zts.bindings.InstanceRegisterInformation;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleTokenResponseEntity;
+import com.yahoo.vespa.athenz.client.zts.bindings.TenantDomainsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.utils.IdentityCsrGenerator;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
@@ -43,13 +44,16 @@ import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
 import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.RFC822_NAME;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Default implementation of {@link ZtsClient}
@@ -204,6 +208,22 @@ public class DefaultZtsClient implements ZtsClient {
                                               KeyPair keyPair,
                                               String cloud) {
         return getRoleCertificate(role, null, keyPair, cloud);
+    }
+
+    @Override
+    public List<AthenzDomain> getTenantDomains(AthenzIdentity providerIdentity, AthenzIdentity userIdentity, String roleName) {
+        URI uri = ztsUrl.resolve(
+                String.format("providerdomain/%s/user/%s", providerIdentity.getDomainName(), userIdentity.getFullName()));
+        HttpUriRequest request = RequestBuilder.get(uri)
+                .addParameter("roleName", roleName)
+                .addParameter("serviceName", providerIdentity.getName())
+                .build();
+        return withClient(client -> {
+            try (CloseableHttpResponse response = client.execute(request)) {
+                TenantDomainsResponseEntity entity = readEntity(response, TenantDomainsResponseEntity.class);
+                return entity.tenantDomainNames.stream().map(AthenzDomain::new).collect(toList());
+            }
+        });
     }
 
     private static InstanceIdentity getInstanceIdentity(HttpResponse response) throws IOException {

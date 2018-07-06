@@ -3,8 +3,17 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
+import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.ZToken;
+import com.yahoo.vespa.athenz.client.zts.Identity;
+import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
+import com.yahoo.vespa.athenz.client.zts.ZtsClient;
+import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,12 +33,57 @@ public class ZtsClientMock implements ZtsClient {
     }
 
     @Override
-    public List<AthenzDomain> getTenantDomainsForUser(AthenzIdentity identity) {
-        log.log(Level.INFO, "getTenantDomainsForUser(principal='%s')", identity);
+    public List<AthenzDomain> getTenantDomains(AthenzIdentity providerIdentity, AthenzIdentity userIdentity, String roleName) {
+        log.log(Level.INFO, String.format("getTenantDomains(providerIdentity='%s', userIdentity='%s', roleName='%s')",
+                                          providerIdentity.getFullName(), userIdentity.getFullName(), roleName));
         return athenz.domains.values().stream()
-                .filter(domain -> domain.tenantAdmins.contains(identity) || domain.admins.contains(identity))
+                .filter(domain -> domain.tenantAdmins.contains(userIdentity) || domain.admins.contains(userIdentity))
                 .map(domain -> domain.name)
                 .collect(toList());
     }
 
+    @Override
+    public InstanceIdentity registerInstance(AthenzService providerIdentity, AthenzService instanceIdentity, String instanceId, String attestationData, boolean requestServiceToken, Pkcs10Csr csr) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InstanceIdentity refreshInstance(AthenzService providerIdentity, AthenzService instanceIdentity, String instanceId, boolean requestServiceToken, Pkcs10Csr csr) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Identity getServiceIdentity(AthenzService identity, String keyId, Pkcs10Csr csr) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Identity getServiceIdentity(AthenzService identity, String keyId, KeyPair keyPair, String dnsSuffix) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ZToken getRoleToken(AthenzDomain domain) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ZToken getRoleToken(AthenzRole athenzRole) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public X509Certificate getRoleCertificate(AthenzRole role, Duration expiry, KeyPair keyPair, String cloud) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public X509Certificate getRoleCertificate(AthenzRole role, KeyPair keyPair, String cloud) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void close() {
+
+    }
 }
