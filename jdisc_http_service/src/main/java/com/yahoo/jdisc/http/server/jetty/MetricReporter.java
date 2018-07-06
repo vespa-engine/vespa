@@ -3,25 +3,20 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Metric.Context;
-import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.jdisc.application.UriPattern;
-import com.yahoo.jdisc.handler.RequestHandler;
-import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
  * Responsible for metric reporting for JDisc http request handler support.
- *
  * @author Tony Vaagenes
  */
 public class MetricReporter {
     private final Metric metric;
-    private volatile Context context;
-    private final Map<String, Object> requestDimensions;
+    private final @Nullable Context context;
 
     private final long requestStartTime;
 
@@ -29,20 +24,10 @@ public class MetricReporter {
     private final AtomicBoolean firstSetOfTimeToFirstByte = new AtomicBoolean(true);
 
 
-    public MetricReporter(Metric metric, Map<String, Object> requestDimensions, long requestStartTime) {
+    public MetricReporter(Metric metric, @Nullable Context context, long requestStartTime) {
         this.metric = metric;
-        this.context = metric.createContext(requestDimensions);
-        this.requestDimensions = requestDimensions;
+        this.context = context;
         this.requestStartTime = requestStartTime;
-    }
-
-    public void setBindingMatch(BindingMatch<?> bindingMatch) {
-        if (bindingMatch == null) return;
-        UriPattern pattern = bindingMatch.matched();
-        if (pattern == null) return;
-        Map<String, Object> combinedDimensions = new HashMap<>(requestDimensions);
-        combinedDimensions.put(Metrics.HANDLER_DIMENSION, pattern.toString());
-        this.context = metric.createContext(combinedDimensions);
     }
 
     @SuppressWarnings("deprecation")
