@@ -80,8 +80,8 @@ void
 TermFieldMatchData::resizePositionVector(size_t sz)
 {
     assert(allocated());
-    assert(_sz >= 2);
-    size_t newSize(std::min(MAX_ELEMS, sz));
+    assert(sz >= _sz);
+    size_t newSize(std::min(MAX_ELEMS, std::max(1ul, sz)));
     TermFieldMatchDataPosition * n = new TermFieldMatchDataPosition[newSize];
     for (size_t i(0); i < _data._positions._allocated; i++) {
         n[i] = _data._positions._positions[i];
@@ -92,19 +92,19 @@ TermFieldMatchData::resizePositionVector(size_t sz)
 }
 
 void
-TermFieldMatchData::allocateVectorAndAppend(const TermFieldMatchDataPosition &pos)
+TermFieldMatchData::allocateVector()
 {
-    assert(_sz == 1);
+    assert(_sz < 2);
     assert(!allocated());
     size_t newSize = 2;
     TermFieldMatchDataPosition * n = new TermFieldMatchDataPosition[newSize];
-    n[0] = *getFixed();
-    n[1] = pos;
-    _data._positions._maxElementLength = std::max(getFixed()->getElementLen(), pos.getElementLen());
+    if (_sz > 0) {
+        n[0] = *getFixed();
+        _data._positions._maxElementLength = getFixed()->getElementLen();
+    }
+    _fieldId = _fieldId | 0x4000; // set allocated() flag
     _data._positions._allocated = newSize;
     _data._positions._positions = n;
-    _fieldId = _fieldId | 0x4000; // set allocated() flag
-    _sz++;
 }
 
 void
@@ -122,4 +122,4 @@ TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosi
     }
 }
 
-} // namespace
+}
