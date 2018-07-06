@@ -206,8 +206,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         getSupervisor().addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
-        // TODO: Change parameters to "si" instead of "s*" when all clients have been updated
-        getSupervisor().addMethod(new Method("filedistribution.serveFile", "s*", "is", this, "serveFile"));
+        getSupervisor().addMethod(new Method("filedistribution.serveFile", "si", "is", this, "serveFile"));
         getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i",
                                         this, "setFileReferencesToDownload")
                                      .methodDesc("set which file references to download")
@@ -529,7 +528,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     public final void serveFile(Request request) {
         request.detach();
         FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
-        fileServer.serveFile(request, receiver);
+        fileServer.serveFile(request.parameters().get(0).asString(), request.parameters().get(1).asInt32() == 0, request, receiver);
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
