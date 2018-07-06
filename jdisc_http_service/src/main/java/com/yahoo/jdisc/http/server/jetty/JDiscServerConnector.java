@@ -15,8 +15,9 @@ import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +28,7 @@ class JDiscServerConnector extends ServerConnector {
     public static final String REQUEST_ATTRIBUTE = JDiscServerConnector.class.getName();
     private final static Logger log = Logger.getLogger(JDiscServerConnector.class.getName());
     private final Metric.Context metricCtx;
+    private final Map<String, Metric.Context> requestMetricContextCache = new ConcurrentHashMap<>();
     private final ServerConnectionStatistics statistics;
     private final boolean tcpKeepAlive;
     private final boolean tcpNoDelay;
@@ -41,20 +43,13 @@ class JDiscServerConnector extends ServerConnector {
         this.channelOpenedByActivator = channelOpenedByActivator;
         this.tcpKeepAlive = config.tcpKeepAliveEnabled();
         this.tcpNoDelay = config.tcpNoDelay();
-        this.metricCtx = createMetricContext(config, metric);
         this.metric = metric;
         this.connectorName = config.name();
         this.listenPort = config.listenPort();
+        this.metricCtx = metric.createContext(createConnectorDimensions(listenPort, connectorName));
 
         this.statistics = new ServerConnectionStatistics();
         addBean(statistics);
-    }
-
-    private Metric.Context createMetricContext(ConnectorConfig config, Metric metric) {
-        Map<String, Object> props = new TreeMap<>();
-        props.put(JettyHttpServer.Metrics.NAME_DIMENSION, config.name());
-        props.put(JettyHttpServer.Metrics.PORT_DIMENSION, config.listenPort());
-        return metric.createContext(props);
     }
 
     @Override
@@ -124,15 +119,23 @@ class JDiscServerConnector extends ServerConnector {
     }
 
     public Metric.Context getRequestMetricContext(HttpServletRequest request) {
-        Map<String, Object> props = new TreeMap<>();
-        props.put(JettyHttpServer.Metrics.NAME_DIMENSION, connectorName);
-        props.put(JettyHttpServer.Metrics.PORT_DIMENSION, listenPort);
-        props.put(JettyHttpServer.Metrics.METHOD_DIMENSION, request.getMethod());
-        return metric.createContext(props);
+        String method = request.getMethod();
+        return requestMetricContextCache.computeIfAbsent(method, ignored -> {
+            Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName);
+            dimensions.put(JettyHttpServer.Metrics.METHOD_DIMENSION, method);
+            return metric.createContext(dimensions);
+        });
     }
 
     public static JDiscServerConnector fromRequest(ServletRequest request) {
         return (JDiscServerConnector) request.getAttribute(REQUEST_ATTRIBUTE);
+    }
+
+    private static Map<String, Object> createConnectorDimensions(int listenPort, String connectorName) {
+        Map<String, Object> props = new HashMap<>();
+        props.put(JettyHttpServer.Metrics.NAME_DIMENSION, connectorName);
+        props.put(JettyHttpServer.Metrics.PORT_DIMENSION, listenPort);
+        return props;
     }
 
 }
