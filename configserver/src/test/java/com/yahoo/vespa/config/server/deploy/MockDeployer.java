@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class MockDeployer implements com.yahoo.config.provision.Deployer {
 
@@ -21,8 +21,18 @@ public class MockDeployer implements com.yahoo.config.provision.Deployer {
     }
 
     @Override
+    public Optional<Deployment> deployFromLocalActive(ApplicationId application, boolean bootstrap) {
+        return Optional.empty();
+    }
+
+    @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout) {
         lastDeployed = application;
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout, boolean bootstrap) {
         return Optional.empty();
     }
 

@@ -202,7 +202,25 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      */
     @Override
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application) {
-        return deployFromLocalActive(application, Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()).plus(Duration.ofSeconds(5)));
+        return deployFromLocalActive(application, false);
+    }
+
+    /**
+     * Creates a new deployment from the active application, if available.
+     * This is used for system internal redeployments, not on application package changes.
+     *
+     * @param application the active application to be redeployed
+     * @param bootstrap the deployment is done when bootstrapping
+     * @return a new deployment from the local active, or empty if a local active application
+     *         was not present for this id (meaning it either is not active or active on another
+     *         node in the config server cluster)
+     */
+    @Override
+    public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application,
+                                                                                 boolean bootstrap) {
+        return deployFromLocalActive(application,
+                                     Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()).plus(Duration.ofSeconds(5)),
+                                     bootstrap);
     }
 
     /**
@@ -211,13 +229,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      *
      * @param application the active application to be redeployed
      * @param timeout the timeout to use for each individual deployment operation
+     * @param bootstrap the deployment is done when bootstrapping
      * @return a new deployment from the local active, or empty if a local active application
      *         was not present for this id (meaning it either is not active or active on another
      *         node in the config server cluster)
      */
     @Override
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application,
-                                                                                 Duration timeout) {
+                                                                                 Duration timeout,
+                                                                                 boolean bootstrap) {
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
         LocalSession activeSession = getActiveSession(tenant, application);
@@ -228,10 +248,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         // Keep manually deployed tenant applications on the latest version, don't change version otherwise
         // TODO: Remove this and always use version from session once controller starts upgrading manual deployments
-        Version version = decideVersion(application, environment, newSession.getVespaVersion());
+        Version version = decideVersion(application, environment, newSession.getVespaVersion(), bootstrap);
                 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
-                                                 false /* don't validate as this is already deployed */, version));
+                                                 false /* don't validate as this is already deployed */, version,
+                                                 bootstrap));
     }
 
     @Override
@@ -257,7 +278,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Deployment deployFromPreparedSession(LocalSession session, Tenant tenant, Duration timeout) {
-        return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock);
+        return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false);
     }
 
     // ---------------- Application operations ----------------------------------------------------------------
@@ -672,12 +693,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Set<ApplicationId> failedDeployments = new HashSet<>();
 
         for (ApplicationId appId : applicationIds) {
-            Optional<com.yahoo.config.provision.Deployment> deploymentOptional = deployFromLocalActive(appId);
+            Optional<com.yahoo.config.provision.Deployment> deploymentOptional = deployFromLocalActive(appId, true /* bootstrap */);
             if ( ! deploymentOptional.isPresent()) continue;
 
-            Deployment deployment = (Deployment)deploymentOptional.get();
-            deployment.setBootstrap(true); // Only available inside the config server; hence the cast
-            futures.put(appId, executor.submit(deployment::activate));
+            futures.put(appId, executor.submit(deploymentOptional.get()::activate));
         }
 
         for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
@@ -723,9 +742,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     /** Returns version to use when deploying application in given environment */
-    static Version decideVersion(ApplicationId application, Environment environment, Version targetVersion) {
+    static Version decideVersion(ApplicationId application, Environment environment, Version targetVersion, boolean bootstrap) {
         if (environment.isManuallyDeployed() &&
-            !"hosted-vespa".equals(application.tenant().value())) { // Never change version of system applications
+            !"hosted-vespa".equals(application.tenant().value()) && // Never change version of system applications
+            !bootstrap) { // Do not use current version when bootstrapping config server
             return Vtag.currentVersion;
         }
         return targetVersion;
