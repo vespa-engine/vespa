@@ -19,7 +19,7 @@ import java.nio.file.Paths;
 import java.util.logging.Level;
 
 /**
- * Takes requests on Querybuilder
+ * Takes requests on /querybuilder
  *
  * @author  Henrik Høiness
  */

@@ -1,10 +1,20 @@
 /*
-* Copyright 2008 Christopher Dolivet
-* Licenced under BSD Licence
+* Copyright (c) 2008, Christophe Dolivet
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+*
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+* Neither the name of EditArea nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+* Open source under the BSD License.
 */
 
 body, html{
-	margin: 0; 
+	margin: 0;
 	padding: 0;
 	height: 100%;
 	border: none;
@@ -22,7 +32,7 @@ body, html, table, form, textarea{
 }
 
 #result{
-	z-index: 4; 
+	z-index: 4;
 	overflow-x: auto;
 	overflow-y: scroll;
 	border-top: solid #888 1px;
@@ -38,22 +48,22 @@ body, html, table, form, textarea{
 #container{
 	overflow: hidden;
 	border: solid blue 0;
-	position: relative; 
+	position: relative;
 	z-index: 10;
 	padding: 0 5px 0 45px;
-	/*padding-right: 5px;*/ 
+	/*padding-right: 5px;*/
 }
 
 #textarea{
-	position: relative; 
-	top: 0; 
+	position: relative;
+	top: 0;
 	left: 0;
 	margin: 0;
 	padding: 0;
 	width: 100%;
-	height: 100%; 
-	overflow: hidden;  
-	z-index: 7; 
+	height: 100%;
+	overflow: hidden;
+	z-index: 7;
 	border-width: 0;
 	background-color: transparent;
 	resize: none;
@@ -67,16 +77,16 @@ body, html, table, form, textarea{
 	white-space: pre;
 	margin: 0;
 	padding: 0;
-	position : absolute; 
-	z-index: 4; 
+	position : absolute;
+	z-index: 4;
 	overflow: visible;
 }
 
 
 #selection_field, #selection_field_text{
-	margin: 0; 
-	background-color: #E1F2F9; 
-/*	height: 1px; */  
+	margin: 0;
+	background-color: #E1F2F9;
+/*	height: 1px; */
 	position: absolute;
 	z-index: 5;
 	top: -100px;
@@ -88,7 +98,7 @@ body, html, table, form, textarea{
 #selection_field.show_colors {
 	z-index: 3;
 	background-color:#EDF9FC;
-	
+
 }
 
 #selection_field strong{
@@ -135,8 +145,8 @@ body, html, table, form, textarea{
 }
 
 #test_font_size{
-	padding: 0; 
-	margin: 0; 
+	padding: 0;
+	margin: 0;
 	visibility: hidden;
 	position: absolute;
 	white-space: pre;
@@ -148,13 +158,13 @@ pre{
 }
 
 .hidden{
-	opacity: 0.2; 
+	opacity: 0.2;
 	filter:alpha(opacity=20);
 }
 
 #result .edit_area_cursor{
-	position: absolute; 
-	z-index:6; 
+	position: absolute;
+	z-index:6;
 	background-color: #FF6633;
 	top: -100px;
 	margin: 0;
@@ -168,11 +178,11 @@ pre{
 /* area popup */
 .editarea_popup{
 	border: solid 1px #888888;
-	background-color: #ECE9D8; 
-	width: 250px; 
-	padding: 4px; 
+	background-color: #ECE9D8;
+	width: 250px;
+	padding: 4px;
 	position: absolute;
-	visibility: hidden; 
+	visibility: hidden;
 	z-index: 15;
 	top: -500px;
 }
@@ -187,9 +197,9 @@ pre{
 }
 
 .editarea_popup .close_popup{
-	float: right; 
-	line-height: 16px; 
-	border: 0; 
+	float: right;
+	line-height: 16px;
+	border: 0;
 	padding: 0;
 }
 
@@ -200,7 +210,7 @@ pre{
 
 .editarea_popup . {
 	text-align: right;
-}	
+}
 
 /* Area_search */
 div#area_search_replace{
@@ -222,30 +232,30 @@ div#area_search_replace .button a{
 	background-color: #DEDEDE;
 	text-decoration: none;
 	padding: 0 2px;
-	color: #000000;	
+	color: #000000;
 	white-space: nowrap;
 }
 
-div#area_search_replace a:hover{	
+div#area_search_replace a:hover{
 	/*border: solid 1px #888888;*/
 	background-color: #EDEDED;
 }
 
 div#area_search_replace  #move_area_search_replace{
-	cursor: move; 
+	cursor: move;
 	border: solid 1px #888;
 }
 
 div#area_search_replace  #close_area_search_replace{
-	text-align: right; 
-	vertical-align: top; 
+	text-align: right;
+	vertical-align: top;
 	white-space: nowrap;
 }
 
 div#area_search_replace  #area_search_msg{
-	height: 18px; 
-	overflow: hidden; 
-	border-top: solid 1px #888; 
+	height: 18px;
+	overflow: hidden;
+	border-top: solid 1px #888;
 	margin-top: 3px;
 }
 
@@ -261,9 +271,9 @@ div#area_search_replace  #area_search_msg{
 /* area_toolbar */
 .area_toolbar{
 	/*font: 11px sans-serif;*/
-	width: 100%; 
+	width: 100%;
 	/*height: 21px; */
-	margin: 0; 
+	margin: 0;
 	padding: 0;
 	background-color: #ECE9D8;
 	text-align: center;
@@ -374,15 +384,15 @@ table.statusbar{
 
 /* waiting screen */
 #processing{
-	display: none; 
-	background-color:#ECE9D8; 
+	display: none;
+	background-color:#ECE9D8;
 	border: solid #888 1px;
-	position: absolute; 
-	top: 0; 
+	position: absolute;
+	top: 0;
 	left: 0;
-	width: 100%; 
-	height: 100%; 
-	z-index: 100; 
+	width: 100%;
+	height: 100%;
+	z-index: 100;
 	text-align: center;
 }
 
@@ -391,7 +401,7 @@ table.statusbar{
 	left: 50%;
 	top: 50%;
 	width: 200px;
-	height: 20px; 
+	height: 20px;
 	margin-left: -100px;
 	margin-top: -10px;
 	text-align: center;
@@ -409,8 +419,8 @@ table.statusbar{
 }
 
 #tab_browsing_list {
-	padding: 0; 
-	margin: 0; 
+	padding: 0;
+	margin: 0;
 	list-style-type: none;
 	white-space: nowrap;
 }
@@ -420,26 +430,26 @@ table.statusbar{
 }
 #tab_browsing_list a {
 	position: relative;
-	display: block; 
-	text-decoration: none; 
-	float: left; 
+	display: block;
+	text-decoration: none;
+	float: left;
 	cursor: pointer;
 	line-height:14px;
 }
 
 #tab_browsing_list a span {
-	display: block; 
-	color: #000; 
-	background: #ECE9D8; 
-	border:	1px solid #888; 
-	border-width: 1px 1px 0; 
-	text-align: center; 
-	padding: 2px 2px 1px 4px; 
+	display: block;
+	color: #000;
+	background: #ECE9D8;
+	border:	1px solid #888;
+	border-width: 1px 1px 0;
+	text-align: center;
+	padding: 2px 2px 1px 4px;
 	position: relative;	/*IE 6 hack */
 }
 
 #tab_browsing_list a b {
-	display: block; 
+	display: block;
 	border-bottom: 2px solid #617994;
 }
 

@@ -14,6 +14,11 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertTrue;
 
+
+/**
+ * @author Henrik Høiness
+ */
+
 public class GUIHandlerTest {
 
     private JDisc container;
@@ -27,7 +32,7 @@ public class GUIHandlerTest {
     public void stopContainer() {
         /*
         try {
-            Thread.sleep(120_000);
+            Thread.sleep(100_000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }*/
@@ -36,12 +41,12 @@ public class GUIHandlerTest {
 
     @Test
     public void testRequest() throws Exception {
-       assertResponse("/querybuilder/", "<!DOCTYPE html>","text/html; charset=UTF-8", 200);
+       assertResponse("/querybuilder/", "<!-- Copyright 2018 Yahoo Holdings.","text/html; charset=UTF-8", 200);
     }
 
     @Test
     public void testContentTypes() throws Exception{
-        assertResponse("/querybuilder/_includes/css/vespa.css", ":root","text/css; charset=UTF-8", 200);
+        assertResponse("/querybuilder/_includes/css/vespa.css", "/**","text/css; charset=UTF-8", 200);
         assertResponse("/querybuilder/js/agency.js", "/*!","application/javascript; charset=UTF-8", 200);
         assertResponse("/querybuilder/img/reload.svg", "<?xml","image/svg+xml; charset=UTF-8", 200);
         assertResponse("/querybuilder/img/Vespa-V2.png", null,"image/png; charset=UTF-8", 200);

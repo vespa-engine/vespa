@@ -1,7 +1,6 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.restapi.application;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.restapi;
 
-import com.yahoo.restapi.Path;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;

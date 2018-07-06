@@ -1,3 +1,6 @@
+/**
+* Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+*/
 editAreaLoader.load_syntax["yql"] = {
 	'DISPLAY_NAME' : 'YQL'
 	,'QUOTEMARKS' : {1: "'", 2: '"', 3: '`'}
@@ -5,7 +8,7 @@ editAreaLoader.load_syntax["yql"] = {
 	,'OPERATOR_CASE_SENSITIVE' : false
 	,'KEYWORDS' : {
 		'statements' : [
-			'SELECT', 'FROM',' SOURCES', 'CONTAINS',
+			'SELECT', 'FROM','SOURCES', 'CONTAINS',
 		 	'NOT', 'ORDER',
 			'BY', 'WHERE'
 		]
