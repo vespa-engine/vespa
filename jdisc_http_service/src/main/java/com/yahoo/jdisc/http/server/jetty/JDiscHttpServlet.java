@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -91,7 +90,7 @@ class JDiscHttpServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setAttribute(JDiscServerConnector.REQUEST_ATTRIBUTE, getConnector(request));
 
-        Metric.Context metricContext = context.metric.createContext(getRequestMetricDimensions(request));
+        Metric.Context metricContext = getMetricContext(request);
         context.metric.add(JettyHttpServer.Metrics.NUM_REQUESTS, 1, metricContext);
         context.metric.add(JettyHttpServer.Metrics.JDISC_HTTP_REQUESTS, 1, metricContext);
         context.metric.add(JettyHttpServer.Metrics.MANHATTAN_NUM_REQUESTS, 1, metricContext);
@@ -114,7 +113,7 @@ class JDiscHttpServlet extends HttpServlet {
         try {
             switch (request.getDispatcherType()) {
                 case REQUEST:
-                    new HttpRequestDispatch(context, accessLogEntry, getRequestMetricDimensions(request), request, response)
+                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response)
                             .dispatch();
                     break;
                 default:
@@ -130,8 +129,8 @@ class JDiscHttpServlet extends HttpServlet {
         }
     }
 
-    private static Map<String, Object> getRequestMetricDimensions(HttpServletRequest request) {
-        return JDiscServerConnector.fromRequest(request).getRequestMetricDimensions(request);
+    private static Metric.Context getMetricContext(HttpServletRequest request) {
+        return JDiscServerConnector.fromRequest(request).getRequestMetricContext(request);
     }
 
     private static String formatAttributes(final HttpServletRequest request) {

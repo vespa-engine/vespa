@@ -15,7 +15,6 @@ import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -124,12 +123,12 @@ class JDiscServerConnector extends ServerConnector {
         return metricCtx;
     }
 
-    public Map<String, Object> getRequestMetricDimensions(HttpServletRequest request) {
-        Map<String, Object> props = new HashMap<>();
+    public Metric.Context getRequestMetricContext(HttpServletRequest request) {
+        Map<String, Object> props = new TreeMap<>();
         props.put(JettyHttpServer.Metrics.NAME_DIMENSION, connectorName);
         props.put(JettyHttpServer.Metrics.PORT_DIMENSION, listenPort);
         props.put(JettyHttpServer.Metrics.METHOD_DIMENSION, request.getMethod());
-        return props;
+        return metric.createContext(props);
     }
 
     public static JDiscServerConnector fromRequest(ServletRequest request) {

@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.AccessLogEntry;
+import com.yahoo.jdisc.Metric.Context;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.Response;
@@ -21,7 +22,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,7 +54,7 @@ class HttpRequestDispatch {
 
     public HttpRequestDispatch(JDiscContext jDiscContext,
                                AccessLogEntry accessLogEntry,
-                               Map<String, Object> requestMetricDimensions,
+                               Context metricContext,
                                HttpServletRequest servletRequest,
                                HttpServletResponse servletResponse) throws IOException {
         this.jDiscContext = jDiscContext;
@@ -62,7 +62,7 @@ class HttpRequestDispatch {
         requestHandler = newRequestHandler(jDiscContext, accessLogEntry, servletRequest);
 
         this.jettyRequest = (Request) servletRequest;
-        this.metricReporter = new MetricReporter(jDiscContext.metric, requestMetricDimensions, jettyRequest.getTimeStamp());
+        this.metricReporter = new MetricReporter(jDiscContext.metric, metricContext, jettyRequest.getTimeStamp());
         honourMaxKeepAliveRequests();
         this.servletResponseController = new ServletResponseController(
                 servletRequest,
@@ -159,7 +159,6 @@ class HttpRequestDispatch {
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
             HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
             requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler);
-            metricReporter.setBindingMatch(jdiscRequest.getBindingMatch());
         }
 
         ServletInputStream servletInputStream = jettyRequest.getInputStream();
