@@ -8,7 +8,7 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.Path;
+import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.statuspage.config.StatuspageConfig;
 import com.yahoo.yolean.Exceptions;

@@ -1,0 +1,965 @@
+<!-- Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Vespa. Big data. Real time.</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="  Your big data processing and serving system - deep learning,
+      search applications, ad selection system, personalized
+      recommendation systems, and more...">
+
+
+    <!-- Site icons - generated using http://realfavicongenerator.net/ -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/querybuilder/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/querybuilder/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/querybuilder/icons/favicon-16x16.png">
+    <link rel="manifest" href="/querybuilder/icons/manifest.json">
+    <link rel="mask-icon" href="/querybuilder/icons/safari-pinned-tab.svg" color="#3f9dd8">
+    <link rel="shortcut icon" href="/querybuilder/icons/favicon.ico" type="image/x-icon">
+    <meta name="msapplication-config" content="/querybuilder/icons/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Custom Fonts -->
+    <link rel="stylesheet" href="/querybuilder/css/font-awesome/css/font-awesome.min.css">
+    <link href='https://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700' rel='stylesheet' type='text/css'>
+
+        <title>Vespa - Big Data. Real time.</title>
+
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    </head>
+
+
+<body id="page-top" class="index">
+
+<style type="text/css"></style>
+
+
+<link href="/querybuilder/_includes/css/agency.css" rel="stylesheet" type="text/css">
+<link href="/querybuilder/_includes/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/querybuilder/_includes/css/vespa.css" rel="stylesheet" type="text/css">
+<nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="http://www.vespa.ai">Vespa. Big data. Real time.</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="hidden"><a href="#page-top"></a>
+                    <li><a href="http://blog.vespa.ai/">Blog</a>
+                    <li><a href="https://twitter.com/vespaengine">Twitter</a>
+                    <li><a href="http://docs.vespa.ai">Docs</a>
+                    <li><a href="https://github.com/vespa-engine">GitHub</a>
+                    <li><a href="http://docs.vespa.ai/documentation/vespa-quick-start.html">Get Started Now</a>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header>
+        <div class="layer">
+            <div class="intro container">
+              <div class="intro-lead-in">Vespa Search Engine</div>
+              <div class="intro-long">Select the method for sending requests and construct a query.</div>
+              <select class="methodselector" onchange="chooseMethod();" id="method">
+                	<option class="options" value="POST">POST</option>
+                	<option class="options" value="GET">GET</option>
+              </select>
+              <input type="text" class="textbox" name="value" value="http://httpbin.org/post" id="url" size="30">
+              <button class="button" onclick="startSending();" id="send">Send</button>
+
+              <br/>
+              <div id="request">
+              </br>
+                <div class="intro-param">Construct a query by adding parameters or pasting a JSON.</div>
+              </div>
+              <br/>
+              <button class="addRow"onclick="addNewRow()" id="addRow">+</button>
+              <br/>
+              <button class="pasteJSON"onclick="pasteJSON();" id="pasteJSON"><img src="/querybuilder/img/paste.svg" height="16" width="16" style="margin-top:-2px; margin-right: 3px;"/>   Paste JSON</button>
+            </br>
+              <button class="showJSON"onclick="showJSON();" id="showJSON">Show query JSON</button>
+              </br>
+              <textarea class="responsebox" id="jsonquery" cols=70 rows=15 style="display:none;"readonly></textarea>
+              </br>
+              <button class="copyJSON"onclick="copyToClipboard(jsonquery);" id="copyJSON"><img src="/querybuilder/img/copy.svg" height="17" width="17" /> Copy as JSON</button>
+              <button class="copyURL"onclick="copyURL();" id="copyURL"><img src="/querybuilder/img/copy.svg" height="17" width="17" /> Copy as URL</button>
+              <br/>
+
+              <div class="response">Response</div>
+              <input class="responseinfo" id="reponsestatus" value="" readonly></input></br>
+              <textarea class="responsebox" id="response" cols=70 rows=25 readonly></textarea>
+              <div id="div" >
+                  <div >
+                    <div class="intro-copy" onclick="copyToClipboard(response);" style="cursor:pointer;">
+                      <img src="/querybuilder/img/copy.svg" height="30" width="30" />
+                    </div>
+                    <div class="intro-refresh" onclick="refresh();" style="cursor:pointer;">
+                      <img src="/querybuilder/img/reload.svg" height="30" width="30" />
+                    </div>
+                  </div>
+              </div>
+            </div>
+        </div>
+    </header>
+    <footer>
+          <div class="container">
+              <div class="row">
+                  <div class="col-xs-2 quicklink-section">
+                      <div class="footer-title">Resources</div>
+                      <ul class="quicklinks">
+                          <li><a href="http://docs.vespa.ai/documentation/vespa-quick-start.html">Getting Started</a>
+                          <li><a href="http://docs.vespa.ai">Documentation</a>
+                          <li><a href="https://github.com/vespa-engine/vespa">Open source</a>
+                      </ul>
+                  </div>
+                  <div class="col-xs-2 quicklink-section">
+                      <div class="footer-title">Contact</div>
+                      <ul class="quicklinks">
+                          <li><a href="https://twitter.com/vespaengine">Twitter</a>
+                          <li><a href="mailto:info@vespa.ai">info@vespa.ai</a>
+                          <li><a href="https://github.com/vespa-engine/vespa/issues">Issues</a>
+                      </ul>
+                  </div>
+                  <div class="col-xs-2 quicklink-section">
+                      <div class="footer-title">Community</div>
+                      <ul class="quicklinks">
+                          <li><a href="https://github.com/vespa-engine/vespa/blob/master/CONTRIBUTING.md">Contributing</a>
+                          <li><a href="http://stackoverflow.com/questions/tagged/vespa">Stack Overflow</a>
+                          <li><a href="https://gitter.im/vespa-engine/Lobby">Gitter</a>
+                      </ul>
+                  </div>
+                  <div class="col-xs-6 quicklink-section">
+                      <div class="credits">
+                          <span>Copyright Yahoo Holdings 2018</span>
+                          Licensed under <a href="https://github.com/vespa-engine/vespa/blob/master/LICENSE">Apache License 2.0</a>
+                          , <a href="https://github.com/y7kim/agency-jekyll-theme">Theme</a> by Rick K.
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </footer>
+
+      <!-- jQuery Version 1.11.0 -->
+      <script src="/querybuilder/js/jquery-1.11.0.js"></script>
+
+      <!-- Bootstrap Core JavaScript -->
+      <script src="/querybuilder/js/bootstrap.min.js"></script>
+
+      <!-- Plugin JavaScript -->
+      <script src="/querybuilder/js/jquery.easing.min.js"></script>
+      <script src="/querybuilder/js/classie.js"></script>
+
+      <!-- Custom Theme JavaScript -->
+      <script src="/querybuilder/js/agency.js"></script>
+
+      <script language="javascript" type="text/javascript" src="/querybuilder/editarea/edit_area/edit_area_full.js"></script>
+      <script language="javascript" type="text/javascript">
+
+      function fEALoaded() {
+        $('#frame_'+window.yqlID).contents().find('.area_toolbar').hide();
+        var iframe = document.getElementById("frame_"+window.yqlID);
+        iframe.style = "vertical-align: middle; height: 117px; width: 350px; margin-bottom: 5px; ";
+      }
+      </script>
+
+
+
+
+
+      <SCRIPT language="javascript">
+
+      	method = "POST";
+      	var number = 0;
+      	var childno = {};
+      	var json = JSON.parse("{}");
+        var searchApiReference = null;
+      	window.onload = function() {addNewRow(); getSearchApiReference();};
+
+      	var possible = ["yql", "hits", "offset", "queryProfile", "nocache", "groupingSessionCache", "searchChain", "timeout", "trace","tracelevel","traceLevel", "",
+      , "model", "ranking", "collapse","collapsesize","collapsesize","presentation", "pos", "streaming", "rules", "recall", "user", "nocachewrite", "metrics"];
+
+      	var usedProps = [];
+      	var hasChilds = ["model", "ranking", "trace","tracelevel", "ranking.matchPhase", "ranking.matchPhase.diversity", "presentation","collapse", "pos", "streaming", "rules", "metrics"];
+      	var removedIndexes = [0];
+      	var childrenProps = {
+      		"model" : ["defaultIndex", "encoding", "language", "queryString", "restrict", "searchPath", "sources", "type"],
+      		"ranking" : ["location", "features", "listFeatures", "profile", "properties", "sorting", "freshness", "queryCache", "matchPhase"],
+      		"ranking.matchPhase" : ["maxHits", "attribute", "ascending", "diversity"],
+      		"ranking.matchPhase.diversity" : ["attribute", "minGroups"],
+      		"presentation" : ["bolding", "format", "summary", "template", "timing"],
+          "trace" : ["timestamps"],
+          "tracelevel" : ["rules"],
+          "metrics" : ["ignore"],
+      		"collapse":["summary"],
+      		"pos" : ["ll", "radius", "bb", "attribute"],
+      		"streaming" : ["userid", "groupname", "selection", "priority", "maxbucketspervisitor"],
+      		"rules" : ["off", "rulebase"]
+      	};
+
+        var stringType = ["yql", "queryProfile", "searchChain", "model.defaultIndex", "model.encoding", "model.language",
+         "model.queryString", "model.searchPath", "model.type", "ranking.features", "ranking.profile", "ranking.properties", "ranking.sorting", "ranking.matchPhase.diversity.attribute",
+         "ranking.matchPhase.attribute","pos.attribute", "presentation.summary", "collapse.summary",
+         "presentation.template", "select", "collapsefield", "pos.ll", "pos.radius", "streaming.priority", "streaming.groupname", "streaming.selection", "rules.rulebase",
+         "user", "presentation.format","ranking.location","ranking.freshness"];
+        var booleanType = ["nocache", "groupingSessionCache", "trace.timestamps", "ranking.listFeatures", "ranking.queryCache", "ranking.matchPhase.ascending",
+         "presentation.bolding", "presentation.timing", "rules.off", "nocachewrite", "metrics.ignore"];
+        var listType = ["model.filter", "model.restrict", "model.sources", "pos.bb", "recall"];
+        var integerType = ["hits","offset", "traceLevel", "collapsesize", "streaming.userid", "streaming.maxbucketspervisitor", "tracelevel.rules"];
+        var floatType = ["timeout"];
+        var longType = ["ranking.matchPhase.maxHits", "ranking.matchPhase.diversity.minGroups"];
+        var latlongType = [""];
+        var yqlID = "v1";
+
+
+      function updateFields(){
+      	var temp = number;
+      	while (temp > 0){
+      		if (!contains(removedIndexes, temp)){
+      			var datalist = document.getElementById("prop"+temp);
+      			datalist.innerHTML = "";
+      			possible.forEach(function(item){
+      				if (!contains(usedProps, item)){
+      					var option = document.createElement("option");
+      					option.value = item;
+      					datalist.appendChild(option);
+      				}
+      			});
+      		}
+      		temp -= 1;
+      	}
+      }
+
+      function pasteJSON(){
+        var button = document.getElementById("pasteJSON");
+        if (button.innerHTML === "Press CMD+V"){
+          button.innerHTML = '<img src="/querybuilder/img/paste.svg" height="16" width="16" style="margin-top:-2px; margin-right: 3px;"/>   Paste JSON';
+          button.style = "background-color: #99C1DA;"
+        }else{
+          var textarea = document.getElementById("response");
+          var button = document.getElementById("pasteJSON");
+          button.innerHTML = "Press CMD+V";
+          button.style = "background-color: #5791d7;"
+          textarea.focus();
+          document.getElementById('response').addEventListener('paste', handlePaste);
+        }
+      }
+
+      function handlePaste (e) {
+          var clipboardData, pastedData;
+
+          // Stop data actually being pasted into div
+          e.stopPropagation();
+          e.preventDefault();
+
+          // Get pasted data via clipboard API
+          clipboardData = e.clipboardData || window.clipboardData;
+          pastedData = clipboardData.getData('Text');
+
+          // Do whatever with pasteddata
+          alert("Converting JSON: \n\n "+pastedData);
+
+          //Removing eventlistener
+          var oldResponse = document.getElementById('response');
+          var newResponse = oldResponse.cloneNode(true);
+          oldResponse.parentNode.replaceChild(newResponse, oldResponse);
+
+          //Returning to old button and
+          pasteJSON();
+          convertPastedJSON(pastedData);
+      }
+
+      function convertPastedJSON(pastedData){
+        try {
+          document.getElementById("request").innerHTML = "</br> <div class=\"intro-param\">Construct a query by adding parameters or pasting a JSON.</div>";
+          number = 0;
+          var json = JSON.parse(pastedData);
+          buildFromJSON(json, 0);
+        }
+        catch (err) {
+          alert("Could not parse JSON, with error-message: \n\n"+err.message);
+        }
+      }
+
+      function buildFromJSON(obj,parentNo) {
+        Object.keys(obj).forEach(function(key) {
+          if ( typeof(eval('obj.'+key)) === "object" ) {
+            if (parentNo != 0){
+              var newNo = addChildProp(parentNo, key);
+              buildFromJSON(eval('obj.'+key), newNo);
+            }
+            if (parentNo === 0){
+              var newNo = addNewRow(key);
+              buildFromJSON(eval('obj.'+key), newNo);
+            }
+          }
+          else {
+            if (parentNo != 0){
+              var newNo = addChildProp(parentNo, key, eval('obj.'+key));
+            }
+            if (parentNo === 0){
+              var newNo = addNewRow(key, eval('obj.'+key));
+            }
+          }
+        });
+      }
+
+      function copyURL(){
+        generateJSON();
+        var urlMap = dotNotate(window.json);
+        var url = buildURL(urlMap);
+        var el = document.createElement("textarea");
+        el.value = url;
+        document.body.appendChild(el);
+        copyToClipboard(el);
+        document.body.removeChild(el);
+        return url;
+      }
+
+      function buildURL(map){
+        var url = document.getElementById("url").value + "?";
+        var parameters = "";
+        Object.keys(map).forEach(function(key) {
+          parameters += "&" + encodeToURI(key) + "=" + encodeToURI(map[key]);
+        });
+        parameters = parameters.substr(1)
+        return url+parameters
+
+      }
+
+      function encodeToURI(string){
+        string = encodeURIComponent(string);
+        string = string.replace(/%20/g, '+');
+        return string;
+      }
+
+        function dotNotate(obj,target,prefix) {
+          target = target || {},
+          prefix = prefix || "";
+
+          Object.keys(obj).forEach(function(key) {
+            if ( typeof(obj[key]) === "object" ) {
+              dotNotate(obj[key],target,prefix + key + ".");
+            } else {
+              return target[prefix + key] = obj[key];
+            }
+          });
+
+          return target;
+        }
+
+      function copyToClipboard(id){
+        id.select();
+        document.execCommand('copy');
+        clearSelection();
+      }
+
+      function clearSelection()
+      {
+       if (window.getSelection) {window.getSelection().removeAllRanges();}
+       else if (document.selection) {document.selection.empty();}
+      }
+
+      function chooseMethod(method) {
+      	var selectBox = document.getElementById("method");
+      	var selectedMethod = selectBox.options[selectBox.selectedIndex].value;
+      	if (selectedMethod != method){
+      		window.method = selectedMethod
+      		changeDiv(selectedMethod);
+      	}
+      }
+
+      function changeDiv(selectedMethod){
+      	if (selectedMethod === "GET"){
+      		document.getElementById("request").innerHTML = '</br><textarea class=\"responsebox\" cols=70 rows=4 id=\"url2\">'+copyURL();+'</textarea>';
+        	changeVisibility();
+      	}
+      	else if (selectedMethod === "POST") {
+      		document.getElementById("request").innerHTML = "</br> <div class=\"intro-param\">Construct a query by adding parameters or pasting a JSON.</div>";
+      		number = 0;
+        	changeVisibility();
+          let jsonString = JSON.stringify(window.json);
+          if (jsonString === "{}" || jsonString=== '{"":""}'){
+        		addNewRow();
+          } else {
+            buildFromJSON(window.json, 0);
+          }
+
+      	}
+      }
+      function stripMyHTML(html)
+      {
+         var tmp = document.createElement("DIV");
+         tmp.innerHTML = html
+         for (var i = 0; i < tmp.children.length; i++){
+           tmp.children[i].classList = [];
+         }
+         return tmp.innerHTML.replace('<code>','').replace('</code>','');
+      }
+
+      function addNewRow(key, value){
+      	number += 1;
+      	const temp = number;
+      	childno[temp] = 0;
+      	var newInput = document.createElement("input");
+      	newInput.id = "i"+temp;
+      	newInput.setAttribute("list", "prop"+temp);
+      	newInput.onchange = function(){keySelected(temp);};
+        newInput.classList.add("input")
+      	var newDatalist = document.createElement("datalist");
+      	newDatalist.id = "prop"+temp;
+      	newInputVal = document.createElement("input");
+      	newInputVal.type = "text";
+      	newInputVal.id = "v"+temp;
+        newInputVal.classList.add("propvalue");
+      	var newButton = document.createElement("button");
+      	newButton.id = "b"+temp;
+      	newButton.innerHTML = "-";
+      	newButton.onclick = function(){removeRow(temp);};
+        newButton.classList.add("removeRow");
+      	var br = document.createElement("br");
+      	br.id = "br"+temp
+
+        var img = document.createElement("img");
+        img.src = "/querybuilder/img/information.svg";
+        img.height = "15";
+        img.width = "15";
+        img.classList.add("information");
+
+        var span = document.createElement("span");
+        span.id = "span"+temp;
+        span.innerHTML = stripMyHTML('Choose a parameter for information');
+
+        var a = document.createElement("a");
+        a.href = "#";
+        a.classList.add("tip");
+        a.id = "inf"+temp
+
+        a.appendChild(img);
+        a.appendChild(span);
+
+
+      	var div = document.createElement("div");
+      	div.id = number;
+      	div.appendChild(newInput);
+      	div.appendChild(newDatalist);
+
+        div.appendChild(a);
+
+      	div.appendChild(newInputVal);
+      	div.appendChild(newButton);
+      	div.appendChild(br);
+
+      	var bigdiv = document.getElementById("request");
+      	bigdiv.appendChild(div);
+      	updateFields();
+        value2 = ""+ value;
+        if (key){
+          newInput.value = key;
+          keySelected(temp, value)
+        }
+        if (value || value2==="false"){
+          if (key === "yql"){
+            editAreaLoader.setValue(window.yqlID, value);
+          } else {
+            newInputVal.value= value;
+          }
+        }
+        generateJSON();
+        return temp;
+      }
+
+      function showInformation(no, key){
+        var a = document.getElementById("inf"+no);
+        if(validKey(no, key)){
+        a.style = "visibility: visible;";
+        try {
+          document.getElementById("span"+no).innerHTML = changeInformation(no, key);
+        } catch (err) {
+          document.getElementById("span"+no).innerHTML = "Something went wrong loading search api reference. Please refresh page";
+        }
+        }
+        else{
+        a.style = "visibility: hidden;"
+        }
+      }
+
+      function validKey(no, possibleKey){
+        if (contains(possible, possibleKey)){return true;}
+        for (var key in childrenProps){
+          if (contains(childrenProps[key],possibleKey)){
+            return true;
+          }
+        }
+        return false;
+      }
+
+      	function keySelected(no, value){
+      		var key = document.getElementById("i"+no).value;
+          showInformation(no, key);
+      		findUsedProps();
+          var fullKey = getFullName(no, key);
+      		if(contains(hasChilds, fullKey)){
+      			var input = document.getElementById("v"+no);
+            if ($(input).is("textarea")){
+              editAreaLoader.delete_instance(window.yqlID);
+            }
+      			var button = document.createElement("button");
+      			button.id="propb"+no
+      			button.innerHTML=" +   Add property";
+      			button.onclick = function(){addChildProp(no);};
+            button.classList.add("addpropsbutton");
+      			var parent = input.parentNode;
+      			parent.replaceChild(button, input);
+      		} else {
+      			if (document.getElementById("propb"+no) != null){
+      				var button = document.getElementById("propb"+no)
+      				var newInputVal = document.createElement("input");
+      				newInputVal.type = "text";
+      				newInputVal.id = "v"+no;
+              newInputVal.classList.add("propvalue");
+              var parent = button.parentNode;
+              showType(newInputVal, no);
+              if (key === "yql"){
+                newInputVal = document.createElement("textarea");
+                newInputVal.id = "v"+no;
+                window.yqlID = "v"+no;
+                newInputVal.class = "yql";
+                newInputVal.name = "content";
+                newInputVal.cols = "80";
+                newInputVal.rows = "15";
+                newInputVal.innerHTML = "\n\n\n\n\n";
+        				parent.replaceChild(newInputVal, button);
+                editAreaLoader.init({
+                  id : "v"+no		// textarea id
+                  ,syntax: "yql"			// syntax to be uses for highgliting
+                  ,start_highlight: true		// to display with highlight mode on start-up
+                  ,autocompletion: true
+                  ,plugins: 'autocompletion'
+                  ,gecko_spellcheck: true
+                  ,allow_toggle: false
+                  ,browsers: "all"
+                  ,replace_tab_by_spaces: 2
+                  ,EA_load_callback: "fEALoaded"
+                });
+              }
+              if (key != "yql"){
+        				parent.replaceChild(newInputVal, button);
+              }
+      			}else if (true) {
+              var inputval = document.getElementById("v"+no);
+              showType(inputval, no);
+              if ($(inputval).is("textarea")){
+                var newInputVal = document.createElement("input");
+                editAreaLoader.delete_instance(window.yqlID);
+                newInputVal.type = "text";
+                newInputVal.id = "v"+no;
+                newInputVal.classList.add("propvalue");
+                showType(newInputVal, no);
+                var parent = inputval.parentNode;
+                parent.replaceChild(newInputVal, inputval);
+              }
+
+              if (key === "yql"){
+                newInputVal = document.createElement("textarea");
+                newInputVal.id = "v"+no;
+                window.yqlID = "v"+no;
+                newInputVal.name = "content";
+                newInputVal.cols = "80";
+                newInputVal.rows = "15";
+                newInputVal.class = "yql";
+                newInputVal.innerHTML = "\n\n\n\n\n";
+                var parent = inputval.parentNode;
+                parent.replaceChild(newInputVal, inputval);
+                editAreaLoader.init({
+                    id : "v"+no		// textarea id
+                    ,syntax: "yql"			// syntax to be uses for highgliting
+                    ,start_highlight: true		// to display with highlight mode on start-up
+                    ,autocompletion: true
+                    ,plugins: 'autocompletion'
+                    ,gecko_spellcheck: true
+                    ,font_family: 'Tahoma'
+                    ,allow_toggle: false
+                    ,browsers: "all"
+                    ,replace_tab_by_spaces: 2
+                    ,EA_load_callback: "fEALoaded"
+                });
+              }
+              if(value){
+                inputval.value = value;
+              }
+
+            }
+      		}
+          if (!validKey(no, key)){
+            var keyInput = document.getElementById("i"+no);
+            keyInput.style = "border-width: 1px; border-color: red;"
+            var valueInput = document.getElementById("v"+no);
+            valueInput.placeholder = "Invalid parameter";
+          }
+          if (validKey(no, key)){
+            var keyInput = document.getElementById("i"+no);
+            keyInput.style = "border-width: 0px;"
+          }
+
+      	}
+
+      function showType(inputVal, no){
+        var key = document.getElementById("i"+no).value;
+        var key = getFullName(no, key);
+        if (contains(stringType, key)){
+          inputVal.placeholder = "String";
+        }
+        else if (contains(booleanType, key)){
+          inputVal.placeholder = "Boolean";
+        }
+        else if (contains(integerType, key)){
+          inputVal.placeholder = "Int";
+        }
+        else if (contains(listType, key)){
+          inputVal.placeholder = "Array";
+        }
+        else if (contains(longType, key)){
+          inputVal.placeholder = "Long";
+        }
+        else if (contains(latlongType, key)){
+          inputVal.placeholder = "Latlong";
+        }
+        else if (contains(floatType, key)){
+          inputVal.placeholder = "Float";
+        }
+        else {
+          inputVal.placeholder = "";
+        }
+      }
+
+      function removeRow(no){
+      	var div = document.getElementById(no);
+      	var key = document.getElementById("i"+no).value;
+      	var bigdiv = document.getElementById("request");
+        setTimeout(function(){
+          	bigdiv.removeChild(div);
+        }, 200);
+      	removedIndexes.push(no);
+      	findUsedProps();
+      	updateFields();
+        generateJSON();
+      }
+
+      function removeChild(no){
+      	var a = "" + no;
+      	var parentIndexes;
+      	var div = document.getElementById(no);
+      	var bigdiv = document.getElementById(a.split(".").slice(0, -1).join("."));
+      	bigdiv.removeChild(div);
+      	removedIndexes.push(parseInt(no));
+      	findUsedProps();
+      	updateFields();
+        generateJSON();
+      }
+
+      function countDots(s1) {
+          return ( s1.match( /\./g ) || [] ).length;
+        }
+
+      function addChildProp(no, key, value){
+        generateJSON();
+      	childno[no] += 1;
+      	var temp = ""+no+"."+childno[no];
+      	childno[temp] = 0;
+      	var parentNode = document.getElementById(no);
+
+      	var newInput = document.createElement("input");
+      	newInput.id = "i"+temp;
+      	newInput.setAttribute("list", "prop"+temp);
+      	newInput.onchange = function(){keySelected(temp);};
+        newInput.classList.add("input")
+
+      	var newDatalist = document.createElement("datalist");
+      	newDatalist.id = "prop"+temp;
+      	newInputVal = document.createElement("input");
+      	newInputVal.type = "text";
+      	newInputVal.id = "v"+temp;
+        newInputVal.classList.add("propvalue");
+      	var newButton = document.createElement("button");
+      	newButton.id = "b"+temp;
+      	newButton.innerHTML = "-";
+      	newButton.onclick = function(){removeChild(temp);};
+        newButton.classList.add("removeRow");
+      	var br = document.createElement("br");
+      	br.id = "br"+temp
+      	var div = document.createElement("div");
+      	div.id = temp;
+      	var b = document.createElement('b');
+      	b.innerHTML = ' ↳   ';
+      	var margin = 20*(temp).length;
+      	b.style = "padding-left:"+margin+"px;";
+
+        var img = document.createElement("img");
+        img.src = "/querybuilder/img/information.svg";
+        img.height = "15";
+        img.width = "15";
+        img.classList.add("information");
+
+        var span = document.createElement("span");
+        span.id = "span"+temp;
+        span.innerHTML = stripMyHTML('Choose a parameter for information');
+        var a = document.createElement("a");
+        a.href = "#";
+        a.classList.add("tip");
+        a.id = "inf"+temp
+        a.appendChild(img);
+        a.appendChild(span);
+      	div.appendChild(b);
+      	div.appendChild(newInput);
+      	div.appendChild(newDatalist);
+        div.append(a);
+      	div.appendChild(newInputVal);
+      	div.appendChild(newButton);
+      	div.appendChild(br);
+      	parentNode.appendChild(div);
+      	updateChildrenFields(no);
+        let value2 = "" + value;
+        if (key){
+          newInput.value = key;
+          keySelected(temp, value);
+        }
+        if (value2==="false" || value){
+          newInputVal.value= value;
+        }
+        return temp;
+      }
+
+      function updateChildrenFields(parentNo){
+      	parentKey = document.getElementById("i"+parentNo).value;
+      	var temp = parseInt(childno[parentNo]);
+      	while (temp > 0){
+      		if (!contains(removedIndexes, temp)){
+      			var datalist = document.getElementById("prop"+parentNo+"."+temp);
+            setTimeout(function(){
+              datalist.innerHTML = "";
+        			var list = childrenProps[getFullName(parentNo,parentKey)];
+        			list.forEach(function(item){
+        				var option = document.createElement("option");
+        				option.value = item;
+        				datalist.appendChild(option);
+        			});
+          }, 30);
+      		}
+      		temp -= 1;
+      	}
+      }
+
+      function contains(a, obj) {
+          for (var i = 0; i < a.length; i++) {
+              if (a[i] === obj) {
+                  return true;
+              }
+          }
+          return false;
+      }
+
+      function refresh(){
+      	document.location.reload(true);
+      }
+
+      function generateJSON(){
+      	json = JSON.parse("{}");
+      	buildJSON(json, number, 0);
+        var textarea = document.getElementById("jsonquery");
+        textarea.innerHTML = JSON.stringify(window.json, undefined, 4);
+      }
+
+      function buildJSON(parent, no, thresh){
+      	var temp = no;
+        if (countDots(""+temp) > 0){
+          var list = (""+no).split(".");
+          var child_id = list[list.length-1];
+        } else{
+          var child_id = (""+no)
+      }
+      	while (child_id > thresh){
+      		if (!contains(removedIndexes, temp)){
+      			var key = document.getElementById("i"+temp).value;
+      			if (document.getElementById("v"+temp) != null){
+      				var value = document.getElementById("v"+temp).value;
+              if (key === "yql"){
+                value = $.trim(editAreaLoader.getValue(window.yqlID).replace(/\n/g, " "));
+              }
+              if (contains(booleanType, key)){
+                if (value === 'true'){
+                  value = true;
+              } if (value === 'false'){
+                  value = false;
+              }}
+              var fullKey = getFullName(temp, key);
+              if (contains(integerType, fullKey) || contains(longType, fullKey)){
+                value = parseInt(value);
+                value = isNaN(value) ? 0 : value;
+              }
+              if (contains(floatType, fullKey)){
+                value = parseFloat(value);
+                value = isNaN(value) ? 0 : value;
+              }
+      				parent[key] = value
+      			} else {
+      				parent[key] = JSON.parse("{}");
+      				const newParent = parent[key];
+      				const tempJSON = json;
+      				var newNo = temp+"."+childno[temp];
+      				var newThresh = 0;
+      				buildJSON(newParent, newNo, newThresh);
+      			}
+      		}
+          if (countDots(""+temp) > 0){
+            var temp2 = temp.split(".").slice(0, -1);
+            var newNo = temp.split(".")[temp2.length];
+            newNo = parseInt(newNo)-1;
+            temp2.push(newNo);
+            temp = temp2.join(".");
+            child_id--;
+          } else{
+            temp = parseInt(temp)-1;
+            child_id--;
+          }
+      	}
+      }
+
+      function findUsedProps(){
+      	usedProps = [];
+      	addUsedProps(window.number, 0);
+
+      }
+
+      function addUsedProps(no, thresh){
+      	var temp = no;
+      	while (temp > thresh){
+      		if (!contains(removedIndexes, temp)){
+      			var key = document.getElementById("i"+temp).value;
+      			usedProps.push(key);
+      		}
+        temp--;
+      	}
+      }
+
+      function startSending(){
+      	if (method === "POST"){
+      		var url = document.getElementById("url").value;
+      		generateJSON();
+      		var jsonobj = JSON.stringify(window.json);
+      		var xmlhttp = new XMLHttpRequest();
+          xmlhttp.open("POST", url, false);
+          xmlhttp.setRequestHeader("Content-Type", "application/json");
+          xmlhttp.send(jsonobj);
+      		document.getElementById("reponsestatus").value = ""+xmlhttp.status+" "+xmlhttp.statusText;
+      		document.getElementById("response").innerHTML = JSON.stringify(JSON.parse(xmlhttp.responseText), undefined, 4);
+      	}else if (method === "GET") {
+      		var url = document.getElementById("url2").value;
+          window.open(url);
+      	}
+      }
+
+
+      function changeVisibility() {
+          var x = document.getElementById("url");
+      		var y = document.getElementById("addRow");
+          var z = document.getElementById("showJSON");
+          var a = document.getElementById("pasteJSON");
+          if (x.style.display === "none") {
+              x.style.display = "inline-block";
+              y.style.display = "inline-block";
+              z.style.display = "inline-block";
+              a.style.display = "inline-block";
+          } else {
+              x.style.display = "none";
+              y.style.display = "none";
+              z.style.display = "none";
+              a.style.display = "none";
+          }
+      }
+
+      function showJSON(){
+        var textarea = document.getElementById("jsonquery");
+        var copyJSON = document.getElementById("copyJSON");
+        var showJSON = document.getElementById("showJSON");
+        var copyURL = document.getElementById("copyURL")
+        if (textarea.style.display === "none") {
+            textarea.style.display = "inline-block";
+            copyJSON.style.display = "inline-block";
+            showJSON.innerHTML = "Hide query JSON";
+            copyURL.style.display = "inline-block";
+            generateJSON();
+        } else {
+            copyJSON.style.display = "none";
+            textarea.style.display = "none";
+            showJSON.innerHTML = "Show query JSON";
+            copyURL.style.display = "none";
+        }
+      }
+
+      function getSearchApiReference(){
+        var div = document.getElementById("div");
+        var object = document.createElement("object");
+        object.data = "/querybuilder/_includes/search-api-reference.html";
+        object.type ="text/html";
+        object.style = "visibility: hidden; height: 1px; width: 200px;"
+        div.appendChild(object);
+        setTimeout(function(){
+          searchApiReference = object.contentDocument;
+          setTimeout(function(){
+            div.removeChild(object);
+          }, 20);
+        }, 150);
+      }
+
+      function changeInformation(no,key){
+        if (key===""){return "Choose a parameter for information"}
+        if (contains(hasChilds, getFullName(no,key))){return "Add parameters under the parent ''" + getFullName(no,key) + "'"}
+        var refId = getFullName(no,key);
+        var ref = searchApiReference;
+        var tabletext = stripMyHTML(ref.getElementById(refId).nextElementSibling.outerHTML);
+        return tabletext;
+      }
+
+      function getFullName(no, key){
+          var name = key;
+          no = ""+no;
+          no = no.split(".").slice(0,-1).join(".");
+          while (no.length > 0){
+            var parentName = document.getElementById("i"+no).value;
+            name = parentName + "." + name;
+            no = no.split(".").slice(0,-1).join(".");
+          }
+          return name;
+      }
+      </script>
+
+      <!-- Global Site Tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-107187180-1"></script>
+      <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments)};
+          gtag('js', new Date());
+          gtag('config', 'UA-107187180-1');
+      </script>
+  </body>
+</html>

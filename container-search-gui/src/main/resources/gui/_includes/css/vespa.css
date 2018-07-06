@@ -1,0 +1,630 @@
+/**
+* Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+* Based on vespa.css from https://github.com/vespa-engine/frontpage for header- and footer-elements
+*/
+:root{
+   --primary: #188fff;
+   --secondary: #003abc;
+   --secondary-dark: #333;
+   --muted: #777;
+
+   --fontprimary: HelveticaNeue,Helvetica,Arial,sans-serif;
+   --fontsecondary: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
+ };
+
+.bg-light-blue {
+    background-image: linear-gradient(-1deg, rgba(63,157,216,0.08) 0%, rgba(163, 195, 215, 0.08) 97%);
+}
+
+.yql {
+}
+
+.yql:focus {
+  outline: none;
+}
+
+
+.information {
+  margin-left: -40px;
+  margin-right: 28px;
+  margin-top: -2.5px;
+  opacity:0.6;
+  transition: transform .1s; /* Animation */
+}
+
+.information:hover{
+  transform: scale(1.05);
+}
+
+/*** Tooltips! ***/
+.tip {
+  visibility: visible;
+  border-bottom: 1px dotted [#FFFFFF];
+  position: relative;
+  cursor: help;
+  text-decoration: none;
+  color: #FFF !important;
+}
+.tip span {
+  display: none;
+  z-index: 100;
+  position: absolute;
+  padding: .6em;
+  padding-left: 1em;
+  top: 1.5em;
+  left: 2.4em;
+  width: 15em;
+  background-color: #4DA2D6;
+  border: 1px solid #FFFFFF;
+  border-radius: 0.5em;
+}
+
+.tip span td {
+text-align: left;
+vertical-align: top;
+padding-left: 5px;
+}
+
+.tip span a {
+text-decoration: none;
+color: white;
+}
+
+.tip:hover span {
+  display: inline-block;
+}
+.sg-question-set,
+.sg-type-radio ul.sg-list-vertical li,
+.sg-type-checkbox ul.sg-list-vertical li,
+.sg-question-options,
+.sg-type-radio-likert .sg-question-options,
+.sg-type-table .sg-question-options,
+.sg-instructions
+{
+  overflow: visible;
+}
+
+
+
+section h2.section-heading,
+section h2.section-subheading,
+section h3.section-heading,
+section h3.section-subheading {
+    text-transform: none;
+    font-family: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
+    font-weight: normal;
+    font-style: normal;
+}
+
+section h2.section-heading,
+section h3.section-heading {
+    font-size: 50px;
+    color: #3F9DD8;
+    margin-bottom: 5px;
+}
+
+section h2.section-subheading,
+section h3.section-subheading {
+    line-height: 26px;
+    margin-top: 0;
+}
+
+.text-muted {
+    color: #303030;
+}
+
+#banner {
+     background-color: #336699;
+     color: #FFFFFF;
+     font-weight: bold;
+     padding-bottom: 2px;
+     padding-top: 2px;
+     width: 100%;
+}
+
+#banner a {
+    color: #FFFFFF;
+    text-decoration: underline;
+}
+
+.navbar-default {
+    background-color: #3F9DD8;
+    padding: 0;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+
+.navbar-default .navbar-header {
+    margin-left: 13px;
+}
+
+.navbar-default .navbar-brand {
+    background: transparent url("../../img/Vespa-V2.png") no-repeat;
+    background-size: contain;
+    direction: ltr;
+    text-indent: -9000px;
+    height: 28px;
+    width: 100px;
+    display: inline-block;
+    font-family: HelveticaNeue,Helvetica,Arial,sans-serif;
+    font-weight: bold;
+    color: var(--primary);
+    margin-top: 16px;
+    margin-left: 10px;
+}
+
+.navbar-default .nav li a {
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: #FFFFFF;
+    text-transform: none;
+    font-family: HelveticaNeue,Helvetica,Arial,sans-serif;
+}
+
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:hover {
+    color: #FFC43C;
+}
+
+.navbar-toggle {
+    margin-right: 45px;
+}
+
+/* Trick to prevent anchored links to hide heading behind navbar */
+section[id]:before {
+    display: block;
+    content: " ";
+    margin-top: -80px;
+    height: 100px;
+    visibility: hidden;
+}
+
+header {
+    background-image: linear-gradient(0deg, #98C1DB 7%, #3F9DD8 100%);
+    min-height: 1150px;
+}
+
+@media (max-height: 1150px) {
+    header {
+        min-height: 100vh;
+    }
+}
+
+header .intro {
+    margin-top: -80px;
+    max-width: 350px;
+    padding-top: 10px;
+    padding-bottom: 50px;
+}
+
+header .intro-logo {
+    max-width: 120px;
+    padding-bottom: 30px;
+}
+
+header .intro-button {
+    box-shadow: 0px 2px 4px 0px rgba(0,0,0,0.5);
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+header .intro-long {
+    line-height: 27px;
+    font-size: 16px;
+    padding-bottom: 20px;
+}
+
+header .intro-param {
+    line-height: 27px;
+    font-size: 16px;
+    padding-bottom: 0px;
+    margin-bottom: 5px;
+}
+header .response{
+    line-height: 27px;
+    font-size: 20px;
+    padding-top: 10px;
+    padding-bottom: 8px;
+}
+
+header .methodselector{
+  font-size: 15px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 70px;
+  height: 25px;
+  border-width: 0px;
+  -o-transition:.3s;
+  -ms-transition:.3s;
+  -moz-transition:.3s;
+  -webkit-transition:.3s;
+  transition:.3s
+}
+
+header .methodselector:hover {background-color: #79B4D8;}
+header .button:hover {background-color: #79B4D8;}
+header .removeRow:hover {background-color: #79B4D8;}
+header .addRow:hover {background-color: #79B4D8;}
+header .showJSON:hover {background-color: #79B4D8;}
+header .copyURL:hover {background-color: #79B4D8;}
+header .copyJSON:hover {background-color: #79B4D8;}
+header .methodselector:focus { outline: none; }
+header .textbox:focus {outline: none; }
+header .input:focus {outline:none;}
+header .responsebox::selection {background-color:grey;}
+header .textbox::selection {background-color:grey;}
+header .input::selection {background-color:grey;}
+header .propvalue::selection {background-color:grey;}
+header .responsebox:focus {outline:none;}
+header .responseinfo:focus {outline:none;}
+header .propvalue:focus {outline:none;}
+header .addpropsbutton:focus {outline:none;}
+
+
+header .input {
+  color: #000;
+  width: 190px;
+  border-width: 0px;
+  margin-right:2px;
+}
+
+header .input2 {
+  color: #000;
+  width: 175px;
+  border-width: 0px;
+  margin-right:2px;
+}
+
+header .textbox {
+  color: #000;
+  padding-left: 2px;
+}
+
+header .responsebox {
+  color: #000;
+  background-color: #FFF;
+
+}
+
+header .responseinfo {
+  color: #d6e6f0;
+  text-align: center;
+  border-width: 0px;
+  background-color: transparent;
+}
+
+header .propvalue {
+  color: #000;
+  background-color: #FFF;
+  width: 175px;
+  border-width: 0px;
+  margin-bottom: 3px;
+}
+
+header .propvalue:-webkit-input-placeholder { /* Safari, Chrome(, Opera?) */
+ color:gray;
+ font-style:italic;
+}
+header .propvalue:-moz-placeholder { /* Firefox 18- */
+ color:gray;
+ font-style:italic;
+}
+header .propvalue:-moz-placeholder { /* Firefox 19+ */
+ color:gray;
+ font-style:italic;
+}
+header .propvalue-ms-input-placeholder { /* IE (10+?) */
+ color:gray;
+ font-style:italic;
+}
+
+
+header .button{
+  font-size: 15px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 70px;
+  height: 25px;
+  border-width: 0px;
+  border-radius: 5px;
+  padding: 0px
+}
+header .button:focus { outline: none; }
+
+
+
+header .addpropsbutton{
+  font-size: 15px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 175px;
+  height: 23px;
+  border-width: 0px;
+  border-radius: 5px;
+  padding: 0px;
+  margin-left: 2px;
+  margin-bottom: 3px;
+}
+header .addRow{
+  font-size: 15px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 70px;
+  height: 25px;
+  border-width: 0px;
+  border-radius: 5px;
+  padding: 0px
+}
+header .addRow:focus { outline: none; }
+
+header .removeRow{
+  font-size: 16px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 35px;
+  height: 23px;
+  border-width: 0px;
+  border-radius: 5px;
+  padding: 0px;
+  padding-bottom: 2px;
+  margin-left: 3px;
+  text-align: center;
+  line-height: normal;
+}
+header .removeRow:focus { outline: none; }
+
+header .json:focus {outline: none;}
+header .copyJSON:focus {outline: none;}
+header .showJSON:focus {outline: none;}
+header .copyURL:focus {outline: none;}
+header .pasteJSON:focus {outline: none;}
+
+header .copyJSON{
+  font-size: 15px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 130px;
+  height: 25px;
+  border-width: 0px;
+  border-radius: 5px;
+  padding: 0px
+  padding-left: 1px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  margin-right: 2px;
+  display: none;
+}
+
+header .showJSON{
+  font-size: 15px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 140px;
+  height: 25px;
+  border-width: 0px;
+  border-radius: 5px;
+  padding: 0px
+  padding-left: 1px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+header .pasteJSON{
+  font-size: 15px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 140px;
+  height: 25px;
+  border-width: 0px;
+  border-radius: 5px;
+  padding: 0px;
+  padding-left: 0px;
+  padding-bottom: 2px;
+  margin-top: 35px;
+  margin-bottom: 10px;
+
+  align-content: 30%;
+}
+
+
+header .copyURL{
+  font-size: 15px;
+  color: #fff;;
+  background-color: #99C1DA;
+  width: 130px;
+  height: 25px;
+  border-width: 0px;
+  border-radius: 5px;
+  padding: 0px
+  padding-left: 1px;
+  margin-top: 25px;
+  margin-bottom: 10px;
+  margin-left: 2px;
+  display: none;
+}
+
+header .intro .intro-lead-in {
+    font-style: normal;
+    font-size: 22px;
+    line-height: 50px;
+    margin-bottom: 25px;
+    font-family: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
+}
+
+header .intro .intro-heading {
+    font-style: normal;
+}
+
+header .intro-button {
+    box-shadow: 0px 2px 4px 0px rgba(0,0,0,0.5);
+}
+
+header .intro .btn-xl {
+    background: #FFFFFF;
+    border: 1px solid #3F9DD8;
+    border-radius: 2px;
+    font-size: 20px;
+    color: #3F9DD8;
+    font-weight: normal;
+    text-transform: none;
+    font-family: HelveticaNeue,Helvetica,Arial,sans-serif;
+}
+
+
+header .intro-copy {
+    display:inline-block
+    position: inherit;
+    margin-top: 10px;
+    padding-left: 50px;
+    transform: translateX(-50%);
+}
+header .intro-refresh {
+    display: inline-block;
+    margin-top: 15px;
+    transform: translateX(-50%);
+}
+
+@media (min-height: 1150px) {
+    header .intro-down-arrow {
+        /* Hard code top: 1150 (height of top section) - 20 (bottom) - 36 (image height) = 1094 */
+        top: 1094px;
+    }
+}
+
+@media (max-height: 825px) {
+    header .intro-down-arrow {
+        display: none;
+    }
+}
+
+@media(min-width: 768px) {
+    header .intro {
+        padding-top: 200px;
+        padding-bottom: 200px;
+        max-width: 620px;
+    }
+
+    header .intro-logo {
+        max-width: 238px;
+        padding-bottom: 70px;
+    }
+
+    header .intro .intro-lead-in {
+        font-size: 51px;
+        font-style: normal;
+        line-height: 50px;
+    }
+
+    header .intro .intro-long {
+        margin-left: 80px;
+        margin-right: 80px;
+    }
+
+    header .intro .intro-heading {
+        margin-bottom: 25px;
+        font-size: 90px;
+        font-weight: 600;
+    }
+}
+
+section {
+    padding: 50px 0;
+}
+
+section h3.section-subheading {
+    margin-bottom: 50px;
+    font-weight: normal;
+}
+
+@media(min-width: 768px) {
+    section {
+        padding: 50px 0;
+    }
+}
+
+footer .row {
+    font-size: 12px;
+    text-align: left;
+}
+
+footer .row h4 {
+    font-size: 14px;
+    padding-left: 40px;
+}
+
+footer .row .quicklinks {
+    line-height: 25px;
+    list-style: none;
+    text-align: left;
+}
+
+footer .credits {
+    font-size: 10px;
+    text-align: center;
+}
+
+#description p {
+    font-weight: 300;
+    font-size: 25px;
+}
+
+footer {
+    font-size: 14px;
+    color: #FFFFFF;
+    background-color: #3F9DD8;
+    line-height: 22px;
+    letter-spacing: 0;
+}
+
+footer .footer-row {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+
+footer quicklinks {
+    font-size: 14px;
+    color: #FFFFFF;
+}
+
+
+footer ul.quicklinks {
+    margin: 0;
+    padding: 0;
+}
+
+footer .footer-title {
+    color: #FFC43C;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+footer ul.quicklinks a {
+    font-size: 14px;
+    color: #FFFFFF;
+}
+
+footer .quicklink-section {
+    padding: 0;
+    min-width: 120px;
+}
+
+footer .credits {
+    font-size: 12px;
+    font-weight: normal;
+    text-align: right;
+    font-family: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
+}
+
+footer .credits a {
+    color: #FFFFFF;
+}
+
+footer .credits span {
+    color: #FFC43C;
+}
