@@ -136,6 +136,7 @@ import java.util.logging.Logger;
  *
  * @author Arne Bergene Fossaa
  */
+@Deprecated
 public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
 
     protected static final String YCA_HTTP_HEADER = "Yahoo-App-Auth";

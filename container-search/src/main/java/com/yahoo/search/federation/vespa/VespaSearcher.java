@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.Map;
 import java.util.Set;
 
+import com.yahoo.search.federation.http.ConfiguredHTTPProviderSearcher;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -28,7 +29,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.cache.QrBinaryCacheConfig;
 import com.yahoo.search.cache.QrBinaryCacheRegionConfig;
 import com.yahoo.search.federation.ProviderConfig;
-import com.yahoo.search.federation.http.ConfiguredHTTPProviderSearcher;
 import com.yahoo.search.federation.http.Connection;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.textserialize.TextSerialize;
@@ -46,6 +46,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
  * @author Arne Bergene Fossaa
  * @author Steinar Knutsen
  */
+@Deprecated
 @Provides("Vespa")
 @After("*")
 public class VespaSearcher extends ConfiguredHTTPProviderSearcher {

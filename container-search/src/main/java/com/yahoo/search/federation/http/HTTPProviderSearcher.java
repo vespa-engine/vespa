@@ -39,6 +39,7 @@ import java.util.logging.Logger;
  * @author Arne Bergene Fossaa
  * @author bratseth
  */
+@Deprecated
 public abstract class HTTPProviderSearcher extends HTTPSearcher {
 
     private final Counter emptyResults;
