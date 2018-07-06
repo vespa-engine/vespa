@@ -47,6 +47,7 @@ private:
     int32_t  getElementWeight() const { return empty() ? 1 : allocated() ? getMultiple()->getElementWeight() : getFixed()->getElementWeight(); }
     uint32_t getMaxElementLength() const { return empty() ? 0 : allocated() ? _data._positions._maxElementLength : getFixed()->getElementLen(); }
     void appendPositionToAllocatedVector(const TermFieldMatchDataPosition &pos);
+    void allocateVectorAndAppend(const TermFieldMatchDataPosition &pos);
     void resizePositionVector(size_t sz) __attribute__((noinline));
 
     enum { FIELDID_MASK = 0x1fff};
@@ -66,7 +67,18 @@ public:
     size_t capacity() const { return allocated() ? _data._positions._allocated : 1; }
     void reservePositions(size_t sz) {
         if (sz > capacity()) {
-            resizePositionVector(sz);
+            if (allocated()) {
+                resizePositionVector(sz);
+            } else {
+                TermFieldMatchDataPosition * n = new TermFieldMatchDataPosition[sz];
+                if (_sz == 1) {
+                    n[0] = *getFixed();
+                    _data._positions._maxElementLength = n[0].getElementLen();
+                }
+                _data._positions._allocated = sz;
+                _data._positions._positions = n;
+                _fieldId = _fieldId | 0x4000; // set allocated() flag
+            }
         }
     }
 
@@ -224,11 +236,13 @@ public:
      * @param pos low-level occurrence information
      **/
     TermFieldMatchData &appendPosition(const TermFieldMatchDataPosition &pos) {
-        if (isMultiPos() || (_sz > 0)) {
-            appendPositionToAllocatedVector(pos);
-        } else {
+        if (_sz == 0 && !allocated()) {
             _sz = 1;
             new (_data._position) TermFieldMatchDataPosition(pos);
+        } else if (allocated()) {
+            appendPositionToAllocatedVector(pos);
+        } else {
+            allocateVectorAndAppend(pos);
         }
         return *this;
     }
