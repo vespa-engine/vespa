@@ -19,6 +19,7 @@ import java.util.Collections;
  * @author  <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
  * @author  bratseth
  */
+@Deprecated
 public abstract class ConfiguredHTTPProviderSearcher extends HTTPProviderSearcher {
 
     /** Create this from a configuraton */

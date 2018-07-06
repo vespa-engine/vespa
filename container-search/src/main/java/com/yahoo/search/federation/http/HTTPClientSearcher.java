@@ -91,6 +91,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
  * @author bratseth
  */
+@Deprecated
 public abstract class HTTPClientSearcher extends HTTPSearcher {
 
     static final CompoundName REQUEST_META_CARRIER = new CompoundName("com.yahoo.search.federation.http.HTTPClientSearcher_requestMeta");

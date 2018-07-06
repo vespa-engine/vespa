@@ -16,6 +16,7 @@ import com.yahoo.statistics.Statistics;
  *
  * @author bratseth
  */
+@Deprecated
 public abstract class ConfiguredHTTPClientSearcher extends HTTPClientSearcher {
 
     /** Create this from a configuraton */
