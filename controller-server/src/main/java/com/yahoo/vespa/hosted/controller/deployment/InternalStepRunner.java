@@ -54,7 +54,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Con
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.dirty;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -86,7 +85,6 @@ public class InternalStepRunner implements StepRunner {
 
     private final Controller controller;
     private final Testers testers;
-    private final ThreadLocal<ByteArrayLogger> logger = new ThreadLocal<>();
 
     public InternalStepRunner(Controller controller, Testers testers) {
         this.controller = controller;
