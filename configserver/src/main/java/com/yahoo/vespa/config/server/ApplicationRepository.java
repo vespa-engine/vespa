@@ -553,6 +553,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
+    public void deleteOldSessions() {
+        listApplications().forEach(app -> tenantRepository.getTenant(app.tenant()).getLocalSessionRepo().purgeOldSessions());
+    }
 
     // ---------------- Tenant operations ----------------------------------------------------------------
 

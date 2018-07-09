@@ -9,7 +9,13 @@ import com.yahoo.vespa.defaults.Defaults;
 import java.io.File;
 import java.time.Duration;
 
-// Note: Unit test is in ApplicationRepositoryTest
+/**
+ * Removes unused file references from disk
+ * <p>
+ * Note: Unit test is in ApplicationRepositoryTest
+ *
+ * @author hmusum
+ */
 public class FileDistributionMaintainer extends Maintainer {
 
     private final ApplicationRepository applicationRepository;

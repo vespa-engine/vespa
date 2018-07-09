@@ -16,6 +16,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * A maintainer is some job which runs at a fixed interval to perform some maintenance task in the config server.
+ *
+ * @author hmusum
+ */
 public abstract class Maintainer extends AbstractComponent implements Runnable {
 
     protected static final Logger log = Logger.getLogger(Maintainer.class.getName());
