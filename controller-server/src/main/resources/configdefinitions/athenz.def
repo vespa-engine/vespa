@@ -42,3 +42,6 @@ service.privateKeySecretName    string
 
 # Expiry of service principal token and certificate
 service.credentialsExpiryMinutes int   default=43200  # 30 days
+
+# Path to athenz.conf file
+athenzConfFile                  string
