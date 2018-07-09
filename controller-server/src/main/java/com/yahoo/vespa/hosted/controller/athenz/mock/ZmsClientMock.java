@@ -5,6 +5,8 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPublicKey;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 
@@ -92,6 +94,16 @@ public class ZmsClientMock implements ZmsClient {
     public List<AthenzDomain> getDomainList(String prefix) {
         log("getDomainList()");
         return new ArrayList<>(athenz.domains.keySet());
+    }
+
+    @Override
+    public AthenzPublicKey getPublicKey(AthenzService service, String keyId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<AthenzPublicKey> getPublicKeys(AthenzService service) {
+        throw new UnsupportedOperationException();
     }
 
     private AthenzDbMock.Domain getDomainOrThrow(AthenzDomain domainName, boolean verifyVespaTenant) {
