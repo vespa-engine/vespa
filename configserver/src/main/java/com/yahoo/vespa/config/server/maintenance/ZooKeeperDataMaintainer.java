@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-        package com.yahoo.vespa.config.server.maintenance;
+package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -9,6 +9,8 @@ import java.time.Duration;
 
 /**
  * Removes unused zookeeper data (for now only data used by old file distribution code is removed)
+ *
+ * @author hmusum
  */
 public class ZooKeeperDataMaintainer extends Maintainer {
 

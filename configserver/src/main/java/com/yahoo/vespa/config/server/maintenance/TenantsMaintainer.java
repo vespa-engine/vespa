@@ -7,6 +7,11 @@ import com.yahoo.vespa.curator.Curator;
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * Removes unused tenants (has no applications and was created more than 7 days ago)
+ *
+ * @author hmusum
+ */
 public class TenantsMaintainer extends Maintainer {
 
     private final Duration ttlForUnusedTenant;
@@ -21,7 +26,6 @@ public class TenantsMaintainer extends Maintainer {
     }
 
     @Override
-    // Delete unused tenants that were created more than ttlForUnusedTenant ago
     protected void maintain() {
         applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, Instant.now());
     }

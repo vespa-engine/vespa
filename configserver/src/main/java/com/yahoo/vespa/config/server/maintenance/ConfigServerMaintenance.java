@@ -10,11 +10,19 @@ import com.yahoo.vespa.curator.Curator;
 
 import java.time.Duration;
 
+/**
+ * Maintenance jobs of the config server.
+ * Each maintenance job is a singleton instance of its implementing class, created and owned by this,
+ * and running its own dedicated thread.
+ *
+ * @author hmusum
+ */
 public class ConfigServerMaintenance extends AbstractComponent {
 
     private final TenantsMaintainer tenantsMaintainer;
     private final ZooKeeperDataMaintainer zooKeeperDataMaintainer;
     private final FileDistributionMaintainer fileDistributionMaintainer;
+    private final SessionsMaintainer sessionsMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
@@ -25,6 +33,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
         zooKeeperDataMaintainer = new ZooKeeperDataMaintainer(applicationRepository, curator, defaults.defaultInterval);
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig);
+        sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, defaults.defaultInterval);
     }
 
     @Override
@@ -32,6 +41,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         tenantsMaintainer.deconstruct();
         zooKeeperDataMaintainer.deconstruct();
         fileDistributionMaintainer.deconstruct();
+        sessionsMaintainer.deconstruct();
     }
 
     /*
