@@ -124,7 +124,6 @@ class HttpRequestDispatch {
             }
 
             boolean reportedError = false;
-            parent.metricReporter.contentSize((int) parent.jettyRequest.getContentRead());
 
             if (error != null) {
                 if (error instanceof CompletionException && error.getCause() instanceof EofException) {
