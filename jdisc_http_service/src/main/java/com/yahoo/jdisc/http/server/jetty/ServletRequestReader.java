@@ -45,6 +45,8 @@ class ServletRequestReader implements ReadListener {
     private final Executor executor;
     private final MetricReporter metricReporter;
 
+    private int bytesRead;
+
     /**
      * Rules:
      * 1. If state != State.READING,  then numberOfOutstandingUserCalls must not increase
@@ -134,6 +136,7 @@ class ServletRequestReader implements ReadListener {
             int bytesReceived = buf.remaining();
             requestContentChannel.write(buf, writeCompletionHandler);
             metricReporter.successfulRead(bytesReceived);
+            bytesRead += bytesReceived;
         } catch (final Throwable t) {
             finishedFuture.completeExceptionally(t);
         } finally {
@@ -184,6 +187,7 @@ class ServletRequestReader implements ReadListener {
     private void doneReading() {
         final boolean shouldCloseRequestContentChannel;
 
+        int bytesRead;
         synchronized (monitor) {
             if (state != State.READING) {
                 return;
@@ -195,11 +199,14 @@ class ServletRequestReader implements ReadListener {
             if (shouldCloseRequestContentChannel) {
                 state = State.REQUEST_CONTENT_CLOSED;
             }
+            bytesRead = this.bytesRead;
         }
 
         if (shouldCloseRequestContentChannel) {
            closeCompletionHandler_noThrow();
         }
+
+        metricReporter.contentSize(bytesRead);
     }
 
     private void closeCompletionHandler_noThrow() {
