@@ -668,6 +668,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         cluster.addComponent(searchHandler);
+        addGUIHandler(cluster, searchElement);
+    }
+
+    private void addGUIHandler(ContainerCluster cluster, Element searchElement) {
+        ProcessingHandler<SearchChains> guiHandler = new ProcessingHandler<>(
+                cluster.getSearch().getChains(), "com.yahoo.search.query.gui.GUIHandler");
+
+        String[] defaultBindings = {"http://*/querybuilder/*", "https://*/querybuilder/*"};
+        for (String binding: serverBindings(searchElement, defaultBindings)) {
+            guiHandler.addServerBindings(binding);
+        }
+        cluster.addComponent(guiHandler);
     }
 
     private String[] serverBindings(Element searchElement, String... defaultBindings) {
