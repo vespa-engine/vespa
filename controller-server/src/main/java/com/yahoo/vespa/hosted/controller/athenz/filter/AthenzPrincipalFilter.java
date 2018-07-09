@@ -9,15 +9,16 @@ import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
+import com.yahoo.vespa.athenz.utils.ntoken.AthenzConfTruststore;
+import com.yahoo.vespa.athenz.utils.ntoken.NTokenValidator;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
+import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 
 /**
@@ -30,31 +31,23 @@ import java.util.concurrent.Executor;
  *
  * @author bjorncs
  */
-// TODO bjorncs: Move this class to vespa-athenz bundle
+// TODO bjorncs: Move this class to jdisc-security-filters bundle
 public class AthenzPrincipalFilter extends CorsRequestFilterBase {
 
     private final NTokenValidator validator;
     private final String principalTokenHeader;
 
-    /**
-     * @param executor to preload the ZMS public keys with
-     */
     @Inject
-    public AthenzPrincipalFilter(ZmsKeystore zmsKeystore,
-                                 Executor executor,
-                                 AthenzConfig athenzConfig,
-                                 CorsFilterConfig corsConfig) {
-        this(new NTokenValidator(zmsKeystore), executor, athenzConfig.principalHeaderName(), new HashSet<>(corsConfig.allowedUrls()));
+    public AthenzPrincipalFilter(AthenzConfig athenzConfig, CorsFilterConfig corsConfig) {
+        this(new NTokenValidator(Paths.get(athenzConfig.athenzConfFile())), athenzConfig.principalHeaderName(), new HashSet<>(corsConfig.allowedUrls()));
     }
 
     AthenzPrincipalFilter(NTokenValidator validator,
-                          Executor executor,
                           String principalTokenHeader,
                           Set<String> corsAllowedUrls) {
         super(corsAllowedUrls);
         this.validator = validator;
         this.principalTokenHeader = principalTokenHeader;
-        executor.execute(validator::preloadPublicKeys);
     }
 
     @Override
