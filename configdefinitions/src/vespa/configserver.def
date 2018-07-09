@@ -59,8 +59,11 @@ maintainerIntervalMinutes int default=30
 # TODO: Default set to a high value (1 year) => maintainer will not run, change when maintainer verified out in prod
 tenantsMaintainerIntervalMinutes int default=525600
 
+# Bootstrapping
 # How long bootstrapping can take before giving up (in seconds)
 maxDurationOfBootstrap long default=7200
+# How long to sleep before redeploying again if it fails (in seconds)
+sleepTimeWhenRedeployingFails long default=30
 
 # Feature Flags (poor man's feature flags, to be overridden in configserver-config.xml if needed)
 deleteApplicationLegacy bool default=false

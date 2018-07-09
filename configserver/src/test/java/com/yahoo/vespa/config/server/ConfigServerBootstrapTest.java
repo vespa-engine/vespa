@@ -125,7 +125,8 @@ public class ConfigServerBootstrapTest {
                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                                               .hostedVespa(true)
                                               .multitenant(true)
-                                              .maxDurationOfBootstrap(1) /* seconds */);
+                                              .maxDurationOfBootstrap(1) /* seconds */
+                                              .sleepTimeWhenRedeployingFails(0)); /* seconds */
     }
 
     public static class MockRpc extends com.yahoo.vespa.config.server.rpc.MockRpc {

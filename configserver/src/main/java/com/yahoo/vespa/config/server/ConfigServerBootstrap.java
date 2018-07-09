@@ -41,6 +41,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final StateMonitor stateMonitor;
     private final VipStatus vipStatus;
     private final Duration maxDurationOfRedeployment;
+    private final Duration sleepTimeWhenRedeployingFails;
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
 
     // The tenants object is injected so that all initial requests handlers are
@@ -63,6 +64,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.serverThread = new Thread(this, "configserver main");
         this.vipStatus = vipStatus;
         this.maxDurationOfRedeployment = Duration.ofSeconds(applicationRepository.configserverConfig().maxDurationOfBootstrap());
+        this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(applicationRepository.configserverConfig().sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         initializing(); // Initially take server out of rotation
         if (mainThread == MainThread.START)
@@ -88,7 +90,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             log.log(LogLevel.INFO, "Configserver upgrading from " + versionState.storedVersion() + " to "
                     + versionState.currentVersion() + ". Redeploying all applications");
             try {
-                if ( ! applicationRepository.redeployAllApplications(maxDurationOfRedeployment)) {
+                if ( ! applicationRepository.redeployAllApplications(maxDurationOfRedeployment, sleepTimeWhenRedeployingFails)) {
                     redeployingApplicationsFailed();
                     return; // Status will not be set to 'up' since we return here
                 }
