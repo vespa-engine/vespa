@@ -58,7 +58,7 @@ public class FileServer {
     public static class ReplayStatus {
         private final int code;
         private final String description;
-        public ReplayStatus(int code, String description) {
+        ReplayStatus(int code, String description) {
             this.code = code;
             this.description = description;
         }
@@ -71,6 +71,7 @@ public class FileServer {
         void receive(FileReferenceData fileData, ReplayStatus status);
     }
 
+    @SuppressWarnings("WeakerAccess") // Created by dependency injection
     @Inject
     public FileServer(ConfigserverConfig configserverConfig) {
         this(createConnectionPool(configserverConfig), new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())));
@@ -88,7 +89,7 @@ public class FileServer {
         this.pullExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
-    public boolean hasFile(String fileReference) {
+    boolean hasFile(String fileReference) {
         return hasFile(new FileReference(fileReference));
     }
 
@@ -100,7 +101,8 @@ public class FileServer {
         }
         return false;
     }
-    public void startFileServing(String fileName, Receiver target) {
+
+    void startFileServing(String fileName, Receiver target) {
         FileReference reference = new FileReference(fileName);
         File file = root.getFile(reference);
 
@@ -152,31 +154,37 @@ public class FileServer {
     private void serveFileInternal(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
         log.log(LogLevel.DEBUG, () -> "Received request for reference '" + fileReference + "' from " + request.target());
 
-        FileApiErrorCodes result;
+        boolean fileExists;
         try {
-            result = hasFile(fileReference) ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND;
-            if (result == FileApiErrorCodes.OK) {
-                startFileServing(fileReference, receiver);
-            } else {
-                // Non-zero second parameter means that the request should never lead
-                // to a new download typically because the request comes from another config server.
-                // This is to avoid config servers asking each other for a file that does not exist
-                if (downloadFromOtherSourceIfNotFound) {
-                    log.log(LogLevel.DEBUG, "File not found, downloading from another source");
-                    downloader.getFile(new FileReferenceDownload(new FileReference(fileReference), false /* downloadFromOtherSourceIfNotFound */));
-                } else {
-                    log.log(LogLevel.DEBUG, "File not found, will not download from another source since request came from another config server");
-                    result = FileApiErrorCodes.NOT_FOUND;
-                }
-            }
+            fileExists = hasFile(fileReference) || download(fileReference, downloadFromOtherSourceIfNotFound);
+            if (fileExists) startFileServing(fileReference, receiver);
         } catch (IllegalArgumentException e) {
-            result = FileApiErrorCodes.NOT_FOUND;
+            fileExists = false;
             log.warning("Failed serving file reference '" + fileReference + "', request was from " + request.target() + ", with error " + e.toString());
         }
+
+        FileApiErrorCodes result = fileExists ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND;
         request.returnValues()
                 .add(new Int32Value(result.getCode()))
                 .add(new StringValue(result.getDescription()));
         request.returnRequest();
+    }
+
+    // downloadFromOtherSourceIfNotFound is true when the request comes from another config server.
+    // This is to avoid config servers asking each other for a file that does not exist
+    private boolean download(String fileReference, boolean downloadFromOtherSourceIfNotFound) {
+        if (downloadFromOtherSourceIfNotFound) {
+            log.log(LogLevel.DEBUG, "File not found, downloading from another source");
+            return download(fileReference).isPresent();
+        } else {
+            log.log(LogLevel.DEBUG, "File not found, will not download from another source since request came from another config server");
+            return false;
+        }
+    }
+
+    private Optional<File> download(String fileReference) {
+        /* downloadFromOtherSourceIfNotFound should be false here, since this request is from a config server */
+        return downloader.getFile(new FileReferenceDownload(new FileReference(fileReference), false));
     }
 
     public FileDownloader downloader() {
