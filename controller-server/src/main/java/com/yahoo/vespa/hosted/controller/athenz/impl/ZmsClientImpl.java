@@ -1,18 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
+import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zms.DomainList;
 import com.yahoo.athenz.zms.ProviderResourceGroupRoles;
+import com.yahoo.athenz.zms.PublicKeyEntry;
+import com.yahoo.athenz.zms.ServiceIdentity;
 import com.yahoo.athenz.zms.Tenancy;
 import com.yahoo.athenz.zms.TenantRoleAction;
 import com.yahoo.athenz.zms.ZMSClient;
 import com.yahoo.athenz.zms.ZMSClientException;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPublicKey;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
@@ -126,6 +130,28 @@ public class ZmsClientImpl implements ZmsClient {
                 });
     }
 
+    @Override
+    public AthenzPublicKey getPublicKey(AthenzService service, String keyId) {
+        log("getPublicKeyEntry(domain=%s, service=%s, keyId=%s)", service.getDomain().getName(), service.getName(), keyId);
+        return getOrThrow(() -> {
+            PublicKeyEntry entry = zmsClient.getPublicKeyEntry(service.getDomain().getName(), service.getName(), keyId);
+            return fromYbase64EncodedKey(entry.getKey(), keyId);
+        });
+    }
+
+    @Override
+    public List<AthenzPublicKey> getPublicKeys(AthenzService service) {
+        log("getServiceIdentity(domain=%s, service=%s)", service.getDomain().getName(), service.getName());
+        return getOrThrow(() -> {
+            ServiceIdentity serviceIdentity = zmsClient.getServiceIdentity(service.getDomain().getName(), service.getName());
+            return toAthenzPublicKeys(serviceIdentity.getPublicKeys());
+        });
+    }
+
+    private static AthenzPublicKey fromYbase64EncodedKey(String encodedKey, String keyId) {
+        return new AthenzPublicKey(Crypto.loadPublicKey(Crypto.ybase64DecodeString(encodedKey)), keyId);
+    }
+
     private static List<TenantRoleAction> createTenantRoleActions() {
         return Arrays.stream(ApplicationAction.values())
                 .map(action -> new TenantRoleAction().setAction(action.name()).setRole(action.roleName))
@@ -134,6 +160,12 @@ public class ZmsClientImpl implements ZmsClient {
 
     private static List<AthenzDomain> toAthenzDomains(List<String> domains) {
         return domains.stream().map(AthenzDomain::new).collect(toList());
+    }
+
+    private static List<AthenzPublicKey> toAthenzPublicKeys(List<PublicKeyEntry> publicKeys) {
+        return publicKeys.stream()
+                .map(entry -> fromYbase64EncodedKey(entry.getKey(), entry.getId()))
+                .collect(toList());
     }
 
     private boolean hasAccess(String action, String resource, AthenzIdentity identity) {
