@@ -192,6 +192,50 @@ TEST("term field model") {
     testInvalidId();
 }
 
+TEST("append positions") {
+    TermFieldMatchData tfmd;
+    tfmd.setFieldId(123);
+    EXPECT_EQUAL(0u, tfmd.size());
+    EXPECT_EQUAL(1u, tfmd.capacity());
+    tfmd.reset(7);
+    EXPECT_EQUAL(0u, tfmd.size());
+    EXPECT_EQUAL(1u, tfmd.capacity());
+    TermFieldMatchDataPosition pos(0x01020304, 0x10203040, 0x11223344, 0x12345678);
+    tfmd.appendPosition(pos);
+    EXPECT_EQUAL(1u, tfmd.size());
+    EXPECT_EQUAL(1u, tfmd.capacity());
+    EXPECT_EQUAL(0x01020304u, tfmd.begin()->getElementId());
+    EXPECT_EQUAL(0x10203040u, tfmd.begin()->getPosition());
+    EXPECT_EQUAL(0x11223344, tfmd.begin()->getElementWeight());
+    EXPECT_EQUAL(0x12345678u, tfmd.begin()->getElementLen());
+    tfmd.reset(11);
+    EXPECT_EQUAL(0u, tfmd.size());
+    EXPECT_EQUAL(1u, tfmd.capacity());
+    TermFieldMatchDataPosition pos2(0x21020304, 0x20203040, 0x21223344, 0x22345678);
+    tfmd.appendPosition(pos);
+    tfmd.appendPosition(pos2);
+    EXPECT_EQUAL(2u, tfmd.size());
+    EXPECT_EQUAL(2u, tfmd.capacity());
+    TermFieldMatchDataPosition pos3(0x31020304, 0x30203040, 0x31223344, 0x32345678);
+    tfmd.appendPosition(pos3);
+    EXPECT_EQUAL(3u, tfmd.size());
+    EXPECT_EQUAL(4u, tfmd.capacity());
+    EXPECT_EQUAL(0x01020304u, tfmd.begin()->getElementId());
+    EXPECT_EQUAL(0x10203040u, tfmd.begin()->getPosition());
+    EXPECT_EQUAL(0x11223344, tfmd.begin()->getElementWeight());
+    EXPECT_EQUAL(0x12345678u, tfmd.begin()->getElementLen());
+
+    EXPECT_EQUAL(0x21020304u, tfmd.begin()[1].getElementId());
+    EXPECT_EQUAL(0x20203040u, tfmd.begin()[1].getPosition());
+    EXPECT_EQUAL(0x21223344, tfmd.begin()[1].getElementWeight());
+    EXPECT_EQUAL(0x22345678u, tfmd.begin()[1].getElementLen());
+
+    EXPECT_EQUAL(0x31020304u, tfmd.begin()[2].getElementId());
+    EXPECT_EQUAL(0x30203040u, tfmd.begin()[2].getPosition());
+    EXPECT_EQUAL(0x31223344, tfmd.begin()[2].getElementWeight());
+    EXPECT_EQUAL(0x32345678u, tfmd.begin()[2].getElementLen());
+}
+
 TEST("Access subqueries") {
     State state;
     testSetup(state);

@@ -40,7 +40,7 @@ TermFieldMatchData & TermFieldMatchData::operator = (const TermFieldMatchData & 
 TermFieldMatchData::~TermFieldMatchData()
 {
     if (isRawScore()) {
-    } else if (isMultiPos()) {
+    } else if (allocated()) {
         delete [] _data._positions._positions;
     } else {
         getFixed()->~TermFieldMatchDataPosition();
@@ -79,21 +79,30 @@ constexpr size_t MAX_ELEMS =  std::numeric_limits<uint16_t>::max();
 void
 TermFieldMatchData::resizePositionVector(size_t sz)
 {
+    assert(allocated());
+    assert(sz >= _sz);
     size_t newSize(std::min(MAX_ELEMS, std::max(1ul, sz)));
     TermFieldMatchDataPosition * n = new TermFieldMatchDataPosition[newSize];
-    if (_sz > 0) {
-        if (isMultiPos()) {
-            for (size_t i(0); i < _data._positions._allocated; i++) {
-                n[i] = _data._positions._positions[i];
-            }
-            delete [] _data._positions._positions;
-        } else {
-            assert(_sz == 1);
-            n[0] = *getFixed();
-            _data._positions._maxElementLength = getFixed()->getElementLen();
-        }
+    for (size_t i(0); i < _data._positions._allocated; i++) {
+        n[i] = _data._positions._positions[i];
     }
-    _fieldId = _fieldId | 0x4000;
+    delete [] _data._positions._positions;
+    _data._positions._allocated = newSize;
+    _data._positions._positions = n;
+}
+
+void
+TermFieldMatchData::allocateVector()
+{
+    assert(_sz < 2);
+    assert(!allocated());
+    size_t newSize = 2;
+    TermFieldMatchDataPosition * n = new TermFieldMatchDataPosition[newSize];
+    if (_sz > 0) {
+        n[0] = *getFixed();
+        _data._positions._maxElementLength = getFixed()->getElementLen();
+    }
+    _fieldId = _fieldId | 0x4000; // set allocated() flag
     _data._positions._allocated = newSize;
     _data._positions._positions = n;
 }
@@ -101,6 +110,7 @@ TermFieldMatchData::resizePositionVector(size_t sz)
 void
 TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosition &pos)
 {
+    assert(allocated());
     if (__builtin_expect(_sz >= _data._positions._allocated, false)) {
         resizePositionVector(_sz*2);
     }
