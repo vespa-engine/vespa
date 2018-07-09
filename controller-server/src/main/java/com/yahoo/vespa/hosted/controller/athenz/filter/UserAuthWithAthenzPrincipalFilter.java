@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.jdisc.http.filter.security.athenz.AthenzPrincipalFilter;
+import com.yahoo.jdisc.http.filter.security.athenz.AthenzPrincipalFilterConfig;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -36,10 +38,10 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
     private final String principalHeaderName;
 
     @Inject
-    public UserAuthWithAthenzPrincipalFilter(AthenzConfig athenzConfig, CorsFilterConfig corsConfig) {
-        super(athenzConfig, corsConfig);
+    public UserAuthWithAthenzPrincipalFilter(AthenzPrincipalFilterConfig filterConfig, AthenzConfig athenzConfig, CorsFilterConfig corsConfig) {
+        super(filterConfig, corsConfig);
         this.userAuthenticationPassThruAttribute = athenzConfig.userAuthenticationPassThruAttribute();
-        this.principalHeaderName = athenzConfig.principalHeaderName();
+        this.principalHeaderName = filterConfig.principalHeaderName();
     }
 
     @Override
