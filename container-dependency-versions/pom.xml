@@ -186,7 +186,7 @@
                 <version>${javax.ws.rs-api.version}</version>
             </dependency>
 
-            <!-- TODO: upgrade jaxb-api artifacts to >=2.3.0.
+            <!-- TODO: upgrade jaxb artifacts to >=2.3.0.
             See https://stackoverflow.com/questions/50237516/proper-fix-for-java-10-complaining-about-illegal-reflection-access-by-jaxb-impl  -->
             <dependency>
                 <groupId>javax.xml.bind</groupId>
