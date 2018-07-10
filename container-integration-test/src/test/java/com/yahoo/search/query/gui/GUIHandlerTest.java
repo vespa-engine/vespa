@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -67,7 +66,7 @@ public class GUIHandlerTest {
         Assert.assertEquals("Status code", expectedStatusCode, response.getStatus());
         Assert.assertEquals(expectedContentType, response.getHeaders().getFirst("Content-Type"));
         if(expectedStartString != null){
-            assertTrue(response.getBodyAsString().startsWith(expectedStartString));
+            Assert.assertTrue(response.getBodyAsString().startsWith(expectedStartString));
         }
     }
 

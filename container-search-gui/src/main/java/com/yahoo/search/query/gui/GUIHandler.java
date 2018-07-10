@@ -5,17 +5,13 @@ import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-
-
 import com.yahoo.search.query.restapi.ErrorResponse;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.File;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.logging.Level;
 
 /**
@@ -47,71 +43,80 @@ public class GUIHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-         com.yahoo.restapi.Path path = new com.yahoo.restapi.Path(request.getUri().getPath());
+        com.yahoo.restapi.Path path = new com.yahoo.restapi.Path(request.getUri().getPath());
         if (path.matches("/querybuilder/")) {
             return new FileResponse("_includes/index.html");
         }
         if (!path.matches("/querybuilder/{*}") ) {
-            return ErrorResponse.notFoundError("Nothing at " + path);
+            return ErrorResponse.notFoundError("Nothing at path:" + path);
         }
         String filepath = path.getRest();
-        if (!isValidPath(GUIHandler.class.getClassLoader().getResource("gui").getFile()+"/"+filepath)){
-            return ErrorResponse.notFoundError("Nothing at " + path);
+        if (!isValidPath(filepath)){
+            return ErrorResponse.notFoundError("Nothing at path:" + filepath);
         }
         return new FileResponse(filepath);
     }
 
     private static boolean isValidPath(String path) {
-        File file = new File(path);
-        return file.exists();
+        InputStream in = GUIHandler.class.getClassLoader().getResourceAsStream("gui/"+path);
+        boolean isValid = (in != null);
+        if(isValid){
+            try { in.close(); } catch (IOException e) {/* Problem with closing inputstream */}
+        }
+
+        return isValid;
     }
 
     private static class FileResponse extends HttpResponse {
 
-        private final Path path;
+        private final String path;
 
         public FileResponse(String relativePath) {
             super(200);
-            this.path = Paths.get(GUIHandler.class.getClassLoader().getResource("gui").getFile(), relativePath);
+            this.path = relativePath;
         }
 
         @Override
         public void render(OutputStream out) throws IOException {
-            byte[] data = Files.readAllBytes(path);
-            out.write(data);
+            InputStream is = GUIHandler.class.getClassLoader().getResourceAsStream("gui/"+this.path);
+            byte[] buf = new byte[1024];
+            int numRead;
+            while ( (numRead = is.read(buf) ) >= 0) {
+                out.write(buf, 0, numRead);
+            }
         }
 
         @Override
         public String getContentType() {
-            if (path.toString().endsWith(".css")) {
+            if (path.endsWith(".css")) {
                 return "text/css";
-            } else if (path.toString().endsWith(".js")) {
+            } else if (path.endsWith(".js")) {
                 return "application/javascript";
-            } else if (path.toString().endsWith(".html")) {
+            } else if (path.endsWith(".html")) {
                 return "text/html";
-            }else if (path.toString().endsWith(".php")) {
+            }else if (path.endsWith(".php")) {
                 return "text/php";
-            }else if (path.toString().endsWith(".svg")) {
+            }else if (path.endsWith(".svg")) {
                 return "image/svg+xml";
-            }else if (path.toString().endsWith(".eot")) {
+            }else if (path.endsWith(".eot")) {
                 return "application/vnd.ms-fontobject";
-            }else if (path.toString().endsWith(".ttf")) {
+            }else if (path.endsWith(".ttf")) {
                 return "font/ttf";
-            }else if (path.toString().endsWith(".woff")) {
+            }else if (path.endsWith(".woff")) {
                 return "font/woff";
-            }else if (path.toString().endsWith(".woff2")) {
+            }else if (path.endsWith(".woff2")) {
                 return "font/woff2";
-            }else if (path.toString().endsWith(".otf")) {
+            }else if (path.endsWith(".otf")) {
                 return "font/otf";
-            }else if (path.toString().endsWith(".png")) {
+            }else if (path.endsWith(".png")) {
                 return "image/png";
-            }else if (path.toString().endsWith(".xml")) {
+            }else if (path.endsWith(".xml")) {
                 return "application/xml";
-            }else if (path.toString().endsWith(".ico")) {
+            }else if (path.endsWith(".ico")) {
                 return "image/x-icon";
-            }else if (path.toString().endsWith(".json")) {
+            }else if (path.endsWith(".json")) {
                 return "application/json";
-            }else if (path.toString().endsWith(".ttf")) {
+            }else if (path.endsWith(".ttf")) {
                 return "font/ttf";
             }
             return "text/html";
