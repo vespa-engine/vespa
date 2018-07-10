@@ -188,18 +188,17 @@
 
       <SCRIPT language="javascript">
 
-      	method = "POST";
+        const CONFIG = $.getJSON('/querybuilder/gui_variables.json', function(data){window.CONFIG = data;});
+        method = "POST";
       	var number = 0;
       	var childno = {};
       	var json = JSON.parse("{}");
         var searchApiReference = null;
-      	window.onload = function() {addNewRow(); getSearchApiReference();};
 
       	var possible = ["yql", "hits", "offset", "queryProfile", "nocache", "groupingSessionCache", "searchChain", "timeout", "trace","tracelevel","traceLevel", "",
       , "model", "ranking", "collapse","collapsesize","collapsesize","presentation", "pos", "streaming", "rules", "recall", "user", "nocachewrite", "metrics"];
 
       	var usedProps = [];
-      	var hasChilds = ["model", "ranking", "trace","tracelevel", "ranking.matchPhase", "ranking.matchPhase.diversity", "presentation","collapse", "pos", "streaming", "rules", "metrics"];
       	var removedIndexes = [0];
       	var childrenProps = {
       		"model" : ["defaultIndex", "encoding", "language", "queryString", "restrict", "searchPath", "sources", "type"],
@@ -215,6 +214,19 @@
       		"streaming" : ["userid", "groupname", "selection", "priority", "maxbucketspervisitor"],
       		"rules" : ["off", "rulebase"]
       	};
+
+        window.onload = function() {
+          // Adding variables from configuration file
+          if (window.CONFIG.hasOwnProperty("featurename")){
+            childrenProps["ranking.features"] = window.CONFIG.featurename;
+          }
+          if (window.CONFIG.hasOwnProperty("propertyname")){
+            childrenProps["ranking.properties"] = window.CONFIG.propertyname;
+          }
+
+          addNewRow();
+          getSearchApiReference();
+        };
 
         var stringType = ["yql", "queryProfile", "searchChain", "model.defaultIndex", "model.encoding", "model.language",
          "model.queryString", "model.searchPath", "model.type", "ranking.features", "ranking.profile", "ranking.properties", "ranking.sorting", "ranking.matchPhase.diversity.attribute",
@@ -518,7 +530,7 @@
           showInformation(no, key);
       		findUsedProps();
           var fullKey = getFullName(no, key);
-      		if(contains(hasChilds, fullKey)){
+      		if(fullKey in childrenProps){
       			var input = document.getElementById("v"+no);
             if ($(input).is("textarea")){
               editAreaLoader.delete_instance(window.yqlID);
@@ -611,14 +623,14 @@
             }
       		}
           if (!validKey(no, key)){
-            var keyInput = document.getElementById("i"+no);
-            keyInput.style = "border-width: 1px; border-color: red;"
+            //var keyInput = document.getElementById("i"+no);
+            //keyInput.style = "border-width: 1px; border-color: red;"
             var valueInput = document.getElementById("v"+no);
-            valueInput.placeholder = "Invalid parameter";
+            valueInput.placeholder = "Possible invalid parameter";
           }
           if (validKey(no, key)){
             var keyInput = document.getElementById("i"+no);
-            keyInput.style = "border-width: 0px;"
+            //keyInput.style = "border-width: 0px;"
           }
 
       	}
@@ -665,15 +677,15 @@
         generateJSON();
       }
 
-      function removeChild(no){
+      function removeChildRow(no){
       	var a = "" + no;
-      	var parentIndexes;
+        var parentNo = a.split(".").slice(0, -1).join(".");
       	var div = document.getElementById(no);
-      	var bigdiv = document.getElementById(a.split(".").slice(0, -1).join("."));
+      	var bigdiv = document.getElementById(parentNo);
       	bigdiv.removeChild(div);
-      	removedIndexes.push(parseInt(no));
+      	removedIndexes.push(no);
       	findUsedProps();
-      	updateFields();
+      	updateChildrenFields(parentNo);
         generateJSON();
       }
 
@@ -703,7 +715,7 @@
       	var newButton = document.createElement("button");
       	newButton.id = "b"+temp;
       	newButton.innerHTML = "-";
-      	newButton.onclick = function(){removeChild(temp);};
+      	newButton.onclick = function(){removeChildRow(temp);};
         newButton.classList.add("removeRow");
       	var br = document.createElement("br");
       	br.id = "br"+temp
@@ -753,17 +765,17 @@
       	parentKey = document.getElementById("i"+parentNo).value;
       	var temp = parseInt(childno[parentNo]);
       	while (temp > 0){
-      		if (!contains(removedIndexes, temp)){
+      		if (!contains(removedIndexes, parentNo+"."+temp)){
       			var datalist = document.getElementById("prop"+parentNo+"."+temp);
-            setTimeout(function(){
               datalist.innerHTML = "";
         			var list = childrenProps[getFullName(parentNo,parentKey)];
         			list.forEach(function(item){
-        				var option = document.createElement("option");
-        				option.value = item;
-        				datalist.appendChild(option);
+                if(!contains(usedProps,getFullName(parentNo,parentKey)+"."+item)){
+          				var option = document.createElement("option");
+          				option.value = item;
+          				datalist.appendChild(option);
+              }
         			});
-          }, 30);
       		}
       		temp -= 1;
       	}
@@ -851,14 +863,37 @@
       }
 
       function addUsedProps(no, thresh){
-      	var temp = no;
-      	while (temp > thresh){
-      		if (!contains(removedIndexes, temp)){
-      			var key = document.getElementById("i"+temp).value;
-      			usedProps.push(key);
-      		}
-        temp--;
-      	}
+        var temp = no;
+        if (countDots(""+temp) > 0){
+          var list = (""+no).split(".");
+          var child_id = list[list.length-1];
+        } else{
+          var child_id = (""+no)
+      }
+        while (child_id > thresh){
+          if (!contains(removedIndexes, temp)){
+            var key = document.getElementById("i"+temp).value;
+            usedProps.push(getFullName(temp, key));
+            if (childno[temp] != -1 && childno[temp] != 0){
+              var temp2 = ""+temp+"."+childno[temp];
+              var thresh2 = 0;
+              addUsedProps(temp2, thresh2);
+            }
+          }
+          let dots = countDots(""+temp);
+          if (dots > 0){
+            var temp2 = temp.split(".").slice(0, -1);
+            var newNo = temp.split(".")[temp2.length];
+            newNo = parseInt(newNo)-1;
+            temp2.push(newNo);
+            temp = temp2.join(".");
+            child_id--;
+          }
+          if (dots == 0){
+            temp = parseInt(temp)-1;
+            child_id--;
+          }
+        }
       }
 
       function startSending(){
@@ -933,7 +968,7 @@
 
       function changeInformation(no,key){
         if (key===""){return "Choose a parameter for information"}
-        if (contains(hasChilds, getFullName(no,key))){return "Add parameters under the parent ''" + getFullName(no,key) + "'"}
+        if (getFullName(no,key) in childrenProps){return "Add parameters under the parent ''" + getFullName(no,key) + "'"}
         var refId = getFullName(no,key);
         var ref = searchApiReference;
         var tabletext = stripMyHTML(ref.getElementById(refId).nextElementSibling.outerHTML);
