@@ -7,6 +7,7 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
+import com.yahoo.vespa.athenz.client.zts.ZtsClientException;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
@@ -142,6 +143,8 @@ public class AthenzCredentialsMaintainer {
                 log.info(String.format("Deleted private key file (path=%s)", privateKeyFile));
             if (Files.deleteIfExists(certificateFile))
                 log.info(String.format("Deleted certificate file (path=%s)", certificateFile));
+            if (Files.deleteIfExists(identityDocumentFile))
+                log.info(String.format("Deleted identity document file (path=%s)", certificateFile));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -201,6 +204,12 @@ public class AthenzCredentialsMaintainer {
                             csr);
             writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
             log.info("Instance successfully refreshed and credentials written to file");
+        } catch (ZtsClientException e) {
+            // TODO Find out why certificate was revoked and hopefully remove this workaround
+            if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
+                log.error("Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
+                registerIdentity();
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

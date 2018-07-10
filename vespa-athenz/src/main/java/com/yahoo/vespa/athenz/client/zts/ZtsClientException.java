@@ -8,11 +8,25 @@ package com.yahoo.vespa.athenz.client.zts;
  */
 public class ZtsClientException extends RuntimeException {
 
-    public ZtsClientException(String message) {
-        super(message);
+    private final int errorCode;
+    private final String description;
+
+    public ZtsClientException(int errorCode, String description) {
+        super(createMessage(errorCode, description));
+        this.errorCode = errorCode;
+        this.description = description;
     }
 
-    public ZtsClientException(String message, Throwable cause) {
-        super(message, cause);
+    public int getErrorCode() {
+        return errorCode;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
+    private static String createMessage(int code, String description) {
+        return String.format("Received error from ZTS: code=%d, message=\"%s\"", code, description);
+    }
+
 }
