@@ -39,7 +39,8 @@ public class NTokenValidator {
     public AthenzPrincipal validate(NToken token) throws InvalidTokenException {
         PrincipalToken principalToken = new PrincipalToken(token.getRawToken());
         String keyId = principalToken.getKeyId();
-        PublicKey zmsPublicKey = truststore.getPublicKey(keyId)
+        String keyService = principalToken.getKeyService();
+        PublicKey zmsPublicKey = (keyService == null || keyService.equals("zms") ? truststore.getZmsPublicKey(keyId) : truststore.getZtsPublicKey(keyId))
                 .orElseThrow(() -> {
                     String message = "NToken has an unknown keyId: " + keyId;
                     log.log(LogLevel.WARNING, message);

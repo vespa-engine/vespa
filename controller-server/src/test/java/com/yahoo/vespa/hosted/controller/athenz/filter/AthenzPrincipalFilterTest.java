@@ -14,6 +14,7 @@ import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
+import com.yahoo.vespa.athenz.utils.ntoken.AthenzTruststore;
 import com.yahoo.vespa.athenz.utils.ntoken.NTokenValidator;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import org.junit.Before;
@@ -176,7 +177,7 @@ public class AthenzPrincipalFilterTest {
         private final Map<NToken, AthenzPrincipal> validTokens = new HashMap<>();
 
         NTokenValidatorMock() {
-            super(keyId -> Optional.empty());
+            super((AthenzTruststore)null);
         }
 
         public NTokenValidatorMock add(NToken token, AthenzPrincipal principal) {

@@ -10,5 +10,6 @@ import java.util.Optional;
  * @author bjorncs
  */
 public interface AthenzTruststore {
-   Optional<PublicKey> getPublicKey(String keyId);
+   Optional<PublicKey> getZmsPublicKey(String keyId);
+   Optional<PublicKey> getZtsPublicKey(String keyId);
 }

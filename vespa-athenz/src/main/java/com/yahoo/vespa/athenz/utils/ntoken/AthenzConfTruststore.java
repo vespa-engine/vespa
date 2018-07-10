@@ -21,32 +21,37 @@ import java.util.Optional;
  */
 public class AthenzConfTruststore implements AthenzTruststore {
 
-    private final Map<String, PublicKey> publicKeys;
+    private final Map<String, PublicKey> zmsPublicKeys;
+    private final Map<String, PublicKey> ztsPublicKeys;
 
     public AthenzConfTruststore(Path athenzConfFile) {
-        this.publicKeys = loadPublicKeys(athenzConfFile);
-    }
-
-    @Override
-    public Optional<PublicKey> getPublicKey(String keyId) {
-        return Optional.ofNullable(publicKeys.get(keyId));
-    }
-
-    private static Map<String, PublicKey> loadPublicKeys(Path athenzConfFile) {
         try {
-            Map<String, PublicKey> publicKeys = new HashMap<>();
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(athenzConfFile.toFile());
-            ArrayNode keysArray = (ArrayNode) root.get("ztsPublicKeys");
-            for (JsonNode keyEntry : keysArray) {
-                String keyId = keyEntry.get("id").textValue();
-                String encodedPublicKey = keyEntry.get("key").textValue();
-                PublicKey publicKey = Crypto.loadPublicKey(Crypto.ybase64DecodeString(encodedPublicKey));
-                publicKeys.put(keyId, publicKey);
-            }
-            return publicKeys;
+            JsonNode root = new ObjectMapper().readTree(athenzConfFile.toFile());
+            this.zmsPublicKeys = loadPublicKeys((ArrayNode) root.get("zmsPublicKeys"));
+            this.ztsPublicKeys = loadPublicKeys((ArrayNode) root.get("ztsPublicKeys"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static Map<String, PublicKey> loadPublicKeys(ArrayNode keysArray) {
+        Map<String, PublicKey> publicKeys = new HashMap<>();
+        for (JsonNode keyEntry : keysArray) {
+            String keyId = keyEntry.get("id").textValue();
+            String encodedPublicKey = keyEntry.get("key").textValue();
+            PublicKey publicKey = Crypto.loadPublicKey(Crypto.ybase64DecodeString(encodedPublicKey));
+            publicKeys.put(keyId, publicKey);
+        }
+        return publicKeys;
+    }
+
+    @Override
+    public Optional<PublicKey> getZmsPublicKey(String keyId) {
+        return Optional.ofNullable(zmsPublicKeys.get(keyId));
+    }
+
+    @Override
+    public Optional<PublicKey> getZtsPublicKey(String keyId) {
+        return Optional.ofNullable(ztsPublicKeys.get(keyId));
     }
 }

@@ -15,6 +15,7 @@ import org.junit.rules.ExpectedException;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -68,7 +69,17 @@ public class NTokenValidatorTest {
     }
 
     private static AthenzTruststore createTruststore() {
-        return keyId -> keyId.equals("0") ? Optional.of(TRUSTED_KEY.getPublic()) : Optional.empty();
+        return new AthenzTruststore() {
+            @Override
+            public Optional<PublicKey> getZmsPublicKey(String keyId) {
+                return keyId.equals("0") ? Optional.of(TRUSTED_KEY.getPublic()) : Optional.empty();
+            }
+
+            @Override
+            public Optional<PublicKey> getZtsPublicKey(String keyId) {
+                return Optional.empty();
+            }
+        };
     }
 
     private static NToken createNToken(AthenzIdentity identity, Instant issueTime, PrivateKey privateKey, String keyId) {
@@ -77,6 +88,7 @@ public class NTokenValidatorTest {
                 .salt("1234")
                 .host("host")
                 .ip("1.2.3.4")
+                .keyService("zms")
                 .issueTime(issueTime.getEpochSecond())
                 .expirationWindow(1000)
                 .build();
