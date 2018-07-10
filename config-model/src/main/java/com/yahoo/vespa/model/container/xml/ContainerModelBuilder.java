@@ -23,6 +23,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -47,6 +48,7 @@ import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
+import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
@@ -378,6 +380,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.setSearch(buildSearch(cluster, searchElement, queryProfiles, semanticRules));
 
             addSearchHandler(cluster, searchElement);
+            addGUIHandler(cluster);
             validateAndAddConfiguredComponents(cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
         }
     }
@@ -668,19 +671,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         cluster.addComponent(searchHandler);
-        addGUIHandler(cluster, searchElement);
     }
 
-    private void addGUIHandler(ContainerCluster cluster, Element searchElement) {
-        ProcessingHandler<SearchChains> guiHandler = new ProcessingHandler<>(
-                cluster.getSearch().getChains(), "com.yahoo.search.query.gui.GUIHandler");
+    private void addGUIHandler(ContainerCluster cluster) {
+        Handler<?> guiHandler = Handler.fromClassName("com.yahoo.search.query.gui.GUIHandler");
 
-        String[] defaultBindings = {"http://*/querybuilder/*", "https://*/querybuilder/*"};
-        for (String binding: serverBindings(searchElement, defaultBindings)) {
-            guiHandler.addServerBindings(binding);
-        }
+        guiHandler.addServerBindings("http://*/querybuilder/*", "https://*/querybuilder/*");
         cluster.addComponent(guiHandler);
     }
+
 
     private String[] serverBindings(Element searchElement, String... defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
