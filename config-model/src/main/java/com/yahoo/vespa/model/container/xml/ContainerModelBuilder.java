@@ -57,6 +57,7 @@ import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.jersey.xml.RestApiBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
+import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.container.search.PageTemplates;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.SemanticRules;
@@ -674,9 +675,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addGUIHandler(ContainerCluster cluster) {
-        Handler<?> guiHandler = Handler.fromClassName("com.yahoo.search.query.gui.GUIHandler");
-
-        guiHandler.addServerBindings("http://*/querybuilder/*", "https://*/querybuilder/*");
+        Handler<?> guiHandler = new GUIHandler();
+        guiHandler.addServerBindings("http://"+GUIHandler.BINDING, "https://"+GUIHandler.BINDING);
         cluster.addComponent(guiHandler);
     }
 
