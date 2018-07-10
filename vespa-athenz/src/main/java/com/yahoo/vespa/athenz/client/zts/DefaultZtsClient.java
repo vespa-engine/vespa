@@ -10,10 +10,11 @@ import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
+import com.yahoo.vespa.athenz.client.zts.bindings.ErrorResponseEntity;
+import com.yahoo.vespa.athenz.client.zts.bindings.IdentityRefreshRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceIdentityCredentials;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceRefreshInformation;
-import com.yahoo.vespa.athenz.client.zts.bindings.IdentityRefreshRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceRegisterInformation;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.RoleCertificateResponseEntity;
@@ -33,7 +34,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.http.HttpStatus;
 
 import javax.net.ssl.SSLContext;
@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
@@ -237,10 +236,8 @@ public class DefaultZtsClient implements ZtsClient {
         if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
             return objectMapper.readValue(response.getEntity().getContent(), entityType);
         } else {
-            String message = EntityUtils.toString(response.getEntity());
-            throw new ZtsClientException(
-                    String.format("Unable to get identity. http code/message: %d/%s",
-                                  response.getStatusLine().getStatusCode(), message));
+            ErrorResponseEntity errorEntity = objectMapper.readValue(response.getEntity().getContent(), ErrorResponseEntity.class);
+            throw new ZtsClientException(errorEntity.code, errorEntity.description);
         }
     }
 
