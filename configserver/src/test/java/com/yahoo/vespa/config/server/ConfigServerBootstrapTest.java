@@ -2,15 +2,27 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.provision.Host;
+import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Version;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.jdisc.core.SystemTimer;
+import com.yahoo.path.Path;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -18,8 +30,13 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
 import static org.junit.Assert.assertEquals;
@@ -97,6 +114,41 @@ public class ConfigServerBootstrapTest {
         assertEquals(StateMonitor.Status.initializing, bootstrap.status());
         assertFalse(rpcServer.isRunning());
         assertFalse(vipStatus.isInRotation());
+
+        bootstrap.deconstruct();
+    }
+
+    // Tests that we do not try to create the config model version stored in zookeeper when not on hosted vespa, since
+    // we are then only able to create the latest version
+    @Test
+    public void testBootstrapNonHostedOneConfigModel() throws Exception {
+        ConfigserverConfig configserverConfig = createConfigserverConfigNonHosted(temporaryFolder);
+        List<ModelFactory> modelFactories = Collections.singletonList(DeployTester.createModelFactory(Version.fromString("1.2.3")));
+        List<Host> hosts = Arrays.asList(createHost("host1", "1.2.3"), createHost("host2", "1.2.3"), createHost("host3", "1.2.3"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
+        Curator curator = new MockCurator();
+        DeployTester tester = new DeployTester(modelFactories, configserverConfig,
+                                               Clock.systemUTC(), new Zone(Environment.dev, RegionName.defaultName()),
+                                               provisioner, curator);
+        ApplicationId app = tester.deployApp("src/test/apps/app/", "myApp", "1.2.3", Instant.now());
+
+        File versionFile = temporaryFolder.newFile();
+        VersionState versionState = new VersionState(versionFile);
+        assertTrue(versionState.isUpgraded());
+
+        // Ugly hack, but I see no other way of doing it:
+        // Manipulate application version in zookeeper so that it is an older version than the model we know, which is
+        // the case when upgrading on non-hosted installations
+        curator.set(Path.fromString("/config/v2/tenants/" + app.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
+
+        RpcServer rpcServer = createRpcServer(configserverConfig);
+        VipStatus vipStatus = new VipStatus();
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
+                                                                    createStateMonitor(), vipStatus);
+
+        waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
+        waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
+        waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {
@@ -120,14 +172,27 @@ public class ConfigServerBootstrapTest {
     }
 
     private static ConfigserverConfig createConfigserverConfig(TemporaryFolder temporaryFolder) throws IOException {
+        return createConfigserverConfig(temporaryFolder, true);
+    }
+
+    private static ConfigserverConfig createConfigserverConfigNonHosted(TemporaryFolder temporaryFolder) throws IOException {
+        return createConfigserverConfig(temporaryFolder, false);
+    }
+
+    private static ConfigserverConfig createConfigserverConfig(TemporaryFolder temporaryFolder, boolean hosted) throws IOException {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
-                                              .hostedVespa(true)
-                                              .multitenant(true)
+                                              .hostedVespa(hosted)
+                                              .multitenant(hosted)
                                               .maxDurationOfBootstrap(1) /* seconds */
                                               .sleepTimeWhenRedeployingFails(0)); /* seconds */
     }
+
+    private Host createHost(String hostname, String version) {
+        return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.of(com.yahoo.component.Version.fromString(version)));
+    }
+
 
     public static class MockRpc extends com.yahoo.vespa.config.server.rpc.MockRpc {
 
