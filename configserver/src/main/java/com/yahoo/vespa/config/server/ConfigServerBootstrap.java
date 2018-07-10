@@ -28,7 +28,6 @@ import java.util.concurrent.Executors;
 public class ConfigServerBootstrap extends AbstractComponent implements Runnable {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigServerBootstrap.class.getName());
-    private static final ExecutorService rpcServerExecutor  = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
     private static final String vipStatusClusterIdentifier = "configserver";
 
     enum MainThread {START, DO_NOT_START}
@@ -43,6 +42,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final Duration maxDurationOfRedeployment;
     private final Duration sleepTimeWhenRedeployingFails;
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
+    private final ExecutorService rpcServerExecutor;
 
     // The tenants object is injected so that all initial requests handlers are
     // added to the rpc server before it starts answering rpc requests.
@@ -66,6 +66,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.maxDurationOfRedeployment = Duration.ofSeconds(applicationRepository.configserverConfig().maxDurationOfBootstrap());
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(applicationRepository.configserverConfig().sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
+        rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
         initializing(); // Initially take server out of rotation
         if (mainThread == MainThread.START)
             start();

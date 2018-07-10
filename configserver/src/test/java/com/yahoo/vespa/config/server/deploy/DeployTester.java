@@ -108,8 +108,13 @@ public class DeployTester {
     }
 
     public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone, HostProvisioner provisioner) {
+        this(modelFactories, configserverConfig, clock, zone, provisioner, new MockCurator());
+    }
+
+    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone,
+                        HostProvisioner provisioner, Curator curator) {
         this.clock = clock;
-        TestComponentRegistry componentRegistry = createComponentRegistry(new MockCurator(), Metrics.createTestMetrics(),
+        TestComponentRegistry componentRegistry = createComponentRegistry(curator, Metrics.createTestMetrics(),
                                                                           modelFactories, configserverConfig, clock, zone,
                                                                           provisioner);
         try {

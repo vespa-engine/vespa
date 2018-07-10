@@ -147,9 +147,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         if (Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment()))
             versions = keepThoseUsedOn(allocatedHosts.get(), versions);
 
-        // Make sure we build wanted version if we are building models for this major version
+        // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
+        // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
         Version wantedVersion = Version.fromIntValues(wantedNodeVespaVersion.getMajor(), wantedNodeVespaVersion.getMinor(), wantedNodeVespaVersion.getMicro());
-        if (wantedVersion.getMajor() == latest.getMajor())
+        if (hosted && wantedVersion.getMajor() == latest.getMajor())
             versions.add(wantedVersion);
 
         // TODO: We use the allocated hosts from the newest version when building older model versions.
