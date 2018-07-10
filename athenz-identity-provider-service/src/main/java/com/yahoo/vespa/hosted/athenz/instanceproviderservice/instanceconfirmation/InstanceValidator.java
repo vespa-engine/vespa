@@ -61,6 +61,17 @@ public class InstanceValidator {
         return false;
     }
 
+    // TODO Add actual validation. Cannot reuse isValidInstance as identity document is not part of the refresh request.
+    //      We'll have to perform some validation on the instance id and other fields of the attribute map.
+    //      Separate between tenant and node certificate as well.
+    public boolean isValidRefresh(InstanceConfirmation confirmation) {
+        log.log(LogLevel.INFO, () -> String.format("Accepting refresh for instance with identity '%s', provider '%s', instanceId '%s'.",
+                                                   new AthenzService(confirmation.domain, confirmation.service).getFullName(),
+                                                   confirmation.provider,
+                                                   confirmation.attributes.get("sanDNS").toString()));
+        return true;
+    }
+
     // If/when we dont care about logging exactly whats wrong, this can be simplified
     // TODO Use identity type to determine if this check should be performed
     boolean isSameIdentityAsInServicesXml(ApplicationId applicationId, String domain, String service) {
