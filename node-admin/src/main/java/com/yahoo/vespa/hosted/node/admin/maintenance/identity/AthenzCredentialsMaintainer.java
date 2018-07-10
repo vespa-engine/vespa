@@ -143,6 +143,8 @@ public class AthenzCredentialsMaintainer {
                 log.info(String.format("Deleted private key file (path=%s)", privateKeyFile));
             if (Files.deleteIfExists(certificateFile))
                 log.info(String.format("Deleted certificate file (path=%s)", certificateFile));
+            if (Files.deleteIfExists(identityDocumentFile))
+                log.info(String.format("Deleted identity document file (path=%s)", certificateFile));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
