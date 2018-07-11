@@ -169,7 +169,8 @@ public class SessionPreparer {
                                                                    logger,
                                                                    params,
                                                                    currentActiveApplicationSet,
-                                                                   properties);
+                                                                   properties,
+                                                                   configserverConfig);
         }
 
         void checkTimeout(String step) {

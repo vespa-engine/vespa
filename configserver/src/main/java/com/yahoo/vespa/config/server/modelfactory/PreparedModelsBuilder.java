@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -64,8 +65,9 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  DeployLogger logger,
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
-                                 ModelContext.Properties properties) {
-        super(modelFactoryRegistry, properties.hostedVespa(), properties.zone());
+                                 ModelContext.Properties properties,
+                                 ConfigserverConfig configserverConfig) {
+        super(modelFactoryRegistry, configserverConfig, properties.zone());
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
 
