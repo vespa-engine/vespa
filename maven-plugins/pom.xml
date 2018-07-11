@@ -21,5 +21,7 @@
         <module>../bundle-plugin</module>
         <module>../configgen</module>
         <module>../config-class-plugin</module>
+        <module>../application-deploy-plugin</module>
+        <module>../vespa-application-maven-plugin</module>
     </modules>
 </project>
