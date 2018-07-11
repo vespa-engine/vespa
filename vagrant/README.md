@@ -1,6 +1,6 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
-# Create C++ dev environment on CentOS using VirtualBox and Vagrant
+# Create C++ or Java dev environment on CentOS using VirtualBox and Vagrant
 
 ## Prerequisites
 * [Install VirtualBox](https://www.virtualbox.org/wiki/Downloads)
@@ -12,16 +12,28 @@
 
     cd <vespa-source>/vagrant
 
-#### 2. Install Vagrant VirtualBox Guest Additions plugin
+#### 2. Choose dev environment
+
+##### a. For a dev environment with plain centos/7 and no GUI:
+
+    export VESPA_VAGRANT_VM_BOX=centos/7
+    export VESPA_DISABLE_VAGRANT_GUI=true
+
+##### b. For a dev environment with GUI and CLion:
+
+    export VESPA_VAGRANT_VM_BOX=<TODO>
+    export VESPA_VAGRANT_VM_BOX_URL=<TODO>
+
+#### 3. Install Vagrant VirtualBox Guest Additions plugin
 This is required for mounting shared folders and get mouse pointer integration and seamless windows in the virtual CentOS desktop.
 
     vagrant plugin install vagrant-vbguest
 
-#### 3. Start and provision the environment
+#### 4. Start and provision the environment
 
     vagrant up
 
-#### 4. Connect to machine via SSH
+#### 5. Connect to machine via SSH
 SSH agent forwarding is enabled to ensure easy interaction with GitHub inside the machine.
 
     vagrant ssh
@@ -30,6 +42,10 @@ SSH agent forwarding is enabled to ensure easy interaction with GitHub inside th
 This is needed in order to compile and run tests fast on the local file system inside the virtual machine.
 
     git clone git@github.com:vespa-engine/vespa.git
+
+## Build Java modules
+Please follow the build instructions described [here](../README.md#build-java-modules).
+
 
 ## Build C++ modules
 Please follow the build instructions described [here](../README.md#build-c-modules).
