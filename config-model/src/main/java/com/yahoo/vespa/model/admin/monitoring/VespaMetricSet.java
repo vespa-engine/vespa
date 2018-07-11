@@ -68,6 +68,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("configserver.delayedResponses.count", "configserver.delayedResponses"));
         metrics.add(new Metric("configserver.sessionChangeErrors.count", "configserver.sessionChangeErrors"));
 
+        metrics.add(new Metric("configserver.zkZNodes.last", "configserver.zkZNodes"));
+        metrics.add(new Metric("configserver.zkAvgLatency.last", "configserver.zkAvgLatency"));
+        metrics.add(new Metric("configserver.zkMaxLatency.last", "configserver.zkMaxLatency"));
+        metrics.add(new Metric("configserver.zkConnections.last", "configserver.zkConnections"));
+        metrics.add(new Metric("configserver.zkOutstandingConnections.last", "configserver.zkOutstandingConnections"));
+
         return metrics;
     }
 
