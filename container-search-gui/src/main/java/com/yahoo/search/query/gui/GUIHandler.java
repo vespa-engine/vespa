@@ -122,5 +122,4 @@ public class GUIHandler extends LoggingRequestHandler {
             return "text/html";
         }
     }
-
 }
