@@ -15,8 +15,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
@@ -290,10 +292,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId) {
+        Zone zone = new Zone(Environment.from(configserverConfig.environment()), RegionName.from(configserverConfig.region()));
+        List<String> hostedZonesToUseDeleteApplication =
+                Arrays.asList("dev.us-east-1", "dev.corp-us-east-1", "test.us-east-1",
+                              "prod.corp-us-east-1", "prod.aws-us-east-1a", "prod.aws-us-west-1b");
+        boolean useDeleteApplicationLegacyInThisZone = !hostedZonesToUseDeleteApplication.contains(zone.toString());
+
         // TODO: Use deleteApplication() in all zones
         if (configserverConfig.deleteApplicationLegacy() ||
-                (configserverConfig.hostedVespa() && SystemName.from(configserverConfig.system()) == SystemName.main
-                        && !Arrays.asList("corp-us-east-1", "aws-us-east-1a").contains(configserverConfig.region()))) {
+                (configserverConfig.hostedVespa() && SystemName.from(configserverConfig.system()) == SystemName.main &&
+                        useDeleteApplicationLegacyInThisZone)) {
             return deleteApplicationLegacy(applicationId);
         } else {
             return deleteApplication(applicationId);
@@ -306,7 +314,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return true if the application was found and deleted, false if it was not present
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
-    public boolean deleteApplication(ApplicationId applicationId) {
+    boolean deleteApplication(ApplicationId applicationId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         if (tenant == null) return false;
 
