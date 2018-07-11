@@ -1,7 +1,14 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
-import com.yahoo.document.*;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.NewDocumentType;
@@ -10,7 +17,6 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.UnprocessingSearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.tensor.TensorType;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -20,12 +26,24 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Goal which generates Vespa document classes from SD files.
- * @author vegardh
+ *
+ * @author Vegard Havdal
  */
 @Mojo(name = "document-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class DocumentGenMojo extends AbstractMojo {
