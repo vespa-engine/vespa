@@ -94,29 +94,29 @@ public class GUIHandler extends LoggingRequestHandler {
                 return "application/javascript";
             } else if (path.endsWith(".html")) {
                 return "text/html";
-            }else if (path.endsWith(".php")) {
+            } else if (path.endsWith(".php")) {
                 return "text/php";
-            }else if (path.endsWith(".svg")) {
+            } else if (path.endsWith(".svg")) {
                 return "image/svg+xml";
-            }else if (path.endsWith(".eot")) {
+            } else if (path.endsWith(".eot")) {
                 return "application/vnd.ms-fontobject";
-            }else if (path.endsWith(".ttf")) {
+            } else if (path.endsWith(".ttf")) {
                 return "font/ttf";
-            }else if (path.endsWith(".woff")) {
+            } else if (path.endsWith(".woff")) {
                 return "font/woff";
-            }else if (path.endsWith(".woff2")) {
+            } else if (path.endsWith(".woff2")) {
                 return "font/woff2";
-            }else if (path.endsWith(".otf")) {
+            } else if (path.endsWith(".otf")) {
                 return "font/otf";
-            }else if (path.endsWith(".png")) {
+            } else if (path.endsWith(".png")) {
                 return "image/png";
-            }else if (path.endsWith(".xml")) {
+            } else if (path.endsWith(".xml")) {
                 return "application/xml";
-            }else if (path.endsWith(".ico")) {
+            } else if (path.endsWith(".ico")) {
                 return "image/x-icon";
-            }else if (path.endsWith(".json")) {
+            } else if (path.endsWith(".json")) {
                 return "application/json";
-            }else if (path.endsWith(".ttf")) {
+            } else if (path.endsWith(".ttf")) {
                 return "font/ttf";
             }
             return "text/html";

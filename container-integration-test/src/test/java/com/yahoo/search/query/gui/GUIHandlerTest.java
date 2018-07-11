@@ -5,13 +5,13 @@ import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
+
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
 import java.io.IOException;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -24,7 +24,7 @@ public class GUIHandlerTest {
 
     @Before
     public void startContainer() {
-        container = JDisc.fromServicesXml(servicesXml(), Networking.enable);
+        container = JDisc.fromServicesXml(servicesXml(), Networking.disable);
     }
 
     @After
@@ -63,10 +63,10 @@ public class GUIHandlerTest {
 
     private void assertResponse(Request.Method method, String path, String expectedStartString, String expectedContentType, int expectedStatusCode) throws IOException {
         Response response = container.handleRequest(new Request("http://localhost:8080" + path, new byte[0], method));
-        Assert.assertEquals("Status code", expectedStatusCode, response.getStatus());
-        Assert.assertEquals(expectedContentType, response.getHeaders().getFirst("Content-Type"));
+        assertEquals("Status code", expectedStatusCode, response.getStatus());
+        assertEquals(expectedContentType, response.getHeaders().getFirst("Content-Type"));
         if(expectedStartString != null){
-            Assert.assertTrue(response.getBodyAsString().startsWith(expectedStartString));
+            assertTrue(response.getBodyAsString().startsWith(expectedStartString));
         }
     }
 
