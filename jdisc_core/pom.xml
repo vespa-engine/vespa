@@ -22,6 +22,14 @@
             <artifactId>jaxb-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.sun.activation</groupId>
             <artifactId>javax.activation</artifactId>
         </dependency>
@@ -240,6 +248,8 @@
                                 <argument>${project.build.directory}/dependency/config-lib.jar</argument>
                                 <argument>${project.build.directory}/dependency/yolean.jar</argument>
                                 <argument>${project.build.directory}/dependency/jaxb-api.jar</argument>
+                                <argument>${project.build.directory}/dependency/jaxb-core.jar</argument>
+                                <argument>${project.build.directory}/dependency/jaxb-impl.jar</argument>
                                 <argument>${project.build.directory}/dependency/javax.activation.jar</argument>
                             </arguments>
                         </configuration>
