@@ -51,7 +51,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>3.0.0-M1</version>
                         <executions>
                             <execution>
                                 <!-- To allow running 'mvn enforcer:enforce' from the command line -->
