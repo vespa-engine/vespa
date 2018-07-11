@@ -46,21 +46,19 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final long appGeneration;
     private final SessionZooKeeperClient zkClient;
     private final PermanentApplicationPackage permanentApplicationPackage;
-    private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
     private final Curator curator;
     private final DeployLogger logger;
 
     public ActivatedModelsBuilder(TenantName tenant, long appGeneration, SessionZooKeeperClient zkClient, GlobalComponentRegistry globalComponentRegistry) {
-        super(globalComponentRegistry.getModelFactoryRegistry(), 
-              globalComponentRegistry.getHostProvisioner().isPresent(),
+        super(globalComponentRegistry.getModelFactoryRegistry(),
+              globalComponentRegistry.getConfigserverConfig(),
               globalComponentRegistry.getZone());
         this.tenant = tenant;
         this.appGeneration = appGeneration;
         this.zkClient = zkClient;
         this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
-        this.configserverConfig = globalComponentRegistry.getConfigserverConfig();
         this.configDefinitionRepo = globalComponentRegistry.getConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
         this.curator = globalComponentRegistry.getCurator();

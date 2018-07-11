@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.modelfactory;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelFactory;
@@ -10,6 +11,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
@@ -42,15 +44,17 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     private static final Logger log = Logger.getLogger(ModelsBuilder.class.getName());
 
     private final ModelFactoryRegistry modelFactoryRegistry;
+    protected final ConfigserverConfig configserverConfig;
 
     /** True if we are running in hosted mode */
     private final boolean hosted;
 
     private final Zone zone;
 
-    protected ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry, boolean hosted, Zone zone) {
+    protected ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry, ConfigserverConfig configserverConfig, Zone zone) {
         this.modelFactoryRegistry = modelFactoryRegistry;
-        this.hosted = hosted;
+        this.configserverConfig = configserverConfig;
+        this.hosted = configserverConfig.hostedVespa();
         this.zone = zone;
     }
 
@@ -143,8 +147,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         allApplicationVersions.add(latestModelVersion);
 
         // TODO: Enable for all zones
-        // Note: Cannot be enabled for prod zones yet, due to an issue with how AccessControlValidator works
-        if (Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment()))
+        if (configserverConfig.buildMinimalSetOfConfigModels() &&
+                (SystemName.from(configserverConfig.system()) == SystemName.cd ||
+                        Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment()) ||
+                        Arrays.asList("corp-us-east-1", "ap-southeast-1").contains(zone().region().value())))
             versions = keepThoseUsedOn(allocatedHosts.get(), versions);
 
         // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
