@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-disable_gui = ENV['VESPA_DISABLE_VAGRANT_GUI']
+disable_gui = ENV['VESPA_VAGRANT_DISABLE_GUI']
 
 def validate_vm_env_option(name)
   opt = ENV[name]
