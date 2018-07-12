@@ -26,10 +26,10 @@ Create centos7-desktop box:
 * Install packer by following guide at [packer.io](https://www.packer.io/intro/getting-started/install.html)
 
 * Clone boxcutter centos repo and build the box:
-
-
-    git clone https://github.com/boxcutter/centos.git
-    ./bin/box build centos7-desktop.json virtualbox
+```
+git clone https://github.com/boxcutter/centos.git
+./bin/box build centos7-desktop.json virtualbox
+```
 
 Example exports:
 
