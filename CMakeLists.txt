@@ -115,6 +115,9 @@ add_subdirectory(vespamalloc)
 add_subdirectory(vsm)
 add_subdirectory(zkfacade)
 
+# Add any auxilliary projects
+add_auxilliary_modules()
+
 # Create module targets with name ${MODULE}+module depending on every target defined within that module
 __create_module_targets(TARGETS "module")
 

@@ -547,3 +547,14 @@ endfunction()
 function(install_fat_java_artifact NAME)
     install(FILES "target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
 endfunction()
+
+function(add_auxilliary_modules)
+    if(EXTRA_PROJECTS)
+        foreach(PROJECT ${EXTRA_PROJECTS})
+            get_filename_component(RELDIR ${PROJECT} NAME)
+            add_subdirectory(${PROJECT} ${RELDIR})
+        endforeach()
+    endif()
+endfunction()
+
+
