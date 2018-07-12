@@ -23,7 +23,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
-import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -48,7 +47,6 @@ import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
-import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
@@ -57,7 +55,6 @@ import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.jersey.xml.RestApiBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
-import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.container.search.PageTemplates;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.SemanticRules;
@@ -381,7 +378,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.setSearch(buildSearch(cluster, searchElement, queryProfiles, semanticRules));
 
             addSearchHandler(cluster, searchElement);
-            addGUIHandler(cluster);
             validateAndAddConfiguredComponents(cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
         }
     }
@@ -673,13 +669,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         cluster.addComponent(searchHandler);
     }
-
-    private void addGUIHandler(ContainerCluster cluster) {
-        Handler<?> guiHandler = new GUIHandler();
-        guiHandler.addServerBindings("http://"+GUIHandler.BINDING, "https://"+GUIHandler.BINDING);
-        cluster.addComponent(guiHandler);
-    }
-
 
     private String[] serverBindings(Element searchElement, String... defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");

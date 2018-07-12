@@ -8,8 +8,6 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
@@ -33,31 +31,6 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     private ChainsConfig chainsConfig() {
         return root.getConfig(ChainsConfig.class, "default/component/com.yahoo.search.handler.SearchHandler");
     }
-
-    @Test
-    public void gui_search_handler_is_always_included_when_search_is_specified() throws Exception{
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
-                "  <search />",
-                nodesXml,
-                "</jdisc>");
-
-        createModel(root, clusterElem);
-
-        String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(GUIHandler.BINDING));
-
-        ContainerCluster cluster = (ContainerCluster)root.getChildren().get("default");
-
-        GUIHandler guiHandler = null;
-        for (Handler<?> handler : cluster.getHandlers()) {
-            if (handler instanceof GUIHandler) {
-                guiHandler = (GUIHandler) handler;
-            }
-        }
-        if (guiHandler == null) fail();
-    }
-
 
 
     @Test
