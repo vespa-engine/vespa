@@ -1,6 +1,6 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
-# Create C++ or Java dev environment on CentOS using VirtualBox and Vagrant
+# Create C++ / Java dev environment on CentOS using VirtualBox and Vagrant
 
 ## Prerequisites
 * [Install VirtualBox](https://www.virtualbox.org/wiki/Downloads)
@@ -21,8 +21,21 @@
 
 ##### b. For a dev environment with GUI and CLion:
 
-    export VESPA_VAGRANT_VM_BOX=<TODO>
-    export VESPA_VAGRANT_VM_BOX_URL=<TODO>
+Create centos7-desktop box:
+
+* Install packer by following guide at [packer.io](https://www.packer.io/intro/getting-started/install.html)
+
+* Clone boxcutter centos repo and build the box:
+
+
+    git clone https://github.com/boxcutter/centos.git
+    ./bin/box build centos7-desktop.json virtualbox
+
+Example exports:
+
+    export VESPA_VAGRANT_VM_BOX="centos7-desktop"
+    export VESPA_VAGRANT_VM_BOX_URL="$HOME/git/boxcutter/centos/box/virtualbox/centos7-desktop-xx.yyyy.z.box"
+
 
 #### 3. Install Vagrant VirtualBox Guest Additions plugin
 This is required for mounting shared folders and get mouse pointer integration and seamless windows in the virtual CentOS desktop.
