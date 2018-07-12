@@ -45,9 +45,11 @@ public class Metrics extends TimerTask implements MetricUpdaterFactory {
         requests = createCounter(METRIC_REQUESTS, statistics);
         failedRequests = createCounter(METRIC_FAILED_REQUESTS, statistics);
         procTimeCounter = createCounter("procTime", statistics);
-        timer.scheduleAtFixedRate(this, 5000, (long) (healthMonitorConfig.snapshot_interval() * 1000));
+
         log.log(LogLevel.DEBUG, "Metric update interval is " + healthMonitorConfig.snapshot_interval() + " seconds");
-        zkMetricUpdater = new ZKMetricUpdater(this, zkServerConfig, healthMonitorConfig);
+        long intervalMs = (long) (healthMonitorConfig.snapshot_interval() * 1000);
+        timer.scheduleAtFixedRate(this, 5000, intervalMs);
+        zkMetricUpdater = new ZKMetricUpdater(zkServerConfig, 4500, intervalMs);
     }
 
     public static Metrics createTestMetrics() {

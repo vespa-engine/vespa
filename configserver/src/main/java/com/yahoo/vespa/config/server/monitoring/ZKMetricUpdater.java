@@ -1,7 +1,6 @@
 package com.yahoo.vespa.config.server.monitoring;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -42,10 +41,6 @@ public class ZKMetricUpdater extends TimerTask {
     private AtomicReference<Map<String, Long>> zkMetrics = new AtomicReference<>(new HashMap<>());
     private final Timer timer = new Timer();
     private final int zkPort;
-
-    public ZKMetricUpdater(Metrics metrics, ZookeeperServerConfig zkServerConfig, HealthMonitorConfig healthMonitorConfig) {
-        this(zkServerConfig, 4500, (long) (healthMonitorConfig.snapshot_interval() * 1000));
-    }
 
     public ZKMetricUpdater(ZookeeperServerConfig zkServerConfig, long delay, long interval) {
         this.zkPort = zkServerConfig.clientPort();
