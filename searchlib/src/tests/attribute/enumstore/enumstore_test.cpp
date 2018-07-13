@@ -41,6 +41,7 @@ private:
     void testFloatEnumStore(EnumStoreType & es);
     void testFloatEnumStore();
 
+    void testFindFolded();
     void testAddEnum();
     template <typename EnumStoreType>
     void testAddEnum(bool hasPostings);
@@ -275,6 +276,40 @@ EnumStoreTest::testFloatEnumStore()
 }
 
 void
+EnumStoreTest::testFindFolded()
+{
+    StringEnumStore ses(100, false);
+    std::vector<EnumIndex> indices;
+    std::vector<std::string> unique({"", "one", "two", "TWO", "Two", "three"});
+    for (std::string &str : unique) {
+        EnumIndex idx;
+        ses.addEnum(str.c_str(), idx);
+        EXPECT_TRUE(ses.getLastEnum() == indices.size());
+        indices.push_back(idx);
+        ses.incRefCount(idx);
+        EXPECT_EQUAL(1u, ses.getRefCount(idx));
+    }
+    ses.freezeTree();
+    for (uint32_t i = 0; i < indices.size(); ++i) {
+        uint32_t e = ses.getEnum(indices[i]);
+        EXPECT_EQUAL(i, e);
+        EnumIndex idx;
+        EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
+    }
+    EXPECT_EQUAL(1u, ses.findFoldedEnums("").size());
+    EXPECT_EQUAL(0u, ses.findFoldedEnums("foo").size());
+    EXPECT_EQUAL(1u, ses.findFoldedEnums("one").size());
+    EXPECT_EQUAL(3u, ses.findFoldedEnums("two").size());
+    EXPECT_EQUAL(3u, ses.findFoldedEnums("TWO").size());
+    EXPECT_EQUAL(3u, ses.findFoldedEnums("tWo").size());
+    const auto v = ses.findFoldedEnums("Two");
+    EXPECT_EQUAL(std::string("TWO"), ses.getValue(v[0]));
+    EXPECT_EQUAL(std::string("Two"), ses.getValue(v[1]));
+    EXPECT_EQUAL(std::string("two"), ses.getValue(v[2]));
+    EXPECT_EQUAL(1u, ses.findFoldedEnums("three").size());
+}
+
+void
 EnumStoreTest::testAddEnum()
 {
     testAddEnum<StringEnumStore>(false);
@@ -319,6 +354,7 @@ EnumStoreTest::testAddEnum(bool hasPostings)
         uint32_t e = ses.getEnum(indices[i]);
         EXPECT_EQUAL(i, e);
         EXPECT_TRUE(ses.findEnum(unique[i].c_str(), e));
+        EXPECT_EQUAL(1u, ses.findFoldedEnums(unique[i].c_str()).size());
         EXPECT_TRUE(ses.getEnum(datastore::EntryRef(e)) == i);
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
@@ -874,6 +910,7 @@ EnumStoreTest::Main()
     testStringEntry();
     testNumericEntry();
     testFloatEnumStore();
+    testFindFolded();
     testAddEnum();
     testCompaction();
     testReset();
