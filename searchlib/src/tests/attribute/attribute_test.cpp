@@ -1297,6 +1297,8 @@ AttributeTest::testWeightedSet()
             testWeightedSet<IntegerAttribute, AttributeVector::WeightedInt>(ptr, values);
             IAttributeVector::EnumHandle e;
             EXPECT_TRUE(ptr->findEnum("1", e));
+            EXPECT_EQUAL(1u, ptr->findFoldedEnums("1").size());
+
         }
     }
     { // FloatingPointAttribute
@@ -1320,6 +1322,7 @@ AttributeTest::testWeightedSet()
             testWeightedSet<FloatingPointAttribute, AttributeVector::WeightedFloat>(ptr, values);
             IAttributeVector::EnumHandle e;
             EXPECT_TRUE(ptr->findEnum("1", e));
+            EXPECT_EQUAL(1u, ptr->findFoldedEnums("1").size());
         }
     }
     { // StringAttribute
@@ -1345,6 +1348,7 @@ AttributeTest::testWeightedSet()
             testWeightedSet<StringAttribute, AttributeVector::WeightedString>(ptr, values);
             IAttributeVector::EnumHandle e;
             EXPECT_TRUE(ptr->findEnum("string00", e));
+            EXPECT_EQUAL(1u, ptr->findFoldedEnums("StRiNg00").size());
         }
     }
 }
