@@ -200,6 +200,15 @@ EnumStoreT<EntryType>::findEnum(Type value,
 }
 
 template <typename EntryType>
+std::vector<EnumStoreBase::EnumHandle>
+EnumStoreT<EntryType>::findFoldedEnums(Type value) const
+{
+    FoldedComparatorType cmp(*this, value);
+    return _enumDict->findMatchingEnums(cmp);
+}
+
+
+template <typename EntryType>
 bool
 EnumStoreT<EntryType>::findIndex(Type value, Index &idx) const
 {

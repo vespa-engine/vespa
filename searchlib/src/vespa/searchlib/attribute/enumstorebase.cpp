@@ -507,6 +507,20 @@ EnumStoreDict<Dictionary>::findFrozenIndex(const EnumStoreComparator &cmp,
 
 
 template <typename Dictionary>
+std::vector<EnumStoreBase::EnumHandle>
+EnumStoreDict<Dictionary>::findMatchingEnums(const EnumStoreComparator &cmp) const
+{
+    std::vector<EnumStoreBase::EnumHandle> result;
+    typename Dictionary::ConstIterator itr =
+        _dict.getFrozenView().find(Index(), cmp);
+    while (itr.valid() && !cmp(Index(), itr.getKey())) {
+        result.push_back(itr.getKey().ref());
+        ++itr;
+    }
+    return result;
+}
+
+template <typename Dictionary>
 void
 EnumStoreDict<Dictionary>::onReset()
 {

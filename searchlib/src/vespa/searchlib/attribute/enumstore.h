@@ -166,6 +166,7 @@ public:
     ssize_t deserialize(const void *src, size_t available, Index &idx) override;
     bool foldedChange(const Index &idx1, const Index &idx2) override;
     virtual bool findEnum(Type value, EnumStoreBase::EnumHandle &e) const;
+    virtual std::vector<EnumStoreBase::EnumHandle> findFoldedEnums(Type value) const;
     void addEnum(Type value, Index &newIdx);
     virtual bool findIndex(Type value, Index &idx) const;
     void freeUnusedEnums(bool movePostingidx) override;
