@@ -32,6 +32,19 @@ IntegerAttributeTemplate<T>::findEnum(const char *value, EnumHandle &e) const {
     return findEnum(ivalue, e);
 }
 
+
+template<typename T>
+std::vector<EnumStoreBase::EnumHandle>
+IntegerAttributeTemplate<T>::findFoldedEnums(const char *value) const
+{
+    std::vector<EnumHandle> result;
+    EnumHandle h;
+    if (findEnum(value, h)) {
+        result.push_back(h);
+    }
+    return result;
+}
+
 template<typename T>
 largeint_t
 IntegerAttributeTemplate<T>::getIntFromEnum(EnumHandle e) const {
