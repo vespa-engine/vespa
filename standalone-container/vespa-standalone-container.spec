@@ -48,6 +48,7 @@ declare -a modules=(
   container-disc
   container-jersey2
   container-search-and-docproc
+  container-search-gui
   defaults
   docprocs
   jdisc-security-filters
