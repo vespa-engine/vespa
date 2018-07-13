@@ -97,7 +97,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
     private final ConfigserverConfig configserverConfig;
-    private final Environment environment;
     private final FileDistributionStatus fileDistributionStatus;
 
     @Inject
@@ -139,7 +138,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.httpProxy = httpProxy;
         this.clock = clock;
         this.configserverConfig = configserverConfig;
-        this.environment = Environment.from(configserverConfig.environment());
         this.fileDistributionStatus = fileDistributionStatus;
     }
 
@@ -250,7 +248,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         // Keep manually deployed tenant applications on the latest version, don't change version otherwise
         // TODO: Remove this and always use version from session once controller starts upgrading manual deployments
-        Version version = decideVersion(application, environment, newSession.getVespaVersion(), bootstrap);
+        Version version = decideVersion(application, zone().environment(), newSession.getVespaVersion(), bootstrap);
                 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
                                                  false /* don't validate as this is already deployed */, version,
@@ -292,15 +290,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId) {
-        Zone zone = new Zone(Environment.from(configserverConfig.environment()), RegionName.from(configserverConfig.region()));
         List<String> hostedZonesToUseDeleteApplication =
                 Arrays.asList("dev.us-east-1", "dev.corp-us-east-1", "test.us-east-1",
                               "prod.corp-us-east-1", "prod.aws-us-east-1a", "prod.aws-us-west-1b");
-        boolean useDeleteApplicationLegacyInThisZone = !hostedZonesToUseDeleteApplication.contains(zone.toString());
+        boolean useDeleteApplicationLegacyInThisZone = !hostedZonesToUseDeleteApplication.contains(zone().toString());
 
         // TODO: Use deleteApplication() in all zones
         if (configserverConfig.deleteApplicationLegacy() ||
-                (configserverConfig.hostedVespa() && SystemName.from(configserverConfig.system()) == SystemName.main &&
+                (configserverConfig.hostedVespa() && zone().system() == SystemName.main &&
                         useDeleteApplicationLegacyInThisZone)) {
             return deleteApplicationLegacy(applicationId);
         } else {
@@ -766,6 +763,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Slime deployLog = new Slime();
         deployLog.setObject();
         return deployLog;
+    }
+
+    private Zone zone() {
+        return new Zone(SystemName.from(configserverConfig.system()),
+                        Environment.from(configserverConfig.environment()),
+                        RegionName.from(configserverConfig.region()));
     }
 
 }
