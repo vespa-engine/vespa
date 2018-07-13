@@ -26,6 +26,8 @@ struct NotImplementedAttribute : AttributeVector {
     uint32_t get(DocId, WeightedConstChar *, uint32_t) const override;
     uint32_t get(DocId, WeightedEnum *, uint32_t) const override;
     bool findEnum(const char *, EnumHandle &) const override;
+    std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
+
     long onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const override;
     long onSerializeForDescendingSort(DocId, void *, long, const common::BlobConverter *) const override;
     uint32_t clearDoc(DocId) override;
