@@ -500,6 +500,8 @@ public:
 
     // Implements IAttributeVector
     bool findEnum(const char *value, EnumHandle &e) const override;
+    std::vector<EnumHandle> findFoldedEnums(const char *) const override;
+
     const char * getStringFromEnum(EnumHandle e) const override;
 
 ///// Modify API

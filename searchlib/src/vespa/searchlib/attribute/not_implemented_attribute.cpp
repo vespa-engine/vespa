@@ -103,6 +103,12 @@ NotImplementedAttribute::findEnum(const char *, EnumHandle &) const {
     return false;
 }
 
+std::vector<NotImplementedAttribute::EnumHandle>
+NotImplementedAttribute::findFoldedEnums(const char *) const {
+    notImplemented();
+    return std::vector<EnumHandle>();
+}
+
 long
 NotImplementedAttribute::onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const {
     notImplemented();

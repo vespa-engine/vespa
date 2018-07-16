@@ -508,6 +508,12 @@ int32_t AttributeVector::getWeight(DocId, uint32_t) const { return 1; }
 
 bool AttributeVector::findEnum(const char *, EnumHandle &) const { return false; }
 
+std::vector<search::attribute::IAttributeVector::EnumHandle>
+AttributeVector::findFoldedEnums(const char *) const {
+    std::vector<EnumHandle> empty;
+    return empty;
+}
+
 const char * AttributeVector::getStringFromEnum(EnumHandle) const { return nullptr; }
 
 AttributeVector::SearchContext::SearchContext(const AttributeVector &attr) :

@@ -78,6 +78,9 @@ public:
                                  const EnumStoreComparator *fcmp) = 0;
     virtual bool findIndex(const EnumStoreComparator &cmp, Index &idx) const = 0;
     virtual bool findFrozenIndex(const EnumStoreComparator &cmp, Index &idx) const = 0;
+    virtual std::vector<attribute::IAttributeVector::EnumHandle>
+    findMatchingEnums(const EnumStoreComparator &cmp) const = 0;
+
     virtual void onReset() = 0;
     virtual void onTransferHoldLists(generation_t generation) = 0;
     virtual void onTrimHoldLists(generation_t firstUsed) = 0;
@@ -131,6 +134,9 @@ public:
 
     bool findIndex(const EnumStoreComparator &cmp, Index &idx) const override;
     bool findFrozenIndex(const EnumStoreComparator &cmp, Index &idx) const override;
+    std::vector<attribute::IAttributeVector::EnumHandle>
+    findMatchingEnums(const EnumStoreComparator &cmp) const override;
+
     void onReset() override;
     void onTransferHoldLists(generation_t generation) override;
     void onTrimHoldLists(generation_t firstUsed) override;

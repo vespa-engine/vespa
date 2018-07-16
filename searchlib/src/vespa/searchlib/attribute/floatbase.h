@@ -81,6 +81,7 @@ protected:
     Change _defaultValue;
 private:
     bool findEnum(const char *value, EnumHandle &e) const override;
+    std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
     bool isUndefined(DocId doc) const override;
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;

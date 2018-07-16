@@ -36,14 +36,8 @@ class UseStringEnum : public UseAttr
 public:
     UseStringEnum(const IAttributeVector & attr)
         : UseAttr(attr) {}
-    bool mapToken(const ISearchContext &context, int64_t &token) const
-    {
-        attribute::IAttributeVector::EnumHandle handle;
-        if (attribute().findEnum(context.queryTerm().getTerm(), handle)) {
-            token = handle;
-            return true;
-        }
-        return false;
+    auto mapToken(const ISearchContext &context) const {
+        return attribute().findFoldedEnums(context.queryTerm().getTerm());
     }
     int64_t getToken(uint32_t docId) const {
         return attribute().getEnum(docId);
@@ -56,14 +50,13 @@ class UseInteger : public UseAttr
 {
 public:
     UseInteger(const IAttributeVector & attr) : UseAttr(attr) {}
-    bool mapToken(const ISearchContext &context, int64_t &token) const
-    {
+    std::vector<int64_t> mapToken(const ISearchContext &context) const {
+        std::vector<int64_t> result;
         Int64Range range(context.getAsIntegerTerm());
         if (range.isPoint()) {
-            token = range.lower();
-            return true;
+            result.push_back(range.lower());
         }
-        return false;
+        return result;
     }
     int64_t getToken(uint32_t docId) const {
         return attribute().getInt(docId);
@@ -92,8 +85,7 @@ public:
         : _tfmd(tfmd), _attr(attr), _map(), _weight(0)
     {
         for (size_t i = 0; i < contexts.size(); ++i) {
-            int64_t token(0);
-            if (_attr.mapToken(*contexts[i], token)) {
+            for (int64_t token : _attr.mapToken(*contexts[i])) {
                 _map[token] = weights[i];
             }
         }

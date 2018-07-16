@@ -152,6 +152,7 @@ protected:
     StringDirectAttribute(const vespalib::string & baseFileName, const Config & c);
     ~StringDirectAttribute();
     bool findEnum(const char * value, EnumHandle & e) const override;
+    std::vector<EnumHandle> findFoldedEnums(const char *) const override;
     void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
         for (size_t i(0); i < sz; i++) {
             e[i] = v[i];

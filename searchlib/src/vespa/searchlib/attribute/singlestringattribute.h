@@ -52,6 +52,9 @@ public:
     const char * get(DocId doc) const override {
         return this->_enumStore.getValue(this->_enumIndices[doc]);
     }
+    std::vector<EnumHandle> findFoldedEnums(const char *value) const override {
+        return this->_enumStore.findFoldedEnums(value);
+    }
     const char * getStringFromEnum(EnumHandle e) const override {
         return this->_enumStore.getValue(e);
     }
