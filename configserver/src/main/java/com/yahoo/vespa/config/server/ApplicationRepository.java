@@ -558,8 +558,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public void deleteOldSessions() {
+    public void deleteExpiredLocalSessions() {
         listApplications().forEach(app -> tenantRepository.getTenant(app.tenant()).getLocalSessionRepo().purgeOldSessions());
+    }
+
+    public int deleteExpiredRemoteSessions(Duration expiryTime) {
+        return listApplications()
+                .stream()
+                .map(app -> tenantRepository.getTenant(app.tenant()).getRemoteSessionRepo()
+                        // TODO: Delete in all zones
+                        .deleteExpiredSessions(expiryTime, zone().system() == SystemName.cd))
+                .mapToInt(i -> i)
+                .sum();
     }
 
     // ---------------- Tenant operations ----------------------------------------------------------------
@@ -605,7 +615,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getLocalSession(tenant, sessionId).getMetaData();
     }
 
-    ConfigserverConfig configserverConfig() {
+    public ConfigserverConfig configserverConfig() {
         return configserverConfig;
     }
 
@@ -765,7 +775,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return deployLog;
     }
 
-    private Zone zone() {
+    public Zone zone() {
         return new Zone(SystemName.from(configserverConfig.system()),
                         Environment.from(configserverConfig.environment()),
                         RegionName.from(configserverConfig.region()));

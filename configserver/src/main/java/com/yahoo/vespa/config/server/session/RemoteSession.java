@@ -132,4 +132,9 @@ public class RemoteSession extends Session {
         }
     }
 
+    public void delete() {
+        Transaction transaction = zooKeeperClient.deleteTransaction();
+        transaction.commit();
+    }
+
 }
