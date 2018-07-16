@@ -1,4 +1,4 @@
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
 # Create C++ / Java dev environment on CentOS using VirtualBox and Vagrant
 
@@ -17,7 +17,7 @@
 ##### a. For a dev environment with plain centos/7 and no GUI:
 
     export VESPA_VAGRANT_VM_BOX=centos/7
-    export VESPA_DISABLE_VAGRANT_GUI=true
+    export VESPA_VAGRANT_DISABLE_GUI=true
 
 ##### b. For a dev environment with GUI and CLion:
 
