@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,6 +50,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     private final RemoteSessionFactory remoteSessionFactory;
     private final Map<Long, RemoteSessionStateWatcher> sessionStateWatchers = new HashMap<>();
     private final ReloadHandler reloadHandler;
+    private final TenantName tenantName;
     private final MetricUpdater metrics;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
@@ -56,20 +59,21 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
      * @param curator              a {@link Curator} instance.
      * @param remoteSessionFactory a {@link com.yahoo.vespa.config.server.session.RemoteSessionFactory}
      * @param reloadHandler        a {@link com.yahoo.vespa.config.server.ReloadHandler}
-     * @param tenant               a {@link TenantName} instance.
+     * @param tenantName           a {@link TenantName} instance.
      * @param applicationRepo      a {@link TenantApplications} instance.
      */
     public RemoteSessionRepo(Curator curator,
                              RemoteSessionFactory remoteSessionFactory,
                              ReloadHandler reloadHandler,
-                             TenantName tenant,
+                             TenantName tenantName,
                              TenantApplications applicationRepo,
                              MetricUpdater metricUpdater) {
         this.curator = curator;
-        this.sessionsPath = TenantRepository.getSessionsPath(tenant);
+        this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
         this.remoteSessionFactory = remoteSessionFactory;
         this.reloadHandler = reloadHandler;
+        this.tenantName = tenantName;
         this.metrics = metricUpdater;
         initializeSessions();
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, pathChildrenExecutor);
@@ -82,10 +86,35 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.curator = null;
         this.remoteSessionFactory = null;
         this.reloadHandler = null;
+        this.tenantName = tenantName;
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.metrics = null;
         this.directoryCache = null;
         this.applicationRepo = null;
+    }
+
+    public List<Long> getSessions() {
+        return getSessionList(curator.getChildren(sessionsPath));
+    }
+
+    public int deleteExpiredSessions(Duration expiryTime, boolean deleteFromZooKeeper) {
+        int deleted = 0;
+        for (long sessionId : getSessions()) {
+            RemoteSession session = getSession(sessionId);
+            Instant created = Instant.ofEpochSecond(session.getCreateTime());
+            if (session.getStatus() == Session.Status.DEACTIVATE && sessionHasExpired(created, expiryTime)) {
+                log.log(LogLevel.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired");
+                if (deleteFromZooKeeper) {
+                    session.delete();
+                    deleted++;
+                }
+            }
+        }
+        return deleted;
+    }
+
+    private boolean sessionHasExpired(Instant created, Duration expiryTime) {
+        return (created.plus(expiryTime).isBefore(Instant.now()));
     }
 
     private void loadActiveSession(RemoteSession session) {
@@ -113,7 +142,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
 
     // TODO: Add sessions in parallel
     private void initializeSessions() throws NumberFormatException {
-        getSessionList(curator.getChildren(sessionsPath)).forEach(this::sessionAdded);
+        getSessions().forEach(this::sessionAdded);
     }
 
     private synchronized void sessionsChanged() throws NumberFormatException {

@@ -245,12 +245,11 @@ public class ApplicationRepositoryTest {
     @Test
     public void testDeletingInactiveSessions() {
         ManualClock clock = new ManualClock(Instant.now());
-        ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                               .configServerDBDir(Files.createTempDir()
-                                                                                                          .getAbsolutePath())
-                                                                               .configDefinitionsDir(Files.createTempDir()
-                                                                                                             .getAbsolutePath())
-                                                                               .sessionLifetime(60));
+        ConfigserverConfig configserverConfig =
+                new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                               .configServerDBDir(Files.createTempDir().getAbsolutePath())
+                                               .configDefinitionsDir(Files.createTempDir().getAbsolutePath())
+                                               .sessionLifetime(60));
         DeployTester tester = new DeployTester(configserverConfig, clock);
         tester.deployApp("src/test/apps/app", "myapp", Instant.now()); // session 2 (numbering starts at 2)
 
@@ -274,11 +273,14 @@ public class ApplicationRepositoryTest {
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
-        // All sessions except 3 should be removed after the call to deleteOldSessions
-        tester.applicationRepository().deleteOldSessions();
+        // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
+        tester.applicationRepository().deleteExpiredLocalSessions();
         final Collection<LocalSession> sessions = tester.tenant().getLocalSessionRepo().listSessions();
         assertEquals(1, sessions.size());
         assertEquals(3, new ArrayList<>(sessions).get(0).getSessionId());
+
+        // There should be no expired remote sessions in the common case
+        assertEquals(0, applicationRepository.deleteExpiredRemoteSessions(Duration.ofSeconds(0)));
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
