@@ -959,7 +959,9 @@ FileStorHandlerImpl::Stripe::getNextMessage(FileStorHandler::LockedMessage& lck)
     }
 
     api::StorageMessage & m(*range.first->_command);
-    // We don't allow batching of operations across lock requirement modes.
+    // For now, don't allow batching of operations across lock requirement modes.
+    // We might relax this requirement later once we're 100% sure it can't trigger
+    // any unfortunate edge cases.
     if (lck.first->lockingRequirements() != m.lockingRequirements()) {
         lck.second.reset();
         return lck;

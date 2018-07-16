@@ -22,6 +22,7 @@ public:
     void exclusive_locked_operation_not_started_if_shared_op_active();
     void shared_locked_operation_not_started_if_exclusive_op_active();
     void exclusive_locked_operation_not_started_if_exclusive_op_active();
+    void operation_batching_not_allowed_across_different_lock_modes();
 
     std::shared_ptr<api::StorageMessage> createPut(uint64_t bucket, uint64_t docIdx);
     std::shared_ptr<api::StorageMessage> createGet(uint64_t bucket) const;
@@ -34,6 +35,7 @@ public:
     CPPUNIT_TEST(exclusive_locked_operation_not_started_if_shared_op_active);
     CPPUNIT_TEST(shared_locked_operation_not_started_if_exclusive_op_active);
     CPPUNIT_TEST(exclusive_locked_operation_not_started_if_exclusive_op_active);
+    CPPUNIT_TEST(operation_batching_not_allowed_across_different_lock_modes);
     CPPUNIT_TEST_SUITE_END();
 
     struct Fixture {
@@ -182,6 +184,21 @@ void PersistenceQueueTest::exclusive_locked_operation_not_started_if_exclusive_o
     // Expected to time out
     auto lock1 = f.filestorHandler->getNextMessage(_disk, f.stripeId);
     CPPUNIT_ASSERT(!lock1.first.get());
+}
+
+void PersistenceQueueTest::operation_batching_not_allowed_across_different_lock_modes() {
+    Fixture f(*this);
+
+    f.filestorHandler->schedule(createPut(1234, 0), _disk);
+    f.filestorHandler->schedule(createGet(1234), _disk);
+
+    auto lock0 = f.filestorHandler->getNextMessage(_disk, f.stripeId);
+    CPPUNIT_ASSERT(lock0.first);
+    CPPUNIT_ASSERT(lock0.second);
+    CPPUNIT_ASSERT_EQUAL(api::LockingRequirements::Exclusive, lock0.first->lockingRequirements());
+
+    f.filestorHandler->getNextMessage(_disk, f.stripeId, lock0);
+    CPPUNIT_ASSERT(!lock0.second);
 }
 
 } // namespace storage
