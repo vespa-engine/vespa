@@ -13,6 +13,6 @@ import org.w3c.dom.Element;
 public class DomFilterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Component> {
     @Override
     protected Component doBuild(AbstractConfigProducer ancestor, Element element) {
-        return new HttpFilter(BundleInstantiationSpecificationBuilder.build(element, false));
+        return new HttpFilter(BundleInstantiationSpecificationBuilder.build(element));
     }
 }
