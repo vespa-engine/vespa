@@ -312,4 +312,9 @@ const char* to_string(LockingRequirements req) noexcept {
     assert(false);
 }
 
+std::ostream& operator<<(std::ostream& os, LockingRequirements req) {
+    os << to_string(req);
+    return os;
+}
+
 }

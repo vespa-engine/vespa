@@ -19,6 +19,7 @@
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/printable.h>
 #include <map>
+#include <iosfwd>
 
 namespace vespalib {
     class asciistream;
@@ -317,6 +318,8 @@ enum class LockingRequirements : uint8_t {
 };
 
 const char* to_string(LockingRequirements req) noexcept;
+
+std::ostream& operator<<(std::ostream&, LockingRequirements);
 
 class StorageMessage : public vespalib::Printable
 {
