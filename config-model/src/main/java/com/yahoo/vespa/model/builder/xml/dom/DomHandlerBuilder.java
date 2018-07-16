@@ -12,18 +12,8 @@ import org.w3c.dom.Element;
 
 /**
  * @author gjoranv
- * @since 5.1.6
  */
 public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
-    private final boolean legacyMode;
-
-    public DomHandlerBuilder(boolean legacyMode) {
-        this.legacyMode = legacyMode;
-    }
-
-    public DomHandlerBuilder() {
-        this(false);
-    }
 
     @Override
     protected Handler doBuild(AbstractConfigProducer ancestor, Element handlerElement) {
@@ -41,7 +31,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
     }
 
     protected Handler<? super Component<?, ?>> getHandler(Element handlerElement) {
-        BundleInstantiationSpecification bundleSpec = BundleInstantiationSpecificationBuilder.build(handlerElement, legacyMode);
+        BundleInstantiationSpecification bundleSpec = BundleInstantiationSpecificationBuilder.build(handlerElement);
         return new Handler<>(
                 new ComponentModel(bundleSpec));
     }
