@@ -1298,6 +1298,7 @@ AttributeTest::testWeightedSet()
             IAttributeVector::EnumHandle e;
             EXPECT_TRUE(ptr->findEnum("1", e));
             EXPECT_EQUAL(1u, ptr->findFoldedEnums("1").size());
+            EXPECT_EQUAL(e, ptr->findFoldedEnums("1")[0]);
 
         }
     }
@@ -1323,6 +1324,7 @@ AttributeTest::testWeightedSet()
             IAttributeVector::EnumHandle e;
             EXPECT_TRUE(ptr->findEnum("1", e));
             EXPECT_EQUAL(1u, ptr->findFoldedEnums("1").size());
+            EXPECT_EQUAL(e, ptr->findFoldedEnums("1")[0]);
         }
     }
     { // StringAttribute
@@ -1349,6 +1351,7 @@ AttributeTest::testWeightedSet()
             IAttributeVector::EnumHandle e;
             EXPECT_TRUE(ptr->findEnum("string00", e));
             EXPECT_EQUAL(1u, ptr->findFoldedEnums("StRiNg00").size());
+            EXPECT_EQUAL(e, ptr->findFoldedEnums("StRiNg00")[0]);
         }
     }
 }

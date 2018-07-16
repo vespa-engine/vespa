@@ -355,6 +355,7 @@ EnumStoreTest::testAddEnum(bool hasPostings)
         EXPECT_EQUAL(i, e);
         EXPECT_TRUE(ses.findEnum(unique[i].c_str(), e));
         EXPECT_EQUAL(1u, ses.findFoldedEnums(unique[i].c_str()).size());
+        EXPECT_EQUAL(e, ses.findFoldedEnums(unique[i].c_str())[0]);
         EXPECT_TRUE(ses.getEnum(datastore::EntryRef(e)) == i);
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
