@@ -16,7 +16,7 @@ class MergeBlockingTest : public FileStorTestFixture
 {
 public:
     void setupDisks() {
-        FileStorTestFixture::setupDisks(1);
+        FileStorTestFixture::setupPersistenceThreads(1);
         _node->setPersistenceProvider(
                 spi::PersistenceProvider::UP(
                         new spi::dummy::DummyPersistence(_node->getTypeRepo(), 1)));
