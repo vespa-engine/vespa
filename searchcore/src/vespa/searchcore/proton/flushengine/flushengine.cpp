@@ -306,7 +306,7 @@ FlushEngine::flushNextTarget(const vespalib::string & name)
         LOG(info, "The same target %s out of %ld has been asked to flush again. "
                   "This might indicate flush logic flaw so I will wait 1s before doing it.",
                   name.c_str(), lst.first.size());
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(100ms);
     }
     _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx), *this, ctx));
     return ctx->getName();
