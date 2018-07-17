@@ -3,19 +3,28 @@
 
 disable_gui = ENV['VESPA_VAGRANT_DISABLE_GUI']
 
-def validate_vm_env_option(name)
+def get_mandatory_env_value(name)
   opt = ENV[name]
   if opt.nil? or opt.empty?
     raise Vagrant::Errors::VagrantError.new, "Environment variable #{name} must be set to a valid value before running vagrant"
   end
+  return opt
 end
 
-validate_vm_env_option('VESPA_VAGRANT_VM_BOX')
-vm_box = ENV['VESPA_VAGRANT_VM_BOX']
+def get_env_value(name, fallback)
+  opt = ENV[name]
+  if opt.nil? or opt.empty?
+    return fallback
+  end
+  return opt
+end
+
+vm_box = get_mandatory_env_value('VESPA_VAGRANT_VM_BOX')
+vm_memory = get_env_value('VESPA_VAGRANT_VM_MEMORY', "8192")
+vm_cpus = get_env_value('VESPA_VAGRANT_VM_CPUS', 4)
 
 unless disable_gui
-  validate_vm_env_option('VESPA_VAGRANT_VM_BOX_URL')
-  vm_box_url = ENV['VESPA_VAGRANT_VM_BOX_URL']
+  vm_box_url = get_mandatory_env_value('VESPA_VAGRANT_VM_BOX_URL')
 end
 
 # For a complete reference, please see the online documentation at https://docs.vagrantup.com.
@@ -33,8 +42,8 @@ Vagrant.configure("2") do |config|
     vb.gui = true unless disable_gui
     vb.name = "vespa-dev"
 
-    vb.memory = "8192"
-    vb.cpus = 4
+    vb.memory = vm_memory
+    vb.cpus = vm_cpus
   end
   
   # Install required and nice-to-have packages
@@ -58,8 +67,8 @@ Vagrant.configure("2") do |config|
 
     unless disable_gui
       echo -e "fs.inotify.max_user_watches = 524288" > /etc/sysctl.d/clion.conf
-      wget -q -O - https://download.jetbrains.com/cpp/CLion-2017.3.3.tar.gz | tar -C /opt -zx
-      ln -sf /opt/clion-2017.3.3/bin/clion.sh /usr/bin/clion
+      wget -q -O - https://download.jetbrains.com/cpp/CLion-2018.1.6.tar.gz | tar -C /opt -zx
+      ln -sf /opt/clion-2018.1.6/bin/clion.sh /usr/bin/clion
     end
 
     yum update -y
