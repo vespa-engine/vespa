@@ -27,8 +27,10 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
 
-    // Use a fixed thread pool to avoid overload on config servers
-    private final Executor deploymentExecutor = Executors.newFixedThreadPool(4, new DaemonThreadFactory("node repo application maintainer"));
+    // Use a fixed thread pool to avoid overload on config servers. Resource usage when deploying varies
+    // a lot between applications, so doing one by one avoids issues where one or more resource-demanding
+    // deployments happen simultaneously
+    private final Executor deploymentExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("node repo application maintainer"));
 
     protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
@@ -41,7 +43,6 @@ public abstract class ApplicationMaintainer extends Maintainer {
         for (ApplicationId application : applications) {
             if (canDeployNow(application))
                 deploy(application);
-            throttle(applications.size());
         }
     }
 
@@ -61,8 +62,6 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     protected Deployer deployer() { return deployer; }
 
-    /** Block in this method until the next application should be maintained */
-    protected abstract void throttle(int applicationCount);
 
     private Set<ApplicationId> applicationsNeedingMaintenance() {
         return nodesNeedingMaintenance().stream()

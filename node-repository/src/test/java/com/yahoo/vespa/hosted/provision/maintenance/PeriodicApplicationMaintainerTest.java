@@ -251,8 +251,6 @@ public class PeriodicApplicationMaintainerTest {
             deployWithLock(application);
         }
 
-        protected void throttle(int applicationCount) { }
-
         @Override
         protected List<Node> nodesNeedingMaintenance() {
             if (overriddenNodesNeedingMaintenance.isPresent())

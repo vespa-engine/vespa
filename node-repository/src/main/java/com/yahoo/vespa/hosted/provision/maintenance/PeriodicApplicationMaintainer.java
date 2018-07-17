@@ -26,12 +26,6 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     }
 
     @Override
-    protected void throttle(int applicationCount) {
-        // Sleep for a length of time that will spread deployment evenly over the maintenance period
-        try { Thread.sleep(interval().toMillis() / applicationCount); } catch (InterruptedException e) { return; }
-    }
-
-    @Override
     protected boolean canDeployNow(ApplicationId application) {
         Optional<Instant> lastDeploy = deployer().lastDeployTime(application);
         if (lastDeploy.isPresent() &&
