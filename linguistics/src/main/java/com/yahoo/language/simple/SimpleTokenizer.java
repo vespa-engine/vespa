@@ -26,7 +26,6 @@ public class SimpleTokenizer implements Tokenizer {
     private final static int SPACE_CODE = 32;
     private final Normalizer normalizer;
     private final Transformer transformer;
-    private static final KStemmer kStemmer = new KStemmer();
 
     public SimpleTokenizer() {
         this(new SimpleNormalizer(), new SimpleTransformer());
@@ -72,7 +71,7 @@ public class SimpleTokenizer implements Tokenizer {
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)
             token = transformer.accentDrop(token, language);
-        if (stemMode != StemMode.NONE)
+        if (stemMode != StemMode.NONE && token != null)
             token = stemmer.stem(token).toString();
         return token;
     }
@@ -127,7 +126,7 @@ public class SimpleTokenizer implements Tokenizer {
                 alg = SnowballStemmer.ALGORITHM.TURKISH;
                 break;
             default:
-                return charSequence -> kStemmer.stem(charSequence.toString());
+                return charSequence -> charSequence == null ? null : new KStemmer().stem(charSequence.toString());
         }
         return new SnowballStemmer(alg);
     }
