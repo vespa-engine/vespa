@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
+
+import java.util.Objects;
 
 /**
  * Represents the response from application submit request
@@ -22,5 +20,18 @@ public class SubmitResult {
         return "SubmitResult{" +
                 "version='" + version + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SubmitResult that = (SubmitResult) o;
+        return Objects.equals(version, that.version);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(version);
     }
 }
