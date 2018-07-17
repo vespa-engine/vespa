@@ -13,6 +13,8 @@ MatchingStats::Partition &get_writable_partition(std::vector<MatchingStats::Part
     return state[id];
 }
 
+constexpr double MIN_TIMEOUT = 0.001;
+
 } // namespace proton::matching::<unnamed>
 
 MatchingStats::MatchingStats()
@@ -62,6 +64,7 @@ MatchingStats::add(const MatchingStats &rhs)
     _docsReRanked += rhs._docsReRanked;
     _softDoomed += rhs.softDoomed();
 
+
     _queryCollateralTime.add(rhs._queryCollateralTime);
     _queryLatency.add(rhs._queryLatency);
     _matchTime.add(rhs._matchTime);
@@ -75,10 +78,13 @@ MatchingStats::add(const MatchingStats &rhs)
 
 MatchingStats &
 MatchingStats::updatesoftDoomFactor(double hardLimit, double softLimit, double duration) {
-    if (duration < softLimit) {
-        _softDoomFactor += 0.01*(softLimit - duration)/hardLimit;
-    } else {
-        _softDoomFactor += 0.02*(softLimit - duration)/hardLimit;
+    if ((hardLimit >= MIN_TIMEOUT) && (softLimit >= MIN_TIMEOUT)) {
+        double diff = (softLimit - duration)/hardLimit;
+        if (duration < softLimit) {
+            _softDoomFactor += 0.01*diff;
+        } else {
+            _softDoomFactor += 0.02*diff;
+        }
     }
     return *this;
 }

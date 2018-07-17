@@ -240,6 +240,39 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_max());
 }
 
+TEST("requireThatSoftDoomIsSetAndAdded") {
+    MatchingStats stats;
+    MatchingStats stats2;
+    EXPECT_EQUAL(0ul, stats.softDoomed());
+    EXPECT_EQUAL(0.5, stats.softDoomFactor());
+    stats.softDoomFactor(0.7);
+    stats.softDoomed(3);
+    EXPECT_EQUAL(3ul, stats.softDoomed());
+    EXPECT_EQUAL(0.7, stats.softDoomFactor());
+    stats2.add(stats);
+    EXPECT_EQUAL(3ul, stats2.softDoomed());
+    EXPECT_EQUAL(0.5, stats2.softDoomFactor());  // Not affected by add
+}
+
+TEST("requireThatSoftDoomFacorIsComputedCorrectly") {
+    MatchingStats stats;
+    EXPECT_EQUAL(0ul, stats.softDoomed());
+    EXPECT_EQUAL(0.5, stats.softDoomFactor());
+    stats.softDoomed(1);
+    stats.updatesoftDoomFactor(1.0, 0.5, 2.0);
+    EXPECT_EQUAL(1ul, stats.softDoomed());
+    EXPECT_EQUAL(0.47, stats.softDoomFactor());
+    stats.updatesoftDoomFactor(1.0, 0.5, 2.0);
+    EXPECT_EQUAL(1ul, stats.softDoomed());
+    EXPECT_EQUAL(0.44, stats.softDoomFactor());
+    stats.updatesoftDoomFactor(0.0009, 0.5, 2.0);   // hard limits less than 1ms should be ignored
+    EXPECT_EQUAL(1ul, stats.softDoomed());
+    EXPECT_EQUAL(0.44, stats.softDoomFactor());
+    stats.updatesoftDoomFactor(1.0, 0.0009, 2.0);   // soft limits less than 1ms should be ignored
+    EXPECT_EQUAL(1ul, stats.softDoomed());
+    EXPECT_EQUAL(0.44, stats.softDoomFactor());
+}
+
 TEST_MAIN() {
     TEST_RUN_ALL();
 }
