@@ -44,7 +44,7 @@ public class SimpleTokenizer implements Tokenizer {
     public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
         if (input.isEmpty()) return Collections.emptyList();
 
-        opennlp.tools.stemmer.Stemmer stemmer = getStemmerForLanguage(language, stemMode);
+        opennlp.tools.stemmer.Stemmer stemmer = getStemmerForLanguage(language);
 
         List<Token> tokens = new ArrayList<>();
         int nextCode = input.codePointAt(0);
@@ -76,7 +76,11 @@ public class SimpleTokenizer implements Tokenizer {
         return token;
     }
 
-    private static Stemmer getStemmerForLanguage(Language language, StemMode stemMode) {
+    private static Stemmer getStemmerForLanguage(Language language) {
+        Stemmer stemmer = charSequence -> charSequence == null ? null : new KStemmer().stem(charSequence.toString());
+        if (language == null) {
+            return stemmer;
+        }
         SnowballStemmer.ALGORITHM alg;
         switch (language) {
             case DANISH:
@@ -126,7 +130,7 @@ public class SimpleTokenizer implements Tokenizer {
                 alg = SnowballStemmer.ALGORITHM.TURKISH;
                 break;
             default:
-                return charSequence -> charSequence == null ? null : new KStemmer().stem(charSequence.toString());
+                return stemmer;
         }
         return new SnowballStemmer(alg);
     }
