@@ -8,6 +8,7 @@
 #include "tls_stats_factory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.flushengine");
@@ -160,9 +161,9 @@ FlushEngine::Run(FastOS_ThreadInterface *, void *)
         }
         prevFlushName = flushNextTarget(prevFlushName);
         if ( ! prevFlushName.empty()) {
-            // Sleep at least 10 ms after a successful flush in order to avoid busy loop in case
-            // of strategy error or target error.
-            FastOS_Thread::Sleep(10);
+            // Sleep 1 ms after a successful flush in order to avoid busy loop in case
+            // of strategy or target error.
+            std::this_thread::sleep_for(1ms);
         } else {
             shouldIdle = true;
         }
