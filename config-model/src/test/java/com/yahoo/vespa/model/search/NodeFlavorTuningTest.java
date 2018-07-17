@@ -83,7 +83,7 @@ public class NodeFlavorTuningTest {
     @Test
     public void require_that_summary_read_io_is_set_based_on_disk() {
         assertSummaryReadIo(ProtonConfig.Summary.Read.Io.DIRECTIO, true);
-        assertSummaryReadIo(ProtonConfig.Summary.Read.Io.DIRECTIO, false);
+        assertSummaryReadIo(ProtonConfig.Summary.Read.Io.MMAP, false);
     }
 
     @Test

@@ -292,7 +292,7 @@ summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO
 ## Control io options during read of stored documents.
 ## All summary.read options will take effect immediately on new files written.
 ## On old files it will take effect either upon compact or on restart.
-summary.read.io enum {NORMAL, DIRECTIO, MMAP } default=DIRECTIO restart
+summary.read.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
 
 ## Multiple optional options for use with mmap
 summary.read.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
