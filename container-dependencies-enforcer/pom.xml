@@ -95,7 +95,7 @@
                                                 <include>commons-logging:commons-logging:[1.1.1]:jar:provided</include>
                                                 <include>javax.annotation:javax.annotation-api:[${javax.annotation-api.version}]:jar:provided</include>
                                                 <include>javax.inject:javax.inject:[1]:jar:provided</include>
-                                                <include>javax.servlet:javax.servlet-api:[3.1.0]:jar:provided</include>
+                                                <include>javax.servlet:javax.servlet-api:[3.1.0]:jar:provided</
                                                 <include>javax.validation:validation-api:[${javax.validation-api.version}]:jar:provided</include>
                                                 <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
                                                 <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
@@ -136,6 +136,10 @@
                                                 <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
                                                 <include>org.slf4j:slf4j-jdk14:[${slf4j.version}]:jar:provided</include>
                                                 <include>xml-apis:xml-apis:[1.4.01]:jar:provided</include>
+                                                <include>com.optimaize.languagedetector:language-detector:0.6:jar:provided</include>
+                                                <include>org.apache.opennlp:opennlp-tools:1.8.4:jar:provided</include>
+                                                <include>net.arnx:jsonic:1.2.11:jar:provided</include>
+                                                <include>com.intellij:annotations:12.0:jar:provided</include>
                                             </includes>
                                         </bannedDependencies>
                                     </rules>
