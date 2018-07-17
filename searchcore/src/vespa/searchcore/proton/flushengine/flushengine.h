@@ -15,7 +15,7 @@ namespace proton {
 
 namespace flushengine { class ITlsStatsFactory; }
 
-class FlushEngine : public FastOS_Runnable
+class FlushEngine final : public FastOS_Runnable
 {
 public:
     class FlushMeta {
@@ -37,9 +37,7 @@ private:
     struct FlushInfo : public FlushMeta
     {
         FlushInfo();
-        FlushInfo(uint32_t taskId,
-                  const IFlushTarget::SP &target,
-                  const vespalib::string &destination);
+        FlushInfo(uint32_t taskId, const IFlushTarget::SP &target, const vespalib::string &destination);
         ~FlushInfo();
 
         IFlushTarget::SP  _target;
@@ -102,7 +100,7 @@ public:
     /**
      * Destructor. Waits for all pending tasks to complete.
      */
-    ~FlushEngine();
+    ~FlushEngine() override;
 
     /**
      * Observe and reset internal executor stats

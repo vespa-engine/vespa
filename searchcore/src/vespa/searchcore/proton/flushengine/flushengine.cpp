@@ -71,7 +71,7 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _idleIntervalMS(idleIntervalMS),
       _taskId(0),
       _threadPool(128 * 1024),
-      _strategy(strategy),
+      _strategy(std::move(strategy)),
       _priorityStrategy(),
       _executor(numThreads, 128 * 1024),
       _lock(),
@@ -81,7 +81,7 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _setStrategyLock(),
       _strategyLock(),
       _strategyCond(),
-      _tlsStatsFactory(tlsStatsFactory),
+      _tlsStatsFactory(std::move(tlsStatsFactory)),
       _pendingPrune()
 { }
 
@@ -401,7 +401,7 @@ FlushEngine::setStrategy(IFlushStrategy::SP strategy)
         return;
     }
     assert(!_priorityStrategy);
-    _priorityStrategy = strategy;
+    _priorityStrategy = std::move(strategy);
     {
         std::lock_guard<std::mutex> guard(_lock);
         _cond.notify_all();
