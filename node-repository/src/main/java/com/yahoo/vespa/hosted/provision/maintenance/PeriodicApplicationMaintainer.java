@@ -8,8 +8,12 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The application maintainer regularly redeploys all applications to make sure the node repo and application
@@ -19,19 +23,31 @@ import java.util.Optional;
  * @author bratseth
  */
 public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
+    private final Duration minTimeBetweenRedeployments;
 
     public PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, 
-                                         Duration interval, JobControl jobControl) {
+                                         Duration interval, Duration minTimeBetweenRedeployments, JobControl jobControl) {
         super(deployer, nodeRepository, interval, jobControl);
+        this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
     }
 
     @Override
     protected boolean canDeployNow(ApplicationId application) {
-        Optional<Instant> lastDeploy = deployer().lastDeployTime(application);
-        if (lastDeploy.isPresent() &&
-            lastDeploy.get().isAfter(nodeRepository().clock().instant().minus(interval())))
-            return false; // Don't deploy if a regular deploy just happened
-        return true;
+        // Don't deploy if a regular deploy just happened
+        return getLastDeployTime(application).isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments));
+    }
+
+    // Returns the app that was deployed the longest time ago
+    @Override
+    protected Set<ApplicationId> applicationsNeedingMaintenance() {
+        Optional<ApplicationId> apps = (nodesNeedingMaintenance().stream()
+                .map(node -> node.allocation().get().owner())
+                .min(Comparator.comparing(this::getLastDeployTime)));
+        return apps.map(applicationId -> new HashSet<>(Collections.singletonList(applicationId))).orElseGet(HashSet::new);
+    }
+
+    private Instant getLastDeployTime(ApplicationId application) {
+        return deployer().lastDeployTime(application).orElse(Instant.EPOCH);
     }
 
     @Override

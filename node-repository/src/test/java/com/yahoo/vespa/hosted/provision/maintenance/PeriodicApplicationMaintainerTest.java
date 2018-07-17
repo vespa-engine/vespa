@@ -32,7 +32,6 @@ import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -146,7 +145,7 @@ public class PeriodicApplicationMaintainerTest {
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
         ((ManualClock) nodeRepository.clock()).advance(Duration.ofMinutes(5));
         fixture.runApplicationMaintainer();
-        // Too soo: Not redeployed:
+        // Too soon: Not redeployed:
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
 
@@ -227,7 +226,12 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         void runApplicationMaintainer(Optional<List<Node>> overriddenNodesNeedingMaintenance) {
-            new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), overriddenNodesNeedingMaintenance).run();
+            TestablePeriodicApplicationMaintainer maintainer =
+                    new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(1),
+                                                              Duration.ofMinutes(30), overriddenNodesNeedingMaintenance);
+            // Need to run twice, as only one app is deployed per run
+            maintainer.run();
+            maintainer.run();
         }
 
         NodeList getNodes(Node.State ... states) {
@@ -241,8 +245,8 @@ public class PeriodicApplicationMaintainerTest {
         private Optional<List<Node>> overriddenNodesNeedingMaintenance;
         
         TestablePeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
-                                              Optional<List<Node>> overriddenNodesNeedingMaintenance) {
-            super(deployer, nodeRepository, interval, new JobControl(nodeRepository.database()));
+                                              Duration minTimeBetweenRedeployments, Optional<List<Node>> overriddenNodesNeedingMaintenance) {
+            super(deployer, nodeRepository, interval, minTimeBetweenRedeployments, new JobControl(nodeRepository.database()));
             this.overriddenNodesNeedingMaintenance = overriddenNodesNeedingMaintenance;
         }
 

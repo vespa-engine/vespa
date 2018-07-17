@@ -63,7 +63,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
     protected Deployer deployer() { return deployer; }
 
 
-    private Set<ApplicationId> applicationsNeedingMaintenance() {
+    protected Set<ApplicationId> applicationsNeedingMaintenance() {
         return nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
