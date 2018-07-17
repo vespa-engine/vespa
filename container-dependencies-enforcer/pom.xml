@@ -95,7 +95,7 @@
                                                 <include>commons-logging:commons-logging:[1.1.1]:jar:provided</include>
                                                 <include>javax.annotation:javax.annotation-api:[${javax.annotation-api.version}]:jar:provided</include>
                                                 <include>javax.inject:javax.inject:[1]:jar:provided</include>
-                                                <include>javax.servlet:javax.servlet-api:[3.1.0]:jar:provided</
+                                                <include>javax.servlet:javax.servlet-api:[3.1.0]:jar:provided</include>
                                                 <include>javax.validation:validation-api:[${javax.validation-api.version}]:jar:provided</include>
                                                 <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
                                                 <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
