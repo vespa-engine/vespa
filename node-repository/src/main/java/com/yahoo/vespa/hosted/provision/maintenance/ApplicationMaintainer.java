@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +27,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
 
-    private final Executor deploymentExecutor = Executors.newCachedThreadPool(new DaemonThreadFactory("node repo application maintainer"));
+    // Use a fixed thread pool to avoid overload on config servers
+    private final Executor deploymentExecutor = Executors.newFixedThreadPool(4, new DaemonThreadFactory("node repo application maintainer"));
 
     protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
