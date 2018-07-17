@@ -304,7 +304,7 @@ FlushEngine::flushNextTarget(const vespalib::string & name)
     }
     if ( name == ctx->getName()) {
         LOG(info, "The same target %s out of %ld has been asked to flush again. "
-                  "This might indicate flush logic flaw so I will wait 1s before doing it.",
+                  "This might indicate flush logic flaw so I will wait 100 ms before doing it.",
                   name.c_str(), lst.first.size());
         std::this_thread::sleep_for(100ms);
     }
