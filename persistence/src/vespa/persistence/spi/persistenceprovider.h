@@ -232,6 +232,9 @@ struct PersistenceProvider
      * document id. If no versions were found, or the document was removed,
      * the result should be successful, but contain no document (see GetResult).
      *
+     * Concurrency note: may be called concurrently with other read-only
+     * operations.
+     *
      * @param fieldSet A set of fields that should be retrieved.
      * @param id The document id to retrieve.
      */
@@ -252,6 +255,9 @@ struct PersistenceProvider
      * the information required to match iterator ids up to their current
      * iteration progress and selection criteria. destroyIterator will NOT
      * be called when createIterator returns an error.
+     *
+     * Concurrency note: may be called concurrently with other read-only
+     * operations.
      *
      * @param selection Selection criteria used to limit the subset of
      *   the bucket's documents that will be returned by the iterator. The
@@ -322,6 +328,9 @@ struct PersistenceProvider
      * to indicate this to the caller. Calling iterate on an already completed
      * iterator must only set this flag on the result and return without any
      * documents.
+     *
+     * Concurrency note: may be called concurrently with other read-only
+     * operations.
      *
      * @param id An iterator ID returned by a previous call to createIterator
      * @param maxByteSize An indication of the maximum number of bytes that
