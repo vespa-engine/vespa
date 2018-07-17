@@ -62,6 +62,14 @@
       <scope>provided</scope>
       <classifier>no_aop</classifier>
     </dependency>
+    <dependency>
+      <groupId>org.apache.opennlp</groupId>
+      <artifactId>opennlp-tools</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.optimaize.languagedetector</groupId>
+      <artifactId>language-detector</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
