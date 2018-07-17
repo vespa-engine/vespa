@@ -30,9 +30,7 @@ public:
      */
     IFlushHandler(const vespalib::string &name)
         : _name(name)
-    {
-        // empty
-    }
+    { }
 
     /**
      * Virtual destructor required for inheritance.
@@ -76,8 +74,7 @@ public:
      * This method is called to sync tls to stable media, up to and
      * including the given serial number.
      *
-     * @param syncTo The last serial number that has to be persisted to stable
-     *               media.
+     * @param syncTo The last serial number that has to be persisted to stable media.
      */
     virtual void syncTls(SerialNum syncTo) = 0;
 };
