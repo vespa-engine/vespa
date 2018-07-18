@@ -116,6 +116,30 @@
                     <div class="intro-refresh" onclick="refresh();" style="cursor:pointer;">
                       <img src="/querybuilder/img/reload.svg" height="30" width="30" />
                     </div>
+                    </br>
+                    </br>
+                    <div id="helpbutton" class="intro-help" onclick="toggleHelp();" style="cursor:pointer;">
+                      <img src="/querybuilder/img/features-help.png" height="47" width="138" style="margin-left: -1px;"/>
+                    </div>
+                    <div id="help" style="display: none;">
+                    <div class="intro-param" id="help">
+                      </br>
+                      <div class="help-title">Features</div>
+                      <span> ○  Autocompletion of YQL-syntax</span> </br>
+                      <span> ○  Drop-down lists of all valid parameters</span> </br>
+                      <span> ○  Sending both POST and GET-requests to <i>Vespa</i></span> </br>
+                      <span> ○  Easy access to the <a href="https://docs.vespa.ai/documentation/reference/search-api-reference.html">documentation</a> of each parameter</span> </br>
+                      <span> ○  Conversion of POST- to GET-query</span> </br>
+                      <span> ○  Pasting already built JSON-query</span> </br>
+                      <span> ○  View and copy the response of queries</span> </br>
+                      <span> ○  View the finished JSON-query as you build </span> </br>
+                    </div>
+                    </br>
+                    <div class="intro-param" id="help">
+                      <div class="help-title">Help</div>
+                      <span> If you find errors, spelling mistakes, faulty pieces of code or want to improve the querybuilder, please submit a pull request or create an <a href="https://github.com/vespa-engine/vespa/issues">issue</a>.</span> </br>
+                    </div>
+                  </div>
                   </div>
               </div>
             </div>
@@ -242,6 +266,21 @@
         var latlongType = [""];
         var yqlID = "v1";
 
+
+
+      function toggleHelp(){
+        var div = document.getElementById("help");
+        var buttonDiv = document.getElementById("helpbutton");
+        if (div.style.display === "none") {
+          console.log("VISER")
+            div.style.display = "block";
+            buttonDiv.style.backgroundColor = '#4EA2D6';
+        } else {
+          console.log("SKJULER");
+            div.style.display = "none";
+            buttonDiv.style.backgroundColor = 'transparent';
+        }
+      }
 
       function updateFields(){
       	var temp = number;
