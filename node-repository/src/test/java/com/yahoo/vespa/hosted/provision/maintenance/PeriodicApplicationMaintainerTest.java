@@ -262,6 +262,10 @@ public class PeriodicApplicationMaintainerTest {
             return super.nodesNeedingMaintenance();
         }
 
+        protected boolean shouldBeDeployedOnThisServer(ApplicationId application) {
+            return true;
+        }
+
     }
 
 }
