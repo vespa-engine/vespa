@@ -50,9 +50,6 @@ public class SimpleDetectorTestCase {
         // a string from http://www.columbia.edu/kermit/utf8.html that says "I can eat glass (and it doesn't hurt me)".
         assertLanguage(Language.KOREAN, "\ub098\ub294 \uc720\ub9ac\ub97c \uba39\uc744 \uc218 \uc788\uc5b4\uc694. " +
                                         "\uadf8\ub798\ub3c4 \uc544\ud504\uc9c0 \uc54a\uc544\uc694");
-
-        // from https://ru.wikipedia.org/wiki/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F
-        assertLanguage(Language.RUSSIAN, "Материал из Википедии — свободной энциклопедии");
     }
 
     @Test

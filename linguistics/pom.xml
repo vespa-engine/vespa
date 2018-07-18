@@ -66,10 +66,6 @@
       <groupId>org.apache.opennlp</groupId>
       <artifactId>opennlp-tools</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.optimaize.languagedetector</groupId>
-      <artifactId>language-detector</artifactId>
-    </dependency>
   </dependencies>
   <build>
     <plugins>

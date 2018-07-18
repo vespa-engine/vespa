@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.language.process;
+package com.yahoo.language.opennlp;
 
 import com.yahoo.language.Language;
-import com.yahoo.language.simple.SimpleTokenizer;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Token;
+import com.yahoo.language.process.Tokenizer;
 import org.junit.Test;
 
 import java.util.*;
@@ -16,9 +18,9 @@ import static org.junit.Assert.*;
  *
  * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
  */
-public class TokenizationTestCase {
+public class OpenNlpTokenizationTestCase {
 
-    private final Tokenizer tokenizer = new SimpleTokenizer();
+    private final Tokenizer tokenizer = new OpenNlpTokenizer();
 
     @Test
     public void testTokenizer() {
@@ -64,8 +66,8 @@ public class TokenizationTestCase {
                        Arrays.asList("on"), null);
         assertTokenize("\uFF2F\uFF2E", Language.ENGLISH, StemMode.SHORTEST, false,
                        Arrays.asList("on"), null);
-
-
+        assertTokenize("наименование", Language.RUSSIAN, StemMode.SHORTEST, false,
+                Arrays.asList("наименован"), null);
     }
 
     @Test
