@@ -5,6 +5,7 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -16,7 +17,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -77,7 +77,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
     final void deployWithLock(ApplicationId application) {
-        // An application might change it's state between the time the set of applications is retrieved and the
+        // An application might change its state between the time the set of applications is retrieved and the
         // time deployment happens. Lock the application and check if it's still active.
         //
         // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
@@ -85,9 +85,10 @@ public abstract class ApplicationMaintainer extends Maintainer {
             if ( ! isActive(application)) return; // became inactive since deployment was requested
             Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
             if ( ! deployment.isPresent()) return; // this will be done at another config server
+            log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);
             deployment.get().activate();
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Exception on maintenance redeploy", e);
+            log.log(LogLevel.WARNING, "Exception on maintenance redeploy", e);
         }
     }
 

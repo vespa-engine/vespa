@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -40,10 +41,12 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     // Returns the app that was deployed the longest time ago
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        Optional<ApplicationId> apps = (nodesNeedingMaintenance().stream()
+        Optional<ApplicationId> app = (nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
                 .min(Comparator.comparing(this::getLastDeployTime)));
-        return apps.map(applicationId -> new HashSet<>(Collections.singletonList(applicationId))).orElseGet(HashSet::new);
+        app.ifPresent(applicationId -> log.log(LogLevel.INFO, applicationId + " will be deployed, last deploy time " +
+                getLastDeployTime(applicationId)));
+        return app.map(applicationId -> new HashSet<>(Collections.singletonList(applicationId))).orElseGet(HashSet::new);
     }
 
     private Instant getLastDeployTime(ApplicationId application) {
