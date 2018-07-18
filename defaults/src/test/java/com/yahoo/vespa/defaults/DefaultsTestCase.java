@@ -22,4 +22,14 @@ public class DefaultsTestCase {
         assertEquals("vespa", Defaults.getDefaults().vespaUser());
     }
 
+    @Test
+    public void testPortsArePositive() {
+        Defaults d = Defaults.getDefaults();
+        assertEquals(true, d.vespaPortBase() > 0);
+        assertEquals(true, d.vespaWebServicePort() > 0);
+        assertEquals(true, d.vespaConfigServerRpcPort() > 0);
+        assertEquals(true, d.vespaConfigServerHttpPort() > 0);
+        assertEquals(true, d.vespaConfigProxyRpcPort() > 0);
+    }
+
 }

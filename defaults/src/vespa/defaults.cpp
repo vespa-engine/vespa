@@ -20,9 +20,9 @@ const char *defaultUser = "vespa";
 const char *defaultHost = "localhost";
 int defaultWebServicePort = 8080;
 int defaultPortBase = 19000;
-int defaultPortConfigServerRpc = 19070;
-int defaultPortConfigServerHttp = 19071;
-int defaultPortConfigProxyRpc = 19090;
+int defaultPortConfigServerRpc = 0;
+int defaultPortConfigServerHttp = 0;
+int defaultPortConfigProxyRpc = 0;
 const char *defaultConfigServers = "localhost";
 
 std::atomic<bool> initialized(false);
@@ -80,16 +80,16 @@ void findDefaults() {
         // fprintf(stderr, "debug\tdefault port base is '%ld'\n", p);
         defaultPortBase = p;
     }
+    defaultPortConfigServerRpc = defaultPortBase + 70;
+    defaultPortConfigProxyRpc = defaultPortBase + 90;
     p = getNumFromEnv("port_configserver_rpc");
     if (p > 0) {
         defaultPortConfigServerRpc = p;
-        defaultPortConfigServerHttp = p+1;
     }
+    defaultPortConfigServerHttp = defaultPortConfigServerRpc + 1;
     p = getNumFromEnv("port_configproxy_rpc");
     if (p > 0) {
         defaultPortConfigProxyRpc = p;
-    } else {
-        defaultPortConfigProxyRpc = defaultPortBase + 90;
     }
     env = getenv("VESPA_CONFIGSERVERS");
     if (env == NULL || *env == '\0') {
@@ -241,6 +241,7 @@ Defaults::vespaConfigServerHosts()
 int
 Defaults::vespaConfigServerRpcPort()
 {
+    findDefaults();
     return defaultPortConfigServerRpc;
 }
 

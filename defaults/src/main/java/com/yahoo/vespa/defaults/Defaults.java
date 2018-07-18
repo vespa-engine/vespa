@@ -27,15 +27,20 @@ public class Defaults {
     private final String vespaHost;
     private final int vespaWebServicePort;
     private final int vespaPortBase;
+    private final int vespaPortConfigServerRpc;
+    private final int vespaPortConfigServerHttp;
+    private final int vespaPortConfigProxyRpc;
 
     private Defaults() {
         vespaHome = findVespaHome();
         vespaUser = findVespaUser();
         vespaHost = findVespaHostname();
-        vespaWebServicePort = findVespaWebServicePort();
-        vespaPortBase = 19000; // TODO
+        vespaWebServicePort = findWebServicePort(8080);
+        vespaPortBase = findVespaPortBase(19000);
+        vespaPortConfigServerRpc = findConfigServerPort(vespaPortBase + 70);
+        vespaPortConfigServerHttp = vespaPortConfigServerRpc + 1;
+        vespaPortConfigProxyRpc = findConfigProxyPort(vespaPortBase + 91);
     }
-
     static private String findVespaHome() {
         Optional<String> vespaHomeEnv = Optional.ofNullable(System.getenv("VESPA_HOME"));
         if ( ! vespaHomeEnv.isPresent() || vespaHomeEnv.get().trim().isEmpty()) {
@@ -67,19 +72,31 @@ public class Defaults {
         return vespaUserEnv.get().trim();
     }
 
-    static private int findVespaWebServicePort() {
-        Optional<String> vespaWebServicePortString = Optional.ofNullable(System.getenv("VESPA_WEB_SERVICE_PORT"));
-        if ( ! vespaWebServicePortString.isPresent() || vespaWebServicePortString.get().trim().isEmpty()) {
-            log.info("VESPA_WEB_SERVICE_PORT not set, using 8080");
-            return 8080;
+    static private int findPort(String varName, int defaultPort) {
+        Optional<String> port = Optional.ofNullable(System.getenv(varName));
+        if ( ! port.isPresent() || port.get().trim().isEmpty()) {
+            log.fine("" + varName + " not set, using " + defaultPort);
+            return defaultPort;
         }
         try {
-            return Integer.parseInt(vespaWebServicePortString.get());
+            return Integer.parseInt(port.get());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("must be an integer, was '" +
+                                               port.get() + "'");
         }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("VESPA_WEB_SERVICE_PORT must be an integer, was '" +
-                                               vespaWebServicePortString.get() + "'");
-        }
+    }
+
+    static private int findVespaPortBase(int defaultPort) {
+        return findPort("VESPA_PORT_BASE", defaultPort);
+    }
+    static private int findConfigServerPort(int defaultPort) {
+        return findPort("port_configserver_rpc", defaultPort);
+    }
+    static private int findConfigProxyPort(int defaultPort) {
+        return findPort("port_configproxy_rpc", defaultPort);
+    }
+    static private int findWebServicePort(int defaultPort) {
+        return findPort("VESPA_WEB_SERVICE_PORT", defaultPort);
     }
 
     /**
@@ -134,6 +151,15 @@ public class Defaults {
      * @return the vespa base number for ports
      */
     public int vespaPortBase() { return vespaPortBase; }
+
+    /** @return port number used by cloud config server (for its RPC protocol) */
+    public int vespaConfigServerRpcPort() { return vespaPortConfigServerRpc; }
+
+    /** @return port number used by cloud config server (REST api on HTTP) */
+    public int vespaConfigServerHttpPort() { return vespaPortConfigServerHttp; }
+
+    /** @return port number used by config proxy server (RPC protocol) */
+    public int vespaConfigProxyRpcPort() { return vespaPortConfigProxyRpc; }
 
     /** Returns the defaults of this runtime environment */
     public static Defaults getDefaults() { return defaults; }
