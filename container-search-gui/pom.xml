@@ -53,14 +53,14 @@
                 <version>1.3.0</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>wget</goal>
                         </goals>
                         <configuration>
                             <url>https://docs.vespa.ai/documentation/reference/search-api-reference.html</url>
                             <outputFileName>search-api-reference.html</outputFileName>
-                            <outputDirectory>src/main/resources/gui/_includes/</outputDirectory>
+                            <outputDirectory>${project.build.outputDirectory}/gui/_includes/</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
