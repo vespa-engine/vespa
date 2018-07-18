@@ -2,10 +2,13 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -43,6 +46,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
         Optional<ApplicationId> app = (nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
+                .filter(applicationId -> !ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId().equals(applicationId))
                 .min(Comparator.comparing(this::getLastDeployTime)));
         app.ifPresent(applicationId -> log.log(LogLevel.INFO, applicationId + " will be deployed, last deploy time " +
                 getLastDeployTime(applicationId)));
