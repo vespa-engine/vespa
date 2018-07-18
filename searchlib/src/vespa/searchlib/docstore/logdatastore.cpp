@@ -296,15 +296,17 @@ LogDataStore::compact(uint64_t syncToken)
     uint64_t usage = getDiskFootprint();
     uint64_t bloat = getDiskBloat();
     LOG(debug, "%s", bloatMsg(bloat, usage).c_str());
-    if (_fileChunks.size() > 1) {
+    const bool doCompact = (_fileChunks.size() > 1);
+    if (doCompact) {
         LOG(info, "%s. Will compact", bloatMsg(bloat, usage).c_str());
         compactWorst(_config.getMaxDiskBloatFactor(), _config.getMaxBucketSpread());
+    }
+    flushActiveAndWait(syncToken);
+    if (doCompact) {
         usage = getDiskFootprint();
         bloat = getDiskBloat();
         LOG(info, "Done compacting. %s", bloatMsg(bloat, usage).c_str());
     }
-
-    flushActiveAndWait(syncToken);
 }
 
 size_t
