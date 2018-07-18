@@ -11,25 +11,29 @@ import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.fastsearch.CacheControl;
 import com.yahoo.prelude.querytransform.RecallSearcher;
 import com.yahoo.search.Query;
-import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.Presentation;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.restapi.ErrorResponse;
+import com.yahoo.search.yql.MinimalQueryInserter;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.yolean.Exceptions;
+
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 
-import com.yahoo.search.yql.MinimalQueryInserter;
 
 
 /**
@@ -40,11 +44,14 @@ import com.yahoo.search.yql.MinimalQueryInserter;
 
 public class GUIHandler extends LoggingRequestHandler {
     private final IndexModel indexModel;
+    private final RankProfilesConfig rankProfilesConfig;
 
     @Inject
-    public GUIHandler(Context parentContext, IndexInfoConfig indexInfo, QrSearchersConfig clusters) {
+    public GUIHandler(Context parentContext, IndexInfoConfig indexInfo, QrSearchersConfig clusters, RankProfilesConfig rankProfilesConfig) {
         super(parentContext);
-        indexModel = new IndexModel(indexInfo, clusters);
+        this.indexModel = new IndexModel(indexInfo, clusters);
+        this.rankProfilesConfig = rankProfilesConfig;
+
     }
 
     @Override
@@ -65,7 +72,7 @@ public class GUIHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         com.yahoo.restapi.Path path = new com.yahoo.restapi.Path(request.getUri().getPath());
         if (path.matches("/querybuilder/")) {
-            return new FileResponse("_includes/index.html", null);
+            return new FileResponse("_includes/index.html", null, null);
         }
         if (!path.matches("/querybuilder/{*}") ) {
             return ErrorResponse.notFoundError("Nothing at path:" + path);
@@ -74,7 +81,7 @@ public class GUIHandler extends LoggingRequestHandler {
         if (!isValidPath(filepath) && !filepath.equals("config.json")){
             return ErrorResponse.notFoundError("Nothing at path:" + filepath);
         }
-        return new FileResponse(filepath, indexModel);
+        return new FileResponse(filepath, indexModel, rankProfilesConfig);
     }
 
     private static boolean isValidPath(String path) {
@@ -92,11 +99,13 @@ public class GUIHandler extends LoggingRequestHandler {
 
         private final String path;
         private final IndexModel indexModel;
+        private final RankProfilesConfig rankProfilesConfig;
 
-        public FileResponse(String relativePath, IndexModel indexModel) {
+        public FileResponse(String relativePath, IndexModel indexModel, RankProfilesConfig rankProfilesConfig) {
             super(200);
             this.path = relativePath;
             this.indexModel = indexModel;
+            this.rankProfilesConfig = rankProfilesConfig;
         }
 
 
@@ -157,12 +166,20 @@ public class GUIHandler extends LoggingRequestHandler {
             JSONObject json = new JSONObject();
             json.put("ranking_properties", Arrays.asList("propertyname"));
             json.put("ranking_features", Arrays.asList("featurename"));
-            json.put("ranking_profile", Arrays.asList("rankprofile1", "rankprofile2"));
+
             List<String> sources = new ArrayList<>();
-            try{
+
+            try {
                 sources = new ArrayList<>(indexModel.getMasterClusters().keySet());
-            } catch (NullPointerException ex){ /* clusters are not set */}
+            } catch (NullPointerException ex){ /* clusters are not set */ }
             json.put("model_sources", sources);
+
+            List<String> rankProfiles = new ArrayList<>();
+            try {
+                rankProfilesConfig.rankprofile().forEach(rankProfile -> rankProfiles.add(rankProfile.name()));
+            } catch (NullPointerException ex){ /* rankprofiles are not set*/ }
+            json.put("ranking_profile", rankProfiles);
+
 
             // Creating map from parent to children for GUI: parameter --> child-parameters
             HashMap<String, List<String>> childMap = new HashMap<>();

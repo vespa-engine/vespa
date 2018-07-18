@@ -46,7 +46,7 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-search</artifactId>
+            <artifactId>container-search-and-docproc</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
