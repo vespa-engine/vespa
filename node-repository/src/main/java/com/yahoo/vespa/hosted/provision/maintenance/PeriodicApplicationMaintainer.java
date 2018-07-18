@@ -2,13 +2,21 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
+import com.yahoo.vespa.service.monitor.application.ConfigServerHostApplication;
+import com.yahoo.vespa.service.monitor.application.HostedVespaApplication;
+import com.yahoo.vespa.service.monitor.application.ProxyHostApplication;
+import com.yahoo.vespa.service.monitor.application.TenantHostApplication;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -41,8 +49,16 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     // Returns the app that was deployed the longest time ago
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
+        // Need to exclude these fake apps
+        List<ApplicationId> fakeApps = Arrays.asList(
+                ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId(),
+                ConfigServerHostApplication.CONFIG_SERVER_HOST_APPLICATION.getApplicationId(),
+                ProxyHostApplication.PROXY_HOST_APPLICATION.getApplicationId(),
+                TenantHostApplication.TENANT_HOST_APPLICATION.getApplicationId());
+
         Optional<ApplicationId> app = (nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
+                .filter(applicationId -> !fakeApps.contains(applicationId))
                 .min(Comparator.comparing(this::getLastDeployTime)));
         app.ifPresent(applicationId -> log.log(LogLevel.INFO, applicationId + " will be deployed, last deploy time " +
                 getLastDeployTime(applicationId)));
