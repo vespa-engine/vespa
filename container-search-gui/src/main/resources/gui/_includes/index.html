@@ -84,7 +84,7 @@
                 	<option class="options" value="POST">POST</option>
                 	<option class="options" value="GET">GET</option>
               </select>
-              <input type="text" class="textbox" name="value" value="http://httpbin.org/post" id="url" size="30">
+              <input type="text" class="textbox" name="value" value="http://localhost:8080/search/" id="url" size="30">
               <button class="button" onclick="startSending();" id="send">Send</button>
 
               <br/>
@@ -174,7 +174,6 @@
 
       <script language="javascript" type="text/javascript" src="/querybuilder/editarea/edit_area/edit_area_full.js"></script>
       <script language="javascript" type="text/javascript">
-
       function fEALoaded() {
         $('#frame_'+window.yqlID).contents().find('.area_toolbar').hide();
         var iframe = document.getElementById("frame_"+window.yqlID);
@@ -184,50 +183,31 @@
 
 
 
-
-
       <SCRIPT language="javascript">
-
-        const CONFIG = $.getJSON('/querybuilder/gui_variables.json', function(data){window.CONFIG = data;});
+        const CONFIG = $.getJSON('/querybuilder/config.json', function(data){window.CONFIG = data;});
         method = "POST";
       	var number = 0;
       	var childno = {};
       	var json = JSON.parse("{}");
         var searchApiReference = null;
-
-      	var possible = ["yql", "hits", "offset", "queryProfile", "nocache", "groupingSessionCache", "searchChain", "timeout", "trace","tracelevel","traceLevel", "",
-      , "model", "ranking", "collapse","collapsesize","collapsesize","presentation", "pos", "streaming", "rules", "recall", "user", "nocachewrite", "metrics"];
-
+        var possible = null;
       	var usedProps = [];
       	var removedIndexes = [0];
-      	var childrenProps = {
-      		"model" : ["defaultIndex", "encoding", "language", "queryString", "restrict", "searchPath", "sources", "type"],
-      		"ranking" : ["location", "features", "listFeatures", "profile", "properties", "sorting", "freshness", "queryCache", "matchPhase"],
-      		"ranking.matchPhase" : ["maxHits", "attribute", "ascending", "diversity"],
-      		"ranking.matchPhase.diversity" : ["attribute", "minGroups"],
-      		"presentation" : ["bolding", "format", "summary", "template", "timing"],
-          "trace" : ["timestamps"],
-          "tracelevel" : ["rules"],
-          "metrics" : ["ignore"],
-      		"collapse":["summary"],
-      		"pos" : ["ll", "radius", "bb", "attribute"],
-      		"streaming" : ["userid", "groupname", "selection", "priority", "maxbucketspervisitor"],
-      		"rules" : ["off", "rulebase"]
-      	};
-
+        var childrenProps = null;
         window.onload = function() {
-          // Adding variables from configuration file
-          if (window.CONFIG.hasOwnProperty("featurename")){
-            childrenProps["ranking.features"] = window.CONFIG.featurename;
-          }
-          if (window.CONFIG.hasOwnProperty("propertyname")){
-            childrenProps["ranking.properties"] = window.CONFIG.propertyname;
-          }
-
-          addNewRow();
-          getSearchApiReference();
+          setTimeout(function(){
+            possible = window.CONFIG.levelZeroParameters;
+            childrenProps = window.CONFIG.childMap;
+            if (window.CONFIG.hasOwnProperty("ranking_features")){
+              childrenProps["ranking.features"] = window.CONFIG.ranking_features;
+            }
+            if (window.CONFIG.hasOwnProperty("ranking_properties")){
+              childrenProps["ranking.properties"] = window.CONFIG.ranking_properties;
+            }
+            addNewRow();
+            getSearchApiReference();
+          }, 250);
         };
-
         var stringType = ["yql", "queryProfile", "searchChain", "model.defaultIndex", "model.encoding", "model.language",
          "model.queryString", "model.searchPath", "model.type", "ranking.features", "ranking.profile", "ranking.properties", "ranking.sorting", "ranking.matchPhase.diversity.attribute",
          "ranking.matchPhase.attribute","pos.attribute", "presentation.summary", "collapse.summary",
@@ -241,8 +221,6 @@
         var longType = ["ranking.matchPhase.maxHits", "ranking.matchPhase.diversity.minGroups"];
         var latlongType = [""];
         var yqlID = "v1";
-
-
       function updateFields(){
       	var temp = number;
       	while (temp > 0){
@@ -260,7 +238,6 @@
       		temp -= 1;
       	}
       }
-
       function pasteJSON(){
         var button = document.getElementById("pasteJSON");
         if (button.innerHTML === "Press CMD+V"){
@@ -275,31 +252,24 @@
           document.getElementById('response').addEventListener('paste', handlePaste);
         }
       }
-
       function handlePaste (e) {
           var clipboardData, pastedData;
-
           // Stop data actually being pasted into div
           e.stopPropagation();
           e.preventDefault();
-
           // Get pasted data via clipboard API
           clipboardData = e.clipboardData || window.clipboardData;
           pastedData = clipboardData.getData('Text');
-
           // Do whatever with pasteddata
           alert("Converting JSON: \n\n "+pastedData);
-
           //Removing eventlistener
           var oldResponse = document.getElementById('response');
           var newResponse = oldResponse.cloneNode(true);
           oldResponse.parentNode.replaceChild(newResponse, oldResponse);
-
           //Returning to old button and
           pasteJSON();
           convertPastedJSON(pastedData);
       }
-
       function convertPastedJSON(pastedData){
         try {
           document.getElementById("request").innerHTML = "</br> <div class=\"intro-param\">Construct a query by adding parameters or pasting a JSON.</div>";
@@ -311,7 +281,6 @@
           alert("Could not parse JSON, with error-message: \n\n"+err.message);
         }
       }
-
       function buildFromJSON(obj,parentNo) {
         Object.keys(obj).forEach(function(key) {
           if ( typeof(eval('obj.'+key)) === "object" ) {
@@ -334,7 +303,6 @@
           }
         });
       }
-
       function copyURL(){
         generateJSON();
         var urlMap = dotNotate(window.json);
@@ -346,7 +314,6 @@
         document.body.removeChild(el);
         return url;
       }
-
       function buildURL(map){
         var url = document.getElementById("url").value + "?";
         var parameters = "";
@@ -355,19 +322,15 @@
         });
         parameters = parameters.substr(1)
         return url+parameters
-
       }
-
       function encodeToURI(string){
         string = encodeURIComponent(string);
         string = string.replace(/%20/g, '+');
         return string;
       }
-
         function dotNotate(obj,target,prefix) {
           target = target || {},
           prefix = prefix || "";
-
           Object.keys(obj).forEach(function(key) {
             if ( typeof(obj[key]) === "object" ) {
               dotNotate(obj[key],target,prefix + key + ".");
@@ -375,22 +338,18 @@
               return target[prefix + key] = obj[key];
             }
           });
-
           return target;
         }
-
       function copyToClipboard(id){
         id.select();
         document.execCommand('copy');
         clearSelection();
       }
-
       function clearSelection()
       {
        if (window.getSelection) {window.getSelection().removeAllRanges();}
        else if (document.selection) {document.selection.empty();}
       }
-
       function chooseMethod(method) {
       	var selectBox = document.getElementById("method");
       	var selectedMethod = selectBox.options[selectBox.selectedIndex].value;
@@ -399,7 +358,6 @@
       		changeDiv(selectedMethod);
       	}
       }
-
       function changeDiv(selectedMethod){
       	if (selectedMethod === "GET"){
       		document.getElementById("request").innerHTML = '</br><textarea class=\"responsebox\" cols=70 rows=4 id=\"url2\">'+copyURL();+'</textarea>';
@@ -410,12 +368,11 @@
       		number = 0;
         	changeVisibility();
           let jsonString = JSON.stringify(window.json);
-          if (jsonString === "{}" || jsonString=== '{"":""}'){
+          if (jsonString === "{}" || jsonString=== '{"":""}'){
         		addNewRow();
           } else {
             buildFromJSON(window.json, 0);
           }
-
       	}
       }
       function stripMyHTML(html)
@@ -427,7 +384,6 @@
          }
          return tmp.innerHTML.replace('<code>','').replace('</code>','');
       }
-
       function addNewRow(key, value){
       	number += 1;
       	const temp = number;
@@ -443,6 +399,10 @@
       	newInputVal.type = "text";
       	newInputVal.id = "v"+temp;
         newInputVal.classList.add("propvalue");
+        newInputVal.setAttribute("list", "val"+temp);
+        var newDatalist2 = document.createElement("datalist");
+      	newDatalist2.id = "val"+temp;
+        //newDatalist2.style = "display: none;";
       	var newButton = document.createElement("button");
       	newButton.id = "b"+temp;
       	newButton.innerHTML = "-";
@@ -450,37 +410,29 @@
         newButton.classList.add("removeRow");
       	var br = document.createElement("br");
       	br.id = "br"+temp
-
         var img = document.createElement("img");
         img.src = "/querybuilder/img/information.svg";
         img.height = "15";
         img.width = "15";
         img.classList.add("information");
-
         var span = document.createElement("span");
         span.id = "span"+temp;
         span.innerHTML = stripMyHTML('Choose a parameter for information');
-
         var a = document.createElement("a");
         a.href = "#";
         a.classList.add("tip");
         a.id = "inf"+temp
-
         a.appendChild(img);
         a.appendChild(span);
-
-
       	var div = document.createElement("div");
       	div.id = number;
       	div.appendChild(newInput);
       	div.appendChild(newDatalist);
-
         div.appendChild(a);
-
       	div.appendChild(newInputVal);
+        div.appendChild(newDatalist2);
       	div.appendChild(newButton);
       	div.appendChild(br);
-
       	var bigdiv = document.getElementById("request");
       	bigdiv.appendChild(div);
       	updateFields();
@@ -489,7 +441,7 @@
           newInput.value = key;
           keySelected(temp, value)
         }
-        if (value || value2==="false"){
+        if (value || value2==="false"){
           if (key === "yql"){
             editAreaLoader.setValue(window.yqlID, value);
           } else {
@@ -499,7 +451,6 @@
         generateJSON();
         return temp;
       }
-
       function showInformation(no, key){
         var a = document.getElementById("inf"+no);
         if(validKey(no, key)){
@@ -514,7 +465,6 @@
         a.style = "visibility: hidden;"
         }
       }
-
       function validKey(no, possibleKey){
         if (contains(possible, possibleKey)){return true;}
         for (var key in childrenProps){
@@ -524,7 +474,19 @@
         }
         return false;
       }
-
+      function checkConfigOptions(key, no){
+        var jsonID = key.replace(/\./g , "_");
+        var datalist = document.getElementById("val"+no);
+        datalist.innerHTML = "";
+        if (window.CONFIG.hasOwnProperty(jsonID)){
+          var optionlist = eval("window.CONFIG."+jsonID);
+          optionlist.forEach(function(item){
+            var option = document.createElement("option");
+            option.value = item;
+            datalist.appendChild(option);
+          });
+        }
+      }
       	function keySelected(no, value){
       		var key = document.getElementById("i"+no).value;
           showInformation(no, key);
@@ -536,6 +498,8 @@
               editAreaLoader.delete_instance(window.yqlID);
             }
       			var button = document.createElement("button");
+            //var datalist = document.getElementById("val"+no); //Hide value-datalist
+            //datalist.style = "display:none;";
       			button.id="propb"+no
       			button.innerHTML=" +   Add property";
       			button.onclick = function(){addChildProp(no);};
@@ -549,6 +513,7 @@
       				newInputVal.type = "text";
       				newInputVal.id = "v"+no;
               newInputVal.classList.add("propvalue");
+              newInputVal.setAttribute("list", "val"+no);
               var parent = button.parentNode;
               showType(newInputVal, no);
               if (key === "yql"){
@@ -586,11 +551,11 @@
                 newInputVal.type = "text";
                 newInputVal.id = "v"+no;
                 newInputVal.classList.add("propvalue");
+                newInputVal.setAttribute("list", "val"+no);
                 showType(newInputVal, no);
                 var parent = inputval.parentNode;
                 parent.replaceChild(newInputVal, inputval);
               }
-
               if (key === "yql"){
                 newInputVal = document.createElement("textarea");
                 newInputVal.id = "v"+no;
@@ -619,7 +584,6 @@
               if(value){
                 inputval.value = value;
               }
-
             }
       		}
           if (!validKey(no, key)){
@@ -627,14 +591,17 @@
             //keyInput.style = "border-width: 1px; border-color: red;"
             var valueInput = document.getElementById("v"+no);
             valueInput.placeholder = "Possible invalid parameter";
+            //Removes possible options for for former parameter
+            var datalist = document.getElementById("val"+no);
+            datalist.innerHTML = "";
           }
           if (validKey(no, key)){
+            // Check if datalist should be visible and add options
+            checkConfigOptions(fullKey, no);
             var keyInput = document.getElementById("i"+no);
             //keyInput.style = "border-width: 0px;"
           }
-
       	}
-
       function showType(inputVal, no){
         var key = document.getElementById("i"+no).value;
         var key = getFullName(no, key);
@@ -663,7 +630,6 @@
           inputVal.placeholder = "";
         }
       }
-
       function removeRow(no){
       	var div = document.getElementById(no);
       	var key = document.getElementById("i"+no).value;
@@ -676,7 +642,6 @@
       	updateFields();
         generateJSON();
       }
-
       function removeChildRow(no){
       	var a = "" + no;
         var parentNo = a.split(".").slice(0, -1).join(".");
@@ -688,30 +653,29 @@
       	updateChildrenFields(parentNo);
         generateJSON();
       }
-
       function countDots(s1) {
           return ( s1.match( /\./g ) || [] ).length;
         }
-
       function addChildProp(no, key, value){
         generateJSON();
       	childno[no] += 1;
       	var temp = ""+no+"."+childno[no];
       	childno[temp] = 0;
       	var parentNode = document.getElementById(no);
-
       	var newInput = document.createElement("input");
       	newInput.id = "i"+temp;
       	newInput.setAttribute("list", "prop"+temp);
       	newInput.onchange = function(){keySelected(temp);};
         newInput.classList.add("input")
-
       	var newDatalist = document.createElement("datalist");
       	newDatalist.id = "prop"+temp;
       	newInputVal = document.createElement("input");
       	newInputVal.type = "text";
       	newInputVal.id = "v"+temp;
         newInputVal.classList.add("propvalue");
+        newInputVal.setAttribute("list", "val"+temp);
+        var newDatalist2 = document.createElement("datalist");
+        newDatalist2.id = "val"+temp;
       	var newButton = document.createElement("button");
       	newButton.id = "b"+temp;
       	newButton.innerHTML = "-";
@@ -725,13 +689,11 @@
       	b.innerHTML = ' ↳   ';
       	var margin = 20*(temp).length;
       	b.style = "padding-left:"+margin+"px;";
-
         var img = document.createElement("img");
         img.src = "/querybuilder/img/information.svg";
         img.height = "15";
         img.width = "15";
         img.classList.add("information");
-
         var span = document.createElement("span");
         span.id = "span"+temp;
         span.innerHTML = stripMyHTML('Choose a parameter for information');
@@ -746,6 +708,7 @@
       	div.appendChild(newDatalist);
         div.append(a);
       	div.appendChild(newInputVal);
+        div.appendChild(newDatalist2);
       	div.appendChild(newButton);
       	div.appendChild(br);
       	parentNode.appendChild(div);
@@ -760,7 +723,6 @@
         }
         return temp;
       }
-
       function updateChildrenFields(parentNo){
       	parentKey = document.getElementById("i"+parentNo).value;
       	var temp = parseInt(childno[parentNo]);
@@ -780,7 +742,6 @@
       		temp -= 1;
       	}
       }
-
       function contains(a, obj) {
           for (var i = 0; i < a.length; i++) {
               if (a[i] === obj) {
@@ -789,18 +750,15 @@
           }
           return false;
       }
-
       function refresh(){
       	document.location.reload(true);
       }
-
       function generateJSON(){
       	json = JSON.parse("{}");
       	buildJSON(json, number, 0);
         var textarea = document.getElementById("jsonquery");
         textarea.innerHTML = JSON.stringify(window.json, undefined, 4);
       }
-
       function buildJSON(parent, no, thresh){
       	var temp = no;
         if (countDots(""+temp) > 0){
@@ -824,7 +782,7 @@
                   value = false;
               }}
               var fullKey = getFullName(temp, key);
-              if (contains(integerType, fullKey) || contains(longType, fullKey)){
+              if (contains(integerType, fullKey) || contains(longType, fullKey)){
                 value = parseInt(value);
                 value = isNaN(value) ? 0 : value;
               }
@@ -855,13 +813,10 @@
           }
       	}
       }
-
       function findUsedProps(){
       	usedProps = [];
       	addUsedProps(window.number, 0);
-
       }
-
       function addUsedProps(no, thresh){
         var temp = no;
         if (countDots(""+temp) > 0){
@@ -895,7 +850,6 @@
           }
         }
       }
-
       function startSending(){
       	if (method === "POST"){
       		var url = document.getElementById("url").value;
@@ -912,8 +866,6 @@
           window.open(url);
       	}
       }
-
-
       function changeVisibility() {
           var x = document.getElementById("url");
       		var y = document.getElementById("addRow");
@@ -931,7 +883,6 @@
               a.style.display = "none";
           }
       }
-
       function showJSON(){
         var textarea = document.getElementById("jsonquery");
         var copyJSON = document.getElementById("copyJSON");
@@ -950,7 +901,6 @@
             copyURL.style.display = "none";
         }
       }
-
       function getSearchApiReference(){
         var div = document.getElementById("div");
         var object = document.createElement("object");
@@ -965,7 +915,6 @@
           }, 20);
         }, 150);
       }
-
       function changeInformation(no,key){
         if (key===""){return "Choose a parameter for information"}
         if (getFullName(no,key) in childrenProps){return "Add parameters under the parent ''" + getFullName(no,key) + "'"}
@@ -974,7 +923,6 @@
         var tabletext = stripMyHTML(ref.getElementById(refId).nextElementSibling.outerHTML);
         return tabletext;
       }
-
       function getFullName(no, key){
           var name = key;
           no = ""+no;
