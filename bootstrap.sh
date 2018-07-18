@@ -26,7 +26,7 @@ else
 fi
 
 mvn_install() {
-    mvn --quiet --batch-mode --threads 1.5C --no-snapshot-updates clean install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true "$@"
+    mvn --quiet --batch-mode --no-snapshot-updates clean install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true "$@"
 }
 
 # Generate vtag map
@@ -48,17 +48,17 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
 (
   cd container-dependency-versions
-  mvn_install
+  mvn_install --threads 1.5C
 )
 (
   cd parent
-  mvn_install
+  mvn_install --threads 1.5C
 )
-mvn_install -N
+mvn_install --threads 1.5C -N
 
 # and build plugins first:
 echo "Building Vespa Maven plugins."
-mvn_install -f maven-plugins/pom.xml
+mvn_install --threads 1 -f maven-plugins/pom.xml
 
 # now everything else should just work with normal maven dependency resolution:
 
