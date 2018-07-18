@@ -5,19 +5,18 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -28,7 +27,10 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
 
-    private final Executor deploymentExecutor = Executors.newCachedThreadPool(new DaemonThreadFactory("node repo application maintainer"));
+    // Use a fixed thread pool to avoid overload on config servers. Resource usage when deploying varies
+    // a lot between applications, so doing one by one avoids issues where one or more resource-demanding
+    // deployments happen simultaneously
+    private final Executor deploymentExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("node repo application maintainer"));
 
     protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
@@ -41,7 +43,6 @@ public abstract class ApplicationMaintainer extends Maintainer {
         for (ApplicationId application : applications) {
             if (canDeployNow(application))
                 deploy(application);
-            throttle(applications.size());
         }
     }
 
@@ -61,10 +62,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     protected Deployer deployer() { return deployer; }
 
-    /** Block in this method until the next application should be maintained */
-    protected abstract void throttle(int applicationCount);
 
-    private Set<ApplicationId> applicationsNeedingMaintenance() {
+    protected Set<ApplicationId> applicationsNeedingMaintenance() {
         return nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -78,7 +77,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
     final void deployWithLock(ApplicationId application) {
-        // An application might change it's state between the time the set of applications is retrieved and the
+        // An application might change its state between the time the set of applications is retrieved and the
         // time deployment happens. Lock the application and check if it's still active.
         //
         // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
@@ -86,9 +85,10 @@ public abstract class ApplicationMaintainer extends Maintainer {
             if ( ! isActive(application)) return; // became inactive since deployment was requested
             Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
             if ( ! deployment.isPresent()) return; // this will be done at another config server
+            log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);
             deployment.get().activate();
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Exception on maintenance redeploy", e);
+            log.log(LogLevel.WARNING, "Exception on maintenance redeploy", e);
         }
     }
 

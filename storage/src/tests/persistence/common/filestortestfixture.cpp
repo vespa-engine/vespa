@@ -18,19 +18,17 @@ spi::LoadType FileStorTestFixture::defaultLoadType = spi::LoadType(0, "default")
 const uint32_t FileStorTestFixture::MSG_WAIT_TIME;
 
 void
-FileStorTestFixture::setupDisks(uint32_t diskCount)
+FileStorTestFixture::setupPersistenceThreads(uint32_t threads)
 {
     std::string rootOfRoot = "todo-make-unique-filestorefixture";
-    _config.reset(new vdstestlib::DirConfig(getStandardConfig(true, rootOfRoot)));
+    _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, rootOfRoot));
+    _config->getConfig("stor-server").set("root_folder", (rootOfRoot + "-vdsroot.2"));
+    _config->getConfig("stor-devices").set("root_folder", (rootOfRoot + "-vdsroot.2"));
+    _config->getConfig("stor-server").set("node_index", "1");
+    _config->getConfig("stor-filestor").set("num_threads", std::to_string(threads));
 
-    _config2.reset(new vdstestlib::DirConfig(*_config));
-    _config2->getConfig("stor-server").set("root_folder", (rootOfRoot + "-vdsroot.2"));
-    _config2->getConfig("stor-devices").set("root_folder", (rootOfRoot + "-vdsroot.2"));
-    _config2->getConfig("stor-server").set("node_index", "1");
-
-    _smallConfig.reset(new vdstestlib::DirConfig(*_config));
-    _node.reset(new TestServiceLayerApp(DiskCount(diskCount), NodeIndex(1),
-                                        _config->getConfigId()));
+    _node = std::make_unique<TestServiceLayerApp>(
+            DiskCount(1), NodeIndex(1), _config->getConfigId());
     _testdoctype1 = _node->getTypeRepo()->getDocumentType("testdoctype1");
 }
 
@@ -38,16 +36,15 @@ FileStorTestFixture::setupDisks(uint32_t diskCount)
 void
 FileStorTestFixture::setUp()
 {
-    setupDisks(1);
+    setupPersistenceThreads(1);
     _node->setPersistenceProvider(
-            spi::PersistenceProvider::UP(
-                    new spi::dummy::DummyPersistence(_node->getTypeRepo(), 1)));
+            std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo(), 1));
 }
 
 void
 FileStorTestFixture::tearDown()
 {
-    _node.reset(0);
+    _node.reset();
 }
 
 void
@@ -91,7 +88,7 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
 }
 
 api::StorageMessageAddress
-FileStorTestFixture::TestFileStorComponents::makeSelfAddress() const {
+FileStorTestFixture::makeSelfAddress() {
     return api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0);
 }
 

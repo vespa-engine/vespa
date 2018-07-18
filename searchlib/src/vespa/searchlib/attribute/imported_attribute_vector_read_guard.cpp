@@ -99,6 +99,11 @@ bool ImportedAttributeVectorReadGuard::findEnum(const char *value, EnumHandle &e
     return _target_attribute.findEnum(value, e);
 }
 
+std::vector<ImportedAttributeVectorReadGuard::EnumHandle>
+ImportedAttributeVectorReadGuard::findFoldedEnums(const char *value) const {
+    return _target_attribute.findFoldedEnums(value);
+}
+
 const char * ImportedAttributeVectorReadGuard::getStringFromEnum(EnumHandle e) const {
     return _target_attribute.getStringFromEnum(e);
 }

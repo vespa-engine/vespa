@@ -8,6 +8,7 @@
 #include "tls_stats_factory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.flushengine");
@@ -22,8 +23,7 @@ namespace proton {
 namespace {
 
 search::SerialNum
-findOldestFlushedSerial(const IFlushTarget::List &lst,
-                        const IFlushHandler &handler)
+findOldestFlushedSerial(const IFlushTarget::List &lst, const IFlushHandler &handler)
 {
     search::SerialNum ret(handler.getCurrentSerialNumber());
     for (const IFlushTarget::SP & target : lst) {
@@ -33,42 +33,46 @@ findOldestFlushedSerial(const IFlushTarget::List &lst,
     return ret;
 }
 
+void
+logTarget(const char * text, const FlushContext & ctx) {
+    LOG(debug, "Target '%s' %s flush of transactions %" PRIu64 " through %" PRIu64 ".",
+        ctx.getName().c_str(), text,
+        ctx.getTarget()->getFlushedSerialNum() + 1,
+        ctx.getHandler()->getCurrentSerialNumber());
 }
 
-FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, fastos::TimeStamp start, uint32_t id) :
-    _name(name),
-    _start(start),
-    _id(id)
+}
+
+FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, fastos::TimeStamp start, uint32_t id)
+    : _name(name),
+      _start(start),
+      _id(id)
 { }
-FlushEngine::FlushMeta::~FlushMeta() { }
+FlushEngine::FlushMeta::~FlushMeta() = default;
 
-FlushEngine::FlushInfo::FlushInfo() :
-    FlushMeta("", fastos::ClockSystem::now(), 0),
-    _target()
+FlushEngine::FlushInfo::FlushInfo()
+    : FlushMeta("", fastos::ClockSystem::now(), 0),
+      _target()
 {
 }
 
-FlushEngine::FlushInfo::~FlushInfo() { }
+FlushEngine::FlushInfo::~FlushInfo() = default;
 
 
-FlushEngine::FlushInfo::FlushInfo(uint32_t taskId,
-                                  const IFlushTarget::SP &target,
-                                  const vespalib::string & destination) :
-    FlushMeta(destination, fastos::ClockSystem::now(), taskId),
-    _target(target)
+FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const IFlushTarget::SP &target, const vespalib::string & destination)
+    : FlushMeta(destination, fastos::ClockSystem::now(), taskId),
+      _target(target)
 {
 }
 
-FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory>
-                         tlsStatsFactory,
-                         IFlushStrategy::SP strategy, uint32_t numThreads,
-                         uint32_t idleIntervalMS)
+FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
+                         IFlushStrategy::SP strategy, uint32_t numThreads, uint32_t idleIntervalMS)
     : _closed(false),
       _maxConcurrent(numThreads),
       _idleIntervalMS(idleIntervalMS),
       _taskId(0),
       _threadPool(128 * 1024),
-      _strategy(strategy),
+      _strategy(std::move(strategy)),
       _priorityStrategy(),
       _executor(numThreads, 128 * 1024),
       _lock(),
@@ -78,11 +82,9 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory>
       _setStrategyLock(),
       _strategyLock(),
       _strategyCond(),
-      _tlsStatsFactory(tlsStatsFactory),
+      _tlsStatsFactory(std::move(tlsStatsFactory)),
       _pendingPrune()
-{
-    // empty
-}
+{ }
 
 FlushEngine::~FlushEngine()
 {
@@ -92,7 +94,7 @@ FlushEngine::~FlushEngine()
 FlushEngine &
 FlushEngine::start()
 {
-    if (_threadPool.NewThread(this) == NULL) {
+    if (_threadPool.NewThread(this) == nullptr) {
         throw vespalib::IllegalStateException("Failed to start engine thread.");
     }
     return *this;
@@ -148,10 +150,8 @@ FlushEngine::wait(size_t minimumWaitTimeIfReady)
 }
 
 void
-FlushEngine::Run(FastOS_ThreadInterface *thread, void *arg)
+FlushEngine::Run(FastOS_ThreadInterface *, void *)
 {
-    (void)thread;
-    (void)arg;
     bool shouldIdle = false;
     vespalib::string prevFlushName;
     while (wait(shouldIdle ? _idleIntervalMS : 0)) {
@@ -161,13 +161,14 @@ FlushEngine::Run(FastOS_ThreadInterface *thread, void *arg)
         }
         prevFlushName = flushNextTarget(prevFlushName);
         if ( ! prevFlushName.empty()) {
-            // Sleep at least 10 ms after a successful flush in order to avoid busy loop in case
-            // of strategy error or target error.
-            FastOS_Thread::Sleep(10);
+            // Sleep 1 ms after a successful flush in order to avoid busy loop in case
+            // of strategy or target error.
+            std::this_thread::sleep_for(1ms);
         } else {
             shouldIdle = true;
         }
-        LOG(debug, "Making another wait(idle=%s, timeMS=%d) last was '%s'", shouldIdle ? "true" : "false", shouldIdle ? _idleIntervalMS : 0, prevFlushName.c_str());
+        LOG(debug, "Making another wait(idle=%s, timeMS=%d) last was '%s'",
+            shouldIdle ? "true" : "false", shouldIdle ? _idleIntervalMS : 0, prevFlushName.c_str());
     }
     _executor.sync();
     prune();
@@ -211,18 +212,16 @@ FlushEngine::getTargetList(bool includeFlushingTargets) const
         for (const auto & it : _handlers) {
             IFlushHandler & handler(*it.second);
             search::SerialNum serial(handler.getCurrentSerialNumber());
-            LOG(spam, "Checking FlushHandler '%s' current serial = %ld",
-                handler.getName().c_str(), serial);
+            LOG(spam, "Checking FlushHandler '%s' current serial = %ld", handler.getName().c_str(), serial);
             IFlushTarget::List lst = handler.getFlushTargets();
             for (const IFlushTarget::SP & target : lst) {
-                LOG(spam, "Checking target '%s' with flushedSerialNum = %ld", target->getName().c_str(), target->getFlushedSerialNum());
+                LOG(spam, "Checking target '%s' with flushedSerialNum = %ld",
+                    target->getName().c_str(), target->getFlushedSerialNum());
                 if (!isFlushing(guard, FlushContext::createName(handler, *target)) || includeFlushingTargets) {
-                    ret.push_back(FlushContext::SP(new FlushContext(it.second,
-                                                                    IFlushTarget::SP(new CachedFlushTarget(target)),
-                                                                    serial)));
+                    ret.push_back(std::make_shared<FlushContext>(it.second, std::make_shared<CachedFlushTarget>(target), serial));
                 } else {
                     LOG(debug, "Target '%s' with flushedSerialNum = %ld already has a flush going. Local last serial = %ld.",
-                               target->getName().c_str(), target->getFlushedSerialNum(), serial);
+                        target->getName().c_str(), target->getFlushedSerialNum(), serial);
                 }
             }
         }
@@ -258,16 +257,11 @@ FlushEngine::initNextFlush(const FlushContext::List &lst)
             break;
         }
     }
-    if (ctx.get() != NULL) {
-        LOG(debug, "Target '%s' initiated flush of transactions %" PRIu64 " through %" PRIu64 ".",
-                   ctx->getName().c_str(),
-                   ctx->getTarget()->getFlushedSerialNum() + 1,
-                   ctx->getHandler()->getCurrentSerialNumber());
+    if (ctx) {
+        logTarget("initiated", *ctx);
     }
     return ctx;
 }
-
-
 
 void
 FlushEngine::flushAll(const FlushContext::List &lst)
@@ -276,19 +270,12 @@ FlushEngine::flushAll(const FlushContext::List &lst)
     for (const FlushContext::SP & ctx : lst) {
         if (wait(0)) {
             if (ctx->initFlush()) {
-                LOG(debug, "Target '%s' initiated flush of transactions %" PRIu64 " through %" PRIu64 ".",
-                           ctx->getName().c_str(),
-                           ctx->getTarget()->getFlushedSerialNum() + 1,
-                           ctx->getHandler()->getCurrentSerialNumber());
-                _executor.execute(Task::UP(new FlushTask(initFlush(*ctx), *this, ctx)));
+                logTarget("initiated", *ctx);
+                _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx), *this, ctx));
             } else {
-                LOG(debug, "Target '%s' failed to initiate flush of transactions %" PRIu64 " through %" PRIu64 ".",
-                           ctx->getName().c_str(),
-                           ctx->getTarget()->getFlushedSerialNum() + 1,
-                           ctx->getHandler()->getCurrentSerialNumber());
+                logTarget("failed to initiate", *ctx);
             }
         }
-
     }
 }
 
@@ -311,17 +298,17 @@ FlushEngine::flushNextTarget(const vespalib::string & name)
         return "";
     }
     FlushContext::SP ctx = initNextFlush(lst.first);
-    if (ctx.get() == NULL) {
+    if ( ! ctx) {
         LOG(debug, "All targets refused to flush.");
         return "";
     }
     if ( name == ctx->getName()) {
         LOG(info, "The same target %s out of %ld has been asked to flush again. "
-                  "This might indicate flush logic flaw so I will wait 1s before doing it.",
+                  "This might indicate flush logic flaw so I will wait 100 ms before doing it.",
                   name.c_str(), lst.first.size());
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(100ms);
     }
-    _executor.execute(Task::UP(new FlushTask(initFlush(*ctx), *this, ctx)));
+    _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx), *this, ctx));
     return ctx->getName();
 }
 
@@ -330,12 +317,8 @@ FlushEngine::initFlush(const FlushContext &ctx)
 {
     if (LOG_WOULD_LOG(event)) {
         IFlushTarget::MemoryGain mgain(ctx.getTarget()->getApproxMemoryGain());
-        EventLogger::flushStart(ctx.getName(),
-                                mgain.getBefore(),
-                                mgain.getAfter(),
-                                mgain.gain(),
-                                ctx.getTarget()->getFlushedSerialNum() + 1,
-                                ctx.getHandler()->getCurrentSerialNumber());
+        EventLogger::flushStart(ctx.getName(), mgain.getBefore(), mgain.getAfter(), mgain.gain(),
+                                ctx.getTarget()->getFlushedSerialNum() + 1, ctx.getHandler()->getCurrentSerialNumber());
     }
     return initFlush(ctx.getHandler(), ctx.getTarget());
 }
@@ -350,10 +333,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     }
     if (LOG_WOULD_LOG(event)) {
         FlushStats stats = ctx.getTarget()->getLastFlushStats();
-        EventLogger::flushComplete(ctx.getName(),
-                                   duration.ms(),
-                                   stats.getPath(),
-                                   stats.getPathElementsToLog());
+        EventLogger::flushComplete(ctx.getName(), duration.ms(), stats.getPath(), stats.getPathElementsToLog());
     }
     LOG(debug, "FlushEngine::flushDone(taskId='%d') took '%f' secs", taskId, duration.sec());
     std::lock_guard<std::mutex> guard(_lock);
@@ -366,8 +346,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
 }
 
 IFlushHandler::SP
-FlushEngine::putFlushHandler(const DocTypeName &docTypeName,
-                             const IFlushHandler::SP &flushHandler)
+FlushEngine::putFlushHandler(const DocTypeName &docTypeName, const IFlushHandler::SP &flushHandler)
 {
     std::lock_guard<std::mutex> guard(_lock);
     IFlushHandler::SP result(_handlers.putHandler(docTypeName, flushHandler));
@@ -376,13 +355,6 @@ FlushEngine::putFlushHandler(const DocTypeName &docTypeName,
     }
     _pendingPrune.insert(flushHandler);
     return std::move(result);
-}
-
-IFlushHandler::SP
-FlushEngine::getFlushHandler(const DocTypeName &docTypeName) const
-{
-    std::lock_guard<std::mutex> guard(_lock);
-    return _handlers.getHandler(docTypeName);
 }
 
 IFlushHandler::SP
@@ -430,7 +402,7 @@ FlushEngine::setStrategy(IFlushStrategy::SP strategy)
         return;
     }
     assert(!_priorityStrategy);
-    _priorityStrategy = strategy;
+    _priorityStrategy = std::move(strategy);
     {
         std::lock_guard<std::mutex> guard(_lock);
         _cond.notify_all();

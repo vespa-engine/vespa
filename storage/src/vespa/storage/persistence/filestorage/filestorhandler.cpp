@@ -71,9 +71,9 @@ FileStorHandler::getNextMessage(uint16_t disk, uint32_t stripeId, LockedMessage&
 }
 
 FileStorHandler::BucketLockInterface::SP
-FileStorHandler::lock(const document::Bucket& bucket, uint16_t disk)
+FileStorHandler::lock(const document::Bucket& bucket, uint16_t disk, api::LockingRequirements lockReq)
 {
-    return _impl->lock(bucket, disk);
+    return _impl->lock(bucket, disk, lockReq);
 }
 
 void

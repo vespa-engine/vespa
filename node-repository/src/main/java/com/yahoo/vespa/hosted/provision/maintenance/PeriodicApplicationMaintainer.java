@@ -2,14 +2,27 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
+import com.yahoo.vespa.service.monitor.application.ConfigServerHostApplication;
+import com.yahoo.vespa.service.monitor.application.HostedVespaApplication;
+import com.yahoo.vespa.service.monitor.application.ProxyHostApplication;
+import com.yahoo.vespa.service.monitor.application.TenantHostApplication;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The application maintainer regularly redeploys all applications to make sure the node repo and application
@@ -19,25 +32,41 @@ import java.util.Optional;
  * @author bratseth
  */
 public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
+    private final Duration minTimeBetweenRedeployments;
 
     public PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, 
-                                         Duration interval, JobControl jobControl) {
+                                         Duration interval, Duration minTimeBetweenRedeployments, JobControl jobControl) {
         super(deployer, nodeRepository, interval, jobControl);
-    }
-
-    @Override
-    protected void throttle(int applicationCount) {
-        // Sleep for a length of time that will spread deployment evenly over the maintenance period
-        try { Thread.sleep(interval().toMillis() / applicationCount); } catch (InterruptedException e) { return; }
+        this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
     }
 
     @Override
     protected boolean canDeployNow(ApplicationId application) {
-        Optional<Instant> lastDeploy = deployer().lastDeployTime(application);
-        if (lastDeploy.isPresent() &&
-            lastDeploy.get().isAfter(nodeRepository().clock().instant().minus(interval())))
-            return false; // Don't deploy if a regular deploy just happened
-        return true;
+        // Don't deploy if a regular deploy just happened
+        return getLastDeployTime(application).isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments));
+    }
+
+    // Returns the app that was deployed the longest time ago
+    @Override
+    protected Set<ApplicationId> applicationsNeedingMaintenance() {
+        // Need to exclude these fake apps
+        List<ApplicationId> fakeApps = Arrays.asList(
+                ConfigServerApplication.CONFIG_SERVER_APPLICATION.getApplicationId(),
+                ConfigServerHostApplication.CONFIG_SERVER_HOST_APPLICATION.getApplicationId(),
+                ProxyHostApplication.PROXY_HOST_APPLICATION.getApplicationId(),
+                TenantHostApplication.TENANT_HOST_APPLICATION.getApplicationId());
+
+        Optional<ApplicationId> app = (nodesNeedingMaintenance().stream()
+                .map(node -> node.allocation().get().owner())
+                .filter(applicationId -> !fakeApps.contains(applicationId))
+                .min(Comparator.comparing(this::getLastDeployTime)));
+        app.ifPresent(applicationId -> log.log(LogLevel.INFO, applicationId + " will be deployed, last deploy time " +
+                getLastDeployTime(applicationId)));
+        return app.map(applicationId -> new HashSet<>(Collections.singletonList(applicationId))).orElseGet(HashSet::new);
+    }
+
+    private Instant getLastDeployTime(ApplicationId application) {
+        return deployer().lastDeployTime(application).orElse(Instant.EPOCH);
     }
 
     @Override

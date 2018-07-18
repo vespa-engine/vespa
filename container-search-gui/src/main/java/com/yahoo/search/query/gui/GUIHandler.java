@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.logging.Level;
 
 
-
 /**
  * Takes requests on /querybuilder
  *
@@ -43,6 +42,7 @@ import java.util.logging.Level;
  */
 
 public class GUIHandler extends LoggingRequestHandler {
+
     private final IndexModel indexModel;
     private final RankProfilesConfig rankProfilesConfig;
 
@@ -88,12 +88,11 @@ public class GUIHandler extends LoggingRequestHandler {
         InputStream in = GUIHandler.class.getClassLoader().getResourceAsStream("gui/"+path);
         boolean isValid = (in != null);
         if(isValid){
-            try { in.close(); } catch (IOException e) {/* Problem with closing input stream */}
+            try { in.close(); } catch (IOException e) {/* Problem with closing inputstream */}
         }
 
         return isValid;
     }
-
 
     private static class FileResponse extends HttpResponse {
 
@@ -106,8 +105,8 @@ public class GUIHandler extends LoggingRequestHandler {
             this.path = relativePath;
             this.indexModel = indexModel;
             this.rankProfilesConfig = rankProfilesConfig;
-        }
 
+        }
 
         @Override
         public void render(OutputStream out) throws IOException {

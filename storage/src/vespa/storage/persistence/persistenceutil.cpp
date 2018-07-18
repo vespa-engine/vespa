@@ -122,9 +122,14 @@ PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket,
     result.disk = getPreferredAvailableDisk(bucket);
 
     while (true) {
+        // This function is only called in a context where we require exclusive
+        // locking (split/join). Refactor if this no longer the case.
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock(
-                _fileStorHandler.lock(bucket, result.disk));
+                _fileStorHandler.lock(bucket, result.disk, api::LockingRequirements::Exclusive));
 
+        // TODO disks are no longer used in practice, can we safely discard this?
+        // Might need it for synchronization purposes if something has taken the
+        // disk lock _and_ the bucket lock...?
         StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(
                 bucket.getBucketId(), "join-lockAndGetDisk-1", flags));
         if (entry.exist() && entry->disk != result.disk) {

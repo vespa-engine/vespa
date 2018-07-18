@@ -67,4 +67,9 @@ public abstract class Session {
         return TenantRepository.logPre(getTenant());
     }
 
+    // in seconds
+    public long getCreateTime() {
+        return zooKeeperClient.readCreateTime();
+    }
+
 }
