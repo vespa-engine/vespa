@@ -84,7 +84,7 @@
                 	<option class="options" value="POST">POST</option>
                 	<option class="options" value="GET">GET</option>
               </select>
-              <input type="text" class="textbox" name="value" value="http://httpbin.org/post" id="url" size="30">
+              <input type="text" class="textbox" name="value" value="http://localhost:8080/search/" id="url" size="30">
               <button class="button" onclick="startSending();" id="send">Send</button>
 
               <br/>
@@ -184,48 +184,36 @@
 
 
 
-
-
       <SCRIPT language="javascript">
 
-        const CONFIG = $.getJSON('/querybuilder/gui_variables.json', function(data){window.CONFIG = data;});
+        const CONFIG = $.getJSON('/querybuilder/config.json', function(data){window.CONFIG = data;});
         method = "POST";
       	var number = 0;
       	var childno = {};
       	var json = JSON.parse("{}");
         var searchApiReference = null;
-
-      	var possible = ["yql", "hits", "offset", "queryProfile", "nocache", "groupingSessionCache", "searchChain", "timeout", "trace","tracelevel","traceLevel", "",
-      , "model", "ranking", "collapse","collapsesize","collapsesize","presentation", "pos", "streaming", "rules", "recall", "user", "nocachewrite", "metrics"];
-
+        var possible = null;
       	var usedProps = [];
       	var removedIndexes = [0];
-      	var childrenProps = {
-      		"model" : ["defaultIndex", "encoding", "language", "queryString", "restrict", "searchPath", "sources", "type"],
-      		"ranking" : ["location", "features", "listFeatures", "profile", "properties", "sorting", "freshness", "queryCache", "matchPhase"],
-      		"ranking.matchPhase" : ["maxHits", "attribute", "ascending", "diversity"],
-      		"ranking.matchPhase.diversity" : ["attribute", "minGroups"],
-      		"presentation" : ["bolding", "format", "summary", "template", "timing"],
-          "trace" : ["timestamps"],
-          "tracelevel" : ["rules"],
-          "metrics" : ["ignore"],
-      		"collapse":["summary"],
-      		"pos" : ["ll", "radius", "bb", "attribute"],
-      		"streaming" : ["userid", "groupname", "selection", "priority", "maxbucketspervisitor"],
-      		"rules" : ["off", "rulebase"]
-      	};
+        var childrenProps = null;
+
 
         window.onload = function() {
-          // Adding variables from configuration file
-          if (window.CONFIG.hasOwnProperty("featurename")){
-            childrenProps["ranking.features"] = window.CONFIG.featurename;
-          }
-          if (window.CONFIG.hasOwnProperty("propertyname")){
-            childrenProps["ranking.properties"] = window.CONFIG.propertyname;
-          }
+          setTimeout(function(){
+            possible = window.CONFIG.levelZeroParameters;
+            childrenProps = window.CONFIG.childMap;
 
-          addNewRow();
-          getSearchApiReference();
+            if (window.CONFIG.hasOwnProperty("ranking_features")){
+              childrenProps["ranking.features"] = window.CONFIG.ranking_features;
+            }
+            if (window.CONFIG.hasOwnProperty("ranking_properties")){
+              childrenProps["ranking.properties"] = window.CONFIG.ranking_properties;
+            }
+
+
+            addNewRow();
+            getSearchApiReference();
+          }, 250);
         };
 
         var stringType = ["yql", "queryProfile", "searchChain", "model.defaultIndex", "model.encoding", "model.language",
@@ -439,10 +427,17 @@
         newInput.classList.add("input")
       	var newDatalist = document.createElement("datalist");
       	newDatalist.id = "prop"+temp;
+
       	newInputVal = document.createElement("input");
       	newInputVal.type = "text";
       	newInputVal.id = "v"+temp;
         newInputVal.classList.add("propvalue");
+        newInputVal.setAttribute("list", "val"+temp);
+        var newDatalist2 = document.createElement("datalist");
+      	newDatalist2.id = "val"+temp;
+        //newDatalist2.style = "display: none;";
+
+
       	var newButton = document.createElement("button");
       	newButton.id = "b"+temp;
       	newButton.innerHTML = "-";
@@ -478,6 +473,7 @@
         div.appendChild(a);
 
       	div.appendChild(newInputVal);
+        div.appendChild(newDatalist2);
       	div.appendChild(newButton);
       	div.appendChild(br);
 
@@ -525,6 +521,23 @@
         return false;
       }
 
+
+      function checkConfigOptions(key, no){
+        var jsonID = key.replace(/\./g , "_");
+        var datalist = document.getElementById("val"+no);
+        datalist.innerHTML = "";
+        if (window.CONFIG.hasOwnProperty(jsonID)){
+          var optionlist = eval("window.CONFIG."+jsonID);
+          optionlist.forEach(function(item){
+            var option = document.createElement("option");
+            option.value = item;
+            datalist.appendChild(option);
+          });
+
+        }
+
+      }
+
       	function keySelected(no, value){
       		var key = document.getElementById("i"+no).value;
           showInformation(no, key);
@@ -536,6 +549,10 @@
               editAreaLoader.delete_instance(window.yqlID);
             }
       			var button = document.createElement("button");
+
+            //var datalist = document.getElementById("val"+no); //Hide value-datalist
+            //datalist.style = "display:none;";
+
       			button.id="propb"+no
       			button.innerHTML=" +   Add property";
       			button.onclick = function(){addChildProp(no);};
@@ -549,6 +566,8 @@
       				newInputVal.type = "text";
       				newInputVal.id = "v"+no;
               newInputVal.classList.add("propvalue");
+              newInputVal.setAttribute("list", "val"+no);
+
               var parent = button.parentNode;
               showType(newInputVal, no);
               if (key === "yql"){
@@ -586,6 +605,7 @@
                 newInputVal.type = "text";
                 newInputVal.id = "v"+no;
                 newInputVal.classList.add("propvalue");
+                newInputVal.setAttribute("list", "val"+no);
                 showType(newInputVal, no);
                 var parent = inputval.parentNode;
                 parent.replaceChild(newInputVal, inputval);
@@ -627,8 +647,14 @@
             //keyInput.style = "border-width: 1px; border-color: red;"
             var valueInput = document.getElementById("v"+no);
             valueInput.placeholder = "Possible invalid parameter";
+
+            //Removes possible options for for former parameter
+            var datalist = document.getElementById("val"+no);
+            datalist.innerHTML = "";
           }
           if (validKey(no, key)){
+            // Check if datalist should be visible and add options
+            checkConfigOptions(fullKey, no);
             var keyInput = document.getElementById("i"+no);
             //keyInput.style = "border-width: 0px;"
           }
@@ -712,6 +738,11 @@
       	newInputVal.type = "text";
       	newInputVal.id = "v"+temp;
         newInputVal.classList.add("propvalue");
+
+        newInputVal.setAttribute("list", "val"+temp);
+        var newDatalist2 = document.createElement("datalist");
+        newDatalist2.id = "val"+temp;
+
       	var newButton = document.createElement("button");
       	newButton.id = "b"+temp;
       	newButton.innerHTML = "-";
@@ -746,6 +777,7 @@
       	div.appendChild(newDatalist);
         div.append(a);
       	div.appendChild(newInputVal);
+        div.appendChild(newDatalist2);
       	div.appendChild(newButton);
       	div.appendChild(br);
       	parentNode.appendChild(div);

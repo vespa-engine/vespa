@@ -2,17 +2,35 @@
 package com.yahoo.search.query.gui;
 
 import com.google.inject.Inject;
+
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.fastsearch.CacheControl;
+import com.yahoo.prelude.querytransform.RecallSearcher;
+import com.yahoo.search.Query;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.query.Model;
+import com.yahoo.search.query.Presentation;
+import com.yahoo.search.query.Ranking;
+import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.restapi.ErrorResponse;
 import com.yahoo.yolean.Exceptions;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.*;
 import java.util.logging.Level;
+
+import com.yahoo.search.yql.MinimalQueryInserter;
+
 
 /**
  * Takes requests on /querybuilder
@@ -21,10 +39,12 @@ import java.util.logging.Level;
  */
 
 public class GUIHandler extends LoggingRequestHandler {
+    private final IndexModel indexModel;
 
     @Inject
-    public GUIHandler(Context parentCtx) {
-        super(parentCtx);
+    public GUIHandler(Context parentContext, IndexInfoConfig indexInfo, QrSearchersConfig clusters) {
+        super(parentContext);
+        indexModel = new IndexModel(indexInfo, clusters);
     }
 
     @Override
@@ -45,40 +65,51 @@ public class GUIHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         com.yahoo.restapi.Path path = new com.yahoo.restapi.Path(request.getUri().getPath());
         if (path.matches("/querybuilder/")) {
-            return new FileResponse("_includes/index.html");
+            return new FileResponse("_includes/index.html", null);
         }
         if (!path.matches("/querybuilder/{*}") ) {
             return ErrorResponse.notFoundError("Nothing at path:" + path);
         }
         String filepath = path.getRest();
-        if (!isValidPath(filepath)){
+        if (!isValidPath(filepath) && !filepath.equals("config.json")){
             return ErrorResponse.notFoundError("Nothing at path:" + filepath);
         }
-        return new FileResponse(filepath);
+        return new FileResponse(filepath, indexModel);
     }
 
     private static boolean isValidPath(String path) {
         InputStream in = GUIHandler.class.getClassLoader().getResourceAsStream("gui/"+path);
         boolean isValid = (in != null);
         if(isValid){
-            try { in.close(); } catch (IOException e) {/* Problem with closing inputstream */}
+            try { in.close(); } catch (IOException e) {/* Problem with closing input stream */}
         }
 
         return isValid;
     }
 
+
     private static class FileResponse extends HttpResponse {
 
         private final String path;
+        private final IndexModel indexModel;
 
-        public FileResponse(String relativePath) {
+        public FileResponse(String relativePath, IndexModel indexModel) {
             super(200);
             this.path = relativePath;
+            this.indexModel = indexModel;
         }
+
 
         @Override
         public void render(OutputStream out) throws IOException {
-            InputStream is = GUIHandler.class.getClassLoader().getResourceAsStream("gui/"+this.path);
+            InputStream is;
+            if (this.path.equals("config.json")){
+                String json = "{}";
+                try { json = getGUIConfig(); } catch (JSONException e) { /*Something happened while parsing JSON */ }
+                is = new ByteArrayInputStream(json.getBytes());
+            } else{
+                is = GUIHandler.class.getClassLoader().getResourceAsStream("gui/"+this.path);
+            }
             byte[] buf = new byte[1024];
             int numRead;
             while ( (numRead = is.read(buf) ) >= 0) {
@@ -120,6 +151,44 @@ public class GUIHandler extends LoggingRequestHandler {
                 return "font/ttf";
             }
             return "text/html";
+        }
+
+        private String getGUIConfig() throws JSONException {
+            JSONObject json = new JSONObject();
+            json.put("ranking_properties", Arrays.asList("propertyname"));
+            json.put("ranking_features", Arrays.asList("featurename"));
+            json.put("ranking_profile", Arrays.asList("rankprofile1", "rankprofile2"));
+            List<String> sources = new ArrayList<>();
+            try{
+                sources = new ArrayList<>(indexModel.getMasterClusters().keySet());
+            } catch (NullPointerException ex){ /* clusters are not set */}
+            json.put("model_sources", sources);
+
+            // Creating map from parent to children for GUI: parameter --> child-parameters
+            HashMap<String, List<String>> childMap = new HashMap<>();
+            childMap.put(Model.MODEL, Arrays.asList(Model.DEFAULT_INDEX, Model.ENCODING, Model.LANGUAGE, Model.QUERY_STRING, Model.RESTRICT, Model.SEARCH_PATH, Model.SOURCES, Model.TYPE));
+            childMap.put(Ranking.RANKING, Arrays.asList(Ranking.LOCATION, Ranking.FEATURES, Ranking.LIST_FEATURES, Ranking.PROFILE, Ranking.PROPERTIES, Ranking.SORTING, Ranking.FRESHNESS, Ranking.QUERYCACHE, Ranking.MATCH_PHASE));
+            childMap.put(Ranking.RANKING +"."+ Ranking.MATCH_PHASE, Arrays.asList(MatchPhase.MAX_HITS, MatchPhase.ATTRIBUTE, MatchPhase.ASCENDING, Ranking.DIVERSITY));
+            childMap.put(Ranking.RANKING +"."+ Ranking.MATCH_PHASE +"."+Ranking.DIVERSITY, Arrays.asList(Diversity.ATTRIBUTE, Diversity.MINGROUPS));
+            childMap.put(Presentation.PRESENTATION, Arrays.asList(Presentation.BOLDING, Presentation.FORMAT, Presentation.SUMMARY, "template", Presentation.TIMING ));
+            childMap.put("trace", Arrays.asList("timestamps"));
+            childMap.put("tracelevel", Arrays.asList("rules"));
+            childMap.put("metrics", Arrays.asList("ignore"));
+            childMap.put("collapse", Arrays.asList("summary"));
+            childMap.put("pos", Arrays.asList("ll", "radius", "bb", "attribute"));
+            childMap.put("streaming", Arrays.asList("userid", "groupname", "selection", "priority", "maxbucketspervisitor"));
+            childMap.put("rules", Arrays.asList("off", "rulebase"));
+            json.put("childMap", childMap);
+
+            List<String> levelZeroParameters = Arrays.asList(MinimalQueryInserter.YQL.toString(), Query.HITS.toString(), Query.OFFSET.toString(),
+                                "queryProfile", Query.NO_CACHE.toString(), Query.GROUPING_SESSION_CACHE.toString(),
+                                Query.SEARCH_CHAIN.toString(), Query.TIMEOUT.toString(), "trace", "tracelevel",
+                                Query.TRACE_LEVEL.toString(), Model.MODEL, Ranking.RANKING, "collapse", "collapsesize","collapsefield",
+                                Presentation.PRESENTATION, "pos", "streaming", "rules", RecallSearcher.recallName.toString(), "user",
+                                CacheControl.nocachewrite.toString(), "metrics", "");
+            json.put("levelZeroParameters", levelZeroParameters);
+
+            return json.toString();
         }
     }
 }
