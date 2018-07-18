@@ -35,7 +35,7 @@ import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 @Before({STEMMING, ACCENT_REMOVAL})
 public class RecallSearcher extends Searcher {
 
-    public static final CompoundName recallName=new CompoundName("recall");
+    private static final CompoundName recallName=new CompoundName("recall");
 
     @Override
     public Result search(Query query, Execution execution) {
