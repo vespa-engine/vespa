@@ -168,7 +168,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         public ConfigserverBuilder(int i, List<ConfigServerSpec> configServerSpec) {
             this.i = i;
             Objects.requireNonNull(configServerSpec);
-            if (configServerSpec.size() > 1)
+            if (configServerSpec.size() > 0)
                 this.rpcPort = configServerSpec.get(0).getConfigServerPort();
             else
                 this.rpcPort = Configserver.defaultRpcPort;
