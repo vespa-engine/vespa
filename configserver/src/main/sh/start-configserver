@@ -161,7 +161,7 @@ vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	-Xms128m -Xmx2048m \
         -XX:+PreserveFramePointer \
 	-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${VESPA_HOME}/var/crash \
-	-XX:OnOutOfMemoryError='kill -9 %p' \
+	-XX:+ExitOnOutOfMemoryError \
 	$jvmargs \
 	-Djava.library.path=${VESPA_HOME}/lib64 \
 	-Djava.awt.headless=true \
