@@ -170,7 +170,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         if (configserverConfig.buildMinimalSetOfConfigModels() &&
                 (SystemName.from(configserverConfig.system()) == SystemName.cd ||
                         Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment()) ||
-                        Arrays.asList("corp-us-east-1", "ap-southeast-1").contains(zone().region().value())))
+                        Arrays.asList("corp-us-east-1", "ap-southeast-1", "us-central-1").contains(zone().region().value())))
             versions = keepThoseUsedOn(allocatedHosts, versions);
 
         // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
