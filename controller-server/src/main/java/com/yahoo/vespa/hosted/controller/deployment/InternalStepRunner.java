@@ -406,9 +406,11 @@ public class InternalStepRunner implements StepRunner {
         byte[] testPackage = controller.applications().artifacts().getTesterPackage(testerOf(id.application()), version.id());
         byte[] servicesXml = servicesXml(controller.system());
 
-        // TODO hakonhall: Assemble!
-
-        throw new AssertionError();
+        try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
+            zipBuilder.add(testPackage);
+            zipBuilder.add("services.xml", servicesXml);
+            return new ApplicationPackage(zipBuilder.toByteArray());
+        }
     }
 
     /** Returns all endpoints for all current deployments of the given real application. */
