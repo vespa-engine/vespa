@@ -25,11 +25,13 @@ import java.util.Set;
  */
 public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     private final Duration minTimeBetweenRedeployments;
+    private final Instant start;
 
     public PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, 
                                          Duration interval, Duration minTimeBetweenRedeployments, JobControl jobControl) {
         super(deployer, nodeRepository, interval, jobControl);
         this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
+        this.start = Instant.now();
     }
 
     @Override
@@ -41,6 +43,8 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     // Returns the app that was deployed the longest time ago
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
+        if (waitInitially()) return new HashSet<>();
+
         Optional<ApplicationId> app = (nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
                 .filter(this::shouldBeDeployedOnThisServer)
@@ -58,6 +62,11 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     // the rest will be deployed on another config server
     protected boolean shouldBeDeployedOnThisServer(ApplicationId application) {
         return deployer().lastDeployTime(application).isPresent();
+    }
+
+    // TODO: Do not start deploying until some time has gone (ideally only until bootstrap of config server is finished)
+    protected boolean waitInitially() {
+        return Instant.now().isBefore(start.plus(minTimeBetweenRedeployments));
     }
 
     @Override

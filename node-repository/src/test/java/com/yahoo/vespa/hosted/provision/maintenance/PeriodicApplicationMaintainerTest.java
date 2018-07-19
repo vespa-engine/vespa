@@ -266,6 +266,10 @@ public class PeriodicApplicationMaintainerTest {
             return true;
         }
 
+        protected boolean waitInitially() {
+            return false;
+        }
+
     }
 
 }
