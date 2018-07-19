@@ -414,7 +414,7 @@ makeDocTypeRepoConfig()
 
 
 Document::UP
-makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field)
+makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field, size_t numReps=0)
 {
     asciistream idstr;
     idstr << "id:test:test:: " << i;
@@ -424,7 +424,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field)
     ASSERT_TRUE(doc.get());
     asciistream mainstr;
     mainstr << "static text" << i << " body something";
-    for (uint32_t j = 0; j < 10; ++j) {
+    for (uint32_t j = 0; j < 10+numReps; ++j) {
         mainstr << (j + i * 1000) << " ";
     }
     mainstr << " and end field";
@@ -432,7 +432,6 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field)
     if (extra_field) {
         doc->set("extra", "foo");
     }
-
     return doc;
 }
 
@@ -443,9 +442,12 @@ public:
     using UpdateStrategy=DocumentStore::Config::UpdateStrategy;
     VisitCacheStore(UpdateStrategy strategy);
     ~VisitCacheStore();
-    IDocumentStore & getStore() { return _datastore; }
+    IDocumentStore & getStore() { return *_datastore; }
     void write(uint32_t id) {
-        write(id, makeDoc(_repo, id, true));
+        write(id, 0);
+    }
+    void write(uint32_t lid, uint32_t numReps) {
+        write(lid, makeDoc(_repo, lid, true, numReps));
     }
     void rewrite(uint32_t id) {
         write(id, makeDoc(_repo, id, false));
@@ -459,7 +461,10 @@ public:
         _inserted.erase(id);
     }
     void verifyRead(uint32_t id) {
-        verifyDoc(*_datastore.read(id, _repo), id);
+        verifyDoc(*_datastore->read(id, _repo), id);
+    }
+    void read(uint32_t id) {
+        *_datastore->read(id, _repo);
     }
     void verifyDoc(const Document & doc, uint32_t id) {
         EXPECT_TRUE(doc == *_inserted[id]);
@@ -469,8 +474,10 @@ public:
     }
     void verifyVisit(const std::vector<uint32_t> & lids, const std::vector<uint32_t> & expected, bool allowCaching) {
         VerifyVisitor vv(*this, expected, allowCaching);
-        _datastore.visit(lids, _repo, vv);
+        _datastore->visit(lids, _repo, vv);
     }
+    void recreate();
+
 private:
     class VerifyVisitor : public IDocumentVisitor {
     public:
@@ -495,7 +502,7 @@ private:
     DummyFileHeaderContext           _fileHeaderContext;
     vespalib::ThreadStackExecutor    _executor;
     MyTlSyncer                       _tlSyncer;
-    LogDocumentStore                 _datastore;
+    std::unique_ptr<LogDocumentStore>  _datastore;
     std::map<uint32_t, Document::UP> _inserted;
     SerialNum                        _serial;
 };
@@ -522,12 +529,22 @@ VisitCacheStore::VisitCacheStore(UpdateStrategy strategy) :
     _fileHeaderContext(),
     _executor(1, 128*1024),
     _tlSyncer(),
-    _datastore(_executor, _myDir.getDir(), _config, GrowStrategy(),
-               TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr),
+    _datastore(std::make_unique<LogDocumentStore>(_executor, _myDir.getDir(), _config, GrowStrategy(),
+                                                  TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr)),
     _inserted(),
     _serial(1)
 { }
+
 VisitCacheStore::~VisitCacheStore() = default;
+
+void
+VisitCacheStore::recreate() {
+    _datastore->flush(_datastore->initFlush(_datastore->tentativeLastSyncToken()));
+    _datastore.reset();
+    _datastore = std::make_unique<LogDocumentStore>(_executor, _myDir.getDir(), _config, GrowStrategy(),
+                                                    TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr);
+
+}
 
 void
 verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, size_t memory_used) {
@@ -549,18 +566,24 @@ TEST("test the update cache strategy") {
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 221));
     vcs.write(8);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 221));
-    vcs.write(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 221));
+    vcs.write(7, 17);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 282));
     vcs.verifyRead(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 221));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 282));
     vcs.remove(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 221));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 282));
     vcs.remove(7);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 0, 0));
     vcs.write(7);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 0, 0));
     vcs.verifyRead(7);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 2, 1, 221));
+    vcs.write(7, 17);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 2, 1, 282));
+    vcs.recreate();
+    IDocumentStore & ds2 = vcs.getStore();
+    vcs.verifyRead(7);
+    TEST_DO(verifyCacheStats(ds2.getCacheStats(), 0, 1, 1, 282));
 }
 
 TEST("test the invalidate cache strategy") {
