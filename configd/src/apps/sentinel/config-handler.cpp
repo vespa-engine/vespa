@@ -133,6 +133,9 @@ ConfigHandler::terminate()
     for (int retry = 0; retry < 10 && doWork(); ++retry) {
         LOG(warning, "some services refuse to terminate cleanly, sending KILL");
         terminateServices(false, true);
+        tv.tv_sec = 0;
+        tv.tv_usec = 200000;
+        select(0, nullptr, nullptr, nullptr, &tv);
     }
     return !doWork();
 }
