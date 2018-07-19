@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<services xmlns:deploy='vespa' version='1.0'>
+    <container version='1.0' id='default'>
+
+        <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vepsa-testrunner-components">
+            <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
+                <artifactsPath>artifacts</artifactsPath>
+            </config>
+        </component>
+
+        <handler id="com.yahoo.vespa.hosted.testrunner.TestRunnerHandler" bundle="vespa-testrunner-components">
+            <binding>http://*/tester/v1/*</binding>
+        </handler>
+
+        <http>
+            <filtering>
+                <request-chain id="testrunner-api">
+                    <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle="jdisc-security-filters">
+                        <config name="jdisc.http.filter.security.athenz.athenz-authorization-filter">
+                            <credentialsToVerify>TOKEN_ONLY</credentialsToVerify>
+                            <roleTokenHeaderName>Yahoo-Role-Auth</roleTokenHeaderName>
+                        </config>
+                        <component id="com.yahoo.jdisc.http.filter.security.athenz.StaticRequestResourceMapper" bundle="jdisc-security-filters">
+                            <config name="jdisc.http.filter.security.athenz.static-request-resource-mapper">
+                                <resourceName>vespa.vespa.cd:tester-application</resourceName>
+                                <action>deploy</action>
+                            </config>
+                        </component>
+                    </filter>
+                </request-chain>
+            </filtering>
+        </http>
+
+        <nodes count="1" flavor="d-2-8-50" />
+    </container>
+</services>

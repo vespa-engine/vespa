@@ -433,9 +433,47 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    private byte[] servicesXml() {
-        //TODO hakonhall: Create!
-        return "".getBytes();
+    static byte[] servicesXml(SystemName systemName) {
+        String domain = systemName == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd";
+
+        String servicesXml = "<?xml version='1.0' encoding='UTF-8'?>\n" +
+                "<services xmlns:deploy='vespa' version='1.0'>\n" +
+                "    <container version='1.0' id='default'>\n" +
+                "\n" +
+                "        <component id=\"com.yahoo.vespa.hosted.testrunner.TestRunner\" bundle=\"vepsa-testrunner-components\">\n" +
+                "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
+                "                <artifactsPath>artifacts</artifactsPath>\n" +
+                "            </config>\n" +
+                "        </component>\n" +
+                "\n" +
+                "        <handler id=\"com.yahoo.vespa.hosted.testrunner.TestRunnerHandler\" bundle=\"vespa-testrunner-components\">\n" +
+                "            <binding>http://*/tester/v1/*</binding>\n" +
+                "        </handler>\n" +
+                "\n" +
+                "        <http>\n" +
+                "            <filtering>\n" +
+                "                <request-chain id=\"testrunner-api\">\n" +
+                "                    <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle=\"jdisc-security-filters\">\n" +
+                "                        <config name=\"jdisc.http.filter.security.athenz.athenz-authorization-filter\">\n" +
+                "                            <credentialsToVerify>TOKEN_ONLY</credentialsToVerify>\n" +
+                "                            <roleTokenHeaderName>Yahoo-Role-Auth</roleTokenHeaderName>\n" +
+                "                        </config>\n" +
+                "                        <component id=\"com.yahoo.jdisc.http.filter.security.athenz.StaticRequestResourceMapper\" bundle=\"jdisc-security-filters\">\n" +
+                "                            <config name=\"jdisc.http.filter.security.athenz.static-request-resource-mapper\">\n" +
+                "                                <resourceName>" + domain + ":tester-application</resourceName>\n" +
+                "                                <action>deploy</action>\n" +
+                "                            </config>\n" +
+                "                        </component>\n" +
+                "                    </filter>\n" +
+                "                </request-chain>\n" +
+                "            </filtering>\n" +
+                "        </http>\n" +
+                "\n" +
+                "        <nodes count=\"1\" flavor=\"d-2-8-50\" />\n" +
+                "    </container>\n" +
+                "</services>\n";
+
+        return servicesXml.getBytes();
     }
 
     /** Returns the config for the tests to run for the given job. */
