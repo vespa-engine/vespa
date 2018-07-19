@@ -290,9 +290,9 @@ TEST("requireThatSoftDoomFacorIsComputedCorrectlyForUpAdjustment") {
     stats.updatesoftDoomFactor(0.0009, 0.9, 0.1);   // hard limits less than 1ms should be ignored
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.516, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1.0, 0.9, 0.1);   // soft limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(1.0, 0.0009, 0.1);   // soft limits less than 1ms should be ignored
     EXPECT_EQUAL(1ul, stats.softDoomed());
-    EXPECT_EQUAL(0.524, stats.softDoomFactor());
+    EXPECT_EQUAL(0.516, stats.softDoomFactor());
     stats.softDoomFactor(0.1);
     stats.updatesoftDoomFactor(1.0, 0.9, 0.001);      // Prevent changes above 5%
     EXPECT_EQUAL(1ul, stats.softDoomed());
