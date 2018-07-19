@@ -102,6 +102,10 @@
       <artifactId>commons-exec</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.apache.opennlp</groupId>
+      <artifactId>opennlp-tools</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>
     </dependency>
