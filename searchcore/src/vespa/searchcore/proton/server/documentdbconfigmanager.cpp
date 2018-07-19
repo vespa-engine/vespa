@@ -157,13 +157,26 @@ deriveCompression(const T & config) {
     return compression;
 }
 
+DocumentStore::Config::UpdateStrategy
+derive(ProtonConfig::Summary::Cache::UpdateStrategy strategy) {
+    switch (strategy) {
+        case ProtonConfig::Summary::Cache::UpdateStrategy::INVALIDATE:
+            return DocumentStore::Config::UpdateStrategy::INVALIDATE;
+        case ProtonConfig::Summary::Cache::UpdateStrategy::UPDATE:
+            return DocumentStore::Config::UpdateStrategy::UPDATE;
+    }
+    return DocumentStore::Config::UpdateStrategy::INVALIDATE;
+}
+
 DocumentStore::Config
 getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo)
 {
     size_t maxBytes = (cache.maxbytes < 0)
                       ? (hwInfo.memory().sizeBytes()*std::min(50l, -cache.maxbytes))/100l
                       : cache.maxbytes;
-    return DocumentStore::Config(deriveCompression(cache.compression), maxBytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
+    return DocumentStore::Config(deriveCompression(cache.compression), maxBytes, cache.initialentries)
+            .allowVisitCaching(cache.allowvisitcaching)
+            .updateStrategy(derive(cache.updateStrategy));
 }
 
 LogDocumentStore::Config

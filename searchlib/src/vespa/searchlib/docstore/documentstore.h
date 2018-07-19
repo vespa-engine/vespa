@@ -27,17 +27,20 @@ class DocumentStore : public IDocumentStore
 public:
     class Config {
     public:
+        enum UpdateStrategy {INVALIDATE, UPDATE };
         using CompressionConfig = vespalib::compression::CompressionConfig;
         Config() :
             _compression(CompressionConfig::LZ4, 9, 70),
             _maxCacheBytes(1000000000),
             _initialCacheEntries(0),
+            _updateStrategy(INVALIDATE),
             _allowVisitCaching(false)
         { }
         Config(const CompressionConfig & compression, size_t maxCacheBytes, size_t initialCacheEntries) :
             _compression((maxCacheBytes != 0) ? compression : CompressionConfig::NONE),
             _maxCacheBytes(maxCacheBytes),
             _initialCacheEntries(initialCacheEntries),
+            _updateStrategy(INVALIDATE),
             _allowVisitCaching(false)
         { }
         const CompressionConfig & getCompression() const { return _compression; }
@@ -45,11 +48,14 @@ public:
         size_t getInitialCacheEntries() const { return _initialCacheEntries; }
         bool allowVisitCaching() const { return _allowVisitCaching; }
         Config & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
+        Config & updateStrategy(UpdateStrategy strategy) { _updateStrategy = strategy; return *this; }
+        UpdateStrategy updateStrategy() const { return _updateStrategy; }
         bool operator == (const Config &) const;
     private:
         CompressionConfig _compression;
         size_t _maxCacheBytes;
         size_t _initialCacheEntries;
+        UpdateStrategy _updateStrategy;
         bool   _allowVisitCaching;
     };
 
@@ -82,14 +88,10 @@ public:
     CacheStats getCacheStats() const override;
     size_t memoryMeta() const override { return _backingStore.memoryMeta(); }
     const vespalib::string & getBaseDir() const override { return _backingStore.getBaseDir(); }
-    void
-    accept(IDocumentStoreReadVisitor &visitor,
-           IDocumentStoreVisitorProgress &visitorProgress,
-           const document::DocumentTypeRepo &repo) override;
-    void
-    accept(IDocumentStoreRewriteVisitor &visitor,
-           IDocumentStoreVisitorProgress &visitorProgress,
-           const document::DocumentTypeRepo &repo) override;
+    void accept(IDocumentStoreReadVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
+                const document::DocumentTypeRepo &repo) override;
+    void accept(IDocumentStoreRewriteVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
+                const document::DocumentTypeRepo &repo) override;
     double getVisitCost() const override;
     DataStoreStorageStats getStorageStats() const override;
     MemoryUsage getMemoryUsage() const override;

@@ -101,7 +101,7 @@ public:
      * Update the cache and write through to backing store.
      * Object is then put at head of LRU list.
      */
-    void write(const K & key, const V & value);
+    void write(const K & key, V value);
 
     /**
      * Tell if an object with given key exists in the cache.

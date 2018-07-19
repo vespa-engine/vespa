@@ -44,6 +44,8 @@ public:
     typedef std::unique_ptr<DataBuffer> UP;
     DataBuffer(const DataBuffer &) = delete;
     DataBuffer &operator=(const DataBuffer &) = delete;
+    DataBuffer(DataBuffer &&) = default;
+    DataBuffer &operator=(DataBuffer &&) = default;
 
     /**
      * Construct a databuffer.
@@ -61,19 +63,19 @@ public:
      * @param buf pointer to preallocated memory
      * @param len length of preallocated memory
      **/
-    DataBuffer(char *buf, size_t len) :
+    DataBuffer(void *buf, size_t len) :
         _alignment(1),
-        _externalBuf(buf),
-        _bufstart(buf),
-        _bufend(buf + len),
+        _externalBuf(static_cast<char *>(buf)),
+        _bufstart(_externalBuf),
+        _bufend(_externalBuf + len),
         _datapt(_bufstart),
         _freept(_bufstart),
         _buffer(Alloc::alloc(0))
     { }
 
-    DataBuffer(const char *buf, size_t len) :
+    DataBuffer(const void *buf, size_t len) :
         _alignment(1),
-        _externalBuf(const_cast<char *>(buf)),
+        _externalBuf(static_cast<char *>(const_cast<void *>(buf))),
         _bufstart(_externalBuf),
         _bufend(_bufstart + len),
         _datapt(_bufstart),

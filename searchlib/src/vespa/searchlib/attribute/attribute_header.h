@@ -10,8 +10,7 @@
 
 namespace vespalib { class GenericHeader; }
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 /**
  * Attribute header class used by attribute savers and attribute initializer
@@ -71,5 +70,4 @@ public:
     void addTags(vespalib::GenericHeader &header) const;
 };
 
-} // namespace search::attribute
-} // namespace search
+}

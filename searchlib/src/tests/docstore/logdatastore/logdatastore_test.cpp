@@ -282,13 +282,13 @@ TEST("testTruncatedIdxFile"){
     {
         // Files comes from the 'growing test'.
         LogDataStore datastore(executor, TEST_PATH("bug-7257706"), config, GrowStrategy(),
-                               TuneFileSummary(), fileHeaderContext, tlSyncer, NULL);
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         EXPECT_EQUAL(354ul, datastore.lastSyncToken());
     }
     const char * magic = "mumbo jumbo";
     {
         LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
-                               TuneFileSummary(), fileHeaderContext, tlSyncer, NULL);
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         EXPECT_EQUAL(331ul, datastore.lastSyncToken());
         datastore.write(332, 7, magic, strlen(magic));
         datastore.write(333, 8, magic, strlen(magic));
@@ -296,7 +296,7 @@ TEST("testTruncatedIdxFile"){
     }
     {
         LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
-                               TuneFileSummary(), fileHeaderContext, tlSyncer, NULL);
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         EXPECT_EQUAL(334ul, datastore.lastSyncToken());
     }
 }
@@ -308,7 +308,7 @@ TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
     MyTlSyncer tlSyncer;
     LogDataStore datastore(executor, "dangling-test", config,
                            GrowStrategy(), TuneFileSummary(),
-                           fileHeaderContext, tlSyncer, NULL);
+                           fileHeaderContext, tlSyncer, nullptr);
     EXPECT_EQUAL(354ul, datastore.lastSyncToken());
     EXPECT_EQUAL(4096u + 480u, datastore.getDiskHeaderFootprint());
     EXPECT_EQUAL(datastore.getDiskHeaderFootprint() + 94016u, datastore.getDiskFootprint());
@@ -321,7 +321,7 @@ TEST("testThatIncompleteCompactedFilesAreRemoved") {
     MyTlSyncer tlSyncer;
     LogDataStore datastore(executor, "incompletecompact-test", config,
                            GrowStrategy(), TuneFileSummary(),
-                           fileHeaderContext, tlSyncer, NULL);
+                           fileHeaderContext, tlSyncer, nullptr);
     EXPECT_EQUAL(354ul, datastore.lastSyncToken());
     EXPECT_EQUAL(3*(4096u + 480u), datastore.getDiskHeaderFootprint());
     LogDataStore::NameIdSet files = datastore.getAllActiveFiles();
@@ -340,7 +340,7 @@ public:
         _executor(1, 128*1024),
         _tlSyncer(),
         _datastore(_executor, _myDir.getDir(), _config, GrowStrategy(),
-                   TuneFileSummary(), _fileHeaderContext, _tlSyncer, NULL)
+                   TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr)
     { }
     ~VisitStore();
     IDataStore & getStore() { return _datastore; }
@@ -524,7 +524,7 @@ VisitCacheStore::VisitCacheStore() :
     _inserted(),
     _serial(1)
 { }
-VisitCacheStore::~VisitCacheStore() {}
+VisitCacheStore::~VisitCacheStore() = default;
 
 void
 verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, size_t memory_used) {
@@ -546,41 +546,42 @@ TEST("test that the integrated visit cache works.") {
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 100, 100, 20574));
+    constexpr size_t BASE_SZ = 21374;
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 100, 100, BASE_SZ));
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 20574)); // From the individual cache.
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, BASE_SZ)); // From the individual cache.
 
     vcs.verifyVisit({7,9,17,19,67,88}, false);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 20574));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, BASE_SZ));
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 101, 101, 21135));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 101, 101, BASE_SZ+557));
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 101, 21135));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 101, BASE_SZ+557));
     vcs.rewrite(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, 20922)); // From the individual cache.
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, BASE_SZ+328)); // From the individual cache.
     vcs.rewrite(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, 20148)); // From the both caches.
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, BASE_SZ-442)); // From the both caches.
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 102, 99, 20732));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 102, 99, BASE_SZ+130));
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, 20783));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, BASE_SZ+201));
     vcs.rewrite(17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, 19943));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, BASE_SZ-657));
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 98, 20587));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 98, BASE_SZ-3));
     vcs.remove(17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, 19943));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, BASE_SZ-657));
     vcs.verifyVisit({7,9,17,19,67,88,89}, {7,9,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, 20526));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, BASE_SZ-64));
 
     vcs.verifyVisit({41, 42}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 106, 99, 20820));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 106, 99, BASE_SZ+238));
     vcs.verifyVisit({43, 44}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 107, 100, 21124));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 107, 100, BASE_SZ+540));
     vcs.verifyVisit({41, 42, 43, 44}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 108, 99, 20944));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 108, 99, BASE_SZ+362));
 }
 
 TEST("testWriteRead") {
@@ -595,7 +596,7 @@ TEST("testWriteRead") {
         vespalib::ThreadStackExecutor executor(1, 128*1024);
         MyTlSyncer tlSyncer;
         LogDataStore datastore(executor, "empty", config, GrowStrategy(),
-                               TuneFileSummary(), fileHeaderContext, tlSyncer, NULL);
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         ASSERT_TRUE(datastore.lastSyncToken() == 0);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
         EXPECT_LESS(0u, headerFootprint);
@@ -606,7 +607,7 @@ TEST("testWriteRead") {
         fetchAndTest(datastore, 0, a[0].c_str(), a[0].size());
         datastore.write(2, 0, a[1].c_str(), a[1].size());
         fetchAndTest(datastore, 0, a[1].c_str(), a[1].size());
-        fetchAndTest(datastore, 1, NULL, 0);
+        fetchAndTest(datastore, 1, nullptr, 0);
         datastore.remove(3, 0);
         fetchAndTest(datastore, 0, "", 0);
 
@@ -632,7 +633,7 @@ TEST("testWriteRead") {
         MyTlSyncer tlSyncer;
         LogDataStore datastore(executor, "empty", config,
                                GrowStrategy(), TuneFileSummary(),
-                               fileHeaderContext, tlSyncer, NULL);
+                               fileHeaderContext, tlSyncer, nullptr);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
         EXPECT_LESS(0u, headerFootprint);
         EXPECT_EQUAL(4944ul + headerFootprint, datastore.getDiskFootprint());

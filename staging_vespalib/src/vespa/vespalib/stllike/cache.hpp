@@ -120,16 +120,17 @@ cache<P>::read(const K & key)
 
 template< typename P >
 void
-cache<P>::write(const K & key, const V & value)
+cache<P>::write(const K & key, V value)
 {
     vespalib::LockGuard storeGuard(getLock(key));
+    _store.write(key, value);
     {
         vespalib::LockGuard guard(_hashLock);
-        (*this)[key] = value;
-        _sizeBytes += calcSize(key, value);
+        size_t sz = calcSize(key, value);
+        (*this)[key] = std::move(value);
+        _sizeBytes += sz;
         _write++;
     }
-    _store.write(key, value);
 }
 
 template< typename P >

@@ -35,8 +35,7 @@ void
 DocumentVisitorAdapter::visit(uint32_t lid, vespalib::ConstBufferRef buf) {
     if (buf.size() > 0) {
         vespalib::nbostream is(buf.c_str(), buf.size());
-        document::Document::UP doc(new document::Document(_repo, is));
-        _visitor.visit(lid, std::move(doc));
+        _visitor.visit(lid, std::make_unique<document::Document>(_repo, is));
     }
 }
 
@@ -51,34 +50,38 @@ public:
     using Alloc = vespalib::alloc::Alloc;
     typedef std::unique_ptr<Value> UP;
 
-    Value() : _compressedSize(0), _uncompressedSize(0), _compression(CompressionConfig::NONE) {}
+    Value()
+        : _syncToken(0),
+          _compressedSize(0),
+          _uncompressedSize(0),
+          _compression(CompressionConfig::NONE)
+    {}
 
-    Value(Value &&rhs) :
-            _compressedSize(rhs._compressedSize),
-            _uncompressedSize(rhs._uncompressedSize),
-            _compression(rhs._compression),
-            _buf(std::move(rhs._buf)) {}
+    Value(uint64_t syncToken)
+        : _syncToken(syncToken),
+          _compressedSize(0),
+          _uncompressedSize(0),
+          _compression(CompressionConfig::NONE)
+    {}
 
-    Value(const Value &rhs) :
-            _compressedSize(rhs._compressedSize),
-            _uncompressedSize(rhs._uncompressedSize),
-            _compression(rhs._compression),
-            _buf(Alloc::alloc(rhs.size())) {
+    Value(Value &&rhs) = default;
+    Value &operator=(Value &&rhs) = default;
+
+    Value(const Value &rhs)
+        : _syncToken(rhs._syncToken),
+          _compressedSize(rhs._compressedSize),
+          _uncompressedSize(rhs._uncompressedSize),
+          _compression(rhs._compression),
+          _buf(Alloc::alloc(rhs.size()))
+    {
         memcpy(get(), rhs.get(), size());
-    }
-
-    Value &operator=(Value &&rhs) {
-        _buf = std::move(rhs._buf);
-        _compressedSize = rhs._compressedSize;
-        _uncompressedSize = rhs._uncompressedSize;
-        _compression = rhs._compression;
-        return *this;
     }
 
     void setCompression(CompressionConfig::Type comp, size_t uncompressedSize) {
         _compression = comp;
         _uncompressedSize = uncompressedSize;
     }
+    uint64_t getSyncToken() const { return _syncToken; }
 
     CompressionConfig::Type getCompression() const { return _compression; }
 
@@ -96,7 +99,8 @@ public:
      * Decompress value into temporary buffer and deserialize document from
      * the temporary buffer.
      */
-    document::Document::UP deserializeDocument(const DocumentTypeRepo &repo);
+    document::Document::UP deserializeDocument(const DocumentTypeRepo &repo) const;
+    vespalib::DataBuffer decompressed() const;
 
     size_t size() const { return _compressedSize; }
     bool empty() const { return size() == 0; }
@@ -104,6 +108,7 @@ public:
     const void *get() const { return _buf.get(); }
     void *get() { return _buf.get(); }
 private:
+    uint64_t _syncToken;
     size_t _compressedSize;
     size_t _uncompressedSize;
     CompressionConfig::Type _compression;
@@ -119,7 +124,7 @@ public:
 
     bool read(DocumentIdT key, Value &value) const;
     void visit(const IDocumentStore::LidVector &lids, const DocumentTypeRepo &repo, IDocumentVisitor &visitor) const;
-    void write(DocumentIdT, const Value &) {}
+    void write(DocumentIdT, const Value &);
     void erase(DocumentIdT) {}
     const CompressionConfig &getCompression() const { return _compression; }
     void reconfigure(const CompressionConfig &compression);
@@ -138,8 +143,7 @@ void
 Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression) {
     //Underlying buffer must be identical to allow swap.
     vespalib::DataBuffer compressed(buf.getData(), 0u);
-    CompressionConfig::Type type = compress(compression, vespalib::ConstBufferRef(buf.getData(), len),
-                                            compressed, true);
+    CompressionConfig::Type type = compress(compression, vespalib::ConstBufferRef(buf.getData(), len), compressed, true);
     _compressedSize = compressed.getDataLen();
     if (buf.getData() == compressed.getData()) {
         // Uncompressed so we can just steal the underlying buffer.
@@ -154,15 +158,19 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &com
     setCompression(type, len);
 }
 
-
-document::Document::UP
-Value::deserializeDocument(const DocumentTypeRepo &repo) {
-    vespalib::DataBuffer uncompressed((char *) _buf.get(), (size_t) 0);
+vespalib::DataBuffer
+Value::decompressed() const {
+    vespalib::DataBuffer uncompressed(_buf.get(), (size_t) 0);
     decompress(getCompression(), getUncompressedSize(), vespalib::ConstBufferRef(*this, size()), uncompressed, true);
-    vespalib::nbostream is(uncompressed.getData(), uncompressed.getDataLen());
-    return document::Document::UP(new document::Document(repo, is));
+    return uncompressed;
 }
 
+document::Document::UP
+Value::deserializeDocument(const DocumentTypeRepo &repo) const {
+    vespalib::DataBuffer uncompressed(decompressed());
+    vespalib::nbostream is(uncompressed.getData(), uncompressed.getDataLen());
+    return std::make_unique<document::Document>(repo, is);
+}
 
 void
 BackingStore::visit(const IDocumentStore::LidVector &lids, const DocumentTypeRepo &repo,
@@ -184,6 +192,14 @@ BackingStore::read(DocumentIdT key, Value &value) const {
 }
 
 void
+BackingStore::write(DocumentIdT lid, const Value & value)
+{
+    assert(value.getCompression() == _compression.type);
+    vespalib::DataBuffer buf = value.decompressed();
+    _backingStore.write(value.getSyncToken(), lid, buf.getData(), buf.getDataLen());
+}
+
+void
 BackingStore::reconfigure(const CompressionConfig &compression) {
     _compression = compression;
 }
@@ -194,8 +210,7 @@ using CacheParams = vespalib::CacheParam<
         vespalib::LruParam<DocumentIdT, docstore::Value>,
         docstore::BackingStore,
         vespalib::zero<DocumentIdT>,
-        vespalib::size<docstore::Value>
->;
+        vespalib::size<docstore::Value> >;
 
 class Cache : public vespalib::cache<CacheParams> {
 public:
@@ -210,6 +225,7 @@ DocumentStore::Config::operator == (const Config &rhs) const {
     return (_maxCacheBytes == rhs._maxCacheBytes) &&
             (_allowVisitCaching == rhs._allowVisitCaching) &&
             (_initialCacheEntries == rhs._initialCacheEntries) &&
+            (_updateStrategy == rhs._updateStrategy) &&
             (_compression == rhs._compression);
 }
 
@@ -226,7 +242,7 @@ DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     _cache->reserveElements(config.getInitialCacheEntries());
 }
 
-DocumentStore::~DocumentStore() {}
+DocumentStore::~DocumentStore() = default;
 
 void
 DocumentStore::reconfigure(const Config & config) {
@@ -282,10 +298,22 @@ DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const document::Docume
 
 void
 DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & stream) {
-    _backingStore.write(syncToken, lid, stream.peek(), stream.size());
     if (useCache()) {
-        _cache->invalidate(lid);
-        _visitCache->invalidate(lid);
+        switch (_config.updateStrategy()) {
+            case Config::UpdateStrategy::INVALIDATE:
+                _backingStore.write(syncToken, lid, stream.peek(), stream.size());
+                _cache->invalidate(lid);
+                break;
+            case Config::UpdateStrategy::UPDATE: {
+                Value value(syncToken);
+                value.set(vespalib::DataBuffer(), stream.size(), _store->getCompression());
+                _cache->write(lid, std::move(value));
+                break;
+            }
+        }
+        _visitCache->invalidate(lid); // The cost and complexity of this updating this is not worth it.
+    } else {
+        _backingStore.write(syncToken, lid, stream.peek(), stream.size());
     }
 }
 
