@@ -417,6 +417,12 @@
             </dependency>
             <dependency>
                 <!-- NOT provided from jdisc runtime -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava-testlib</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <!-- NOT provided from jdisc runtime -->
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-continuation</artifactId>
                 <version>${jetty.version}</version>

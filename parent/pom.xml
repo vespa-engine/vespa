@@ -407,11 +407,6 @@
                 <version>${asm.version}</version>
             </dependency>
             <dependency>
-              <groupId>com.google.guava</groupId>
-              <artifactId>guava-testlib</artifactId>
-              <version>18.0</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>3.4.0</version>

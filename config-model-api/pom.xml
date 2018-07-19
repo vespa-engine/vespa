@@ -72,7 +72,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
-      <version>17.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
