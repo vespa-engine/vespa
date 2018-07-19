@@ -194,7 +194,6 @@ BackingStore::read(DocumentIdT key, Value &value) const {
 void
 BackingStore::write(DocumentIdT lid, const Value & value)
 {
-    assert(value.getCompression() == _compression.type);
     vespalib::DataBuffer buf = value.decompressed();
     _backingStore.write(value.getSyncToken(), lid, buf.getData(), buf.getDataLen());
 }
@@ -304,12 +303,17 @@ DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostr
                 _backingStore.write(syncToken, lid, stream.peek(), stream.size());
                 _cache->invalidate(lid);
                 break;
-            case Config::UpdateStrategy::UPDATE: {
-                Value value(syncToken);
-                value.set(vespalib::DataBuffer(), stream.size(), _store->getCompression());
-                _cache->write(lid, std::move(value));
+            case Config::UpdateStrategy::UPDATE:
+                if (_cache->hasKey(lid)) {
+                    Value value(syncToken);
+                    vespalib::DataBuffer buf(stream.size());
+                    buf.writeBytes(stream.peek(), stream.size());
+                    value.set(std::move(buf), stream.size(), _store->getCompression());
+                    _cache->write(lid, std::move(value));
+                } else {
+                    _backingStore.write(syncToken, lid, stream.peek(), stream.size());
+                }
                 break;
-            }
         }
         _visitCache->invalidate(lid); // The cost and complexity of this updating this is not worth it.
     } else {
@@ -503,31 +507,22 @@ WrapVisitor(Visitor &visitor,
 
 
 void
-DocumentStore::accept(IDocumentStoreReadVisitor &visitor,
-                      IDocumentStoreVisitorProgress &visitorProgress,
+DocumentStore::accept(IDocumentStoreReadVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
                       const DocumentTypeRepo &repo)
 {
-    WrapVisitor<IDocumentStoreReadVisitor> wrap(visitor, repo,
-                                                _store->getCompression(),
-                                                *this,
-                                                _backingStore.
-                                                tentativeLastSyncToken());
+    WrapVisitor<IDocumentStoreReadVisitor> wrap(visitor, repo, _store->getCompression(), *this,
+                                                _backingStore.tentativeLastSyncToken());
     WrapVisitorProgress wrapVisitorProgress(visitorProgress);
     _backingStore.accept(wrap, wrapVisitorProgress, false);
 }
 
 
 void
-DocumentStore::accept(IDocumentStoreRewriteVisitor &visitor,
-                      IDocumentStoreVisitorProgress &visitorProgress,
+DocumentStore::accept(IDocumentStoreRewriteVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
                       const DocumentTypeRepo &repo)
 {
-    WrapVisitor<IDocumentStoreRewriteVisitor> wrap(visitor,
-                                                   repo,
-                                                   _store->getCompression(),
-                                                   *this,
-                                                   _backingStore.
-                                                   tentativeLastSyncToken());
+    WrapVisitor<IDocumentStoreRewriteVisitor> wrap(visitor, repo, _store->getCompression(), *this,
+                                                   _backingStore.tentativeLastSyncToken());
     WrapVisitorProgress wrapVisitorProgress(visitorProgress);
     _backingStore.accept(wrap, wrapVisitorProgress, true);
 }

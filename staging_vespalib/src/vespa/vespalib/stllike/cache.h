@@ -148,6 +148,7 @@ private:
     mutable size_t      _race;
     mutable size_t      _insert;
     mutable size_t      _write;
+    mutable size_t      _update;
     mutable size_t      _erase;
     mutable size_t      _invalidate;
     mutable size_t      _lookup;

@@ -440,7 +440,8 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field)
 
 class VisitCacheStore {
 public:
-    VisitCacheStore();
+    using UpdateStrategy=DocumentStore::Config::UpdateStrategy;
+    VisitCacheStore(UpdateStrategy strategy);
     ~VisitCacheStore();
     IDocumentStore & getStore() { return _datastore; }
     void write(uint32_t id) {
@@ -510,10 +511,12 @@ VisitCacheStore::VerifyVisitor::~VerifyVisitor() {
     EXPECT_EQUAL(_expected.size(), _actual.size());
 }
 
-VisitCacheStore::VisitCacheStore() :
+
+VisitCacheStore::VisitCacheStore(UpdateStrategy strategy) :
     _myDir("visitcache"),
     _repo(makeDocTypeRepoConfig()),
-    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
+    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0)
+                    .allowVisitCaching(true).updateStrategy(strategy),
             LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                     .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16384))),
     _fileHeaderContext(),
@@ -535,8 +538,58 @@ verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, siz
     EXPECT_GREATER_EQUAL(memory_used+20,  cs.memory_used);
 }
 
+TEST("test the update cache strategy") {
+    VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::UPDATE);
+    IDocumentStore & ds = vcs.getStore();
+    for (size_t i(1); i <= 10; i++) {
+        vcs.write(i);
+    }
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 0));
+    vcs.verifyRead(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 221));
+    vcs.write(8);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 221));
+    vcs.write(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 221));
+    vcs.verifyRead(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 221));
+    vcs.remove(8);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 1, 221));
+    vcs.remove(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 0, 0));
+    vcs.write(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 1, 0, 0));
+    vcs.verifyRead(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 1, 2, 1, 221));
+}
+
+TEST("test the invalidate cache strategy") {
+    VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::INVALIDATE);
+    IDocumentStore & ds = vcs.getStore();
+    for (size_t i(1); i <= 10; i++) {
+        vcs.write(i);
+    }
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 0));
+    vcs.verifyRead(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 221));
+    vcs.write(8);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 1, 221));
+    vcs.write(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 1, 0, 0));
+    vcs.verifyRead(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 2, 1, 221));
+    vcs.remove(8);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 2, 1, 221));
+    vcs.remove(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 2, 0, 0));
+    vcs.write(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 2, 0, 0));
+    vcs.verifyRead(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 3, 1, 221));
+}
+
 TEST("test that the integrated visit cache works.") {
-    VisitCacheStore vcs;
+    VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::INVALIDATE);
     IDocumentStore & ds = vcs.getStore();
     for (size_t i(1); i <= 100; i++) {
         vcs.write(i);
