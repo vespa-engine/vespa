@@ -120,9 +120,12 @@ public:
     }
 
     void setSize(Index sz) {
-        clearBit(size());
+        setBit(sz);  // Need to place the new stop sign first
+        if (sz > _sz) {
+            // Can only remove the old stopsign if it is ahead of the new.
+            clearBit(_sz);
+        }
         _sz = sz;
-        setBit(size());
     }
     void setBit(Index idx) {
         _words[wordNum(idx)] |= mask(idx);
