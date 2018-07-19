@@ -44,13 +44,13 @@ MatchView::MatchView(const Matchers::SP &matchers,
       _docIdLimit(docIdLimit)
 { }
 
-MatchView::~MatchView() { }
+MatchView::~MatchView() = default;
 
 Matcher::SP
 MatchView::getMatcher(const vespalib::string & rankProfile) const
 {
     Matcher::SP retval = _matchers->lookup(rankProfile);
-    if (retval.get() == NULL) {
+    if ( ! retval) {
         throw std::runtime_error(make_string("Failed locating Matcher for rank profile '%s'", rankProfile.c_str()));
     }
     LOG(debug, "Rankprofile = %s has termwise_limit=%f", rankProfile.c_str(), retval->get_termwise_limit());
@@ -60,8 +60,8 @@ MatchView::getMatcher(const vespalib::string & rankProfile) const
 
 MatchContext::UP MatchView::createContext() const {
     IAttributeContext::UP attrCtx = _attrMgr->createContext();
-    ISearchContext::UP searchCtx(new SearchContext(_indexSearchable, _docIdLimit.get()));
-    return MatchContext::UP(new MatchContext(std::move(attrCtx), std::move(searchCtx)));
+    auto searchCtx = std::make_unique<SearchContext>(_indexSearchable, _docIdLimit.get());
+    return std::make_unique<MatchContext>(std::move(attrCtx), std::move(searchCtx));
 }
 
 

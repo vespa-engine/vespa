@@ -23,6 +23,7 @@ import org.w3c.dom.Element;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.logging.Level;
 
 /**
@@ -102,7 +103,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return cluster;
     }
 
-    // Extra stupid because configservers tag is voluntary
+    // Extra stupid because configservers tag is optional
     private List<Configserver> getConfigServers(AbstractConfigProducer parent, Element adminE) {
         SimpleConfigProducer configServers = new SimpleConfigProducer(parent, "configservers");
         List<Configserver> cfgs = new ArrayList<>();
@@ -114,7 +115,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
             } else {
                 parent.deployLogger().log(LogLevel.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
             }
-            Configserver cfgs0 = new ConfigserverBuilder(0).build(configServers, configserverE);
+            Configserver cfgs0 = new ConfigserverBuilder(0, configServerSpecs).build(configServers, configserverE);
             cfgs0.setProp("index", 0);
             cfgs.add(cfgs0);
             return cfgs;
@@ -122,7 +123,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         // configservers tag in use
         int i = 0;
         for (Element configserverE : XML.getChildren(configserversE, "configserver")) {
-            Configserver cfgsrv = new ConfigserverBuilder(i).build(configServers, configserverE);
+            Configserver cfgsrv = new ConfigserverBuilder(i, configServerSpecs).build(configServers, configserverE);
             cfgsrv.setProp("index", i);
             cfgs.add(cfgsrv);
             i++;
@@ -161,16 +162,21 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     }
 
     private static class ConfigserverBuilder extends DomConfigProducerBuilder<Configserver> {
-        int i;
+        private final int i;
+        private final int rpcPort;
 
-        public ConfigserverBuilder(int i) {
+        public ConfigserverBuilder(int i, List<ConfigServerSpec> configServerSpec) {
             this.i = i;
+            Objects.requireNonNull(configServerSpec);
+            if (configServerSpec.size() > 0)
+                this.rpcPort = configServerSpec.get(0).getConfigServerPort();
+            else
+                this.rpcPort = Configserver.defaultRpcPort;
         }
 
         @Override
-        protected Configserver doBuild(AbstractConfigProducer parent,
-                                       Element spec) {
-            return new Configserver(parent, "configserver." + i);
+        protected Configserver doBuild(AbstractConfigProducer parent, Element spec) {
+            return new Configserver(parent, "configserver." + i, rpcPort);
         }
     }
 

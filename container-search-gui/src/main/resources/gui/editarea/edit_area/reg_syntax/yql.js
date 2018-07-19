@@ -1,6 +1,19 @@
 /**
 * Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 */
+function getSources(bool){
+		var options = [];
+		if (window.CONFIG.hasOwnProperty("model_sources")){
+			var sources = window.CONFIG.model_sources;
+			for (i in sources){
+				option = [sources[i]];
+				options.push(option);
+			}
+			if (bool == true){options.push(["*"])}
+		}
+		return options;
+}
+
 editAreaLoader.load_syntax["yql"] = {
 	'DISPLAY_NAME' : 'YQL'
 	,'QUOTEMARKS' : {1: "'", 2: '"', 3: '`'}
@@ -74,9 +87,23 @@ editAreaLoader.load_syntax["yql"] = {
 						 ['DESC','DESC'],['ASC','ASC'],['ALL','ALL'], ['GROUP','GROUP'],
 						 ['RANGE','RANGE'],['EACH','EACH'],['OUTPUT','OUTPUT'],
 						 ['SUM','SUM'],['LIMIT','LIMIT'],['OFFSET','OFFSET'],
-						 ['TIMEOUT','TIMEOUT'],
-						]
+						 ['TIMEOUT','TIMEOUT']
+					 ]
+			}
+		},
+		"sources": {	// the name of this definition group. It's posisble to have different rules inside the same definition file
+			"REGEXP": { "before_word": "[^a-zA-Z0-9_]|^"	// \\s|\\.|
+						,"possible_words_letters": "[a-zA-Z0-9_]+"
+						,"letter_after_word_must_match": "[^a-zA-Z0-9_]|$"
+						,"prefix_separator": " "
+					}
+			,"CASE_SENSITIVE": false
+			,"MAX_TEXT_LENGTH": 50		// the maximum length of the text being analyzed before the cursor position
+			,"KEYWORDS": {
+					'SOURCES' : getSources(true) ,
+					',' : getSources(false)
 			}
 		}
+
 	}
 };

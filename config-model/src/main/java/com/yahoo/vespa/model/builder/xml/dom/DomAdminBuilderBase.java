@@ -34,7 +34,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     private static final String DEFAULT_CLUSTER_NAME = "vespa";
 
     private final ApplicationType applicationType;
-    private final List<ConfigServerSpec> configServerSpecs;
+    protected final List<ConfigServerSpec> configServerSpecs;
     private final FileRegistry fileRegistry;
     protected final boolean multitenant;
 
@@ -52,7 +52,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
             HostSystem hostSystem = parent.getHostSystem();
             HostResource host = new HostResource(Host.createConfigServerHost(hostSystem, spec.getHostName()));
             hostSystem.addBoundHost(host);
-            Configserver configserver = new Configserver(parent, spec.getHostName());
+            Configserver configserver = new Configserver(parent, spec.getHostName(), spec.getConfigServerPort());
             configserver.setHostResource(host);
             configserver.setBasePort(configserver.getWantedPort());
             configserver.initService();

@@ -1,16 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import java.util.logging.Logger;
-
 import com.yahoo.config.model.api.ConfigServerSpec;
-import com.yahoo.log.LogLevel;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
 
 /**
@@ -26,11 +18,13 @@ import com.yahoo.vespa.model.AbstractService;
  */
 public class Configserver extends AbstractService {
     private static final long serialVersionUID = 1L;
-    private static final int defaultPort = 19070;
-    private static final Logger log = Logger.getLogger(Configserver.class.getName());
+    public static final int defaultRpcPort = 19070;
 
-    public Configserver(AbstractConfigProducer parent, String name) {
+    private final int rpcPort;
+
+    public Configserver(AbstractConfigProducer parent, String name, int rpcPort) {
         super(parent, name);
+        this.rpcPort = rpcPort;
         portsMeta.on(0).tag("rpc").tag("config");
         portsMeta.on(1).tag("http").tag("config").tag("state");
         setProp("clustertype", "admin");
@@ -41,16 +35,7 @@ public class Configserver extends AbstractService {
      * Returns the desired base port for this service.
      */
     public int getWantedPort() {
-        try {
-            // TODO: Provide configserver port as argument when creating this service instead
-            Process process = new ProcessBuilder(getDefaults().underVespaHome("bin/vespa-print-default"), "configserver_rpc_port").start();
-            InputStream in = process.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            return Integer.parseInt(reader.readLine().trim());
-        } catch (Exception exception) {
-            log.log(LogLevel.DEBUG, "Error reading port from script, using " + defaultPort);
-            return defaultPort;
-        }
+        return rpcPort;
     }
 
     /**
@@ -84,7 +69,7 @@ public class Configserver extends AbstractService {
         return getRelativePort(1);
     }
 
-    public ConfigServerSpec getConfigServerSpec() {
+    ConfigServerSpec getConfigServerSpec() {
         return new Spec(getHostName(), getConfigServerRpcPort(), getConfigServerHttpPort(), ZooKeepersConfigProvider.zkPort);
     }
 
