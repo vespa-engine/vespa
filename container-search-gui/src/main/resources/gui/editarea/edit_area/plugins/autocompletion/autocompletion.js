@@ -480,7 +480,10 @@ var EditArea_autocompletion= {
 				{
 					var line= "<li><a href=\"#\" class=\"entry\" onmousedown=\"EditArea_autocompletion._select('"+ results[i][1]['replace_with'].replace(new RegExp('"', "g"), "&quot;") +"');return false;\">"+ results[i][1]['comment'];
 					if(results[i][0]['prefix_name'].length>0)
-						line+='<span class="prefix">'+ results[i][0]['prefix_name'] +'</span>';
+						var value = results[i][0]['prefix_name'];
+						value = (value == undefined) ? "" : value;
+						if (value == 'SOURCES' || value == ','){value = 'Source'}
+						line+='<span class="prefix">'+ value +'</span>';
 					line+='</a></li>';
 					lines[lines.length]=line;
 				}

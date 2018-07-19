@@ -18,7 +18,7 @@ import java.util.Optional;
  */
 public class CacheControl {
 
-    private static final CompoundName nocachewrite=new CompoundName("nocachewrite");
+    public static final CompoundName nocachewrite=new CompoundName("nocachewrite");
 
     /** Whether this CacheControl actually should cache hits at all. */
     private final boolean activeCache;
