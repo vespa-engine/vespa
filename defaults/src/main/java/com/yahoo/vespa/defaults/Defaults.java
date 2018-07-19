@@ -32,20 +32,20 @@ public class Defaults {
     private final int vespaPortConfigProxyRpc;
 
     private Defaults() {
-        vespaHome = findVespaHome();
-        vespaUser = findVespaUser();
-        vespaHost = findVespaHostname();
+        vespaHome = findVespaHome("/opt/vespa");
+        vespaUser = findVespaUser("vespa");
+        vespaHost = findVespaHostname("localhost");
         vespaWebServicePort = findWebServicePort(8080);
         vespaPortBase = findVespaPortBase(19000);
         vespaPortConfigServerRpc = findConfigServerPort(vespaPortBase + 70);
         vespaPortConfigServerHttp = vespaPortConfigServerRpc + 1;
         vespaPortConfigProxyRpc = findConfigProxyPort(vespaPortBase + 90);
     }
-    static private String findVespaHome() {
+    static private String findVespaHome(String defHome) {
         Optional<String> vespaHomeEnv = Optional.ofNullable(System.getenv("VESPA_HOME"));
         if ( ! vespaHomeEnv.isPresent() || vespaHomeEnv.get().trim().isEmpty()) {
-            log.info("VESPA_HOME not set, using /opt/vespa");
-            return "/opt/vespa";
+            log.info("VESPA_HOME not set, using " + defHome);
+            return defHome;
         }
         String vespaHome = vespaHomeEnv.get().trim();
         if (vespaHome.endsWith("/")) {
@@ -55,19 +55,19 @@ public class Defaults {
         return vespaHome;
     }
 
-    static private String findVespaHostname() {
+    static private String findVespaHostname(String defHost) {
         Optional<String> vespaHostEnv = Optional.ofNullable(System.getenv("VESPA_HOSTNAME"));
         if (vespaHostEnv.isPresent() && ! vespaHostEnv.get().trim().isEmpty()) {
             return vespaHostEnv.get().trim();
         }
-        return "localhost";
+        return defHost;
     }
 
-    static private String findVespaUser() {
+    static private String findVespaUser(String defUser) {
         Optional<String> vespaUserEnv = Optional.ofNullable(System.getenv("VESPA_USER"));
         if (! vespaUserEnv.isPresent()) {
-            log.fine("VESPA_USER not set, using vespa");
-            return "vespa";
+            log.fine("VESPA_USER not set, using "+defUser);
+            return defUser;
         }
         return vespaUserEnv.get().trim();
     }
