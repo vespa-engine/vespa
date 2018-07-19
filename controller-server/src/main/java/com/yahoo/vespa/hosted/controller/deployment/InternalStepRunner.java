@@ -403,8 +403,8 @@ public class InternalStepRunner implements StepRunner {
                                                                   .lastTriggered().get()
                                                                   .application();
 
-        byte[] testJar = controller.applications().artifacts().getTesterJar(testerOf(id.application()), version.id());
-        byte[] servicesXml = servicesXml();
+        byte[] testPackage = controller.applications().artifacts().getTesterPackage(testerOf(id.application()), version.id());
+        byte[] servicesXml = servicesXml(controller.system());
 
         // TODO hakonhall: Assemble!
 
