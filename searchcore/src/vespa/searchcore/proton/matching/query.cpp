@@ -28,6 +28,7 @@ using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
 using search::queryeval::AndBlueprint;
+using search::queryeval::RankBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IRequestContext;
 using search::queryeval::SearchIterator;
@@ -126,8 +127,8 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
     if (_whiteListBlueprint) {
         auto andBlueprint = std::make_unique<AndBlueprint>();
-        if (dynamic_cast<const search::queryeval::RankBlueprint*>(_blueprint.get())) {
-            search::queryeval::RankBlueprint * rank = static_cast<search::queryeval::RankBlueprint*>(_blueprint.get());
+        RankBlueprint * rank = dynamic_cast<RankBlueprint*>(_blueprint.get());
+        if (rank != nullptr) {
             (*andBlueprint)
                     .addChild(rank->removeChild(0))
                     .addChild(std::move(_whiteListBlueprint));
