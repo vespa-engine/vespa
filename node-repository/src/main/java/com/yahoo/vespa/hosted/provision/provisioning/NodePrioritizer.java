@@ -188,6 +188,9 @@ public class NodePrioritizer {
             boolean conflictingCluster = list.childrenOf(node).owner(appId).asList().stream()
                                              .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
 
+            // TODO: I think we should add nodes here even when there is a conflicting cluster,
+            // that constraint should be picked up by NodeAllocation#offeredNodeHasParentHostnameAlreadyAccepted().
+            // That way this could could be removed and we would return a OutOfCapacityException with a proper explanation
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
             log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + node);
