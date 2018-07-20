@@ -558,9 +558,9 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
-
     private Query queryFromRequest(HttpRequest request, CompiledQueryProfile queryProfile){
-        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST && request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE).equals(JSON_CONTENT_TYPE)) {
+        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST
+            && JSON_CONTENT_TYPE.equals(request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE))) {
             Inspector inspector;
             try {
                 byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
@@ -585,7 +585,7 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
+    public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent) {
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String qualifiedKey = parent + key;
             switch (value.type()) {
@@ -611,8 +611,6 @@ public class SearchHandler extends LoggingRequestHandler {
 
         });
     }
-
-
 
 }
 
