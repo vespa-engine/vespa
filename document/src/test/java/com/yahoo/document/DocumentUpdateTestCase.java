@@ -651,6 +651,64 @@ public class DocumentUpdateTestCase {
         assertNull(doc.getFieldValue(tensorField));
     }
 
+    @Test
+    public void testThatNonIdenticalAssignCanNotBePrunedAway() {
+        Field field = docType.getField("strfoo");
+        String expected = "some other value";
+        Document doc = createDocument();
+        doc.setFieldValue(field, "some value");
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createAssign(field, new StringFieldValue(expected)));
+        update.prune(doc);
+        assertEquals(1, update.size());
+        update.applyTo(doc);
+        assertEquals(expected, doc.getFieldValue(field).getWrappedValue());
+    }
+
+    @Test
+    public void testThatIdenticalAssignCanBePrunedAway() {
+        Field field = docType.getField("strfoo");
+        String expected = "some value";
+        Document doc = createDocument();
+        doc.setFieldValue(field, "some value");
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createAssign(field,new StringFieldValue(expected)));
+        update.prune(doc);
+        assertEquals(0, update.size());
+        update.applyTo(doc);
+        assertEquals(expected, doc.getFieldValue(field).getWrappedValue());
+    }
+
+    @Test
+    public void testThatIdenticalAssignCanBePrunedAwayIfLast() {
+        Field field = docType.getField("strfoo");
+        String expected = "some value";
+        Document doc = createDocument();
+        doc.setFieldValue(field, "some value");
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createClearField(field));
+        update.addFieldUpdate(FieldUpdate.createAssign(field, new StringFieldValue(expected)));
+        update.prune(doc);
+        assertEquals(0, update.size());
+        update.applyTo(doc);
+        assertEquals(expected, doc.getFieldValue(field).getWrappedValue());
+    }
+
+    @Test
+    public void testThatIdenticalAssignCanNotBePrunedAwayIfNotLast() {
+        Field field = docType.getField("strfoo");
+        String expected = "some random value";
+        Document doc = createDocument();
+        doc.setFieldValue(field, "some value");
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createAssign(field, new StringFieldValue("some value")));
+        update.addFieldUpdate(FieldUpdate.createAssign(field, new StringFieldValue(expected)));
+        update.prune(doc);
+        assertEquals(1, update.size());
+        update.applyTo(doc);
+        assertEquals(expected, doc.getFieldValue(field).getWrappedValue());
+    }
+
     private static TensorFieldValue createTensorFieldValue(String tensor) {
         return new TensorFieldValue(Tensor.from(tensor));
     }
