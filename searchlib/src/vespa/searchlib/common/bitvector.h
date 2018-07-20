@@ -121,6 +121,7 @@ public:
 
     void setSize(Index sz) {
         setBit(sz);  // Need to place the new stop sign first
+        std::atomic_thread_fence(std::memory_order_release);
         if (sz > _sz) {
             // Can only remove the old stopsign if it is ahead of the new.
             clearBit(_sz);
