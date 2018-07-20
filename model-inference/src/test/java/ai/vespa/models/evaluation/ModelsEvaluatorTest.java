@@ -42,4 +42,10 @@ public class ModelsEvaluatorTest {
         assertEquals(32.0, function.evaluate().asDouble(), delta);
     }
 
+    // TODO: Test argument-less function
+    // TODO: Test that binding nonexisting variable doesn't work
+    // TODO: Test that rebinding dopesn't work
+    // TODO: Test with nested macros
+    // TODO: Test TF/ONNX model
+
 }
