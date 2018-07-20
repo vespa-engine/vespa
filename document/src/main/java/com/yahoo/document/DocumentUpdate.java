@@ -129,8 +129,6 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @throws IllegalArgumentException if the document does not have the same document type as this update
      */
     public DocumentUpdate prune(Document doc) {
-        if ( ! fieldPathUpdates.isEmpty()) return this;
-
         verifyType(doc);
 
         for (Iterator<FieldUpdate> iter = fieldUpdates.iterator(); iter.hasNext();) {
