@@ -72,9 +72,9 @@ public:
         size_t numFields() const { return _fields.size(); }
         const FieldSpecBase &field(size_t idx) const { return _fields[idx]; }
         const FieldSpecBase *lookupField(uint32_t fieldId) const {
-            for (size_t i = 0; i < _fields.size(); ++i) {
-                if (_fields[i].getFieldId() == fieldId) {
-                    return &_fields[i];
+            for (const FieldSpecBase & field : _fields) {
+                if (field.getFieldId() == fieldId) {
+                    return &field;
                 }
             }
             return nullptr;

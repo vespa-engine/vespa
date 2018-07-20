@@ -4,11 +4,10 @@
 
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/matchdata.h>
-#include <vector>
 #include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace search::queryeval {
-
 
 /**
  * Base description of a single field to be searched.
@@ -61,27 +60,22 @@ private:
 class FieldSpecBaseList
 {
 private:
-    std::vector<FieldSpecBase> _list;
+    using List = std::vector<FieldSpecBase>;
+    List _list;
 
 public:
+    using const_iterator = List::const_iterator;
     FieldSpecBaseList &add(const FieldSpecBase &spec) {
         _list.push_back(spec);
         return *this;
     }
-    bool empty() const {
-        return _list.empty();
-    }
-    size_t size() const {
-        return _list.size();
-    }
-    const FieldSpecBase &operator[](size_t i) const {
-        return _list[i];
-    }
+    bool empty() const { return _list.empty(); }
+    size_t size() const { return _list.size(); }
+    const_iterator begin() const { return _list.begin(); }
+    const_iterator end() const { return _list.end(); }
+    const FieldSpecBase &operator[](size_t i) const { return _list[i]; }
     void clear() { _list.clear(); }
-
-    void swap(FieldSpecBaseList & rhs) {
-        _list.swap(rhs._list);
-    }
+    void swap(FieldSpecBaseList & rhs) { _list.swap(rhs._list); }
 };
 
 /**
@@ -97,19 +91,11 @@ public:
         _list.push_back(spec);
         return *this;
     }
-    bool empty() const {
-        return _list.empty();
-    }
-    size_t size() const {
-        return _list.size();
-    }
-    const FieldSpec &operator[](size_t i) const {
-        return _list[i];
-    }
+    bool empty() const { return _list.empty(); }
+    size_t size() const { return _list.size(); }
+    const FieldSpec &operator[](size_t i) const { return _list[i]; }
     void clear() { _list.clear(); }
-    void swap(FieldSpecList & rhs) {
-        _list.swap(rhs._list);
-    }
+    void swap(FieldSpecList & rhs) { _list.swap(rhs._list); }
 };
 
 }

@@ -41,9 +41,9 @@ Blueprint::HitEstimate
 Blueprint::max(const std::vector<HitEstimate> &data)
 {
     HitEstimate est;
-    for (size_t i = 0; i < data.size(); ++i) {
-        if (est.empty || est.estHits < data[i].estHits) {
-            est = data[i];
+    for (const HitEstimate & hitEst : data) {
+        if (est.empty || est.estHits < hitEst.estHits) {
+            est = hitEst;
         }
     }
     return est;
@@ -69,7 +69,7 @@ Blueprint::State::State(const FieldSpecBaseList &fields_in)
 {
 }
 
-Blueprint::State::~State() { }
+Blueprint::State::~State() = default;
 
 Blueprint::Blueprint()
     : _parent(0),
@@ -79,9 +79,7 @@ Blueprint::Blueprint()
 {
 }
 
-Blueprint::~Blueprint()
-{
-}
+Blueprint::~Blueprint() = default;
 
 Blueprint::UP
 Blueprint::optimize(Blueprint::UP bp) {
@@ -180,8 +178,8 @@ void
 IntermediateBlueprint::setDocIdLimit(uint32_t limit)
 {
     Blueprint::setDocIdLimit(limit);
-    for (size_t i = 0; i < _children.size(); ++i) {
-        _children[i]->setDocIdLimit(limit);
+    for (Blueprint * child : _children) {
+        child->setDocIdLimit(limit);
     }
 }
 
@@ -190,8 +188,8 @@ IntermediateBlueprint::calculateEstimate() const
 {
     std::vector<HitEstimate> estimates;
     estimates.reserve(_children.size());
-    for (size_t i = 0; i < _children.size(); ++i) {
-        estimates.push_back(_children[i]->getState().estimate());
+    for (const Blueprint * child : _children) {
+        estimates.push_back(child->getState().estimate());
     }
     return combine(estimates);
 }
@@ -200,8 +198,8 @@ uint32_t
 IntermediateBlueprint::calculate_tree_size() const
 {
     uint32_t nodes = 1;
-    for (size_t i = 0; i < _children.size(); ++i) {
-        nodes += _children[i]->getState().tree_size();
+    for (const Blueprint * child : _children) {
+        nodes += child->getState().tree_size();
     }
     return nodes;
 }
@@ -212,8 +210,8 @@ IntermediateBlueprint::infer_allow_termwise_eval() const
     if (!supports_termwise_children()) {
         return false;
     }
-    for (size_t i = 0; i < _children.size(); ++i) {
-        if (!_children[i]->getState().allow_termwise_eval()) {
+    for (const Blueprint * child : _children) {
+        if (!child->getState().allow_termwise_eval()) {
             return false;
         }
     }
@@ -255,8 +253,8 @@ IntermediateBlueprint::mixChildrenFields() const
 
     Map fieldMap;
     FieldSpecBaseList fieldList;
-    for (size_t i = 0; i < _children.size(); ++i) {
-        const State &childState = _children[i]->getState();
+    for (const Blueprint * child : _children) {
+        const State &childState = child->getState();
         if (!childState.isTermLike()) {
             return fieldList; // empty: non-term-like child
         }
@@ -271,8 +269,8 @@ IntermediateBlueprint::mixChildrenFields() const
             }
         }
     }
-    for (MapPos pos = fieldMap.begin(); pos != fieldMap.end(); ++pos) {
-        fieldList.add(*(pos->second));
+    for (const auto & entry : fieldMap) {
+        fieldList.add(*entry.second);
     }
     return fieldList;
 }
@@ -306,8 +304,8 @@ IntermediateBlueprint::optimize(Blueprint* &self)
 {
     assert(self == this);
     if (should_optimize_children()) {
-        for (size_t i = 0; i < _children.size(); ++i) {
-            _children[i]->optimize(_children[i]);
+        for (auto & child : _children) {
+            child->optimize(child);
         }
     }
     optimize_self();
@@ -328,10 +326,7 @@ IntermediateBlueprint::createSearch(fef::MatchData &md, bool strict) const
     return createIntermediateSearch(subSearches, strict, md);
 }
 
-IntermediateBlueprint::IntermediateBlueprint()
-    : _children()
-{
-}
+IntermediateBlueprint::IntermediateBlueprint() = default;
 
 const Blueprint &
 IntermediateBlueprint::getChild(size_t n) const
@@ -396,8 +391,8 @@ IntermediateBlueprint::fetchPostings(bool strict)
 void
 IntermediateBlueprint::freeze()
 {
-    for (size_t i = 0; i < _children.size(); ++i) {
-        _children[i]->freeze();
+    for (Blueprint * child : _children) {
+        child->freeze();
     }
     freeze_self();
 }
@@ -407,7 +402,7 @@ namespace {
 bool
 areAnyParentsEquiv(const Blueprint * node)
 {
-    return (node == NULL)
+    return (node == nullptr)
            ? false
            : node->isEquiv()
              ? true
@@ -436,7 +431,8 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
                 const Blueprint & child = getChild(i);
                 const State &cs = child.getState();
                 bool canSkipUnpack(canBlueprintSkipUnpack(child, md));
-                LOG(debug, "Child[%ld] has %ld fields. canSkipUnpack='%s'.", i, cs.numFields(), canSkipUnpack ? "true" : "false");
+                LOG(debug, "Child[%ld] has %ld fields. canSkipUnpack='%s'.",
+                    i, cs.numFields(), canSkipUnpack ? "true" : "false");
                 for (size_t j = 0; canSkipUnpack && (j < cs.numFields()); ++j) {
                     if ( ! cs.field(j).resolve(md)->isNotNeeded()) {
                         LOG(debug, "Child[%ld].field(%ld).fieldId=%d need unpack.", i, j, cs.field(j).getFieldId());
@@ -469,7 +465,7 @@ LeafBlueprint::LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwis
     _state.allow_termwise_eval(allow_termwise_eval);
 }
 
-LeafBlueprint::~LeafBlueprint() { }
+LeafBlueprint::~LeafBlueprint() = default;
 
 void
 LeafBlueprint::fetchPostings(bool strict)
