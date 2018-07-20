@@ -32,7 +32,7 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
       _result(result)
 { }
 
-SummaryManagerInitializer::~SummaryManagerInitializer() {}
+SummaryManagerInitializer::~SummaryManagerInitializer() = default;
 
 void
 SummaryManagerInitializer::run()

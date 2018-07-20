@@ -231,6 +231,9 @@ summary.cache.compression.type enum {NONE, LZ4, ZSTD} default=LZ4
 ## 9 is a reasonable default for both
 summary.cache.compression.level int default=9
 
+## Control if cache entry is updated or ivalidated when changed.
+summary.cache.update_strategy enum {INVALIDATE, UPDATE} default=INVALIDATE
+
 ## Control compression type of the summary while in memory during compaction
 ## NB So far only stragey=LOG honours it.
 summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD

@@ -2,10 +2,10 @@
 
 #include "attributefilewriter.h"
 #include "attributefilebufferwriter.h"
+#include "attribute_header.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include "attribute_header.h"
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -13,7 +13,6 @@ LOG_SETUP(".searchlib.attribute.attributefilewriter");
 
 using search::common::FileHeaderContext;
 using vespalib::getLastErrorString;
-
 
 namespace search {
 
@@ -23,8 +22,7 @@ const uint32_t headerAlign = 4096;
 const uint32_t MIN_ALIGNMENT = 4096;
 
 void
-writeDirectIOAligned(FastOS_FileInterface &file, const void *buf,
-                     size_t length)
+writeDirectIOAligned(FastOS_FileInterface &file, const void *buf, size_t length)
 {
     const char * data(static_cast<const char *>(buf));
     size_t remaining(length);
@@ -37,7 +35,6 @@ writeDirectIOAligned(FastOS_FileInterface &file, const void *buf,
         file.WriteBuf(data, remaining);
     }
 }
-
 
 void
 updateHeader(const vespalib::string &name, uint64_t fileBitSize)
@@ -63,36 +60,28 @@ class FileBackedBufferWriter : public AttributeFileBufferWriter
 {
 public:
     FileBackedBufferWriter(AttributeFileWriter &fileWriter);
+    ~FileBackedBufferWriter() override;
 
-    virtual ~FileBackedBufferWriter();
-
-    virtual void onFlush(size_t nowLen) override;
+    void onFlush(size_t nowLen) override;
 };
 
 
 FileBackedBufferWriter::FileBackedBufferWriter(AttributeFileWriter &fileWriter)
     : AttributeFileBufferWriter(fileWriter)
-{
-}
+{ }
 
-
-FileBackedBufferWriter::~FileBackedBufferWriter()
-{
-}
-
+FileBackedBufferWriter::~FileBackedBufferWriter() = default;
 
 void
 FileBackedBufferWriter::onFlush(size_t nowLen) {
     // Note: Must use const ptr to indicate that buffer is pre-filled.
-    Buffer buf(std::make_unique<BufferBuf>
-               ((const char *) _buf->getFree(), nowLen));
+    auto buf(std::make_unique<BufferBuf>(static_cast<const void *>(_buf->getFree()), nowLen));
     assert(buf->getDataLen() == nowLen);
     assert(buf->getData() == _buf->getFree());
     _fileWriter.writeBuf(std::move(buf));
 }
 
 }
-
 
 AttributeFileWriter::
 AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
@@ -107,9 +96,7 @@ AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
       _fileBitSize(0)
 { }
 
-
-AttributeFileWriter::~AttributeFileWriter() { }
-
+AttributeFileWriter::~AttributeFileWriter() = default;
 
 bool
 AttributeFileWriter::open(const vespalib::string &fileName)
@@ -130,7 +117,6 @@ AttributeFileWriter::open(const vespalib::string &fileName)
     return true;
 }
 
-
 void
 AttributeFileWriter::writeHeader()
 {
@@ -142,7 +128,6 @@ AttributeFileWriter::writeHeader()
     _fileBitSize = headerLen * 8;
 }
 
-
 void
 AttributeFileWriter::addTags(vespalib::GenericHeader &header)
 {
@@ -151,13 +136,11 @@ AttributeFileWriter::addTags(vespalib::GenericHeader &header)
     header.putTag(Tag("desc", _desc));
 }
 
-
 AttributeFileWriter::Buffer
 AttributeFileWriter::allocBuf(size_t size)
 {
     return std::make_unique<BufferBuf>(size, MIN_ALIGNMENT);
 }
-
 
 void
 AttributeFileWriter::writeBuf(Buffer buf)
@@ -167,7 +150,6 @@ AttributeFileWriter::writeBuf(Buffer buf)
     writeDirectIOAligned(*_file, buf->getData(), bufLen);
     _fileBitSize += bufLen * 8;
 }
-
 
 void
 AttributeFileWriter::close()
@@ -179,13 +161,10 @@ AttributeFileWriter::close()
     }
 }
 
-
 std::unique_ptr<BufferWriter>
 AttributeFileWriter::allocBufferWriter()
 {
     return std::make_unique<FileBackedBufferWriter>(*this);
 }
-
-
 
 } // namespace search

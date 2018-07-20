@@ -26,7 +26,7 @@ LogDocumentStore::LogDocumentStore(vespalib::ThreadExecutor & executor,
                     tuneFileSummary, fileHeaderContext, tlSyncer, bucketizer)
 {}
 
-LogDocumentStore::~LogDocumentStore() {}
+LogDocumentStore::~LogDocumentStore() = default;
 
 void
 LogDocumentStore::reconfigure(const Config & config) {
