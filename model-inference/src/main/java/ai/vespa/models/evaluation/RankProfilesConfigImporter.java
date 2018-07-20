@@ -21,15 +21,14 @@ import java.util.regex.Pattern;
  */
 class RankProfilesConfigImporter {
 
-    // TODO: Move to separate class ... or something
-    static final Pattern expressionPattern =
+    private static final Pattern expressionPattern =
             Pattern.compile("rankingExpression\\(([a-zA-Z0-9_]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.rankingScript");
 
     /**
      * Returns a map of the models contained in this config, indexed on name.
      * The map is modifiable and owned by the caller.
      */
-    public Map<String, Model> importFrom(RankProfilesConfig config) {
+    Map<String, Model> importFrom(RankProfilesConfig config) {
         try {
             Map<String, Model> models = new HashMap<>();
             for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
@@ -56,11 +55,12 @@ class RankProfilesConfigImporter {
                 List<String> arguments = new ArrayList<>(); // TODO: Arguments?
                 RankingExpression expression = new RankingExpression(name, property.value());
 
-                if (instance == null) // free function; use configured name
-                    functions.add(new ExpressionFunction(name, arguments, expression)); // Use the configured name
-                else // Referred, bound function - use full name used in references
-                    boundFunctions.add(new ExpressionFunction("rankingExpression(" + name + instance + ")",
-                                                              arguments, expression));
+                if (instance == null) // free function;  make available in model under configured name
+                    functions.add(new ExpressionFunction(name, arguments, expression)); //
+
+                // Make all functions, bound or not available under the name they are referenced by in expressions
+                boundFunctions.add(new ExpressionFunction("rankingExpression(" + name + (instance != null ? instance : "") + ")",
+                                                          arguments, expression));
             }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to macros
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),
@@ -75,7 +75,13 @@ class RankProfilesConfigImporter {
             functions.add(firstPhase);
         if (functionByName("secondphase", functions) == null && secondPhase != null) // may be already included, depending on body
             functions.add(secondPhase);
-        return new Model(profile.name(), functions, boundFunctions);
+
+        try {
+            return new Model(profile.name(), functions, boundFunctions);
+        }
+        catch (RuntimeException e) {
+            throw new IllegalArgumentException("Could not load model '" + profile.name() + "'", e);
+        }
     }
 
     private ExpressionFunction functionByName(String name, List<ExpressionFunction> functions) {

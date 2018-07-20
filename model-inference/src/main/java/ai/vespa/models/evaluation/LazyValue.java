@@ -143,4 +143,8 @@ class LazyValue extends Value {
         return computedValue().hashCode();
     }
 
+    LazyValue copyFor(Context context) {
+        return new LazyValue(this.function, context);
+    }
+
 }

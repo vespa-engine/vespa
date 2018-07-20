@@ -4,7 +4,6 @@ package ai.vespa.models.evaluation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
-import com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 
 import java.util.Collection;
@@ -25,20 +24,34 @@ public class Model {
     /** Free functions */
     private final ImmutableList<ExpressionFunction> functions;
 
-    /** An instance of each usage of the above function, where variables are replaced by their bindings */
-    private final ImmutableMap<String, ExpressionFunction> boundFunctions;
+    /** Instances of each usage of the above function, where variables (if any) are replaced by their bindings */
+    private final ImmutableMap<String, ExpressionFunction> referredFunctions;
+
+    private final ImmutableMap<String, LazyArrayContext> contextPrototypes;
 
     public Model(String name, Collection<ExpressionFunction> functions) {
         this(name, functions, Collections.emptyList());
     }
 
-    Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> boundFunctions) {
+    Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> referredFunctions) {
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
-        ImmutableMap.Builder<String, ExpressionFunction> b = new ImmutableMap.Builder<>();
-        for (ExpressionFunction function : boundFunctions)
-            b.put(function.getName(), function);
-        this.boundFunctions = b.build();
+
+        ImmutableMap.Builder<String, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
+        for (ExpressionFunction function : referredFunctions)
+            functionsBuilder.put(function.getName(), function);
+        this.referredFunctions = functionsBuilder.build();
+
+        ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
+        for (ExpressionFunction function : functions) {
+            try {
+                contextBuilder.put(function.getName(), new LazyArrayContext(function.getBody(), this.referredFunctions));
+            }
+            catch (RuntimeException e) {
+                throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);
+            }
+        }
+        this.contextPrototypes = contextBuilder.build();
     }
 
     public String name() { return name; }
@@ -55,6 +68,14 @@ public class Model {
         return function;
     }
 
+    /** Returns the given function, or throws a IllegalArgumentException if it does not exist */
+    private LazyArrayContext requireContextProprotype(String name) {
+        LazyArrayContext context = contextPrototypes.get(name);
+        if (context == null) // Implies function is not present
+            throw new IllegalArgumentException("No function named '" + name + "' in " + this + ". Available functions: " +
+                                               functions.stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
+        return context;
+    }
 
     /** Returns the function withe the given name, or null if none */ // TODO: Parameter overloading?
     ExpressionFunction function(String name) {
@@ -65,7 +86,7 @@ public class Model {
     }
 
     /** Returns an immutable map of the bound function instances of this, indexed by the bound instance if */
-    Map<String, ExpressionFunction> boundFunctions() { return boundFunctions; }
+    Map<String, ExpressionFunction> boundFunctions() { return referredFunctions; }
 
     /**
      * Returns a function which can be used to evaluate the given function
@@ -74,7 +95,7 @@ public class Model {
      */
     // TODO: Rename to singleThreadedContextFor, move context protottype creation to construction, clone here
     public Context contextFor(String function) {
-        return new LazyArrayContext(requireFunction(function).getBody(), boundFunctions);
+        return requireContextProprotype(function).copy();
     }
 
     @Override
