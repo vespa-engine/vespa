@@ -63,6 +63,10 @@ using search::queryeval::SearchIterator;
 using search::queryeval::SimpleBlueprint;
 using search::queryeval::SimpleResult;
 using search::queryeval::ParallelWeakAndBlueprint;
+using search::queryeval::RankBlueprint;
+using search::queryeval::AndBlueprint;
+using search::queryeval::SourceBlenderBlueprint;
+
 using std::string;
 using std::vector;
 namespace fef_test = search::fef::test;
@@ -106,6 +110,7 @@ class Test : public vespalib::TestApp {
     void requireThatWeakAndBlueprintsAreCreatedCorrectly();
     void requireThatParallelWandBlueprintsAreCreatedCorrectly();
     void requireThatWhiteListBlueprintCanBeUsed();
+    void requireThatRankBlueprintStaysOnTopAfterWhiteListing();
     void requireThatSameElementTermsAreProperlyPrefixed();
     void requireThatSameElementDoesNotAllocateMatchData();
     void requireThatSameElementIteratorsCanBeBuilt();
@@ -879,6 +884,38 @@ Test::requireThatWhiteListBlueprintCanBeUsed()
     EXPECT_EQUAL(exp, act);
 }
 
+void Test::requireThatRankBlueprintStaysOnTopAfterWhiteListing() {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addRank(2);
+    builder.addStringTerm("foo", field, field_id, string_weight);
+    builder.addStringTerm("bar", field, field_id, string_weight);
+    std::string stackDump = StackDumpCreator::create(*builder.build());
+    Query query;
+    query.buildTree(stackDump, "", ViewResolver(), plain_index_env);
+    FakeSearchContext context(42);
+    context.addIdx(0).idx(0).getFake()
+            .addResult(field, "foo", FakeResult().doc(1));
+    context.setLimit(42);
+
+    query.setWhiteListBlueprint(std::make_unique<SimpleBlueprint>(SimpleResult()));
+
+    FakeRequestContext requestContext;
+    MatchDataLayout mdl;
+    query.reserveHandles(requestContext, context, mdl);
+    const RankBlueprint * root = dynamic_cast<const RankBlueprint *>(query.peekRoot());
+    ASSERT_TRUE(root != nullptr);
+    EXPECT_EQUAL(2u, root->childCnt());
+    const AndBlueprint * first = dynamic_cast<const AndBlueprint *>(&root->getChild(0));
+    ASSERT_TRUE(first != nullptr);
+    EXPECT_EQUAL(2u, first->childCnt());
+    EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&first->getChild(0)));
+    EXPECT_TRUE(dynamic_cast<const SimpleBlueprint *>(&first->getChild(1)));
+    EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&root->getChild(1)));
+
+}
+
+
+
 search::query::Node::UP
 make_same_element_stack_dump(const vespalib::string &prefix, const vespalib::string &term_prefix)
 {
@@ -984,6 +1021,7 @@ Test::Main()
     TEST_CALL(requireThatWeakAndBlueprintsAreCreatedCorrectly);
     TEST_CALL(requireThatParallelWandBlueprintsAreCreatedCorrectly);
     TEST_CALL(requireThatWhiteListBlueprintCanBeUsed);
+    TEST_CALL(requireThatRankBlueprintStaysOnTopAfterWhiteListing);
     TEST_CALL(requireThatSameElementTermsAreProperlyPrefixed);
     TEST_CALL(requireThatSameElementDoesNotAllocateMatchData);
     TEST_CALL(requireThatSameElementIteratorsCanBeBuilt);

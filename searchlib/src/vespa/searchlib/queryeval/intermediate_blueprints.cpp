@@ -302,7 +302,7 @@ OrBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
 }
 
 //-----------------------------------------------------------------------------
-WeakAndBlueprint::~WeakAndBlueprint() {}
+WeakAndBlueprint::~WeakAndBlueprint() = default;
 
 Blueprint::HitEstimate
 WeakAndBlueprint::combine(const std::vector<HitEstimate> &data) const
