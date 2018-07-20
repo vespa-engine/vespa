@@ -126,10 +126,18 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
     if (_whiteListBlueprint) {
         auto andBlueprint = std::make_unique<AndBlueprint>();
-        (*andBlueprint)
-            .addChild(std::move(_blueprint))
-            .addChild(std::move(_whiteListBlueprint));
-        _blueprint = std::move(andBlueprint);
+        if (dynamic_cast<const search::queryeval::RankBlueprint*>(_blueprint.get())) {
+            search::queryeval::RankBlueprint * rank = static_cast<search::queryeval::RankBlueprint*>(_blueprint.get());
+            (*andBlueprint)
+                    .addChild(rank->removeChild(0))
+                    .addChild(std::move(_whiteListBlueprint));
+            rank->insertChild(0, std::move(andBlueprint));
+        } else {
+            (*andBlueprint)
+                    .addChild(std::move(_blueprint))
+                    .addChild(std::move(_whiteListBlueprint));
+            _blueprint = std::move(andBlueprint);
+        }
         _blueprint->setDocIdLimit(context.getDocIdLimit());
         LOG(debug, "blueprint after white listing:\n%s\n", _blueprint->asString().c_str());
     }
