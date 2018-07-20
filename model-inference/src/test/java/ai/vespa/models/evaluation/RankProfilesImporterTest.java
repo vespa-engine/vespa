@@ -39,21 +39,22 @@ public class RankProfilesImporterTest {
                        "30 * pow(0 - fieldMatch(description).earliness,2)",
                        macros);
         assertEquals(1, macros.boundFunctions().size());
-        assertBoundFunction("fourtimessum@5cf279212355b980.67f1e87166cfef86", "4 * (match + rankBoost)", macros);
+        assertBoundFunction("rankingExpression(fourtimessum@5cf279212355b980.67f1e87166cfef86)",
+                            "4 * (match + rankBoost)", macros);
     }
 
     private void assertFunction(String name, String expression, Model model) {
         ExpressionFunction function = model.function(name);
         assertNotNull(function);
         assertEquals(name, function.getName());
-        assertEquals(expression, function.getBody().toString());
+        assertEquals(expression, function.getBody().getRoot().toString());
     }
 
     private void assertBoundFunction(String name, String expression, Model model) {
-        ExpressionFunction function = model.boundFunction(name);
-        assertNotNull(function);
+        ExpressionFunction function = model.boundFunctions().get(name);
+        assertNotNull("Function '" + name + "' is present", function);
         assertEquals(name, function.getName());
-        assertEquals(expression, function.getBody().toString());
+        assertEquals(expression, function.getBody().getRoot().toString());
     }
 
 }

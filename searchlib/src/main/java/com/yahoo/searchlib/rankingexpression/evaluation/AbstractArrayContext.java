@@ -54,6 +54,7 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
     protected final double[] doubleValues() { return indexedBindings.doubleValues(); }
     protected final boolean ignoreUnknownValues() { return ignoreUnknownValues; }
 
+    @Override
     public Set<String> names() {
         return indexedBindings.names();
     }

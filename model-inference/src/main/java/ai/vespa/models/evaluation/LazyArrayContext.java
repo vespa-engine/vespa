@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -9,12 +10,15 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -22,41 +26,19 @@ import java.util.Set;
  *
  * @author bratseth
  */
-class LazyArrayContext extends Context implements ContextIndex {
+final class LazyArrayContext extends Context implements ContextIndex {
 
-    /** The current values set */
-    private Value[] values;
-
-    private static DoubleValue constantZero = DoubleValue.frozen(0);
+    private final String expressionName;
+    private IndexedBindings indexedBindings;
 
     /**
      * Create a fast lookup, lazy context for an expression.
-     * This instance should be reused indefinitely by a single thread.
      *
      * @param expression the expression to create a context for
      */
-    LazyArrayContext(RankingExpression expression, List<ExpressionFunction> functions) {
-        values = new Value[doubleValues().length];
-        Arrays.fill(values, DoubleValue.zero);
-    }
-
-    @Override
-    protected void extractBindTargets(ExpressionNode node, Set<String> bindTargets) {
-        if (isFunctionReference(node)) {
-            ReferenceNode reference = (ReferenceNode)node;
-            bindTargets.add(reference.getArguments().expressions().get(0).toString());
-
-        }
-        else {
-            super.extractBindTargets(node, bindTargets);
-        }
-    }
-
-    private boolean isFunctionReference(ExpressionNode node) {
-        if ( ! (node instanceof ReferenceNode)) return false;
-
-        ReferenceNode reference = (ReferenceNode)node;
-        return reference.getName().equals("rankingExpression") && reference.getArguments().size() == 1;
+    LazyArrayContext(RankingExpression expression, Map<String, ExpressionFunction> functions) {
+        this.expressionName = expression.getName();
+        this.indexedBindings = new IndexedBindings(expression, functions, this);
     }
 
     /**
@@ -67,15 +49,8 @@ class LazyArrayContext extends Context implements ContextIndex {
      *         ignoredUnknownValues is false
      */
     @Override
-    public final void put(String name, Value value) {
-        Integer index = nameToIndex().get(name);
-        if (index == null) {
-            if (ignoreUnknownValues())
-                return;
-            else
-                throw new IllegalArgumentException("Value '" + name + "' is not known to " + this);
-        }
-        put(index, value);
+    public void put(String name, Value value) {
+        put(requireIndexOf(name), value);
     }
 
     /** Same as put(index,DoubleValue.frozen(value)) */
@@ -87,55 +62,150 @@ class LazyArrayContext extends Context implements ContextIndex {
      * Puts a value by index.
      * The value will be frozen if it isn't already.
      */
-    public final void put(int index, Value value) {
-        values[index] = value.freeze();
-        try {
-            doubleValues()[index] = value.asDouble();
-        }
-        catch (UnsupportedOperationException e) {
-            doubleValues()[index] = Double.NaN; // see getDouble below
-        }
+    public void put(int index, Value value) {
+        indexedBindings.set(index, value.freeze());
     }
 
     @Override
     public TensorType getType(Reference reference) {
-        Integer index = nameToIndex().get(reference.toString());
-        if (index == null) return null;
-        return values[index].type();
+        // TODO: Support function refs
+        // TODO: Add type information so we do not need to evaluate to get this
+        return get(requireIndexOf(reference.toString())).type();
     }
 
     /** Perform a slow lookup by name */
     @Override
     public Value get(String name) {
-        Integer index = nameToIndex().get(name);
-        if (index == null) return DoubleValue.zero;
-        return values[index];
+        return get(requireIndexOf(name));
     }
 
     /** Perform a fast lookup by index */
     @Override
-    public final Value get(int index) {
-        return values[index];
+    public Value get(int index) {
+        return indexedBindings.get(index);
     }
 
-    /** Perform a fast lookup directly of the value as a double. This is faster than get(index).asDouble() */
     @Override
-    public final double getDouble(int index) {
-        double value = doubleValues()[index];
+    public double getDouble(int index) {
+        double value = get(index).asDouble();
         if (value == Double.NaN)
             throw new UnsupportedOperationException("Value at " + index + " has no double representation");
         return value;
     }
 
+    @Override
+    public int getIndex(String name) {
+        return requireIndexOf(name);
+    }
+
+    @Override
+    public int size() {
+        return indexedBindings.names().size();
+    }
+
+    private Integer requireIndexOf(String name) {
+        Integer index = indexedBindings.indexOf(name);
+        if (index == null)
+            throw new IllegalArgumentException("Value '" + name + "' can not be bound in " + this);
+        return index;
+    }
+
+    @Override
+    public String toString() { return "context of '" + expressionName + "'"; }
+
     /**
      * Creates a clone of this context suitable for evaluating against the same ranking expression
      * in a different thread (i.e, name name to index map, different value set.
      */
+    // TODO: Use copy constructor instead to preserve final
     public LazyArrayContext clone() {
-        LazyArrayContext clone = (LazyArrayContext)super.clone();
-        clone.values = new Value[nameToIndex().size()];
-        Arrays.fill(values, constantZero);
-        return clone;
+        try {
+            LazyArrayContext clone = (LazyArrayContext)super.clone();
+            // TODO: Either move non-lazy value setting to array or copy all lazy functions
+            clone.indexedBindings = indexedBindings.clone();
+            return clone;
+        }
+        catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Programming error");
+        }
+    }
+
+    private static class IndexedBindings implements Cloneable {
+
+        /** The mapping from variable name to index */
+        private final ImmutableMap<String, Integer> nameToIndex;
+
+        /** The current values set, pre-converted to doubles */
+        private Value[] values;
+
+        IndexedBindings(RankingExpression expression, Map<String, ExpressionFunction> functions, LazyArrayContext owner) {
+            Set<String> bindTargets = new LinkedHashSet<>();
+            extractBindTargets(expression.getRoot(), functions, bindTargets);
+
+            values = new Value[bindTargets.size()];
+            Arrays.fill(values, DoubleValue.zero);
+
+            int i = 0;
+            ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
+            for (String variable : bindTargets)
+                nameToIndexBuilder.put(variable,i++);
+            nameToIndex = nameToIndexBuilder.build();
+
+            for (Map.Entry<String, ExpressionFunction> function : functions.entrySet()) {
+                Integer index = nameToIndex.get(function.getKey());
+                if (index != null) // Referenced in this, so bind it
+                    values[index] = new LazyValue(function.getValue(), owner);
+            }
+        }
+
+        private void extractBindTargets(ExpressionNode node, Map<String, ExpressionFunction> functions, Set<String> bindTargets) {
+            if (isFunctionReference(node)) {
+                String reference = node.toString();
+                bindTargets.add(reference);
+                extractBindTargets(functions.get(reference).getBody().getRoot(), functions, bindTargets);
+            }
+            else if (node instanceof ReferenceNode) {
+                if (((ReferenceNode)node).getArguments().expressions().size() > 0)
+                    throw new UnsupportedOperationException("Can not bind " + node +
+                                                            ": Array lookup is not supported with features having arguments)");
+                bindTargets.add(node.toString());
+            }
+            else if (node instanceof CompositeNode) {
+                CompositeNode cNode = (CompositeNode)node;
+                for (ExpressionNode child : cNode.children())
+                    extractBindTargets(child, functions, bindTargets);
+            }
+        }
+
+        private boolean isFunctionReference(ExpressionNode node) {
+            if ( ! (node instanceof ReferenceNode)) return false;
+
+            ReferenceNode reference = (ReferenceNode)node;
+            return reference.getName().equals("rankingExpression") && reference.getArguments().size() == 1;
+        }
+
+        Value get(int index) { return values[index]; }
+        void set(int index, Value value) { values[index] = value; }
+        Set<String> names() { return nameToIndex.keySet(); }
+        Integer indexOf(String name) { return nameToIndex.get(name); }
+
+        /**
+         * Creates a clone of this context suitable for evaluating against the same ranking expression
+         * in a different thread (i.e, name name to index map, different value set.
+         */
+        @Override
+        public IndexedBindings clone() {
+            try {
+                IndexedBindings clone = (IndexedBindings)super.clone();
+                clone.values = new Value[nameToIndex.size()];
+                // TODO: Remove clone, or fill LazyValues from functions here
+                return clone;
+            }
+            catch (CloneNotSupportedException e) {
+                throw new RuntimeException("Programming error");
+            }
+        }
+
     }
 
 }

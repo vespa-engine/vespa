@@ -2,6 +2,7 @@
 package ai.vespa.models.evaluation;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
@@ -9,6 +10,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -24,8 +26,7 @@ public class Model {
     private final ImmutableList<ExpressionFunction> functions;
 
     /** An instance of each usage of the above function, where variables are replaced by their bindings */
-    // TODO: Separate name and instance id?
-    private final ImmutableList<ExpressionFunction> boundFunctions;
+    private final ImmutableMap<String, ExpressionFunction> boundFunctions;
 
     public Model(String name, Collection<ExpressionFunction> functions) {
         this(name, functions, Collections.emptyList());
@@ -34,7 +35,10 @@ public class Model {
     Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> boundFunctions) {
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
-        this.boundFunctions = ImmutableList.copyOf(boundFunctions);
+        ImmutableMap.Builder<String, ExpressionFunction> b = new ImmutableMap.Builder<>();
+        for (ExpressionFunction function : boundFunctions)
+            b.put(function.getName(), function);
+        this.boundFunctions = b.build();
     }
 
     public String name() { return name; }
@@ -46,7 +50,7 @@ public class Model {
     ExpressionFunction requireFunction(String name) {
         ExpressionFunction function = function(name);
         if (function == null)
-            throw new IllegalArgumentException("No function named '" + name + " in " + this + ". Available functions: " +
+            throw new IllegalArgumentException("No function named '" + name + "' in " + this + ". Available functions: " +
                                                functions.stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
         return function;
     }
@@ -60,29 +64,17 @@ public class Model {
         return null;
     }
 
-    /** Returns an immutable list of the bound function instances of this */
-    List<ExpressionFunction> boundFunctions() { return boundFunctions; }
-
-    /** Returns the function withe the given name, or null if none */ // TODO: Parameter overloading?
-    ExpressionFunction boundFunction(String name) {
-        for (ExpressionFunction function : boundFunctions)
-            if (function.getName().equals(name))
-                return function;
-        return null;
-    }
+    /** Returns an immutable map of the bound function instances of this, indexed by the bound instance if */
+    Map<String, ExpressionFunction> boundFunctions() { return boundFunctions; }
 
     /**
      * Returns a function which can be used to evaluate the given function
      *
      * @throws IllegalArgumentException if the function is not present
      */
+    // TODO: Rename to singleThreadedContextFor, move context protottype creation to construction, clone here
     public Context contextFor(String function) {
-        Context context = new LazyArrayContext(requireFunction(function).getBody(), boundFunctions);
-        for (ExpressionFunction boundFunction : boundFunctions) {
-            System.out.println("Binding " + boundFunction.getName());
-            context.put(boundFunction.getName(), new LazyValue(boundFunction, context));
-        }
-        return context;
+        return new LazyArrayContext(requireFunction(function).getBody(), boundFunctions);
     }
 
     @Override

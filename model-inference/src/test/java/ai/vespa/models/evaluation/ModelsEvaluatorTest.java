@@ -69,7 +69,7 @@ public class ModelsEvaluatorTest {
         ModelsEvaluator evaluator = createEvaluator();
         Context context = evaluator.contextFor("macros", "secondphase");
         context.put("match", 3);
-        context.put("rankboost", 5);
+        context.put("rankBoost", 5);
         assertEquals(32.0, evaluator.evaluate("macros", "secondphase", context).asDouble(), delta);
     }
 

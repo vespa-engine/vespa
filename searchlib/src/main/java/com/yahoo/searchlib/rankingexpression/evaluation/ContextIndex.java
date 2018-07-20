@@ -1,7 +1,9 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 /**
- * Indexed context lookup methods
+ * Indexed context lookup methods.
+ * Any context which implements these methods supports optimizations where map lookups
+ * are replaced by indexed lookups.
  *
  * @author bratseth
  */
@@ -16,5 +18,9 @@ public interface ContextIndex {
      * @throws NullPointerException is this name is not known to this context
      */
     int getIndex(String name);
+
+    Value get(int index);
+
+    double getDouble(int index);
 
 }

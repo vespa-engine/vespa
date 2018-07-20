@@ -276,7 +276,7 @@ public class RankingExpression implements Serializable {
      * Returns the value of evaluating this expression over the given context.
      *
      * @param context The variable bindings to use for this evaluation.
-     * @return The evaluation result.
+     * @return the evaluation result.
      * @throws IllegalArgumentException if there are variables which are not bound in the given map
      */
     public Value evaluate(Context context) {

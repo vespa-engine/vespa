@@ -4,6 +4,7 @@ package ai.vespa.models.evaluation;
 import ai.vespa.models.evaluation.Model;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
 import java.util.ArrayList;
@@ -29,15 +30,20 @@ class RankProfilesConfigImporter {
      * The map is modifiable and owned by the caller.
      */
     public Map<String, Model> importFrom(RankProfilesConfig config) {
-        Map<String, Model> models = new HashMap<>();
-        for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
-            Model model = importProfile(profile);
-            models.put(model.name(), model);
+        try {
+            Map<String, Model> models = new HashMap<>();
+            for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
+                Model model = importProfile(profile);
+                models.put(model.name(), model);
+            }
+            return models;
         }
-        return models;
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Could not read rank profiles config - version mismatch?", e);
+        }
     }
 
-    private Model importProfile(RankProfilesConfig.Rankprofile profile) {
+    private Model importProfile(RankProfilesConfig.Rankprofile profile) throws ParseException {
         List<ExpressionFunction> functions = new ArrayList<>();
         List<ExpressionFunction> boundFunctions = new ArrayList<>();
         ExpressionFunction firstPhase = null;
@@ -48,18 +54,21 @@ class RankProfilesConfigImporter {
                 String name = expressionMatcher.group(1);
                 String instance = expressionMatcher.group(2);
                 List<String> arguments = new ArrayList<>(); // TODO: Arguments?
-                RankingExpression expression = RankingExpression.from(property.value());
+                RankingExpression expression = new RankingExpression(name, property.value());
 
-                if (instance == null)
-                    functions.add(new ExpressionFunction(name, arguments, expression));
-                else
-                    boundFunctions.add(new ExpressionFunction(name + instance, arguments, expression));
+                if (instance == null) // free function; use configured name
+                    functions.add(new ExpressionFunction(name, arguments, expression)); // Use the configured name
+                else // Referred, bound function - use full name used in references
+                    boundFunctions.add(new ExpressionFunction("rankingExpression(" + name + instance + ")",
+                                                              arguments, expression));
             }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to macros
-                firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(), RankingExpression.from(property.value()));
+                firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),
+                                                    new RankingExpression("first-phase", property.value()));
             }
             else if (property.name().equals("vespa.rank.secondphase")) { // Include in addition to macros
-                secondPhase = new ExpressionFunction("secondphase", new ArrayList<>(), RankingExpression.from(property.value()));
+                secondPhase = new ExpressionFunction("secondphase", new ArrayList<>(),
+                                                     new RankingExpression("second-phase", property.value()));
             }
         }
         if (functionByName("firstphase", functions) == null && firstPhase != null) // may be already included, depending on body
