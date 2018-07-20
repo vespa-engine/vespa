@@ -1,20 +1,28 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchlib.rankingexpression.evaluation;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package ai.vespa.models.evaluation;
 
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext;
+import com.yahoo.searchlib.rankingexpression.evaluation.Context;
+import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
- * Creates a context which supports array index based lookup.
- * This instance may be reused indefinitely for evaluations of a single
- * ranking expression, in a single thread at the time.
+ * An array context supporting functions invocations implemented as lazy values.
  *
  * @author bratseth
  */
-public class ArrayContext extends AbstractArrayContext implements Cloneable {
+class LazyArrayContext extends Context implements ContextIndex {
 
     /** The current values set */
     private Value[] values;
@@ -22,26 +30,33 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     private static DoubleValue constantZero = DoubleValue.frozen(0);
 
     /**
-     * Create a fast lookup context for an expression.
-     * This instance should be reused indefinitely by a single thread.
-     * This will fail if unknown values are attempted added.
-     */
-    public ArrayContext(RankingExpression expression) {
-        this(expression, false);
-    }
-
-    /**
-     * Create a fast lookup context for an expression.
+     * Create a fast lookup, lazy context for an expression.
      * This instance should be reused indefinitely by a single thread.
      *
      * @param expression the expression to create a context for
-     * @param ignoreUnknownValues whether attempts to put values not present in this expression
-     *                            should fail (false - the default), or be ignored (true)
      */
-    public ArrayContext(RankingExpression expression, boolean ignoreUnknownValues) {
-        super(expression, ignoreUnknownValues);
+    LazyArrayContext(RankingExpression expression, List<ExpressionFunction> functions) {
         values = new Value[doubleValues().length];
         Arrays.fill(values, DoubleValue.zero);
+    }
+
+    @Override
+    protected void extractBindTargets(ExpressionNode node, Set<String> bindTargets) {
+        if (isFunctionReference(node)) {
+            ReferenceNode reference = (ReferenceNode)node;
+            bindTargets.add(reference.getArguments().expressions().get(0).toString());
+
+        }
+        else {
+            super.extractBindTargets(node, bindTargets);
+        }
+    }
+
+    private boolean isFunctionReference(ExpressionNode node) {
+        if ( ! (node instanceof ReferenceNode)) return false;
+
+        ReferenceNode reference = (ReferenceNode)node;
+        return reference.getName().equals("rankingExpression") && reference.getArguments().size() == 1;
     }
 
     /**
@@ -116,8 +131,8 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
      * Creates a clone of this context suitable for evaluating against the same ranking expression
      * in a different thread (i.e, name name to index map, different value set.
      */
-    public ArrayContext clone() {
-        ArrayContext clone = (ArrayContext)super.clone();
+    public LazyArrayContext clone() {
+        LazyArrayContext clone = (LazyArrayContext)super.clone();
         clone.values = new Value[nameToIndex().size()];
         Arrays.fill(values, constantZero);
         return clone;

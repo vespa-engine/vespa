@@ -78,11 +78,11 @@ public class Model implements Cloneable {
     private String defaultIndex = null;
     private Query.Type type = Query.Type.ALL;
     private Query parent;
-    private Set<String> sources=new LinkedHashSet<>();
-    private Set<String> restrict=new LinkedHashSet<>();
+    private Set<String> sources = new LinkedHashSet<>();
+    private Set<String> restrict = new LinkedHashSet<>();
     private String searchPath;
     private String documentDbName = null;
-    private Execution execution=new Execution(new Execution.Context(null, null, null, null, null));
+    private Execution execution = new Execution(new Execution.Context(null, null, null, null, null));
 
     public Model(Query query) {
         setParent(query);
@@ -101,7 +101,7 @@ public class Model implements Cloneable {
      */
     @Deprecated
     public void traceLanguage() {
-        if (getParent().getTraceLevel()<2) return;
+        if (getParent().getTraceLevel() < 2) return;
         if (language != null) {
             getParent().trace("Language " + getLanguage() + " specified directly as a parameter", false, 2);
         }

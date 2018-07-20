@@ -4,6 +4,7 @@ package ai.vespa.models.evaluation;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.FileSource;
 import com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext;
+import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
@@ -46,7 +47,7 @@ public class ModelsEvaluatorTest {
     }
 
     @Test
-    public void testScalarArrayCnotextEvaluation() {
+    public void testScalarArrayContextEvaluation() {
         ModelsEvaluator evaluator = createEvaluator();
         ArrayContext context = new ArrayContext(evaluator.requireModel("macros").requireFunction("fourtimessum").getBody());
         context.put("var1", Value.of(Tensor.from("{{x:0}:3,{x:1}:5}")));
@@ -61,6 +62,15 @@ public class ModelsEvaluatorTest {
         context.put("var1", Value.of(Tensor.from("{{x:0}:3,{x:1}:5}")));
         context.put("var2", Value.of(Tensor.from("{{x:0}:7,{x:1}:11}")));
         assertEquals(Tensor.from("{{x:0}:40.0,{x:1}:64.0}"), evaluator.evaluate("macros", "fourtimessum", context));
+    }
+
+    @Test
+    public void testEvaluationDependingOnBoundMacro() {
+        ModelsEvaluator evaluator = createEvaluator();
+        Context context = evaluator.contextFor("macros", "secondphase");
+        context.put("match", 3);
+        context.put("rankboost", 5);
+        assertEquals(32.0, evaluator.evaluate("macros", "secondphase", context).asDouble(), delta);
     }
 
 }

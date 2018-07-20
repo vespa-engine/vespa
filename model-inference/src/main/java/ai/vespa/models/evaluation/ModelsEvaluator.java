@@ -27,6 +27,15 @@ public class ModelsEvaluator {
     public Map<String, Model> models() { return models; }
 
     /**
+     * Returns a function which can be used to evaluate the given function in the given model
+     *
+     * @throws IllegalArgumentException if the function or model is not present
+     */
+    public Context contextFor(String modelName, String functionName) {
+        return requireModel(modelName).contextFor(functionName);
+    }
+
+    /**
      * Evaluates the given function in the given model.
      *
      * @param modelName the name of the model to evaluate

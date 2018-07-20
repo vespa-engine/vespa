@@ -20,7 +20,8 @@ import java.util.regex.Pattern;
  */
 class RankProfilesConfigImporter {
 
-    private static final Pattern expressionPattern =
+    // TODO: Move to separate class ... or something
+    static final Pattern expressionPattern =
             Pattern.compile("rankingExpression\\(([a-zA-Z0-9_]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.rankingScript");
 
     /**

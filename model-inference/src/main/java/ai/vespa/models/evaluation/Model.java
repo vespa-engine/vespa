@@ -3,6 +3,8 @@ package ai.vespa.models.evaluation;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext;
+import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -50,9 +52,6 @@ public class Model {
     }
 
 
-    /** Returns an immutable list of the bound function instances of this */
-    List<ExpressionFunction> boundFunctions() { return boundFunctions; }
-
     /** Returns the function withe the given name, or null if none */ // TODO: Parameter overloading?
     ExpressionFunction function(String name) {
         for (ExpressionFunction function : functions)
@@ -61,12 +60,29 @@ public class Model {
         return null;
     }
 
+    /** Returns an immutable list of the bound function instances of this */
+    List<ExpressionFunction> boundFunctions() { return boundFunctions; }
+
     /** Returns the function withe the given name, or null if none */ // TODO: Parameter overloading?
     ExpressionFunction boundFunction(String name) {
         for (ExpressionFunction function : boundFunctions)
             if (function.getName().equals(name))
                 return function;
         return null;
+    }
+
+    /**
+     * Returns a function which can be used to evaluate the given function
+     *
+     * @throws IllegalArgumentException if the function is not present
+     */
+    public Context contextFor(String function) {
+        Context context = new LazyArrayContext(requireFunction(function).getBody(), boundFunctions);
+        for (ExpressionFunction boundFunction : boundFunctions) {
+            System.out.println("Binding " + boundFunction.getName());
+            context.put(boundFunction.getName(), new LazyValue(boundFunction, context));
+        }
+        return context;
     }
 
     @Override

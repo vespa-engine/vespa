@@ -44,7 +44,7 @@ public class ExpressionOptimizer {
         return null;
     }
 
-    public OptimizationReport optimize(RankingExpression expression, AbstractArrayContext arrayContext) {
+    public OptimizationReport optimize(RankingExpression expression, ContextIndex arrayContext) {
         OptimizationReport report = new OptimizationReport();
         // Note: Order of optimizations matter
         gbdtOptimizer.optimize(expression, arrayContext, report);
