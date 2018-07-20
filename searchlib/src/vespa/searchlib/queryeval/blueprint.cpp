@@ -18,7 +18,7 @@ namespace search::queryeval {
 
 void maybe_eliminate_self(Blueprint* &self, Blueprint::UP replacement) {
     // replace with replacement
-    if (replacement.get() != nullptr) {
+    if (replacement) {
         Blueprint *tmp = replacement.release();
         tmp->setParent(self->getParent());
         tmp->setSourceId(self->getSourceId());

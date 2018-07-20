@@ -240,7 +240,7 @@ protected:
 public:
     typedef std::vector<size_t> IndexList;
     IntermediateBlueprint();
-    virtual ~IntermediateBlueprint();
+    ~IntermediateBlueprint() override;
 
     void setDocIdLimit(uint32_t limit) override final;
 
@@ -285,7 +285,7 @@ protected:
 
     LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);
 public:
-    ~LeafBlueprint();
+    ~LeafBlueprint() override;
     const State &getState() const override final { return _state; }
     void setDocIdLimit(uint32_t limit) override final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(bool strict) override;
