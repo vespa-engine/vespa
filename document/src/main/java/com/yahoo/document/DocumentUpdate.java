@@ -97,6 +97,12 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         docId = id;
     }
 
+    private void verifyType(Document doc) {
+        if (!documentType.equals(doc.getDataType())) {
+            throw new IllegalArgumentException(
+                    "Document " + doc.getId() + " with type " + doc.getDataType() + " must have same type as update, which is type " + documentType);
+        }
+    }
     /**
      * Applies this document update.
      *
@@ -105,10 +111,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @throws IllegalArgumentException if the document does not have the same document type as this update
      */
     public DocumentUpdate applyTo(Document doc) {
-        if (!documentType.equals(doc.getDataType())) {
-            throw new IllegalArgumentException(
-                    "Document " + doc + " must have same type as update, which is type " + documentType);
-        }
+        verifyType(doc);
 
         for (FieldUpdate fieldUpdate : fieldUpdates) {
             fieldUpdate.applyTo(doc);
@@ -120,18 +123,15 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     }
 
     /**
-     * Will prune away any field update that will not modify any field in the document.
-     * @param doc
+     * Prune away any field update that will not modify any field in the document.
+     * @param doc document to check against
      * @return a reference to itself
      * @throws IllegalArgumentException if the document does not have the same document type as this update
      */
     public DocumentUpdate prune(Document doc) {
         if ( ! fieldPathUpdates.isEmpty()) return this;
 
-        if (!documentType.equals(doc.getDataType())) {
-            throw new IllegalArgumentException(
-                    "Document " + doc + " must have same type as update, which is type " + documentType);
-        }
+        verifyType(doc);
 
         for (Iterator<FieldUpdate> iter = fieldUpdates.iterator(); iter.hasNext();) {
             FieldUpdate update = iter.next();
