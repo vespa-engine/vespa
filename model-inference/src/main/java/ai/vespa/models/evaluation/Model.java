@@ -4,7 +4,6 @@ package ai.vespa.models.evaluation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
-import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -34,6 +33,7 @@ public class Model {
     }
 
     Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> referredFunctions) {
+        // TODO: Optimize functions
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
 
@@ -56,7 +56,7 @@ public class Model {
 
     public String name() { return name; }
 
-    /** Returns an immutable list of the free (callable) functions of this */
+    /** Returns an immutable list of the free functions of this */
     public List<ExpressionFunction> functions() { return functions; }
 
     /** Returns the given function, or throws a IllegalArgumentException if it does not exist */
@@ -89,13 +89,15 @@ public class Model {
     Map<String, ExpressionFunction> boundFunctions() { return referredFunctions; }
 
     /**
-     * Returns a function which can be used to evaluate the given function
+     * Returns an evaluator which can be used to evaluate the given function in a single thread once.
+
+     * Usage:
+     * <code>Tensor result = model.evaluatorOf("myFunction").bind("foo", value).bind("bar", value).evaluate()</code>
      *
      * @throws IllegalArgumentException if the function is not present
      */
-    // TODO: Rename to singleThreadedContextFor, move context protottype creation to construction, clone here
-    public Context contextFor(String function) {
-        return requireContextProprotype(function).copy();
+    public FunctionEvaluator evaluatorOf(String function) {  // TODO: Parameter overloading?
+        return new FunctionEvaluator(requireContextProprotype(function).copy());
     }
 
     @Override

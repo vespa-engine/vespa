@@ -17,7 +17,6 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,11 +27,11 @@ import java.util.Set;
  */
 final class LazyArrayContext extends Context implements ContextIndex {
 
-    private final String expressionName;
+    private final RankingExpression expression;
     private final IndexedBindings indexedBindings;
 
-    private LazyArrayContext(String expressionName, IndexedBindings indexedBindings) {
-        this.expressionName = expressionName;
+    private LazyArrayContext(RankingExpression expression, IndexedBindings indexedBindings) {
+        this.expression = expression;
         this.indexedBindings = indexedBindings.copy(this);
     }
 
@@ -42,7 +41,7 @@ final class LazyArrayContext extends Context implements ContextIndex {
      * @param expression the expression to create a context for
      */
     LazyArrayContext(RankingExpression expression, Map<String, ExpressionFunction> functions) {
-        this.expressionName = expression.getName();
+        this.expression = expression;
         this.indexedBindings = new IndexedBindings(expression, functions, this);
     }
 
@@ -118,14 +117,16 @@ final class LazyArrayContext extends Context implements ContextIndex {
     }
 
     @Override
-    public String toString() { return "context of '" + expressionName + "'"; }
+    public String toString() { return "context of '" + expression.getName() + "'"; }
+
+    RankingExpression expression() { return expression; }
 
     /**
-     * Creates a clone of this context suitable for evaluating against the same ranking expression
+     * Creates a copy of this context suitable for evaluating against the same ranking expression
      * in a different thread or for re-binding free variables.
      */
     LazyArrayContext copy() {
-        return new LazyArrayContext(expressionName, indexedBindings);
+        return new LazyArrayContext(expression, indexedBindings);
     }
 
     private static class IndexedBindings {
