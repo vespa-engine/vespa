@@ -7,6 +7,8 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace search {
 
@@ -166,11 +168,11 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
         assert(isSingleValue);
         (void) isSingleValue;
         if (isString) {
-            return queryeval::SearchIterator::UP(new AttributeFilter<UseStringEnum>(tfmd, _attr, _weights, _contexts));
+            return std::make_unique<AttributeFilter<UseStringEnum>>(tfmd, _attr, _weights, _contexts);
         } else {
             assert(isInteger);
             (void) isInteger;
-            return queryeval::SearchIterator::UP(new AttributeFilter<UseInteger>(tfmd, _attr, _weights, _contexts));
+            return std::make_unique<AttributeFilter<UseInteger>>(tfmd, _attr, _weights, _contexts);
         }
     }
 }
@@ -179,10 +181,26 @@ void
 AttributeWeightedSetBlueprint::fetchPostings(bool strict)
 {
     if (strict) {
-        for (size_t i = 0; i < _contexts.size(); ++i) {
-            _contexts[i]->fetchPostings(true);
+        for (auto * context : _contexts) {
+            context->fetchPostings(true);
         }
     }
+}
+
+void
+AttributeWeightedSetBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
+{
+    ComplexLeafBlueprint::visitMembers(visitor);
+    visitor.visitString("attribute", _attr.getName());
+    visitor.openStruct("terms", "TermList");
+    for (size_t i = 0; i < _contexts.size(); ++i) {
+        const ISearchContext * context = _contexts[i];
+        visitor.openStruct(vespalib::make_string("[%zu]", i), "Term");
+        visitor.visitString("term", context->queryTerm().getTerm());
+        visitor.visitInt("weight", _weights[i]);
+        visitor.closeStruct();
+    }
+    visitor.closeStruct();
 }
 
 } // namespace search

@@ -21,9 +21,7 @@ GroupingManager::GroupingManager(GroupingContext & groupingContext)
 {
 }
 
-GroupingManager::~GroupingManager()
-{
-}
+GroupingManager::~GroupingManager() = default;
 
 using search::expression::ExpressionNode;
 using search::expression::AttributeNode;
