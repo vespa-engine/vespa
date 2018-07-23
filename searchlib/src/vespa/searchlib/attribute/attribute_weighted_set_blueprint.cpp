@@ -39,7 +39,7 @@ public:
     UseStringEnum(const IAttributeVector & attr)
         : UseAttr(attr) {}
     auto mapToken(const ISearchContext &context) const {
-        return attribute().findFoldedEnums(context.queryTerm().getTerm());
+        return attribute().findFoldedEnums(context.queryTerm()->getTerm());
     }
     int64_t getToken(uint32_t docId) const {
         return attribute().getEnum(docId);
@@ -196,8 +196,16 @@ AttributeWeightedSetBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) co
     for (size_t i = 0; i < _contexts.size(); ++i) {
         const ISearchContext * context = _contexts[i];
         visitor.openStruct(vespalib::make_string("[%zu]", i), "Term");
-        visitor.visitString("term", context->queryTerm().getTerm());
-        visitor.visitInt("weight", _weights[i]);
+        visitor.visitBool("valid", context->valid());
+        if (context-> valid()) {
+            bool isString = (_attr.isStringType() && _attr.hasEnum());
+            if (isString) {
+                visitor.visitString("term", context->queryTerm()->getTerm());
+            } else {
+                visitor.visitInt("term", context->getAsIntegerTerm().lower());
+            }
+            visitor.visitInt("weight", _weights[i]);
+        }
         visitor.closeStruct();
     }
     visitor.closeStruct();

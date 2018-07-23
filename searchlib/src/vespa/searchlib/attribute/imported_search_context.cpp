@@ -249,7 +249,7 @@ Int64Range ImportedSearchContext::getAsIntegerTerm() const {
     return _target_search_context->getAsIntegerTerm();
 }
 
-const QueryTermBase& ImportedSearchContext::queryTerm() const {
+const QueryTermBase * ImportedSearchContext::queryTerm() const {
     return _target_search_context->queryTerm();
 }
 

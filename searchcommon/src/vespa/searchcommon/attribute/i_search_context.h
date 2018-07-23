@@ -48,7 +48,7 @@ public:
 
     virtual bool valid() const = 0;
     virtual Int64Range getAsIntegerTerm() const = 0;
-    virtual const QueryTermBase &queryTerm() const = 0;
+    virtual const QueryTermBase * queryTerm() const = 0;
     virtual const vespalib::string &attributeName() const = 0;
 
     int32_t find(DocId docId, int32_t elementId, int32_t &weight) const { return onFind(docId, elementId, weight); }
