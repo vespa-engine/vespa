@@ -131,7 +131,7 @@ public class FastHit extends Hit {
     /** Returns the index of the node this hit originated at */
     public int getDistributionKey() { return distributionKey; }
 
-    /** Returns the index of the node this hit originated at */
+    /** Sets the index of the node this hit originated at */
     public void setDistributionKey(int distributionKey) { this.distributionKey = distributionKey; }
 
     /**

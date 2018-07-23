@@ -5,15 +5,15 @@ import java.io.File;
 
 /**
  * Source specifying config from one local file
- * @author vegardh
- * @since 5.1
  *
+ * @author vegardh
  */
 public class FileSource implements ConfigSource {
+
     private final File file;
 
     public FileSource(File file) {
-        if (!file.isFile()) throw new IllegalArgumentException("Not an ordinary file: "+file);
+        if ( ! file.isFile()) throw new IllegalArgumentException("Not an ordinary file: "+file);
         this.file = file;
     }
 

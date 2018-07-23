@@ -18,6 +18,6 @@ public abstract class Optimizer {
     /** Returns whether this is enabled */
     public boolean isEnabled() { return enabled; }
 
-    public abstract void optimize(RankingExpression expression, AbstractArrayContext context, OptimizationReport report);
+    public abstract void optimize(RankingExpression expression, ContextIndex context, OptimizationReport report);
 
 }

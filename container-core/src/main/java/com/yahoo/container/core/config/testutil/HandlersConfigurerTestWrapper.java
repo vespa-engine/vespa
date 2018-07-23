@@ -111,11 +111,7 @@ public class HandlersConfigurerTestWrapper {
 
     public void reloadConfig() {
         configurer.reloadConfig(++lastGeneration);
-        try {
-            configurer.getNewComponentGraph(Guice.createInjector(), false);
-        } catch (InterruptedException e) {
-           throw new RuntimeException(e);
-        }
+        configurer.getNewComponentGraph(Guice.createInjector(), false);
     }
 
     public void shutdown() {
