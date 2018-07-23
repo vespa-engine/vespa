@@ -159,6 +159,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
     const char *p = theBuf.begin();
     const char *ep = theBuf.end();
     uint64_t tmp(0);
+    int64_t tmpI64(0);
     uint8_t flags(0);
     while (p < ep) {
         vespalib::string metaStr;
@@ -259,9 +260,9 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             break;
 
         case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-            tmp = vespalib::nbo::n2h(*reinterpret_cast<const uint64_t *>(p));
+            tmpI64 = vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
             p += sizeof(uint64_t);
-            result.append(make_string("%c/%lu", _G_ItemName[type], tmp));
+            result.append(make_string("%c/%ld", _G_ItemName[type], tmpI64));
             break;
 
         case ParseItem::ITEM_PHRASE:

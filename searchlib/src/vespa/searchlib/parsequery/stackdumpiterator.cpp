@@ -180,9 +180,9 @@ SimpleQueryStackDumpIterator::next()
         _currArity = 0;
         break;
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-        if (p + 8 > _bufEnd) return false;
+        if (p + sizeof(int64_t) > _bufEnd) return false;
         _generatedTerm.clear();
-        _generatedTerm << vespalib::nbo::n2h(*(const uint64_t *)p);
+        _generatedTerm << vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
         _currTerm = _generatedTerm.c_str();
         _currTermLen = _generatedTerm.size();
         p += 8;
