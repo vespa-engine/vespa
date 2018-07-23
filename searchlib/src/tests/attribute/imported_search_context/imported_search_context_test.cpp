@@ -348,7 +348,7 @@ TEST_F("Multiple iterators can be created from the same context", SingleValueFix
 // implemented at all for (single) numeric attributes. Intentional?
 TEST_F("queryTerm() returns term context was created with", WsetValueFixture) {
     auto ctx = f.create_context(word_term("helloworld"));
-    EXPECT_EQUAL(std::string("helloworld"), std::string(ctx->queryTerm().getTerm()));
+    EXPECT_EQUAL(std::string("helloworld"), std::string(ctx->queryTerm()->getTerm()));
 }
 
 struct SearchCacheFixture : Fixture {

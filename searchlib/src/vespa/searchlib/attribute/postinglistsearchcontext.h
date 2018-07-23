@@ -283,14 +283,14 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
 
     if (this->valid()) {
         if (this->isPrefix()) {
-            FoldedComparatorType comp(_enumStore, this->queryTerm().getTerm(), true);
+            FoldedComparatorType comp(_enumStore, this->queryTerm()->getTerm(), true);
             this->lookupRange(comp, comp);
         } else if (this->isRegex()) {
-            vespalib::string prefix(Regexp::get_prefix(this->queryTerm().getTerm()));
+            vespalib::string prefix(Regexp::get_prefix(this->queryTerm()->getTerm()));
             FoldedComparatorType comp(_enumStore, prefix.c_str(), true);
             this->lookupRange(comp, comp);
         } else {
-            FoldedComparatorType comp(_enumStore, this->queryTerm().getTerm());
+            FoldedComparatorType comp(_enumStore, this->queryTerm()->getTerm());
             this->lookupTerm(comp);
         }
         if (this->_uniqueValues == 1u) {

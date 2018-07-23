@@ -104,7 +104,7 @@ private:
     protected:
         bool valid() const override;
 
-        const QueryTermBase & queryTerm() const override;
+        const QueryTermBase * queryTerm() const override;
         bool isMatch(const char *src) const {
             if (__builtin_expect(isRegex(), false)) {
                 return getRegex()->match(src);
