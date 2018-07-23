@@ -185,7 +185,7 @@ SimpleQueryStackDumpIterator::next()
         _generatedTerm << vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
         _currTerm = _generatedTerm.c_str();
         _currTermLen = _generatedTerm.size();
-        p += 8;
+        p += sizeof(int64_t);
         if (p > _bufEnd) return false;
 
         _currArg1 = 0;
