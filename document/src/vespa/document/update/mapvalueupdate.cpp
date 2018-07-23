@@ -71,9 +71,9 @@ MapValueUpdate::applyTo(FieldValue& value) const
         ArrayFieldValue& val(static_cast<ArrayFieldValue&>(value));
         int32_t index = _key->getAsInt();
         if (index < 0 || static_cast<uint32_t>(index) >= val.size()) {
-            throw IllegalStateException(vespalib::make_string(
-                    "Tried to update element %i in an array of %zu elements",
-		            index, val.size()), VESPA_STRLOC);
+            // Silently ignoring updates with index out of bounds matches
+            // behavior of functionally identical fieldpath updates.
+            return true;
         }
         if (!_update->applyTo(val[_key->getAsInt()])) {
             val.remove(_key->getAsInt());
