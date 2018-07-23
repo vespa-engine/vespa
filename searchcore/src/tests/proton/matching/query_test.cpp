@@ -65,6 +65,8 @@ using search::queryeval::SimpleResult;
 using search::queryeval::ParallelWeakAndBlueprint;
 using search::queryeval::RankBlueprint;
 using search::queryeval::AndBlueprint;
+using search::queryeval::IntermediateBlueprint;
+using search::queryeval::AndNotBlueprint;
 using search::queryeval::SourceBlenderBlueprint;
 
 using std::string;
@@ -111,6 +113,7 @@ class Test : public vespalib::TestApp {
     void requireThatParallelWandBlueprintsAreCreatedCorrectly();
     void requireThatWhiteListBlueprintCanBeUsed();
     void requireThatRankBlueprintStaysOnTopAfterWhiteListing();
+    void requireThatAndNotBlueprintStaysOnTopAfterWhiteListing();
     void requireThatSameElementTermsAreProperlyPrefixed();
     void requireThatSameElementDoesNotAllocateMatchData();
     void requireThatSameElementIteratorsCanBeBuilt();
@@ -884,9 +887,8 @@ Test::requireThatWhiteListBlueprintCanBeUsed()
     EXPECT_EQUAL(exp, act);
 }
 
-void Test::requireThatRankBlueprintStaysOnTopAfterWhiteListing() {
-    QueryBuilder<ProtonNodeTypes> builder;
-    builder.addRank(2);
+template<typename T>
+void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<ProtonNodeTypes> & builder) {
     builder.addStringTerm("foo", field, field_id, string_weight);
     builder.addStringTerm("bar", field, field_id, string_weight);
     std::string stackDump = StackDumpCreator::create(*builder.build());
@@ -902,7 +904,7 @@ void Test::requireThatRankBlueprintStaysOnTopAfterWhiteListing() {
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
     query.reserveHandles(requestContext, context, mdl);
-    const RankBlueprint * root = dynamic_cast<const RankBlueprint *>(query.peekRoot());
+    const IntermediateBlueprint * root = dynamic_cast<const T *>(query.peekRoot());
     ASSERT_TRUE(root != nullptr);
     EXPECT_EQUAL(2u, root->childCnt());
     const AndBlueprint * first = dynamic_cast<const AndBlueprint *>(&root->getChild(0));
@@ -911,9 +913,19 @@ void Test::requireThatRankBlueprintStaysOnTopAfterWhiteListing() {
     EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&first->getChild(0)));
     EXPECT_TRUE(dynamic_cast<const SimpleBlueprint *>(&first->getChild(1)));
     EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&root->getChild(1)));
-
 }
 
+void Test::requireThatRankBlueprintStaysOnTopAfterWhiteListing() {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addRank(2);
+    verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing<RankBlueprint>(builder);
+}
+
+void Test::requireThatAndNotBlueprintStaysOnTopAfterWhiteListing() {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addAndNot(2);
+    verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing<AndNotBlueprint>(builder);
+}
 
 
 search::query::Node::UP
@@ -1022,6 +1034,7 @@ Test::Main()
     TEST_CALL(requireThatParallelWandBlueprintsAreCreatedCorrectly);
     TEST_CALL(requireThatWhiteListBlueprintCanBeUsed);
     TEST_CALL(requireThatRankBlueprintStaysOnTopAfterWhiteListing);
+    TEST_CALL(requireThatAndNotBlueprintStaysOnTopAfterWhiteListing);
     TEST_CALL(requireThatSameElementTermsAreProperlyPrefixed);
     TEST_CALL(requireThatSameElementDoesNotAllocateMatchData);
     TEST_CALL(requireThatSameElementIteratorsCanBeBuilt);
