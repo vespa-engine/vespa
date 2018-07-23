@@ -262,7 +262,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
         case ParseItem::ITEM_PURE_WEIGHTED_LONG:
             tmpI64 = vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
             p += sizeof(uint64_t);
-            result.append(make_string("%c/%ld", _G_ItemName[type], tmpI64));
+            result.append(make_string("%c/%"PRId64, _G_ItemName[type], tmpI64));
             break;
 
         case ParseItem::ITEM_PHRASE:
