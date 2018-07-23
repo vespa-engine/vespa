@@ -25,9 +25,9 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(const vespalib::strin
     _currArg2(0),
     _currArg3(0),
     _predicate_query_term(),
-    _currIndexName(NULL),
+    _currIndexName(nullptr),
     _currIndexNameLen(0),
-    _currTerm(NULL),
+    _currTerm(nullptr),
     _currTermLen(0),
     _generatedTerm(),
     _currNum(-1)
@@ -114,9 +114,9 @@ SimpleQueryStackDumpIterator::next()
         _currArity = tmp;
         if (p > _bufEnd) return false;
         _currArg1 = 0;
-        _currIndexName = NULL;
+        _currIndexName = nullptr;
         _currIndexNameLen = 0;
-        _currTerm = NULL;
+        _currTerm = nullptr;
         _currTermLen = 0;
         break;
 
@@ -129,9 +129,9 @@ SimpleQueryStackDumpIterator::next()
         p += vespalib::compress::Integer::decompressPositive(tmp, p);
         _currArg1 = tmp;
         if (p > _bufEnd) return false;
-        _currIndexName = NULL;
+        _currIndexName = nullptr;
         _currIndexNameLen = 0;
-        _currTerm = NULL;
+        _currTerm = nullptr;
         _currTermLen = 0;
         break;
 
@@ -149,7 +149,7 @@ SimpleQueryStackDumpIterator::next()
         _currIndexName = p;
         p += _currIndexNameLen;
         if (p > _bufEnd) return false;
-        _currTerm = NULL;
+        _currTerm = nullptr;
         _currTermLen = 0;
         break;
     case ParseItem::ITEM_SAME_ELEMENT:
@@ -163,7 +163,7 @@ SimpleQueryStackDumpIterator::next()
         _currIndexName = p;
         p += _currIndexNameLen;
         if (p > _bufEnd) return false;
-        _currTerm = NULL;
+        _currTerm = nullptr;
         _currTermLen = 0;
         break;
 
@@ -197,7 +197,7 @@ SimpleQueryStackDumpIterator::next()
             _currIndexName = p;
             p += _currIndexNameLen;
             _currArity = readCompressedPositiveInt(p);
-            _currTerm = NULL;
+            _currTerm = nullptr;
             _currTermLen = 0;
             if (p > _bufEnd) return false;
         } catch (...) {
@@ -281,7 +281,7 @@ SimpleQueryStackDumpIterator::next()
         } else {
             _currArg1 = 0;
         }
-        _currTerm = NULL;
+        _currTerm = nullptr;
         _currTermLen = 0;
         break;
 
