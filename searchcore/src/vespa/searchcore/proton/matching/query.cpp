@@ -28,7 +28,9 @@ using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
 using search::queryeval::AndBlueprint;
+using search::queryeval::AndNotBlueprint;
 using search::queryeval::RankBlueprint;
+using search::queryeval::IntermediateBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IRequestContext;
 using search::queryeval::SearchIterator;
@@ -74,6 +76,16 @@ void AddLocationNode(const string &location_str, Node::UP &query_tree, Location 
     }
     query_tree = std::move(new_base);
 }
+
+IntermediateBlueprint *
+asRankOrAndNot(Blueprint * blueprint) {
+    IntermediateBlueprint * rankOrAndNot = dynamic_cast<RankBlueprint*>(blueprint);
+    if (rankOrAndNot == nullptr) {
+        rankOrAndNot = dynamic_cast<AndNotBlueprint*>(blueprint);
+    }
+    return rankOrAndNot;
+}
+
 }  // namespace
 
 Query::Query() = default;
@@ -127,12 +139,12 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
     if (_whiteListBlueprint) {
         auto andBlueprint = std::make_unique<AndBlueprint>();
-        RankBlueprint * rank = dynamic_cast<RankBlueprint*>(_blueprint.get());
-        if (rank != nullptr) {
+        IntermediateBlueprint * rankOrAndNot = asRankOrAndNot(_blueprint.get());
+        if (rankOrAndNot != nullptr) {
             (*andBlueprint)
-                    .addChild(rank->removeChild(0))
+                    .addChild(rankOrAndNot->removeChild(0))
                     .addChild(std::move(_whiteListBlueprint));
-            rank->insertChild(0, std::move(andBlueprint));
+            rankOrAndNot->insertChild(0, std::move(andBlueprint));
         } else {
             (*andBlueprint)
                     .addChild(std::move(_blueprint))
