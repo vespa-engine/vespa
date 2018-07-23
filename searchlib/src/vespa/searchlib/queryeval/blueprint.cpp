@@ -133,7 +133,6 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
         for (size_t i = 0; i < state.numFields(); ++i) {
             const FieldSpecBase &spec = state.field(i);
             visitor.openStruct(vespalib::make_string("[%zu]", i), "Field");
-            // visitor.visitString("name", spec.getName());
             visitor.visitInt("fieldId", spec.getFieldId());
             visitor.visitInt("handle", spec.getHandle());
             visitor.visitBool("isFilter", spec.isFilter());
