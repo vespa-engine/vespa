@@ -1241,7 +1241,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.jobController().jobs(appId)
                 .forEach(jobType -> jobMap.put(jobType, controller.jobController()
                         .last(appId, jobType)
-                        .orElseThrow(() -> new RuntimeException("This is a data violation right?"))));
+                        .orElseThrow(() -> new RuntimeException(String.format("Job %s for application %s appears in " +
+                                        "the list of previously ran jobs, but no status of the last execution found",
+                                jobType.jobName(), appId.toShortString())))));
 
         return jobMap;
     }
@@ -1250,7 +1252,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Map<String, byte[]> dataParts = new MultipartParser().parse(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         SourceRevision sourceRevision = toSourceRevision(submitOptions).orElseThrow(() ->
-                new IllegalArgumentException("Must specify 'repository', 'branch' and 'commit"));
+                new IllegalArgumentException("Must specify 'repository', 'branch', and 'commit'"));
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
                 sourceRevision,
