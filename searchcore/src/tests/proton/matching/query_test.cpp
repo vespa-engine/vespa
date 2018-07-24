@@ -887,10 +887,11 @@ Test::requireThatWhiteListBlueprintCanBeUsed()
     EXPECT_EQUAL(exp, act);
 }
 
-template<typename T>
+template<typename T1, typename T2>
 void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<ProtonNodeTypes> & builder) {
     builder.addStringTerm("foo", field, field_id, string_weight);
     builder.addStringTerm("bar", field, field_id, string_weight);
+    builder.addStringTerm("baz", field, field_id, string_weight);
     std::string stackDump = StackDumpCreator::create(*builder.build());
     Query query;
     query.buildTree(stackDump, "", ViewResolver(), plain_index_env);
@@ -904,27 +905,33 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<Pr
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
     query.reserveHandles(requestContext, context, mdl);
-    const IntermediateBlueprint * root = dynamic_cast<const T *>(query.peekRoot());
+    const IntermediateBlueprint * root = dynamic_cast<const T1 *>(query.peekRoot());
     ASSERT_TRUE(root != nullptr);
     EXPECT_EQUAL(2u, root->childCnt());
-    const AndBlueprint * first = dynamic_cast<const AndBlueprint *>(&root->getChild(0));
+    const IntermediateBlueprint * second = dynamic_cast<const T2 *>(&root->getChild(0));
+    ASSERT_TRUE(second != nullptr);
+    EXPECT_EQUAL(2u, second->childCnt());
+    const AndBlueprint * first = dynamic_cast<const AndBlueprint *>(&second->getChild(0));
     ASSERT_TRUE(first != nullptr);
     EXPECT_EQUAL(2u, first->childCnt());
     EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&first->getChild(0)));
     EXPECT_TRUE(dynamic_cast<const SimpleBlueprint *>(&first->getChild(1)));
+    EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&second->getChild(1)));
     EXPECT_TRUE(dynamic_cast<const SourceBlenderBlueprint *>(&root->getChild(1)));
 }
 
 void Test::requireThatRankBlueprintStaysOnTopAfterWhiteListing() {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addRank(2);
-    verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing<RankBlueprint>(builder);
+    builder.addAndNot(2);
+    verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing<RankBlueprint, AndNotBlueprint>(builder);
 }
 
 void Test::requireThatAndNotBlueprintStaysOnTopAfterWhiteListing() {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addAndNot(2);
-    verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing<AndNotBlueprint>(builder);
+    builder.addRank(2);
+    verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing<AndNotBlueprint, RankBlueprint>(builder);
 }
 
 

@@ -86,6 +86,17 @@ asRankOrAndNot(Blueprint * blueprint) {
     return rankOrAndNot;
 }
 
+IntermediateBlueprint *
+lastConsequtiveRankOrAndNot(Blueprint * blueprint) {
+    IntermediateBlueprint * prev = nullptr;
+    IntermediateBlueprint * curr = asRankOrAndNot(blueprint);
+    while (curr != nullptr) {
+        prev =  curr;
+        curr = asRankOrAndNot(&curr->getChild(0));
+    }
+    return prev;
+}
+
 }  // namespace
 
 Query::Query() = default;
@@ -139,7 +150,7 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
     if (_whiteListBlueprint) {
         auto andBlueprint = std::make_unique<AndBlueprint>();
-        IntermediateBlueprint * rankOrAndNot = asRankOrAndNot(_blueprint.get());
+        IntermediateBlueprint * rankOrAndNot = lastConsequtiveRankOrAndNot(_blueprint.get());
         if (rankOrAndNot != nullptr) {
             (*andBlueprint)
                     .addChild(rankOrAndNot->removeChild(0))
