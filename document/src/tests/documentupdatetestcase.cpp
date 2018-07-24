@@ -64,6 +64,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
   void array_element_update_can_be_roundtrip_serialized();
   void array_element_update_applies_to_specified_element();
+  void array_element_update_for_invalid_index_is_ignored();
 
   CPPUNIT_TEST_SUITE(DocumentUpdateTest);
   CPPUNIT_TEST(testSimpleUsage);
@@ -91,6 +92,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
   CPPUNIT_TEST(array_element_update_can_be_roundtrip_serialized);
   CPPUNIT_TEST(array_element_update_applies_to_specified_element);
+  CPPUNIT_TEST(array_element_update_for_invalid_index_is_ignored);
   CPPUNIT_TEST_SUITE_END();
 
 };
@@ -1048,6 +1050,19 @@ void DocumentUpdateTest::array_element_update_applies_to_specified_element() {
     CPPUNIT_ASSERT_EQUAL(vespalib::string("foo"), (*result_array)[0].getAsString());
     CPPUNIT_ASSERT_EQUAL(vespalib::string("bar"), (*result_array)[1].getAsString());
     CPPUNIT_ASSERT_EQUAL(vespalib::string("blarg"), (*result_array)[2].getAsString());
+}
+
+void DocumentUpdateTest::array_element_update_for_invalid_index_is_ignored() {
+    ArrayUpdateFixture f;
+
+    ArrayFieldValue array_value(f.array_field.getDataType());
+    array_value.add("jerry");
+    f.doc->setValue(f.array_field, array_value);
+
+    f.update->applyTo(*f.doc); // MapValueUpdate for index 1, which does not exist
+
+    auto result_array = f.doc->getAs<ArrayFieldValue>(f.array_field);
+    CPPUNIT_ASSERT_EQUAL(array_value, *result_array);
 }
 
 }  // namespace document
