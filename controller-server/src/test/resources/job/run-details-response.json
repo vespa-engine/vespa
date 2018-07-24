@@ -1,0 +1,5 @@
+{
+  "deployTester":"INFO\t1234567890\tSUCCESS",
+  "installTester":"INFO\t1234598760\tSUCCESS",
+  "deactivateTester":"INFO\t1234678901\tERROR: Something went wrong"
+}
