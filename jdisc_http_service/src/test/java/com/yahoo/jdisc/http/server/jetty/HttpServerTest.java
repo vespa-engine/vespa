@@ -65,7 +65,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * @author bakksjo
+ * @author Oyvind Bakksjo
  * @author Simon Thoresen Hult
  */
 public class HttpServerTest {
@@ -463,6 +463,20 @@ public class HttpServerTest {
         driver.client().get("/status.html")
               .expectStatusCode(is(OK))
               .expectContent(matchesPattern("\\d{13,}"));
+        assertThat(driver.close(), is(true));
+    }
+
+    @Test
+    public void requireThatGzipEncodingRequestsAreAutomaticallyDecompressed() throws Exception {
+        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final String requestContent = generateContent('a', 30);
+        final ResponseValidator response =
+                driver.client().newPost("/status.html")
+                        .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                        .setGzipContent(requestContent)
+                        .execute();
+        response.expectStatusCode(is(OK))
+                .expectContent(startsWith('{' + requestContent + "=[]}"));
         assertThat(driver.close(), is(true));
     }
 
