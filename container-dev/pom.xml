@@ -209,6 +209,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.optimaize.languagedetector</groupId>
+          <artifactId>language-detector</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.opennlp</groupId>
           <artifactId>opennlp-tools</artifactId>
         </exclusion>
