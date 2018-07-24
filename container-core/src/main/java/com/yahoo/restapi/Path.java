@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * If the path spec ends with /{*}, it will match urls with any rest path.
  * The rest path (not including the trailing slash) will be available as getRest().
  * 
- * Note that for convenience in common use this has state which is changes as a side effect of each matches
+ * Note that for convenience in common use this has state which changes as a side effect of each matches
  * invocation. It is therefore for single thread use.
  * 
  * @author bratseth
@@ -40,6 +40,8 @@ public class Path {
     }
 
     /**
+     * Parses the path according to pathSpec - must be called prior to {@link #get}
+     *
      * Returns whether this path matches the given template string.
      * If the given template has placeholders, their values (accessible by get) are reset by calling this,
      * whether or not the path matches the given template.

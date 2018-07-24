@@ -49,6 +49,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -63,6 +64,8 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
@@ -88,6 +91,7 @@ import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -168,6 +172,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job"))
+            return JobControllerApiHandlerHelper.jobTypeResponse(jobTypes(path), latestRuns(path), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}"))
+            return JobControllerApiHandlerHelper.runStatusResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}"))
+            return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
@@ -193,6 +203,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploy(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -1204,4 +1215,48 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 message + ": No NToken provided"));
     }
 
+    private ApplicationId appIdFromPath(Path path) {
+        return ApplicationId.from(path.get("tenant"), path.get("application"), path.get("instance"));
+    }
+
+    private JobType jobTypeFromPath(Path path) {
+        return JobType.fromJobName(path.get("jobtype"));
+    }
+
+    private RunId runIdFromPath(Path path) {
+        long number = Long.parseLong(path.get("number"));
+        return new RunId(appIdFromPath(path), jobTypeFromPath(path), number);
+    }
+
+    private List<JobType> jobTypes(Path path) {
+        ApplicationId appId = appIdFromPath(path);
+        DeploymentSpec deploymentSpec = controller.applications().get(appId).get().deploymentSpec();
+        DeploymentSteps deploymentSteps = new DeploymentSteps(deploymentSpec, controller::system);
+        return deploymentSteps.jobs();
+    }
+
+    private Map<JobType, RunStatus> latestRuns(Path path) {
+        Map<JobType, RunStatus> jobMap = new HashMap<>();
+        ApplicationId appId = appIdFromPath(path);
+        controller.jobController().jobs(appId)
+                .forEach(jobType -> jobMap.put(jobType, controller.jobController()
+                        .last(appId, jobType)
+                        .orElseThrow(() -> new RuntimeException(String.format("Job %s for application %s appears in " +
+                                        "the list of previously ran jobs, but no status of the last execution found",
+                                jobType.jobName(), appId.toShortString())))));
+
+        return jobMap;
+    }
+
+    private HttpResponse submit(String tenant, String application, HttpRequest request) {
+        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
+        SourceRevision sourceRevision = toSourceRevision(submitOptions).orElseThrow(() ->
+                new IllegalArgumentException("Must specify 'repository', 'branch', and 'commit'"));
+
+        return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
+                sourceRevision,
+                dataParts.get(EnvironmentResource.APPLICATION_ZIP),
+                dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+    }
 }
