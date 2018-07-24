@@ -6,10 +6,7 @@
 #include <vector>
 #include <vespa/searchlib/common/feature.h>
 
-namespace search {
-namespace fef {
-
-class Properties;
+namespace search::fef { class Properties; }
 
 /**
  * This namespace is a placeholder for several structs, each representing
@@ -19,7 +16,7 @@ class Properties;
  * instance one should use the property names defined here to perform the lookup.
  * If the property is not present the default value is used.
  **/
-namespace indexproperties {
+namespace search::fef::indexproperties {
 
 namespace eval {
 
@@ -357,8 +354,4 @@ struct QueryFeature {
 
 } // namespace type
 
-
-} // namespace indexproperties
-} // namespace fef
-} // namespace search
-
+}

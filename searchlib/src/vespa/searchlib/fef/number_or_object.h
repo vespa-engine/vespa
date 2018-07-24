@@ -5,8 +5,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/eval/eval/value.h>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Storage cell for values passed between feature executors in the
@@ -21,5 +20,4 @@ union NumberOrObject {
     ~NumberOrObject() {}
 };
 
-} // namespace fef
-} // namespace search
+}

@@ -3,16 +3,16 @@
 #include "internal_max_reduce_prod_join_feature.h"
 #include "valuefeature.h"
 #include "weighted_set_parser.h"
+#include "dotproductfeature.h"
 
-#include <vespa/log/log.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/features/dotproductfeature.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchcommon/common/datatype.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".features.internalmaxreduceprodjoin");
 
 using namespace search::attribute;
@@ -20,8 +20,7 @@ using namespace search::fef;
 
 using search::features::dotproduct::wset::IntegerVector;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Executor used when array can be accessed directly
@@ -38,8 +37,7 @@ public:
 };
 
 template <typename BaseType>
-RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute,
-                         const IntegerVector &queryVector) :
+RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute, const IntegerVector &queryVector) :
         FeatureExecutor(),
         _attribute(attribute),
         _queryVector(queryVector)
@@ -215,8 +213,4 @@ InternalMaxReduceProdJoinBlueprint::createExecutor(const IQueryEnvironment &env,
     return stash.create<SingleZeroValueExecutor>();
 }
 
-
 }
-}
-
-

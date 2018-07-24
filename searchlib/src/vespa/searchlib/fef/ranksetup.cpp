@@ -20,8 +20,7 @@ public:
 };
 } // namespace <unnamed>
 
-namespace search {
-namespace fef {
+namespace search::fef {
     
 using namespace indexproperties;    
 
@@ -61,7 +60,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _softTimeoutTailCost(0.1)
 { }
 
-RankSetup::~RankSetup() { }
+RankSetup::~RankSetup() = default;
 
 void
 RankSetup::configure()
@@ -190,5 +189,4 @@ RankSetup::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &o
     }
 }
 
-} // namespace fef
-} // namespace search
+}
