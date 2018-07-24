@@ -10,7 +10,7 @@ namespace vespalib { class ThreadStackExecutorBase; }
 
 namespace proton {
 
-class IDocumentDBConfigOwner;
+class DocumentDBConfigOwner;
 
 /*
  * Interface class for owner of a proton configurer, with callback methods
@@ -21,12 +21,12 @@ class IProtonConfigurerOwner
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
 public:
     virtual ~IProtonConfigurerOwner() { }
-    virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName &docTypeName,
-                                                  document::BucketSpace bucketSpace,
-                                                  const vespalib::string &configId,
-                                                  const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
-                                                  const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
-                                                  InitializeThreads initializeThreads) = 0;
+    virtual std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
+                                                                 document::BucketSpace bucketSpace,
+                                                                 const vespalib::string &configId,
+                                                                 const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
+                                                                 const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
+                                                                 InitializeThreads initializeThreads) = 0;
     virtual void removeDocumentDB(const DocTypeName &docTypeName) = 0;
     virtual void applyConfig(const std::shared_ptr<BootstrapConfig> &bootstrapConfig) = 0;
 };

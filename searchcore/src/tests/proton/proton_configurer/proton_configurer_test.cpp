@@ -12,7 +12,7 @@
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
-#include <vespa/searchcore/proton/server/i_document_db_config_owner.h>
+#include <vespa/searchcore/proton/server/document_db_config_owner.h>
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/proton_configurer.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer_owner.h>
@@ -208,13 +208,13 @@ struct ConfigFixture {
 
 struct MyProtonConfigurerOwner;
 
-struct MyDocumentDBConfigOwner : public IDocumentDBConfigOwner
+struct MyDocumentDBConfigOwner : public DocumentDBConfigOwner
 {
     vespalib::string _name;
     MyProtonConfigurerOwner &_owner;
     MyDocumentDBConfigOwner(const vespalib::string &name,
                             MyProtonConfigurerOwner &owner)
-        : IDocumentDBConfigOwner(),
+        : DocumentDBConfigOwner(),
           _name(name),
           _owner(owner)
     {
@@ -240,12 +240,12 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
     }
     virtual ~MyProtonConfigurerOwner() { }
 
-    virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName &docTypeName,
-                                                  document::BucketSpace bucketSpace,
-                                                  const vespalib::string &configId,
-                                                  const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
-                                                  const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
-                                                  InitializeThreads initializeThreads) override
+    virtual std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
+                                                                 document::BucketSpace bucketSpace,
+                                                                 const vespalib::string &configId,
+                                                                 const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
+                                                                 const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
+                                                                 InitializeThreads initializeThreads) override
     {
         (void) bucketSpace;
         (void) configId;
@@ -257,7 +257,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
         std::ostringstream os;
         os << "add db " << docTypeName.getName() << " " << documentDBConfig->getGeneration();
         _log.push_back(os.str());
-        return db.get();
+        return db;
     }
     virtual void removeDocumentDB(const DocTypeName &docTypeName) override {
         ASSERT_FALSE(_dbs.find(docTypeName) == _dbs.end());

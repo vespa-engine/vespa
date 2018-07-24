@@ -90,7 +90,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        ConfigStore::UP config_store,
                        InitializeThreads initializeThreads,
                        const HwInfo &hwInfo)
-    : IDocumentDBConfigOwner(),
+    : DocumentDBConfigOwner(),
       IReplayConfig(),
       IFeedHandlerOwner(),
       IDocumentSubDBOwner(),

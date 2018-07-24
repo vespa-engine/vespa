@@ -352,7 +352,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     }
 }
 
-IDocumentDBConfigOwner *
+std::shared_ptr<DocumentDBConfigOwner>
 Proton::addDocumentDB(const DocTypeName &docTypeName,
                       document::BucketSpace bucketSpace,
                       const vespalib::string &configId,
@@ -366,21 +366,21 @@ Proton::addDocumentDB(const DocTypeName &docTypeName,
         if (docType != NULL) {
             LOG(info, "Add document database: doctypename(%s), configid(%s)",
                 docTypeName.toString().c_str(), configId.c_str());
-            return addDocumentDB(*docType, bucketSpace, bootstrapConfig, documentDBConfig, initializeThreads).get();
+            return addDocumentDB(*docType, bucketSpace, bootstrapConfig, documentDBConfig, initializeThreads);
         } else {
 
             LOG(warning,
                 "Did not find document type '%s' in the document manager. "
                 "Skipping creating document database for this type",
                 docTypeName.toString().c_str());
-            return nullptr;
+            return std::shared_ptr<DocumentDBConfigOwner>();
         }
     } catch (const document::DocumentTypeNotFoundException & e) {
         LOG(warning,
             "Did not find document type '%s' in the document manager. "
             "Skipping creating document database for this type",
             docTypeName.toString().c_str());
-        return nullptr;
+        return std::shared_ptr<DocumentDBConfigOwner>();
     }
 }
 

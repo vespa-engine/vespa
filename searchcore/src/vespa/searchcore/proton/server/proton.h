@@ -130,7 +130,7 @@ private:
     std::mutex                      _nodeUpLock;
     std::set<BucketSpace>           _nodeUp;   // bucketspaces where node is up
 
-    IDocumentDBConfigOwner *
+    std::shared_ptr<DocumentDBConfigOwner>
     addDocumentDB(const DocTypeName & docTypeName, BucketSpace bucketSpace, const vespalib::string & configid,
                   const BootstrapConfig::SP & bootstrapConfig, const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                   InitializeThreads initializeThreads) override;
