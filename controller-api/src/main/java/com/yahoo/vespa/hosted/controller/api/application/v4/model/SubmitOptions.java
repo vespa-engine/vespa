@@ -17,24 +17,24 @@ import java.util.Objects;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SubmitOptions {
 
-    public GitRepository gitRepository;
-    public GitBranch gitBranch;
-    public GitCommit gitCommit;
+    public GitRepository repository;
+    public GitBranch branch;
+    public GitCommit commit;
 
     public static SubmitOptions from(String repository, String branch, String commit) {
         SubmitOptions options = new SubmitOptions();
-        options.gitRepository = new GitRepository(repository);
-        options.gitBranch = new GitBranch(branch);
-        options.gitCommit = new GitCommit(commit);
+        options.repository = new GitRepository(repository);
+        options.branch = new GitBranch(branch);
+        options.commit = new GitCommit(commit);
         return options;
     }
 
     @Override
     public String toString() {
         return "SubmitOptions{" +
-                "gitRepository=" + gitRepository +
-                ", gitBranch=" + gitBranch +
-                ", gitCommit=" + gitCommit +
+                "repository=" + repository +
+                ", branch=" + branch +
+                ", commit=" + commit +
                 '}';
     }
 
@@ -43,13 +43,13 @@ public class SubmitOptions {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SubmitOptions that = (SubmitOptions) o;
-        return Objects.equals(gitRepository, that.gitRepository) &&
-                Objects.equals(gitBranch, that.gitBranch) &&
-                Objects.equals(gitCommit, that.gitCommit);
+        return Objects.equals(repository, that.repository) &&
+                Objects.equals(branch, that.branch) &&
+                Objects.equals(commit, that.commit);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(gitRepository, gitBranch, gitCommit);
+        return Objects.hash(repository, branch, commit);
     }
 }
