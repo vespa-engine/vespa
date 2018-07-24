@@ -169,14 +169,14 @@ public class JobController {
     }
 
     /** Registers the given application, such that it may have deployment jobs run here. */
-    void register(ApplicationId id) {
+    public void register(ApplicationId id) {
         controller.applications().lockIfPresent(id, application ->
                 controller.applications().store(application.withBuiltInternally(true)));
     }
 
     /** Accepts and stores a new application package and test jar pair under a generated application version key. */
     public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
-                                     byte[] applicationPackage, byte[] applicationTestJar) {
+                                     byte[] applicationPackage, byte[] applicationTestPackage) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
             controller.applications().store(application.withBuiltInternally(true));
@@ -185,6 +185,9 @@ public class JobController {
             version.set(ApplicationVersion.from(revision, run));
 
             // TODO smorgrav: Store the pair.
+//            controller.applications().artifacts().putApplicationPackage(id, version.toString(), applicationPackage);
+//            controller.applications().artifacts().putTesterPackage(
+//                    InternalStepRunner.testerOf(id), version.toString(), applicationTestPackage);
 
             notifyOfNewSubmission(id, revision, run);
         });
@@ -265,7 +268,7 @@ public class JobController {
     private void notifyOfNewSubmission(ApplicationId id, SourceRevision revision, long number) {
         DeploymentJobs.JobReport report = new DeploymentJobs.JobReport(id,
                                                                        JobType.component,
-                                                                       Long.MAX_VALUE, // TODO jvenstad: Clean up this!
+                                                                       1,
                                                                        number,
                                                                        Optional.of(revision),
                                                                        Optional.empty());

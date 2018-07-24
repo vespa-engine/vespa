@@ -72,15 +72,23 @@ public class RunStatus {
         return id;
     }
 
-    /** Returns an unmodifiable view of the status of all steps in this run. */
+    /** Returns an unmodifiable view of the status of all steps in this run.
+     * TODO maybe reflect in the signature that the map is a EnumMap or at least behaves as a sorted map?
+     * */
     public Map<Step, Step.Status> steps() {
         return steps;
     }
 
     /** Returns the final result of this run, if it has ended. */
     public Optional<RunResult> result() {
-        // TODO jvenstad: To implement, or not ... If so, base on status.
-        throw new AssertionError();
+
+        // No result of not finished yet
+        if (!hasEnded()) return Optional.empty();
+
+        // If any steps has failed - then we need to figure out what - for now return fixed error result
+        if (hasFailed()) return Optional.of(RunResult.testError);
+
+        return Optional.of(RunResult.success);
     }
 
     /** Returns the instant at which this run began. */
