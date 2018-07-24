@@ -67,7 +67,7 @@ RawExecutor<BaseType>::execute(uint32_t docId)
 {
     using A = IntegerAttributeTemplate<BaseType>;
     const multivalue::Value<BaseType> *values(nullptr);
-    const A *iattr = dynamic_cast<const A *>(_attribute);
+    const A *iattr = static_cast<const A *>(_attribute);
     size_t count = iattr->getRawValues(docId, values);
     outputs().set_number(0, maxProduct(values, count, _queryVector));
 }
