@@ -370,8 +370,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         GzipHandler gzipHandler = new GzipHandlerWithVaryHeaderFixed();
         gzipHandler.setCompressionLevel(serverConfig.responseCompressionLevel());
         gzipHandler.setCheckGzExists(false);  // TODO: will be removed without replacement in Jetty 10
-        gzipHandler.setIncludedMethods("GET", "POST");
         gzipHandler.setInflateBufferSize(8 * 1024);
+        gzipHandler.setIncludedMethods("GET", "POST", "PUT", "PATCH");
         return gzipHandler;
     }
 
