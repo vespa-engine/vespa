@@ -188,8 +188,8 @@ public class JobController {
 //            controller.applications().artifacts().putApplicationPackage(id, version.toString(), applicationPackage);
 //            controller.applications().artifacts().putTesterPackage(
 //                    InternalStepRunner.testerOf(id), version.toString(), applicationTestPackage);
-
-            notifyOfNewSubmission(id, revision, run);
+//
+//            notifyOfNewSubmission(id, revision, run);
         });
         return version.get();
     }

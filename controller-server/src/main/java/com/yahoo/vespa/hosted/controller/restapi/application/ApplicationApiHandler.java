@@ -203,6 +203,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploy(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -1243,5 +1244,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                         .orElseThrow(() -> new RuntimeException("This is a data violation right?"))));
 
         return jobMap;
+    }
+
+    private HttpResponse submit(String tenant, String application, HttpRequest request) {
+        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
+        SourceRevision sourceRevision = toSourceRevision(submitOptions).orElseThrow(() ->
+                new IllegalArgumentException("Must specify 'repository', 'branch' and 'commit"));
+
+        return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
+                sourceRevision,
+                dataParts.get(EnvironmentResource.APPLICATION_ZIP),
+                dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
     }
 }

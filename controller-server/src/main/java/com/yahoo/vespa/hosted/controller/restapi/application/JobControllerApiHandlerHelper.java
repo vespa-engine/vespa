@@ -101,5 +101,22 @@ class JobControllerApiHandlerHelper {
 
         return new SlimeJsonResponse(slime);
     }
+
+    /**
+     * Unpack payload and submit to job controller. Defaults instance to 'default' and renders the
+     * application version on success.
+     *
+     * @return Response with the new application version
+     */
+    static HttpResponse submitResponse(JobController jobController, String tenant, String application,
+                                       SourceRevision sourceRevision, byte[] appPackage, byte[] testPackage) {
+        ApplicationVersion version = jobController.submit(ApplicationId.from(tenant, application, "default"),
+                sourceRevision, appPackage, testPackage);
+
+        Slime slime = new Slime();
+        Cursor responseObject = slime.setObject();
+        responseObject.setString("version", version.id());
+        return new SlimeJsonResponse(slime);
+    }
 }
 
