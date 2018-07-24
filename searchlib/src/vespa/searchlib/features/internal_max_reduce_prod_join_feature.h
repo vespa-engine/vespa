@@ -4,8 +4,7 @@
 
 #include <vespa/searchlib/fef/blueprint.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Feature for the specific replacement of the expression:
@@ -40,5 +39,4 @@ public:
 
 };
 
-}
 }

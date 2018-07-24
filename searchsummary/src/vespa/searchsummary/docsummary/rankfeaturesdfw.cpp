@@ -8,10 +8,10 @@
 namespace search::docsummary {
 
 RankFeaturesDFW::RankFeaturesDFW() :
-    _env(NULL)
+    _env(nullptr)
 { }
 
-RankFeaturesDFW::~RankFeaturesDFW() { }
+RankFeaturesDFW::~RankFeaturesDFW() = default;
 
 void
 RankFeaturesDFW::init(IDocsumEnvironment * env)
@@ -23,15 +23,15 @@ void
 RankFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state,
                              ResType type, vespalib::slime::Inserter &target)
 {
-    if (state->_rankFeatures.get() == NULL) {
+    if (state->_rankFeatures.get() == nullptr) {
         state->_callback.FillRankFeatures(state, _env);
-        if (state->_rankFeatures.get() == NULL) { // still no rank features to write
+        if (state->_rankFeatures.get() == nullptr) { // still no rank features to write
             return;
         }
     }
     const FeatureSet::StringVector & names = state->_rankFeatures->getNames();
     const feature_t * values = state->_rankFeatures->getFeaturesByDocId(docid);
-    if (type == RES_FEATUREDATA && values != NULL) {
+    if (type == RES_FEATUREDATA && values != nullptr) {
         vespalib::slime::Cursor& obj = target.insertObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
             vespalib::Memory name(names[i].c_str(), names[i].size());
@@ -40,7 +40,7 @@ RankFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *s
         return;
     }
     vespalib::JSONStringer & json(state->_jsonStringer);
-    if (values != NULL) {
+    if (values != nullptr) {
         json.clear();
         json.beginObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
