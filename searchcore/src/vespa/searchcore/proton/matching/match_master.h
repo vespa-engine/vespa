@@ -8,8 +8,7 @@
 namespace vespalib { class ThreadBundle; }
 namespace search { class FeatureSet; }
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class MatchToolsFactory;
 class MatchParams;
@@ -37,6 +36,4 @@ public:
     static MatchingStats getStats(MatchMaster && rhs) { return std::move(rhs._stats); }
 };
 
-} // namespace proton::matching
-} // namespace proton
-
+}

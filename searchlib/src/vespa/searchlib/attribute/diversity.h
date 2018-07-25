@@ -14,9 +14,7 @@
  * diversified results based on a secondary attribute.
  **/
 
-namespace search {
-namespace attribute {
-namespace diversity {
+namespace search::attribute::diversity {
 
 template <typename ITR>
 class ForwardRange
@@ -227,6 +225,4 @@ void diversify(bool forward, const DictItr &lower, const DictItr &upper, const P
     }
 }
 
-} // namespace search::attribute::diversity
-} // namespace search::attribute
-} // namespace search
+}

@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 class BasicType
 {
@@ -66,5 +65,3 @@ class BasicType
 };
 
 }
-}
-

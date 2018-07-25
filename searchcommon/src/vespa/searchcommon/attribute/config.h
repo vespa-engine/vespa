@@ -9,8 +9,7 @@
 #include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/eval/eval/value_type.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 class Config
 {
@@ -120,6 +119,5 @@ private:
     PredicateParams    _predicateParams;
     vespalib::eval::ValueType _tensorType;
 };
-}  // namespace attribute
-}  // namespace search
 
+}

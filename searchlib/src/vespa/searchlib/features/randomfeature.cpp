@@ -9,8 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomfeature");
 
-namespace search {
-namespace features {
+namespace search::features {
 
 RandomExecutor::RandomExecutor(uint64_t seed, uint64_t matchSeed) :
     search::fef::FeatureExecutor(),
@@ -81,5 +80,4 @@ RandomBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespa
 }
 
 
-} // namespace features
-} // namespace search
+}

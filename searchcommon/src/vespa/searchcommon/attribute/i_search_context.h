@@ -5,7 +5,6 @@
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/stllike/string.h>
 
-
 namespace search::fef { class TermFieldMatchData; }
 namespace search::queryeval { class SearchIterator; }
 namespace search { class QueryTermBase; }

@@ -180,9 +180,7 @@ RankingExpressionBlueprint::RankingExpressionBlueprint(rankingexpression::Expres
 {
 }
 
-RankingExpressionBlueprint::~RankingExpressionBlueprint()
-{
-}
+RankingExpressionBlueprint::~RankingExpressionBlueprint() = default;
 
 void
 RankingExpressionBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,

@@ -3,10 +3,9 @@
 #pragma once
 
 #include "iattributevector.h"
-#include <stdint.h>
+#include <cstdint>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 
 /**
@@ -154,7 +153,6 @@ public:
     }
 };
 
-
 typedef AttributeContent<double>       FloatContent;
 typedef AttributeContent<const char *> ConstCharContent;
 typedef AttributeContent<IAttributeVector::largeint_t> IntegerContent;
@@ -166,7 +164,4 @@ typedef AttributeContent<IAttributeVector::WeightedString>    WeightedStringCont
 typedef AttributeContent<IAttributeVector::WeightedEnum>      WeightedEnumContent;
 typedef IAttributeVector::EnumHandle EnumHandle;
 
-
-} // namespace attribute
-} // namespace search
-
+}
