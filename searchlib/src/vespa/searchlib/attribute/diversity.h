@@ -116,11 +116,11 @@ public:
           _cutoff_max_groups(cutoff_max_groups), _cutoff_strict(cutoff_strict),
           _seen(std::min(cutoff_max_groups, 10000ul)*3)
     { }
-    template <typename Item>
-    bool accepted(Item item) {
+    size_t getMaxTotal() const { return _max_total; }
+    bool accepted(uint32_t docId) {
         if (_total_count < _max_total) {
             if ((_seen.size() < _cutoff_max_groups) || _cutoff_strict) {
-                typename Fetcher::ValueType group = _diversity.get(item._key);
+                typename Fetcher::ValueType group = _diversity.get(docId);
                 if (_seen.size() < _cutoff_max_groups) {
                     return conditional_add(_seen[group]);
                 } else {
@@ -166,25 +166,23 @@ public:
 
     template <typename Item>
     void push_back(Item item) {
-        if (_filter.accepted(item)) {
+        if (_filter.accepted(item._key)) {
             _result.push_back(item);
         }
     }
 
 };
 
-template <typename DictRange, typename PostingStore, typename Fetcher, typename Result>
-void diversify_3(const DictRange &range_in, const PostingStore &posting, size_t wanted_hits,
-                 const Fetcher &diversity, size_t max_per_group,
-                 size_t cutoff_max_groups, bool cutoff_strict,
+template <typename DictRange, typename PostingStore, typename Filter, typename Result>
+void diversify_3(const DictRange &range_in, const PostingStore &posting, Filter & filter,
                  Result &result, std::vector<size_t> &fragments)
 {
-    DiversityFilter<Fetcher> filter(diversity, max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
-    DiversityRecorder<DiversityFilter<Fetcher>, Result> recorder(filter, result);
+
+    DiversityRecorder<Filter, Result> recorder(filter, result);
     DictRange range(range_in);
     using DataType = typename PostingStore::DataType;
     using KeyDataType = typename PostingStore::KeyDataType;
-    while (range.has_next() && (result.size() < wanted_hits)) {
+    while (range.has_next() && (result.size() < filter.getMaxTotal())) {
         typename DictRange::Next dict_entry(range);
         posting.foreach_frozen(dict_entry.get().getData(),
                                [&](uint32_t key, const DataType &data)
@@ -204,29 +202,42 @@ void diversify_2(const DictRange &range_in, const PostingStore &posting, size_t 
     if (diversity_attr.hasEnum()) { // must handle enum first
         FetchEnumFast fastEnum(diversity_attr);
         if (fastEnum.valid()) {
-            diversify_3(range_in, posting, wanted_hits, fastEnum, max_per_group, cutoff_max_groups, cutoff_strict, result, fragments);
+            DiversityFilter<FetchEnumFast> filter(fastEnum, max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+            diversify_3(range_in, posting, filter, result, fragments);
         } else {
-            diversify_3(range_in, posting, wanted_hits, FetchEnum(diversity_attr), max_per_group, cutoff_max_groups, cutoff_strict, result, fragments);
+            DiversityFilter<FetchEnum> filter(FetchEnum(diversity_attr), max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+            diversify_3(range_in, posting, filter, result, fragments);
         }
     } else if (diversity_attr.isIntegerType()) {
-        FetchNumberFast<SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t> > > fastInt32(diversity_attr);
-        FetchNumberFast<SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t> > > fastInt64(diversity_attr);
+        using FetchInt32Fast = FetchNumberFast<SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t> > >;
+        using FetchInt64Fast = FetchNumberFast<SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t> > >;
+
+        FetchInt32Fast fastInt32(diversity_attr);
+        FetchInt64Fast fastInt64(diversity_attr);
         if (fastInt32.valid()) {
-            diversify_3(range_in, posting, wanted_hits, fastInt32, max_per_group, cutoff_max_groups, cutoff_strict, result, fragments);
+            DiversityFilter<FetchInt32Fast> filter(fastInt32, max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+            diversify_3(range_in, posting, filter, result, fragments);
         } else if (fastInt64.valid()) {
-            diversify_3(range_in, posting, wanted_hits, fastInt64, max_per_group, cutoff_max_groups, cutoff_strict, result, fragments);
+            DiversityFilter<FetchInt64Fast> filter(fastInt64, max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+            diversify_3(range_in, posting, filter, result, fragments);
         } else {
-            diversify_3(range_in, posting, wanted_hits, FetchInteger(diversity_attr), max_per_group, cutoff_max_groups, cutoff_strict, result, fragments);
+            DiversityFilter<FetchInteger> filter(FetchInteger(diversity_attr), max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+            diversify_3(range_in, posting, filter, result, fragments);
         }
     } else if (diversity_attr.isFloatingPointType()) {
-        FetchNumberFast<SingleValueNumericAttribute<FloatingPointAttributeTemplate<float> > > fastFloat(diversity_attr);
-        FetchNumberFast<SingleValueNumericAttribute<FloatingPointAttributeTemplate<double> > > fastDouble(diversity_attr);
+        using FetchFloatFast = FetchNumberFast<SingleValueNumericAttribute<FloatingPointAttributeTemplate<float> > >;
+        using FetchDoubleFast = FetchNumberFast<SingleValueNumericAttribute<FloatingPointAttributeTemplate<double> > >;
+        FetchFloatFast fastFloat(diversity_attr);
+        FetchDoubleFast fastDouble(diversity_attr);
         if (fastFloat.valid()) {
-            diversify_3(range_in, posting, wanted_hits, fastFloat, max_per_group, cutoff_max_groups, cutoff_strict, result, fragments);
+            DiversityFilter<FetchFloatFast> filter(fastFloat, max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+            diversify_3(range_in, posting, filter, result, fragments);
         } else if (fastDouble.valid()) {
-            diversify_3(range_in, posting, wanted_hits, fastDouble, max_per_group, cutoff_max_groups, cutoff_strict, result, fragments);
+            DiversityFilter<FetchDoubleFast> filter(fastDouble, max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+            diversify_3(range_in, posting, filter, result, fragments);
         } else {
-            diversify_3(range_in, posting, wanted_hits, FetchFloat(diversity_attr), max_per_group, cutoff_max_groups, cutoff_strict, result, fragments);
+            DiversityFilter<FetchFloat> filter(FetchFloat(diversity_attr), max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+            diversify_3(range_in, posting, filter, result, fragments);
         }
     }
 }
