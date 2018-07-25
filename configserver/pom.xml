@@ -101,6 +101,13 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <!-- To get all necessary test deps. -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-test</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespa_jersey2</artifactId>
       <version>${project.version}</version>
