@@ -95,8 +95,18 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <!-- Pulled in by language-detector in scope compile -->
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <!-- Pulled in by language-detector in scope compile -->
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
