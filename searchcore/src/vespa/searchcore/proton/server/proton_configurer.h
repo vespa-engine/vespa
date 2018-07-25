@@ -12,6 +12,7 @@
 
 namespace proton {
 
+class DocumentDBDirectoryHolder;
 class IDocumentDBConfigOwner;
 class IProtonConfigurerOwner;
 class BootstrapConfig;
@@ -22,7 +23,7 @@ class BootstrapConfig;
  */
 class ProtonConfigurer : public IProtonConfigurer
 {
-    using DocumentDBs = std::map<DocTypeName, IDocumentDBConfigOwner *>;
+    using DocumentDBs = std::map<DocTypeName, std::pair<std::weak_ptr<IDocumentDBConfigOwner>, std::weak_ptr<DocumentDBDirectoryHolder>>>;
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
 
     ExecutorThreadService _executor;

@@ -4,7 +4,8 @@
 #include "proton_config_snapshot.h"
 #include "bootstrapconfig.h"
 #include "i_proton_configurer_owner.h"
-#include "i_document_db_config_owner.h"
+#include "document_db_config_owner.h"
+#include "document_db_directory_holder.h"
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -162,13 +163,15 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
     const auto &documentDBConfig = cfgitr->second;
     auto dbitr(_documentDBs.find(docTypeName));
     if (dbitr == _documentDBs.end()) {
-        auto *newdb = _owner.addDocumentDB(docTypeName, bucketSpace, configId, bootstrapConfig, documentDBConfig, initializeThreads);
-        if (newdb != nullptr) {
-            auto insres = _documentDBs.insert(std::make_pair(docTypeName, newdb));
+        auto newdb = _owner.addDocumentDB(docTypeName, bucketSpace, configId, bootstrapConfig, documentDBConfig, initializeThreads);
+        if (newdb) {
+            auto insres = _documentDBs.insert(std::make_pair(docTypeName, std::make_pair(newdb, newdb->getDocumentDBDirectoryHolder())));
             assert(insres.second);
         }
     } else {
-        dbitr->second->reconfigure(documentDBConfig);
+        auto documentDB = dbitr->second.first.lock();
+        assert(documentDB);
+        documentDB->reconfigure(documentDBConfig);
     }
 }
 
@@ -189,6 +192,7 @@ ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot)
         auto found(newDocTypes.find(dbitr->first));
         if (found == newDocTypes.end()) {
             _owner.removeDocumentDB(dbitr->first);
+            DocumentDBDirectoryHolder::waitUntilDestroyed(dbitr->second.second);
             dbitr = _documentDBs.erase(dbitr);
         } else {
             ++dbitr;
