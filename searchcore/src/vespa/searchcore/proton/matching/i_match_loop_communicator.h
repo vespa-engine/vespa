@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/searchlib/queryeval/scores.h>
+#include <vespa/searchlib/queryeval/idiversifier.h>
 #include <utility>
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 
 namespace proton::matching {
@@ -16,10 +16,6 @@ struct IMatchLoopCommunicator {
     using RangePair = std::pair<Range, Range>;
     using IndexesToKeep = std::vector<uint32_t>;
     using Hit = std::pair<uint32_t, feature_t>;
-    struct IDiversifier {
-        virtual ~IDiversifier() {}
-        virtual bool keep(uint32_t docId) = 0;
-    };
     struct Matches {
         size_t hits;
         size_t docs;

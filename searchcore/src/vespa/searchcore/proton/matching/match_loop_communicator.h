@@ -24,9 +24,9 @@ private:
         }
     };
     struct SelectDiversifiedBest : vespalib::Rendezvous<std::vector<Hit>, IndexesToKeep> {
-        IDiversifier & _diversifier;
+        search::queryeval::IDiversifier & _diversifier;
         std::vector<size_t> _indexes;
-        SelectDiversifiedBest(size_t n, IDiversifier & diversifier)
+        SelectDiversifiedBest(size_t n, search::queryeval::IDiversifier & diversifier)
             : vespalib::Rendezvous<std::vector<Hit>, IndexesToKeep>(n),
               _diversifier(diversifier),
               _indexes(n, 0)
@@ -57,7 +57,7 @@ private:
     RangeCover             _rangeCover;
 
 public:
-    MatchLoopCommunicator(size_t threads, size_t topN, IDiversifier & diversifier);
+    MatchLoopCommunicator(size_t threads, size_t topN, search::queryeval::IDiversifier & diversifier);
     MatchLoopCommunicator(size_t threads, size_t topN);
     ~MatchLoopCommunicator();
 

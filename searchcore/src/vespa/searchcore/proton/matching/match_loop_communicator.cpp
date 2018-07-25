@@ -7,9 +7,9 @@ namespace proton:: matching {
 
 namespace {
 
-class AllowAll final : public IMatchLoopCommunicator::IDiversifier {
+class AllowAll final : public search::queryeval::IDiversifier {
 public:
-    bool keep(uint32_t docId) override {
+    bool accepted(uint32_t docId) override {
         (void) docId;
         return true;
     }
@@ -22,7 +22,7 @@ MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
     : MatchLoopCommunicator(threads, topN, _G_allowAll)
 {}
 
-MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, IDiversifier & diversifier)
+MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, search::queryeval::IDiversifier & diversifier)
     : _estimate_match_frequency(threads),
       _selectBest(threads, topN),
       _selectDiversifiedBest(threads, diversifier),
@@ -81,7 +81,7 @@ MatchLoopCommunicator::SelectDiversifiedBest::mingle()
     while (!queue.empty()) {
         uint32_t i = queue.front();
         uint32_t docId = in(i)[_indexes[i]].first;
-        if (_diversifier.keep(docId)) {
+        if (_diversifier.accepted(docId)) {
             out(i).push_back(_indexes[i]);
         }
         if (in(i).size() > ++_indexes[i]) {
