@@ -18,7 +18,7 @@ using search::FeatureSet;
 
 namespace {
 
-struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
+struct TimedMatchLoopCommunicator final : IMatchLoopCommunicator {
     IMatchLoopCommunicator &communicator;
     fastos::StopWatch rerank_time;
     TimedMatchLoopCommunicator(IMatchLoopCommunicator &com) : communicator(com) {}
@@ -27,6 +27,11 @@ struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     }
     size_t selectBest(const std::vector<feature_t> &sortedScores) override {
         size_t result = communicator.selectBest(sortedScores);
+        rerank_time.start();
+        return result;
+    }
+    IndexesToKeep selectDiversifiedBest(const std::vector<Hit> &sortedScores) override {
+        IndexesToKeep result = communicator.selectDiversifiedBest(sortedScores);
         rerank_time.start();
         return result;
     }
@@ -69,10 +74,9 @@ MatchMaster::match(const MatchParams &params,
     std::vector<MatchThread::UP> threadState;
     std::vector<vespalib::Runnable*> targets;
     for (size_t i = 0; i < threadBundle.size(); ++i) {
-        IMatchLoopCommunicator &com =
-            (i == 0)?
-            static_cast<IMatchLoopCommunicator&>(timedCommunicator) :
-            static_cast<IMatchLoopCommunicator&>(communicator);
+        IMatchLoopCommunicator &com = (i == 0)
+                ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
+                : static_cast<IMatchLoopCommunicator&>(communicator);
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(),
                         params, matchToolsFactory, com, *scheduler,
                         resultProcessor, mergeDirector, distributionKey));
@@ -118,7 +122,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         featureNames.emplace_back(resolver.name_of(i));
     }
-    FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
+    auto retval = std::make_shared<FeatureSet>(featureNames, docs.size());
     if (docs.empty()) {
         return retval;
     }
@@ -126,8 +130,8 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
 
     SearchIterator &search = matchTools->search();
     search.initRange(docs.front(), docs.back()+1);
-    for (uint32_t i = 0; i < docs.size(); ++i) {
-        if (search.seek(docs[i])) {
+    for (uint32_t doc : docs) {
+        if (search.seek(doc)) {
             uint32_t docId = search.getDocId();
             search.unpack(docId);
             search::feature_t * f = fs.getFeaturesByIndex(fs.addDocId(docId));
@@ -135,7 +139,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
                 f[j] = resolver.resolve(j).as_number(docId);
             }
         } else {
-            LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
+            LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", doc);
         }
     }
     return retval;
