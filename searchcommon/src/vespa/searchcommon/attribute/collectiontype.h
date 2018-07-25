@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 class CollectionType
 {
@@ -74,5 +73,3 @@ class CollectionType
 };
 
 }
-}
-

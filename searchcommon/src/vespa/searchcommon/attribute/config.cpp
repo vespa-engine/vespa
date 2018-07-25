@@ -20,10 +20,7 @@ Config::Config() :
 {
 }
 
-Config::Config(BasicType bt,
-               CollectionType ct,
-               bool fastSearch_,
-               bool huge_)
+Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
     : _basicType(bt),
       _type(ct),
       _fastSearch(fastSearch_),
@@ -41,6 +38,6 @@ Config::Config(BasicType bt,
 
 Config::Config(const Config &) = default;
 Config & Config::operator = (const Config &) = default;
-Config::~Config() {}
+Config::~Config() = default;
 
 }

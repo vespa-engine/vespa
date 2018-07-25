@@ -3,8 +3,7 @@
 
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class Anything
 {
@@ -33,5 +32,4 @@ private:
     ObjectMap _objectMap;
 };
 
-}
 }

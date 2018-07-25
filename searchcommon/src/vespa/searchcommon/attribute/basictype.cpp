@@ -3,8 +3,7 @@
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 const BasicType::TypeInfo BasicType::_typeTable[BasicType::MAX_TYPE] = {
     { BasicType::NONE,      0,                "none" },
@@ -31,11 +30,8 @@ BasicType::asType(const vespalib::string &t)
             return _typeTable[i]._type;
         }
     }
-    throw vespalib::IllegalStateException(t +
-                                " not recognized as "
-                                "valid attribute data type");
+    throw vespalib::IllegalStateException(t + " not recognized as valid attribute data type");
     return NONE;
 }
 
-}
 }

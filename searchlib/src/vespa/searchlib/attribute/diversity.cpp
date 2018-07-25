@@ -2,10 +2,6 @@
 
 #include "diversity.hpp"
 
-namespace search {
-namespace attribute {
-namespace diversity {
+namespace search::attribute::diversity {
 
-}
-}
 }

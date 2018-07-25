@@ -3,8 +3,7 @@
 #include <vespa/searchcommon/attribute/collectiontype.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 const CollectionType::TypeInfo CollectionType::_typeTable[CollectionType::MAX_TYPE] = {
     { CollectionType::SINGLE, "single" },
@@ -20,11 +19,8 @@ CollectionType::asType(const vespalib::string &t)
             return _typeTable[i]._type;
         }
     }
-    throw vespalib::IllegalStateException(t +
-                             " not recognized as valid attribute "
-                             "collection type");
+    throw vespalib::IllegalStateException(t + " not recognized as valid attribute collection type");
     return SINGLE;
 }
 
-}
 }

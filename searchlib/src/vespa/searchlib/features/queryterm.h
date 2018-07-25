@@ -6,8 +6,7 @@
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/itermdata.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * This class represents a query term with the relevant data. Now also
@@ -58,7 +57,4 @@ public:
                             bool lookupConnectedness = false);
 };
 
-
-} // namespace features
-} // namespace search
-
+}

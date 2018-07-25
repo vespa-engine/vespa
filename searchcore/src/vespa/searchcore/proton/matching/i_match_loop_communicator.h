@@ -2,14 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/queryeval/scores.h>
 #include <utility>
 #include <cstddef>
 #include <vector>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 struct IMatchLoopCommunicator {
     typedef search::feature_t feature_t;
@@ -31,6 +29,4 @@ struct IMatchLoopCommunicator {
     virtual ~IMatchLoopCommunicator() {}
 };
 
-} // namespace matching
-} // namespace proton
-
+}

@@ -4,8 +4,7 @@
 
 #include "persistent_predicate_params.h"
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 /*
  * Parameters for predicate attributes.
@@ -28,5 +27,4 @@ public:
     }
 };
 
-}  // namespace attribute
-}  // namespace search
+}

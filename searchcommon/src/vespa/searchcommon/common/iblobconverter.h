@@ -5,8 +5,7 @@
 #include <vespa/vespalib/util/buffer.h>
 #include <memory>
 
-namespace search {
-namespace common {
+namespace search::common {
 
 class BlobConverter
 {
@@ -21,5 +20,3 @@ private:
 };
 
 }
-}
-
