@@ -4,7 +4,11 @@ import argparse
 import os, sys
 
 
-# noinspection PyInterpreter
+# Parsing Elastic Search documents to Vespa documents
+# Example of usage:  python ES_Vespa_parser.py my_index.json my_index_mapping.json
+__author__ = 'henrhoi'
+
+
 class ElasticSearchParser:
 
     document_file = None
