@@ -243,7 +243,7 @@ void FS4Properties::set(StringRef & e, const vespalib::stringref & s)
 {
     e.first = _backing.size();
     e.second = s.size();
-    _backing.append(s.c_str(), s.size());
+    _backing.append(s.data(), s.size());
 }
 
 void

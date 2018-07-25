@@ -37,7 +37,7 @@ public:
             _text(textBegin, textEnd - textBegin), _stem(stemBegin, stemEnd - stemBegin), _type(type) {}
         const vespalib::stringref & getText() const { return _text; }
         const vespalib::stringref & getStem() const { return _stem; }
-        bool hasStem() const { return _stem.c_str() != NULL; }
+        bool hasStem() const { return _stem.data() != NULL; }
         Type getType() const { return _type; }
     };
 

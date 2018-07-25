@@ -520,7 +520,7 @@ void asciistream::write(const void * buf, size_t len)
     if (_rPos > 0 && _rPos == length()) {
         clear();
     }
-    if (_rbuf.c_str() != _wbuf.c_str()) {
+    if (_rbuf.data() != _wbuf.data()) {
         if (_wbuf.empty()) {
             _wbuf = _rbuf; // Read only to RW
         } else {
@@ -557,7 +557,7 @@ string asciistream::getline(char delim)
 
 asciistream asciistream::createFromFile(const stringref & fileName)
 {
-    FastOS_File file(fileName.c_str());
+    FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
         ssize_t sz = file.getSize();
@@ -578,7 +578,7 @@ asciistream asciistream::createFromFile(const stringref & fileName)
 
 asciistream asciistream::createFromDevice(const stringref & fileName)
 {
-    FastOS_File file(fileName.c_str());
+    FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
         char buf[8192];

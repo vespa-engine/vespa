@@ -18,7 +18,7 @@ DocumentId::DocumentId()
 DocumentId::DocumentId(vespalib::stringref id)
     : Printable(),
       _globalId(),
-      _id(IdString::createIdString(id.c_str(), id.size()).release())
+      _id(IdString::createIdString(id.data(), id.size()).release())
 {
 }
 

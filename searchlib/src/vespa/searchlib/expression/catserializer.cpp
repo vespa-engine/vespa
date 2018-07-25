@@ -17,7 +17,7 @@ using vespalib::stringref;
 CatSerializer & CatSerializer::put(const IFieldBase & field, const stringref & value)
 {
     (void) field;
-    getStream().write(value.c_str(), value.size());
+    getStream().write(value.data(), value.size());
     return *this;
 }
 

@@ -104,7 +104,7 @@ size_t
 UTF8StringFieldSearcherBase::matchTermRegular(const FieldRef & f, QueryTerm & qt)
 {
     termcount_t words(0);
-    const byte * n = reinterpret_cast<const byte *> (f.c_str());
+    const byte * n = reinterpret_cast<const byte *> (f.data());
     // __builtin_prefetch(n, 0, 0);
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
@@ -134,7 +134,7 @@ UTF8StringFieldSearcherBase::matchTermRegular(const FieldRef & f, QueryTerm & qt
 size_t
 UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
 {
-    const byte * n = reinterpret_cast<const byte *> (f.c_str());
+    const byte * n = reinterpret_cast<const byte *> (f.data());
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
     const cmptype_t * eterm = term+tsz;
@@ -161,7 +161,7 @@ size_t
 UTF8StringFieldSearcherBase::matchTermSubstring(const FieldRef & f, QueryTerm & qt)
 {
     if (qt.termLen() == 0) { return 0; }
-    const byte * n = reinterpret_cast<const byte *> (f.c_str());
+    const byte * n = reinterpret_cast<const byte *> (f.data());
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
     if ( f.size() >= _buf->size()) {
@@ -195,7 +195,7 @@ size_t
 UTF8StringFieldSearcherBase::matchTermSuffix(const FieldRef & f, QueryTerm & qt)
 {
     termcount_t words = 0;
-    const byte * srcbuf = reinterpret_cast<const byte *> (f.c_str());
+    const byte * srcbuf = reinterpret_cast<const byte *> (f.data());
     const byte * srcend = srcbuf + f.size();
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);

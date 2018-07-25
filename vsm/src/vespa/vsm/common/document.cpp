@@ -12,10 +12,10 @@ namespace vsm
 
 vespalib::asciistream & operator << (vespalib::asciistream & os, const FieldRef & f)
 {
-  const char *s = f.c_str();
+  const char *s = f.data();
   os << f.size();
   if (s) {
-    os << s;
+      os << s; // Better hope it's null terminated!
   }
   os << " : ";
   return os;

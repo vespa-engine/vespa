@@ -22,7 +22,7 @@ writeFields(vespalib::asciistream & os,
 {
     os << prefix << "[" << fields.size() << "]\n";
     for (size_t i = 0; i < fields.size(); ++i) {
-        fields[i].write(os, vespalib::make_string("%s[%zu].", prefix.c_str(), i));
+        fields[i].write(os, vespalib::make_string("%s[%zu].", prefix.data(), i));
     }
 }
 
@@ -245,7 +245,7 @@ Schema & Schema::operator=(Schema && rhs) = default;
 Schema::~Schema() { }
 
 bool
-Schema::loadFromFile(const vespalib::stringref & fileName)
+Schema::loadFromFile(const vespalib::string & fileName)
 {
     std::ifstream file(fileName.c_str());
     if (!file) {
@@ -284,7 +284,7 @@ Schema::loadFromFile(const vespalib::stringref & fileName)
 }
 
 bool
-Schema::saveToFile(const vespalib::stringref & fileName) const
+Schema::saveToFile(const vespalib::string & fileName) const
 {
     vespalib::asciistream os;
     writeToStream(os, true);

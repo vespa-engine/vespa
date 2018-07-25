@@ -65,8 +65,9 @@ uint32_t getTokenCount(const vespalib::string& line) {
 
 uint64_t toLong(const vespalib::stringref& s, int base) {
     char* endptr;
-    uint64_t result(strtoull(s.c_str(), &endptr, base));
-    if ((s.c_str() + s.size()) != endptr) {
+    // FIXME C++17 range-safe from_chars() instead of strtoull()
+    uint64_t result(strtoull(s.data(), &endptr, base));
+    if ((s.data() + s.size()) != endptr) {
         throw vespalib::IllegalArgumentException("Parsing '" + s + "' as a long.");
     }
     return result;

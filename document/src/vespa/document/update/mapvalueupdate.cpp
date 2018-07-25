@@ -46,7 +46,7 @@ MapValueUpdate::checkCompatibility(const Field& field) const
 	    if (_key->getClass().id() != IntFieldValue::classId) {
             throw IllegalArgumentException(vespalib::make_string(
                     "Key for field '%s' is of wrong type (expected '%s', was '%s').",
-                    field.getName().c_str(), DataType::INT->toString().c_str(),
+                    vespalib::string(field.getName()).c_str(), DataType::INT->toString().c_str(),
                     _key->getDataType()->toString().c_str()), VESPA_STRLOC);
         }
     } else if (field.getDataType().getClass().id() == WeightedSetDataType::classId) {
@@ -54,7 +54,7 @@ MapValueUpdate::checkCompatibility(const Field& field) const
         if (!type.getNestedType().isValueType(*_key)) {
             throw IllegalArgumentException(vespalib::make_string(
                     "Key for field '%s' is of wrong type (expected '%s', was '%s').",
-                    field.getName().c_str(), DataType::INT->toString().c_str(),
+                    vespalib::string(field.getName()).c_str(), DataType::INT->toString().c_str(),
                     _key->getDataType()->toString().c_str()), VESPA_STRLOC);
         }
     } else {

@@ -63,7 +63,7 @@ ParseItem::ParseItem(ItemType type, const vespalib::stringref & idx, const char 
 {
     assert_type(type);
     SetType(type);
-    SetIndex(idx.c_str());
+    SetIndex(idx.data());
     SetTerm(term);
 }
 

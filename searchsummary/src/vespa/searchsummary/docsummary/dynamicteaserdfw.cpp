@@ -159,7 +159,7 @@ public:
     {
         if (item->_si != NULL) {
             *len = item->_si->getIndexName().size();
-            return item->_si->getIndexName().c_str();
+            return item->_si->getIndexName().data();
         } else {
             *len = item->_data->_indexlen;
             return item->_data->_index;
@@ -221,7 +221,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
             {
                 vespalib::stringref term = iterator.getTerm();
-                v->VisitKeyword(&item, term.c_str(), term.size(), false, isSpecialToken);
+                v->VisitKeyword(&item, term.data(), term.size(), false, isSpecialToken);
             }
             break;
         case search::ParseItem::ITEM_NUMTERM:
@@ -257,7 +257,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_SUBSTRINGTERM:
             {
                 vespalib::stringref term = iterator.getTerm();
-                v->VisitKeyword(&item, term.c_str(), term.size(), true, isSpecialToken);
+                v->VisitKeyword(&item, term.data(), term.size(), true, isSpecialToken);
             }
             break;
         case search::ParseItem::ITEM_ANY:

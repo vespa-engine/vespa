@@ -77,7 +77,8 @@ deduceResultNode(const vespalib::stringref & fieldName, const FieldValue & fv, b
         } else if (cInfo.inherits(MapFieldValue::classId)) {
             value = deduceResultNode(fieldName, *static_cast<const MapFieldValue &>(fv).createValue(), preserveAccurateTypes, nestedMultiValue);
         } else {
-            throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'", fieldName.c_str(), cInfo.name()));
+            throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'",
+                                                 vespalib::string(fieldName).c_str(), cInfo.name()));
         }
         const Identifiable::RuntimeClass & rInfo = value->getClass();
         if (rInfo.inherits(ResultNodeVector::classId)) {
@@ -97,10 +98,12 @@ deduceResultNode(const vespalib::stringref & fieldName, const FieldValue & fv, b
         } else if (rInfo.inherits(RawResultNode::classId)) {
             value.reset(new RawResultNodeVector());
         } else {
-            throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'. It nests down to %s which is not expected", fieldName.c_str(), cInfo.name(), rInfo.name()));
+            throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'. It nests down to %s which is not expected",
+                                                 vespalib::string(fieldName).c_str(), cInfo.name(), rInfo.name()));
         }
     } else {
-        throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'", fieldName.c_str(), cInfo.name()));
+        throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'",
+                                             vespalib::string(fieldName).c_str(), cInfo.name()));
     }
     return value;
 }

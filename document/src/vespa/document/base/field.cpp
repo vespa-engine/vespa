@@ -78,7 +78,7 @@ Field::calculateIdV7()
     ost << getName();
     ost << _dataType->getId();
 
-    int newId = vespalib::BobHash::hash(ost.str().c_str(), ost.str().length(), 0);
+    int newId = vespalib::BobHash::hash(ost.str().data(), ost.str().length(), 0);
     // Highest bit is reserved to tell 7-bit id's from 31-bit ones
     if (newId < 0) newId = -newId;
     validateId(newId);
@@ -91,7 +91,7 @@ Field::validateId(int newId) {
         throw vespalib::IllegalArgumentException(vespalib::make_string(
                     "Attempt to set the id of %s to %d failed, values from "
                     "100 to 127 are reserved for internal use",
-                    getName().c_str(), newId));
+                    vespalib::string(getName()).c_str(), newId));
     }
 
     if ((newId & 0x80000000) != 0) // Highest bit must not be set
@@ -99,7 +99,7 @@ Field::validateId(int newId) {
         throw vespalib::IllegalArgumentException(vespalib::make_string(
                     "Attempt to set the id of %s to %d"
                     " failed, negative id values are illegal",
-                    getName().c_str(), newId));
+                    vespalib::string(getName()).c_str(), newId));
     }
 }
 

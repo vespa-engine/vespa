@@ -47,7 +47,7 @@ stringref::find(const stringref & s, size_type start) const {
 
 std::ostream & operator << (std::ostream & os, const stringref & v)
 {
-    return os.write(v.c_str(), v.size());
+    return os.write(v.data(), v.size());
 }
 
 template<uint32_t SS>

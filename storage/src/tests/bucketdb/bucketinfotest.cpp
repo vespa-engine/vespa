@@ -51,14 +51,14 @@ getBucketInfo(std::string nodeList, std::string order) {
     {
         vespalib::StringTokenizer tokenizer(order, ",");
         for (uint32_t i = 0; i < tokenizer.size(); i++) {
-            ordering.push_back(atoi(tokenizer[i].c_str()));
+            ordering.push_back(atoi(tokenizer[i].data()));
         }
     }
 
     vespalib::StringTokenizer tokenizer(nodeList, ",");
     for (uint32_t i = 0; i < tokenizer.size(); i++) {
         info.addNode(BucketCopy(0,
-                                atoi(tokenizer[i].c_str()),
+                                atoi(tokenizer[i].data()),
                                 api::BucketInfo(1,1,1)),
                      ordering);
     }

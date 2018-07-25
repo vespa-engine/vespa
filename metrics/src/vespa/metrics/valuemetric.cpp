@@ -19,7 +19,7 @@ AbstractValueMetric::logWarning(const char* msg, const char * op) const
 {
     vespalib::asciistream ost;
     ost << msg << " in value metric " << getPath() << " op " << op << ". Resetting it.";
-    LOG(warning, "%s", ost.str().c_str());
+    LOG(warning, "%s", ost.str().data());
 }
 
 void

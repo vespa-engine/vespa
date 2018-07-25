@@ -19,7 +19,7 @@ namespace vespalib {
 namespace {
 
     FileInfo::UP
-    processStat(struct stat& filestats, bool result, const stringref & path) {
+    processStat(struct stat& filestats, bool result, stringref path) {
         FileInfo::UP resval;
         if (result) {
             resval.reset(new FileInfo);
@@ -36,7 +36,7 @@ namespace {
         }
         LOG(debug, "stat(%s): Existed? %s, Plain file? %s, Directory? %s, "
                    "Size: %" PRIu64,
-            path.c_str(),
+            string(path).c_str(),
             resval.get() ? "true" : "false",
             resval.get() && resval->_plainfile ? "true" : "false",
             resval.get() && resval->_directory ? "true" : "false",
@@ -69,7 +69,7 @@ operator<<(std::ostream& out, const FileInfo& info)
     return out;
 }
 
-File::File(const stringref & filename)
+File::File(stringref filename)
     : _fd(-1),
       _flags(0),
       _filename(filename),
@@ -79,7 +79,7 @@ File::File(const stringref & filename)
 {
 }
 
-File::File(int fileDescriptor, const stringref & filename)
+File::File(int fileDescriptor, stringref filename)
     : _fd(fileDescriptor),
       _flags(0),
       _filename(filename),
@@ -128,7 +128,7 @@ File::operator=(File& f)
 }
 
 void
-File::setFilename(const stringref & filename)
+File::setFilename(stringref filename)
 {
     if (_filename == filename) return;
     if (_close && _fd != -1) close();
@@ -139,14 +139,14 @@ File::setFilename(const stringref & filename)
 }
 
 namespace {
-    int openAndCreateDirsIfMissing(const stringref & filename, int flags,
+    int openAndCreateDirsIfMissing(const string & filename, int flags,
                                    bool createDirsIfMissing)
     {
         int fd = ::open(filename.c_str(), flags, 0644);
         if (fd < 0 && errno == ENOENT && ((flags & O_CREAT) != 0)
             && createDirsIfMissing)
         {
-            string::size_type pos = filename.rfind('/');
+            auto pos = filename.rfind('/');
             if (pos != string::npos) {
                 string path(filename.substr(0, pos));
                 mkdir(path);
@@ -381,7 +381,7 @@ File::readAll() const
 }
 
 vespalib::string
-File::readAll(const vespalib::stringref & path)
+File::readAll(vespalib::stringref path)
 {
     File file(path);
     file.open(File::READONLY);
@@ -452,14 +452,14 @@ getCurrentDirectory()
 }
 
 bool
-mkdir(const stringref & directory, bool recursive)
+mkdir(const string & directory, bool recursive)
 {
     if (::mkdir(directory.c_str(), 0777) == 0) {
         LOG(debug, "mkdir(%s): Created directory", directory.c_str());
         return true;
     }
     if (recursive && errno == ENOENT) {
-        string::size_type slashpos = directory.rfind('/');
+        auto slashpos = directory.rfind('/');
         if (slashpos != string::npos) {
             /* Recursively make superdirs.*/
             string superdir = directory.substr(0, slashpos);
@@ -499,8 +499,8 @@ mkdir(const stringref & directory, bool recursive)
 }
 
 void
-symlink(const stringref & oldPath,
-        const stringref & newPath)
+symlink(const string & oldPath,
+        const string & newPath)
 {
     if (::symlink(oldPath.c_str(), newPath.c_str())) {
         asciistream ss;
@@ -513,7 +513,7 @@ symlink(const stringref & oldPath,
 }
 
 string
-readLink(const stringref & path)
+readLink(const string & path)
 {
     char buf[256];
     ssize_t bytes(::readlink(path.c_str(), buf, sizeof(buf)));
@@ -528,7 +528,7 @@ readLink(const stringref & path)
 }
 
 void
-chdir(const stringref & directory)
+chdir(const string & directory)
 {
     if (::chdir(directory.c_str()) != 0) {
         asciistream ost;
@@ -537,12 +537,11 @@ chdir(const stringref & directory)
         throw IoException(ost.str(), IoException::getErrorType(errno),
                           VESPA_STRLOC);
     }
-    LOG(debug, "chdir(%s): Working directory changed.",
-        directory.c_str());
+    LOG(debug, "chdir(%s): Working directory changed.", directory.c_str());
 }
 
 bool
-rmdir(const stringref & directory, bool recursive)
+rmdir(const string & directory, bool recursive)
 {
     string dirname(directory);
     if (!dirname.empty() && *dirname.rbegin() == '/') {
@@ -595,26 +594,26 @@ rmdir(const stringref & directory, bool recursive)
 }
 
 FileInfo::UP
-stat(const stringref & path)
+stat(const string & path)
 {
     struct ::stat filestats;
     return processStat(filestats, ::stat(path.c_str(), &filestats) == 0, path);
 }
 
 FileInfo::UP
-lstat(const stringref & path)
+lstat(const string & path)
 {
     struct ::stat filestats;
     return processStat(filestats, ::lstat(path.c_str(), &filestats) == 0, path);
 }
 
 bool
-fileExists(const vespalib::stringref & path) {
+fileExists(const string & path) {
     return (stat(path).get() != 0);
 }
 
 bool
-unlink(const stringref & filename)
+unlink(const string & filename)
 {
     if (::unlink(filename.c_str()) != 0) {
         if (errno == ENOENT) {
@@ -631,7 +630,7 @@ unlink(const stringref & filename)
 }
 
 bool
-rename(const stringref & frompath, const stringref & topath,
+rename(const string & frompath, const string & topath,
        bool copyDeleteBetweenFilesystems, bool createTargetDirectoryIfMissing)
 {
     LOG(spam, "rename(%s, %s): Renaming file%s.",
@@ -696,7 +695,7 @@ namespace {
 }
 
 void
-copy(const stringref & frompath, const stringref & topath,
+copy(const string & frompath, const string & topath,
      bool createTargetDirectoryIfMissing, bool useDirectIO)
 {
         // Get aligned buffer, so it works with direct IO
@@ -730,7 +729,7 @@ copy(const stringref & frompath, const stringref & topath,
 }
 
 DirectoryList
-listDirectory(const stringref & path)
+listDirectory(const string & path)
 {
     DIR* dir = ::opendir(path.c_str());
     struct dirent* entry;
@@ -762,7 +761,7 @@ getAlignedBuffer(size_t size)
         return MallocAutoPtr(ptr);
 }
 
-string dirname(const stringref name)
+string dirname(stringref name)
 {
     size_t found = name.rfind('/');
     if (found == string::npos) {
@@ -776,7 +775,7 @@ string dirname(const stringref name)
 
 namespace {
 
-void addStat(asciistream &os, const stringref name)
+void addStat(asciistream &os, const string & name)
 {
     struct ::stat filestat;
     memset(&filestat, '\0', sizeof(filestat));
@@ -801,7 +800,7 @@ void addStat(asciistream &os, const stringref name)
 }
 
 string
-getOpenErrorString(const int osError, const stringref filename)
+getOpenErrorString(const int osError, stringref filename)
 {
     asciistream os;
     string dirName(dirname(filename));
@@ -809,12 +808,12 @@ getOpenErrorString(const int osError, const stringref filename)
         getErrorString(osError) << "\") fileStat";
     addStat(os, filename);
     os << " dirStat";
-    addStat(os, dirName.c_str());
+    addStat(os, dirName);
     return os.str();
 }
 
 bool
-isDirectory(const vespalib::stringref & path) {
+isDirectory(const string & path) {
     FileInfo::UP info(stat(path));
     return (info.get() && info->_directory);
 }

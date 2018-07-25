@@ -74,7 +74,7 @@ public:
         if (fv.getClass().inherits(document::LiteralFieldValueB::classId)) {
             const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
             vespalib::stringref s = lfv.getValueRef();
-            addToPacker(s.c_str(), s.size());
+            addToPacker(s.data(), s.size());
         } else {
             vespalib::string s = fv.toString();
             addToPacker(s.c_str(), s.size());

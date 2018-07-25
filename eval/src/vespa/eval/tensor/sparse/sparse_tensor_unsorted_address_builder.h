@@ -53,7 +53,7 @@ class SparseTensorUnsortedAddressBuilder
     ElementStringRef
     append(vespalib::stringref str)
     {
-        const char *cstr = str.c_str();
+        const char *cstr = str.data();
         uint32_t start = _elementStrings.size();
         _elementStrings.insert(_elementStrings.end(),
                                cstr, cstr + str.size() + 1);

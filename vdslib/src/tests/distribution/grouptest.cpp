@@ -30,7 +30,7 @@ namespace {
         vespalib::StringTokenizer st(nodelist, ",");
         std::vector<uint16_t> nodes(st.size());
         for (uint32_t i=0; i<st.size(); ++i) {
-            nodes[i] = atoi(st[i].c_str());
+            nodes[i] = atoi(st[i].data());
         }
         group->setNodes(nodes);
         return group;

@@ -555,12 +555,12 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
     }
 
     for (const auto &fupd : upd.getUpdates()) {
-        LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().c_str());
+        LOG(debug, "Retrieving guard for attribute vector '%s'.", vespalib::string(fupd.getField().getName()).c_str());
         auto found = _attrMap.find(fupd.getField().getName());
         AttributeVector * attrp = (found != _attrMap.end()) ? found->second.first : nullptr;
         onUpdate.onUpdateField(fupd.getField().getName(), attrp);
         if (attrp == nullptr) {
-            LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().c_str());
+            LOG(spam, "Failed to find attribute vector %s", vespalib::string(fupd.getField().getName()).c_str());
             continue;
         }
         // TODO: Check if we must use > due to multiple entries for same

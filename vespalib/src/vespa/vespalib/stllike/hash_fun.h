@@ -67,7 +67,7 @@ template<> struct hash<const char *> {
 };
 
 template<> struct hash<vespalib::stringref> {
-    size_t operator() (const vespalib::stringref & arg) const { return hashValue(arg.c_str(), arg.size()); }
+    size_t operator() (const vespalib::stringref & arg) const { return hashValue(arg.data(), arg.size()); }
 };
 
 template<> struct hash<vespalib::string> {

@@ -43,7 +43,7 @@ bool equals(const X & lhs, const Y & rhs) {
 
 template <>
 bool equals<ConstCharPtr, vespalib::stringref>(const ConstCharPtr & lhs, const vespalib::stringref & rhs) {
-    return strcmp(lhs, rhs.c_str()) == 0;
+    return strcmp(lhs, rhs.data()) == 0;
 }
 
 template <typename T>

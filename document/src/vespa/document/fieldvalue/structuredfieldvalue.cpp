@@ -71,7 +71,7 @@ void StructuredFieldValue::setFieldValue(const Field & field, const FieldValue &
         throw IllegalArgumentException(
                 "Cannot assign value of type " + value.getDataType()->toString()
                 + "with value : '" + value.toString()
-                + "' to field " + field.getName().c_str() + " of type "
+                + "' to field " + field.getName() + " of type "
                 + field.getDataType().toString() + ".", VESPA_STRLOC);
     }
     setFieldValue(field, FieldValue::UP(value.clone()));

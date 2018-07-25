@@ -26,7 +26,7 @@ FieldCache::FieldCache(const ResultClass &resClass,
         if (docType.hasField(fieldName)) {
             const Field &field = docType.getField(fieldName);
             LOG(debug, "Caching Field instance for field '%s': %s.%u",
-                fieldName.c_str(), field.getName().c_str(), field.getId());
+                fieldName.c_str(), vespalib::string(field.getName()).c_str(), field.getId());
             _cache.push_back(Field::CSP(new Field(field)));
         } else {
             _cache.push_back(Field::CSP());

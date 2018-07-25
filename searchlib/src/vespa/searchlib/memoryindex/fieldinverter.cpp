@@ -256,7 +256,7 @@ FieldInverter::saveWord(const vespalib::stringref word)
 
     char * buf = &_words[0] + wordsSize;
     memset(buf, 0, 4);
-    memcpy(buf + 4, word.c_str(), len);
+    memcpy(buf + 4, word.data(), len);
     uint32_t *lastWord = reinterpret_cast<uint32_t *>(buf + 4 + (len & ~0x3));
     *lastWord &=  (0xffffff >> ((3 - (len & 3)) << 3)); //only on little endian machiness !!
 

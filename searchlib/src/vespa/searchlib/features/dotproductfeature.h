@@ -100,7 +100,7 @@ public:
     EnumVector(const search::attribute::IAttributeVector * attribute) : _attribute(attribute) {}
     void insert(const vespalib::stringref & label, const vespalib::stringref & value) {
         search::attribute::EnumHandle e;
-        if (_attribute->findEnum(label.c_str(), e)) {
+        if (_attribute->findEnum(label.data(), e)) {
             _vector.push_back(std::make_pair(e, util::strToNum<feature_t>(value)));
         }
     }

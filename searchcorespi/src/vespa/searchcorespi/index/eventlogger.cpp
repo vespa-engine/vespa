@@ -19,7 +19,7 @@ EventLogger::diskIndexLoadStart(const vespalib::string &indexDir)
     jstr.appendKey("input");
     LogUtil::logDir(jstr, indexDir, 6);
     jstr.endObject();
-    EV_STATE("diskindex.load.start", jstr.toString().c_str());
+    EV_STATE("diskindex.load.start", jstr.toString().data());
 }
 
 void
@@ -32,7 +32,7 @@ EventLogger::diskIndexLoadComplete(const vespalib::string &indexDir,
     jstr.appendKey("input");
     LogUtil::logDir(jstr, indexDir, 6);
     jstr.endObject();
-    EV_STATE("diskindex.load.complete", jstr.toString().c_str());
+    EV_STATE("diskindex.load.complete", jstr.toString().data());
 }
 
 void
@@ -50,7 +50,7 @@ EventLogger::diskFusionStart(const std::vector<vespalib::string> &sources,
     jstr.appendKey("output");
     LogUtil::logDir(jstr, fusionDir, 6);
     jstr.endObject();
-    EV_STATE("fusion.start", jstr.toString().c_str());
+    EV_STATE("fusion.start", jstr.toString().data());
 }
 
 void
@@ -63,7 +63,7 @@ EventLogger::diskFusionComplete(const vespalib::string &fusionDir,
     jstr.appendKey("output");
     LogUtil::logDir(jstr, fusionDir, 6);
     jstr.endObject();
-    EV_STATE("fusion.complete", jstr.toString().c_str());
+    EV_STATE("fusion.complete", jstr.toString().data());
 }
 
 }

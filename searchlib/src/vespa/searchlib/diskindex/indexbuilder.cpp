@@ -296,7 +296,7 @@ FileHandle::open(const vespalib::stringref &dir,
                             index.getSchema(), index.getIndex(),
                             tuneFileWrite, fileHeaderContext)) {
         LOG(error, "Could not open term writer %s for write (%s)",
-            dir.c_str(), getLastErrorString().c_str());
+            vespalib::string(dir).c_str(), getLastErrorString().c_str());
         LOG_ABORT("should not be reached");
     }
 }

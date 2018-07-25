@@ -14,7 +14,7 @@ UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
 {
     (void) mintsz;
     termcount_t words(0);
-    const byte * n = reinterpret_cast<const byte *> (f.c_str());
+    const byte * n = reinterpret_cast<const byte *> (f.data());
     const byte * e = n + f.size();
     if (f.size() >= _buf->size()) {
         _buf->reserve(f.size() + 1);
