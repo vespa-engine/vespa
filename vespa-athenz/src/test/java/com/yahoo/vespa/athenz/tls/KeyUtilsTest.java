@@ -27,8 +27,8 @@ public class KeyUtilsTest {
     public void can_serialize_deserialize_pem() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         String pem = KeyUtils.toPem(keyPair.getPrivate());
-        assertThat(pem, containsString("BEGIN PRIVATE KEY"));
-        assertThat(pem, containsString("END PRIVATE KEY"));
+        assertThat(pem, containsString("BEGIN RSA PRIVATE KEY"));
+        assertThat(pem, containsString("END RSA PRIVATE KEY"));
         PrivateKey deserializedKey = KeyUtils.fromPemEncodedPrivateKey(pem);
         assertEquals(keyPair.getPrivate(), deserializedKey);
     }
