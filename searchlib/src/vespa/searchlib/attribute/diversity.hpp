@@ -31,4 +31,24 @@ ReverseRange<ITR>::ReverseRange(const ITR &lower, const ITR &upper)
 template <typename ITR>
 ReverseRange<ITR>::~ReverseRange() = default;
 
+template <typename Fetcher>
+bool
+DiversityFilterT<Fetcher>::accepted(uint32_t docId) {
+    if (_total_count < _max_total) {
+        if ((_seen.size() < _cutoff_max_groups) || _cutoff_strict) {
+            typename Fetcher::ValueType group = _diversity.get(docId);
+            if (_seen.size() < _cutoff_max_groups) {
+                return conditional_add(_seen[group]);
+            } else {
+                auto found = _seen.find(group);
+                return (found == _seen.end()) ? add() : conditional_add(found->second);
+            }
+        } else if ( !_cutoff_strict) {
+            return add();
+        }
+    }
+    return false;
+}
+
+
 }
