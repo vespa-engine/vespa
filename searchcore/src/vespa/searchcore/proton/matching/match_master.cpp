@@ -57,12 +57,9 @@ createScheduler(uint32_t numThreads, uint32_t numSearchPartitions, uint32_t numD
 } // namespace proton::matching::<unnamed>
 
 ResultProcessor::Result::UP
-MatchMaster::match(const MatchParams &params,
-                   vespalib::ThreadBundle &threadBundle,
-                   const MatchToolsFactory &matchToolsFactory,
-                   ResultProcessor &resultProcessor,
-                   uint32_t distributionKey,
-                   uint32_t numSearchPartitions)
+MatchMaster::match(const MatchParams &params, vespalib::ThreadBundle &threadBundle,
+                   const MatchToolsFactory &matchToolsFactory, ResultProcessor &resultProcessor,
+                   uint32_t distributionKey, uint32_t numSearchPartitions)
 {
     fastos::StopWatch query_latency_time;
     query_latency_time.start();
@@ -77,9 +74,8 @@ MatchMaster::match(const MatchParams &params,
         IMatchLoopCommunicator &com = (i == 0)
                 ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
                 : static_cast<IMatchLoopCommunicator&>(communicator);
-        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(),
-                        params, matchToolsFactory, com, *scheduler,
-                        resultProcessor, mergeDirector, distributionKey));
+        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, matchToolsFactory, com,
+                                                               *scheduler, resultProcessor, mergeDirector, distributionKey));
         targets.push_back(threadState.back().get());
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
