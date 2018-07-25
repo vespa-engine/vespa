@@ -134,7 +134,7 @@
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <attachBundleToArtifact>true</attachBundleToArtifact>
+                    <attachBundleArtifact>true</attachBundleArtifact>
                 </configuration>
             </plugin>
         </plugins>
