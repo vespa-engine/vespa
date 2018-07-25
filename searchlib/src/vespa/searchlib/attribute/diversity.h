@@ -97,7 +97,7 @@ struct FetchFloat {
     ValueType get(uint32_t docid) const { return attr.getFloat(docid); }
 };
 
-template <typename Fetcher, typename Result>
+template <typename Fetcher>
 class DiversityFilter {
 private:
     size_t _total_count;
@@ -109,48 +109,68 @@ private:
 
     typedef vespalib::hash_map<typename Fetcher::ValueType, uint32_t> Diversity;
     Diversity _seen;
-    Result &_result;
 public:
     DiversityFilter(const Fetcher &diversity, size_t max_per_group,
-                    size_t cutoff_max_groups, bool cutoff_strict,
-                    Result &result, size_t max_total)
+                    size_t cutoff_max_groups, bool cutoff_strict, size_t max_total)
         : _total_count(0), _max_total(max_total), _diversity(diversity), _max_per_group(max_per_group),
           _cutoff_max_groups(cutoff_max_groups), _cutoff_strict(cutoff_strict),
-          _seen(std::min(cutoff_max_groups, 10000ul)*3), _result(result)
+          _seen(std::min(cutoff_max_groups, 10000ul)*3)
     { }
     template <typename Item>
-    void push_back(Item item) {
+    bool accepted(Item item) {
         if (_total_count < _max_total) {
             if ((_seen.size() < _cutoff_max_groups) || _cutoff_strict) {
                 typename Fetcher::ValueType group = _diversity.get(item._key);
                 if (_seen.size() < _cutoff_max_groups) {
-                    conditional_add(_seen[group], item);
+                    return conditional_add(_seen[group]);
                 } else {
                     auto found = _seen.find(group);
                     if (found == _seen.end()) {
-                        add(item);
+                        add();
+                        return true;
                     } else {
-                        conditional_add(found->second, item);
+                        return conditional_add(found->second);
                     }
                 }
             } else if ( !_cutoff_strict) {
-                add(item);
+                add();
+                return true;
             }
         }
+        return false;
     }
+
 private:
-    template <typename Item>
-    void add(Item item) {
+    void add() {
         ++_total_count;
-        _result.push_back(item);
     }
-    template <typename Item>
-    void conditional_add(uint32_t & group_count, Item item) {
+    bool conditional_add(uint32_t & group_count) {
         if (group_count  < _max_per_group) {
             ++group_count;
-            add(item);
+            add();
+            return true;
+        }
+        return false;
+    }
+};
+
+template <typename Filter, typename Result>
+class DiversityRecorder {
+private:
+    Filter & _filter;
+    Result &_result;
+public:
+    DiversityRecorder(Filter & filter, Result &result)
+        : _filter(filter), _result(result)
+    { }
+
+    template <typename Item>
+    void push_back(Item item) {
+        if (_filter.accepted(item)) {
+            _result.push_back(item);
         }
     }
+
 };
 
 template <typename DictRange, typename PostingStore, typename Fetcher, typename Result>
@@ -159,15 +179,16 @@ void diversify_3(const DictRange &range_in, const PostingStore &posting, size_t 
                  size_t cutoff_max_groups, bool cutoff_strict,
                  Result &result, std::vector<size_t> &fragments)
 {
+    DiversityFilter<Fetcher> filter(diversity, max_per_group, cutoff_max_groups, cutoff_strict, wanted_hits);
+    DiversityRecorder<DiversityFilter<Fetcher>, Result> recorder(filter, result);
     DictRange range(range_in);
     using DataType = typename PostingStore::DataType;
     using KeyDataType = typename PostingStore::KeyDataType;
-    DiversityFilter<Fetcher, Result> filter(diversity, max_per_group, cutoff_max_groups, cutoff_strict, result, wanted_hits);
     while (range.has_next() && (result.size() < wanted_hits)) {
         typename DictRange::Next dict_entry(range);
         posting.foreach_frozen(dict_entry.get().getData(),
                                [&](uint32_t key, const DataType &data)
-                               { filter.push_back(KeyDataType(key, data)); });
+                               { recorder.push_back(KeyDataType(key, data)); });
         if (fragments.back() < result.size()) {
             fragments.push_back(result.size());
         }
