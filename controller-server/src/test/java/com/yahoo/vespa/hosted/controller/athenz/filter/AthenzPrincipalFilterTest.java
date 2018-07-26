@@ -14,7 +14,8 @@ import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
+import com.yahoo.vespa.athenz.utils.ntoken.AthenzTruststore;
+import com.yahoo.vespa.athenz.utils.ntoken.NTokenValidator;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,7 +72,7 @@ public class AthenzPrincipalFilterTest {
         AthenzPrincipal principal = new AthenzPrincipal(IDENTITY, NTOKEN);
         validator.add(NTOKEN, principal);
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request);
         filter.filter(filterRequest, new ResponseHandlerMock());
 
@@ -80,7 +81,7 @@ public class AthenzPrincipalFilterTest {
 
     @Test
     public void missing_token_and_certificate_is_unauthorized() {
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(new Request("/"));
         filter.filter(filterRequest, responseHandler);
 
@@ -91,7 +92,7 @@ public class AthenzPrincipalFilterTest {
     public void invalid_token_is_unauthorized() {
         Request request = defaultRequest();
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request);
         filter.filter(filterRequest, responseHandler);
 
@@ -101,7 +102,7 @@ public class AthenzPrincipalFilterTest {
 
     @Test
     public void certificate_is_accepted() {
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(new Request("/"), singletonList(CERTIFICATE));
         filter.filter(filterRequest, responseHandler);
 
@@ -116,7 +117,7 @@ public class AthenzPrincipalFilterTest {
         AthenzPrincipal principalWithToken = new AthenzPrincipal(IDENTITY, NTOKEN);
         validator.add(NTOKEN, principalWithToken);
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request, singletonList(CERTIFICATE));
         filter.filter(filterRequest, responseHandler);
 
@@ -130,7 +131,7 @@ public class AthenzPrincipalFilterTest {
 
         AthenzUser conflictingIdentity = AthenzUser.fromUserId("mallory");
         DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request, singletonList(createSelfSignedCertificate(conflictingIdentity)));
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         filter.filter(filterRequest, responseHandler);
 
         assertUnauthorized(responseHandler, "Identity in principal token does not match x509 CN");
@@ -176,7 +177,7 @@ public class AthenzPrincipalFilterTest {
         private final Map<NToken, AthenzPrincipal> validTokens = new HashMap<>();
 
         NTokenValidatorMock() {
-            super((service, keyId) -> Optional.empty());
+            super((AthenzTruststore)null);
         }
 
         public NTokenValidatorMock add(NToken token, AthenzPrincipal principal) {
@@ -185,7 +186,7 @@ public class AthenzPrincipalFilterTest {
         }
 
         @Override
-        AthenzPrincipal validate(NToken token) throws InvalidTokenException {
+        public AthenzPrincipal validate(NToken token) throws InvalidTokenException {
             if (!validTokens.containsKey(token)) {
                 throw new InvalidTokenException("Invalid token");
             }
