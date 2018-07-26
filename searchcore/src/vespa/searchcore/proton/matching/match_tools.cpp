@@ -88,16 +88,13 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
 {
 }
 
-MatchTools::~MatchTools()
-{
-}
+MatchTools::~MatchTools() = default;
 
 void
 MatchTools::setup_first_phase()
 {
     setup(_rankSetup.create_first_phase_program(),
-          TermwiseLimit::lookup(_queryEnv.getProperties(),
-                                _rankSetup.get_termwise_limit()));
+          TermwiseLimit::lookup(_queryEnv.getProperties(), _rankSetup.get_termwise_limit()));
 }
 
 void
@@ -165,36 +162,34 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         double diversity_cutoff_factor = DiversityCutoffFactor::lookup(rankProperties);
         vespalib::string diversity_cutoff_strategy = DiversityCutoffStrategy::lookup(rankProperties);
         if (!limit_attribute.empty() && limit_maxhits > 0) {
-            _match_limiter.reset(new MatchPhaseLimiter(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(), _requestContext,
+            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(), _requestContext,
                             limit_attribute, limit_maxhits, !limit_ascending, limit_max_filter_coverage,
                             samplePercentage, postFilterMultiplier,
-                            diversity_attribute, diversity_min_groups,
-                            diversity_cutoff_factor,
-                            AttributeLimiter::toDiversityCutoffStrategy(diversity_cutoff_strategy)));
+                            diversity_attribute, diversity_min_groups, diversity_cutoff_factor,
+                            AttributeLimiter::toDiversityCutoffStrategy(diversity_cutoff_strategy));
         } else if (_rankSetup.hasMatchPhaseDegradation()) {
-            _match_limiter.reset(new MatchPhaseLimiter(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(), _requestContext,
+            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(), _requestContext,
                             _rankSetup.getDegradationAttribute(), _rankSetup.getDegradationMaxHits(), !_rankSetup.isDegradationOrderAscending(),
                             _rankSetup.getDegradationMaxFilterCoverage(),
                             _rankSetup.getDegradationSamplePercentage(), _rankSetup.getDegradationPostFilterMultiplier(),
                             _rankSetup.getDiversityAttribute(), _rankSetup.getDiversityMinGroups(),
                             _rankSetup.getDiversityCutoffFactor(),
-                            AttributeLimiter::toDiversityCutoffStrategy(_rankSetup.getDiversityCutoffStrategy())));
+                            AttributeLimiter::toDiversityCutoffStrategy(_rankSetup.getDiversityCutoffStrategy()));
         }
     }
-    if (_match_limiter.get() == nullptr) {
-        _match_limiter.reset(new NoMatchPhaseLimiter());
+    if ( ! _match_limiter) {
+        _match_limiter = std::make_unique<NoMatchPhaseLimiter>();
     }
 }
 
-MatchToolsFactory::~MatchToolsFactory() {}
+MatchToolsFactory::~MatchToolsFactory() = default;
 
 MatchTools::UP
 MatchToolsFactory::createMatchTools() const
 {
     assert(_valid);
-    return MatchTools::UP(
-            new MatchTools(_queryLimiter, _requestContext.getSoftDoom(), _hardDoom, _query, *_match_limiter, _queryEnv,
-                           _mdl, _rankSetup, _featureOverrides));
+    return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getSoftDoom(), _hardDoom, _query,
+                                        *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
 }
 
 }
