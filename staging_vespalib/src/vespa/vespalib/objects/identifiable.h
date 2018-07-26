@@ -171,7 +171,7 @@ public:
         virtual void loadClass(unsigned classId) = 0;
         virtual void loadClass(const char * className) = 0;
     };
-    struct RuntimeClass : public IFieldBase {
+    struct RuntimeClass final : public IFieldBase {
     public:
         RuntimeClass(RuntimeInfo * info);
         ~RuntimeClass();
