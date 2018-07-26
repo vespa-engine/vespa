@@ -50,7 +50,7 @@ public class OperatorChangeApplicationMaintainerTest {
     private Fixture fixture;
 
     @Test
-    public void test_application_maintenance() throws InterruptedException {
+    public void test_application_maintenance() {
         ManualClock clock = new ManualClock();
         Curator curator = new MockCurator();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
