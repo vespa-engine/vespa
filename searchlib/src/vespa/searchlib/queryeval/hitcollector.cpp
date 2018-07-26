@@ -220,23 +220,19 @@ HitCollector::reRank(DocumentScorer &scorer, size_t count)
 size_t
 HitCollector::reRank(DocumentScorer &scorer, std::vector<Hit> hits) {
     size_t hitsToReRank = hits.size();
-    if (_reRankedHits.empty()) {
-        _reRankedHits = std::move(hits);
-    } else {
-        _reRankedHits.insert(_reRankedHits.end(), hits.begin(), hits.end());
-    }
     Scores &initScores = _ranges.first;
     Scores &finalScores = _ranges.second;
-    initScores = Scores(_reRankedHits.back().second, _reRankedHits.front().second);
+    initScores = Scores(hits.back().second, hits.front().second);
     finalScores = Scores(std::numeric_limits<feature_t>::max(),
                          -std::numeric_limits<feature_t>::max());
 
-    std::sort(_reRankedHits.begin(), _reRankedHits.end()); // sort on docId
-    for (auto &hit : _reRankedHits) {
+    std::sort(hits.begin(), hits.end()); // sort on docId
+    for (auto &hit : hits) {
         hit.second = scorer.score(hit.first);
         finalScores.low = std::min(finalScores.low, hit.second);
         finalScores.high = std::max(finalScores.high, hit.second);
     }
+    _reRankedHits = std::move(hits);
     _hasReRanked = true;
     return hitsToReRank;
 }
