@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
-import java.net.URI;
 import java.security.PrivateKey;
 import java.time.Instant;
 import java.util.HashSet;
@@ -76,9 +75,7 @@ public class IdentityDocumentGenerator {
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
                     providerUniqueId,
-                    toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
                     providerService,
-                    URI.create(zoneConfig.ztsUrl()),
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION,
                     configServerHostname,
                     node.hostname(),

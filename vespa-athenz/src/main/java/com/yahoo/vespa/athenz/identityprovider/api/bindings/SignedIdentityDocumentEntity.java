@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
@@ -19,9 +18,7 @@ public class SignedIdentityDocumentEntity {
     @JsonProperty("signature") public final String signature;
     @JsonProperty("signing-key-version") public final int signingKeyVersion;
     @JsonProperty("provider-unique-id") public final String providerUniqueId; // String representation
-    @JsonProperty("dns-suffix") public final String dnsSuffix;
     @JsonProperty("provider-service") public final String providerService;
-    @JsonProperty("zts-endpoint") public final URI ztsEndpoint;
     @JsonProperty("document-version") public final int documentVersion;
     @JsonProperty("configserver-hostname") public final String configServerHostname;
     @JsonProperty("instance-hostname") public final String instanceHostname;
@@ -33,9 +30,7 @@ public class SignedIdentityDocumentEntity {
     public SignedIdentityDocumentEntity(@JsonProperty("signature") String signature,
                                         @JsonProperty("signing-key-version") int signingKeyVersion,
                                         @JsonProperty("provider-unique-id") String providerUniqueId,
-                                        @JsonProperty("dns-suffix") String dnsSuffix,
                                         @JsonProperty("provider-service") String providerService,
-                                        @JsonProperty("zts-endpoint") URI ztsEndpoint,
                                         @JsonProperty("document-version") int documentVersion,
                                         @JsonProperty("configserver-hostname") String configServerHostname,
                                         @JsonProperty("instance-hostname") String instanceHostname,
@@ -45,9 +40,7 @@ public class SignedIdentityDocumentEntity {
         this.signature = signature;
         this.signingKeyVersion = signingKeyVersion;
         this.providerUniqueId = providerUniqueId;
-        this.dnsSuffix = dnsSuffix;
         this.providerService = providerService;
-        this.ztsEndpoint = ztsEndpoint;
         this.documentVersion = documentVersion;
         this.configServerHostname = configServerHostname;
         this.instanceHostname = instanceHostname;
@@ -62,9 +55,7 @@ public class SignedIdentityDocumentEntity {
                 ", signature='" + signature + '\'' +
                 ", signingKeyVersion=" + signingKeyVersion +
                 ", providerUniqueId='" + providerUniqueId + '\'' +
-                ", dnsSuffix='" + dnsSuffix + '\'' +
                 ", providerService='" + providerService + '\'' +
-                ", ztsEndpoint=" + ztsEndpoint +
                 ", documentVersion=" + documentVersion +
                 ", configServerHostname='" + configServerHostname + '\'' +
                 ", instanceHostname='" + instanceHostname + '\'' +
@@ -83,9 +74,7 @@ public class SignedIdentityDocumentEntity {
                 documentVersion == that.documentVersion &&
                 Objects.equals(signature, that.signature) &&
                 Objects.equals(providerUniqueId, that.providerUniqueId) &&
-                Objects.equals(dnsSuffix, that.dnsSuffix) &&
                 Objects.equals(providerService, that.providerService) &&
-                Objects.equals(ztsEndpoint, that.ztsEndpoint) &&
                 Objects.equals(configServerHostname, that.configServerHostname) &&
                 Objects.equals(instanceHostname, that.instanceHostname) &&
                 Objects.equals(createdAt, that.createdAt) &&
@@ -95,6 +84,6 @@ public class SignedIdentityDocumentEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(signature, signingKeyVersion, providerUniqueId, dnsSuffix, providerService, ztsEndpoint, documentVersion, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType);
+        return Objects.hash(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType);
     }
 }
