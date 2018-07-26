@@ -4,8 +4,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sort.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 HitCollector::sortHitsByScore(size_t topn)
@@ -53,16 +52,14 @@ HitCollector::HitCollector(uint32_t numDocs,
       _needReScore(false)
 {
     if (_maxHitsSize > 0) {
-        _collector.reset(new RankedHitCollector(*this));
+        _collector = std::make_unique<RankedHitCollector>(*this);
     } else {
-        _collector.reset(new DocIdCollector<false>(*this));
+        _collector = std::make_unique<DocIdCollector<false>>(*this);
     }
     _hits.reserve(maxHitsSize);
 }
 
-HitCollector::~HitCollector()
-{
-}
+HitCollector::~HitCollector() = default;
 
 void
 HitCollector::RankedHitCollector::collect(uint32_t docId, feature_t score)
@@ -113,7 +110,7 @@ HitCollector::RankedHitCollector::collectAndChangeCollector(uint32_t docId, feat
             hc._docIdVector.push_back(hc._hits[i].first);
         }
         hc._docIdVector.push_back(docId);
-        newCollector.reset(new DocIdCollector<true>(hc));
+        newCollector = std::make_unique<DocIdCollector<true>>(hc);
     } else {
         // start using bit vector
         hc._bitVector = BitVector::create(hc._numDocs);
@@ -123,7 +120,7 @@ HitCollector::RankedHitCollector::collectAndChangeCollector(uint32_t docId, feat
             hc._bitVector->setBit(hc._hits[i].first);
         }
         hc._bitVector->setBit(docId);
-        newCollector.reset(new BitVectorCollector<true>(hc));
+        newCollector = std::make_unique<BitVectorCollector<true>>(hc);
     }
     // treat hit vector as a heap
     std::make_heap(hc._hits.begin(), hc._hits.end(), ScoreComparator());
@@ -168,7 +165,7 @@ HitCollector::DocIdCollector<CollectRankedHit>::collectAndChangeCollector(uint32
     std::vector<uint32_t> emptyVector;
     emptyVector.swap(hc._docIdVector);
     hc._bitVector->setBit(docId);
-    hc._collector.reset(new BitVectorCollector<CollectRankedHit>(hc)); // note - self-destruct.
+    hc._collector = std::make_unique<BitVectorCollector<CollectRankedHit>>(hc); // note - self-destruct.
 }
 
 std::vector<feature_t>
@@ -184,6 +181,20 @@ HitCollector::getSortedHeapScores()
     return scores;
 }
 
+std::vector<HitCollector::Hit>
+HitCollector::getSortedHeapHits()
+{
+    std::vector<Hit> scores;
+    size_t scoresToReturn = std::min(_hits.size(), static_cast<size_t>(_maxReRankHitsSize));
+    scores.reserve(scoresToReturn);
+    sortHitsByScore(scoresToReturn);
+    for (size_t i = 0; i < scoresToReturn; ++i) {
+        scores.push_back(_hits[_scoreOrder[i]]);
+    }
+    return scores;
+}
+
+
 size_t
 HitCollector::reRank(DocumentScorer &scorer)
 {
@@ -198,15 +209,25 @@ HitCollector::reRank(DocumentScorer &scorer, size_t count)
         return 0;
     }
     sortHitsByScore(hitsToReRank);
-    _reRankedHits.reserve(_reRankedHits.size() + hitsToReRank);
+    std::vector<Hit> hits;
+    hits.reserve(hitsToReRank);
     for (size_t i(0); i < hitsToReRank; i++) {
-        _reRankedHits.push_back(_hits[_scoreOrder[i]]);
+        hits.push_back(_hits[_scoreOrder[i]]);
     }
+    return reRank(scorer, std::move(hits));
+}
 
+size_t
+HitCollector::reRank(DocumentScorer &scorer, std::vector<Hit> hits) {
+    size_t hitsToReRank = hits.size();
+    if (_reRankedHits.empty()) {
+        _reRankedHits = std::move(hits);
+    } else {
+        _reRankedHits.insert(_reRankedHits.end(), hits.begin(), hits.end());
+    }
     Scores &initScores = _ranges.first;
     Scores &finalScores = _ranges.second;
-    initScores = Scores(_reRankedHits.back().second,
-                        _reRankedHits.front().second);
+    initScores = Scores(_reRankedHits.back().second, _reRankedHits.front().second);
     finalScores = Scores(std::numeric_limits<feature_t>::max(),
                          -std::numeric_limits<feature_t>::max());
 
@@ -335,5 +356,4 @@ HitCollector::getResultSet(HitRank default_value)
     return rs;
 }
 
-} // namespace queryeval
-} // namespace search
+}

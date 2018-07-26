@@ -18,7 +18,7 @@ using search::FeatureSet;
 
 namespace {
 
-struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
+struct TimedMatchLoopCommunicator final : IMatchLoopCommunicator {
     IMatchLoopCommunicator &communicator;
     fastos::StopWatch rerank_time;
     TimedMatchLoopCommunicator(IMatchLoopCommunicator &com) : communicator(com) {}
@@ -27,6 +27,11 @@ struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     }
     size_t selectBest(const std::vector<feature_t> &sortedScores) override {
         size_t result = communicator.selectBest(sortedScores);
+        rerank_time.start();
+        return result;
+    }
+    std::vector<Hit> selectDiversifiedBest(const std::vector<Hit> &sortedScores) override {
+        std::vector<Hit> result = communicator.selectDiversifiedBest(sortedScores);
         rerank_time.start();
         return result;
     }
@@ -52,30 +57,25 @@ createScheduler(uint32_t numThreads, uint32_t numSearchPartitions, uint32_t numD
 } // namespace proton::matching::<unnamed>
 
 ResultProcessor::Result::UP
-MatchMaster::match(const MatchParams &params,
-                   vespalib::ThreadBundle &threadBundle,
-                   const MatchToolsFactory &matchToolsFactory,
-                   ResultProcessor &resultProcessor,
-                   uint32_t distributionKey,
-                   uint32_t numSearchPartitions)
+MatchMaster::match(const MatchParams &params, vespalib::ThreadBundle &threadBundle,
+                   const MatchToolsFactory &matchToolsFactory, ResultProcessor &resultProcessor,
+                   uint32_t distributionKey, uint32_t numSearchPartitions)
 {
     fastos::StopWatch query_latency_time;
     query_latency_time.start();
     vespalib::DualMergeDirector mergeDirector(threadBundle.size());
-    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize);
-    TimedMatchLoopCommunicator timedCommunicator(communicator);
+    auto communicator = (matchToolsFactory.getDiversityFilter() == nullptr)
+            ? std::make_unique<MatchLoopCommunicator>(threadBundle.size(), params.heapSize)
+            : std::make_unique<MatchLoopCommunicator>(threadBundle.size(), params.heapSize, *matchToolsFactory.getDiversityFilter());
+    TimedMatchLoopCommunicator timedCommunicator(*communicator);
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);
 
     std::vector<MatchThread::UP> threadState;
     std::vector<vespalib::Runnable*> targets;
-    for (size_t i = 0; i < threadBundle.size(); ++i) {
-        IMatchLoopCommunicator &com =
-            (i == 0)?
-            static_cast<IMatchLoopCommunicator&>(timedCommunicator) :
-            static_cast<IMatchLoopCommunicator&>(communicator);
-        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(),
-                        params, matchToolsFactory, com, *scheduler,
-                        resultProcessor, mergeDirector, distributionKey));
+    IMatchLoopCommunicator *com = &timedCommunicator;
+    for (size_t i = 0; i < threadBundle.size(); ++i, com = communicator.get()) {
+        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, matchToolsFactory, *com,
+                                                               *scheduler, resultProcessor, mergeDirector, distributionKey));
         targets.push_back(threadState.back().get());
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
@@ -118,7 +118,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         featureNames.emplace_back(resolver.name_of(i));
     }
-    FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
+    auto retval = std::make_shared<FeatureSet>(featureNames, docs.size());
     if (docs.empty()) {
         return retval;
     }
@@ -126,8 +126,8 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
 
     SearchIterator &search = matchTools->search();
     search.initRange(docs.front(), docs.back()+1);
-    for (uint32_t i = 0; i < docs.size(); ++i) {
-        if (search.seek(docs[i])) {
+    for (uint32_t doc : docs) {
+        if (search.seek(doc)) {
             uint32_t docId = search.getDocId();
             search.unpack(docId);
             search::feature_t * f = fs.getFeaturesByIndex(fs.addDocId(docId));
@@ -135,7 +135,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
                 f[j] = resolver.resolve(j).as_number(docId);
             }
         } else {
-            LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
+            LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", doc);
         }
     }
     return retval;

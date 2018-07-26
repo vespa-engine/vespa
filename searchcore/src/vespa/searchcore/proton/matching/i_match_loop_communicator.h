@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/queryeval/scores.h>
+#include <vespa/searchlib/queryeval/idiversifier.h>
 #include <utility>
 #include <cstddef>
 #include <vector>
@@ -10,9 +11,10 @@
 namespace proton::matching {
 
 struct IMatchLoopCommunicator {
-    typedef search::feature_t feature_t;
-    typedef search::queryeval::Scores Range;
-    typedef std::pair<Range, Range> RangePair;
+    using feature_t = search::feature_t;
+    using Range = search::queryeval::Scores;
+    using RangePair = std::pair<Range, Range>;
+    using Hit = std::pair<uint32_t, feature_t>;
     struct Matches {
         size_t hits;
         size_t docs;
@@ -25,6 +27,7 @@ struct IMatchLoopCommunicator {
     };
     virtual double estimate_match_frequency(const Matches &matches) = 0;
     virtual size_t selectBest(const std::vector<feature_t> &sortedScores) = 0;
+    virtual std::vector<Hit> selectDiversifiedBest(const std::vector<Hit> &sortedHits) = 0;
     virtual RangePair rangeCover(const RangePair &ranges) = 0;
     virtual ~IMatchLoopCommunicator() {}
 };

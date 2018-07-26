@@ -5,11 +5,30 @@
 
 namespace proton:: matching {
 
+namespace {
+
+class AllowAll final : public search::queryeval::IDiversifier {
+public:
+    bool accepted(uint32_t docId) override {
+        (void) docId;
+        return true;
+    }
+};
+
+AllowAll _G_allowAll;
+}
+
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
+    : MatchLoopCommunicator(threads, topN, _G_allowAll)
+{}
+
+MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, search::queryeval::IDiversifier & diversifier)
     : _estimate_match_frequency(threads),
       _selectBest(threads, topN),
+      _selectDiversifiedBest(threads, diversifier),
       _rangeCover(threads)
 {}
+
 MatchLoopCommunicator::~MatchLoopCommunicator() = default;
 
 void
@@ -32,7 +51,7 @@ MatchLoopCommunicator::EstimateMatchFrequency::mingle()
 void
 MatchLoopCommunicator::SelectBest::mingle()
 {
-    vespalib::PriorityQueue<uint32_t, SelectCmp> queue(SelectCmp(*this));
+    vespalib::PriorityQueue<uint32_t, SelectCmp<SelectBest>> queue(SelectCmp(*this));
     for (size_t i = 0; i < size(); ++i) {
         if (!in(i).empty()) {
             queue.push(i);
@@ -41,6 +60,32 @@ MatchLoopCommunicator::SelectBest::mingle()
     for (size_t picked = 0; picked < topN && !queue.empty(); ++picked) {
         uint32_t i = queue.front();
         if (in(i).size() > ++out(i)) {
+            queue.adjust();
+        } else {
+            queue.pop_front();
+        }
+    }
+}
+
+MatchLoopCommunicator::SelectDiversifiedBest::~SelectDiversifiedBest() = default;
+
+void
+MatchLoopCommunicator::SelectDiversifiedBest::mingle()
+{
+    vespalib::PriorityQueue<uint32_t, SelectCmp<SelectDiversifiedBest>> queue(SelectCmp(*this));
+    for (size_t i = 0; i < size(); ++i) {
+        if (!in(i).empty()) {
+            queue.push(i);
+            out(i).reserve(in(i).size());
+        }
+    }
+    while (!queue.empty()) {
+        uint32_t i = queue.front();
+        const Hit & hit = in(i)[_indexes[i]];
+        if (_diversifier.accepted(hit.first)) {
+            out(i).push_back(hit);
+        }
+        if (in(i).size() > ++_indexes[i]) {
             queue.adjust();
         } else {
             queue.pop_front();
