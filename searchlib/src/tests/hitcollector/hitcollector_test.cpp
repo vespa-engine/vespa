@@ -243,9 +243,20 @@ TEST_F("require that scores for 2nd phase candidates can be retrieved", Descendi
     EXPECT_EQUAL(96, scores[4]);
 }
 
+TEST_F("require that hits for 2nd phase candidates can be retrieved", DescendingScoreFixture)
+{
+    f.addHits();
+    std::vector<HitCollector::Hit> scores = f.hc.getSortedHeapHits();
+    ASSERT_EQUAL(5u, scores.size());
+    EXPECT_EQUAL(100, scores[0].second);
+    EXPECT_EQUAL(99, scores[1].second);
+    EXPECT_EQUAL(98, scores[2].second);
+    EXPECT_EQUAL(97, scores[3].second);
+    EXPECT_EQUAL(96, scores[4].second);
+}
+
 TEST("require that score ranges can be read and set.") {
-    std::pair<Scores, Scores> ranges =
-        std::make_pair(Scores(1.0, 2.0), Scores(3.0, 4.0));
+    std::pair<Scores, Scores> ranges = std::make_pair(Scores(1.0, 2.0), Scores(3.0, 4.0));
     HitCollector hc(20, 10, 5);
     hc.setRanges(ranges);
     EXPECT_EQUAL(ranges.first.low, hc.getRanges().first.low);
