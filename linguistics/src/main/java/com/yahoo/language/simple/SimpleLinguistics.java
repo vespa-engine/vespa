@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.simple;
 
+import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.language.Linguistics;
@@ -19,15 +20,35 @@ import com.yahoo.language.process.Transformer;
  * Factory of pure Java linguistic processor implementations.
  *
  * @author bratseth
+ * @author bjorncs
  */
 public class SimpleLinguistics implements Linguistics {
 
     // Threadsafe instances
-    private final static Normalizer normalizer = new SimpleNormalizer();
-    private final static Transformer transformer = new SimpleTransformer();
-    private final static Detector detector = new SimpleDetector();
-    private final static CharacterClasses characterClasses = new CharacterClasses();
-    private final static GramSplitter gramSplitter = new GramSplitter(characterClasses);
+    private final Normalizer normalizer;
+    private final Transformer transformer;
+    private final Detector detector;
+    private final CharacterClasses characterClasses;
+    private final GramSplitter gramSplitter;
+
+    @Inject
+    public SimpleLinguistics() {
+        CharacterClasses characterClasses = new CharacterClasses();
+        this.normalizer = new SimpleNormalizer();
+        this.transformer = new SimpleTransformer();
+        this.detector = new SimpleDetector();
+        this.characterClasses = new CharacterClasses();
+        this.gramSplitter = new GramSplitter(characterClasses);
+    }
+
+    public SimpleLinguistics(SimpleLinguisticsConfig config) {
+        CharacterClasses characterClasses = new CharacterClasses();
+        this.normalizer = new SimpleNormalizer();
+        this.transformer = new SimpleTransformer();
+        this.detector = new SimpleDetector(config.detector());
+        this.characterClasses = new CharacterClasses();
+        this.gramSplitter = new GramSplitter(characterClasses);
+    }
 
     @Override
     public Stemmer getStemmer() { return new StemmerImpl(getTokenizer()); }
