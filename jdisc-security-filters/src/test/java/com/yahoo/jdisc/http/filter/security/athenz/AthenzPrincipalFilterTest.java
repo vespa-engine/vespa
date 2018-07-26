@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.athenz.filter;
+package com.yahoo.jdisc.http.filter.security.athenz;
 
-import com.yahoo.application.container.handler.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
@@ -14,9 +13,7 @@ import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
-import com.yahoo.vespa.athenz.utils.ntoken.AthenzTruststore;
 import com.yahoo.vespa.athenz.utils.ntoken.NTokenValidator;
-import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,20 +26,22 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
 import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author bjorncs
@@ -56,98 +55,115 @@ public class AthenzPrincipalFilterTest {
     private static final String ORIGIN = "http://localhost";
     private static final Set<String> CORS_ALLOWED_URLS = singleton(ORIGIN);
 
-    private NTokenValidatorMock validator;
-    private ResponseHandlerMock responseHandler;
+    private NTokenValidator validator;
 
     @Before
     public void before() {
-        this.validator = new NTokenValidatorMock();
-        this.responseHandler = new ResponseHandlerMock();
+        validator = mock(NTokenValidator.class);
     }
 
     @Test
     public void valid_ntoken_is_accepted() {
-        Request request = defaultRequest();
-
+        DiscFilterRequest request = createRequestMock();
         AthenzPrincipal principal = new AthenzPrincipal(IDENTITY, NTOKEN);
-        validator.add(NTOKEN, principal);
+        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
+        when(request.getClientCertificateChain()).thenReturn(emptyList());
+        when(validator.validate(NTOKEN)).thenReturn(principal);
 
         AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
-        DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request);
-        filter.filter(filterRequest, new ResponseHandlerMock());
+        filter.filter(request, new ResponseHandlerMock());
 
-        assertEquals(principal, filterRequest.getUserPrincipal());
+        verify(request).setUserPrincipal(principal);
+    }
+
+    private DiscFilterRequest createRequestMock() {
+        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        when(request.getHeader("Origin")).thenReturn(ORIGIN);
+        return request;
     }
 
     @Test
     public void missing_token_and_certificate_is_unauthorized() {
+        DiscFilterRequest request = createRequestMock();
+        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(null);
+        when(request.getClientCertificateChain()).thenReturn(emptyList());
+
+        ResponseHandlerMock responseHandler = new ResponseHandlerMock();
+
         AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
-        DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(new Request("/"));
-        filter.filter(filterRequest, responseHandler);
+        filter.filter(request, responseHandler);
 
         assertUnauthorized(responseHandler, "Unable to authenticate Athenz identity");
     }
 
     @Test
     public void invalid_token_is_unauthorized() {
-        Request request = defaultRequest();
+        DiscFilterRequest request = createRequestMock();
+        String errorMessage = "Invalid token";
+        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
+        when(request.getClientCertificateChain()).thenReturn(emptyList());
+        when(validator.validate(NTOKEN)).thenThrow(new NTokenValidator.InvalidTokenException(errorMessage));
+
+        ResponseHandlerMock responseHandler = new ResponseHandlerMock();
 
         AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
-        DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request);
-        filter.filter(filterRequest, responseHandler);
+        filter.filter(request, responseHandler);
 
-        String errorMessage = "Invalid token";
         assertUnauthorized(responseHandler, errorMessage);
     }
 
     @Test
     public void certificate_is_accepted() {
+        DiscFilterRequest request = createRequestMock();
+        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(null);
+        when(request.getClientCertificateChain()).thenReturn(singletonList(CERTIFICATE));
+
+        ResponseHandlerMock responseHandler = new ResponseHandlerMock();
+
         AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
-        DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(new Request("/"), singletonList(CERTIFICATE));
-        filter.filter(filterRequest, responseHandler);
+        filter.filter(request, responseHandler);
 
         AthenzPrincipal expectedPrincipal = new AthenzPrincipal(IDENTITY);
-        assertEquals(expectedPrincipal, filterRequest.getUserPrincipal());
+        verify(request).setUserPrincipal(expectedPrincipal);
     }
 
     @Test
     public void both_ntoken_and_certificate_is_accepted() {
-        Request request = defaultRequest();
-
+        DiscFilterRequest request = createRequestMock();
         AthenzPrincipal principalWithToken = new AthenzPrincipal(IDENTITY, NTOKEN);
-        validator.add(NTOKEN, principalWithToken);
+        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
+        when(request.getClientCertificateChain()).thenReturn(singletonList(CERTIFICATE));
+        when(validator.validate(NTOKEN)).thenReturn(principalWithToken);
+
+        ResponseHandlerMock responseHandler = new ResponseHandlerMock();
 
         AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
-        DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request, singletonList(CERTIFICATE));
-        filter.filter(filterRequest, responseHandler);
+        filter.filter(request, responseHandler);
 
-        assertEquals(principalWithToken, filterRequest.getUserPrincipal());
+        verify(request).setUserPrincipal(principalWithToken);
     }
 
     @Test
     public void conflicting_ntoken_and_certificate_is_unauthorized() {
-        Request request = defaultRequest();
-        validator.add(NTOKEN, new AthenzPrincipal(IDENTITY));
-
+        DiscFilterRequest request = createRequestMock();
         AthenzUser conflictingIdentity = AthenzUser.fromUserId("mallory");
-        DiscFilterRequest filterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request, singletonList(createSelfSignedCertificate(conflictingIdentity)));
+        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
+        when(request.getClientCertificateChain())
+                .thenReturn(singletonList(createSelfSignedCertificate(conflictingIdentity)));
+        when(validator.validate(NTOKEN)).thenReturn(new AthenzPrincipal(IDENTITY));
+
+        ResponseHandlerMock responseHandler = new ResponseHandlerMock();
+
         AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
-        filter.filter(filterRequest, responseHandler);
+        filter.filter(request, responseHandler);
 
         assertUnauthorized(responseHandler, "Identity in principal token does not match x509 CN");
     }
 
-    private static Request defaultRequest() {
-        Request request = new Request("/");
-        request.getHeaders().add("Origin", ORIGIN);
-        request.getHeaders().add(ATHENZ_PRINCIPAL_HEADER, NTOKEN.getRawToken());
-        return request;
-    }
-
     private static void assertUnauthorized(ResponseHandlerMock responseHandler, String expectedMessageSubstring) {
-        assertNotNull(responseHandler.response);
-        assertEquals(UNAUTHORIZED, responseHandler.response.getStatus());
-        assertTrue(responseHandler.getResponseContent().contains(expectedMessageSubstring));
+        assertThat(responseHandler.response, notNullValue());
+        assertThat(responseHandler.response.getStatus(), equalTo(UNAUTHORIZED));
+        assertThat(responseHandler.getResponseContent(), containsString(expectedMessageSubstring));
     }
 
     private static class ResponseHandlerMock implements ResponseHandler {
@@ -168,29 +184,6 @@ public class AthenzPrincipalFilterTest {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        }
-
-    }
-
-    private static class NTokenValidatorMock extends NTokenValidator {
-
-        private final Map<NToken, AthenzPrincipal> validTokens = new HashMap<>();
-
-        NTokenValidatorMock() {
-            super((AthenzTruststore)null);
-        }
-
-        public NTokenValidatorMock add(NToken token, AthenzPrincipal principal) {
-            validTokens.put(token, principal);
-            return this;
-        }
-
-        @Override
-        public AthenzPrincipal validate(NToken token) throws InvalidTokenException {
-            if (!validTokens.containsKey(token)) {
-                throw new InvalidTokenException("Invalid token");
-            }
-            return validTokens.get(token);
         }
 
     }

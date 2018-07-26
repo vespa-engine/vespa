@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.athenz.filter;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.jdisc.http.filter.security.athenz;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
@@ -9,9 +9,7 @@ import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.vespa.athenz.utils.ntoken.AthenzConfTruststore;
 import com.yahoo.vespa.athenz.utils.ntoken.NTokenValidator;
-import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
@@ -31,15 +29,16 @@ import java.util.Set;
  *
  * @author bjorncs
  */
-// TODO bjorncs: Move this class to jdisc-security-filters bundle
 public class AthenzPrincipalFilter extends CorsRequestFilterBase {
 
     private final NTokenValidator validator;
     private final String principalTokenHeader;
 
     @Inject
-    public AthenzPrincipalFilter(AthenzConfig athenzConfig, CorsFilterConfig corsConfig) {
-        this(new NTokenValidator(Paths.get(athenzConfig.athenzConfFile())), athenzConfig.principalHeaderName(), new HashSet<>(corsConfig.allowedUrls()));
+    public AthenzPrincipalFilter(AthenzPrincipalFilterConfig athenzPrincipalFilterConfig, CorsFilterConfig corsConfig) {
+        this(new NTokenValidator(Paths.get(athenzPrincipalFilterConfig.athenzConfFile())),
+             athenzPrincipalFilterConfig.principalHeaderName(),
+             new HashSet<>(corsConfig.allowedUrls()));
     }
 
     AthenzPrincipalFilter(NTokenValidator validator,
