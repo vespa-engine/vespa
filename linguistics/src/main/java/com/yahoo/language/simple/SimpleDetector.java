@@ -34,6 +34,7 @@ import java.util.Locale;
  * character blocks, so if there are no definitive signs of Japanese then it is assumed that the String is Chinese.
  *
  * @author Rich Pito
+ * @author bjorncs
  */
 public class SimpleDetector implements Detector {
     static private TextObjectFactory textObjectFactory;
@@ -58,6 +59,16 @@ public class SimpleDetector implements Detector {
         textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
     }
 
+    private final boolean enableOptimaize;
+
+    public SimpleDetector() {
+        this.enableOptimaize = true;
+    }
+
+    public SimpleDetector(SimpleLinguisticsConfig.Detector detector) {
+        this.enableOptimaize = detector.enableOptimaize();
+    }
+
     @Override
     public Detection detect(byte[] input, int offset, int length, Hint hint) {
         return new Detection(guessLanguage(input, offset, length), guessEncoding(input), false);
@@ -75,11 +86,11 @@ public class SimpleDetector implements Detector {
         return new Detection(guessLanguage(input), Utf8.getCharset().name(), false);
     }
 
-    public static Language guessLanguage(byte[] buf, int offset, int length) {
+    public Language guessLanguage(byte[] buf, int offset, int length) {
         return guessLanguage(Utf8.toString(buf, offset, length));
     }
 
-    public static Language guessLanguage(String input) {
+    public Language guessLanguage(String input) {
         if (input == null || input.length() == 0) {
             return Language.UNKNOWN;
         }
@@ -143,7 +154,7 @@ public class SimpleDetector implements Detector {
                 return Language.THAI;
             }
         }
-        if (Language.UNKNOWN.equals(soFar)){
+        if (enableOptimaize && Language.UNKNOWN.equals(soFar)){
             return detectLangOptimaize(input);
         }
         // got to the end, so return the current best guess
