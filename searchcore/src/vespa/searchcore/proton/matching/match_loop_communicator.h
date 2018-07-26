@@ -23,11 +23,11 @@ private:
             return (in(a)[out(a)] > in(b)[out(b)]);
         }
     };
-    struct SelectDiversifiedBest : vespalib::Rendezvous<std::vector<Hit>, IndexesToKeep> {
+    struct SelectDiversifiedBest : vespalib::Rendezvous<std::vector<Hit>, std::vector<Hit>> {
         search::queryeval::IDiversifier & _diversifier;
         std::vector<size_t> _indexes;
         SelectDiversifiedBest(size_t n, search::queryeval::IDiversifier & diversifier)
-            : vespalib::Rendezvous<std::vector<Hit>, IndexesToKeep>(n),
+            : vespalib::Rendezvous<std::vector<Hit>, std::vector<Hit>>(n),
               _diversifier(diversifier),
               _indexes(n, 0)
         {}
@@ -67,7 +67,7 @@ public:
     size_t selectBest(const std::vector<feature_t> &sortedScores) override {
         return _selectBest.rendezvous(sortedScores);
     }
-    IndexesToKeep selectDiversifiedBest(const std::vector<Hit> &sortedScores) override {
+    std::vector<Hit> selectDiversifiedBest(const std::vector<Hit> &sortedScores) override {
         return _selectDiversifiedBest.rendezvous(sortedScores);
     }
     RangePair rangeCover(const RangePair &ranges) override {

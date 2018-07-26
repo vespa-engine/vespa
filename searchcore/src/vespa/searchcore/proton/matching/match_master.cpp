@@ -30,8 +30,8 @@ struct TimedMatchLoopCommunicator final : IMatchLoopCommunicator {
         rerank_time.start();
         return result;
     }
-    IndexesToKeep selectDiversifiedBest(const std::vector<Hit> &sortedScores) override {
-        IndexesToKeep result = communicator.selectDiversifiedBest(sortedScores);
+    std::vector<Hit> selectDiversifiedBest(const std::vector<Hit> &sortedScores) override {
+        std::vector<Hit> result = communicator.selectDiversifiedBest(sortedScores);
         rerank_time.start();
         return result;
     }
@@ -64,17 +64,17 @@ MatchMaster::match(const MatchParams &params, vespalib::ThreadBundle &threadBund
     fastos::StopWatch query_latency_time;
     query_latency_time.start();
     vespalib::DualMergeDirector mergeDirector(threadBundle.size());
-    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize);
-    TimedMatchLoopCommunicator timedCommunicator(communicator);
+    auto communicator = (matchToolsFactory.getDiversityFilter() == nullptr)
+            ? std::make_unique<MatchLoopCommunicator>(threadBundle.size(), params.heapSize)
+            : std::make_unique<MatchLoopCommunicator>(threadBundle.size(), params.heapSize, *matchToolsFactory.getDiversityFilter());
+    TimedMatchLoopCommunicator timedCommunicator(*communicator);
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);
 
     std::vector<MatchThread::UP> threadState;
     std::vector<vespalib::Runnable*> targets;
-    for (size_t i = 0; i < threadBundle.size(); ++i) {
-        IMatchLoopCommunicator &com = (i == 0)
-                ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
-                : static_cast<IMatchLoopCommunicator&>(communicator);
-        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, matchToolsFactory, com,
+    IMatchLoopCommunicator *com = &timedCommunicator;
+    for (size_t i = 0; i < threadBundle.size(); ++i, com = communicator.get()) {
+        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, matchToolsFactory, *com,
                                                                *scheduler, resultProcessor, mergeDirector, distributionKey));
         targets.push_back(threadState.back().get());
     }

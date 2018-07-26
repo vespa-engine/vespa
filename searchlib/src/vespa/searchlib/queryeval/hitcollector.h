@@ -180,6 +180,7 @@ public:
      **/
     size_t reRank(DocumentScorer &scorer);
     size_t reRank(DocumentScorer &scorer, size_t count);
+    size_t reRank(DocumentScorer &scorer, std::vector<Hit> hits);
 
     std::pair<Scores, Scores> getRanges() const;
     void setRanges(const std::pair<Scores, Scores> &ranges);

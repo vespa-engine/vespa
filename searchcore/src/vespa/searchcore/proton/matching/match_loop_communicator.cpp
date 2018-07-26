@@ -76,13 +76,14 @@ MatchLoopCommunicator::SelectDiversifiedBest::mingle()
     for (size_t i = 0; i < size(); ++i) {
         if (!in(i).empty()) {
             queue.push(i);
+            out(i).reserve(in(i).size());
         }
     }
     while (!queue.empty()) {
         uint32_t i = queue.front();
-        uint32_t docId = in(i)[_indexes[i]].first;
-        if (_diversifier.accepted(docId)) {
-            out(i).push_back(_indexes[i]);
+        const Hit & hit = in(i)[_indexes[i]];
+        if (_diversifier.accepted(hit.first)) {
+            out(i).push_back(hit);
         }
         if (in(i).size() > ++_indexes[i]) {
             queue.adjust();

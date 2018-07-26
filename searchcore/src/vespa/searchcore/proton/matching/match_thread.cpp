@@ -265,12 +265,25 @@ MatchThread::findMatches(MatchTools &tools)
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_scores = hits.getSortedHeapScores();
-            WaitTimer select_best_timer(wait_time_s);
-            size_t useHits = communicator.selectBest(sorted_scores);
-            select_best_timer.done();
             DocumentScorer scorer(tools.rank_program(), tools.search());
-            uint32_t reRanked = hits.reRank(scorer, tools.getHardDoom().doom() ? 0 : useHits);
+            uint32_t  reRanked = 0;
+            if ( ! tools.useDiversityFilter()) {
+                auto sorted_scores = hits.getSortedHeapScores();
+                WaitTimer select_best_timer(wait_time_s);
+                size_t useHits = communicator.selectBest(sorted_scores);
+                reRanked = hits.reRank(scorer, tools.getHardDoom().doom() ? 0 : useHits);
+                select_best_timer.done();
+            } else {
+                auto sorted_hits = hits.getSortedHeapHits();
+                WaitTimer select_best_timer(wait_time_s);
+                auto sortedHitsToUse = communicator.selectDiversifiedBest(sorted_hits);
+                if (tools.getHardDoom().doom()) {
+                    sortedHitsToUse.clear();
+                }
+                reRanked = hits.reRank(scorer, std::move(sortedHitsToUse));
+
+                select_best_timer.done();
+            }
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling
