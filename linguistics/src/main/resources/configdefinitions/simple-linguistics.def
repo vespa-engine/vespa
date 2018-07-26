@@ -3,3 +3,4 @@ namespace=language.simple
 
 # Enable Optimaize language detector
 detector.enableOptimaize bool  default=true
+
