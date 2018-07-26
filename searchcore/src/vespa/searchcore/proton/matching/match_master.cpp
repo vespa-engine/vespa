@@ -25,8 +25,8 @@ struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     double estimate_match_frequency(const Matches &matches) override {
         return communicator.estimate_match_frequency(matches);
     }
-    size_t selectBest(const std::vector<feature_t> &sortedScores) override {
-        size_t result = communicator.selectBest(sortedScores);
+    Hits selectBest(Hits sortedHits) override {
+        Hits result = communicator.selectBest(std::move(sortedHits));
         rerank_time.start();
         return result;
     }

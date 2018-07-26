@@ -29,6 +29,8 @@ MatchLoopCommunicator::EstimateMatchFrequency::mingle()
     }
 }
 
+MatchLoopCommunicator::SelectBest::~SelectBest() = default;
+
 void
 MatchLoopCommunicator::SelectBest::mingle()
 {
@@ -36,11 +38,14 @@ MatchLoopCommunicator::SelectBest::mingle()
     for (size_t i = 0; i < size(); ++i) {
         if (!in(i).empty()) {
             queue.push(i);
+            out(i).reserve(in(i).size());
+            _indexes[i] = 0;
         }
     }
     for (size_t picked = 0; picked < topN && !queue.empty(); ++picked) {
         uint32_t i = queue.front();
-        if (in(i).size() > ++out(i)) {
+        out(i).emplace_back(in(i)[_indexes[i]]);
+        if (in(i).size() > ++_indexes[i]) {
             queue.adjust();
         } else {
             queue.pop_front();

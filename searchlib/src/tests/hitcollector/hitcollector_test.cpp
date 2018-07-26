@@ -231,18 +231,6 @@ TEST_F("testReRank - partial", AscendingScoreFixture)
     TEST_DO(checkResult(*rs, f.expBv.get()));
 }
 
-TEST_F("require that scores for 2nd phase candidates can be retrieved", DescendingScoreFixture)
-{
-    f.addHits();
-    std::vector<feature_t> scores = f.hc.getSortedHeapScores();
-    ASSERT_EQUAL(5u, scores.size());
-    EXPECT_EQUAL(100, scores[0]);
-    EXPECT_EQUAL(99, scores[1]);
-    EXPECT_EQUAL(98, scores[2]);
-    EXPECT_EQUAL(97, scores[3]);
-    EXPECT_EQUAL(96, scores[4]);
-}
-
 TEST_F("require that hits for 2nd phase candidates can be retrieved", DescendingScoreFixture)
 {
     f.addHits();

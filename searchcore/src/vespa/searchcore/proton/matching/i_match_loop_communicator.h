@@ -5,14 +5,16 @@
 #include <vespa/searchlib/queryeval/scores.h>
 #include <utility>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace proton::matching {
 
 struct IMatchLoopCommunicator {
-    typedef search::feature_t feature_t;
-    typedef search::queryeval::Scores Range;
-    typedef std::pair<Range, Range> RangePair;
+    using Range = search::queryeval::Scores;
+    using RangePair = std::pair<Range, Range>;
+    using Hit = std::pair<uint32_t, search::feature_t>;
+    using Hits = std::vector<Hit>;
     struct Matches {
         size_t hits;
         size_t docs;
@@ -24,7 +26,7 @@ struct IMatchLoopCommunicator {
         }
     };
     virtual double estimate_match_frequency(const Matches &matches) = 0;
-    virtual size_t selectBest(const std::vector<feature_t> &sortedScores) = 0;
+    virtual Hits selectBest(Hits sortedHits) = 0;
     virtual RangePair rangeCover(const RangePair &ranges) = 0;
     virtual ~IMatchLoopCommunicator() {}
 };

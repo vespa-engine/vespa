@@ -167,10 +167,9 @@ public:
     }
 
     /**
-     * Returns a sorted vector of scores for the hits that are stored
+     * Returns a sorted vector of hits for the hits that are stored
      * in the heap. These are the candidates for re-ranking.
      */
-    std::vector<feature_t> getSortedHeapScores();
     std::vector<Hit> getSortedHeapHits();
 
     /**
