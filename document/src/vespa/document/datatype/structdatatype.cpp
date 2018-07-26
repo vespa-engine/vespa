@@ -83,7 +83,7 @@ StructDataType::addField(const Field& field)
     vespalib::string error = containsConflictingField(field);
     if (error != "") {
         throw IllegalArgumentException(make_string("Failed to add field '%s' to struct '%s': %s",
-                                                   vespalib::string(field.getName()).c_str(), getName().c_str(),
+                                                   field.getName().data(), getName().c_str(),
                                                    error.c_str()), VESPA_STRLOC);
     }
     if (hasField(field.getName())) {

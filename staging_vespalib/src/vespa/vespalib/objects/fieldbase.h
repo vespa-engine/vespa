@@ -9,6 +9,7 @@ class IFieldBase
 {
 public:
     virtual ~IFieldBase() { }
+    // Overrides must guarantee that returned reference is zero-terminated.
     virtual stringref getName() const = 0;
 };
 

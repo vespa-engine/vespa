@@ -91,7 +91,7 @@ Field::validateId(int newId) {
         throw vespalib::IllegalArgumentException(vespalib::make_string(
                     "Attempt to set the id of %s to %d failed, values from "
                     "100 to 127 are reserved for internal use",
-                    vespalib::string(getName()).c_str(), newId));
+                    getName().data(), newId));
     }
 
     if ((newId & 0x80000000) != 0) // Highest bit must not be set
@@ -99,7 +99,7 @@ Field::validateId(int newId) {
         throw vespalib::IllegalArgumentException(vespalib::make_string(
                     "Attempt to set the id of %s to %d"
                     " failed, negative id values are illegal",
-                    vespalib::string(getName()).c_str(), newId));
+                    getName().data(), newId));
     }
 }
 
