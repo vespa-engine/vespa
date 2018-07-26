@@ -16,6 +16,7 @@
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/proton_configurer.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer_owner.h>
+#include <vespa/searchcore/proton/server/i_proton_disk_layout.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -224,18 +225,33 @@ struct MyDocumentDBConfigOwner : public DocumentDBConfigOwner
     void reconfigure(const DocumentDBConfig::SP & config) override;
 };
 
-struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
+struct MyLog
+{
+    std::vector<vespalib::string> _log;
+
+    MyLog()
+        : _log()
+    {
+    }
+
+    void appendLog(vespalib::string logEntry)
+    {
+        _log.emplace_back(logEntry);
+    }
+};
+
+struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
+                                 public MyLog
 {
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
     vespalib::ThreadStackExecutor _executor;
     std::map<DocTypeName, std::shared_ptr<MyDocumentDBConfigOwner>> _dbs;
-    std::vector<vespalib::string> _log;
 
     MyProtonConfigurerOwner()
         : IProtonConfigurerOwner(),
+          MyLog(),
           _executor(1, 128 * 1024),
-          _dbs(),
-          _log()
+          _dbs()
     {
     }
     virtual ~MyProtonConfigurerOwner() { }
@@ -286,17 +302,48 @@ MyDocumentDBConfigOwner::reconfigure(const DocumentDBConfig::SP & config)
     _owner.reconfigureDocumentDB(_name, config);
 }
 
+struct MyProtonDiskLayout : public IProtonDiskLayout
+{
+    MyLog &_log;
+
+    MyProtonDiskLayout(MyLog &myLog)
+        : _log(myLog)
+    {
+    }
+    void remove(const DocTypeName &docTypeName) override {
+        std::ostringstream os;
+        os << "remove dbdir " << docTypeName.getName();
+        _log.appendLog(os.str());
+    }
+    void init(const std::set<DocTypeName> &docTypeNames) override {
+        std::ostringstream os;
+        os << "initial dbs ";
+        bool first = true;
+        for (const auto &docTypeName : docTypeNames) {
+            if (!first) {
+                os << ",";
+            }
+            first = false;
+            os << docTypeName.getName();
+        }
+        _log.appendLog(os.str());
+    }
+};
+
 struct Fixture
 {
     MyProtonConfigurerOwner _owner;
     ConfigFixture _config;
+    std::unique_ptr<IProtonDiskLayout> _diskLayout;
     ProtonConfigurer _configurer;
 
     Fixture()
         : _owner(),
           _config("test"),
-          _configurer(_owner._executor, _owner)
+          _diskLayout(),
+          _configurer(_owner._executor, _owner, _diskLayout)
     {
+        _diskLayout = std::make_unique<MyProtonDiskLayout>(_owner);
     }
     ~Fixture() { }
 
@@ -338,14 +385,14 @@ TEST_F("require that nothing is applied before initial config", Fixture())
 TEST_F("require that initial config is applied", Fixture())
 {
     f.applyInitialConfig();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"}));
 }
 
 TEST_F("require that new config is blocked", Fixture())
 {
     f.applyInitialConfig();
     f.reconfigure();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"}));
 }
 
 TEST_F("require that new config can be unblocked", Fixture())
@@ -353,14 +400,14 @@ TEST_F("require that new config can be unblocked", Fixture())
     f.applyInitialConfig();
     f.reconfigure();
     f.allowReconfig();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"}));
 }
 
 TEST_F("require that initial config is not reapplied due to config unblock", Fixture())
 {
     f.applyInitialConfig();
     f.allowReconfig();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2"}));
 }
 
 TEST_F("require that we can add document db", Fixture())
@@ -369,7 +416,7 @@ TEST_F("require that we can add document db", Fixture())
     f.allowReconfig();
     f.addDocType("foobar");
     f.reconfigure();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "apply config 3","reconf db _alwaysthere_ 3", "add db foobar 3"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3","reconf db _alwaysthere_ 3", "add db foobar 3"}));
 }
 
 TEST_F("require that we can remove document db", Fixture())
@@ -379,7 +426,7 @@ TEST_F("require that we can remove document db", Fixture())
     f.allowReconfig();
     f.removeDocType("foobar");
     f.reconfigure();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "remove db foobar"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "remove db foobar", "remove dbdir foobar"}));
 }
 
 TEST_F("require that document db adds and reconfigs are intermingled", Fixture())
@@ -392,7 +439,7 @@ TEST_F("require that document db adds and reconfigs are intermingled", Fixture()
     f.addDocType("foobar");
     f.addDocType("zbar");
     f.reconfigure();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "add db abar 3", "reconf db foobar 3", "add db zbar 3"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "add db abar 3", "reconf db foobar 3", "add db zbar 3"}));
 }
 
 TEST_F("require that document db removes are applied at end", Fixture())
@@ -403,7 +450,7 @@ TEST_F("require that document db removes are applied at end", Fixture())
     f.allowReconfig();
     f.removeDocType("abar");
     f.reconfigure();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "add db abar 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "reconf db foobar 3", "remove db abar"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_,abar,foobar", "apply config 2", "add db _alwaysthere_ 2", "add db abar 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "reconf db foobar 3", "remove db abar", "remove dbdir abar"}));
 }
 
 TEST_F("require that new configs can be blocked again", Fixture())
@@ -413,7 +460,7 @@ TEST_F("require that new configs can be blocked again", Fixture())
     f.allowReconfig();
     f.disableReconfig();
     f.reconfigure();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"}));
+    TEST_DO(f1.assertLog({"initial dbs _alwaysthere_", "apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"}));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

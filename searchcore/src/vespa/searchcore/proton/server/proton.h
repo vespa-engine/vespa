@@ -37,6 +37,7 @@ namespace proton {
 
 class DiskMemUsageSampler;
 class IDocumentDBReferenceRegistry;
+class IProtonDiskLayout;
 class PrepareRestartHandler;
 class SummaryEngine;
 class DocsumBySlime;
@@ -111,6 +112,7 @@ private:
     std::unique_ptr<vespalib::StateServer>  _stateServer;
     std::unique_ptr<TransportServer>        _fs4Server;
     vespalib::ThreadStackExecutor   _executor;
+    std::unique_ptr<IProtonDiskLayout> _protonDiskLayout;
     ProtonConfigurer                _protonConfigurer;
     ProtonConfigFetcher             _protonConfigFetcher;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _warmupExecutor;

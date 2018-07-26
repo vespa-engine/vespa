@@ -16,6 +16,7 @@ class DocumentDBDirectoryHolder;
 class IDocumentDBConfigOwner;
 class IProtonConfigurerOwner;
 class BootstrapConfig;
+class IProtonDiskLayout;
 
 /*
  * Class to handle config changes to proton using config snapshots spanning
@@ -34,6 +35,7 @@ class ProtonConfigurer : public IProtonConfigurer
     mutable std::mutex _mutex;
     bool _allowReconfig;
     vespalib::SimpleComponentConfigProducer _componentConfig;
+    const std::unique_ptr<IProtonDiskLayout> &_diskLayout;
 
     void performReconfigure();
     bool skipConfig(const ProtonConfigSnapshot *configSnapshot, bool initialConfig);
@@ -43,10 +45,12 @@ class ProtonConfigurer : public IProtonConfigurer
                              const DocTypeName &docTypeName, document::BucketSpace bucketSpace,
                              const vespalib::string &configId, const InitializeThreads &initializeThreads);
     void pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot);
+    void pruneInitialDocumentDBDirs(const ProtonConfigSnapshot &configSnapshot);
 
 public:
     ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
-                     IProtonConfigurerOwner &owner);
+                     IProtonConfigurerOwner &owner,
+                     const std::unique_ptr<IProtonDiskLayout> &diskLayout);
 
     ~ProtonConfigurer();
 

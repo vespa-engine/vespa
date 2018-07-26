@@ -75,6 +75,7 @@ vespa_add_library(searchcore_server STATIC
     proton_config_fetcher.cpp
     proton_config_snapshot.cpp
     proton_configurer.cpp
+    proton_disk_layout.cpp
     prune_session_cache_job.cpp
     pruneremoveddocumentsjob.cpp
     putdonecontext.cpp
