@@ -41,10 +41,15 @@ public:
      * Parse the given document identifier given as string, and create an
      * identifier object from it.
      *
+     * Precondition: `id` MUST be null-terminated.
+     *
      * @throws IdParseException If the identifier given is invalid.
      */
     explicit DocumentId(vespalib::stringref id);
 
+    /**
+     * Precondition: `id` MUST be null-terminated.
+     */
     void set(vespalib::stringref id);
 
     /**

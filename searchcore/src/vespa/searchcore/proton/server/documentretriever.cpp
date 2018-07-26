@@ -48,7 +48,7 @@ DocumentRetriever
     LOG(debug, "checking document type '%s' for position fields", docTypeName.getName().c_str());
     for (const document::Field * field : fields) {
         if (field->getDataType().getId() == positionDataTypeId) {
-            LOG(debug, "Field '%s' is a position field", field->getName().c_str());
+            LOG(debug, "Field '%s' is a position field", field->getName().data());
             const vespalib::string & zcurve_name = PositionDataType::getZCurveFieldName(field->getName());
             AttributeGuard::UP attr = attr_manager.getAttribute(zcurve_name);
             if (attr && attr->valid()) {

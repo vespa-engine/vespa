@@ -34,8 +34,9 @@ RouteParser::createTcpDirective(const stringref &str)
     if (posS == string::npos || posS == posP + 1) {
         return IHopDirective::SP(); // no port
     }
+    // FIXME C++17 range-safe from_chars() instead of atoi()
     return IHopDirective::SP(new TcpDirective(str.substr(0, posP),
-                                              atoi(str.substr(posP + 1, posS - 1).c_str()),
+                                              atoi(str.substr(posP + 1, posS - 1).data()),
                                               str.substr(posS + 1)));
 }
 
@@ -104,7 +105,7 @@ RouteParser::createHop(stringref str)
             return Hop().addDirective(createErrorDirective(
                             vespalib::make_string(
                                     "Failed to completely parse '%s'.",
-                                    str.c_str())));
+                                    vespalib::string(str).c_str())));
         } else if (str[at] == '[') {
             ++depth;
         } else if (str[at] == ']') {

@@ -47,7 +47,7 @@ RankFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *s
             featureDump(json, names[i], values[i]);
         }
         json.endObject();
-        vespalib::Memory value(json.toString().c_str(),
+        vespalib::Memory value(json.toString().data(),
                                       json.toString().size());
         if (type == RES_STRING || type == RES_LONG_STRING) {
             target.insertString(value);

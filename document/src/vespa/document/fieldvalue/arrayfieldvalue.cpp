@@ -186,9 +186,6 @@ ArrayFieldValue::iterateSubset(int startPos, int endPos,
 {
     fieldvalue::ModificationStatus retVal = ModificationStatus::NOT_MODIFIED;
 
-    LOG(spam, "iterateSubset(start=%d, end=%d, variable='%s')",
-        startPos, endPos, variable.c_str());
-
     std::vector<int> indicesToRemove;
 
     for (int i = startPos; i <= endPos && i < static_cast<int>(_array->size()); ++i) {

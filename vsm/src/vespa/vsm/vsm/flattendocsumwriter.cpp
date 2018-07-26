@@ -21,13 +21,13 @@ FlattenDocsumWriter::onPrimitive(uint32_t, const Content & c)
     if (fv.getClass().inherits(document::LiteralFieldValueB::classId)) {
         const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
         vespalib::stringref value = lfv.getValueRef();
-        _output.put(value.c_str(), value.size());
+        _output.put(value.data(), value.size());
     } else if (fv.getClass().inherits(document::NumericFieldValueBase::classId)) {
         vespalib::string value = fv.getAsString();
-        _output.put(value.c_str(), value.size());
+        _output.put(value.data(), value.size());
     } else {
         vespalib::string value = fv.toString();
-        _output.put(value.c_str(), value.size());
+        _output.put(value.data(), value.size());
     }
     _useSeparator = true;
 }

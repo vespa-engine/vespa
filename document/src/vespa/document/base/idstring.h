@@ -24,7 +24,7 @@ public:
     static const vespalib::string & getTypeName(Type t);
 
     /** @throws document::IdParseException If parsing of id scheme failed. */
-    static IdString::UP createIdString(const vespalib::stringref & id) { return createIdString(id.c_str(), id.size()); }
+    static IdString::UP createIdString(const vespalib::stringref & id) { return createIdString(id.data(), id.size()); }
     static IdString::UP createIdString(const char *id, size_t sz);
 
     ~IdString() {}

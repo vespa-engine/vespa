@@ -25,7 +25,8 @@ FactoryLoader::create(const stringref & factory)
     const FastOS_DynamicLibrary & lib = *_libraries.get(factory);
     FuncT registrationMethod = reinterpret_cast<FuncT>(lib.GetSymbol("createIndexManagerFactory"));
     if (registrationMethod == NULL) {
-        throw IllegalArgumentException(make_string("Failed locating symbol 'createIndexManagerFactory' in library '%s' for factory '%s'.", lib.GetLibName(), factory.c_str()));
+        throw IllegalArgumentException(make_string("Failed locating symbol 'createIndexManagerFactory' in library '%s' for factory '%s'.",
+                                                   lib.GetLibName(), vespalib::string(factory).c_str()));
     }
     return IIndexManagerFactory::UP(registrationMethod());
 }

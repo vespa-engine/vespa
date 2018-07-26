@@ -14,7 +14,7 @@ void ConfigParser::throwNoDefaultValue(const vespalib::stringref & key) {
 }
 
 vespalib::string
-ConfigParser::deQuote(const vespalib::stringref & source)
+ConfigParser::deQuote(const vespalib::string & source)
 {
     const char *src = source.c_str();
     const char *s = src;

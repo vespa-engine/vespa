@@ -24,7 +24,7 @@ bool icmp(char c, char l)
 bool IdSpecParser::parse(const vespalib::stringref & s)
 {
     bool retval(false);
-    size_t pos(eatWhite(s.c_str(), s.size()));
+    size_t pos(eatWhite(s.data(), s.size()));
     if (pos+1 < s.size()) {
         if (icmp(s[pos], 'i') && icmp(s[pos+1],'d')) {
             pos += 2;
@@ -77,7 +77,7 @@ bool IdSpecParser::parse(const vespalib::stringref & s)
 bool OperatorParser::parse(const vespalib::stringref & s)
 {
     bool retval(false);
-    size_t pos(eatWhite(s.c_str(), s.size()));
+    size_t pos(eatWhite(s.data(), s.size()));
     if (pos+1 < s.size()) {
         retval = true;
         if (s[pos] == '=') {
@@ -122,7 +122,7 @@ bool StringParser::parse(const vespalib::stringref & s)
 {
     bool retval(false);
     setRemaining(s);
-    size_t pos(eatWhite(s.c_str(), s.size()));
+    size_t pos(eatWhite(s.data(), s.size()));
     if (pos + 1 < s.size()) {
         if (s[pos++] == '"') {
             vespalib::string str;
@@ -146,7 +146,7 @@ bool StringParser::parse(const vespalib::stringref & s)
 bool IntegerParser::parse(const vespalib::stringref & s)
 {
     bool retval(false);
-    size_t pos(eatWhite(s.c_str(), s.size()));
+    size_t pos(eatWhite(s.data(), s.size()));
     if (pos < s.size()) {
         char * err(NULL);
         errno = 0;

@@ -68,7 +68,7 @@ public:
     ParametersMap::const_iterator begin() const { return _parameters.begin(); }
     ParametersMap::const_iterator end() const { return _parameters.end(); }
     /// Convenience from earlier use.
-    void set(const KeyT & id, const vespalib::stringref & value) { _parameters[id] = Value(value.c_str(), value.size()); }
+    void set(const KeyT & id, const vespalib::stringref & value) { _parameters[id] = Value(value.data(), value.size()); }
     vespalib::stringref get(const KeyT & id, const vespalib::stringref & def = "") const;
     /**
      * Set the value identified by the id given. This requires the type to be

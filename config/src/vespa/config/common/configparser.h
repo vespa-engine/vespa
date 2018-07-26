@@ -23,7 +23,7 @@ private:
     static std::vector<vsvector> splitArray( const vsvector & config);
     static std::map<vespalib::string, vsvector> splitMap( const vsvector & config);
 
-    static vespalib::string deQuote(const vespalib::stringref & source);
+    static vespalib::string deQuote(const vespalib::string & source);
     static void throwNoDefaultValue(const vespalib::stringref & key);
 
     template<typename T>

@@ -187,16 +187,16 @@ void DistributorTestUtil::addNodesToBucketDB(const document::Bucket& bucket, con
         vespalib::StringTokenizer tok2(tokenizer[i], "=");
         vespalib::StringTokenizer tok3(tok2[1], "/");
 
-        api::BucketInfo info(atoi(tok3[0].c_str()),
-                             atoi(tok3.size() > 1 ? tok3[1].c_str() : tok3[0].c_str()),
-                             atoi(tok3.size() > 2 ? tok3[2].c_str() : tok3[0].c_str()));
+        api::BucketInfo info(atoi(tok3[0].data()),
+                             atoi(tok3.size() > 1 ? tok3[1].data() : tok3[0].data()),
+                             atoi(tok3.size() > 2 ? tok3[2].data() : tok3[0].data()));
 
         size_t flagsIdx = 3;
 
         // Meta info override? For simplicity, require both meta count and size
         if (tok3.size() > 4 && (!tok3[3].empty() && isdigit(tok3[3][0]))) {
-            info.setMetaCount(atoi(tok3[3].c_str()));
-            info.setUsedFileSize(atoi(tok3[4].c_str()));
+            info.setMetaCount(atoi(tok3[3].data()));
+            info.setUsedFileSize(atoi(tok3[4].data()));
             flagsIdx = 5;
         }
 
@@ -211,7 +211,7 @@ void DistributorTestUtil::addNodesToBucketDB(const document::Bucket& bucket, con
             info.setReady(false);
         }
 
-        uint16_t idx = atoi(tok2[0].c_str());
+        uint16_t idx = atoi(tok2[0].data());
         BucketCopy node(
                 0,
                 idx,

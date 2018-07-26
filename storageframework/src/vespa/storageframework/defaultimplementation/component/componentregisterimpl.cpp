@@ -132,7 +132,7 @@ namespace {
 
         MetricHookWrapper(vespalib::stringref name,
                           MetricUpdateHook& hook)
-            : metrics::UpdateHook(name.c_str()),
+            : metrics::UpdateHook(name.data()), // Expected to point to static name
               _hook(hook)
         {
         }

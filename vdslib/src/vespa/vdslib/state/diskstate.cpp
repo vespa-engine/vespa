@@ -73,7 +73,7 @@ DiskState::DiskState(const vespalib::stringref & serialized)
         }
         LOG(debug, "Unknown key %s in diskstate. Ignoring it, assuming it's a "
                    "new feature from a newer version than ourself: %s",
-            key.c_str(), serialized.c_str());
+            key.c_str(), vespalib::string(serialized).c_str());
     }
 
 }

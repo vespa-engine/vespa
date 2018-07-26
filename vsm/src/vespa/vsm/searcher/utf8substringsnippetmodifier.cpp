@@ -14,8 +14,8 @@ size_t
 UTF8SubstringSnippetModifier::matchTerms(const FieldRef & f, const size_t mintsz)
 {
     _modified->reset();
-    _readPtr = f.c_str();
-    const byte * src = reinterpret_cast<const byte *> (f.c_str());
+    _readPtr = f.data();
+    const byte * src = reinterpret_cast<const byte *> (f.data());
     // resize ucs4 buffer
     if (f.size() >= _buf->size()) {
         _buf->resize(f.size() + 1);
@@ -46,8 +46,8 @@ UTF8SubstringSnippetModifier::matchTerms(const FieldRef & f, const size_t mintsz
             const cmptype_t * dtmp = ditr;
             for (; (titr < tend) && (*titr == *dtmp); ++titr, ++dtmp);
             if (titr == tend) {
-                const char * mbegin = f.c_str() + (*_offsets)[ditr - dbegin];
-                const char * mend = f.c_str() + ((dtmp < dend) ? ((*_offsets)[dtmp - dbegin]) : f.size());
+                const char * mbegin = f.data() + (*_offsets)[ditr - dbegin];
+                const char * mend = f.data() + ((dtmp < dend) ? ((*_offsets)[dtmp - dbegin]) : f.size());
                 if (_readPtr <= mbegin) {
                     // We will only copy from the field ref once.
                     // If we have overlapping matches only the first one will be considered.
@@ -61,9 +61,9 @@ UTF8SubstringSnippetModifier::matchTerms(const FieldRef & f, const size_t mintsz
             for(; (ditr < drend) && ! Fast_UnicodeUtil::IsWordChar(*ditr) ; ++ditr );
         }
     }
-    assert(_readPtr <= (f.c_str() + f.size()));
+    assert(_readPtr <= (f.data() + f.size()));
     // copy remaining
-    size_t toCopy = f.size() - (_readPtr - f.c_str());
+    size_t toCopy = f.size() - (_readPtr - f.data());
     copyToModified(toCopy);
 
     return words + 1; // we must also count the last word

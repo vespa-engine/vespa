@@ -74,7 +74,8 @@ PortListenException::make_message(int port, const vespalib::stringref &protocol,
                                   const vespalib::stringref &msg)
 {
     return make_string("failed to listen on port %d with protocol %s%s%s",
-                       port, protocol.c_str(), msg.empty() ? "" : ": ", msg.c_str());
+                       port, vespalib::string(protocol).c_str(), msg.empty() ? "" : ": ",
+                       vespalib::string(msg).c_str());
 }
 
 PortListenException::PortListenException(int port, const vespalib::stringref &protocol,

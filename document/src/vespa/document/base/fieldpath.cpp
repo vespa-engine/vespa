@@ -139,7 +139,7 @@ FieldPathEntry::visitMembers(vespalib::ObjectVisitor &visitor) const
 vespalib::string FieldPathEntry::parseKey(vespalib::stringref & key)
 {
     vespalib::string v;
-    const char *c = key.c_str();
+    const char *c = key.data();
     const char *e = c + key.size();
     for(;(c < e) && isspace(c[0]); c++);
     if ((c < e) && (c[0] == '{')) {
@@ -156,7 +156,8 @@ vespalib::string FieldPathEntry::parseKey(vespalib::stringref & key)
             if ((c < e) && (c[0] == '"')) {
                 c++;
             } else {
-                throw IllegalArgumentException(make_string("Escaped key '%s' is incomplete. No matching '\"'", key.c_str()), VESPA_STRLOC);
+                throw IllegalArgumentException(make_string("Escaped key '%s' is incomplete. No matching '\"'",
+                                                           vespalib::string(key).c_str()), VESPA_STRLOC);
             }
         } else {
             const char * start = c;
@@ -169,10 +170,12 @@ vespalib::string FieldPathEntry::parseKey(vespalib::stringref & key)
         if ((c < e) && (c[0] == '}')) {
             key = c+1;
         } else {
-            throw IllegalArgumentException(make_string("Key '%s' is incomplete. No matching '}'", key.c_str()), VESPA_STRLOC);
+            throw IllegalArgumentException(make_string("Key '%s' is incomplete. No matching '}'",
+                                                       vespalib::string(key).c_str()), VESPA_STRLOC);
         }
     } else {
-        throw IllegalArgumentException(make_string("key '%s' does not start with '{'", key.c_str()), VESPA_STRLOC);
+        throw IllegalArgumentException(make_string("key '%s' does not start with '{'",
+                                                   vespalib::string(key).c_str()), VESPA_STRLOC);
     }
     return v;
 }

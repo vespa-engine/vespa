@@ -934,7 +934,7 @@ LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffi
                                                     base.c_str(), err, getLastErrorString().c_str()));
                 }
             } else {
-                LOG(debug, "Skipping '%s' since it does not end with '%s'", file.c_str(), suffix.c_str());
+                LOG(debug, "Skipping '%s' since it does not end with '%s'", file.data(), suffix.c_str());
             }
         }
     }

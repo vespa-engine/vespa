@@ -67,7 +67,7 @@ checkDimensions(const DenseTensorView &lhs, const DenseTensorView &rhs,
                                                 "dense tensor %s, "
                                                 "lhs dimensions = '%s', "
                                                 "rhs dimensions = '%s'",
-                                                operation.c_str(),
+                                                operation.data(),
                                                 dimensionsAsString(lhs.fast_type()).c_str(),
                                                 dimensionsAsString(rhs.fast_type()).c_str()));
     }

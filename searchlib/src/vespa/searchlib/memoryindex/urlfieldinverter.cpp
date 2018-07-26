@@ -130,7 +130,7 @@ UrlFieldInverter::processUrlSubField(FieldInverter *inverter,
         LOG(error,
             "Illegal field type %s for URL subfield %s, expected string",
             sfv->getDataType()->getName().c_str(),
-            subField.c_str());
+            vespalib::string(subField).data());
         return;
     }
     const StringFieldValue &value = static_cast<const StringFieldValue &>(*sfv);

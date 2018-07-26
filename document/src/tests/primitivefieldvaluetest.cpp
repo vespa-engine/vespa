@@ -195,7 +195,7 @@ void deserialize(const ByteBuffer &buffer, T &value) {
 
         CPPUNIT_ASSERT_EQUAL(size_t(3), value2.getValueRef().size());
         // Zero termination
-        CPPUNIT_ASSERT(*(value2.getValueRef().c_str() + value2.getValueRef().size()) == '\0');
+        CPPUNIT_ASSERT(*(value2.getValueRef().data() + value2.getValueRef().size()) == '\0');
     }
 
 }
@@ -226,7 +226,7 @@ PrimitiveFieldValueTest::testRaw()
             value.toXml("  "));
 
     value.setValue("grmpf", 4);
-    CPPUNIT_ASSERT(strncmp("grmpf", value.getValueRef().c_str(),
+    CPPUNIT_ASSERT(strncmp("grmpf", value.getValueRef().data(),
                            value.getValueRef().size()) == 0);
 }
 

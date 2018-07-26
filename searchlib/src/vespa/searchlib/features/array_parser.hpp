@@ -52,13 +52,13 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
                         logWarning(vespalib::make_string(
                                 "Could not parse item '%s' in query vector '%s', skipping. "
                                 "Expected ':' between dimension and component.",
-                                item.c_str(), input.c_str()));
+                                vespalib::string(item).c_str(), input.c_str()));
                         return;
                     }
                 } catch (vespalib::IllegalArgumentException & e) {
                     logWarning(vespalib::make_string(
                             "Could not parse item '%s' in query vector '%s', skipping. "
-                            "Incorrect type of operands", item.c_str(), input.c_str()));
+                            "Incorrect type of operands", vespalib::string(item).c_str(), input.c_str()));
                     return;
                 }
                 if (commaPos != vespalib::string::npos) {
@@ -77,7 +77,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
                 } catch (vespalib::IllegalArgumentException & e) {
                     logWarning(vespalib::make_string(
                             "Could not parse item[%ld] = '%s' in query vector '%s', skipping. "
-                            "Incorrect type of operands", output.size(), is.c_str(), s.c_str()));
+                            "Incorrect type of operands", output.size(), is.c_str(), vespalib::string(s).c_str()));
                     return;
                 }
             }

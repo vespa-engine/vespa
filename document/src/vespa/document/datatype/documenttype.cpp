@@ -96,7 +96,7 @@ DocumentType::addField(const Field& field)
     } else if (!_ownedFields.get()) {
         throw vespalib::IllegalStateException(make_string(
                         "Cannot add field %s to a DocumentType that does not "
-                        "own its fields.", field.getName().c_str()), VESPA_STRLOC);
+                        "own its fields.", field.getName().data()), VESPA_STRLOC);
     }
     _ownedFields->addField(field);
 }

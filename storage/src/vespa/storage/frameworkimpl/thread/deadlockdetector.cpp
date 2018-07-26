@@ -169,7 +169,7 @@ namespace {
             } else if (state != DeadLockDetector::OK) {
                 vespalib::asciistream ost;
                 ost << "Thread " << id << " has registered tick again.\n";
-                LOGBP(info, "%s", ost.str().c_str());
+                LOGBP(info, "%s", ost.str().data());
                 state = DeadLockDetector::OK;
             }
         }
@@ -200,7 +200,7 @@ DeadLockDetector::handleDeadlock(const framework::MilliSecTime& currentTime,
     if (warnOnly) {
         if (_enableWarning) {
             LOGBT(warning, "deadlockw-" + id, "%s",
-                  error.str().c_str());
+                  error.str().data());
             if (_reportedBucketDBLocksAtState != WARNED) {
                 _reportedBucketDBLocksAtState = WARNED;
                 LOG(info, "Locks in bucket database at deadlock time:"
@@ -212,7 +212,7 @@ DeadLockDetector::handleDeadlock(const framework::MilliSecTime& currentTime,
     } else {
         if (_enableShutdown || _enableWarning) {
             LOGBT(error, "deadlock-" + id, "%s",
-                  error.str().c_str());
+                  error.str().data());
         }
     }
     if (!_enableShutdown) return;

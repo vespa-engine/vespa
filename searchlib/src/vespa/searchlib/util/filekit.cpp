@@ -12,7 +12,7 @@ namespace search {
 using vespalib::getLastErrorString;
 
 bool
-FileKit::createStamp(const vespalib::stringref &name)
+FileKit::createStamp(const vespalib::string &name)
 {
     FastOS_File stamp;
     FastOS_StatInfo statInfo;
@@ -40,7 +40,7 @@ FileKit::createStamp(const vespalib::stringref &name)
 
 
 bool
-FileKit::hasStamp(const vespalib::stringref &name)
+FileKit::hasStamp(const vespalib::string &name)
 {
     FastOS_StatInfo statInfo;
     bool statres;
@@ -57,7 +57,7 @@ FileKit::hasStamp(const vespalib::stringref &name)
 
 
 bool
-FileKit::removeStamp(const vespalib::stringref &name)
+FileKit::removeStamp(const vespalib::string &name)
 {
     FastOS_StatInfo statInfo;
     bool deleteres;
@@ -91,7 +91,7 @@ FileKit::removeStamp(const vespalib::stringref &name)
 
 
 fastos::TimeStamp
-FileKit::getModificationTime(const vespalib::stringref &name)
+FileKit::getModificationTime(const vespalib::string &name)
 {
     FastOS_StatInfo statInfo;
     if (FastOS_File::Stat(name.c_str(), &statInfo)) {

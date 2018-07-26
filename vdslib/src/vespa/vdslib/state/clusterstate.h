@@ -72,7 +72,9 @@ public:
                              const std::string& indent = "") const;
 
 private:
+    // Preconditions: `key` and `value` MUST point into null-terminated strings.
     bool parse(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData);
+    // Preconditions: `key` and `value` MUST point into null-terminated strings.
     bool parseSorD(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData);
     void removeExtraElements();
     void printStateGroupwise(std::ostream& out, const Group&, bool verbose,

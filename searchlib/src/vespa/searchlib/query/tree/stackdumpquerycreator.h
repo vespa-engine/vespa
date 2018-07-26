@@ -41,7 +41,7 @@ public:
             vespalib::stringref stack = queryStack.getStack();
             LOG(error, "Unable to create query tree from stack dump. Failed at position %ld out of %ld bytes %s",
                        queryStack.getPosition(), stack.size(), builder.error().c_str());
-            LOG(error, "Raw QueryStack = %s", vespalib::HexDump(stack.c_str(), stack.size()).toString().c_str());
+            LOG(error, "Raw QueryStack = %s", vespalib::HexDump(stack.data(), stack.size()).toString().c_str());
             if (LOG_WOULD_LOG(debug)) {
                 vespalib::string query = SimpleQueryStack::StackbufToString(stack);
                 LOG(error, "Error = %s, QueryStack = %s", builder.error().c_str(), query.c_str());

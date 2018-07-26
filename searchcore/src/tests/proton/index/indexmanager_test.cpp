@@ -662,7 +662,7 @@ TEST_F("requireThatSerialNumberIsReadOnLoad", Fixture) {
 void crippleFusion(uint32_t fusionId) {
     vespalib::asciistream ost;
     ost << index_dir << "/index.flush." << fusionId << "/serial.dat";
-    FastOS_File(ost.str().c_str()).Delete();
+    FastOS_File(ost.str().data()).Delete();
 }
 
 TEST_F("requireThatFailedFusionIsRetried", Fixture) {
