@@ -209,11 +209,22 @@ HitCollector::reRank(DocumentScorer &scorer, size_t count)
         return 0;
     }
     sortHitsByScore(hitsToReRank);
-    _reRankedHits.reserve(_reRankedHits.size() + hitsToReRank);
+    std::vector<Hit> hits;
+    hits.reserve(hitsToReRank);
     for (size_t i(0); i < hitsToReRank; i++) {
-        _reRankedHits.push_back(_hits[_scoreOrder[i]]);
+        hits.push_back(_hits[_scoreOrder[i]]);
     }
+    return reRank(scorer, std::move(hits));
+}
 
+size_t
+HitCollector::reRank(DocumentScorer &scorer, std::vector<Hit> hits) {
+    size_t hitsToReRank = hits.size();
+    if (_reRankedHits.empty()) {
+        _reRankedHits = std::move(hits);
+    } else {
+        _reRankedHits.insert(_reRankedHits.end(), hits.begin(), hits.end());
+    }
     Scores &initScores = _ranges.first;
     Scores &finalScores = _ranges.second;
     initScores = Scores(_reRankedHits.back().second, _reRankedHits.front().second);
