@@ -11,7 +11,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,7 +42,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     // Returns the app that was deployed the longest time ago
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        if (waitInitially()) return new HashSet<>();
+        if (waitInitially()) return Collections.emptySet();
 
         Optional<ApplicationId> app = (nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
@@ -51,7 +50,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
                 .min(Comparator.comparing(this::getLastDeployTime)));
         app.ifPresent(applicationId -> log.log(LogLevel.INFO, applicationId + " will be deployed, last deploy time " +
                 getLastDeployTime(applicationId)));
-        return app.map(applicationId -> new HashSet<>(Collections.singletonList(applicationId))).orElseGet(HashSet::new);
+        return app.map(Collections::singleton).orElseGet(Collections::emptySet);
     }
 
     private Instant getLastDeployTime(ApplicationId application) {
