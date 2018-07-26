@@ -137,7 +137,7 @@ Matcher::Matcher(const search::index::Schema &schema, const Properties &props, c
 {
     search::features::setup_search_features(_blueprintFactory);
     search::fef::test::setup_fef_test_plugin(_blueprintFactory);
-    _rankSetup.reset(new search::fef::RankSetup(_blueprintFactory, _indexEnv));
+    _rankSetup = std::make_shared<search::fef::RankSetup>(_blueprintFactory, _indexEnv);
     _rankSetup->configure(); // reads config values from the property map
     if (!_rankSetup->compile()) {
         throw vespalib::IllegalArgumentException("failed to compile rank setup", VESPA_STRLOC);
