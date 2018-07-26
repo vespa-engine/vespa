@@ -41,8 +41,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
     protected final void maintain() {
         Set<ApplicationId> applications = applicationsNeedingMaintenance();
         for (ApplicationId application : applications) {
-            if (canDeployNow(application))
-                deploy(application);
+            deploy(application);
         }
     }
 
@@ -83,6 +82,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
         // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
         try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
             if ( ! isActive(application)) return; // became inactive since deployment was requested
+            if ( ! canDeployNow(application)) return; // redeployment is no longer needed
             Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
             if ( ! deployment.isPresent()) return; // this will be done at another config server
             log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);

@@ -46,8 +46,10 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
         Optional<ApplicationId> app = (nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
+                .distinct()
                 .filter(this::shouldBeDeployedOnThisServer)
-                .min(Comparator.comparing(this::getLastDeployTime)));
+                .min(Comparator.comparing(this::getLastDeployTime)))
+                .filter(this::canDeployNow);
         app.ifPresent(applicationId -> log.log(LogLevel.INFO, applicationId + " will be deployed, last deploy time " +
                 getLastDeployTime(applicationId)));
         return app.map(Collections::singleton).orElseGet(Collections::emptySet);
