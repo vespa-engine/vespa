@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.Set;
 
 /**
- * A signed identity document which contains a {@link IdentityDocument}
+ * A signed identity document
  *
  * @author bjorncs
  */
@@ -16,7 +16,6 @@ public class SignedIdentityDocument {
     public static final int DEFAULT_KEY_VERSION = 0;
     public static final int DEFAULT_DOCUMENT_VERSION = 1;
 
-    private final IdentityDocument identityDocument;
     private final String signature;
     private final int signingKeyVersion;
     private final VespaUniqueInstanceId providerUniqueId;
@@ -30,8 +29,7 @@ public class SignedIdentityDocument {
     private final Set<String> ipAddresses;
     private final IdentityType identityType;
 
-    public SignedIdentityDocument(IdentityDocument identityDocument,
-                                  String signature,
+    public SignedIdentityDocument(String signature,
                                   int signingKeyVersion,
                                   VespaUniqueInstanceId providerUniqueId,
                                   String dnsSuffix,
@@ -43,7 +41,6 @@ public class SignedIdentityDocument {
                                   Instant createdAt,
                                   Set<String> ipAddresses,
                                   IdentityType identityType) {
-        this.identityDocument = identityDocument;
         this.signature = signature;
         this.signingKeyVersion = signingKeyVersion;
         this.providerUniqueId = providerUniqueId;
@@ -56,11 +53,6 @@ public class SignedIdentityDocument {
         this.createdAt = createdAt;
         this.ipAddresses = ipAddresses;
         this.identityType = identityType;
-    }
-
-    @Deprecated
-    public IdentityDocument identityDocument() {
-        return identityDocument;
     }
 
     public String signature() {

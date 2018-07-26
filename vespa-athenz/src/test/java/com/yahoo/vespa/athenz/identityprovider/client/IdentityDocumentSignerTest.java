@@ -41,7 +41,7 @@ public class IdentityDocumentSignerTest {
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt, ipAddresses, identityType, keyPair.getPrivate());
 
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
-                null, signature, DEFAULT_KEY_VERSION, id, "dns-suffix", providerService, URI.create("https://zts"),
+                signature, DEFAULT_KEY_VERSION, id, "dns-suffix", providerService, URI.create("https://zts"),
                 DEFAULT_DOCUMENT_VERSION, configserverHostname, instanceHostname, createdAt, ipAddresses, identityType);
 
         assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));

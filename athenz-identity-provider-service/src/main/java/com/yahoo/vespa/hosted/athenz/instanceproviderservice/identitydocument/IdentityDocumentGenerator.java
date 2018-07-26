@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -49,55 +48,46 @@ public class IdentityDocumentGenerator {
     }
 
     public SignedIdentityDocument generateSignedIdentityDocument(String hostname, IdentityType identityType) {
-        Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
         try {
-            IdentityDocument identityDocument = generateIdDocument(node, identityType);
+            Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
+            Allocation allocation = node.allocation().orElseThrow(() -> new RuntimeException("No allocation for node " + node.hostname()));
+            VespaUniqueInstanceId providerUniqueId = new VespaUniqueInstanceId(
+                    allocation.membership().index(),
+                    allocation.membership().cluster().id().value(),
+                    allocation.owner().instance().value(),
+                    allocation.owner().application().value(),
+                    allocation.owner().tenant().value(),
+                    zone.region().value(),
+                    zone.environment().value(),
+                    identityType);
+
+            Set<String> ips = new HashSet<>(node.ipAddresses());
 
             PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
             AthenzService providerService = new AthenzService(zoneConfig.domain(), zoneConfig.serviceName());
 
+            String configServerHostname = HostName.getLocalhost();
+            Instant createdAt = Instant.now();
             String signature = signer.generateSignature(
-                    identityDocument.providerUniqueId(), providerService, identityDocument.configServerHostname(),
-                    identityDocument.instanceHostname(), identityDocument.createdAt(), identityDocument.ipAddresses(), identityType, privateKey);
+                    providerUniqueId, providerService, configServerHostname,
+                    node.hostname(), createdAt, ips, identityType, privateKey);
 
             return new SignedIdentityDocument(
-                    identityDocument,
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
-                    identityDocument.providerUniqueId(),
+                    providerUniqueId,
                     toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
                     providerService,
                     URI.create(zoneConfig.ztsUrl()),
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION,
-                    identityDocument.configServerHostname(),
-                    identityDocument.instanceHostname(),
-                    identityDocument.createdAt(),
-                    identityDocument.ipAddresses(),
+                    configServerHostname,
+                    node.hostname(),
+                    createdAt,
+                    ips,
                     identityType);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }
-    }
-
-    private IdentityDocument generateIdDocument(Node node, IdentityType identityType) {
-        Allocation allocation = node.allocation().orElseThrow(() -> new RuntimeException("No allocation for node " + node.hostname()));
-        VespaUniqueInstanceId providerUniqueId = new VespaUniqueInstanceId(
-                allocation.membership().index(),
-                allocation.membership().cluster().id().value(),
-                allocation.owner().instance().value(),
-                allocation.owner().application().value(),
-                allocation.owner().tenant().value(),
-                zone.region().value(),
-                zone.environment().value(),
-                identityType);
-
-        Set<String> ips = new HashSet<>(node.ipAddresses());
-        return new IdentityDocument(
-                providerUniqueId,
-                HostName.getLocalhost(),
-                node.hostname(),
-                Instant.now(),
-                ips);
     }
 
     private static String toZoneDnsSuffix(Zone zone, String dnsSuffix) {
