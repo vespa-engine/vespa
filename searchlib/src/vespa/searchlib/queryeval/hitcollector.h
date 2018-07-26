@@ -177,8 +177,6 @@ public:
      * method on the given document scorer. The best m hits are sorted on doc id
      * so that score() is called in doc id order.
      **/
-    size_t reRank(DocumentScorer &scorer);
-    size_t reRank(DocumentScorer &scorer, size_t count);
     size_t reRank(DocumentScorer &scorer, std::vector<Hit> hits);
 
     std::pair<Scores, Scores> getRanges() const;

@@ -181,29 +181,6 @@ HitCollector::getSortedHeapHits()
     return scores;
 }
 
-
-size_t
-HitCollector::reRank(DocumentScorer &scorer)
-{
-    return reRank(scorer, _maxReRankHitsSize);
-}
-
-size_t
-HitCollector::reRank(DocumentScorer &scorer, size_t count)
-{
-    size_t hitsToReRank = std::min(_hits.size(), count);
-    if (_hasReRanked || hitsToReRank == 0) {
-        return 0;
-    }
-    sortHitsByScore(hitsToReRank);
-    std::vector<Hit> hits;
-    hits.reserve(hitsToReRank);
-    for (size_t i(0); i < hitsToReRank; i++) {
-        hits.push_back(_hits[_scoreOrder[i]]);
-    }
-    return reRank(scorer, std::move(hits));
-}
-
 size_t
 HitCollector::reRank(DocumentScorer &scorer, std::vector<Hit> hits) {
     if (hits.empty()) { return 0; }

@@ -149,10 +149,14 @@ struct Fixture {
         }
     }
     size_t reRank() {
-        return hc.reRank(scorer);
+        return hc.reRank(scorer, hc.getSortedHeapHits());
     }
     size_t reRank(size_t count) {
-        return hc.reRank(scorer, count);
+        auto hits = hc.getSortedHeapHits();
+        if (hits.size() > count) {
+            hits.resize(count);
+        }
+        return hc.reRank(scorer, std::move(hits));
     }
 };
 
@@ -290,7 +294,7 @@ void testScaling(const std::vector<feature_t> &initScores,
 
     PredefinedScorer scorer(std::move(finalScores));
     // perform second phase ranking
-    EXPECT_EQUAL(2u, hc.reRank(scorer));
+    EXPECT_EQUAL(2u, hc.reRank(scorer, hc.getSortedHeapHits()));
 
     // check results
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
@@ -457,7 +461,7 @@ TEST_F("require that result set is merged correctly with second phase ranking (d
         f.hc.addHit(i, i + 1000);
         addExpectedHitForMergeTest(f, expRh, i);
     }
-    EXPECT_EQUAL(f.maxHeapSize, f.hc.reRank(scorer));
+    EXPECT_EQUAL(f.maxHeapSize, f.hc.reRank(scorer, f.hc.getSortedHeapHits()));
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
     TEST_DO(checkResult(*rs, expRh));
 }
