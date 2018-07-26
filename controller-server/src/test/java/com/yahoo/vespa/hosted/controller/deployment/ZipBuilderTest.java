@@ -43,10 +43,7 @@ public class ZipBuilderTest {
             // Add the zipped data from zip1 to zip2
             zipBuilder2.add(zipBuilder1.toByteArray());
 
-            System.out.println(zipBuilder1.toByteArray().length);
-            System.out.println(zipBuilder2.toByteArray().length);
             Map<String, String> actual = unzipToMap(zipBuilder2.toByteArray());
-
             assertEquals(expected, actual);
         }
     }
