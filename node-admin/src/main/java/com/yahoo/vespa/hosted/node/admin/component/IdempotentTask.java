@@ -40,22 +40,4 @@ public interface IdempotentTask<T extends TaskContext> {
      * @throws RuntimeException (or a subclass) if the task is unable to converge.
      */
     boolean converge(T context);
-
-    /**
-     * <p>Converge the task towards some state where it can be suspended. The
-     * TaskContext should provide enough to determine what kind of suspend is wanted, e.g.
-     * suspension of only the task, or the task and the resources/processes it manages.</p>
-     *
-     * <p>convergeSuspend() must be idempotent: it may be called any number of times, or
-     * interrupted at any time e.g. by `kill -9`.</p>
-     *
-     * <p>convergeSuspend() is not thread safe: The caller must ensure there is at most one
-     * invocation of convergeSuspend() at any given time.</p>
-     *
-     * @return false if already converged, i.e. was a no-op
-     * @throws RuntimeException (or a subclass) if the task is unable to suspend.
-     */
-    default boolean convergeSuspend(T context) {
-        return false;
-    }
 }
