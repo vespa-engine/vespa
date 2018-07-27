@@ -28,6 +28,7 @@ runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
         dbg.append("'");
     }
     LOG(debug, "starting splunk forwarder with command: %s", dbg.c_str());
+    args.push_back(nullptr);
     fflush(stdout);
     pid_t child = fork();
     if (child == -1) {
