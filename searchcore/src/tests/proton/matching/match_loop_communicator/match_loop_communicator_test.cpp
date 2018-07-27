@@ -45,10 +45,24 @@ bool equal(size_t count, const Hits & a, const Hits & b) {
     return true;
 }
 
+struct EveryOdd : public search::queryeval::IDiversifier {
+    bool accepted(uint32_t docId) override {
+        return docId & 0x01;
+    }
+};
+
 TEST_F("require that selectBest gives appropriate results for single thread", MatchLoopCommunicator(num_threads, 3)) {
     EXPECT_TRUE(equal(2u, make_box<Hit>({1, 5}, {2, 4}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}))));
     EXPECT_TRUE(equal(3u, make_box<Hit>({1, 5}, {2, 4}, {3, 3}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}))));
     EXPECT_TRUE(equal(3u, make_box<Hit>({1, 5}, {2, 4}, {3, 3}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}))));
+}
+
+TEST_F("require that selectBest gives appropriate results for single thread with filter",
+       MatchLoopCommunicator(num_threads, 3, std::make_unique<EveryOdd>()))
+{
+    EXPECT_TRUE(equal(1u, make_box<Hit>({1, 5}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}))));
+    EXPECT_TRUE(equal(2u, make_box<Hit>({1, 5}, {3, 3}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}))));
+    EXPECT_TRUE(equal(3u, make_box<Hit>({1, 5}, {3, 3}, {5, 1}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}))));
 }
 
 TEST_MT_F("require that selectBest works with no hits", 10, MatchLoopCommunicator(num_threads, 10)) {
