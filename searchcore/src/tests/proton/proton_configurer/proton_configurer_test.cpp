@@ -315,7 +315,7 @@ struct MyProtonDiskLayout : public IProtonDiskLayout
         os << "remove dbdir " << docTypeName.getName();
         _log.appendLog(os.str());
     }
-    void init(const std::set<DocTypeName> &docTypeNames) override {
+    void initAndPruneUnused(const std::set<DocTypeName> &docTypeNames) override {
         std::ostringstream os;
         os << "initial dbs ";
         bool first = true;

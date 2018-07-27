@@ -17,7 +17,7 @@ class IProtonDiskLayout
 public:
     virtual ~IProtonDiskLayout() = default;
     virtual void remove(const DocTypeName &docTypeName) = 0;
-    virtual void init(const std::set<DocTypeName> &docTypeNames) = 0;
+    virtual void initAndPruneUnused(const std::set<DocTypeName> &docTypeNames) = 0;
 };
 
 } // namespace proton

@@ -138,7 +138,7 @@ ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     }
     const auto &bootstrapConfig = configSnapshot->getBootstrapConfig();
     const ProtonConfig &protonConfig = bootstrapConfig->getProtonConfig();
-    if (initialConfig && _diskLayout) {
+    if (initialConfig) {
         pruneInitialDocumentDBDirs(*configSnapshot);
     }
     _owner.applyConfig(bootstrapConfig);
@@ -190,7 +190,7 @@ ProtonConfigurer::pruneInitialDocumentDBDirs(const ProtonConfigSnapshot &configS
     for (const auto &ddbConfig : protonConfig.documentdb) {
         docTypeNames.emplace(ddbConfig.inputdoctypename);
     }
-    _diskLayout->init(docTypeNames);
+    _diskLayout->initAndPruneUnused(docTypeNames);
 }
 
 void
@@ -211,9 +211,7 @@ ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot)
         if (found == newDocTypes.end()) {
             _owner.removeDocumentDB(dbitr->first);
             DocumentDBDirectoryHolder::waitUntilDestroyed(dbitr->second.second);
-            if (_diskLayout) {
-                _diskLayout->remove(dbitr->first);
-            }
+            _diskLayout->remove(dbitr->first);
             dbitr = _documentDBs.erase(dbitr);
         } else {
             ++dbitr;

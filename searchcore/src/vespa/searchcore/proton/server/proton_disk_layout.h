@@ -21,7 +21,7 @@ public:
     ProtonDiskLayout(const vespalib::string &baseDir, const vespalib::string &tlsSpec);
     ~ProtonDiskLayout() override;
     void remove(const DocTypeName &docTypeName) override;
-    void init(const std::set<DocTypeName> &docTypeNames) override;
+    void initAndPruneUnused(const std::set<DocTypeName> &docTypeNames) override;
 };
 
 } // namespace proton

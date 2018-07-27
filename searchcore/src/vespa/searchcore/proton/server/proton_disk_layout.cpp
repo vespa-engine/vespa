@@ -23,7 +23,7 @@ ProtonDiskLayout::remove(const DocTypeName &docTypeName)
 }
 
 void
-ProtonDiskLayout::init(const std::set<DocTypeName> &docTypeNames)
+ProtonDiskLayout::initAndPruneUnused(const std::set<DocTypeName> &docTypeNames)
 {
     (void) docTypeNames;
 }
