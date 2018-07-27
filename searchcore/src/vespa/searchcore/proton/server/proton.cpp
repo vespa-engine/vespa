@@ -9,6 +9,7 @@
 #include "prepare_restart_handler.h"
 #include "proton.h"
 #include "proton_config_snapshot.h"
+#include "proton_disk_layout.h"
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
@@ -193,7 +194,8 @@ Proton::Proton(const config::ConfigUri & configUri,
       // This executor can only have 1 thread as it is used for
       // serializing startup.
       _executor(1, 128 * 1024),
-      _protonConfigurer(_executor, *this),
+      _protonDiskLayout(),
+      _protonConfigurer(_executor, *this, _protonDiskLayout),
       _protonConfigFetcher(configUri, _protonConfigurer, subscribeTimeout),
       _warmupExecutor(),
       _summaryExecutor(),
@@ -269,7 +271,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         strategy = std::make_shared<SimpleFlush>();
         break;
     }
-    vespalib::mkdir(protonConfig.basedir + "/documents", true);
+    _protonDiskLayout = std::make_unique<ProtonDiskLayout>(protonConfig.basedir, protonConfig.tlsspec);
     vespalib::chdir(protonConfig.basedir);
     _tls->start();
     _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
