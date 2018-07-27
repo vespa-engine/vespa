@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <vector>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".child-handler");
@@ -15,13 +17,18 @@ ChildHandler::ChildHandler() : _childRunning(false) {}
 namespace {
 
 void
-runSplunk(const vespalib::string &prefix, const char *a1, const char *a2 = 0)
+runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
 {
-    const char *argv[] = { 0, a1, a2, 0 };
     vespalib::string path = prefix + "/bin/splunk";
-    argv[0] = path.c_str();
-    LOG(debug, "starting splunk forwarder with command: '%s' '%s' '%s'",
-        argv[0], argv[1], argv[2]);
+    args.insert(args.begin(), path.c_str());
+    std::string dbg = "";
+    for (const char *arg : args) {
+        dbg.append(" '");
+        dbg.append(arg);
+        dbg.append("'");
+    }
+    LOG(debug, "starting splunk forwarder with command: %s", dbg.c_str());
+    args.push_back(nullptr);
     fflush(stdout);
     pid_t child = fork();
     if (child == -1) {
@@ -33,10 +40,10 @@ runSplunk(const vespalib::string &prefix, const char *a1, const char *a2 = 0)
         char *cenv = const_cast<char *>(env.c_str()); // safe cast
         putenv(cenv);
         LOG(debug, "added to environment: '%s'", cenv);
-        char **cargv = const_cast<char **>(argv); // safe cast
-        execv(argv[0], cargv);
+        char **cargv = const_cast<char **>(args.data()); // safe cast
+        execv(cargv[0], cargv);
         // if execv fails:
-        perror(argv[0]);
+        perror(cargv[0]);
         exit(1);
     }
     LOG(debug, "child running with pid %d", (int)child);
@@ -69,19 +76,19 @@ void
 ChildHandler::startChild(const vespalib::string &prefix)
 {
     if (! _childRunning) {
-        runSplunk(prefix, "start", "--accept-license");
+        runSplunk(prefix, {"start", "--answer-yes", "--no-prompt", "--accept-license"});
         _childRunning = true;
         // it is possible that splunk was already running, and
         // then the above won't do anything, so we need to
         // *also* do the restart below, after a small delay.
         sleep(1);
     }
-    runSplunk(prefix, "restart");
+    runSplunk(prefix, {"restart"});
 }
 
 void
 ChildHandler::stopChild(const vespalib::string &prefix)
 {
-    runSplunk(prefix, "stop");
+    runSplunk(prefix, {"stop"});
     _childRunning = false;
 }
