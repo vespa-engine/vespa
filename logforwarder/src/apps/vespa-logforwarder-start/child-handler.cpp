@@ -69,7 +69,7 @@ void
 ChildHandler::startChild(const vespalib::string &prefix)
 {
     if (! _childRunning) {
-        runSplunk(prefix, "start", "--accept-license");
+        runSplunk(prefix, "start", "--answer-yes", "--no-prompt", "--accept-license");
         _childRunning = true;
         // it is possible that splunk was already running, and
         // then the above won't do anything, so we need to
