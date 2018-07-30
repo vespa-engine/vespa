@@ -188,6 +188,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static final CompoundName GROUPING_SESSION_CACHE = new CompoundName("groupingSessionCache");
     public static final CompoundName TIMEOUT = new CompoundName("timeout");
 
+    private Map<String, String> requestMap;
+
     private static QueryProfileType argumentType;
     static {
         argumentType = new QueryProfileType("native");
@@ -209,6 +211,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
+
+    public Map<String, String> getRequestMap() { return this.requestMap; }
 
     /** The aliases of query properties */
     private static Map<String,CompoundName> propertyAliases;
@@ -323,6 +327,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         startTime = System.currentTimeMillis();
+        this.requestMap = requestMap;
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
             Properties queryProfileProperties = new QueryProfileProperties(queryProfile);
