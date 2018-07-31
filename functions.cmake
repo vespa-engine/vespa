@@ -1,5 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # @author Vegard Sjonfjell
+# @author Arnstein Ressem
 
 function(vespa_add_module_dependency OTHER_TARGET_OR_LIB)
     if (TARGET ${OTHER_TARGET_OR_LIB})
@@ -557,4 +558,7 @@ function(add_auxilliary_modules)
     endif()
 endfunction()
 
+function(install_symlink TARGET LINK)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/{TARGET} ${CMAKE_INSTALL_PREFIX}/${LINK})")
+endfunction(install_symlink)
 
