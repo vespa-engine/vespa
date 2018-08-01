@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +36,7 @@ public class MockDeployer implements Deployer {
     public int redeployments = 0;
 
     private final Clock clock;
+    private final ReentrantLock lock = new ReentrantLock();
 
     @Inject
     @SuppressWarnings("unused")
@@ -54,6 +56,10 @@ public class MockDeployer implements Deployer {
         this.applications = applications;
     }
 
+    public ReentrantLock lock() {
+        return lock;
+    }
+
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, boolean bootstrap) {
         return deployFromLocalActive(id, Duration.ofSeconds(60));
@@ -61,8 +67,13 @@ public class MockDeployer implements Deployer {
 
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, Duration timeout) {
-        lastDeployTimes.put(id, clock.instant());
-        return Optional.of(new MockDeployment(provisioner, applications.get(id)));
+        try {
+            lock.lock();
+            lastDeployTimes.put(id, clock.instant());
+            return Optional.of(new MockDeployment(provisioner, applications.get(id)));
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
