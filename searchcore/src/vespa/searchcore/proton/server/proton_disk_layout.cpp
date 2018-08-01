@@ -84,12 +84,14 @@ ProtonDiskLayout::remove(const DocTypeName &docTypeName)
     vespalib::string normalDir(documentsDir + "/" + name);
     vespalib::string removedDir(documentsDir + "/" + getRemovedName(name));
     vespalib::rename(normalDir, removedDir, false, false);
+    vespalib::File::sync(documentsDir);
     TransLogClient tlc(_tlsSpec);
     if (!tlc.remove(name)) {
         LOG(fatal, "Failed to remove tls domain %s", name.c_str());
         LOG_ABORT("Failed to remove tls domain");
     }
     vespalib::rmdir(removedDir, true);
+    vespalib::File::sync(documentsDir);
 }
 
 void

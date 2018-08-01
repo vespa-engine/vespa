@@ -336,6 +336,29 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("syncedto", "Entry synced to");
 }
 
+namespace {
+
+void
+writeDomainDir(std::lock_guard<std::mutex> &guard,
+               vespalib::string dir,
+               vespalib::string domainList,
+               std::map<vespalib::string, std::shared_ptr<Domain>> &domains)
+{
+    (void) guard;
+    vespalib::string domainListTmp(domainList + ".tmp");
+    vespalib::unlink(domainListTmp);
+    std::ofstream domainDir(domainListTmp.c_str(), std::ios::trunc);
+    for (const auto &domainEntry : domains) {
+        domainDir << domainEntry.first << std::endl;
+    }
+    domainDir.close();
+    vespalib::File::sync(domainListTmp);
+    vespalib::rename(domainListTmp, domainList, false, false);
+    vespalib::File::sync(dir);
+}
+
+}
+
 void TransLogServer::createDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
@@ -351,12 +374,9 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
         try {
             domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
                                               _domainPartSize, _defaultCrcType, _fileHeaderContext);
-            {
-                Guard domainGuard(_lock);
-                _domains[domain->name()] = domain;
-            }
-            std::ofstream domainDir(domainList().c_str(), std::ios::app);
-            domainDir << domain->name() << std::endl;
+            Guard domainGuard(_lock);
+            _domains[domain->name()] = domain;
+            writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception & e) {
             LOG(warning, "Failed creating %s domain. Exception = %s", domainName, e.what());
             retval = uint32_t(-1);
@@ -385,12 +405,10 @@ void TransLogServer::deleteDomain(FRT_RPCRequest *req)
                 Guard domainGuard(_lock);
                 _domains.erase(domainName);
             }
-            vespalib::rmdir(Domain::getDir(dir(), domainName).c_str(), true);
-            std::ofstream domainDir(domainList().c_str(), std::ios::trunc);
+            vespalib::rmdir(Domain::getDir(dir(), domainName), true);
+            vespalib::File::sync(dir());
             Guard domainGuard(_lock);
-            for (DomainList::const_iterator it(_domains.begin()), mt(_domains.end()); it != mt; it++) {
-                domainDir << it->first << std::endl;
-            }
+            writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception & e) {
             msg = make_string("Failed deleting %s domain. Exception = %s", domainName, e.what());
             retval = -1;
