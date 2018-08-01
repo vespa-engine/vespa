@@ -107,6 +107,13 @@ populate_environment () {
     fi
 }
 
+add_valgrind_suppressions_file() {
+    if [ -f "$1" ]
+    then
+	VESPA_VALGRIND_SUPPREESSIONS_OPT="$VESPA_VALGRIND_SUPPREESSIONS_OPT --suppressions=$1"
+    fi
+}
+
 populate_environment
 
 PATH=$VESPA_HOME/bin64:$VESPA_HOME/bin:/usr/local/bin:/usr/X11R6/bin:/sbin:/bin:/usr/sbin:/usr/bin
@@ -119,13 +126,17 @@ if [ "$JAVA_HOME" ] && [ -f "${JAVA_HOME}/bin/java" ]; then
     PATH="${PATH}:${JAVA_HOME}/bin"
 fi
 
+VESPA_VALGRIND_SUPPREESSIONS_OPT=""
+add_valgrind_suppressions_file ${VESPA_HOME}/etc/vespa/valgrind-suppressions.txt
+add_valgrind_suppressions_file ${VESPA_HOME}/etc/vespa/suppressions.txt
+
 consider_fallback VESPA_VALGRIND_OPT "--num-callers=32 \
 --run-libc-freeres=yes \
 --track-origins=yes \
 --freelist-vol=1000000000 \
 --leak-check=full \
 --show-reachable=yes \
---suppressions=${VESPA_HOME}/etc/vespa/suppressions.txt"
+${VESPA_VALGRIND_SUPPREESSIONS_OPT}"
 
 consider_fallback VESPA_USE_HUGEPAGES_LIST  $(get_var "hugepages_list")
 consider_fallback VESPA_USE_HUGEPAGES_LIST  "all"
