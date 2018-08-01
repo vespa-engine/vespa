@@ -21,8 +21,8 @@ public interface TaskContext {
      *                to bob".
      */
     void recordSystemModification(Logger logger, String message);
-    default void recordSystemModification(Logger logger, String messageFormat, String... args) {
-        recordSystemModification(logger, String.format(messageFormat, (Object[]) args));
+    default void recordSystemModification(Logger logger, String messageFormat, Object... args) {
+        recordSystemModification(logger, String.format(messageFormat, args));
     }
 
     /**
@@ -35,8 +35,8 @@ public interface TaskContext {
      * Do not log a message that is also recorded with recordSystemModification.
      */
     default void log(Logger logger, String message) {}
-    default void log(Logger logger, String messageFormat, String... args) {
-        log(logger, String.format(messageFormat, (Object[]) args));
+    default void log(Logger logger, String messageFormat, Object... args) {
+        log(logger, String.format(messageFormat, args));
     }
 
     /**
