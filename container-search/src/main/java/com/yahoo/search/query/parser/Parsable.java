@@ -37,7 +37,7 @@ public final class Parsable {
     private String defaultIndexName;
     private Language language; // TODO: Initialize to UNKNOWN
     private Optional<Language> explicitLanguage = Optional.empty();
-    private String where;
+    private Select select;
 
     /** If this is set it will be used to determine the language, if not set explicitly */
     private Optional<Model> model = Optional.empty();
@@ -136,12 +136,12 @@ public final class Parsable {
     }
 
     public Parsable setSelect(Select select){
-        this.where = select.getWhere();
+        this.select = select;
         return this;
     }
 
-    public String getSelect(){
-        return this.where;
+    public Select getSelect(){
+        return this.select;
     }
 
     public static Parsable fromQueryModel(Model model) {

@@ -37,9 +37,11 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.yql.VespaGroupingStep;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -148,12 +150,12 @@ public class SelectParser implements Parser {
         this.query = query;
 
         return buildTree();
-
     }
 
 
-    public QueryTree buildTree() {
-        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getBytes()).get();
+
+    private QueryTree buildTree() {
+        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhere().getBytes()).get();
         if (inspector.field("error_message").valid()){
             throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
         }
@@ -166,12 +168,13 @@ public class SelectParser implements Parser {
     }
 
 
-    public Item walkJson(Inspector inspector){
+    private Item walkJson(Inspector inspector){
         final Item[] item = {null};
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;
 
             switch (type) {
+
                 case AND:
                     item[0] = buildAnd(key, value);
                     break;
@@ -201,6 +204,20 @@ public class SelectParser implements Parser {
             }
         });
         return item[0];
+    }
+
+
+    public List<VespaGroupingStep> getGroupingSteps(String grouping){
+        List<VespaGroupingStep> groupingSteps = new ArrayList<>();
+        GroupingOperation groupingOperation = GroupingOperation.fromString(transformGrouping(grouping));
+        VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
+        groupingSteps.add(groupingStep);
+        return groupingSteps;
+    }
+
+    private String transformGrouping(String grouping){
+        String groupingString = grouping.replace(" ", "").replace("\"", "").replace("\'", "").replace(":{", "(").replace(":", "(").replace("}", ")").replace(",", ")");
+        return groupingString.substring(2, groupingString.length()-1);
     }
 
 

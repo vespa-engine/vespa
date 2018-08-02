@@ -19,9 +19,12 @@ import com.yahoo.search.query.Select;
 import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.yql.VespaGroupingStep;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,6 +45,8 @@ import static org.junit.Assert.fail;
 public class SelectParserTestCase {
 
     private final SelectParser parser = new SelectParser(new ParserEnvironment());
+
+    /** WHERE TESTS */
 
     @Test
     public void test_contains() throws Exception {
@@ -632,12 +637,14 @@ public class SelectParserTestCase {
         checkWordAlternativesContent(alternatives);
     }
 
+    /** GROUPING TESTS */
 
-
-
-
-
-
+    @Test
+    public void testGrouping(){
+        String grouping = "[ { \"all\" : { \"group\" : \"time.year(a)\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        String expected = "[[]all(group(time.year(a)) each(output(count())))]";
+        assertGrouping(expected, parseGrouping(grouping));
+    }
 
 
 
@@ -664,6 +671,15 @@ public class SelectParserTestCase {
         assertEquals(expectedRootClass, parseWhere(where).getRoot().getClass());
     }
 
+    private void assertGrouping(String expected, List<VespaGroupingStep> steps) {
+        List<String> actual = new ArrayList<>(steps.size());
+        for (VespaGroupingStep step : steps) {
+            actual.add(step.continuations().toString() +
+                    step.getOperation());
+        }
+        assertEquals(expected, actual.toString());
+    }
+
 
 
 
@@ -675,10 +691,9 @@ public class SelectParserTestCase {
         return parser.parse(new Parsable().setSelect(select));
     }
 
-    private QueryTree parseGrouping(String grouping) {
-        Select select = new Select("", grouping);
+    private List<VespaGroupingStep> parseGrouping(String grouping) {
 
-        return parser.parse(new Parsable().setSelect(select));
+        return parser.getGroupingSteps(grouping);
     }
 
     private QueryTree parse(String where, String grouping) {
