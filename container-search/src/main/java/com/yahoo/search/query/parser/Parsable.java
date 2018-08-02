@@ -3,6 +3,7 @@ package com.yahoo.search.query.parser;
 
 import com.yahoo.language.Language;
 import com.yahoo.search.query.Model;
+import com.yahoo.search.query.Select;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ public final class Parsable {
     private String defaultIndexName;
     private Language language; // TODO: Initialize to UNKNOWN
     private Optional<Language> explicitLanguage = Optional.empty();
+    private String where;
 
     /** If this is set it will be used to determine the language, if not set explicitly */
     private Optional<Model> model = Optional.empty();
@@ -133,6 +135,15 @@ public final class Parsable {
         return this;
     }
 
+    public Parsable setSelect(Select select){
+        this.where = select.getWhere();
+        return this;
+    }
+
+    public String getSelect(){
+        return this.where;
+    }
+
     public static Parsable fromQueryModel(Model model) {
         return new Parsable()
                 .setModel(model)
@@ -141,7 +152,11 @@ public final class Parsable {
                 .setExplicitLanguage(Optional.ofNullable(model.getLanguage()))
                 .setDefaultIndexName(model.getDefaultIndex())
                 .addSources(model.getSources())
-                .addRestricts(model.getRestrict());
+                .addRestricts(model.getRestrict())
+                .setSelect(model.getParent().getSelect());
     }
+
+
+
 
 }
