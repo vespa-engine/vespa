@@ -17,8 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -33,7 +34,10 @@ public abstract class ApplicationMaintainer extends Maintainer {
     // Use a fixed thread pool to avoid overload on config servers. Resource usage when deploying varies
     // a lot between applications, so doing one by one avoids issues where one or more resource-demanding
     // deployments happen simultaneously
-    private final Executor deploymentExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("node repo application maintainer"));
+    private final ThreadPoolExecutor deploymentExecutor = new ThreadPoolExecutor(1, 1,
+                                                                                 0L, TimeUnit.MILLISECONDS,
+                                                                                 new LinkedBlockingQueue<>(),
+                                                                                 new DaemonThreadFactory("node repo application maintainer"));
 
     protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
@@ -113,6 +117,18 @@ public abstract class ApplicationMaintainer extends Maintainer {
     /** Returns true when application has at least one active node */
     private boolean isActive(ApplicationId application) {
         return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
+    }
+
+    @Override
+    public void deconstruct() {
+        super.deconstruct();
+        this.deploymentExecutor.shutdownNow();
+        try {
+            // Give deployments in progress some time to complete
+            this.deploymentExecutor.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
