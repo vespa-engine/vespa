@@ -9,6 +9,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
@@ -29,7 +30,7 @@ public class SemanticSearcher extends Searcher {
 
     private static final CompoundName rulesRulebase=new CompoundName("rules.rulebase");
     private static final CompoundName rulesOff=new CompoundName("rules.off");
-    private static final CompoundName tracelevelRules=new CompoundName("tracelevel.rules");
+    public static final CompoundName tracelevelRules=new CompoundName("trace.rules");
 
     /** The default rule base of this */
     private RuleBase defaultRuleBase;
