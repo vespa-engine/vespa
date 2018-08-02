@@ -1,16 +1,11 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
 
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
-import com.yahoo.collections.Tuple2;
-import com.yahoo.component.Version;
-import com.yahoo.data.access.simple.Value;
 import com.yahoo.language.Language;
-import com.yahoo.language.Linguistics;
-import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
-import com.yahoo.language.process.Segmenter;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
@@ -44,9 +39,7 @@ import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
-
 import com.yahoo.search.query.parser.ParserEnvironment;
-import com.yahoo.search.yql.YqlParser;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
