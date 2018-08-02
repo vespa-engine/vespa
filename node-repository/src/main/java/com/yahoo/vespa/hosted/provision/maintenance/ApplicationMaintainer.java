@@ -11,12 +11,15 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -26,11 +29,15 @@ import java.util.stream.Collectors;
 public abstract class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
+    private final List<ApplicationId> pendingDeployments = new CopyOnWriteArrayList<>();
 
     // Use a fixed thread pool to avoid overload on config servers. Resource usage when deploying varies
     // a lot between applications, so doing one by one avoids issues where one or more resource-demanding
     // deployments happen simultaneously
-    private final Executor deploymentExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("node repo application maintainer"));
+    private final ThreadPoolExecutor deploymentExecutor = new ThreadPoolExecutor(1, 1,
+                                                                                 0L, TimeUnit.MILLISECONDS,
+                                                                                 new LinkedBlockingQueue<>(),
+                                                                                 new DaemonThreadFactory("node repo application maintainer"));
 
     protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
@@ -39,12 +46,15 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     @Override
     protected final void maintain() {
-        Set<ApplicationId> applications = applicationsNeedingMaintenance();
-        for (ApplicationId application : applications) {
-            deploy(application);
-        }
+        applicationsNeedingMaintenance().forEach(this::deploy);
     }
 
+    /** Returns the number of deployments that are pending execution */
+    public int pendingDeployments() {
+        return pendingDeployments.size();
+    }
+
+    /** Returns whether given application should be deployed at this moment in time */
     protected boolean canDeployNow(ApplicationId application) {
         return true;
     }
@@ -56,16 +66,21 @@ public abstract class ApplicationMaintainer extends Maintainer {
      * even when deployments are slow.
      */
     protected void deploy(ApplicationId application) {
+        if (pendingDeployments.contains(application)) {
+            return;// Avoid queuing multiple deployments for same application
+        }
+        log.log(LogLevel.INFO, application + " will be deployed, last deploy time " +
+                               getLastDeployTime(application));
         deploymentExecutor.execute(() -> deployWithLock(application));
+        pendingDeployments.add(application);
     }
 
     protected Deployer deployer() { return deployer; }
 
-
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
         return nodesNeedingMaintenance().stream()
-                .map(node -> node.allocation().get().owner())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                                        .map(node -> node.allocation().get().owner())
+                                        .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
@@ -75,7 +90,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
     protected abstract List<Node> nodesNeedingMaintenance();
 
     /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
-    final void deployWithLock(ApplicationId application) {
+    protected final void deployWithLock(ApplicationId application) {
         // An application might change its state between the time the set of applications is retrieved and the
         // time deployment happens. Lock the application and check if it's still active.
         //
@@ -89,12 +104,31 @@ public abstract class ApplicationMaintainer extends Maintainer {
             deployment.get().activate();
         } catch (RuntimeException e) {
             log.log(LogLevel.WARNING, "Exception on maintenance redeploy", e);
+        } finally {
+            pendingDeployments.remove(application);
         }
+    }
+
+    /** Returns the last time application was deployed. Epoch is returned if the application has never been deployed. */
+    protected final Instant getLastDeployTime(ApplicationId application) {
+        return deployer.lastDeployTime(application).orElse(Instant.EPOCH);
     }
 
     /** Returns true when application has at least one active node */
     private boolean isActive(ApplicationId application) {
         return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
+    }
+
+    @Override
+    public void deconstruct() {
+        super.deconstruct();
+        this.deploymentExecutor.shutdownNow();
+        try {
+            // Give deployments in progress some time to complete
+            this.deploymentExecutor.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
