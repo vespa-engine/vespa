@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detector;
@@ -45,6 +46,7 @@ import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.yql.YqlParser;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -69,11 +71,8 @@ public class SelectParser implements Parser {
     Parsable query;
     private final IndexFacts indexFacts;
     private final Map<Integer, TaggableItem> identifiedItems = LazyMap.newHashMap();
+    private final List<ConnectedItem> connectedItems = new ArrayList<>();
     private final Normalizer normalizer;
-    private final Segmenter segmenter;
-    private final Detector detector;
-    private final String localSegmenterBackend;
-    private final Version localSegmenterVersion;
     private final ParserEnvironment environment;
     private IndexFacts.Session indexFactsSession;
 
@@ -83,15 +82,14 @@ public class SelectParser implements Parser {
 
     private static final String DESCENDING_HITS_ORDER = "descending";
     private static final String ASCENDING_HITS_ORDER = "ascending";
-
-    private static final Integer DEFAULT_HITS = 10;
-    private static final Integer DEFAULT_OFFSET = 0;
     private static final Integer DEFAULT_TARGET_NUM_HITS = 10;
-    static final String ORIGIN_LENGTH = "length";
-    static final String ORIGIN_OFFSET = "offset";
-    static final String ORIGIN = "origin";
-    static final String ORIGIN_ORIGINAL = "original";
-
+    private static final String ORIGIN_LENGTH = "length";
+    private static final String ORIGIN_OFFSET = "offset";
+    private static final String ORIGIN = "origin";
+    private static final String ORIGIN_ORIGINAL = "original";
+    private static final String CONNECTION_ID = "id";
+    private static final String CONNECTION_WEIGHT = "weight";
+    private static final String CONNECTIVITY = "connectivity";
     private static final String ANNOTATIONS = "annotations";
     private static final String NFKC = "nfkc";
     private static final String USER_INPUT_LANGUAGE = "language";
@@ -127,41 +125,6 @@ public class SelectParser implements Parser {
     private static final String WEAK_AND = "weakAnd";
     private static final String WEIGHTED_SET = "weightedSet";
     private static final String WEIGHT = "weight";
-
-    /**************************************/
-
-    public SelectParser(ParserEnvironment environment) {
-        indexFacts = environment.getIndexFacts();
-        normalizer = environment.getLinguistics().getNormalizer();
-        segmenter = environment.getLinguistics().getSegmenter();
-        detector = environment.getLinguistics().getDetector();
-        this.environment = environment;
-
-        Tuple2<String, Version> version = environment.getLinguistics().getVersion(Linguistics.Component.SEGMENTER);
-        localSegmenterBackend = version.first;
-        localSegmenterVersion = version.second;
-    }
-
-    @Override
-    public QueryTree parse(Parsable query) {
-        indexFactsSession = indexFacts.newSession(query.getSources(), query.getRestrict());
-        this.query = query;
-
-        return buildTree();
-
-    }
-
-    public QueryTree buildTree() {
-        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getBytes()).get();
-        if (inspector.field("error_message").valid()){
-            throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
-        }
-
-        Item root = walkJson(inspector);
-        QueryTree newTree = new QueryTree(root);
-
-        return newTree;
-    }
     private static final String AND = "and";
     private static final String AND_NOT = "and_not";
     private static final String OR = "or";
@@ -172,12 +135,47 @@ public class SelectParser implements Parser {
     private static final String CALL = "call";
     private static final List<String> FUNCTION_CALLS = Arrays.asList(WAND, WEIGHTED_SET, DOT_PRODUCT, PREDICATE, RANK, WEAK_AND);
 
+    /**************************************/
+
+
+
+    public SelectParser(ParserEnvironment environment) {
+        indexFacts = environment.getIndexFacts();
+        normalizer = environment.getLinguistics().getNormalizer();
+
+        this.environment = environment;
+    }
+
+
+    @Override
+    public QueryTree parse(Parsable query) {
+        indexFactsSession = indexFacts.newSession(query.getSources(), query.getRestrict());
+        connectedItems.clear();
+        identifiedItems.clear();
+        this.query = query;
+
+        return buildTree();
+
+    }
+
+
+    public QueryTree buildTree() {
+        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getBytes()).get();
+        if (inspector.field("error_message").valid()){
+            throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
+        }
+
+        Item root = walkJson(inspector);
+        connectItems();
+        QueryTree newTree = new QueryTree(root);
+
+        return newTree;
+    }
+
 
     public Item walkJson(Inspector inspector){
         final Item[] item = {null};
         inspector.traverse((ObjectTraverser) (key, value) -> {
-
-
             String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;
 
             switch (type) {
@@ -208,8 +206,6 @@ public class SelectParser implements Parser {
                 default:
                     throw newUnexpectedArgumentException(key, AND, CALL, CONTAINS, EQ, OR, RANGE, AND_NOT);
             }
-
-
         });
         return item[0];
     }
@@ -236,7 +232,6 @@ public class SelectParser implements Parser {
     }
 
 
-
     private void addItemsFromInspector(CompositeItem item, Inspector inspector){
         if (inspector.type() == ARRAY){
             inspector.traverse((ArrayTraverser) (index, new_value) -> {
@@ -253,6 +248,7 @@ public class SelectParser implements Parser {
         }
     }
 
+
     private Inspector getChildren(Inspector inspector){
         HashMap<Integer, Inspector> children = new HashMap<>();
         if (inspector.type() == ARRAY){
@@ -261,6 +257,9 @@ public class SelectParser implements Parser {
         } else if (inspector.type() == OBJECT){
             if (inspector.field("children").valid()){
                 return inspector.field("children");
+            }
+            if (inspector.field(1).valid()){
+                return inspector.field(1);
             }
         }
         return null;
@@ -284,12 +283,14 @@ public class SelectParser implements Parser {
         return children;
     }
 
+
     private Inspector getAnnotations(Inspector inspector){
         if (inspector.type() == OBJECT && inspector.field("attributes").valid()){
             return inspector.field("attributes");
         }
         return null;
     }
+
 
     private HashMap<String, Inspector> getAnnotationMapFromAnnotationInspector(Inspector annotation){
         HashMap<String, Inspector> attributes = new HashMap<>();
@@ -301,6 +302,7 @@ public class SelectParser implements Parser {
         return attributes;
     }
 
+
     private HashMap<String, Inspector> getAnnotationMap(Inspector inspector){
         HashMap<String, Inspector> attributes = new HashMap<>();
         if (inspector.type() == OBJECT && inspector.field("attributes").valid()){
@@ -311,13 +313,49 @@ public class SelectParser implements Parser {
         return attributes;
     }
 
+
     private <T> T getAnnotation(String annotationName, HashMap<String, Inspector> annotations, Class<T> expectedClass, T defaultValue) {
         return (annotations.get(annotationName) == null) ? defaultValue : expectedClass.cast(annotations.get(annotationName).asString());
     }
 
+
+    private Boolean getBoolAnnotation(String annotationName, HashMap<String, Inspector> annotations, Boolean defaultValue) {
+        if (annotations != null){
+            Inspector annotation = annotations.getOrDefault(annotationName, null);
+            if (annotation != null){
+                return annotation.asBool();
+            }
+        }
+        return defaultValue;
+    }
+
+
+    private Integer getIntegerAnnotation(String annotationName, HashMap<String, Inspector> annotations, Integer defaultValue) {
+        if (annotations != null){
+            Inspector annotation = annotations.getOrDefault(annotationName, null);
+            if (annotation != null){
+                return (int)annotation.asLong();
+            }
+        }
+        return defaultValue;
+    }
+
+
+    private Double getDoubleAnnotation(String annotationName, HashMap<String, Inspector> annotations, Double defaultValue) {
+        if (annotations != null){
+            Inspector annotation = annotations.getOrDefault(annotationName, null);
+            if (annotation != null){
+                return annotation.asDouble();
+            }
+        }
+        return defaultValue;
+    }
+
+
     private Inspector getAnnotationAsInspectorOrNull(String annotationName, HashMap<String, Inspector> annotations) {
         return annotations.get(annotationName);
     }
+
 
     @NonNull
     private CompositeItem buildAnd(String key, Inspector value) {
@@ -326,6 +364,7 @@ public class SelectParser implements Parser {
 
         return andItem;
     }
+
 
     @NonNull
     private CompositeItem buildNotAnd(String key, Inspector value) {
@@ -336,13 +375,13 @@ public class SelectParser implements Parser {
     }
 
 
-
     @NonNull
     private CompositeItem buildOr(String key, Inspector value) {
         OrItem orItem = new OrItem();
         addItemsFromInspector(orItem, value);
         return orItem;
     }
+
 
     @NonNull
     private CompositeItem buildWeakAnd(String key, Inspector value) {
@@ -353,10 +392,10 @@ public class SelectParser implements Parser {
         if (annotations != null){
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
                 if (TARGET_NUM_HITS.equals(annotation_name)){
-                    weakAnd.setN((Integer.class.cast(annotation_value.asDouble())));
+                    weakAnd.setN((int)(annotation_value.asDouble()));
                 }
                 if (SCORE_THRESHOLD.equals(annotation_name)){
-                    weakAnd.setScoreThreshold((Integer.class.cast(annotation_value.asDouble())));
+                    weakAnd.setScoreThreshold((int)(annotation_value.asDouble()));
                 }
             });
         }
@@ -364,11 +403,28 @@ public class SelectParser implements Parser {
         return weakAnd;
     }
 
+
     @NonNull
     private <T extends TaggableItem> T leafStyleSettings(Inspector annotations, @NonNull T out) {
         {
             if (annotations != null) {
+                Inspector  itemConnectivity= getAnnotationAsInspectorOrNull(CONNECTIVITY, getAnnotationMapFromAnnotationInspector(annotations));
+                if (itemConnectivity != null) {
+                    Integer[] id = {null};
+                    Double[] weight = {null};
+                    itemConnectivity.traverse((ObjectTraverser) (key, value) -> {
+                        switch (key){
+                            case CONNECTION_ID:
+                                id[0] = (int) value.asLong();
+                            case CONNECTION_WEIGHT:
+                                weight[0] = value.asDouble();
+                        }
+                    });
+                    connectedItems.add(new ConnectedItem(out, id[0], weight[0]));
+                }
+
                 annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
+
                     if (SIGNIFICANCE.equals(annotation_name)) {
                         if (annotation_value != null) {
                             out.setSignificance(annotation_value.asDouble());
@@ -376,8 +432,8 @@ public class SelectParser implements Parser {
                     }
                     if (UNIQUE_ID.equals(annotation_name)) {
                         if (annotation_value != null) {
-                            out.setUniqueID(Integer.class.cast(annotation_name));
-                            identifiedItems.put(Integer.class.cast(annotation_name), out);
+                            out.setUniqueID((int)annotation_value.asLong());
+                            identifiedItems.put((int)annotation_value.asLong(), out);
                         }
                     }
                 });
@@ -435,7 +491,7 @@ public class SelectParser implements Parser {
         annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
             if (HIT_LIMIT.equals(annotation_name)) {
                 if (annotation_value != null) {
-                    hitLimit[0] = Integer.class.cast(annotation_value);
+                    hitLimit[0] = (int)(annotation_value.asDouble());
                 }
             }
         });
@@ -445,10 +501,10 @@ public class SelectParser implements Parser {
         if (hitLimit[0] != null) {
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
                 if (ASCENDING_HITS_ORDER.equals(annotation_name)) {
-                    ascending[0] = Boolean.class.cast(annotation_value);
+                    ascending[0] = annotation_value.asBool();
                 }
                 if (DESCENDING_HITS_ORDER.equals(annotation_name)) {
-                    descending[0] = Boolean.class.cast(annotation_value);
+                    descending[0] = annotation_value.asBool();
                 }
 
             });
@@ -461,7 +517,6 @@ public class SelectParser implements Parser {
         }
         return hitLimit[0];
     }
-
 
 
     @NonNull
@@ -484,16 +539,19 @@ public class SelectParser implements Parser {
         final Number[] bounds = {null, null};
         final String[] operators = {null, null};
         boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
+            if (bound.type() == STRING) {
+                throw new IllegalArgumentException("Expected operator LITERAL, got READ_FIELD.");
+            }
             if (operator.equals("=")) {
-                bounds[0] = Number.class.cast(bound.asLong());
+                bounds[0] = (bound.type() == DOUBLE) ? Number.class.cast(bound.asDouble()) : Number.class.cast(bound.asLong());
                 operators[0] = operator;
                 equals[0] = true;
             }
             if (operator.equals(">=") || operator.equals(">")){
-                bounds[0] = Number.class.cast(bound.asLong());
+                bounds[0] = (bound.type() == DOUBLE) ? Number.class.cast(bound.asDouble()) : Number.class.cast(bound.asLong());
                 operators[0] = operator;
             } else if (operator.equals("<=") || operator.equals("<")){
-                bounds[1] = Number.class.cast(bound.asLong());
+                bounds[1] = (bound.type() == DOUBLE) ? Number.class.cast(bound.asDouble()) : Number.class.cast(bound.asLong());
                 operators[1] = operator;
             }
 
@@ -531,10 +589,12 @@ public class SelectParser implements Parser {
 
     }
 
+
     @NonNull
     private IntItem buildLessThanOrEquals(String field, String bound) {
         return new IntItem("[;" + bound + "]", field);
     }
+
 
     @NonNull
     private IntItem buildGreaterThan(String field, String bound) {
@@ -542,21 +602,12 @@ public class SelectParser implements Parser {
 
     }
 
+
     @NonNull
     private IntItem buildLessThan(String field, String bound) {
         return new IntItem("<" + bound, field);
     }
 
-    /*
-    @NonNull
-    private IntItem buildEquals(OperatorNode<ExpressionOperator> ast) {
-        IntItem number = new IntItem(fetchConditionWord(ast), fetchConditionIndex(ast));
-        if (isIndexOnLeftHandSide(ast)) {
-            return leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
-        } else {
-            return leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
-        }
-    }*/
 
     @NonNull
     private IntItem instantiateRangeItem(Number lowerBound, Number upperBound, String field, boolean bounds_left_open, boolean bounds_right_open) {
@@ -595,21 +646,23 @@ public class SelectParser implements Parser {
         HashMap<Integer, Inspector> children = getChildrenMap(value);
 
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
-        Integer target_num_hits= getAnnotation(TARGET_NUM_HITS, annotations, Integer.class, DEFAULT_TARGET_NUM_HITS);
+        Integer target_num_hits= getIntegerAnnotation(TARGET_NUM_HITS, annotations, DEFAULT_TARGET_NUM_HITS);
 
         WandItem out = new WandItem(children.get(0).asString(), target_num_hits);
 
-        Double scoreThreshold = getAnnotation(SCORE_THRESHOLD, annotations, Double.class, null);
+        Double scoreThreshold = getDoubleAnnotation(SCORE_THRESHOLD, annotations, null);
+
         if (scoreThreshold != null) {
             out.setScoreThreshold(scoreThreshold);
         }
 
-        Double thresholdBoostFactor = getAnnotation(THRESHOLD_BOOST_FACTOR, annotations, Double.class, null);
+        Double thresholdBoostFactor = getDoubleAnnotation(THRESHOLD_BOOST_FACTOR, annotations, null);
         if (thresholdBoostFactor != null) {
             out.setThresholdBoostFactor(thresholdBoostFactor);
         }
         return fillWeightedSet(value, children, out);
     }
+
 
     @NonNull
     private WeightedSetItem fillWeightedSet(Inspector value, HashMap<Integer, Inspector> children, @NonNull WeightedSetItem out) {
@@ -632,17 +685,24 @@ public class SelectParser implements Parser {
         }
     }
 
+
     private static void addStringItems(HashMap<Integer, Inspector> children, WeightedSetItem out) {
         //{"a":1, "b":2}
-        children.get(1).traverse((ObjectTraverser) (key, value) -> out.addToken(key, Integer.class.cast(value.asLong())));
+        children.get(1).traverse((ObjectTraverser) (key, value) -> {
+            if (value.type() == STRING){
+                throw new IllegalArgumentException("Expected operator LITERAL, got READ_FIELD.");
+            }
+            out.addToken(key, (int)value.asLong());
+        });
     }
+
 
     private static void addLongItems(HashMap<Integer, Inspector> children, WeightedSetItem out) {
         //[[11,1], [37,2]]
         children.get(1).traverse((ArrayTraverser) (index, pair) -> {
             List<Integer> pairValues = new ArrayList<>();
             pair.traverse((ArrayTraverser) (pairIndex, pairValue) -> {
-                pairValues.add(Integer.class.cast(pairValue.asLong()));
+                pairValues.add((int)pairValue.asLong());
             });
             Preconditions.checkArgument(pairValues.size() == 2,
                     "Expected item and weight, got %s.", pairValues);
@@ -661,6 +721,7 @@ public class SelectParser implements Parser {
         return leafStyleSettings(getAnnotations(value), regExp);
     }
 
+
     @NonNull
     private Item buildWeightedSet(String key, Inspector value) {
         HashMap<Integer, Inspector> children = getChildrenMap(value);
@@ -669,6 +730,7 @@ public class SelectParser implements Parser {
         return fillWeightedSet(value, children, new WeightedSetItem(field));
     }
 
+
     @NonNull
     private Item buildDotProduct(String key, Inspector value) {
         HashMap<Integer, Inspector> children = getChildrenMap(value);
@@ -676,6 +738,7 @@ public class SelectParser implements Parser {
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
         return fillWeightedSet(value, children, new DotProductItem(field));
     }
+
 
     @NonNull
     private Item buildPredicate(String key, Inspector value) {
@@ -691,10 +754,17 @@ public class SelectParser implements Parser {
         List<Inspector> argumentList = valueListFromInspector(getChildren(value));
 
         // Adding attributes
-        argumentList.get(1).traverse((ObjectTraverser) (attrKey, attrValue) -> item.addFeature(attrKey, attrValue.asString()));
+        argumentList.get(1).traverse((ObjectTraverser) (attrKey, attrValue) -> {
+            if (attrValue.type() == ARRAY){
+                List<Inspector> attributes = valueListFromInspector(attrValue);
+                attributes.forEach( (attribute) -> item.addFeature(attrKey, attribute.asString()));
+            } else {
+                item.addFeature(attrKey, attrValue.asString());
+            }
+        });
 
         // Adding range attributes
-        argumentList.get(2).traverse((ObjectTraverser) (attrKey, attrValue) -> item.addRangeFeature(attrKey, Integer.class.cast(attrValue.asDouble())));
+        argumentList.get(2).traverse((ObjectTraverser) (attrKey, attrValue) -> item.addRangeFeature(attrKey, (int)attrValue.asDouble()));
 
         return leafStyleSettings(getAnnotations(value), item);
     }
@@ -707,6 +777,7 @@ public class SelectParser implements Parser {
         return rankItem;
     }
 
+
     @NonNull
     private Item buildTermSearch(String key, Inspector value) {
         HashMap<Integer, Inspector> children = getChildrenMap(value);
@@ -714,14 +785,33 @@ public class SelectParser implements Parser {
 
         return instantiateLeafItem(field, key, value);
     }
+
+
+    private String getInspectorKey(Inspector inspector){
+        String[] actualKey = {""};
+        if (inspector.type() == OBJECT){
+            inspector.traverse((ObjectTraverser) (key, value) -> {
+                actualKey[0] = key;
+
+            });
+        }
+        return actualKey[0];
+    }
+
+
     @NonNull
     private Item instantiateLeafItem(String field, String key, Inspector value) {
-        if (CALL.contains(key)) {
+        List<Inspector> possibleLeafFunction = valueListFromInspector(value);
+        String possibleLeafFunctionName = (possibleLeafFunction.size() > 1) ? getInspectorKey(possibleLeafFunction.get(1)) : "";
+        if (FUNCTION_CALLS.contains(key)) {
             return instantiateCompositeLeaf(field, key, value);
+        } else if(!possibleLeafFunctionName.equals("")){
+           return instantiateCompositeLeaf(field, possibleLeafFunctionName, valueListFromInspector(value).get(1).field(possibleLeafFunctionName));
         } else {
             return instantiateWordItem(field, key, value);
         }
     }
+
 
     @NonNull
     private Item instantiateCompositeLeaf(String field, String key, Inspector value) {
@@ -750,20 +840,21 @@ public class SelectParser implements Parser {
         return instantiateWordItem(field, wordData, key, value, false, decideParsingLanguage(value, wordData));
     }
 
+
     @NonNull
     private Item instantiateWordItem(String field, String rawWord, String key, Inspector value, boolean exactMatch, Language language) {
         String wordData = rawWord;
         HashMap<String, Inspector> annotations = getAnnotationMap(value);
 
-        if (getAnnotation(NFKC, annotations, Boolean.class, Boolean.FALSE)) {
+        if (getBoolAnnotation(NFKC, annotations, Boolean.FALSE)) {
             // NOTE: If this is set to FALSE (default), we will still NFKC normalize text data
             // during tokenization/segmentation, as that is always turned on also on the indexing side.
             wordData = normalizer.normalize(wordData);
         }
-        boolean fromQuery = getAnnotation(IMPLICIT_TRANSFORMS, annotations, Boolean.class, Boolean.TRUE);
-        boolean prefixMatch = getAnnotation(PREFIX, annotations, Boolean.class, Boolean.FALSE);
-        boolean suffixMatch = getAnnotation(SUFFIX, annotations, Boolean.class, Boolean.FALSE);
-        boolean substrMatch = getAnnotation(SUBSTRING,annotations, Boolean.class, Boolean.FALSE);
+        boolean fromQuery = getBoolAnnotation(IMPLICIT_TRANSFORMS, annotations,  Boolean.TRUE);
+        boolean prefixMatch = getBoolAnnotation(PREFIX, annotations, Boolean.FALSE);
+        boolean suffixMatch = getBoolAnnotation(SUFFIX, annotations,  Boolean.FALSE);
+        boolean substrMatch = getBoolAnnotation(SUBSTRING,annotations, Boolean.FALSE);
 
         Preconditions.checkArgument((prefixMatch ? 1 : 0)
                         + (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
@@ -786,7 +877,7 @@ public class SelectParser implements Parser {
         if (wordItem instanceof WordItem) {
             prepareWord(field, value, (WordItem) wordItem);
         }
-        if (language != Language.ENGLISH) // mark the language used, unless it's the default
+        if (language != Language.ENGLISH)
             ((Item)wordItem).setLanguage(language);
 
         return (Item) leafStyleSettings(getAnnotations(value), wordItem);
@@ -811,6 +902,7 @@ public class SelectParser implements Parser {
         wordStyleSettings(value, wordItem);
     }
 
+
     private void wordStyleSettings(Inspector value, WordItem out) {
         HashMap<String, Inspector> annotations = getAnnotationMap(value);
 
@@ -818,32 +910,35 @@ public class SelectParser implements Parser {
         if (origin != null) {
             out.setOrigin(origin);
         }
+        if (annotations !=  null){
+            Boolean usePositionData = Boolean.getBoolean(getAnnotation(USE_POSITION_DATA, annotations, String.class, null));
+            if (usePositionData != null) {
+                out.setPositionData(usePositionData);
+            }
+            Boolean stem = getBoolAnnotation(STEM, annotations, null);
+            if (stem != null) {
+                out.setStemmed(!stem);
+            }
 
-        Boolean usePositionData = Boolean.getBoolean(getAnnotation(USE_POSITION_DATA, annotations, String.class, null));
-        if (usePositionData != null) {
-            out.setPositionData(usePositionData);
-        }
-        Boolean stem = Boolean.getBoolean(getAnnotation(STEM, annotations, String.class, null));
-        if (stem != null) {
-            out.setStemmed(!stem);
-        }
-        Boolean normalizeCase = Boolean.getBoolean(getAnnotation(NORMALIZE_CASE, annotations, String.class, null));
-        if (normalizeCase != null) {
-            out.setLowercased(!normalizeCase);
-        }
-        Boolean accentDrop = Boolean.getBoolean(getAnnotation(ACCENT_DROP, annotations, String.class, null));
-        if (accentDrop != null) {
-            out.setNormalizable(accentDrop);
-        }
-        Boolean andSegmenting = Boolean.getBoolean(getAnnotation(AND_SEGMENTING, annotations, String.class, null));
-        if (andSegmenting != null) {
-            if (andSegmenting) {
-                out.setSegmentingRule(SegmentingRule.BOOLEAN_AND);
-            } else {
-                out.setSegmentingRule(SegmentingRule.PHRASE);
+            Boolean normalizeCase = getBoolAnnotation(NORMALIZE_CASE, annotations, null);
+            if (normalizeCase != null) {
+                out.setLowercased(!normalizeCase);
+            }
+            Boolean accentDrop = getBoolAnnotation(ACCENT_DROP, annotations, null);
+            if (accentDrop != null) {
+                out.setNormalizable(accentDrop);
+            }
+            Boolean andSegmenting = getBoolAnnotation(AND_SEGMENTING, annotations,  null);
+            if (andSegmenting != null) {
+                if (andSegmenting) {
+                    out.setSegmentingRule(SegmentingRule.BOOLEAN_AND);
+                } else {
+                    out.setSegmentingRule(SegmentingRule.PHRASE);
+                }
             }
         }
     }
+
 
     private Substring getOrigin(Inspector annotations) {
         if (annotations != null) {
@@ -875,6 +970,7 @@ public class SelectParser implements Parser {
         return null;
     }
 
+
     @NonNull
     private Item instantiateSameElementItem(String field, String key, Inspector value) {
         assertHasOperator(key, SAME_ELEMENT);
@@ -888,6 +984,7 @@ public class SelectParser implements Parser {
         return sameElement;
     }
 
+
     @NonNull
     private Item instantiatePhraseItem(String field, String key, Inspector value) {
         assertHasOperator(key, PHRASE);
@@ -897,13 +994,13 @@ public class SelectParser implements Parser {
         phrase.setIndexName(field);
         HashMap<Integer, Inspector> children = getChildrenMap(value);
 
-        for (Inspector word :  children.values()){
-            phrase.addItem(instantiateWordItem(word.asString(), key, value));
-
-        }
+        for (Inspector word :  children.values())
+            if (word.type() == STRING) phrase.addItem(new WordItem(word.asString()));
+            else if (word.type() == OBJECT && word.field(PHRASE).valid()) {
+                    phrase.addItem(instantiatePhraseItem(field, key, getChildren(word)));
+            }
         return leafStyleSettings(getAnnotations(value), phrase);
     }
-
 
 
     @NonNull
@@ -916,16 +1013,17 @@ public class SelectParser implements Parser {
         HashMap<Integer, Inspector> children = getChildrenMap(value);
 
         for (Inspector word :  children.values()){
-            near.addItem(instantiateWordItem(word.asString(), key, value));
+            near.addItem(new WordItem(word.asString(), field));
         }
 
-        Integer distance = getAnnotation(DISTANCE, getAnnotationMap(value), Integer.class, null);
+        Integer distance = getIntegerAnnotation(DISTANCE, getAnnotationMap(value), null);
 
         if (distance != null) {
-            near.setDistance(distance);
+            near.setDistance((int)distance);
         }
         return near;
     }
+
 
     @NonNull
     private Item instantiateONearItem(String field, String key, Inspector value) {
@@ -936,10 +1034,10 @@ public class SelectParser implements Parser {
         HashMap<Integer, Inspector> children = getChildrenMap(value);
 
         for (Inspector word :  children.values()){
-            onear.addItem(instantiateWordItem(word.asString(), key, value));
+            onear.addItem(new WordItem(word.asString(), field));
         }
 
-        Integer distance = getAnnotation(DISTANCE, getAnnotationMap(value), Integer.class, null);
+        Integer distance = getIntegerAnnotation(DISTANCE, getAnnotationMap(value), null);
         if (distance != null) {
             onear.setDistance(distance);
         }
@@ -958,18 +1056,19 @@ public class SelectParser implements Parser {
 
         for (Inspector word :  children.values()){
             if (word.type() == STRING || word.type() == LONG || word.type() == DOUBLE){
-                equiv.addItem(instantiateWordItem(word.asString(), key, value));
+                equiv.addItem(new WordItem(word.asString(), field));
             }
             if (word.type() == OBJECT){
                 word.traverse((ObjectTraverser) (key2, value2) -> {
                     assertHasOperator(key2, PHRASE);
-                    equiv.addItem(instantiatePhraseItem(word.asString(), key, value2));
+                    equiv.addItem(instantiatePhraseItem(field, key2, value2));
                 });
             }
         }
 
         return leafStyleSettings(getAnnotations(value), equiv);
     }
+
 
     private Item instantiateWordAlternativesItem(String field, String key, Inspector value) {
         HashMap<Integer, Inspector> children = getChildrenMap(value);
@@ -985,9 +1084,7 @@ public class SelectParser implements Parser {
     }
 
 
-
-
-
+    //  Not in use yet
     @NonNull
     private String getIndex(String field) {
         Preconditions.checkArgument(indexFactsSession.isIndex(field), "Field '%s' does not exist.", field);
@@ -996,9 +1093,8 @@ public class SelectParser implements Parser {
     }
 
 
-
     private static void assertHasOperator(String key, String expectedKey) {
-        Preconditions.checkArgument(key.equals(expectedKey), "Expected operator class %s, got %s.", expectedKey, key);
+        Preconditions.checkArgument(key.equals(expectedKey), "Expected operator %s, got %s.", expectedKey, key);
     }
 
 
@@ -1016,10 +1112,37 @@ public class SelectParser implements Parser {
         return new IllegalArgumentException(out.toString());
     }
 
+
     private List<Inspector> valueListFromInspector(Inspector inspector){
         List<Inspector> inspectorList = new ArrayList<>();
         inspector.traverse((ArrayTraverser) (key, value) -> inspectorList.add(value));
         return inspectorList;
+    }
+
+
+    private void connectItems() {
+        for (ConnectedItem entry : connectedItems) {
+            TaggableItem to = identifiedItems.get(entry.toId);
+            Preconditions.checkNotNull(to,
+                    "Item '%s' was specified to connect to item with ID %s, which does not "
+                            + "exist in the query.", entry.fromItem,
+                    entry.toId);
+            entry.fromItem.setConnectivity((Item) to, entry.weight);
+        }
+    }
+
+
+    private static final class ConnectedItem {
+
+        final double weight;
+        final int toId;
+        final TaggableItem fromItem;
+
+        ConnectedItem(TaggableItem fromItem, int toId, double weight) {
+            this.weight = weight;
+            this.toId = toId;
+            this.fromItem = fromItem;
+        }
     }
 
 
