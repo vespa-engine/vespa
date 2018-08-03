@@ -64,7 +64,7 @@ import static com.yahoo.slime.Type.STRING;
 /**
  * The Select query language.
  *
- * This class will be parsing the Select parameters, and will be used when the query has the SELECT-type
+ * This class will be parsing the Select parameters, and will be used when the query has the SELECT-type.
  *
  * @author henrhoi
  */
