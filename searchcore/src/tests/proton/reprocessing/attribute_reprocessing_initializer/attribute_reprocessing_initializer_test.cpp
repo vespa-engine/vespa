@@ -294,9 +294,9 @@ TEST("require that added attribute aspect with flushed attribute after interrupt
         auto dir = diskLayout->createAttributeDir("a");
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(INIT_SERIAL_NUM);
-        writer->markValidSnapshot(INIT_SERIAL_NUM);
         auto snapshotdir = writer->getSnapshotDir(INIT_SERIAL_NUM);
         vespalib::mkdir(snapshotdir);
+        writer->markValidSnapshot(INIT_SERIAL_NUM);
         auto av = AttributeFactory::createAttribute(snapshotdir + "/a",
                                                     Config(BasicType::STRING));
         av->save();

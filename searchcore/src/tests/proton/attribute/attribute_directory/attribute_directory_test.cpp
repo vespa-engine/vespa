@@ -137,6 +137,7 @@ struct Fixture : public DirectoryHandler
         EXPECT_TRUE(hasAttributeDir(dir));
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(serialNum);
+        vespalib::mkdir(writer->getSnapshotDir(serialNum), false);
         writer->markValidSnapshot(serialNum);
         TEST_DO(assertAttributeDiskDir("foo"));
     }
@@ -162,6 +163,7 @@ struct Fixture : public DirectoryHandler
         auto dir = createFooAttrDir();
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(serialNum);
+        vespalib::mkdir(writer->getSnapshotDir(serialNum), false);
         writer->markValidSnapshot(serialNum);
     }
 
@@ -208,8 +210,10 @@ TEST_F("Test that we can prune attribute snapshots", Fixture)
     TEST_DO(f.assertNotAttributeDiskDir("foo"));
     auto writer = dir->getWriter();
     writer->createInvalidSnapshot(2);
+    vespalib::mkdir(writer->getSnapshotDir(2), false);
     writer->markValidSnapshot(2);
     writer->createInvalidSnapshot(4);
+    vespalib::mkdir(writer->getSnapshotDir(4), false);
     writer->markValidSnapshot(4);
     writer.reset();
     TEST_DO(f.assertAttributeDiskDir("foo"));
