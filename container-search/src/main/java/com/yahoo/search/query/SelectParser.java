@@ -260,7 +260,6 @@ public class SelectParser implements Parser {
 
 
     private Inspector getChildren(Inspector inspector){
-        HashMap<Integer, Inspector> children = new HashMap<>();
         if (inspector.type() == ARRAY){
             return inspector;
 
@@ -426,8 +425,10 @@ public class SelectParser implements Parser {
                         switch (key){
                             case CONNECTION_ID:
                                 id[0] = (int) value.asLong();
+                                break;
                             case CONNECTION_WEIGHT:
                                 weight[0] = value.asDouble();
+                                break;
                         }
                     });
                     connectedItems.add(new ConnectedItem(out, id[0], weight[0]));
