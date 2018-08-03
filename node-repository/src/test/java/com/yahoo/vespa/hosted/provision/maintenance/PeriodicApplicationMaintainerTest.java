@@ -180,28 +180,34 @@ public class PeriodicApplicationMaintainerTest {
         // Lock deployer to simulate slow deployments
         fixture.deployer.lock().lock();
 
-        // Queues all eligible applications
-        assertEquals(2, fixture.maintainer.applicationsNeedingMaintenance().size());
-        fixture.runApplicationMaintainer(false);
-        assertEquals(2, fixture.maintainer.pendingDeployments());
+        try {
+            // Queues all eligible applications
+            assertEquals(2, fixture.maintainer.applicationsNeedingMaintenance().size());
+            fixture.runApplicationMaintainer(false);
+            assertEquals(2, fixture.maintainer.pendingDeployments());
 
-        // Enough time passes to make applications eligible for another periodic deployment
-        clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
-        fixture.runApplicationMaintainer(false);
+            // Enough time passes to make applications eligible for another periodic deployment
+            clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            fixture.runApplicationMaintainer(false);
 
-        // Deployments are not re-queued as previous deployments are still pending
-        assertEquals(2, fixture.maintainer.pendingDeployments());
+            // Deployments are not re-queued as previous deployments are still pending
+            assertEquals(2, fixture.maintainer.pendingDeployments());
 
-        // Slow deployments complete
-        fixture.deployer.lock().unlock();
-        fixture.runApplicationMaintainer();
-        Instant deployTime = clock.instant();
-        assertEquals(deployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
-        assertEquals(deployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+            // Slow deployments complete
+            fixture.deployer.lock().unlock();
+            fixture.runApplicationMaintainer();
+            Instant deployTime = clock.instant();
+            assertEquals(deployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
+            assertEquals(deployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
 
-        // Too soon: Already deployed recently
-        clock.advance(Duration.ofMinutes(5));
-        assertEquals(0, fixture.maintainer.applicationsNeedingMaintenance().size());
+            // Too soon: Already deployed recently
+            clock.advance(Duration.ofMinutes(5));
+            assertEquals(0, fixture.maintainer.applicationsNeedingMaintenance().size());
+        } finally {
+            if (fixture.deployer.lock().isHeldByCurrentThread()) {
+                fixture.deployer.lock().unlock();
+            }
+        }
     }
 
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
