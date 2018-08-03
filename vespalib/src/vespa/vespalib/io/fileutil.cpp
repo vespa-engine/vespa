@@ -408,6 +408,15 @@ File::sync()
     }
 }
 
+void
+File::sync(vespalib::stringref path)
+{
+    File file(path);
+    file.open(READONLY);
+    file.sync();
+    file.close();
+}
+
 bool
 File::close()
 {
