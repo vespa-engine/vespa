@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -47,6 +48,7 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author bratseth
  */
+@Ignore
 public class PeriodicApplicationMaintainerTest {
 
     private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
@@ -75,7 +77,7 @@ public class PeriodicApplicationMaintainerTest {
         this.fixture.maintainer.deconstruct();
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void test_application_maintenance() {
         // Create applications
         fixture.activate();
@@ -122,7 +124,7 @@ public class PeriodicApplicationMaintainerTest {
                      reactivatedInApp1, fixture.getNodes(Node.State.inactive).size());
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void deleted_application_is_not_reactivated() {
         // Create applications
         fixture.activate();
@@ -141,7 +143,7 @@ public class PeriodicApplicationMaintainerTest {
                      nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void application_deploy_inhibits_redeploy_for_a_while() {
         fixture.activate();
 
@@ -170,15 +172,15 @@ public class PeriodicApplicationMaintainerTest {
         assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app2).get());
     }
 
-    @Test
-    public void queues_all_eligible_applications_for_deployment() {
+    @Test(timeout = 60_000)
+    public void queues_all_eligible_applications_for_deployment() throws Exception {
         fixture.activate();
 
         // Exhaust initial wait period
         clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
 
         // Lock deployer to simulate slow deployments
-        fixture.deployer.lock().lock();
+        fixture.deployer.lock().lockInterruptibly();
 
         try {
             // Queues all eligible applications
@@ -255,7 +257,7 @@ public class PeriodicApplicationMaintainerTest {
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2,
                                                                Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
             this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
-            this.maintainer = new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(1),
+            this.maintainer = new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofDays(1), // Long duration to prevent scheduled runs during test
                                                                         Duration.ofMinutes(30));
         }
 
