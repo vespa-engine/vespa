@@ -67,8 +67,8 @@ public class MockDeployer implements Deployer {
 
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, Duration timeout) {
+        lock.lock();
         try {
-            lock.lock();
             lastDeployTimes.put(id, clock.instant());
             return Optional.of(new MockDeployment(provisioner, applications.get(id)));
         } finally {
