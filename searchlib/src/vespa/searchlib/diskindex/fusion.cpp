@@ -218,6 +218,7 @@ Fusion::mergeField(uint32_t id)
     }
     if (!FileKit::createStamp(indexDir +  "/.mergeocc_done"))
         return false;
+    vespalib::File::sync(indexDir);
 
     if (!CleanTmpDirs())
         return false;
