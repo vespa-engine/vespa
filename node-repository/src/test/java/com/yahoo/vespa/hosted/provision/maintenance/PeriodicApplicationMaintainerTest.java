@@ -299,7 +299,19 @@ public class PeriodicApplicationMaintainerTest {
 
         void runApplicationMaintainer(boolean waitForDeployments) {
             maintainer.run();
-            while (waitForDeployments && fixture.maintainer.pendingDeployments() != 0);
+            Instant start = Instant.now();
+            while (waitForDeployments && fixture.maintainer.pendingDeployments() != 0) {
+                if (Instant.now().isAfter(start.plus(Duration.ofSeconds(10)))) {
+                    System.out.printf("PENDING DEPLOYMENTS: %d\n", fixture.maintainer.pendingDeployments());
+                    for (Map.Entry<Thread, StackTraceElement[]> t : Thread.getAllStackTraces().entrySet()) {
+                        System.out.printf("--> THREAD %s: %d\n", t.getKey().getName(), t.getKey().getId());
+                        for (StackTraceElement ste : t.getValue()) {
+                            System.out.println("\tat " + ste);
+                        }
+                    }
+                    throw new RuntimeException("Timed out after 10 seconds");
+                }
+            }
         }
 
         NodeList getNodes(Node.State ... states) {
