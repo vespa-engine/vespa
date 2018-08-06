@@ -110,41 +110,26 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
         for (URI configServer : configServers) {
-            final CloseableHttpResponse response;
-            try {
-                response = client.execute(requestFactory.createRequest(configServer));
+            try (CloseableHttpResponse response = client.execute(requestFactory.createRequest(configServer))) {
+                HttpException.handleStatusCode(
+                        response.getStatusLine().getStatusCode(), "Config server " + configServer);
+
+                try {
+                    return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed parse response from config server", e);
+                }
+            } catch (HttpException e) {
+                if (!e.isRetryable()) throw e;
+                lastException = e;
             } catch (Exception e) {
-                // Failure to communicate with a config server is not abnormal, as they are
-                // upgraded at the same time as Docker hosts.
-                if (e.getMessage().indexOf("(Connection refused)") > 0) {
+                // Failure to communicate with a config server is not abnormal during upgrades
+                if (e.getMessage().contains("(Connection refused)")) {
                     NODE_ADMIN_LOGGER.info("Connection refused to " + configServer + " (upgrading?), will try next");
                 } else {
                     NODE_ADMIN_LOGGER.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
                 }
                 lastException = e;
-                continue;
-            }
-
-            try {
-                Optional<HttpException> retryableException = HttpException.handleStatusCode(
-                        response.getStatusLine().getStatusCode(),
-                        "Config server " + configServer);
-                if (retryableException.isPresent()) {
-                    lastException = retryableException.get();
-                    continue;
-                }
-
-                try {
-                    return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
-                } catch (IOException e) {
-                    throw new RuntimeException("Response didn't contain nodes element, failed parsing?", e);
-                }
-            } finally {
-                try {
-                    response.close();
-                } catch (IOException e) {
-                    NODE_ADMIN_LOGGER.warning("Ignoring exception from closing response", e);
-                }
             }
         }
 

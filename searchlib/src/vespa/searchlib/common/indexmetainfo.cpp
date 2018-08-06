@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexmetainfo.h"
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/guard.h>
 #include <cassert>
@@ -310,6 +311,7 @@ IndexMetaInfo::save(const vespalib::string &baseName)
 {
     vespalib::string fileName = makeFileName(baseName);
     vespalib::string newName = fileName + ".new";
+    vespalib::unlink(newName);
     vespalib::FilePointer f(fopen(newName.c_str(), "w"));
     if (!f.valid()) {
         LOG(warning, "could not open file for writing: %s", newName.c_str());
@@ -350,6 +352,7 @@ IndexMetaInfo::save(const vespalib::string &baseName)
             newName.c_str(), fileName.c_str());
         return false;
     }
+    vespalib::File::sync(vespalib::dirname(fileName));
     return true;
 }
 

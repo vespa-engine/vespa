@@ -283,13 +283,16 @@ public class SearchHandler extends LoggingRequestHandler {
 
 
     private HttpSearchResponse handleBody(HttpRequest request){
-        // Find query profile
-        String queryProfileName = request.getProperty("queryProfile");
+
+        Map<String, String> requestMap = requestMapFromRequest(request);
+
+        // Get query profile
+        String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
+
+        Query query = new Query(request, requestMap, queryProfile);
+
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
-
-        Query query = queryFromRequest(request, queryProfile);
-
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
 
         // Find and execute search chain if we have a valid query
@@ -558,7 +561,8 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
-    private Query queryFromRequest(HttpRequest request, CompiledQueryProfile queryProfile){
+    private Map<String, String> requestMapFromRequest(HttpRequest request) {
+
         if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST
             && JSON_CONTENT_TYPE.equals(request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE))) {
             Inspector inspector;
@@ -588,11 +592,10 @@ public class SearchHandler extends LoggingRequestHandler {
                 requestMap.remove("select.grouping");
             }
 
-            return new Query(request, requestMap, queryProfile);
-
+            return requestMap;
 
         } else {
-            return new Query(request, queryProfile);
+            return request.propertyMap();
 
         }
     }

@@ -112,6 +112,7 @@ AttributeDirectory::createInvalidSnapshot(SerialNum serialNum)
     if (empty()) {
         vespalib::string dirName(getDirName());
         vespalib::mkdir(dirName, false);
+        vespalib::File::sync(vespalib::dirname(dirName));
     }
     {
         std::lock_guard<std::mutex> guard(_mutex);
@@ -130,6 +131,9 @@ AttributeDirectory::markValidSnapshot(SerialNum serialNum)
         assert(snap.syncToken == serialNum);
         _snapInfo.validateSnapshot(serialNum);
     }
+    vespalib::string snapshotDir(getSnapshotDir(serialNum));
+    vespalib::File::sync(snapshotDir);
+    vespalib::File::sync(dirname(snapshotDir));
     saveSnapInfo();
 }
 
@@ -178,6 +182,7 @@ AttributeDirectory::removeInvalidSnapshots()
         vespalib::rmdir(subDir, true);
     }
     if (!toRemove.empty()) {
+        vespalib::File::sync(getDirName());
         {
             std::lock_guard<std::mutex> guard(_mutex);
             for (const auto &serialNum : toRemove) {
@@ -194,6 +199,7 @@ AttributeDirectory::removeDiskDir()
     if (empty()) {
         vespalib::string dirName(getDirName());
         vespalib::rmdir(dirName, true);
+        vespalib::File::sync(vespalib::dirname(dirName));
         return true;
     }
     return false;

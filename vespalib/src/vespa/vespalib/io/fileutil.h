@@ -190,6 +190,16 @@ public:
      */
     static vespalib::string readAll(vespalib::stringref path);
 
+    /**
+     * Sync file or directory.
+     *
+     * This is a convenience function for the member functions open() and
+     * sync(), see there for more details.
+     *
+     * @throw IoException If we failed to sync the file.
+     */
+    static void sync(vespalib::stringref path);
+
     virtual void sync();
     virtual bool close();
     virtual bool unlink();

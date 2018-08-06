@@ -139,6 +139,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
 {
     vespalib::mkdir(_baseDir, false); // Assume parent is created.
+    vespalib::File::sync(vespalib::dirname(_baseDir));
 }
 
 StoreOnlyDocSubDB::~StoreOnlyDocSubDB()

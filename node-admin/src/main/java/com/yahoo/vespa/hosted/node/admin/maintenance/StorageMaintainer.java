@@ -89,6 +89,13 @@ public class StorageMaintainer {
                 "129600", "--crit", "1", "--coredir", environment.pathInNodeUnderVespaHome("var/crash/processing").toString());
         configs.add(annotatedCheck(node, coredumpSchedule));
 
+        // athenz certificate check
+        Path athenzCertExpiryCheckPath = environment.pathInNodeUnderVespaHome("libexec64/yms/yms_check_athenz_certs");
+        SecretAgentCheckConfig athenzCertExpirySchedule = new SecretAgentCheckConfig("athenz-certificate-expiry", 60,
+                 athenzCertExpiryCheckPath, "--threshold", "20")
+                .withRunAsUser("root");
+        configs.add(annotatedCheck(node, athenzCertExpirySchedule));
+
         if (node.getNodeType() != NodeType.config) {
             // vespa-health
             Path vespaHealthCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");

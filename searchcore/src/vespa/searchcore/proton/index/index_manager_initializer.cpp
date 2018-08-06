@@ -45,6 +45,7 @@ IndexManagerInitializer::run()
     LOG(debug, "About to create proton::IndexManager with %u index field(s)",
         _schema.getNumIndexFields());
     vespalib::mkdir(_baseDir, false);
+    vespalib::File::sync(vespalib::dirname(_baseDir));
     *_indexManager = std::make_shared<proton::IndexManager>
                     (_baseDir,
                      _warmupCfg,

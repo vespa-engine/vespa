@@ -3,7 +3,9 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/document/select/constant.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/document/select/parsing_failed_exception.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <ostream>
@@ -11,6 +13,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".document.update.fieldpathupdate");
 
+using document::select::ParsingFailedException;
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 
@@ -26,8 +29,13 @@ std::unique_ptr<select::Node>
 parseDocumentSelection(vespalib::stringref query, const DocumentTypeRepo& repo)
 {
     BucketIdFactory factory;
-    select::Parser parser(repo, factory);
-    return parser.parse(query);
+    try {
+        select::Parser parser(repo, factory);
+        return parser.parse(query);
+    } catch (const ParsingFailedException &e) {
+        LOG(warning, "Failed to parse selection for field path update: %s", e.getMessage().c_str());
+        return std::make_unique<select::Constant>(false);
+    }
 }
 
 }  // namespace

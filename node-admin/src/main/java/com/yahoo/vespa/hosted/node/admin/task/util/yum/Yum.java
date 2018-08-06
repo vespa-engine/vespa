@@ -36,6 +36,10 @@ public class Yum {
         return newYumCommand("install", packages, INSTALL_NOOP_PATTERN);
     }
 
+    /**
+     * @param packages A list of packages, each package being of the form name-1.2.3-1.el7.noarch,
+     *                 if no packages are given, will upgrade all installed packages
+     */
     public GenericYumCommand upgrade(String... packages) {
         return newYumCommand("upgrade", packages, UPGRADE_NOOP_PATTERN);
     }
@@ -70,7 +74,7 @@ public class Yum {
             this.packages = packages;
             this.commandOutputNoopPattern = commandOutputNoopPattern;
 
-            if (packages.isEmpty()) {
+            if (packages.isEmpty() && ! "upgrade".equals(yumCommand)) {
                 throw new IllegalArgumentException("No packages specified");
             }
         }

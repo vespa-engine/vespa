@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import javax.ws.rs.core.Response;
-import java.util.Optional;
 
 /**
  * @author hakonhall
@@ -10,35 +9,34 @@ import java.util.Optional;
 @SuppressWarnings("serial")
 public class HttpException extends RuntimeException {
 
-    public static class NotFoundException extends HttpException {
+    private final boolean isRetryable;
 
-        public NotFoundException(String message) {
-            super(Response.Status.NOT_FOUND, message);
-        }
-
+    private HttpException(int statusCode, String message, boolean isRetryable) {
+        super("HTTP status code " + statusCode + ": " + message);
+        this.isRetryable = isRetryable;
     }
 
-    public static class ForbiddenException extends HttpException {
+    private HttpException(Response.Status status, String message, boolean isRetryable) {
+        super(status.toString() + " (" + status.getStatusCode() + "): " + message);
+        this.isRetryable = isRetryable;
+    }
 
-        public ForbiddenException(String message) {
-            super(Response.Status.FORBIDDEN, message);
-        }
-
+    public boolean isRetryable() {
+        return isRetryable;
     }
 
     /**
-     * Returns empty on success.
-     * Returns an exception if the error is retriable.
-     * Throws an exception on a non-retriable error, like 404 Not Found.
+     * Returns on success.
+     * @throws HttpException for all non-expected status codes.
      */
-    static Optional<HttpException> handleStatusCode(int statusCode, String message) {
+    static void handleStatusCode(int statusCode, String message) {
         Response.Status status = Response.Status.fromStatusCode(statusCode);
         if (status == null) {
-            return Optional.of(new HttpException(statusCode, message));
+            throw new HttpException(statusCode, message, true);
         }
 
         switch (status.getFamily()) {
-            case SUCCESSFUL: return Optional.empty();
+            case SUCCESSFUL: return;
             case CLIENT_ERROR:
                 switch (status) {
                     case FORBIDDEN:
@@ -48,20 +46,24 @@ public class HttpException extends RuntimeException {
                     case CONFLICT:
                         // A response body is assumed to be present, and
                         // will later be interpreted as an error.
-                        return Optional.empty();
+                        return;
                 }
-                throw new HttpException(statusCode, message);
+                throw new HttpException(status, message, false);
         }
 
         // Other errors like server-side errors are assumed to be retryable.
-        return Optional.of(new HttpException(status, message));
+        throw new HttpException(status, message, true);
     }
 
-    private HttpException(int statusCode, String message) {
-        super("HTTP status code " + statusCode + ": " + message);
+    public static class NotFoundException extends HttpException {
+        public NotFoundException(String message) {
+            super(Response.Status.NOT_FOUND, message, false);
+        }
     }
 
-    private HttpException(Response.Status status, String message) {
-        super(status.toString() + " (" + status.getStatusCode() + "): " + message);
+    public static class ForbiddenException extends HttpException {
+        public ForbiddenException(String message) {
+            super(Response.Status.FORBIDDEN, message, false);
+        }
     }
 }

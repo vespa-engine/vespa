@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.mock;
 public class YumTest {
     private final TaskContext taskContext = mock(TaskContext.class);
     private final TestTerminal terminal = new TestTerminal();
+    private final Yum yum = new Yum(terminal);
 
     @Before
     public void tearDown() {
@@ -29,7 +31,6 @@ public class YumTest {
                 0,
                 "foobar\nNothing to do\n");
 
-        Yum yum = new Yum(terminal);
         assertFalse(yum
                 .install("package-1", "package-2")
                 .enableRepo("repo-name")
@@ -43,7 +44,7 @@ public class YumTest {
                 0,
                 "foobar\nNo packages marked for update\n");
 
-        assertFalse(new Yum(terminal)
+        assertFalse(yum
                 .upgrade("package-1", "package-2")
                 .converge(taskContext));
     }
@@ -55,7 +56,7 @@ public class YumTest {
                 0,
                 "foobar\nNo Packages marked for removal\n");
 
-        assertFalse(new Yum(terminal)
+        assertFalse(yum
                 .remove("package-1", "package-2")
                 .converge(taskContext));
     }
@@ -67,7 +68,6 @@ public class YumTest {
                 0,
                 "installing, installing");
 
-        Yum yum = new Yum(terminal);
         assertTrue(yum
                 .install("package-1", "package-2")
                 .converge(taskContext));
@@ -80,7 +80,6 @@ public class YumTest {
                 0,
                 "installing, installing");
 
-        Yum yum = new Yum(terminal);
         assertTrue(yum
                 .install("package-1", "package-2")
                 .enableRepo("repo-name")
@@ -94,7 +93,6 @@ public class YumTest {
                 1,
                 "error");
 
-        Yum yum = new Yum(terminal);
         yum.install("package-1", "package-2")
                 .enableRepo("repo-name")
                 .converge(taskContext);
@@ -112,15 +110,26 @@ public class YumTest {
                         "No package package-2 available.\n" +
                         "Nothing to do\n");
 
-        Yum yum = new Yum(terminal);
         Yum.GenericYumCommand install = yum.install("package-1", "package-2", "package-3");
 
         try {
             install.converge(taskContext);
             fail();
         } catch (Exception e) {
-            assertTrue(e.getCause() != null);
+            assertNotNull(e.getCause());
             assertEquals("Unknown package: package-1", e.getCause().getMessage());
         }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void throwIfNoPackagesSpecified() {
+        yum.install();
+    }
+
+    @Test
+    public void allowToCallUpgradeWithNoPackages() {
+        terminal.expectCommand("yum upgrade --assumeyes 2>&1", 0, "OK");
+
+        yum.upgrade().converge(taskContext);
     }
 }
