@@ -17,6 +17,6 @@ sh ./bootstrap.sh java
 mvn install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS} -Dmaven.javadoc.skip=true -Dmaven.test.skip=true
 for i in $(seq 1 30); do
     echo -e "\n\n\n--> RUN ${i}"
-    mvn --no-snapshot-updates --batch-mode --threads ${NUM_THREADS} -pl node-repository test '-Dtest=PeriodicApplicationMaintainerTest'
+    mvn --no-snapshot-updates --batch-mode --threads ${NUM_THREADS} -pl node-repository test '-Dtest=PeriodicApplicationMaintainerTest#application_deploy_inhibits_redeploy_for_a_while'
     echo -e "\n\n\n"
 done
