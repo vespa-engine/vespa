@@ -9,12 +9,12 @@ public class ConnectTest {
     public void testConnect() throws ListenFailedException {
         Test.Orb server   = new Test.Orb(new Transport());
         Test.Orb client   = new Test.Orb(new Transport());
-        Acceptor acceptor = server.listen(new Spec(Test.PORT));
+        Acceptor acceptor = server.listen(new Spec(0));
 
         assertTrue(server.checkLifeCounts(0, 0));
         assertTrue(client.checkLifeCounts(0, 0));
 
-        Target target = client.connect(new Spec("localhost", Test.PORT));
+        Target target = client.connect(new Spec("localhost", acceptor.port()));
 
         for (int i = 0; i < 100; i++) {
             if (client.initCount == 1 && server.initCount == 1) {

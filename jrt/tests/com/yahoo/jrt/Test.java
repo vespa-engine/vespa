@@ -8,19 +8,6 @@ public class Test {
     @org.junit.Test
     public void testNothing() {}
 
-    // www.random.org [2000, 9999]
-    public static final int PORT   = 9741;
-    public static final int PORT_0 = 5069;
-    public static final int PORT_1 = 4935;
-    public static final int PORT_2 = 8862;
-    public static final int PORT_3 = 4695;
-    public static final int PORT_4 = 6975;
-    public static final int PORT_5 = 7186;
-    public static final int PORT_6 = 7694;
-    public static final int PORT_7 = 3518;
-    public static final int PORT_8 = 3542;
-    public static final int PORT_9 = 4954;
-
     /**
      * Supervisor extension with some extra statistics used for
      * testing.
