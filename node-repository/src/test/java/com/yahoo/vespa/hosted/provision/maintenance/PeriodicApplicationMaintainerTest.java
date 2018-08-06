@@ -31,7 +31,6 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -48,7 +47,6 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author bratseth
  */
-@Ignore
 public class PeriodicApplicationMaintainerTest {
 
     private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
