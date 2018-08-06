@@ -15,7 +15,7 @@ ccache --print-config
 cd ${SOURCE_DIR}
 sh ./bootstrap.sh java
 mvn install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS} -Dmaven.javadoc.skip=true -Dmaven.test.skip=true
-for i in $(seq 1 30); do
+for i in $(seq 1 100); do
     echo -e "\n\n\n--> RUN ${i}"
     mvn --no-snapshot-updates --batch-mode --threads ${NUM_THREADS} -pl node-repository test '-Dtest=PeriodicApplicationMaintainerTest'
     echo -e "\n\n\n"
