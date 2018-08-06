@@ -71,8 +71,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
         }
         log.log(LogLevel.INFO, application + " will be deployed, last deploy time " +
                                getLastDeployTime(application));
-        deploymentExecutor.execute(() -> deployWithLock(application));
         pendingDeployments.add(application);
+        deploymentExecutor.execute(() -> deployWithLock(application));
     }
 
     protected Deployer deployer() { return deployer; }

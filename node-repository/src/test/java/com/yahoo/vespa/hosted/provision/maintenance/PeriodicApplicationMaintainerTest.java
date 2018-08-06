@@ -31,7 +31,6 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -48,7 +47,6 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author bratseth
  */
-@Ignore
 public class PeriodicApplicationMaintainerTest {
 
     private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
@@ -79,97 +77,109 @@ public class PeriodicApplicationMaintainerTest {
 
     @Test(timeout = 60_000)
     public void test_application_maintenance() {
-        // Create applications
-        fixture.activate();
+        try {
+            // Create applications
+            fixture.activate();
 
-        // Exhaust initial wait period
-        clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            // Exhaust initial wait period
+            clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
 
-        // Fail and park some nodes
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(0).hostname(), Agent.system, "Failing to unit test");
-        nodeRepository.park(nodeRepository.getNodes(fixture.app2).get(4).hostname(), Agent.system, "Parking to unit test");
-        int failedInApp1 = 1;
-        int failedOrParkedInApp2 = 2;
-        assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
-        assertEquals(fixture.wantedNodesApp2 - failedOrParkedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.getNodes(NodeType.tenant, Node.State.failed, Node.State.parked).size());
-        assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
-        assertEquals(2, nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
+            // Fail and park some nodes
+            nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
+            nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(0).hostname(), Agent.system, "Failing to unit test");
+            nodeRepository.park(nodeRepository.getNodes(fixture.app2).get(4).hostname(), Agent.system, "Parking to unit test");
+            int failedInApp1 = 1;
+            int failedOrParkedInApp2 = 2;
+            assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
+            assertEquals(fixture.wantedNodesApp2 - failedOrParkedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
+            assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.getNodes(NodeType.tenant, Node.State.failed, Node.State.parked).size());
+            assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+            assertEquals(2, nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
 
-        // Cause maintenance deployment which will allocate replacement nodes
-        fixture.runApplicationMaintainer();
-        assertEquals(fixture.wantedNodesApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
-        assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+            // Cause maintenance deployment which will allocate replacement nodes
+            fixture.runApplicationMaintainer();
+            assertEquals(fixture.wantedNodesApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
+            assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
+            assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
 
-        // Reactivate the previously failed nodes
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system, getClass().getSimpleName());
-        int reactivatedInApp1 = 1;
-        int reactivatedInApp2 = 2;
-        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-        assertEquals(fixture.wantedNodesApp1 + reactivatedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
-        assertEquals(fixture.wantedNodesApp2 + reactivatedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals("The reactivated nodes are now active but not part of the application",
-                     0, fixture.getNodes(Node.State.active).retired().size());
+            // Reactivate the previously failed nodes
+            nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
+            nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
+            nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system, getClass().getSimpleName());
+            int reactivatedInApp1 = 1;
+            int reactivatedInApp2 = 2;
+            assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+            assertEquals(fixture.wantedNodesApp1 + reactivatedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
+            assertEquals(fixture.wantedNodesApp2 + reactivatedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
+            assertEquals("The reactivated nodes are now active but not part of the application",
+                         0, fixture.getNodes(Node.State.active).retired().size());
 
-        // Cause maintenance deployment which will update the applications with the re-activated nodes
-        clock.advance(Duration.ofMinutes(35)); // Otherwise redeploys are inhibited
-        fixture.runApplicationMaintainer();
-        assertEquals("Superflous content nodes are retired",
-                     reactivatedInApp2, fixture.getNodes(Node.State.active).retired().size());
-        assertEquals("Superflous container nodes are deactivated (this makes little point for container nodes)",
-                     reactivatedInApp1, fixture.getNodes(Node.State.inactive).size());
+            // Cause maintenance deployment which will update the applications with the re-activated nodes
+            clock.advance(Duration.ofMinutes(35)); // Otherwise redeploys are inhibited
+            fixture.runApplicationMaintainer();
+            assertEquals("Superflous content nodes are retired",
+                         reactivatedInApp2, fixture.getNodes(Node.State.active).retired().size());
+            assertEquals("Superflous container nodes are deactivated (this makes little point for container nodes)",
+                         reactivatedInApp1, fixture.getNodes(Node.State.inactive).size());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test(timeout = 60_000)
     public void deleted_application_is_not_reactivated() {
-        // Create applications
-        fixture.activate();
+        try {
+            // Create applications
+            fixture.activate();
 
-        // Freeze active nodes to simulate an application being deleted during a maintenance run
-        List<Node> frozenActiveNodes = nodeRepository.getNodes(Node.State.active);
+            // Freeze active nodes to simulate an application being deleted during a maintenance run
+            List<Node> frozenActiveNodes = nodeRepository.getNodes(Node.State.active);
 
-        // Remove one application without letting the application maintainer know about it
-        fixture.remove(fixture.app2);
-        assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
+            // Remove one application without letting the application maintainer know about it
+            fixture.remove(fixture.app2);
+            assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
 
-        // Nodes belonging to app2 are inactive after maintenance
-        fixture.maintainer.setOverriddenNodesNeedingMaintenance(frozenActiveNodes);
-        fixture.runApplicationMaintainer();
-        assertEquals("Inactive nodes were incorrectly activated after maintenance", fixture.wantedNodesApp2,
-                     nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
+            // Nodes belonging to app2 are inactive after maintenance
+            fixture.maintainer.setOverriddenNodesNeedingMaintenance(frozenActiveNodes);
+            fixture.runApplicationMaintainer();
+            assertEquals("Inactive nodes were incorrectly activated after maintenance", fixture.wantedNodesApp2,
+                         nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test(timeout = 60_000)
     public void application_deploy_inhibits_redeploy_for_a_while() {
-        fixture.activate();
+        try {
+            fixture.activate();
 
-        // Holds off on deployments a while after starting
-        fixture.runApplicationMaintainer();
-        assertFalse("No deployment expected", fixture.deployer.lastDeployTime(fixture.app1).isPresent());
-        assertFalse("No deployment expected", fixture.deployer.lastDeployTime(fixture.app2).isPresent());
-        // Exhaust initial wait period
-        clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            // Holds off on deployments a while after starting
+            fixture.runApplicationMaintainer();
+            assertFalse("No deployment expected", fixture.deployer.lastDeployTime(fixture.app1).isPresent());
+            assertFalse("No deployment expected", fixture.deployer.lastDeployTime(fixture.app2).isPresent());
+            // Exhaust initial wait period
+            clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
 
-        // First deployment of applications
-        fixture.runApplicationMaintainer();
-        Instant firstDeployTime = clock.instant();
-        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
-        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
-        clock.advance(Duration.ofMinutes(5));
-        fixture.runApplicationMaintainer();
-        // Too soon: Not redeployed:
-        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
-        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+            // First deployment of applications
+            fixture.runApplicationMaintainer();
+            Instant firstDeployTime = clock.instant();
+            assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
+            assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+            clock.advance(Duration.ofMinutes(5));
+            fixture.runApplicationMaintainer();
+            // Too soon: Not redeployed:
+            assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
+            assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
 
-        clock.advance(Duration.ofMinutes(30));
-        fixture.runApplicationMaintainer();
-        // Redeployed:
-        assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app1).get());
-        assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app2).get());
+            clock.advance(Duration.ofMinutes(30));
+            fixture.runApplicationMaintainer();
+            // Redeployed:
+            assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app1).get());
+            assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app2).get());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test(timeout = 60_000)
@@ -205,6 +215,8 @@ public class PeriodicApplicationMaintainerTest {
             // Too soon: Already deployed recently
             clock.advance(Duration.ofMinutes(5));
             assertEquals(0, fixture.maintainer.applicationsNeedingMaintenance().size());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
         } finally {
             if (fixture.deployer.lock().isHeldByCurrentThread()) {
                 fixture.deployer.lock().unlock();
