@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.common.annotations.Beta;
@@ -8,6 +8,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Metric.Context;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
@@ -24,7 +25,6 @@ import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -39,6 +39,7 @@ import org.osgi.framework.ServiceReference;
 
 import javax.management.remote.JMXServiceURL;
 import javax.servlet.DispatcherType;
+
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
 import java.net.MalformedURLException;
@@ -46,7 +47,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -233,11 +236,11 @@ public class JettyHttpServer extends AbstractServerProvider {
         GzipHandler gzipHandler = newGzipHandler(serverConfig);
         gzipHandler.setHandler(servletContextHandler);
 
-        StatisticsHandler statisticsHandler = newStatisticsHandler();
-        statisticsHandler.setHandler(gzipHandler);
+        HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector();
+        statisticsCollector.setHandler(gzipHandler);
 
         HandlerCollection handlerCollection = new HandlerCollection();
-        handlerCollection.setHandlers(new Handler[]{statisticsHandler});
+        handlerCollection.setHandlers(new Handler[] { statisticsCollector });
         return handlerCollection;
     }
 
@@ -293,7 +296,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         try {
             server.start();
         } catch (final BindException e) {
-            throw new RuntimeException("Failed to start server due to BindExecption. ListenPorts = " + listenedPorts.toString() , e);
+            throw new RuntimeException("Failed to start server due to BindExecption. ListenPorts = " + listenedPorts.toString(), e);
         } catch (final Exception e) {
             throw new RuntimeException("Failed to start server.", e);
         }
@@ -318,12 +321,12 @@ public class JettyHttpServer extends AbstractServerProvider {
     private class MetricTask implements Runnable {
         @Override
         public void run() {
-            StatisticsHandler statisticsHandler = ((AbstractHandlerContainer)server.getHandler())
-                    .getChildHandlerByClass(StatisticsHandler.class);
-            if (statisticsHandler == null)
+            HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) server.getHandler())
+                    .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
+            if (statisticsCollector == null)
                 return;
 
-            setServerMetrics(statisticsHandler);
+            setServerMetrics(statisticsCollector);
 
             for (Connector connector : server.getConnectors()) {
                 setConnectorMetrics((JDiscServerConnector)connector);
@@ -333,20 +336,22 @@ public class JettyHttpServer extends AbstractServerProvider {
     }
 
     @SuppressWarnings("deprecation")
-    private void setServerMetrics(StatisticsHandler statistics) {
+    private void setServerMetrics(HttpResponseStatisticsCollector statisticsCollector) {
         long timeSinceStarted = System.currentTimeMillis() - timeStarted;
         metric.set(Metrics.STARTED_MILLIS, timeSinceStarted, null);
         metric.set(Metrics.MANHATTAN_STARTED_MILLIS, timeSinceStarted, null);
 
-        metric.add(Metrics.RESPONSES_1XX, statistics.getResponses1xx(), null);
-        metric.add(Metrics.RESPONSES_2XX, statistics.getResponses2xx(), null);
-        metric.add(Metrics.RESPONSES_3XX, statistics.getResponses3xx(), null);
-        metric.add(Metrics.RESPONSES_4XX, statistics.getResponses4xx(), null);
-        metric.add(Metrics.RESPONSES_5XX, statistics.getResponses5xx(), null);
+        addResponseMetrics(statisticsCollector);
+    }
 
-        // Reset to only add the diff for count metrics.
-        // (The alternative to reset would be to preserve the previous value, and only add the diff.)
-        statistics.statsReset();
+    private void addResponseMetrics(HttpResponseStatisticsCollector statisticsCollector) {
+        Map<String, Map<String, Long>> statistics = statisticsCollector.takeStatisticsByMethod();
+        statistics.forEach((httpMethod, statsByResponseType) -> {
+            Map<String, Object> dimensions = new HashMap<>();
+            dimensions.put(Metrics.METHOD_DIMENSION, httpMethod);
+            Context ctx = metric.createContext(dimensions);
+            statsByResponseType.forEach((group, value) -> metric.add(group, value, ctx));
+        });
     }
 
     private void setConnectorMetrics(JDiscServerConnector connector) {
@@ -357,12 +362,6 @@ public class JettyHttpServer extends AbstractServerProvider {
         metric.set(Metrics.CONNECTION_DURATION_MAX, statistics.getConnectionDurationMax(), connector.getConnectorMetricContext());
         metric.set(Metrics.CONNECTION_DURATION_MEAN, statistics.getConnectionDurationMean(), connector.getConnectorMetricContext());
         metric.set(Metrics.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getConnectorMetricContext());
-    }
-
-    private StatisticsHandler newStatisticsHandler() {
-        StatisticsHandler statisticsHandler = new StatisticsHandler();
-        statisticsHandler.statsReset();
-        return statisticsHandler;
     }
 
     private GzipHandler newGzipHandler(ServerConfig serverConfig) {
@@ -378,9 +377,9 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         @Override
         public HttpField getVaryField() {
-            return GzipHttpOutputInterceptor.VARY_ACCEPT_ENCODING;            
+            return GzipHttpOutputInterceptor.VARY_ACCEPT_ENCODING;
         }
-        
+
     }
-    
+
 }
