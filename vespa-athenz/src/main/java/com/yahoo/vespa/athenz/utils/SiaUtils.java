@@ -7,13 +7,18 @@ import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Misc utility methods for SIA provided credentials
@@ -100,6 +105,25 @@ public class SiaUtils {
             Path tempFile = toTempFile(certificateFile);
             Files.write(tempFile, X509CertificateUtils.toPem(certificate).getBytes());
             Files.move(tempFile, certificateFile, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static List<AthenzService> findSiaServices() {
+        return findSiaServices(DEFAULT_SIA_DIRECTORY);
+    }
+
+    public static List<AthenzService> findSiaServices(Path root) {
+        String keyFileSuffix = ".key.pem";
+        Path keysDirectory = root.resolve("keys");
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(keysDirectory)) {
+            return StreamSupport.stream(directoryStream.spliterator(), false)
+                    .map(path -> path.getFileName().toString())
+                    .filter(fileName -> fileName.endsWith(keyFileSuffix))
+                    .map(fileName -> fileName.substring(0, fileName.length() - keyFileSuffix.length()))
+                    .map(AthenzService::new)
+                    .collect(toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
