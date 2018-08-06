@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  */
 public class StoredInteger implements Supplier<OptionalInt> {
 
-    private static Logger logger = Logger.getLogger(StoredInteger.class.getName());
+    private static final Logger logger = Logger.getLogger(StoredInteger.class.getName());
 
     private final Path path;
     private OptionalInt value;

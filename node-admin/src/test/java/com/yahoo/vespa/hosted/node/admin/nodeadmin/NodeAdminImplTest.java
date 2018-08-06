@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -152,7 +153,7 @@ public class NodeAdminImplTest {
         assertTrue(nodeAdmin.isFrozen());
         assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
         clock.advance(Duration.ofSeconds(1));
-        assertTrue(nodeAdmin.subsystemFreezeDuration().equals(Duration.ofSeconds(1)));
+        assertEquals(Duration.ofSeconds(1), nodeAdmin.subsystemFreezeDuration());
 
         // Unfreezing floors freeze duration
         assertTrue(nodeAdmin.setFrozen(false)); // Unfreeze everything
@@ -164,7 +165,7 @@ public class NodeAdminImplTest {
         assertTrue(nodeAdmin.setFrozen(true));
         assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
         clock.advance(Duration.ofSeconds(1));
-        assertTrue(nodeAdmin.subsystemFreezeDuration().equals(Duration.ofSeconds(1)));
+        assertEquals(Duration.ofSeconds(1), nodeAdmin.subsystemFreezeDuration());
     }
 
     @Test

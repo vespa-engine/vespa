@@ -11,10 +11,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Optional;
-
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**

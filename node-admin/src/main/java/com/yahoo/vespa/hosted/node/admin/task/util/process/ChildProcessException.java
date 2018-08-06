@@ -65,7 +65,7 @@ public abstract class ChildProcessException extends RuntimeException {
         if (possiblyHugeOutput.length() <= maxOutputPrefix + maxOutputSuffix + maxOutputSlack) {
             stringBuilder.append(possiblyHugeOutput);
         } else {
-            stringBuilder.append(possiblyHugeOutput.substring(0, maxOutputPrefix))
+            stringBuilder.append(possiblyHugeOutput, 0, maxOutputPrefix)
                     .append("... [")
                     .append(possiblyHugeOutput.length() - maxOutputPrefix - maxOutputSuffix)
                     .append(" chars omitted] ...")

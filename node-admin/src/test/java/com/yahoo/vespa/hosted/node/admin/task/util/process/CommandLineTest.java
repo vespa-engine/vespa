@@ -104,7 +104,6 @@ public class CommandLineTest {
 
     @Test
     public void programFails() {
-        TestChildProcess2 child = new TestChildProcess2(0, "");
         terminal.expectCommand("foo 2>&1", 1, "");
         try {
             commandLine.add("foo").execute();
