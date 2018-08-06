@@ -700,6 +700,7 @@ IndexBuilder::close()
     for (FieldHandle & fh : _fields) {
         if (fh.getValid()) {
             fh.close();
+            vespalib::File::sync(fh.getDir());
         }
     }
     if (!docsummary::DocumentSummary::writeDocIdLimit(_prefix, _docIdLimit)) {

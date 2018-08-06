@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 #include <unistd.h>
@@ -57,6 +58,7 @@ IndexWriteUtilities::writeSerialNum(SerialNum serialNum,
             tmpFileName.c_str());
     }
     file.Close();
+    vespalib::File::sync(dir);
 
     if (ok) {
         FastOS_File renameFile(tmpFileName.c_str());
@@ -67,6 +69,7 @@ IndexWriteUtilities::writeSerialNum(SerialNum serialNum,
         msg << "Unable to write serial number to '" << dir << "'.";
         throw IllegalStateException(msg.str());
     }
+    vespalib::File::sync(dir);
 }
 
 bool
@@ -94,12 +97,14 @@ IndexWriteUtilities::copySerialNumFile(const vespalib::string &sourceDir,
         return false;
     }
     file.Close();
+    vespalib::File::sync(destDir);
     if (!file.Rename(dest.c_str())) {
         LOG(error,
             "Unable to rename file '%s' to '%s'",
             tmpDest.c_str(), dest.c_str());
         return false;
     }
+    vespalib::File::sync(destDir);
     return true;
 }
 
@@ -151,6 +156,7 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
     }
     vespalib::string schemaTmpName = schemaName + ".tmp";
     vespalib::string schemaOrigName = schemaName + ".orig";
+    vespalib::unlink(schemaTmpName);
     if (!newSchema->saveToFile(schemaTmpName)) {
         LOG(error, "Could not save schema to '%s'",
             schemaTmpName.c_str());
@@ -172,6 +178,7 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
                 schemaName.c_str(),
                 FastOS_File::getLastErrorString().c_str());
         }
+        vespalib::File::sync(indexDir);
     }
     // XXX: FastOS layer violation
     int renameres = ::rename(schemaTmpName.c_str(), schemaName.c_str());
@@ -183,6 +190,7 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
             schemaName.c_str(),
             errString.c_str());
     }
+    vespalib::File::sync(indexDir);
 }
 
 } // namespace index

@@ -3,6 +3,7 @@
 #include "diskindexcleaner.h"
 #include "activediskindexes.h"
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <sstream>
 #include <vector>
 
@@ -34,6 +35,11 @@ bool isValidIndex(const string &index_dir) {
     return serial_file.OpenReadOnlyExisting();
 }
 
+void invalidateIndex(const string &index_dir) {
+    vespalib::unlink(index_dir + "/serial.dat");
+    vespalib::File::sync(index_dir);
+}
+
 uint32_t findLastFusionId(const string &base_dir,
                           const vector<string> &indexes) {
     uint32_t fusion_id = 0;
@@ -56,7 +62,8 @@ uint32_t findLastFusionId(const string &base_dir,
 
 void removeDir(const string &dir) {
     LOG(debug, "Removing index dir '%s'", dir.c_str());
-    FastOS_FileInterface::EmptyAndRemoveDirectory(dir.c_str());
+    invalidateIndex(dir);
+    vespalib::rmdir(dir, true);
 }
 
 bool isOldIndex(const string &index, uint32_t last_fusion_id) {
@@ -73,14 +80,18 @@ bool isOldIndex(const string &index, uint32_t last_fusion_id) {
 }
 
 void removeOld(const string &base_dir, const vector<string> &indexes,
-               const ActiveDiskIndexes &active_indexes) {
+               const ActiveDiskIndexes &active_indexes, bool remove) {
     uint32_t last_fusion_id = findLastFusionId(base_dir, indexes);
     for (size_t i = 0; i < indexes.size(); ++i) {
         const string index_dir = base_dir + "/" + indexes[i];
         if (isOldIndex(indexes[i], last_fusion_id) &&
             !active_indexes.isActive(index_dir))
         {
-            removeDir(index_dir);
+            if (remove) {
+                removeDir(index_dir);
+            } else {
+                invalidateIndex(index_dir);
+            }
         }
     }
 }
@@ -99,14 +110,14 @@ void removeInvalid(const string &base_dir, const vector<string> &indexes) {
 void DiskIndexCleaner::clean(const string &base_dir,
                              const ActiveDiskIndexes &active_indexes) {
     vector<string> indexes = readIndexes(base_dir);
-    removeOld(base_dir, indexes, active_indexes);
+    removeOld(base_dir, indexes, active_indexes, false);
     removeInvalid(base_dir, indexes);
 }
 
 void DiskIndexCleaner::removeOldIndexes(
         const string &base_dir, const ActiveDiskIndexes &active_indexes) {
     vector<string> indexes = readIndexes(base_dir);
-    removeOld(base_dir, indexes, active_indexes);
+    removeOld(base_dir, indexes, active_indexes, true);
 }
 
 }

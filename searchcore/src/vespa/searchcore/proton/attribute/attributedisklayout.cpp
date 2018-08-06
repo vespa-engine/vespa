@@ -14,6 +14,7 @@ AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir, Privat
       _dirs()
 {
     vespalib::mkdir(_baseDir, false);
+    vespalib::File::sync(vespalib::dirname(_baseDir));
 }
 
 AttributeDiskLayout::~AttributeDiskLayout()
