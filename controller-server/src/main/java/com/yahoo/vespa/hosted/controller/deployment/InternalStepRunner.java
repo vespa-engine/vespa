@@ -20,7 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareRes
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.Testers;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
@@ -84,12 +84,12 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private final Controller controller;
-    private final Testers testers;
+    private final TesterCloud testerCloud;
     private final ThreadLocal<ByteArrayLogger> logger = new ThreadLocal<>();
 
-    public InternalStepRunner(Controller controller, Testers testers) {
+    public InternalStepRunner(Controller controller, TesterCloud testerCloud) {
         this.controller = controller;
-        this.testers = testers;
+        this.testerCloud = testerCloud;
     }
 
     @Override
@@ -301,9 +301,9 @@ public class InternalStepRunner implements StepRunner {
         Optional<URI> testerEndpoint = testerEndpoint(id);
         if (testerEndpoint.isPresent()) {
             logger.get().log("Starting tests ...");
-            testers.startTests(testerEndpoint.get(),
-                               Testers.Suite.of(id.type()),
-                               testConfig(id.application(), zone(id.type()), controller.system(), endpoints));
+            testerCloud.startTests(testerEndpoint.get(),
+                                   TesterCloud.Suite.of(id.type()),
+                                   testConfig(id.application(), zone(id.type()), controller.system(), endpoints));
             return succeeded;
         }
 
@@ -321,7 +321,7 @@ public class InternalStepRunner implements StepRunner {
                 .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
 
         Status status;
-        switch (testers.getStatus(testerEndpoint)) {
+        switch (testerCloud.getStatus(testerEndpoint)) {
             case NOT_STARTED:
                 throw new IllegalStateException("Tester reports tests not started, even though they should have!");
             case RUNNING:
@@ -339,7 +339,7 @@ public class InternalStepRunner implements StepRunner {
             default:
                 throw new AssertionError("Unknown status!");
         }
-        logger.get().log(new String(testers.getLogs(testerEndpoint))); // TODO jvenstad: Replace with something less hopeless!
+        logger.get().log(new String(testerCloud.getLogs(testerEndpoint))); // TODO jvenstad: Replace with something less hopeless!
         return status;
     }
 

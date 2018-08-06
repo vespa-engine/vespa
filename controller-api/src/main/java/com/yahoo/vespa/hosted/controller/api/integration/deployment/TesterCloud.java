@@ -7,7 +7,7 @@ import java.net.URI;
  *
  * @author jonmv
  */
-public interface Testers {
+public interface TesterCloud {
 
     /** Signals the tester to run its tests. */
     void startTests(URI testerUrl, Suite suite, byte[] config);
