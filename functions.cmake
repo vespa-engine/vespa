@@ -559,6 +559,6 @@ function(add_auxilliary_modules)
 endfunction()
 
 function(install_symlink TARGET LINK)
-    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/${TARGET} ${LINK})")
+    install(CODE "execute_process(COMMAND ln -sf ${CMAKE_INSTALL_PREFIX}/${TARGET} ${LINK})")
 endfunction(install_symlink)
 
