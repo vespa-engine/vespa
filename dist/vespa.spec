@@ -162,7 +162,7 @@ source %{_devtoolset_enable} || true
 source %{_rhmaven35_enable} || true
 %endif
 sh bootstrap.sh java
-mvn --batch-mode -nsu -T 2C install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+mvn --batch-mode -nsu -T 1  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
