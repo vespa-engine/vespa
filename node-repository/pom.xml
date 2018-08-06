@@ -146,10 +146,10 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
-                    <trimStackTrace>false</trimStackTrace>
-                </configuration>
+                <!-- <configuration> -->
+                <!--     <redirectTestOutputToFile>false</redirectTestOutputToFile> -->
+                <!--     <trimStackTrace>false</trimStackTrace> -->
+                <!-- </configuration> -->
             </plugin>
         </plugins>
     </build>
