@@ -284,14 +284,15 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private HttpSearchResponse handleBody(HttpRequest request){
 
-        boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
-
-        Query query = queryFromRequest(request);
+        Map<String, String> requestMap = requestMapFromRequest(request);
 
         // Get query profile
-        String queryProfileName = query.getRequestMap().getOrDefault("queryProfile", null);
+        String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
+        Query query = new Query(request, requestMap, queryProfile);
+
+        boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
 
         // Find and execute search chain if we have a valid query
@@ -560,7 +561,7 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
-    private Query queryFromRequest(HttpRequest request){
+    private Map<String, String> requestMapFromRequest(HttpRequest request) {
 
         if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST
             && JSON_CONTENT_TYPE.equals(request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE))) {
@@ -579,18 +580,11 @@ public class SearchHandler extends LoggingRequestHandler {
             // Create request-mapping
             Map<String, String> requestMap = new HashMap<>();
             createRequestMapping(inspector, requestMap, "");
-
-            String queryProfileName = requestMap.getOrDefault("queryProfile", null);
-            CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
-
-            return new Query(request, requestMap, queryProfile);
+            return requestMap;
 
 
         } else {
-            String queryProfileName = request.getProperty("queryProfile");
-            CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
-
-            return new Query(request, queryProfile);
+            return request.propertyMap();
 
         }
     }
