@@ -28,36 +28,10 @@ public:
     }
 };
 
-class Test : public TestApp
-{
-public:
-    int Main() override;
-private:
-    typedef LruParam<uint32_t, string> P;
-    typedef Map<uint32_t, string> B;
-    void testCache();
-    void testCacheSize();
-    void testCacheSizeDeep();
-    void testCacheEntriesHonoured();
-    void testCacheMaxSizeHonoured();
-    void testThatMultipleRemoveOnOverflowIsFine();
-};
+using P = LruParam<uint32_t, string>;
+using B = Map<uint32_t, string>;
 
-int
-Test::Main()
-{
-    TEST_INIT("cache_test");
-    testCache();
-    testCacheSize();
-    testCacheSizeDeep();
-    testCacheEntriesHonoured();
-    testCacheMaxSizeHonoured();
-    testThatMultipleRemoveOnOverflowIsFine();
-    TEST_DONE();
-}
-
-void Test::testCache()
-{
+TEST("testCache") {
     B m;
     cache< CacheParam<P, B> > cache(m, -1);
     // Verfify start conditions.
@@ -74,24 +48,29 @@ void Test::testCache()
     EXPECT_TRUE(cache.size() == 1);
 }
 
-void Test::testCacheSize()
+TEST("testCacheSize")
 {
     B m;
     cache< CacheParam<P, B> > cache(m, -1);
     cache.write(1, "10 bytes string");
     EXPECT_EQUAL(80u, cache.sizeBytes());
+    cache.write(1, "10 bytes string"); // Still the same size
+    EXPECT_EQUAL(80u, cache.sizeBytes());
 }
 
-void Test::testCacheSizeDeep()
+TEST("testCacheSizeDeep")
 {
     B m;
     cache< CacheParam<P, B, zero<uint32_t>, size<string> > > cache(m, -1);
     cache.write(1, "15 bytes string");
     EXPECT_EQUAL(95u, cache.sizeBytes());
+    cache.write(1, "10 bytes s");
+    EXPECT_EQUAL(90u, cache.sizeBytes());
+    cache.write(1, "20 bytes string ssss");
+    EXPECT_EQUAL(100u, cache.sizeBytes());
 }
 
-void Test::testCacheEntriesHonoured()
-{
+TEST("testCacheEntriesHonoured") {
     B m;
     cache< CacheParam<P, B, zero<uint32_t>, size<string> > > cache(m, -1);
     cache.maxElements(1);
@@ -105,8 +84,7 @@ void Test::testCacheEntriesHonoured()
     EXPECT_EQUAL(96u, cache.sizeBytes());
 }
 
-void Test::testCacheMaxSizeHonoured()
-{
+TEST("testCacheMaxSizeHonoured") {
     B m;
     cache< CacheParam<P, B, zero<uint32_t>, size<string> > > cache(m, 200);
     cache.write(1, "15 bytes string");
@@ -123,8 +101,7 @@ void Test::testCacheMaxSizeHonoured()
     EXPECT_EQUAL(291u, cache.sizeBytes());
 }
 
-void Test::testThatMultipleRemoveOnOverflowIsFine()
-{
+TEST("testThatMultipleRemoveOnOverflowIsFine") {
     B m;
     cache< CacheParam<P, B, zero<uint32_t>, size<string> > > cache(m, 2000);
     
@@ -159,5 +136,4 @@ void Test::testThatMultipleRemoveOnOverflowIsFine()
     EXPECT_EQUAL(2924u, cache.sizeBytes());
 }
 
-
-TEST_APPHOOK(Test)
+TEST_MAIN() { TEST_RUN_ALL(); }

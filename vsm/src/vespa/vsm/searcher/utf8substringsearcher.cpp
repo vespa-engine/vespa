@@ -13,7 +13,7 @@ IMPLEMENT_DUPLICATE(UTF8SubStringFieldSearcher);
 size_t
 UTF8SubStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
 {
-    const byte * n = reinterpret_cast<const byte *> (f.c_str());
+    const byte * n = reinterpret_cast<const byte *> (f.data());
     if ( f.size() >= _buf->size()) {
         _buf->reserve(f.size() + 1);
     }

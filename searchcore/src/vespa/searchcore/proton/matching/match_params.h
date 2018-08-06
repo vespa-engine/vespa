@@ -4,8 +4,7 @@
 
 #include <vespa/searchlib/fef/fef.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Numeric matching parameters. Some of these comes from the config,
@@ -30,6 +29,4 @@ struct MatchParams {
     bool save_rank_scores() const { return ((heapSize + arraySize) != 0); }
 };
 
-} // namespace proton::matching
-} // namespace proton
-
+}

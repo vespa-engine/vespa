@@ -71,7 +71,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
 
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), metric, jobControl, configserverConfig);
-        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
+        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, defaults.redeployMaintainerInterval, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval), jobControl);
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry), jobControl);
         retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, clock, durationFromEnv("retired_interval").orElse(defaults.retiredInterval), durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry), jobControl);
@@ -130,8 +130,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
     private static class DefaultTimes {
 
-        /** All applications are redeployed with this period */
+        // TODO: Rename, kept now for compatibility reasons, want to change this and corresponding env variable
+        /** Minimum time to wait between deployments by periodic application maintainer*/
         private final Duration periodicRedeployInterval;
+        /** Time between each run of maintainer that does periodic redeployment */
+        private final Duration redeployMaintainerInterval;
         /** Applications are redeployed after manual operator changes within this time period */
         private final Duration operatorChangeRedeployInterval;
 
@@ -155,6 +158,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         DefaultTimes(Zone zone) {
             failGrace = Duration.ofMinutes(60);
             periodicRedeployInterval = Duration.ofMinutes(30);
+            redeployMaintainerInterval = Duration.ofMinutes(1);
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);

@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 typedef uint8_t Source;
 
@@ -91,6 +89,4 @@ private:
     Source   _defaultSource;
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

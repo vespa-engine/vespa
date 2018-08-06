@@ -364,12 +364,11 @@ public class JettyHttpServer extends AbstractServerProvider {
         metric.set(Metrics.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getConnectorMetricContext());
     }
 
-    @SuppressWarnings("deprecation")
     private GzipHandler newGzipHandler(ServerConfig serverConfig) {
         GzipHandler gzipHandler = new GzipHandlerWithVaryHeaderFixed();
         gzipHandler.setCompressionLevel(serverConfig.responseCompressionLevel());
-        gzipHandler.setCheckGzExists(false);  // TODO: will be removed without replacement in Jetty 10
-        gzipHandler.setIncludedMethods("GET", "POST");
+        gzipHandler.setInflateBufferSize(8 * 1024);
+        gzipHandler.setIncludedMethods("GET", "POST", "PUT", "PATCH");
         return gzipHandler;
     }
 

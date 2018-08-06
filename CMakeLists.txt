@@ -20,6 +20,8 @@ include(build_settings.cmake)
 # Enable CTest unit testing
 enable_testing()
 
+vespa_install_data(valgrind-suppressions.txt etc/vespa)
+
 # Include vespa config definitions in every target
 include_directories(BEFORE ${CMAKE_BINARY_DIR}/configdefinitions/src)
 

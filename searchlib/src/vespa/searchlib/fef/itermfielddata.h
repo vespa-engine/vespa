@@ -4,8 +4,7 @@
 
 #include "handle.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Interface to information about a single field that is being
@@ -43,6 +42,4 @@ public:
     virtual TermFieldHandle getHandle() const = 0;
 };
 
-} // namespace fef
-} // namespace search
-
+}

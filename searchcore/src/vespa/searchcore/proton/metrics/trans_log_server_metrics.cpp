@@ -44,6 +44,7 @@ TransLogServerMetrics::considerRemoveDomains(const DomainStats &stats)
     for (auto itr = _domainMetrics.begin(); itr != _domainMetrics.end(); ) {
         const vespalib::string &documentType = itr->first;
         if (stats.find(documentType) == stats.end()) {
+            _parent->unregisterMetric(*itr->second);
             itr = _domainMetrics.erase(itr);
         } else {
             ++itr;

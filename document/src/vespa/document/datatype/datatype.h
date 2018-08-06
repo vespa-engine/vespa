@@ -125,6 +125,7 @@ public:
      * This takes a . separated fieldname and gives you back the path of
      * fields you have to apply to get to your leaf.
      * @param remainFieldName. The remaining part of the fieldname that you want the path of.
+     *                         MUST be null-terminated.
      * @return pointer to field path or null if an error occured
      */
     void buildFieldPath(FieldPath & fieldPath, const vespalib::stringref & remainFieldName) const;

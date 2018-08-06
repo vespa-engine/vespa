@@ -30,7 +30,7 @@ namespace {
                 firstAsterisk = i;
                 continue;
             }
-            uint32_t number = atoi(st[i].c_str());
+            uint32_t number = atoi(vespalib::string(st[i]).c_str());
             if (number <= 0 || number >= 256) {
                 throw vespalib::IllegalArgumentException(
                     "Illegal distribution spec \"" + serialized + "\". "
@@ -48,7 +48,7 @@ namespace {
         }
     }
 
-    std::vector<uint16_t> parse(vespalib::stringref& serialized) {
+    std::vector<uint16_t> parse(vespalib::stringref serialized) {
         std::vector<uint16_t> result;
         if (serialized == "") return result;
         vespalib::StringTokenizer st(serialized, "|");

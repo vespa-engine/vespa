@@ -72,9 +72,9 @@ public:
         size_t numFields() const { return _fields.size(); }
         const FieldSpecBase &field(size_t idx) const { return _fields[idx]; }
         const FieldSpecBase *lookupField(uint32_t fieldId) const {
-            for (size_t i = 0; i < _fields.size(); ++i) {
-                if (_fields[i].getFieldId() == fieldId) {
-                    return &_fields[i];
+            for (const FieldSpecBase & field : _fields) {
+                if (field.getFieldId() == fieldId) {
+                    return &field;
                 }
             }
             return nullptr;
@@ -240,7 +240,7 @@ protected:
 public:
     typedef std::vector<size_t> IndexList;
     IntermediateBlueprint();
-    virtual ~IntermediateBlueprint();
+    ~IntermediateBlueprint() override;
 
     void setDocIdLimit(uint32_t limit) override final;
 
@@ -285,7 +285,7 @@ protected:
 
     LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);
 public:
-    ~LeafBlueprint();
+    ~LeafBlueprint() override;
     const State &getState() const override final { return _state; }
     void setDocIdLimit(uint32_t limit) override final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(bool strict) override;

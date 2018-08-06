@@ -28,7 +28,7 @@ doTransactionLogReplayStart(const string &domainName, SerialNum first, SerialNum
         .appendKey("last").appendInt64(last)
         .endObject();
     jstr.endObject();
-    EV_STATE(eventName.c_str(), jstr.toString().c_str());
+    EV_STATE(eventName.c_str(), jstr.toString().data());
 }
 
 void
@@ -39,7 +39,7 @@ doTransactionLogReplayComplete(const string &domainName, int64_t elapsedTimeMs, 
     jstr.appendKey("domain").appendString(domainName);
     jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
     jstr.endObject();
-    EV_STATE(eventName.c_str(), jstr.toString().c_str());
+    EV_STATE(eventName.c_str(), jstr.toString().data());
 }
 
 }
@@ -67,7 +67,7 @@ EventLogger::transactionLogReplayProgress(const string &domainName, float progre
         .appendKey("current").appendInt64(current)
         .endObject();
     jstr.endObject();
-    EV_STATE("transactionlog.replay.progress", jstr.toString().c_str());
+    EV_STATE("transactionlog.replay.progress", jstr.toString().data());
 }
 
 void
@@ -83,7 +83,7 @@ EventLogger::flushInit(const string &name)
     jstr.beginObject();
     jstr.appendKey("name").appendString(name);
     jstr.endObject();
-    EV_STATE("flush.init", jstr.toString().c_str());
+    EV_STATE("flush.init", jstr.toString().data());
 }
 
 void
@@ -105,7 +105,7 @@ EventLogger::flushStart(const string &name, int64_t beforeMemory, int64_t afterM
         .appendKey("current").appendInt64(current)
         .endObject();
     jstr.endObject();
-    EV_STATE("flush.start", jstr.toString().c_str());
+    EV_STATE("flush.start", jstr.toString().data());
 }
 
 void
@@ -121,7 +121,7 @@ EventLogger::flushComplete(const string &name, int64_t elapsedTimeMs,
         LogUtil::logDir(jstr, outputPath, outputPathElems);
     }
     jstr.endObject();
-    EV_STATE("flush.complete", jstr.toString().c_str());
+    EV_STATE("flush.complete", jstr.toString().data());
 }
 
 namespace {
@@ -146,7 +146,7 @@ EventLogger::populateAttributeStart(const std::vector<string> &names)
     jstr.beginObject();
     addNames(jstr, names);
     jstr.endObject();
-    EV_STATE("populate.attribute.start", jstr.toString().c_str());
+    EV_STATE("populate.attribute.start", jstr.toString().data());
 }
 
 void
@@ -157,7 +157,7 @@ EventLogger::populateAttributeComplete(const std::vector<string> &names, int64_t
     addNames(jstr, names);
     jstr.appendKey("documents.populated").appendInt64(documentsPopulated);
     jstr.endObject();
-    EV_STATE("populate.attribute.complete", jstr.toString().c_str());
+    EV_STATE("populate.attribute.complete", jstr.toString().data());
 }
 
 void
@@ -167,7 +167,7 @@ EventLogger::populateDocumentFieldStart(const string &fieldName)
     jstr.beginObject();
     jstr.appendKey("name").appendString(fieldName);
     jstr.endObject();
-    EV_STATE("populate.documentfield.start", jstr.toString().c_str());
+    EV_STATE("populate.documentfield.start", jstr.toString().data());
 }
 
 void
@@ -178,7 +178,7 @@ EventLogger::populateDocumentFieldComplete(const string &fieldName, int64_t docu
     jstr.appendKey("name").appendString(fieldName);
     jstr.appendKey("documents.populated").appendInt64(documentsPopulated);
     jstr.endObject();
-    EV_STATE("populate.documentfield.complete", jstr.toString().c_str());
+    EV_STATE("populate.documentfield.complete", jstr.toString().data());
 }
 
 void
@@ -189,7 +189,7 @@ EventLogger::lidSpaceCompactionComplete(const string &subDbName, uint32_t lidLim
     jstr.appendKey("documentsubdb").appendString(subDbName);
     jstr.appendKey("lidlimit").appendInt64(lidLimit);
     jstr.endObject();
-    EV_STATE("lidspace.compaction.complete", jstr.toString().c_str());
+    EV_STATE("lidspace.compaction.complete", jstr.toString().data());
 }
 
 
@@ -201,7 +201,7 @@ EventLogger::reprocessDocumentsStart(const string &subDb, double visitCost)
     jstr.appendKey("documentsubdb").appendString(subDb);
     jstr.appendKey("visitcost").appendDouble(visitCost);
     jstr.endObject();
-    EV_STATE("reprocess.documents.start", jstr.toString().c_str());
+    EV_STATE("reprocess.documents.start", jstr.toString().data());
 }
     
 
@@ -214,7 +214,7 @@ EventLogger::reprocessDocumentsProgress(const string &subDb, double progress, do
     jstr.appendKey("progress").appendDouble(progress);
     jstr.appendKey("visitcost").appendDouble(visitCost);
     jstr.endObject();
-    EV_STATE("reprocess.documents.progress", jstr.toString().c_str());
+    EV_STATE("reprocess.documents.progress", jstr.toString().data());
 }
     
 
@@ -227,7 +227,7 @@ EventLogger::reprocessDocumentsComplete(const string &subDb, double visitCost, i
     jstr.appendKey("visitcost").appendDouble(visitCost);
     jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
     jstr.endObject();
-    EV_STATE("reprocess.documents.complete", jstr.toString().c_str());
+    EV_STATE("reprocess.documents.complete", jstr.toString().data());
 }
 
 void
@@ -238,7 +238,7 @@ EventLogger::loadAttributeStart(const vespalib::string &subDbName, const vespali
     jstr.appendKey("documentsubdb").appendString(subDbName);
     jstr.appendKey("name").appendString(attrName);
     jstr.endObject();
-    EV_STATE("load.attribute.start", jstr.toString().c_str());
+    EV_STATE("load.attribute.start", jstr.toString().data());
 }
 
 void
@@ -251,7 +251,7 @@ EventLogger::loadAttributeComplete(const vespalib::string &subDbName,
     jstr.appendKey("name").appendString(attrName);
     jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
     jstr.endObject();
-    EV_STATE("load.attribute.complete", jstr.toString().c_str());
+    EV_STATE("load.attribute.complete", jstr.toString().data());
 }
 
 namespace {
@@ -263,7 +263,7 @@ loadComponentStart(const vespalib::string &subDbName, const vespalib::string &co
     jstr.beginObject();
     jstr.appendKey("documentsubdb").appendString(subDbName);
     jstr.endObject();
-    EV_STATE(make_string("load.%s.start", componentName.c_str()).c_str(), jstr.toString().c_str());
+    EV_STATE(make_string("load.%s.start", componentName.c_str()).c_str(), jstr.toString().data());
 }
 
 void
@@ -274,7 +274,7 @@ loadComponentComplete(const vespalib::string &subDbName, const vespalib::string 
     jstr.appendKey("documentsubdb").appendString(subDbName);
     jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
     jstr.endObject();
-    EV_STATE(make_string("load.%s.complete", componentName.c_str()).c_str(), jstr.toString().c_str());
+    EV_STATE(make_string("load.%s.complete", componentName.c_str()).c_str(), jstr.toString().data());
 }
 
 }
@@ -314,7 +314,7 @@ EventLogger::transactionLogPruneComplete(const string &domainName, SerialNum pru
         .appendKey("pruned").appendInt64(prunedSerial)
         .endObject();
     jstr.endObject();
-    EV_STATE("transactionlog.prune.complete", jstr.toString().c_str());
+    EV_STATE("transactionlog.prune.complete", jstr.toString().data());
 }
 
 } // namespace proton

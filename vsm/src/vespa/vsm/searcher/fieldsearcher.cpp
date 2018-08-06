@@ -115,7 +115,7 @@ void FieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf & UNUSE
 size_t FieldSearcher::countWords(const FieldRef & f)
 {
     size_t words = 0;
-    const char * n = f.c_str();
+    const char * n = f.data();
     const char * e = n + f.size();
     for( ; n < e; ++n) {
         for (; isspace(*n) && (n<e); ++n);

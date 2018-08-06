@@ -787,7 +787,7 @@ MergeThrottler::validateNewMerge(
         oss << mergeCmd.toString() << " sent to node "
             << _component.getIndex()
             << ", which is not in its forwarding chain";
-        LOG(error, "%s", oss.str().c_str());
+        LOG(error, "%s", oss.str().data());
     } else if (mergeCmd.getChain().size() >= nodeSeq.getSortedNodes().size()) {
         // Chain is full but we haven't seen the merge! This means
         // the node has probably gone down with a merge it previously
@@ -795,12 +795,12 @@ MergeThrottler::validateNewMerge(
         oss << mergeCmd.toString()
             << " is not in node's internal state, but has a "
             << "full chain, meaning it cannot be forwarded.";
-        LOG(debug, "%s", oss.str().c_str());
+        LOG(debug, "%s", oss.str().data());
     } else if (nodeSeq.chainContainsIndex(nodeSeq.getThisNodeIndex())) {
         oss << mergeCmd.toString()
             << " is not in node's internal state, but contains "
             << "this node in its non-full chain. This should not happen!";
-        LOG(error, "%s", oss.str().c_str());
+        LOG(error, "%s", oss.str().data());
     } else {
         valid = true;
     }
@@ -1117,7 +1117,7 @@ MergeThrottler::makeAbortReply(api::StorageCommand& cmd,
                                vespalib::stringref reason) const
 {
     LOG(debug, "Aborting message %s with reason '%s'",
-        cmd.toString().c_str(), reason.c_str());
+        cmd.toString().c_str(), reason.data());
     std::unique_ptr<api::StorageReply> reply(cmd.makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, reason));
     return std::shared_ptr<api::StorageMessage>(reply.release());

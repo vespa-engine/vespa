@@ -177,7 +177,7 @@ JSONWriter::appendKey(const vespalib::stringref & str)
 {
     considerComma();
     indent();
-    quote(str.c_str(), str.size());
+    quote(str.data(), str.size());
     (*_os) << ':';
     _comma = false;
     return *this;
@@ -246,7 +246,7 @@ JSONWriter &
 JSONWriter::appendString(const vespalib::stringref & str)
 {
     considerComma();
-    quote(str.c_str(), str.size());
+    quote(str.data(), str.size());
     updateCommaState();
     return *this;
 }

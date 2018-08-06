@@ -16,21 +16,21 @@ class AttributeWeightedSetBlueprint : public queryeval::ComplexLeafBlueprint
 private:
     using ISearchContext = attribute::ISearchContext;
     using IAttributeVector = attribute::IAttributeVector;
-    size_t                     _numDocs;
-    size_t                     _estHits;
-    std::vector<int32_t>       _weights;
-    const IAttributeVector    & _attr;
-    std::vector<ISearchContext*> _contexts;
-
-    AttributeWeightedSetBlueprint(const AttributeWeightedSetBlueprint &); // disabled
-    AttributeWeightedSetBlueprint &operator=(const AttributeWeightedSetBlueprint &); // disabled
+    size_t                         _numDocs;
+    size_t                         _estHits;
+    std::vector<int32_t>           _weights;
+    const IAttributeVector       & _attr;
+    std::vector<ISearchContext*>   _contexts;
 
 public:
+    AttributeWeightedSetBlueprint(const AttributeWeightedSetBlueprint &) = delete;
+    AttributeWeightedSetBlueprint &operator=(const AttributeWeightedSetBlueprint &) = delete;
     AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const IAttributeVector & attr);
     ~AttributeWeightedSetBlueprint();
     void addToken(std::unique_ptr<ISearchContext> context, int32_t weight);
     queryeval::SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     void fetchPostings(bool strict) override;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };
 
 } // namespace search

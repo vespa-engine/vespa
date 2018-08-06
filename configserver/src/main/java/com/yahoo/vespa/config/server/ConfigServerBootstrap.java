@@ -2,8 +2,11 @@
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Deployment;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;
@@ -12,8 +15,16 @@ import com.yahoo.vespa.config.server.version.VersionState;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Main component that bootstraps and starts config server threads.
@@ -39,6 +50,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final VersionState versionState;
     private final StateMonitor stateMonitor;
     private final VipStatus vipStatus;
+    private final ConfigserverConfig configserverConfig;
     private final Duration maxDurationOfRedeployment;
     private final Duration sleepTimeWhenRedeployingFails;
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
@@ -63,8 +75,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.stateMonitor = stateMonitor;
         this.serverThread = new Thread(this, "configserver main");
         this.vipStatus = vipStatus;
-        this.maxDurationOfRedeployment = Duration.ofSeconds(applicationRepository.configserverConfig().maxDurationOfBootstrap());
-        this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(applicationRepository.configserverConfig().sleepTimeWhenRedeployingFails());
+        this.configserverConfig = applicationRepository.configserverConfig();
+        this.maxDurationOfRedeployment = Duration.ofSeconds(configserverConfig.maxDurationOfBootstrap());
+        this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
         initializing(); // Initially take server out of rotation
@@ -91,7 +104,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             log.log(LogLevel.INFO, "Configserver upgrading from " + versionState.storedVersion() + " to "
                     + versionState.currentVersion() + ". Redeploying all applications");
             try {
-                if ( ! applicationRepository.redeployAllApplications(maxDurationOfRedeployment, sleepTimeWhenRedeployingFails)) {
+                if ( ! redeployAllApplications()) {
                     redeployingApplicationsFailed();
                     return; // Status will not be set to 'up' since we return here
                 }
@@ -161,6 +174,53 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private void redeployingApplicationsFailed() {
         if (exitIfRedeployingApplicationsFails == RedeployingApplicationsFails.EXIT_JVM) System.exit(1);
+    }
+
+    private boolean redeployAllApplications() throws InterruptedException {
+        Instant end = Instant.now().plus(maxDurationOfRedeployment);
+        Set<ApplicationId> applicationsNotRedeployed = applicationRepository.listApplications();
+        do {
+            applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
+            if ( ! applicationsNotRedeployed.isEmpty()) {
+                Thread.sleep(sleepTimeWhenRedeployingFails.toMillis());
+            }
+        } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
+
+        if ( ! applicationsNotRedeployed.isEmpty()) {
+            log.log(LogLevel.ERROR, "Redeploying applications not finished after " + maxDurationOfRedeployment +
+                    ", exiting, applications that failed redeployment: " + applicationsNotRedeployed);
+            return false;
+        }
+        return true;
+    }
+
+    // Returns the set of applications that failed to redeploy
+    private Set<ApplicationId> redeployApplications(Set<ApplicationId> applicationIds) throws InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
+                                                                new DaemonThreadFactory("redeploy apps"));
+        // Keep track of deployment per application
+        Map<ApplicationId, Future<?>> futures = new HashMap<>();
+        Set<ApplicationId> failedDeployments = new HashSet<>();
+
+        for (ApplicationId appId : applicationIds) {
+            Optional<Deployment> deploymentOptional = applicationRepository.deployFromLocalActive(appId, true /* bootstrap */);
+            if ( ! deploymentOptional.isPresent()) continue;
+
+            futures.put(appId, executor.submit(deploymentOptional.get()::activate));
+        }
+
+        for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
+            try {
+                f.getValue().get();
+            } catch (ExecutionException e) {
+                ApplicationId app = f.getKey();
+                log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);
+                failedDeployments.add(app);
+            }
+        }
+        executor.shutdown();
+        executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+        return failedDeployments;
     }
 
 }

@@ -1,11 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.document.serialization.DocumentUpdateReader;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
+import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 
 import java.util.ArrayList;
@@ -94,6 +97,12 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         docId = id;
     }
 
+    private void verifyType(Document doc) {
+        if (!documentType.equals(doc.getDataType())) {
+            throw new IllegalArgumentException(
+                    "Document " + doc.getId() + " with type " + doc.getDataType() + " must have same type as update, which is type " + documentType);
+        }
+    }
     /**
      * Applies this document update.
      *
@@ -102,16 +111,37 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @throws IllegalArgumentException if the document does not have the same document type as this update
      */
     public DocumentUpdate applyTo(Document doc) {
-        if (!documentType.equals(doc.getDataType())) {
-            throw new IllegalArgumentException(
-                    "Document " + doc + " must have same type as update, which is type " + documentType);
-        }
+        verifyType(doc);
 
         for (FieldUpdate fieldUpdate : fieldUpdates) {
             fieldUpdate.applyTo(doc);
         }
         for (FieldPathUpdate fieldPathUpdate : fieldPathUpdates) {
             fieldPathUpdate.applyTo(doc);
+        }
+        return this;
+    }
+
+    /**
+     * Prune away any field update that will not modify any field in the document.
+     * @param doc document to check against
+     * @return a reference to itself
+     * @throws IllegalArgumentException if the document does not have the same document type as this update
+     */
+    public DocumentUpdate prune(Document doc) {
+        verifyType(doc);
+
+        for (Iterator<FieldUpdate> iter = fieldUpdates.iterator(); iter.hasNext();) {
+            FieldUpdate update = iter.next();
+            if (!update.isEmpty()) {
+                ValueUpdate last = update.getValueUpdate(update.size() - 1);
+                if (last instanceof AssignValueUpdate) {
+                    FieldValue currentValue = doc.getFieldValue(update.getField());
+                    if ((currentValue != null) && (currentValue.compareTo(last.getValue()) == 0)) {
+                        iter.remove();
+                    }
+                }
+            }
         }
         return this;
     }

@@ -88,7 +88,7 @@ ClusterState::ClusterState(const vespalib::string& serialized)
         if (key.empty() || ! parse(key, value, nodeData) ) {
             LOG(debug, "Unknown key %s in systemstate. Ignoring it, assuming it's "
                        "a new feature from a newer version than ourself: %s",
-                       key.c_str(), serialized.c_str());
+                       vespalib::string(key).c_str(), serialized.c_str());
         }
     }
     nodeData.addTo(_nodeStates, _nodeCount);
@@ -106,13 +106,13 @@ ClusterState::parse(vespalib::stringref key, vespalib::stringref value, NodeData
         break;
     case 'b':
         if (key == "bits") {
-            _distributionBits = atoi(value.c_str());
+            _distributionBits = atoi(value.data());
             return true;
         }
         break;
     case 'v':
         if (key == "version") {
-            _version = atoi(value.c_str());
+            _version = atoi(value.data());
             return true;
         }
         break;
@@ -145,7 +145,7 @@ ClusterState::parseSorD(vespalib::stringref key, vespalib::stringref value, Node
     if (nodeType == 0) return false;
     if (dot == vespalib::string::npos) { // Entry that set node counts
         uint16_t nodeCount = 0;
-        nodeCount = atoi(value.c_str());
+        nodeCount = atoi(value.data());
 
         if (nodeCount > _nodeCount[*nodeType] ) {
             _nodeCount[*nodeType] = nodeCount;
@@ -155,9 +155,9 @@ ClusterState::parseSorD(vespalib::stringref key, vespalib::stringref value, Node
     vespalib::string::size_type dot2 = key.find('.', dot + 1);
     Node node;
     if (dot2 == vespalib::string::npos) {
-        node = Node(*nodeType, atoi(key.substr(dot + 1).c_str()));
+        node = Node(*nodeType, atoi(key.substr(dot + 1).data()));
     } else {
-        node = Node(*nodeType, atoi(key.substr(dot + 1, dot2 - dot - 1).c_str()));
+        node = Node(*nodeType, atoi(key.substr(dot + 1, dot2 - dot - 1).data()));
     }
 
     if (node.getIndex() >= _nodeCount[*nodeType]) {

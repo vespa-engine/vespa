@@ -1,14 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("hitcollector_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
-
-#include <iostream>
-
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
-#include <vespa/searchlib/queryeval/scores.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("hitcollector_test");
 
 using namespace search;
 using namespace search::fef;
@@ -19,8 +17,8 @@ typedef std::map<uint32_t, feature_t> ScoreMap;
 struct BasicScorer : public HitCollector::DocumentScorer
 {
     feature_t _scoreDelta;
-    BasicScorer(feature_t scoreDelta) : _scoreDelta(scoreDelta) {}
-    virtual feature_t score(uint32_t docId) override {
+    explicit BasicScorer(feature_t scoreDelta) : _scoreDelta(scoreDelta) {}
+    feature_t score(uint32_t docId) override {
         return docId + _scoreDelta;
     }
 };
@@ -28,8 +26,8 @@ struct BasicScorer : public HitCollector::DocumentScorer
 struct PredefinedScorer : public HitCollector::DocumentScorer
 {
     ScoreMap _scores;
-    PredefinedScorer(const ScoreMap &scores) : _scores(scores) {}
-    virtual feature_t score(uint32_t docId) override {
+    explicit PredefinedScorer(ScoreMap scores) : _scores(std::move(scores)) {}
+    feature_t score(uint32_t docId) override {
         feature_t retval = default_rank_value;
         auto itr = _scores.find(docId);
         if (itr != _scores.end()) {
@@ -41,38 +39,32 @@ struct PredefinedScorer : public HitCollector::DocumentScorer
 
 void checkResult(const ResultSet & rs, const std::vector<RankedHit> & exp)
 {
-    if (exp.size() > 0) {
+    if ( ! exp.empty()) {
         const RankedHit * rh = rs.getArray();
-        ASSERT_TRUE(rh != NULL);
+        ASSERT_TRUE(rh != nullptr);
         ASSERT_EQUAL(rs.getArrayUsed(), exp.size());
 
         for (uint32_t i = 0; i < exp.size(); ++i) {
-#if 0
-            std::cout << " rh[" << i << "]._docId = " << rh[i]._docId << std::endl;
-            std::cout << "exp[" << i << "]._docId = " << exp[i]._docId << std::endl;
-            std::cout << " rh[" << i << "]._rankValue = " << rh[i]._rankValue << std::endl;
-            std::cout << "exp[" << i << "]._rankValue = " << exp[i]._rankValue << std::endl;
-#endif
             EXPECT_EQUAL(rh[i]._docId, exp[i]._docId);
             EXPECT_EQUAL(rh[i]._rankValue, exp[i]._rankValue);
         }
     } else {
-        ASSERT_TRUE(rs.getArray() == NULL);
+        ASSERT_TRUE(rs.getArray() == nullptr);
     }
 }
 
 void checkResult(ResultSet & rs, BitVector * exp)
 {
-    if (exp != NULL) {
+    if (exp != nullptr) {
         BitVector * bv = rs.getBitOverflow();
-        ASSERT_TRUE(bv != NULL);
+        ASSERT_TRUE(bv != nullptr);
         bv->invalidateCachedCount();
         exp->invalidateCachedCount();
         LOG(info, "bv.hits: %u, exp.hits: %u", bv->countTrueBits(), exp->countTrueBits());
         ASSERT_TRUE(bv->countTrueBits() == exp->countTrueBits());
         EXPECT_TRUE(*bv == *exp);
     } else {
-        ASSERT_TRUE(rs.getBitOverflow() == NULL);
+        ASSERT_TRUE(rs.getBitOverflow() == nullptr);
     }
 }
 
@@ -85,8 +77,8 @@ void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, uint32_t maxHeapSize)
         std::vector<RankedHit> expRh;
 
         std::unique_ptr<ResultSet> rs = hc.getResultSet();
-        TEST_DO(checkResult(*rs.get(), expRh));
-        TEST_DO(checkResult(*rs.get(), NULL));
+        TEST_DO(checkResult(*rs, expRh));
+        TEST_DO(checkResult(*rs, nullptr));
     }
 
     LOG(info, "testAddHit: only ranked hits");
@@ -98,14 +90,14 @@ void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, uint32_t maxHeapSize)
             hc.addHit(i, i + 100);
 
             // build expected result set as we go along
-            expRh.push_back(RankedHit());
+            expRh.emplace_back();
             expRh.back()._docId = i;
             expRh.back()._rankValue = i + 100;
         }
 
         std::unique_ptr<ResultSet> rs = hc.getResultSet();
-        TEST_DO(checkResult(*rs.get(), expRh));
-        TEST_DO(checkResult(*rs.get(), NULL));
+        TEST_DO(checkResult(*rs, expRh));
+        TEST_DO(checkResult(*rs, nullptr));
     }
 
     LOG(info, "testAddHit: both ranked hits and bit vector hits");
@@ -120,15 +112,15 @@ void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, uint32_t maxHeapSize)
             // build expected result set as we go along
             expBv->setBit(i);
             if (i >= (numDocs - maxHitsSize)) {
-                expRh.push_back(RankedHit());
+                expRh.emplace_back();
                 expRh.back()._docId = i;
                 expRh.back()._rankValue = i + 100;
             }
         }
 
         std::unique_ptr<ResultSet> rs = hc.getResultSet();
-        TEST_DO(checkResult(*rs.get(), expRh));
-        TEST_DO(checkResult(*rs.get(), expBv.get()));
+        TEST_DO(checkResult(*rs, expRh));
+        TEST_DO(checkResult(*rs, expBv.get()));
     }
 }
 
@@ -166,14 +158,14 @@ struct Fixture {
 
 struct AscendingScoreFixture : Fixture {
     AscendingScoreFixture() : Fixture() {}
-    virtual HitRank calculateScore(uint32_t i) override {
+    HitRank calculateScore(uint32_t i) override {
         return i + 100;
     }
 };
 
 struct DescendingScoreFixture : Fixture {
     DescendingScoreFixture() : Fixture() {}
-    virtual HitRank calculateScore(uint32_t i) override {
+    HitRank calculateScore(uint32_t i) override {
         return 100 - i;
     }
 };
@@ -197,8 +189,8 @@ TEST_F("testReRank - ascending", AscendingScoreFixture)
     EXPECT_EQUAL(expRh.size(), 10u);
 
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expRh));
-    TEST_DO(checkResult(*rs.get(), f.expBv.get()));
+    TEST_DO(checkResult(*rs, expRh));
+    TEST_DO(checkResult(*rs, f.expBv.get()));
 }
 
 TEST_F("testReRank - descending", DescendingScoreFixture)
@@ -216,8 +208,8 @@ TEST_F("testReRank - descending", DescendingScoreFixture)
     EXPECT_EQUAL(expRh.size(), 10u);
 
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expRh));
-    TEST_DO(checkResult(*rs.get(), f.expBv.get()));
+    TEST_DO(checkResult(*rs, expRh));
+    TEST_DO(checkResult(*rs, f.expBv.get()));
 }
 
 TEST_F("testReRank - partial", AscendingScoreFixture)
@@ -235,8 +227,8 @@ TEST_F("testReRank - partial", AscendingScoreFixture)
     EXPECT_EQUAL(expRh.size(), 10u);
 
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expRh));
-    TEST_DO(checkResult(*rs.get(), f.expBv.get()));
+    TEST_DO(checkResult(*rs, expRh));
+    TEST_DO(checkResult(*rs, f.expBv.get()));
 }
 
 TEST_F("require that scores for 2nd phase candidates can be retrieved", DescendingScoreFixture)
@@ -251,9 +243,20 @@ TEST_F("require that scores for 2nd phase candidates can be retrieved", Descendi
     EXPECT_EQUAL(96, scores[4]);
 }
 
+TEST_F("require that hits for 2nd phase candidates can be retrieved", DescendingScoreFixture)
+{
+    f.addHits();
+    std::vector<HitCollector::Hit> scores = f.hc.getSortedHeapHits();
+    ASSERT_EQUAL(5u, scores.size());
+    EXPECT_EQUAL(100, scores[0].second);
+    EXPECT_EQUAL(99, scores[1].second);
+    EXPECT_EQUAL(98, scores[2].second);
+    EXPECT_EQUAL(97, scores[3].second);
+    EXPECT_EQUAL(96, scores[4].second);
+}
+
 TEST("require that score ranges can be read and set.") {
-    std::pair<Scores, Scores> ranges =
-        std::make_pair(Scores(1.0, 2.0), Scores(3.0, 4.0));
+    std::pair<Scores, Scores> ranges = std::make_pair(Scores(1.0, 2.0), Scores(3.0, 4.0));
     HitCollector hc(20, 10, 5);
     hc.setRanges(ranges);
     EXPECT_EQUAL(ranges.first.low, hc.getRanges().first.low);
@@ -275,19 +278,19 @@ TEST("testNoHitsToReRank") {
             hc.addHit(i, i + 100);
 
             // build expected result set as we go along
-            expRh.push_back(RankedHit());
+            expRh.emplace_back();
             expRh.back()._docId = i;
             expRh.back()._rankValue = i + 100;
         }
 
         std::unique_ptr<ResultSet> rs = hc.getResultSet();
-        TEST_DO(checkResult(*rs.get(), expRh));
-        TEST_DO(checkResult(*rs.get(), NULL));
+        TEST_DO(checkResult(*rs, expRh));
+        TEST_DO(checkResult(*rs, nullptr));
     }
 }
 
 void testScaling(const std::vector<feature_t> &initScores,
-                 const ScoreMap &finalScores,
+                 ScoreMap finalScores,
                  const std::vector<RankedHit> &expected)
 {
     HitCollector hc(5, 5, 2);
@@ -297,13 +300,13 @@ void testScaling(const std::vector<feature_t> &initScores,
         hc.addHit(i, initScores[i]);
     }
 
-    PredefinedScorer scorer(finalScores);
+    PredefinedScorer scorer(std::move(finalScores));
     // perform second phase ranking
     EXPECT_EQUAL(2u, hc.reRank(scorer));
 
     // check results
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expected));
+    TEST_DO(checkResult(*rs, expected));
 }
 
 TEST("testScaling") {
@@ -332,7 +335,7 @@ TEST("testScaling") {
         finalScores[3] = 300;
         finalScores[4] = 400;
 
-        testScaling(initScores, finalScores, exp);
+        testScaling(initScores, std::move(finalScores), exp);
     }
     { // scale down and adjust up
         exp[0]._rankValue = 200; // scaled
@@ -346,7 +349,7 @@ TEST("testScaling") {
         finalScores[3] = 500;
         finalScores[4] = 600;
 
-        testScaling(initScores, finalScores, exp);
+        testScaling(initScores, std::move(finalScores), exp);
     }
     { // scale up and adjust down
 
@@ -361,7 +364,7 @@ TEST("testScaling") {
         finalScores[3] = 3250;
         finalScores[4] = 4500;
 
-        testScaling(initScores, finalScores, exp);
+        testScaling(initScores, std::move(finalScores), exp);
     }
     { // minimal scale (second phase range = 0 (4 - 4) -> 1)
         exp[0]._rankValue = 1; // scaled
@@ -375,7 +378,7 @@ TEST("testScaling") {
         finalScores[3] = 4;
         finalScores[4] = 4;
 
-        testScaling(initScores, finalScores, exp);
+        testScaling(initScores, std::move(finalScores), exp);
     }
     { // minimal scale (first phase range = 0 (4000 - 4000) -> 1)
         std::vector<feature_t> is(initScores);
@@ -391,7 +394,7 @@ TEST("testScaling") {
         finalScores[3] = 400;
         finalScores[4] = 500;
 
-        testScaling(is, finalScores, exp);
+        testScaling(is, std::move(finalScores), exp);
     }
 }
 
@@ -410,8 +413,8 @@ TEST("testOnlyBitVector") {
 
         std::unique_ptr<ResultSet> rs = hc.getResultSet();
         std::vector<RankedHit> expRh;
-        TEST_DO(checkResult(*rs.get(), expRh));  // no ranked hits
-        TEST_DO(checkResult(*rs.get(), expBv.get())); // only bit vector
+        TEST_DO(checkResult(*rs, expRh));  // no ranked hits
+        TEST_DO(checkResult(*rs, expBv.get())); // only bit vector
     }
 }
 
@@ -433,19 +436,19 @@ TEST_F("require that result set is merged correctly with first phase ranking",
         f.hc.addHit(i, i + 1000);
 
         // build expected result set
-        expRh.push_back(RankedHit());
+        expRh.emplace_back();
         expRh.back()._docId = i;
         // only the maxHitsSize best hits gets a score
         expRh.back()._rankValue = (i < f.numDocs - f.maxHitsSize) ? default_rank_value : i + 1000;
     }
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expRh));
+    TEST_DO(checkResult(*rs, expRh));
 }
 
 void
 addExpectedHitForMergeTest(const MergeResultSetFixture &f, std::vector<RankedHit> &expRh, uint32_t docId)
 {
-    expRh.push_back(RankedHit());
+    expRh.emplace_back();
     expRh.back()._docId = docId;
     if (docId < f.numDocs - f.maxHitsSize) { // only the maxHitsSize best hits gets a score
         expRh.back()._rankValue = default_rank_value;
@@ -468,7 +471,7 @@ TEST_F("require that result set is merged correctly with second phase ranking (d
     }
     EXPECT_EQUAL(f.maxHeapSize, f.hc.reRank(scorer));
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expRh));
+    TEST_DO(checkResult(*rs, expRh));
 }
 
 TEST("require that hits can be added out of order") {
@@ -476,7 +479,7 @@ TEST("require that hits can be added out of order") {
     std::vector<RankedHit> expRh;
     // produce expected result in normal order
     for (uint32_t i = 0; i < 5; ++i) {
-        expRh.push_back(RankedHit());
+        expRh.emplace_back();
         expRh.back()._docId = i;
         expRh.back()._rankValue = i + 100;
     }
@@ -485,8 +488,8 @@ TEST("require that hits can be added out of order") {
         hc.addHit(i, i + 100);
     }
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expRh));
-    TEST_DO(checkResult(*rs.get(), nullptr));
+    TEST_DO(checkResult(*rs, expRh));
+    TEST_DO(checkResult(*rs, nullptr));
 }
 
 TEST("require that hits can be added out of order when passing array limit") {
@@ -495,7 +498,7 @@ TEST("require that hits can be added out of order when passing array limit") {
     // produce expected result in normal order
     const size_t numHits = 150;
     for (uint32_t i = 0; i < numHits; ++i) {
-        expRh.push_back(RankedHit());
+        expRh.emplace_back();
         expRh.back()._docId = i;
         expRh.back()._rankValue = (i < 50) ? default_rank_value : (i + 100);
     }
@@ -504,8 +507,8 @@ TEST("require that hits can be added out of order when passing array limit") {
         hc.addHit(i, i + 100);
     }
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expRh));
-    TEST_DO(checkResult(*rs.get(), nullptr));
+    TEST_DO(checkResult(*rs, expRh));
+    TEST_DO(checkResult(*rs, nullptr));
 }
 
 TEST("require that hits can be added out of order only after passing array limit") {
@@ -514,7 +517,7 @@ TEST("require that hits can be added out of order only after passing array limit
     // produce expected result in normal order
     const size_t numHits = 150;
     for (uint32_t i = 0; i < numHits; ++i) {
-        expRh.push_back(RankedHit());
+        expRh.emplace_back();
         expRh.back()._docId = i;
         expRh.back()._rankValue = (i < 50) ? default_rank_value : (i + 100);
     }
@@ -527,8 +530,8 @@ TEST("require that hits can be added out of order only after passing array limit
         hc.addHit(i, i + 100);
     }
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
-    TEST_DO(checkResult(*rs.get(), expRh));
-    TEST_DO(checkResult(*rs.get(), nullptr));
+    TEST_DO(checkResult(*rs, expRh));
+    TEST_DO(checkResult(*rs, nullptr));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -15,15 +15,15 @@ namespace {
 
 #define HOST_BUF_SZ 1024
 
-const char *defaultHome = "/opt/vespa";
-const char *defaultUser = "vespa";
-const char *defaultHost = "localhost";
-int defaultWebServicePort = 8080;
-int defaultPortBase = 19000;
-int defaultPortConfigServerRpc = 19070;
-int defaultPortConfigServerHttp = 19071;
-int defaultPortConfigProxyRpc = 19090;
-const char *defaultConfigServers = "localhost";
+const char *defaultHome = 0;
+const char *defaultUser = 0;
+const char *defaultHost = 0;
+int defaultWebServicePort = 0;
+int defaultPortBase = 0;
+int defaultPortConfigServerRpc = 0;
+int defaultPortConfigServerHttp = 0;
+int defaultPortConfigProxyRpc = 0;
+const char *defaultConfigServers = 0;
 
 std::atomic<bool> initialized(false);
 
@@ -42,8 +42,7 @@ long getNumFromEnv(const char *envName)
     return -1;
 }
 
-void findDefaults() {
-    if (initialized) return;
+const char *findVespaHome(const char *defHome) {
     const char *env = getenv("VESPA_HOME");
     if (env != NULL && *env != '\0') {
         DIR *dp = NULL;
@@ -51,47 +50,72 @@ void findDefaults() {
             dp = opendir(env);
         }
         if (dp != NULL) {
-            defaultHome = env;
-            // fprintf(stderr, "debug\tVESPA_HOME is '%s'\n", defaultHome);
+            // fprintf(stderr, "debug\tVESPA_HOME is '%s'\n", env);
             closedir(dp);
+            return env;
         } else {
             fprintf(stderr, "warning\tbad VESPA_HOME '%s' (ignored)\n", env);
         }
     }
-    env = getenv("VESPA_USER");
+    return defHome;
+}
+
+const char *findVespaUser(const char *defUser) {
+    const char *env = getenv("VESPA_USER");
     if (env != NULL && *env != '\0') {
         if (getpwnam(env) == 0) {
             fprintf(stderr, "warning\tbad VESPA_USER '%s' (ignored)\n", env);
         } else {
-            defaultUser = env;
+            return env;
         }
     }
-    env = getenv("VESPA_HOSTNAME");
+    return defUser;
+}
+
+const char *findHostname(const char *defHost) {
+    const char *env = getenv("VESPA_HOSTNAME");
     if (env != NULL && *env != '\0') {
-        defaultHost = env;
+        return env;
     }
+    return defHost;
+}
+
+int findWebServicePort(int defPort) {
     long p = getNumFromEnv("VESPA_WEB_SERVICE_PORT");
     if (p > 0) {
         // fprintf(stderr, "debug\tdefault web service port is '%ld'\n", p);
-        defaultWebServicePort = p;
+        return p;
     }
-    p = getNumFromEnv("VESPA_PORT_BASE");
+    return defPort;
+}
+
+int findVespaPortBase(int defPort) {
+    long p = getNumFromEnv("VESPA_PORT_BASE");
     if (p > 0) {
         // fprintf(stderr, "debug\tdefault port base is '%ld'\n", p);
-        defaultPortBase = p;
+        return p;
     }
-    p = getNumFromEnv("port_configserver_rpc");
+    return defPort;
+}
+
+int findConfigServerPort(int defPort) {
+    long p = getNumFromEnv("port_configserver_rpc");
     if (p > 0) {
-        defaultPortConfigServerRpc = p;
-        defaultPortConfigServerHttp = p+1;
+        return p;
     }
-    p = getNumFromEnv("port_configproxy_rpc");
+    return defPort;
+}
+
+int findConfigProxyPort(int defPort) {
+    long p = getNumFromEnv("port_configproxy_rpc");
     if (p > 0) {
-        defaultPortConfigProxyRpc = p;
-    } else {
-        defaultPortConfigProxyRpc = defaultPortBase + 90;
+        return p;
     }
-    env = getenv("VESPA_CONFIGSERVERS");
+    return defPort;
+}
+
+const char *findConfigServers(const char *defServers) {
+    const char *env = getenv("VESPA_CONFIGSERVERS");
     if (env == NULL || *env == '\0') {
         env = getenv("services__addr_configserver");
     }
@@ -103,14 +127,26 @@ void findDefaults() {
     }
     if (env != NULL && *env != '\0') {
         // fprintf(stderr, "debug\tdefault configserver(s) is '%s'\n", env);
-        defaultConfigServers = env;
+        return env;
     }
+    return defServers;
+}
+
+void findDefaults() {
+    if (initialized) return;
+
+    defaultHome = findVespaHome("/opt/vespa");
+    defaultUser = findVespaUser("vespa");
+    defaultHost = findHostname("localhost");
+    defaultWebServicePort = findWebServicePort(8080);
+    defaultPortBase = findVespaPortBase(19000);
+    defaultPortConfigServerRpc = findConfigServerPort(defaultPortBase + 70);
+    defaultPortConfigServerHttp = defaultPortConfigServerRpc + 1;
+    defaultPortConfigProxyRpc = findConfigProxyPort(defaultPortBase + 90);
+    defaultConfigServers = findConfigServers("localhost");
+
     initialized = true;
 }
-
-}
-
-namespace vespa {
 
 std::string myPath(const char *argv0)
 {
@@ -136,6 +172,10 @@ std::string myPath(const char *argv0)
     }
     return argv0;
 }
+
+}
+
+namespace vespa {
 
 void
 Defaults::bootstrap(const char *argv0)
@@ -241,6 +281,7 @@ Defaults::vespaConfigServerHosts()
 int
 Defaults::vespaConfigServerRpcPort()
 {
+    findDefaults();
     return defaultPortConfigServerRpc;
 }
 

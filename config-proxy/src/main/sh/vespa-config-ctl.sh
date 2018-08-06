@@ -115,7 +115,7 @@ case $1 in
         echo "Starting config proxy using $configsources as config source(s)"
         vespa-runserver -r 10 -s configproxy -p $P_CONFIG_PROXY -- \
             java ${jvmopts} \
-                 -XX:OnOutOfMemoryError="kill -9 %p" $(getJavaOptionsIPV46) \
+                 -XX:+ExitOnOutOfMemoryError $(getJavaOptionsIPV46) \
                  -Dproxyconfigsources="${configsources}" ${userargs} \
                  -cp $cp com.yahoo.vespa.config.proxy.ProxyServer 19090
 

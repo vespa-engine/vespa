@@ -30,7 +30,7 @@ PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uin
 }
 
 template <typename DataT>
-PostingListSearchContextT<DataT>::~PostingListSearchContextT() {}
+PostingListSearchContextT<DataT>::~PostingListSearchContextT() = default;
 
 
 template <typename DataT>
@@ -154,7 +154,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
 {
     assert(_fetchPostingsDone);
     if (_uniqueValues == 0u) {
-        return SearchIterator::UP(new EmptySearch());
+        return std::make_unique<EmptySearch>();
     }
     if (_merger.hasArray() || _merger.hasBitVector()) { // synthetic results are available
         if (!_merger.emptyArray()) {
@@ -170,7 +170,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             }
         }
         if (_merger.hasArray()) {
-            return SearchIterator::UP(new EmptySearch());
+            return std::make_unique<EmptySearch>();
         }
         const BitVector *bv(_merger.getBitVector());
         assert(bv != nullptr);
@@ -181,7 +181,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             return BitVectorIterator::create(_gbv, std::min(_gbv->size(), _docIdLimit), *matchData, strict);
         }
         if (!_pidx.valid()) {
-            return SearchIterator::UP(new EmptySearch());
+            return std::make_unique<EmptySearch>();
         }
         const PostingList &postingList = _postingList;
         if (!_frozenRoot.valid()) {

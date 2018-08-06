@@ -62,10 +62,11 @@ Version::verifySanity()
     }
 }
 
+// Precondition: input.empty() == false
 static int parseInteger(const stringref & input) __attribute__((noinline));
 static int parseInteger(const stringref & input)
 {
-    const char *s = input.c_str();
+    const char *s = input.data();
     unsigned char firstDigit = s[0];
     if (!isdigit(firstDigit))
         throw IllegalArgumentException("integer must start with a digit");

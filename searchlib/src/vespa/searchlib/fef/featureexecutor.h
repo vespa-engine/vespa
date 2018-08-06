@@ -4,12 +4,10 @@
 
 #include "handle.h"
 #include "matchdata.h"
-#include <memory>
 #include "number_or_object.h"
 #include <vespa/vespalib/util/arrayref.h>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class FeatureExecutor;
 
@@ -181,8 +179,6 @@ vespalib::eval::Value::CREF FeatureExecutor::Inputs::get_object(size_t idx) cons
     return _inputs[idx].as_object(_docid);
 }
 
-} // namespace fef
-} // namespace search
-
+}
 
 //  LocalWords:  param

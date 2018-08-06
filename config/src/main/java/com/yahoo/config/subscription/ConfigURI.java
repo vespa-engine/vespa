@@ -10,9 +10,9 @@ import com.yahoo.config.subscription.impl.JRTConfigRequester;
  * object to simplify parameter passing.
  *
  * @author lulf
- * @since 5.1
  */
 public class ConfigURI {
+
     private String configId;
     private ConfigSource source;
 
@@ -54,4 +54,5 @@ public class ConfigURI {
     public static ConfigURI createFromIdAndSource(String configId, ConfigSource source) {
         return new ConfigURI(configId, source);
     }
+
 }

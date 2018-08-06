@@ -64,8 +64,8 @@ public class BundleIT {
     }
 
     @Test
-    @Ignore
-    public void require_that_manifest_version_matches_pom_version() {
+    @Ignore  // TODO Vespa 7: Should we fix this? Why not?
+    public void require_that_bundle_version_matches_pom_version() {
         assertThat(mainAttributes.getValue("Bundle-Version"), is("5.1.0"));
     }
 

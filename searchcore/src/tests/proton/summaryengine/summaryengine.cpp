@@ -68,7 +68,7 @@ public:
             DocsumReply::Docsum docsum;
             docsum.docid = 10 + i;
             docsum.gid = h.gid;
-            docsum.setData(_reply.c_str(), _reply.size());
+            docsum.setData(_reply.data(), _reply.size());
             retval->docsums.push_back(docsum);
         }
         return retval;

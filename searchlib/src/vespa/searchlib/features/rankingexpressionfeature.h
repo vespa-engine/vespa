@@ -8,8 +8,7 @@
 #include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
 #include <vespa/searchlib/features/rankingexpression/intrinsic_expression.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 
@@ -42,7 +41,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-//-----------------------------------------------------------------------------
-
-} // features
-} // search
+}

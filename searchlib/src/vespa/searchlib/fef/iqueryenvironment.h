@@ -3,11 +3,10 @@
 #pragma once
 
 #include "iindexenvironment.h"
+#include "objectstore.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/fef/objectstore.h>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class Location;
 class Properties;
@@ -90,5 +89,4 @@ private:
     ObjectStore _objectStore;
 };
 
-} // namespace fef
-} // namespace search
+}

@@ -42,9 +42,9 @@ public:
     asciistream & operator << (char v)                { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
-    asciistream & operator << (const string & v)      { doFill(v.size()); write(v.c_str(), v.size()); return *this; }
-    asciistream & operator << (const stringref & v)   { doFill(v.size()); write(v.c_str(), v.size()); return *this; }
-    asciistream & operator << (const std::string & v) { doFill(v.size()); write(v.c_str(), v.size()); return *this; }
+    asciistream & operator << (const string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
+    asciistream & operator << (const stringref & v)   { doFill(v.size()); write(v.data(), v.size()); return *this; }
+    asciistream & operator << (const std::string & v) { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (int16_t v)    { return *this << static_cast<int64_t>(v); }
     asciistream & operator << (uint16_t v)   { return *this << static_cast<uint64_t>(v); }
     asciistream & operator << (int32_t v)    { return *this << static_cast<int64_t>(v); }
@@ -74,7 +74,7 @@ public:
     asciistream & operator >> (float & v);
     asciistream & operator >> (double & v);
     stringref str() const { return stringref(c_str(), size()); }
-    const char * c_str() const { return _rbuf.c_str() + _rPos; }
+    const char * c_str() const { return _rbuf.data() + _rPos; }
     size_t        size() const { return length() - _rPos; }
     bool         empty() const { return size() == 0; }
     bool           eof() const { return empty(); }

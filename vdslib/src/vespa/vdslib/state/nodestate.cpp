@@ -229,7 +229,7 @@ NodeState::NodeState(const vespalib::stringref & serialized, const NodeType* typ
         }
         LOG(debug, "Unknown key %s in nodestate. Ignoring it, assuming it's a "
                    "new feature from a newer version than ourself: %s",
-            key.c_str(), serialized.c_str());
+            key.c_str(), vespalib::string(serialized).c_str());
     }
     diskData.addTo(_diskStates);
     updateAnyDiskDownFlag();

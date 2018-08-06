@@ -28,6 +28,9 @@ using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
 using search::queryeval::AndBlueprint;
+using search::queryeval::AndNotBlueprint;
+using search::queryeval::RankBlueprint;
+using search::queryeval::IntermediateBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IRequestContext;
 using search::queryeval::SearchIterator;
@@ -73,6 +76,27 @@ void AddLocationNode(const string &location_str, Node::UP &query_tree, Location 
     }
     query_tree = std::move(new_base);
 }
+
+IntermediateBlueprint *
+asRankOrAndNot(Blueprint * blueprint) {
+    IntermediateBlueprint * rankOrAndNot = dynamic_cast<RankBlueprint*>(blueprint);
+    if (rankOrAndNot == nullptr) {
+        rankOrAndNot = dynamic_cast<AndNotBlueprint*>(blueprint);
+    }
+    return rankOrAndNot;
+}
+
+IntermediateBlueprint *
+lastConsequtiveRankOrAndNot(Blueprint * blueprint) {
+    IntermediateBlueprint * prev = nullptr;
+    IntermediateBlueprint * curr = asRankOrAndNot(blueprint);
+    while (curr != nullptr) {
+        prev =  curr;
+        curr = asRankOrAndNot(&curr->getChild(0));
+    }
+    return prev;
+}
+
 }  // namespace
 
 Query::Query() = default;
@@ -126,10 +150,18 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
     if (_whiteListBlueprint) {
         auto andBlueprint = std::make_unique<AndBlueprint>();
-        (*andBlueprint)
-            .addChild(std::move(_blueprint))
-            .addChild(std::move(_whiteListBlueprint));
-        _blueprint = std::move(andBlueprint);
+        IntermediateBlueprint * rankOrAndNot = lastConsequtiveRankOrAndNot(_blueprint.get());
+        if (rankOrAndNot != nullptr) {
+            (*andBlueprint)
+                    .addChild(rankOrAndNot->removeChild(0))
+                    .addChild(std::move(_whiteListBlueprint));
+            rankOrAndNot->insertChild(0, std::move(andBlueprint));
+        } else {
+            (*andBlueprint)
+                    .addChild(std::move(_blueprint))
+                    .addChild(std::move(_whiteListBlueprint));
+            _blueprint = std::move(andBlueprint);
+        }
         _blueprint->setDocIdLimit(context.getDocIdLimit());
         LOG(debug, "blueprint after white listing:\n%s\n", _blueprint->asString().c_str());
     }

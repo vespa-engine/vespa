@@ -22,4 +22,29 @@ public class DefaultsTestCase {
         assertEquals("vespa", Defaults.getDefaults().vespaUser());
     }
 
+    @Test
+    public void testPortsArePositive() {
+        Defaults d = Defaults.getDefaults();
+        assertEquals(true, d.vespaPortBase() > 0);
+        assertEquals(true, d.vespaWebServicePort() > 0);
+        assertEquals(true, d.vespaConfigServerRpcPort() > 0);
+        assertEquals(true, d.vespaConfigServerHttpPort() > 0);
+        assertEquals(true, d.vespaConfigProxyRpcPort() > 0);
+    }
+
+    @Test
+    public void dumpAllVars() {
+        Defaults d = Defaults.getDefaults();
+        System.out.println("vespa user = '" + d.vespaUser() + "'");
+        System.out.println("vespa hostname = '" + d.vespaHostname() + "'");
+        System.out.println("vespa home = '" + d.vespaHome() + "'");
+        System.out.println("underVespaHome(foo) = '" + d.underVespaHome("foo") + "'");
+
+        System.out.println("web service port = '" + d.vespaWebServicePort() + "'");
+        System.out.println("vespa port base = '" + d.vespaPortBase() + "'");
+        System.out.println("config server RPC port = '" + d.vespaConfigServerRpcPort() + "'");
+        System.out.println("config server HTTP port = '" + d.vespaConfigServerHttpPort() + "'");
+        System.out.println("config proxy RPC port = '" + d.vespaConfigProxyRpcPort() + "'");
+    }
+
 }

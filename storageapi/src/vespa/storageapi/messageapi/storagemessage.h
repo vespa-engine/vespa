@@ -19,6 +19,7 @@
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/printable.h>
 #include <map>
+#include <iosfwd>
 
 namespace vespalib {
     class asciistream;
@@ -306,6 +307,20 @@ struct TransportContext {
     virtual ~TransportContext() = 0;
 };
 
+enum class LockingRequirements : uint8_t {
+    // Operations with exclusive locking can only be executed iff no other
+    // exclusive or shared locks are taken for its bucket.
+    Exclusive = 0,
+    // Operations with shared locking can only be executed iff no exclusive
+    // lock is taken for its bucket. Should only be used for read-only operations
+    // that cannot mutate a bucket's state.
+    Shared
+};
+
+const char* to_string(LockingRequirements req) noexcept;
+
+std::ostream& operator<<(std::ostream&, LockingRequirements);
+
 class StorageMessage : public vespalib::Printable
 {
     friend class StorageMessageTest; // Used for testing only
@@ -421,6 +436,10 @@ public:
     virtual document::Bucket getBucket() const { return getDummyBucket(); }
     document::BucketId getBucketId() const { return getBucket().getBucketId(); }
     virtual bool hasSingleBucketId() const { return false; }
+    virtual LockingRequirements lockingRequirements() const noexcept {
+        // Safe default: assume exclusive locking is required.
+        return LockingRequirements::Exclusive;
+    }
 };
 
 }

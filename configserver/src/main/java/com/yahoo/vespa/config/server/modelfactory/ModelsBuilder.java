@@ -138,27 +138,13 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                            allocatedHosts.asOptional(),
                                                            now);
         allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
-        
+        List<MODELRESULT> allApplicationVersions = new ArrayList<>(Collections.singletonList(latestModelVersion));
+
         if (latestModelVersion.getModel().skipOldConfigModels(now))
-            return Collections.singletonList(latestModelVersion);
+            return allApplicationVersions;
 
         // load old model versions
-        List<MODELRESULT> allApplicationVersions = new ArrayList<>();
-        allApplicationVersions.add(latestModelVersion);
-
-        // TODO: Enable for all zones
-        if (configserverConfig.buildMinimalSetOfConfigModels() &&
-                (SystemName.from(configserverConfig.system()) == SystemName.cd ||
-                        Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment()) ||
-                        Arrays.asList("corp-us-east-1", "ap-southeast-1").contains(zone().region().value())))
-            versions = keepThoseUsedOn(allocatedHosts.get(), versions);
-
-        // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
-        // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
-        Version wantedVersion = Version.fromIntValues(wantedNodeVespaVersion.getMajor(), wantedNodeVespaVersion.getMinor(), wantedNodeVespaVersion.getMicro());
-        if (hosted && wantedVersion.getMajor() == latest.getMajor())
-            versions.add(wantedVersion);
-
+        versions = versionsToBuild(versions, wantedNodeVespaVersion, allocatedHosts.get());
         // TODO: We use the allocated hosts from the newest version when building older model versions.
         // This is correct except for the case where an old model specifies a cluster which the new version
         // does not. In that case we really want to extend the set of allocated hosts to include those of that
@@ -177,6 +163,23 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             allApplicationVersions.add(modelVersion);
         }
         return allApplicationVersions;
+    }
+
+    private Set<Version> versionsToBuild(Set<Version> versions, com.yahoo.component.Version wantedVersion, AllocatedHosts allocatedHosts) {
+        // TODO: Enable for all zones
+        if (configserverConfig.buildMinimalSetOfConfigModels() &&
+                (SystemName.from(configserverConfig.system()) == SystemName.cd ||
+                        Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment()) ||
+                        Arrays.asList("corp-us-east-1", "ap-southeast-1", "us-central-1").contains(zone().region().value())))
+            versions = keepThoseUsedOn(allocatedHosts, versions);
+
+        // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
+        // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
+        Version wanted = Version.fromIntValues(wantedVersion.getMajor(), wantedVersion.getMinor(), wantedVersion.getMicro());
+        if (hosted && wantedVersion.getMajor() == findLatest(versions).getMajor())
+            versions.add(wanted);
+
+        return versions;
     }
 
     private Set<Version> filterByMajorVersion(int majorVersion, Set<Version> versions) {

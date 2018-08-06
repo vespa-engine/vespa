@@ -19,8 +19,6 @@ public:
 
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<vdstestlib::DirConfig> _config;
-    std::unique_ptr<vdstestlib::DirConfig> _config2;
-    std::unique_ptr<vdstestlib::DirConfig> _smallConfig;
     const document::DocumentType* _testdoctype1;
 
     static const uint32_t MSG_WAIT_TIME = 60 * 1000;
@@ -30,9 +28,11 @@ public:
 
     void setUp() override;
     void tearDown() override;
-    void setupDisks(uint32_t diskCount);
+    void setupPersistenceThreads(uint32_t diskCount);
     void createBucket(const document::BucketId& bid);
     bool bucketExistsInDb(const document::BucketId& bucket) const;
+
+    static api::StorageMessageAddress makeSelfAddress();
 
     api::ReturnCode::Result resultOf(const api::StorageReply& reply) const {
         return reply.getResult().getResult();
@@ -98,8 +98,6 @@ public:
         TestFileStorComponents(FileStorTestFixture& fixture,
                                const char* testName,
                                const StorageLinkInjector& i = NoOpStorageLinkInjector());
-
-        api::StorageMessageAddress makeSelfAddress() const;
 
         void sendDummyGet(const document::BucketId& bid);
         void sendPut(const document::BucketId& bid,

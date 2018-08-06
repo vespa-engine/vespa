@@ -72,7 +72,7 @@ void
 GrowableByteBuffer::putString(const vespalib::stringref& v)
 {
     putInt(v.size());
-    putBytes(v.c_str(), v.size());
+    putBytes(v.data(), v.size());
 }
 
 void

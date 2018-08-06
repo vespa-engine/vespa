@@ -932,8 +932,8 @@ public class RankProfile implements Serializable, Cloneable {
     public static class Macro implements Serializable, Cloneable {
 
         private final String name;
-        private String textualExpression=null;
-        private RankingExpression expression=null;
+        private String textualExpression = null;
+        private RankingExpression expression = null;
         private List<String> formalParams = new ArrayList<>();
 
         /** True if this should be inlined into calling expressions. Useful for very cheap macros. */
@@ -998,6 +998,7 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     public static final class DiversitySettings {
+
         private String attribute = null;
         private int minGroups = 0;
         private double cutoffFactor = 10;

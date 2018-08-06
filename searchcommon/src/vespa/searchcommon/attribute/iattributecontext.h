@@ -3,11 +3,8 @@
 #pragma once
 
 #include "iattributevector.h"
-#include <vector>
-#include <memory>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 /**
  * This is an interface used to access all registered attribute vectors.
@@ -53,6 +50,4 @@ public:
     virtual ~IAttributeContext() {}
 };
 
-} // namespace attribute
-} // namespace search
-
+}

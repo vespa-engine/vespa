@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -62,17 +61,10 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -460,7 +452,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private Set<ApplicationId> listApplications() {
+    Set<ApplicationId> listApplications() {
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().listApplications().stream())
                 .collect(Collectors.toSet());
@@ -682,53 +674,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
             logger.log(LogLevel.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
         }
-    }
-
-    boolean redeployAllApplications(Duration maxDuration, Duration sleepBetweenRetries) throws InterruptedException {
-        Instant end = Instant.now().plus(maxDuration);
-        Set<ApplicationId> applicationsNotRedeployed = listApplications();
-        do {
-            applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
-            if ( ! applicationsNotRedeployed.isEmpty()) {
-                Thread.sleep(sleepBetweenRetries.toMillis());
-            }
-        } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
-
-        if ( ! applicationsNotRedeployed.isEmpty()) {
-            log.log(LogLevel.ERROR, "Redeploying applications not finished after " + maxDuration +
-                    ", exiting, applications that failed redeployment: " + applicationsNotRedeployed);
-            return false;
-        }
-        return true;
-    }
-
-    // Returns the set of applications that failed to redeploy
-    private Set<ApplicationId> redeployApplications(Set<ApplicationId> applicationIds) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                                new DaemonThreadFactory("redeploy apps"));
-        // Keep track of deployment per application
-        Map<ApplicationId, Future<?>> futures = new HashMap<>();
-        Set<ApplicationId> failedDeployments = new HashSet<>();
-
-        for (ApplicationId appId : applicationIds) {
-            Optional<com.yahoo.config.provision.Deployment> deploymentOptional = deployFromLocalActive(appId, true /* bootstrap */);
-            if ( ! deploymentOptional.isPresent()) continue;
-
-            futures.put(appId, executor.submit(deploymentOptional.get()::activate));
-        }
-
-        for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
-            try {
-                f.getValue().get();
-            } catch (ExecutionException e) {
-                ApplicationId app = f.getKey();
-                log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);
-                failedDeployments.add(app);
-            }
-        }
-        executor.shutdown();
-        executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
-        return failedDeployments;
     }
 
     private LocalSession getExistingSession(Tenant tenant, ApplicationId applicationId) {

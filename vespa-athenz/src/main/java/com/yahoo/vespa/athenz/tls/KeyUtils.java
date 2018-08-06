@@ -2,6 +2,8 @@
 package com.yahoo.vespa.athenz.tls;
 
 import com.yahoo.athenz.auth.util.Crypto;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
@@ -70,11 +72,21 @@ public class KeyUtils {
 
     public static String toPem(PrivateKey privateKey) {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
-            pemWriter.writeObject(new PemObject("PRIVATE KEY", privateKey.getEncoded()));
+            // Note: Encoding using PKCS#1 as this is to be read by tools only supporting PKCS#1
+            pemWriter.writeObject(new PemObject("RSA PRIVATE KEY", getPkcs1Bytes(privateKey)));
             pemWriter.flush();
             return stringWriter.toString();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static byte[] getPkcs1Bytes(PrivateKey privateKey) throws IOException{
+
+        byte[] privBytes = privateKey.getEncoded();
+        PrivateKeyInfo pkInfo = PrivateKeyInfo.getInstance(privBytes);
+        ASN1Encodable encodable = pkInfo.parsePrivateKey();
+        ASN1Primitive primitive = encodable.toASN1Primitive();
+        return primitive.getEncoded();
     }
 }

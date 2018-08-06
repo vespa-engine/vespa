@@ -2,8 +2,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -68,6 +66,9 @@ public enum Step {
 
     public List<Step> prerequisites() { return prerequisites; }
 
+    public static Step last() {
+        return report;
+    }
 
     public enum Status {
 
@@ -78,7 +79,7 @@ public enum Step {
         failed,
 
         /** Step succeeded and subsequent steps may now start. */
-        succeeded;
+        succeeded
 
     }
 

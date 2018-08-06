@@ -24,13 +24,18 @@ class DocumentTypeRepo;
 
 namespace storage::spi::dummy {
 
+enum class LockMode {
+    Exclusive,
+    Shared
+};
+
 struct BucketEntry
 {
     DocEntry::SP entry;
     GlobalId gid;
 
     BucketEntry(DocEntry::SP e, const GlobalId& g)
-        : entry(e),
+        : entry(std::move(e)),
           gid(g)
     { }
 };
@@ -98,30 +103,33 @@ class BucketContentGuard
     BucketContentGuard(const BucketContentGuard&);
     BucketContentGuard& operator=(const BucketContentGuard&);
 public:
-    typedef std::unique_ptr<BucketContentGuard> UP;
+    using UP = std::unique_ptr<BucketContentGuard>;
 
     BucketContentGuard(DummyPersistence& persistence,
-                       BucketContent& content)
+                       BucketContent& content,
+                       LockMode lock_mode)
         : _persistence(persistence),
-          _content(content)
+          _content(content),
+          _lock_mode(lock_mode)
     {
     }
     ~BucketContentGuard();
 
-    BucketContent& getContent() {
+    BucketContent& getContent() noexcept {
         return _content;
     }
 
-    BucketContent* operator->() {
+    BucketContent* operator->() noexcept {
         return &_content;
     }
 
-    BucketContent& operator*() {
+    BucketContent& operator*() noexcept {
         return _content;
     }
 private:
     DummyPersistence& _persistence;
     BucketContent& _content;
+    LockMode _lock_mode;
 };
 
 class DummyPersistence : public AbstractPersistenceProvider
@@ -207,8 +215,8 @@ public:
 private:
     friend class BucketContentGuard;
     // Const since funcs only alter mutable field in BucketContent
-    BucketContentGuard::UP acquireBucketWithLock(const Bucket& b) const;
-    void releaseBucketNoLock(const BucketContent& bc) const;
+    BucketContentGuard::UP acquireBucketWithLock(const Bucket& b, LockMode lock_mode = LockMode::Exclusive) const;
+    void releaseBucketNoLock(const BucketContent& bc, LockMode lock_mode = LockMode::Exclusive) const noexcept;
 
     mutable bool _initialized;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;

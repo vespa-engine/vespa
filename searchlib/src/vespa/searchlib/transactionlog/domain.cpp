@@ -3,6 +3,7 @@
 #include "domain.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
@@ -60,6 +61,7 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
     _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
         _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false));
+        vespalib::File::sync(dir());
     }
 }
 
@@ -294,6 +296,7 @@ void Domain::commit(const Packet & packet)
             _parts[entry.serial()] = dp;
         }
         dp = _parts.rbegin()->second;
+        vespalib::File::sync(dir());
     }
     dp->commit(entry.serial(), packet);
     cleanSessions();
@@ -310,6 +313,7 @@ bool Domain::erase(SerialNum to)
             _parts.erase(it);
         }
         retval = retval && dp->erase(to);
+        vespalib::File::sync(dir());
     }
     if (_parts.begin()->second->range().to() >= to) {
         _parts.begin()->second->erase(to);

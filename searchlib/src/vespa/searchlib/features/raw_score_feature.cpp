@@ -5,14 +5,14 @@
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 RawScoreExecutor::RawScoreExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId)
     : FeatureExecutor(),
       _handles(),
       _md(nullptr)
 {
+    _handles.reserve(env.getNumTerms());
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
         if (handle != search::fef::IllegalHandle) {
@@ -25,8 +25,8 @@ void
 RawScoreExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
-    for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
+    for (auto handle : _handles) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(handle);
         if (tfmd->getDocId() == docId) {
             output += tfmd->getRawScore();
         }
@@ -43,8 +43,7 @@ RawScoreExecutor::handle_bind_match_data(const fef::MatchData &md)
 //-----------------------------------------------------------------------------
 
 bool
-RawScoreBlueprint::setup(const IIndexEnvironment &,
-                         const ParameterList &params)
+RawScoreBlueprint::setup(const IIndexEnvironment &, const ParameterList &params)
 {
     _field = params[0].asField();
     describeOutput("out", "accumulated raw score for the given field");
@@ -57,5 +56,4 @@ RawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::S
     return stash.create<RawScoreExecutor>(queryEnv, _field->id());
 }
 
-} // namespace features
-} // namespace search
+}

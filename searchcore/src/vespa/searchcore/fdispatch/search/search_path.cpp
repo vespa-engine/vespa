@@ -46,7 +46,7 @@ SearchPath::parsePartList(const vespalib::stringref &partSpec, size_t numNodes)
         }
     } catch (const std::exception & e) {
         LOG(warning, "Failed parsing part of searchpath='%s' with error '%s'. Result might be mumbo jumbo.",
-            partSpec.c_str(), e.what());
+            vespalib::string(partSpec).c_str(), e.what());
     }
 }
 
@@ -97,7 +97,8 @@ void
 SearchPath::parseRow(const vespalib::stringref &rowSpec)
 {
     if (!rowSpec.empty()) {
-        _elements.back().setRow(strtoul(rowSpec.c_str(), NULL, 0));
+        // FIXME C++17 range-safe from_chars() instead of strtoul()
+        _elements.back().setRow(strtoul(rowSpec.data(), nullptr, 0));
     }
 }
 

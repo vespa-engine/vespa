@@ -8,8 +8,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomnormalstablefeature");
 
-namespace search {
-namespace features {
+namespace search::features {
 
 RandomNormalStableExecutor::RandomNormalStableExecutor(uint64_t seed, double mean, double stddev) :
     search::fef::FeatureExecutor(),
@@ -78,5 +77,4 @@ RandomNormalStableBlueprint::createExecutor(const search::fef::IQueryEnvironment
 }
 
 
-} // namespace features
-} // namespace search
+}

@@ -69,6 +69,7 @@ struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
     void testSerializeAssignMath();
     void testReadSerializedFile();
     void testGenerateSerializedFile();
+    void array_element_update_for_invalid_index_is_ignored();
 
     CPPUNIT_TEST_SUITE(FieldPathUpdateTestCase);
     CPPUNIT_TEST(testWhereClause);
@@ -108,6 +109,7 @@ struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
     CPPUNIT_TEST(testSerializeAssignMath);
     CPPUNIT_TEST(testReadSerializedFile);
     CPPUNIT_TEST(testGenerateSerializedFile);
+    CPPUNIT_TEST(array_element_update_for_invalid_index_is_ignored);
     CPPUNIT_TEST_SUITE_END();
 private:
     DocumentUpdate::UP
@@ -1181,6 +1183,25 @@ FieldPathUpdateTestCase::testGenerateSerializedFile()
     	throw vespalib::Exception("write failed");
     }
     close(fd);
+}
+
+void FieldPathUpdateTestCase::array_element_update_for_invalid_index_is_ignored() {
+    auto doc = std::make_unique<Document>(_foobar_type, DocumentId("id::foobar::1"));
+    doc->setRepo(*_repo);
+    auto& field = doc->getType().getField("strarray");
+
+    ArrayFieldValue str_array(field.getDataType());
+    str_array.add(StringFieldValue("jerry"));
+    doc->setValue("strarray", str_array);
+
+    DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("id::foobar::1"));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
+            new AssignFieldPathUpdate(*doc->getDataType(), "strarray[1]", "", StringFieldValue("george"))));
+    docUp.applyTo(*doc);
+
+    // Doc is unmodified.
+    auto new_arr = doc->getAs<ArrayFieldValue>(field);
+    CPPUNIT_ASSERT_EQUAL(str_array, *new_arr);
 }
 
 }

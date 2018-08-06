@@ -161,7 +161,7 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDoc
                                                    fileHeaderContext, tlSyncer, bucketizer);
 }
 
-SummaryManager::~SummaryManager() {}
+SummaryManager::~SummaryManager() = default;
 
 void
 SummaryManager::putDocument(uint64_t syncToken, search::DocumentIdT lid, const Document & doc)
@@ -204,7 +204,7 @@ IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThread
 {
     IFlushTarget::List ret;
     ret.push_back(std::make_shared<SummaryFlushTarget>(getBackingStore(), summaryService));
-    if (dynamic_cast<LogDocumentStore *>(_docStore.get()) != NULL) {
+    if (dynamic_cast<LogDocumentStore *>(_docStore.get()) != nullptr) {
         ret.push_back(std::make_shared<SummaryCompactTarget>(summaryService, getBackingStore()));
     }
     ret.push_back(createShrinkLidSpaceFlushTarget(summaryService, _docStore));

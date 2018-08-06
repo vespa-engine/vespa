@@ -80,7 +80,8 @@ StructuredDataType::onBuildFieldPath(FieldPath & path, const vespalib::stringref
         path.insert(path.begin(), std::make_unique<FieldPathEntry>(fp));
     } else {
         throw FieldNotFoundException(currFieldName, make_string("Invalid field path '%s', no field named '%s'",
-                                                   remainFieldName.c_str(), currFieldName.c_str()));
+                                                                vespalib::string(remainFieldName).c_str(),
+                                                                vespalib::string(currFieldName).c_str()));
     }
 }
 

@@ -22,6 +22,7 @@ import java.util.concurrent.Executor;
  * @author dybis
  */
 public class AccessLogRequestHandler extends ThreadedHttpRequestHandler {
+
     private final CircularArrayAccessLogKeeper circularArrayAccessLogKeeper;
     private final JsonFactory jsonFactory = new JsonFactory();
 
@@ -53,4 +54,5 @@ public class AccessLogRequestHandler extends ThreadedHttpRequestHandler {
             }
         };
     }
+
 }

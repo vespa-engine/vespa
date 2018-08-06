@@ -26,8 +26,7 @@ using search::fef::FeatureType;
 using vespalib::ArrayRef;
 using vespalib::ConstArrayRef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 namespace {
 
@@ -181,9 +180,7 @@ RankingExpressionBlueprint::RankingExpressionBlueprint(rankingexpression::Expres
 {
 }
 
-RankingExpressionBlueprint::~RankingExpressionBlueprint()
-{
-}
+RankingExpressionBlueprint::~RankingExpressionBlueprint() = default;
 
 void
 RankingExpressionBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
@@ -305,5 +302,4 @@ RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &env, ve
 
 //-----------------------------------------------------------------------------
 
-} // features
-} // search
+}

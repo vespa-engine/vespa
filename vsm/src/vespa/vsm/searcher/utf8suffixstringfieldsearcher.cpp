@@ -14,7 +14,7 @@ UTF8SuffixStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mints
 {
     (void) mintsz;
     termcount_t words = 0;
-    const byte * srcbuf = reinterpret_cast<const byte *> (f.c_str());
+    const byte * srcbuf = reinterpret_cast<const byte *> (f.data());
     const byte * srcend = srcbuf + f.size();
     if (f.size() >= _buf->size()) {
         _buf->reserve(f.size() + 1);

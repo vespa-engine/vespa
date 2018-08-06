@@ -52,12 +52,12 @@ public class ArtifactRepositoryMock extends AbstractComponent implements Artifac
     }
 
     @Override
-    public byte[] getTesterJar(ApplicationId tester, String applicationVersion) {
+    public byte[] getTesterPackage(ApplicationId tester, String applicationVersion) {
         throw new AssertionError();
     }
 
     @Override
-    public void putTesterJar(ApplicationId tester, String applicationVersion, byte[] fatTestJar) {
+    public void putTesterPackage(ApplicationId tester, String applicationVersion, byte[] testerPackage) {
         throw new AssertionError();
     }
 

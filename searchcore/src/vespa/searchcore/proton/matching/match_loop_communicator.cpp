@@ -3,15 +3,14 @@
 #include "match_loop_communicator.h"
 #include <vespa/vespalib/util/priority_queue.h>
 
-namespace proton {
-namespace matching {
+namespace proton:: matching {
 
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
     : _estimate_match_frequency(threads),
       _selectBest(threads, topN),
       _rangeCover(threads)
 {}
-MatchLoopCommunicator::~MatchLoopCommunicator() {}
+MatchLoopCommunicator::~MatchLoopCommunicator() = default;
 
 void
 MatchLoopCommunicator::EstimateMatchFrequency::mingle()
@@ -72,5 +71,4 @@ MatchLoopCommunicator::RangeCover::mingle()
     }
 }
 
-} // namespace matching
-} // namespace proton
+}

@@ -238,12 +238,12 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.3.6</version>
+                <version>${apache.httpclient.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>4.3.3</version>
+                <version>${apache.httpcore.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -417,6 +417,12 @@
             </dependency>
             <dependency>
                 <!-- NOT provided from jdisc runtime -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava-testlib</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <!-- NOT provided from jdisc runtime -->
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-continuation</artifactId>
                 <version>${jetty.version}</version>
@@ -452,6 +458,8 @@
     </dependencyManagement>
 
     <properties>
+        <apache.httpclient.version>4.4.1</apache.httpclient.version>
+        <apache.httpcore.version>4.4.1</apache.httpcore.version>
         <bouncycastle.version>1.58</bouncycastle.version>
         <felix.version>5.6.10</felix.version>
         <findbugs.version>1.3.9</findbugs.version>

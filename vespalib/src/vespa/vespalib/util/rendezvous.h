@@ -71,7 +71,7 @@ public:
      * @param n the size of this Rendezvous
      **/
     Rendezvous(size_t n);
-    virtual ~Rendezvous() {}
+    virtual ~Rendezvous();
 
     /**
      * Called by individual threads to synchronize execution and share

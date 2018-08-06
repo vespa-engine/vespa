@@ -84,9 +84,9 @@ void reportTooShortDocId(const char * id, size_t sz)
 
 uint64_t getAsNumber(const stringref & s, const char* part) {
     char* errPos = NULL;
-    uint64_t value = strtoull(s.c_str(), &errPos, 10);
+    uint64_t value = strtoull(s.data(), &errPos, 10);
 
-    if (s.c_str() + s.size() != errPos) {
+    if (s.data() + s.size() != errPos) {
         reportError(s, part);
     }
     return value;
@@ -96,9 +96,9 @@ void
 getOrderDocBits(const stringref& scheme, uint16_t & widthBits, uint16_t & divisionBits)
 {
     const char* parenPos = reinterpret_cast<const char*>(
-            memchr(scheme.c_str(), '(', scheme.size()));
+            memchr(scheme.data(), '(', scheme.size()));
     const char* endParenPos = reinterpret_cast<const char*>(
-            memchr(scheme.c_str(), ')', scheme.size()));
+            memchr(scheme.data(), ')', scheme.size()));
 
     if (parenPos == NULL || endParenPos == NULL || endParenPos < parenPos) {
         reportError(scheme);
@@ -198,13 +198,13 @@ IdString::Offsets::Offsets(uint32_t maxComponents, uint32_t namespaceOffset, con
 {
     _offsets[0] = namespaceOffset;
     size_t index(1);
-    const char * s(id.c_str() + namespaceOffset);
-    const char * e(id.c_str() + id.size());
+    const char * s(id.data() + namespaceOffset);
+    const char * e(id.data() + id.size());
     for(s=fmemchr(s, e);
         (s != NULL) && (index < maxComponents);
         s = fmemchr(s+1, e))
     {
-        _offsets[index++] = s - id.c_str() + 1;
+        _offsets[index++] = s - id.data() + 1;
     }
     _numComponents = index;
     for (;index < VESPA_NELEMS(_offsets); index++) {
@@ -276,14 +276,14 @@ union LocationUnion {
 
 IdString::LocationType makeLocation(const stringref &s) {
     LocationUnion location;
-    fastc_md5sum(reinterpret_cast<const unsigned char*>(s.c_str()), s.size(), location._key);
+    fastc_md5sum(reinterpret_cast<const unsigned char*>(s.data()), s.size(), location._key);
     return location._location[0];
 }
 
 uint64_t parseNumber(const stringref &number) {
     char* errPos = NULL;
     errno = 0;
-    uint64_t n = strtoul(number.c_str(), &errPos, 10);
+    uint64_t n = strtoul(number.data(), &errPos, 10);
     if (*errPos) {
         throw IdParseException(
                 "'n'-value must be a 64-bit number. It was " +
@@ -396,7 +396,7 @@ GroupDocIdString::locationFromGroupName(vespalib::stringref name)
 }
 
 OrderDocIdString::OrderDocIdString(const stringref & rawId) :
-    IdString(4, static_cast<const char *>(memchr(rawId.c_str(), ':', rawId.size())) - rawId.c_str() + 1, rawId),
+    IdString(4, static_cast<const char *>(memchr(rawId.data(), ':', rawId.size())) - rawId.data() + 1, rawId),
     _widthBits(0),
     _divisionBits(0),
     _ordering(getAsNumber(rawId.substr(offset(2), offset(3) - offset(2) - 1), "ordering"))

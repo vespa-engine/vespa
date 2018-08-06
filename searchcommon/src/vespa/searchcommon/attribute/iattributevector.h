@@ -2,22 +2,21 @@
 
 #pragma once
 
-#include <vector>
 #include "collectiontype.h"
 #include "basictype.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace search {
-
-class IDocumentWeightAttribute;
-class QueryTermSimple;
-
-namespace tensor {
-class ITensorAttribute;
+    class IDocumentWeightAttribute;
+    class QueryTermSimple;
 }
 
-namespace attribute {
+namespace search::tensor {
+    class ITensorAttribute;
+}
+
+namespace search::attribute {
 
 class ISearchContext;
 class SearchContextParams;
@@ -438,6 +437,4 @@ private:
 
 };
 
-} // namespace attribute
-} // namespace search
-
+}

@@ -110,7 +110,7 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _delayedAttributeAspects(false)
 { }
 
-DocumentDBConfig::~DocumentDBConfig() { }
+DocumentDBConfig::~DocumentDBConfig() = default;
 
 bool
 DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const

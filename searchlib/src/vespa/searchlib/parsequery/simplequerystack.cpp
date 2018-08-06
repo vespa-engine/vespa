@@ -159,6 +159,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
     const char *p = theBuf.begin();
     const char *ep = theBuf.end();
     uint64_t tmp(0);
+    int64_t tmpI64(0);
     uint8_t flags(0);
     while (p < ep) {
         vespalib::string metaStr;
@@ -248,22 +249,20 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             termRef = p;
             p += termRefLen;
             result.append(make_string("%c/%d:%.*s/%d:%.*s~", _G_ItemName[type],
-                                            idxRefLen, idxRefLen, idxRef,
-                                            termRefLen, termRefLen, termRef));
+                                      idxRefLen, idxRefLen, idxRef, termRefLen, termRefLen, termRef));
             break;
         case ParseItem::ITEM_PURE_WEIGHTED_STRING:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             termRefLen = tmp;
             termRef = p;
             p += termRefLen;
-            result.append(make_string("%c/%d:%.*s~", _G_ItemName[type],
-                                            termRefLen, termRefLen, termRef));
+            result.append(make_string("%c/%d:%.*s~", _G_ItemName[type], termRefLen, termRefLen, termRef));
             break;
 
         case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-            tmp = vespalib::nbo::n2h(*reinterpret_cast<const uint64_t *>(p));
+            tmpI64 = vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
             p += sizeof(uint64_t);
-            result.append(make_string("%c/%lu", _G_ItemName[type], tmp));
+            result.append(make_string("%c/%" PRId64, _G_ItemName[type], tmpI64));
             break;
 
         case ParseItem::ITEM_PHRASE:
@@ -281,13 +280,12 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
                 uint32_t targetNumHits = tmp;
                 double scoreThreshold = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); 
                 p += sizeof(double);
-                double thresholdBoostFactor = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); // thresholdBoostFactor
+                double thresholdBoostFactor = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p));
                 p += sizeof(double);
                 result.append(make_string("%c/%d/%d:%.*s(%u,%f,%f)~", _G_ItemName[type], arity, idxRefLen,
-                                                idxRefLen, idxRef, targetNumHits, scoreThreshold, thresholdBoostFactor));
+                                          idxRefLen, idxRef, targetNumHits, scoreThreshold, thresholdBoostFactor));
             } else {
-                result.append(make_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen,
-                                                idxRefLen, idxRef));
+                result.append(make_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen, idxRefLen, idxRef));
             }
             break;
 
@@ -297,8 +295,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             idxRef = p;
             p += idxRefLen;
             size_t feature_count = ReadCompressedPositiveInt(p);
-            result.append(make_string(
-                    "%c/%d:%.*s/%zu(", _G_ItemName[type], idxRefLen, idxRefLen, idxRef, feature_count));
+            result.append(make_string("%c/%d:%.*s/%zu(", _G_ItemName[type], idxRefLen, idxRefLen, idxRef, feature_count));
             for (size_t i = 0; i < feature_count; ++i) {
                 vespalib::string key = ReadString(p);
                 vespalib::string value = ReadString(p);

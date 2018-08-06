@@ -110,7 +110,7 @@ public class ExpressionFunction {
 
     @Override
     public String toString() {
-        return name;
+        return "function '" + name + "'";
     }
     
     /**

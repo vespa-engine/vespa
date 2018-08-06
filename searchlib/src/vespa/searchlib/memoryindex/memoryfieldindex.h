@@ -52,7 +52,7 @@ public:
             if (wordRef.valid()) {
                 return _wordStore.getWord(wordRef);
             }
-            return _word.c_str();
+            return _word.data();
         }
 
     public:

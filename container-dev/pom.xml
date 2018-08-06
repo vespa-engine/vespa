@@ -189,7 +189,7 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
+    <!-- NOTE: Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
          and hence make them invisible to user projects' build classpath.
          Excluded artifacts should be added explicitly to the application module to make then visible in users' test classpath. -->
     <dependency>
@@ -205,6 +205,21 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>linguistics</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.optimaize.languagedetector</groupId>
+          <artifactId>language-detector</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.opennlp</groupId>
+          <artifactId>opennlp-tools</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>predicate-search-core</artifactId>
       <version>${project.version}</version>
       <exclusions>
@@ -214,6 +229,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-
+    <!-- DO NOT add dependencies here, but above the NOTE! -->
   </dependencies>
 </project>

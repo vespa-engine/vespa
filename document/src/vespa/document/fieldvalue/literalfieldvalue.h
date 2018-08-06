@@ -54,7 +54,7 @@ public:
         _value = _backing;
         _altered = true;
     }
-    size_t hash() const override final { return vespalib::hashValue(_value.c_str()); }
+    size_t hash() const override final { return vespalib::hashValue(_value.data(), _value.size()); }
     void setValue(const char* val, size_t size) { setValue(stringref(val, size)); }
 
     int compare(const FieldValue& other) const override;
@@ -76,7 +76,7 @@ public:
 protected:
     void syncBacking() const __attribute__((noinline));
     void sync() const {
-        if (__builtin_expect(_backing.c_str() != _value.c_str(), false)) {
+        if (__builtin_expect(_backing.data() != _value.data(), false)) {
             syncBacking();
         }
     }

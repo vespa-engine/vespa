@@ -43,7 +43,7 @@ AddValueUpdate::checkCompatibility(const Field& field) const
         const CollectionDataType& type(static_cast<const CollectionDataType&>(field.getDataType()));
         if (!type.getNestedType().isValueType(*_value)) {
             throw IllegalArgumentException("Cannot add value of type " + _value->getDataType()->toString() +
-                                           " to field " + field.getName().c_str() + " of container type " +
+                                           " to field " + field.getName() + " of container type " +
                                            field.getDataType().toString(), VESPA_STRLOC);
         }
     } else {
