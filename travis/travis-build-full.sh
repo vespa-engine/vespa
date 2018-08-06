@@ -14,9 +14,9 @@ ccache --print-config
 
 cd ${SOURCE_DIR}
 sh ./bootstrap.sh java
-mvn install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS}
-bash ${SOURCE_DIR}/bootstrap-cmake.sh ${SOURCE_DIR}
-make -j ${NUM_THREADS}
-ctest3 --output-on-failure -j ${NUM_THREADS}
-ccache --show-stats
-make install
+mvn install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS} -Dmaven.javadoc.skip=true -Dmaven.test.skip=true
+for i in $(seq 1 30); do
+    echo -e "\n\n\n--> RUN ${i}"
+    mvn --no-snapshot-updates --batch-mode --threads ${NUM_THREADS} -pl node-repository test '-Dtest=PeriodicApplicationMaintainerTest'
+    echo -e "\n\n\n"
+done
