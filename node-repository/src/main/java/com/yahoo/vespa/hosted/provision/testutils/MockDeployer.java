@@ -21,12 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * @author bratseth
  */
 public class MockDeployer implements Deployer {
+
+    private static final Logger log = Logger.getLogger(MockDeployer.class.getName());
 
     private final NodeRepositoryProvisioner provisioner;
     private final Map<ApplicationId, ApplicationContext> applications;
@@ -68,6 +71,7 @@ public class MockDeployer implements Deployer {
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, Duration timeout) {
         try {
+            log.info("Acquiring " + lock.hashCode() + " lock from " + Thread.currentThread().getId());
             lock.lockInterruptibly();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -76,6 +80,7 @@ public class MockDeployer implements Deployer {
             lastDeployTimes.put(id, clock.instant());
             return Optional.of(new MockDeployment(provisioner, applications.get(id)));
         } finally {
+            log.info("Releasing " + lock.hashCode() + " lock from " + Thread.currentThread().getId());
             lock.unlock();
         }
     }
