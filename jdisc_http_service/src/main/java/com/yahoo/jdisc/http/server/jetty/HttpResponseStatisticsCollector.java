@@ -37,7 +37,7 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     private final AtomicReference<FutureCallback> shutdown = new AtomicReference<>();
 
     public static enum HttpMethod {
-        GET, PATCH, POST, PUT, REMOVE, UNKNOWN
+        GET, PATCH, POST, PUT, DELETE, UNKNOWN
     }
 
     private static final String[] HTTP_RESPONSE_GROUPS = { Metrics.RESPONSES_1XX, Metrics.RESPONSES_2XX, Metrics.RESPONSES_3XX,
@@ -149,7 +149,7 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         case "PUT":
             return HttpMethod.PUT;
         case "DELETE":
-            return HttpMethod.REMOVE;
+            return HttpMethod.DELETE;
         default:
             return HttpMethod.UNKNOWN;
         }
