@@ -3,6 +3,7 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/document/select/constant.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/parsing_failed_exception.h>
 #include <vespa/document/util/serializableexceptions.h>
@@ -28,8 +29,13 @@ std::unique_ptr<select::Node>
 parseDocumentSelection(vespalib::stringref query, const DocumentTypeRepo& repo)
 {
     BucketIdFactory factory;
-    select::Parser parser(repo, factory);
-    return parser.parse(query);
+    try {
+        select::Parser parser(repo, factory);
+        return parser.parse(query);
+    } catch (const ParsingFailedException &e) {
+        LOG(warning, "Failed to parse selection for field path update: %s", e.getMessage().c_str());
+        return std::make_unique<select::Constant>(false);
+    }
 }
 
 }  // namespace
@@ -66,18 +72,14 @@ FieldPathUpdate::applyTo(Document& doc) const
     if (_originalWhereClause.empty()) {
         doc.iterateNested(path, *handler);
     } else {
-        try {
-            std::unique_ptr<select::Node> whereClause = parseDocumentSelection(_originalWhereClause, *doc.getRepo());
-            select::ResultList results = whereClause->contains(doc);
-            for (select::ResultList::const_iterator i = results.begin(); i != results.end(); ++i) {
-                LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
-                if (*i->second == select::Result::True) {
-                    handler->setVariables(i->first);
-                    doc.iterateNested(path, *handler);
-                }
+        std::unique_ptr<select::Node> whereClause = parseDocumentSelection(_originalWhereClause, *doc.getRepo());
+        select::ResultList results = whereClause->contains(doc);
+        for (select::ResultList::const_iterator i = results.begin(); i != results.end(); ++i) {
+            LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
+            if (*i->second == select::Result::True) {
+                handler->setVariables(i->first);
+                doc.iterateNested(path, *handler);
             }
-        } catch (const ParsingFailedException &e) {
-            LOG(warning, "Failed to parse selection for field path update: %s", e.getMessage().c_str());
         }
     }
 }
