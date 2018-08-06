@@ -115,8 +115,8 @@ public class SessionTest implements SessionHandler {
         server.setSessionHandler(this);
         client   = new Test.Orb(new Transport());
         client.setSessionHandler(this);
-        acceptor = server.listen(new Spec(Test.PORT));
-        target   = client.connect(new Spec("localhost", Test.PORT),
+        acceptor = server.listen(new Spec(0));
+        target   = client.connect(new Spec("localhost", acceptor.port()),
                                   new Session());
 
         server.addMethod(new Method("set", "i", "", this,
@@ -425,7 +425,7 @@ public class SessionTest implements SessionHandler {
         assertEquals(1, client.downCount);
         assertEquals(1, client.finiCount);
 
-        target = client.connect(new Spec("localhost", Test.PORT),
+        target = client.connect(new Spec("localhost", acceptor.port()),
                                 new Session());
 
         waitState(0, 2, 1, 2, 2, 2, -1, 2, 2);
@@ -441,7 +441,7 @@ public class SessionTest implements SessionHandler {
 
         client.transport().shutdown().join();
 
-        target = client.connect(new Spec("localhost", Test.PORT),
+        target = client.connect(new Spec("localhost", acceptor.port()),
                                 new Session());
 
         waitState(0, 2, 1, 2, 2, 3, oldClientLive, 3, 3);

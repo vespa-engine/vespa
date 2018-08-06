@@ -24,36 +24,39 @@ public class ListenTest {
     @org.junit.Test
     public void testListen() {
         try {
-            Acceptor a = server.listen(new Spec(Test.PORT));
-            assertEquals(Test.PORT, a.port());
+            Acceptor a = server.listen(new Spec(0));
+            assertTrue(a.port() > 0);
             a.shutdown().join();
             assertEquals(-1, a.port());
         } catch (ListenFailedException e) {
             assertTrue(false);
         }
         try {
-            Acceptor a = server.listen(new Spec(null, Test.PORT));
-            assertEquals(Test.PORT, a.port());
+            Acceptor a = server.listen(new Spec(null, 0));
+            assertTrue(a.port() > 0);
             a.shutdown().join();
             assertEquals(-1, a.port());
         } catch (ListenFailedException e) {
             assertTrue(false);
         }
         try {
-            Acceptor a = server.listen(new Spec("tcp/" + Test.PORT));
-            assertEquals(Test.PORT, a.port());
+            Acceptor a = server.listen(new Spec("tcp/" + 0));
+            assertTrue(a.port() > 0);
             a.shutdown().join();
             assertEquals(-1, a.port());
         } catch (ListenFailedException e) {
             assertTrue(false);
         }
         try {
-            Acceptor a = server.listen(new Spec(Test.PORT_0));
-            Acceptor b = server.listen(new Spec(Test.PORT_1));
-            Acceptor c = server.listen(new Spec(Test.PORT_2));
-            assertEquals(Test.PORT_0, a.port());
-            assertEquals(Test.PORT_1, b.port());
-            assertEquals(Test.PORT_2, c.port());
+            Acceptor a = server.listen(new Spec(0));
+            Acceptor b = server.listen(new Spec(0));
+            Acceptor c = server.listen(new Spec(0));
+            assertTrue(a.port() > 0);
+            assertTrue(b.port() > 0);
+            assertTrue(c.port() > 0);
+            assertTrue(a.port() != b.port());
+            assertTrue(a.port() != c.port());
+            assertTrue(b.port() != c.port());
             a.shutdown().join();
             assertEquals(-1, a.port());
             b.shutdown().join();
@@ -71,30 +74,17 @@ public class ListenTest {
             Acceptor a = server.listen(new Spec("bogus"));
             assertTrue(false);
         } catch (ListenFailedException e) {}
-
-        try {
-            Acceptor a = server.listen(new Spec(Test.PORT));
-            assertEquals(Test.PORT, a.port());
-            // try {
-            //  Acceptor b = server.listen(new Spec(Test.PORT));
-            //  assertTrue(false);
-            // } catch (ListenFailedException e) {}
-            a.shutdown().join();
-            assertEquals(-1, a.port());
-        } catch (ListenFailedException e) {
-            assertTrue(false);
-        }
     }
 
     @org.junit.Test
-    public void testListenAnyPort() {
+    public void testListenSamePort() {
         try {
             Acceptor a = server.listen(new Spec("tcp/0"));
             assertTrue(a.port() > 0);
-            // try {
-            //  Acceptor b = server.listen(new Spec(a.port()));
-            //  assertTrue(false);
-            // } catch (ListenFailedException e) {}
+            try {
+                Acceptor b = server.listen(new Spec(a.port()));
+                assertTrue(false);
+            } catch (ListenFailedException e) {}
             a.shutdown().join();
             assertEquals(-1, a.port());
         } catch (ListenFailedException e) {
