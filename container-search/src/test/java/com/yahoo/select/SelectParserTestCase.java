@@ -14,12 +14,14 @@ import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
+import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -646,6 +648,14 @@ public class SelectParserTestCase {
         assertGrouping(expected, parseGrouping(grouping));
     }
 
+
+    @Test
+    public void testMultipleGroupings() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\"}}}, { \"all\" : { \"group\" : \"b\", \"each\" : { \"output\" : \"count()\"}}} ]";
+        String expected = "[[]all(group(a) each(output(count()))), []all(group(b) each(output(count())))]";
+
+        assertGrouping(expected, parseGrouping(grouping));
+    }
 
 
 

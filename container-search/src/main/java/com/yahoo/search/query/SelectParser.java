@@ -218,15 +218,31 @@ public class SelectParser implements Parser {
 
     public List<VespaGroupingStep> getGroupingSteps(String grouping){
         List<VespaGroupingStep> groupingSteps = new ArrayList<>();
-        GroupingOperation groupingOperation = GroupingOperation.fromString(transformGrouping(grouping));
-        VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
-        groupingSteps.add(groupingStep);
+        List<String> groupingOperations = getOperations(grouping);
+        for (String groupingString : groupingOperations){
+            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingString);
+            VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
+            groupingSteps.add(groupingStep);
+        }
         return groupingSteps;
     }
 
-    private String transformGrouping(String grouping){
-        String groupingString = grouping.replace(" ", "").replace("\"", "").replace("\'", "").replace(":{", "(").replace(":", "(").replace("}", ")").replace(",", ")");
-        return groupingString.substring(2, groupingString.length()-1);
+    private List<String> getOperations(String grouping) {
+        List<String> operations = new ArrayList<>();
+        Inspector inspector = SlimeUtils.jsonToSlime(grouping.getBytes()).get();
+        if (inspector.field("error_message").valid()){
+            throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
+        }
+
+        inspector.traverse( (ArrayTraverser) (key, value) -> {
+            String groupingString = value.toString();
+            groupingString = groupingString.replace(" ", "").replace("\"", "").replace("\'", "").replace(":{", "(").replace(":", "(").replace("}", ")").replace(",", ")");
+            groupingString = groupingString.substring(1, groupingString.length());
+            operations.add(groupingString);
+        });
+
+        return operations;
+
     }
 
 
