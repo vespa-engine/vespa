@@ -33,6 +33,7 @@ struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
     void tearDown() override;
 
     void testWhereClause();
+    void testBrokenWhereClause();
     void testNoIterateMapValues();
     void testRemoveField();
     void testApplyRemoveEntireListField();
@@ -73,6 +74,7 @@ struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
 
     CPPUNIT_TEST_SUITE(FieldPathUpdateTestCase);
     CPPUNIT_TEST(testWhereClause);
+    CPPUNIT_TEST(testBrokenWhereClause);
     CPPUNIT_TEST(testNoIterateMapValues);
     CPPUNIT_TEST(testRemoveField);
     CPPUNIT_TEST(testApplyRemoveEntireListField);
@@ -353,6 +355,17 @@ FieldPathUpdateTestCase::testWhereClause()
     TestFieldPathUpdate update("l1s1.structmap.value.smap{$x}", where);
     update.applyTo(*doc);
     CPPUNIT_ASSERT_EQUAL(std::string("dicaprio"), update._str);
+}
+
+void
+FieldPathUpdateTestCase::testBrokenWhereClause()
+{
+    DocumentTypeRepo repo(getRepoConfig());
+    Document::UP doc(createTestDocument(repo));
+    std::string where = "l1s1.structmap.value.smap{$x} == \"dicaprio\"";
+    TestFieldPathUpdate update("l1s1.structmap.value.smap{$x}", where);
+    update.applyTo(*doc);
+    CPPUNIT_ASSERT_EQUAL(std::string(""), update._str);
 }
 
 void

@@ -4,6 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/document/select/parsing_failed_exception.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <ostream>
@@ -11,6 +12,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".document.update.fieldpathupdate");
 
+using document::select::ParsingFailedException;
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 
@@ -64,14 +66,18 @@ FieldPathUpdate::applyTo(Document& doc) const
     if (_originalWhereClause.empty()) {
         doc.iterateNested(path, *handler);
     } else {
-        std::unique_ptr<select::Node> whereClause = parseDocumentSelection(_originalWhereClause, *doc.getRepo());
-        select::ResultList results = whereClause->contains(doc);
-        for (select::ResultList::const_iterator i = results.begin(); i != results.end(); ++i) {
-            LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
-            if (*i->second == select::Result::True) {
-                handler->setVariables(i->first);
-                doc.iterateNested(path, *handler);
+        try {
+            std::unique_ptr<select::Node> whereClause = parseDocumentSelection(_originalWhereClause, *doc.getRepo());
+            select::ResultList results = whereClause->contains(doc);
+            for (select::ResultList::const_iterator i = results.begin(); i != results.end(); ++i) {
+                LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
+                if (*i->second == select::Result::True) {
+                    handler->setVariables(i->first);
+                    doc.iterateNested(path, *handler);
+                }
             }
+        } catch (const ParsingFailedException &e) {
+            LOG(warning, "Failed to parse selection for field path update: %s", e.getMessage().c_str());
         }
     }
 }
