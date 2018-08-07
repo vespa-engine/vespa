@@ -349,6 +349,7 @@ public class DeploymentTrigger {
         if (!jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
         if (!jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
         if (!versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
+        if (application.deploymentSpec().upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return true; // Don't throttle canaries
 
         Instant firstFailing = jobStatus.get().firstFailing().get().at();
         Instant lastCompleted = jobStatus.get().lastCompleted().get().at();
