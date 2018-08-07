@@ -2,7 +2,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.deployment.InternalBuildService;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
@@ -20,9 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
- * Advances the set of {@link RunStatus}es for an {@link InternalBuildService}.
+ * Advances the set of {@link RunStatus}es for a {@link JobController}.
  *
- * @see JobController
  * @author jonmv
  */
 public class JobRunner extends Maintainer {

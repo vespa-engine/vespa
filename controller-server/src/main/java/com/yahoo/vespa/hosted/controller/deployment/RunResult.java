@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 /**
- * Outcomes of jobs run by an {@link InternalBuildService}.
+ * Outcomes of jobs run by a {@link JobController}.
  *
  * @author jonmv
  */

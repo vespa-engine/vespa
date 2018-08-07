@@ -16,7 +16,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinishe
 import static java.util.Objects.requireNonNull;
 
 /**
- * Immutable class containing status information for a deployment job run by an {@link InternalBuildService}.
+ * Immutable class containing status information for a deployment job run by a {@link JobController}.
  *
  * @author jonmv
  */
