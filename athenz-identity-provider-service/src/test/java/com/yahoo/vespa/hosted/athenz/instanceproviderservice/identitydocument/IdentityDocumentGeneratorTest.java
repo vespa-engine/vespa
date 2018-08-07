@@ -87,6 +87,8 @@ public class IdentityDocumentGeneratorTest {
 
         String environment = "dev";
         String region = "us-north-1";
+        String expectedZoneDnsSuffix = environment + "-" + region + "." + dnsSuffix;
+        assertEquals(expectedZoneDnsSuffix, signedIdentityDocument.dnsSuffix());
 
         VespaUniqueInstanceId expectedProviderUniqueId =
                 new VespaUniqueInstanceId(0, "default", "default", "application", "tenant", region, environment, IdentityType.TENANT);

@@ -9,6 +9,7 @@ import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
 import com.yahoo.vespa.athenz.tls.KeyUtils;
 import org.junit.Test;
 
+import java.net.URI;
 import java.security.KeyPair;
 import java.time.Instant;
 import java.util.Arrays;
@@ -17,7 +18,7 @@ import java.util.HashSet;
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.TENANT;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_KEY_VERSION;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author bjorncs
@@ -40,7 +41,7 @@ public class IdentityDocumentSignerTest {
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt, ipAddresses, identityType, keyPair.getPrivate());
 
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
-                signature, DEFAULT_KEY_VERSION, id, providerService,
+                null, signature, DEFAULT_KEY_VERSION, id, "dns-suffix", providerService, URI.create("https://zts"),
                 DEFAULT_DOCUMENT_VERSION, configserverHostname, instanceHostname, createdAt, ipAddresses, identityType);
 
         assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));

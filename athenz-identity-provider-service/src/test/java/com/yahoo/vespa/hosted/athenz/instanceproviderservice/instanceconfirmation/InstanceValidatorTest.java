@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
@@ -8,8 +10,18 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentEntity;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.VespaUniqueInstanceIdEntity;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
 import org.junit.Test;
 
+import java.net.URI;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +40,6 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author valerijf
- * @author bjorncs
  */
 public class InstanceValidatorTest {
 
@@ -80,6 +91,44 @@ public class InstanceValidatorTest {
         InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider);
 
         assertTrue(instanceValidator.isSameIdentityAsInServicesXml(applicationId, domain, service));
+    }
+
+    private static InstanceConfirmation createInstanceConfirmation(PrivateKey privateKey, ApplicationId applicationId,
+                                                                   String domain, String service) {
+        IdentityDocumentEntity identityDocument = new IdentityDocumentEntity(
+                new VespaUniqueInstanceIdEntity(applicationId.tenant().value(), applicationId.application().value(),
+                                                "environment", "region", applicationId.instance().value(), "cluster-id", 0),
+                "hostname",
+                "instance-hostname",
+                Instant.now(),
+                ImmutableSet.of("127.0.0.1", "::1"));
+
+        try {
+            ObjectMapper mapper = Utils.getMapper();
+            String encodedIdentityDocument =
+                    Base64.getEncoder().encodeToString(mapper.writeValueAsString(identityDocument).getBytes());
+            Signature sigGenerator = Signature.getInstance("SHA512withRSA");
+            sigGenerator.initSign(privateKey);
+            sigGenerator.update(encodedIdentityDocument.getBytes());
+
+            return new InstanceConfirmation(
+                    "provider", domain, service,
+                    new SignedIdentityDocumentEntity(encodedIdentityDocument,
+                                                     Base64.getEncoder().encodeToString(sigGenerator.sign()),
+                                                     0,
+                                                     EntityBindingsMapper.toVespaUniqueInstanceId(identityDocument.providerUniqueId).asDottedString(),
+                                                     "dnssuffix",
+                                                     "service",
+                                                     URI.create("http://localhost/zts"),
+                                                     1,
+                                                     identityDocument.configServerHostname,
+                                                     identityDocument.instanceHostname,
+                                                     identityDocument.createdAt,
+                                                     identityDocument.ipAddresses,
+                                                     null)); // TODO Remove support for legacy representation without type
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private SuperModelProvider mockSuperModelProvider(ApplicationInfo... appInfos) {
