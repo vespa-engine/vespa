@@ -67,7 +67,7 @@ public class Select implements Cloneable {
     }
 
 
-    /** Set the where-clause for the query. Must be a JSON-string, with the format described in the Select Reference doc. */
+    /** Set the where-clause for the query. Must be a JSON-string, with the format described in the Select Reference doc - https://docs.vespa.ai/documentation/reference/select-reference.html. */
     public void setWhere(String where) {
         this.where = where;
         model.setType(SELECT);
@@ -83,7 +83,7 @@ public class Select implements Cloneable {
     }
 
 
-    /** Set the grouping-string for the query. Must be a JSON-string, with the format described in the Select Reference doc. */
+    /** Set the grouping-string for the query. Must be a JSON-string, with the format described in the Select Reference doc - https://docs.vespa.ai/documentation/reference/select-reference.html. */
     public void setGrouping(String grouping){
         this.grouping = grouping;
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
