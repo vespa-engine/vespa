@@ -39,13 +39,15 @@ public class JobControllerApiHandlerHelperTest {
     private final ApplicationId appId = ApplicationId.from("vespa", "music", "default");
     private final Instant start = Instant.parse("2018-06-27T10:12:35Z");
 
+    private static Step lastStep = Step.values()[Step.values().length - 1];
+
     @Test
     public void jobTypeResponse() {
         Map<JobType, RunStatus> jobMap = new HashMap<>();
         List<JobType> jobList = new ArrayList<>();
-        jobMap.put(JobType.systemTest, createStatus(JobType.systemTest, 1, 30, Step.last(), Step.Status.succeeded));
+        jobMap.put(JobType.systemTest, createStatus(JobType.systemTest, 1, 30, lastStep, Step.Status.succeeded));
         jobList.add(JobType.systemTest);
-        jobMap.put(JobType.productionApNortheast1, createStatus(JobType.productionApNortheast1, 1, 60, Step.last(), Step.Status.succeeded));
+        jobMap.put(JobType.productionApNortheast1, createStatus(JobType.productionApNortheast1, 1, 60, lastStep, Step.Status.succeeded));
         jobList.add(JobType.productionApNortheast1);
         jobMap.put(JobType.productionUsWest1, createStatus(JobType.productionUsWest1, 1, 60, Step.startTests, Step.Status.failed));
         jobList.add(JobType.productionUsWest1);
@@ -61,13 +63,13 @@ public class JobControllerApiHandlerHelperTest {
         Map<RunId, RunStatus> statusMap = new HashMap<>();
         RunStatus status;
 
-        status = createStatus(JobType.systemTest, 3, 30, Step.last(), Step.Status.succeeded);
+        status = createStatus(JobType.systemTest, 3, 30, lastStep, Step.Status.succeeded);
         statusMap.put(status.id(), status);
 
         status = createStatus(JobType.systemTest, 2, 56, Step.installReal, Step.Status.failed);
         statusMap.put(status.id(), status);
 
-        status = createStatus(JobType.systemTest, 1, 44, Step.last(), Step.Status.succeeded);
+        status = createStatus(JobType.systemTest, 1, 44, lastStep, Step.Status.succeeded);
         statusMap.put(status.id(), status);
 
         URI jobTypeUrl = URI.create("https://domain.tld/application/v4/tenant/sometenant/application/someapp/instance/usuallydefault/job/systemtest");
@@ -85,7 +87,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.curator().writeHistoricRuns(
                 runId.application(),
                 runId.type(),
-                Collections.singleton(createStatus(JobType.systemTest, 42, 44, Step.last(), Step.Status.succeeded)));
+                Collections.singleton(createStatus(JobType.systemTest, 42, 44, lastStep, Step.Status.succeeded)));
 
         logStore.append(runId, Step.deployTester.name(), "INFO\t1234567890\tSUCCESS".getBytes());
         logStore.append(runId, Step.installTester.name(), "INFO\t1234598760\tSUCCESS".getBytes());
@@ -114,7 +116,7 @@ public class JobControllerApiHandlerHelperTest {
         RunId runId = new RunId(appId, type, runid);
 
         Map<Step, Step.Status> stepStatusMap = new HashMap<>();
-        Arrays.stream(Step.values()).sorted(Comparator.naturalOrder()).forEach(step -> {
+        for (Step step : Step.values()) {
             if (step.ordinal() < lastStep.ordinal()) {
                 stepStatusMap.put(step, Step.Status.succeeded);
             } else if (step.equals(lastStep)) {
@@ -122,10 +124,10 @@ public class JobControllerApiHandlerHelperTest {
             } else {
                 stepStatusMap.put(step, Step.Status.unfinished);
             }
-        });
+        }
 
         Optional<Instant> end = Optional.empty();
-        if (lastStepStatus == Step.Status.failed || (lastStepStatus != Step.Status.unfinished && lastStep == Step.last())) {
+        if (lastStepStatus == Step.Status.failed || stepStatusMap.get(lastStep) == Step.Status.succeeded) {
             end = Optional.of(start.plusSeconds(duration));
         }
 

@@ -26,8 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingSe
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.deployment.DelegatingBuildService;
-import com.yahoo.vespa.hosted.controller.deployment.InternalBuildService;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
@@ -126,8 +124,7 @@ public class Controller extends AbstractComponent {
                                                           configServer,
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
-                                                          new DelegatingBuildService(Objects.requireNonNull(buildService, "BuildService cannot be null"),
-                                                                                     new InternalBuildService(jobController)),
+                                                          Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
         tenantController = new TenantController(this, curator, athenzClientFactory);
 

@@ -1,16 +1,14 @@
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.Testers;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 
 import java.net.URI;
 import java.util.Arrays;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Testers.Status.FAILURE;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Testers.Status.NOT_STARTED;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Testers.Status.RUNNING;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Testers.Status.SUCCESS;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.NOT_STARTED;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.RUNNING;
 
-public class MockTesters implements Testers {
+public class MockTesterCloud implements TesterCloud {
 
     private byte[] logs = new byte[0];
     private Status status = NOT_STARTED;

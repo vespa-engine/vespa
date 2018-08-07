@@ -69,11 +69,13 @@ public class DeploymentTrigger {
     private final Controller controller;
     private final Clock clock;
     private final BuildService buildService;
+    private final JobController jobs;
 
     public DeploymentTrigger(Controller controller, BuildService buildService, Clock clock) {
         this.controller = Objects.requireNonNull(controller, "controller cannot be null");
-        this.buildService = Objects.requireNonNull(buildService, "buildService cannot be null");
         this.clock = Objects.requireNonNull(clock, "clock cannot be null");
+        this.buildService = Objects.requireNonNull(buildService, "buildService cannot be null");
+        this.jobs = controller.jobController();
     }
 
     public DeploymentSteps steps(DeploymentSpec spec) {
@@ -161,14 +163,19 @@ public class DeploymentTrigger {
      * Attempts to trigger the given job for the given application and returns the outcome.
      *
      * If the build service can not find the given job, or claims it is illegal to trigger it,
-     * the project id is removed from the application owning the job, to prevent further trigger attemps.
+     * the project id is removed from the application owning the job, to prevent further trigger attempts.
      */
     public boolean trigger(Job job) {
         log.log(LogLevel.INFO, String.format("Triggering %s: %s", job, job.triggering));
         try {
-            buildService.trigger(job);
-            applications().lockOrThrow(job.applicationId(), application ->
-                    applications().store(application.withJobTriggering(job.jobType, job.triggering)));
+            applications().lockOrThrow(job.applicationId(), application -> {
+                if (application.get().deploymentJobs().builtInternally())
+                    jobs.start(job.applicationId(), job.jobType);
+                else
+                    buildService.trigger(job);
+
+                applications().store(application.withJobTriggering(job.jobType, job.triggering));
+            });
             return true;
         }
         catch (RuntimeException e) {
@@ -184,6 +191,9 @@ public class DeploymentTrigger {
     public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType, String user) {
         Application application = applications().require(applicationId);
         if (jobType == component) {
+            if (application.deploymentJobs().builtInternally())
+                throw new IllegalArgumentException(applicationId + " has no component job we can trigger.");
+
             buildService.trigger(BuildJob.of(applicationId, application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
             return singletonList(component);
         }
@@ -339,6 +349,7 @@ public class DeploymentTrigger {
         if (!jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
         if (!jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
         if (!versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
+        if (application.deploymentSpec().upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return true; // Don't throttle canaries
 
         Instant firstFailing = jobStatus.get().firstFailing().get().at();
         Instant lastCompleted = jobStatus.get().lastCompleted().get().at();
@@ -376,6 +387,10 @@ public class DeploymentTrigger {
     }
 
     private JobState jobStateOf(Application application, JobType jobType) {
+        if (application.deploymentJobs().builtInternally()) {
+            Optional<RunStatus> run = controller.jobController().last(application.id(), jobType);
+            return run.isPresent() && ! run.get().hasEnded() ? JobState.running : JobState.idle;
+        }
         return buildService.stateOf(BuildJob.of(application.id(),
                                                 application.deploymentJobs().projectId().getAsLong(),
                                                 jobType.jobName()));
