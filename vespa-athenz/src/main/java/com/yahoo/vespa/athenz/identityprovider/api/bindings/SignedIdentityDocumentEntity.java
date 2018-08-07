@@ -54,7 +54,7 @@ public class SignedIdentityDocumentEntity {
                                         @JsonProperty("ip-addresses") Set<String> ipAddresses,
                                         @JsonProperty("identity-type") String identityType) {
         this.rawIdentityDocument = rawIdentityDocument;
-        this.identityDocument = parseIdentityDocument(rawIdentityDocument);
+        this.identityDocument = rawIdentityDocument != null ? parseIdentityDocument(rawIdentityDocument) : null;
         this.signature = signature;
         this.signingKeyVersion = signingKeyVersion;
         this.providerUniqueId = providerUniqueId;
