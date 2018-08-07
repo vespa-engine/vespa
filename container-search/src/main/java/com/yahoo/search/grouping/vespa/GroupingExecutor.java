@@ -378,7 +378,7 @@ public class GroupingExecutor extends Searcher {
         return (obj instanceof List);
     }
 
-    /**1
+    /**
      * Sets the list of {@link Grouping} objects assigned to the given query. This method overwrites any grouping
      * objects already assigned to the query.
      *

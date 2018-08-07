@@ -278,7 +278,7 @@ public class QueryProperties extends Properties {
                 else if (key.equals(Query.GROUPING_SESSION_CACHE))
                     query.setGroupingSessionCache(asBoolean(value, false));
                 else if (key.equals(GroupingExecutor.GROUPING_LIST))
-                    query.getSelect().setGrouping(value);
+                    query.getSelect().setGrouping((List<GroupingRequest>)value);
                 else
                     super.set(key,value,context);
             }

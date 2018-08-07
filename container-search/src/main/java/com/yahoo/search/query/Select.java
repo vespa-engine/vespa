@@ -70,7 +70,9 @@ public class Select implements Cloneable {
     }
 
 
-    /** Set the where-clause for the query. Must be a JSON-string, with the format described in the Select Reference doc - https://docs.vespa.ai/documentation/reference/select-reference.html. */
+    /** Set the where-clause for the query. Must be a JSON-string, with the format described in the Select Reference doc:
+     * @see <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">https://docs.vespa.ai/documentation/reference/select-reference.html</a>
+     */
     public void setWhereString(String where) {
         this.where = where;
         model.setType(SELECT);
@@ -81,12 +83,12 @@ public class Select implements Cloneable {
 
 
     /** Returns the where-clause in the query */
-    public String getWhereString(){
-        return this.where;
-    }
+    public String getWhereString(){ return where; }
 
 
-    /** Set the grouping-string for the query. Must be a JSON-string, with the format described in the Select Reference doc - https://docs.vespa.ai/documentation/reference/select-reference.html. */
+    /** Set the grouping-string for the query. Must be a JSON-string, with the format described in the Select Reference doc:
+     * @see <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">https://docs.vespa.ai/documentation/reference/select-reference.html</a>
+     * */
     public void setGroupingString(String grouping){
         this.grouping = grouping;
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
@@ -101,23 +103,20 @@ public class Select implements Cloneable {
 
     /** Returns the grouping in the query */
     public String getGroupingString(){
-        return this.grouping;
+        return grouping;
     }
 
 
     /** Returns the query's {@link GroupingRequest} objects */
-    public List<GroupingRequest> getGrouping(){ return this.groupingRequests; }
+    public List<GroupingRequest> getGrouping(){ return groupingRequests; }
 
 
     /** Set the query's list of {@link GroupingRequest} objects */
-    public void setGrouping(Object lst){
+    public void setGrouping(List<GroupingRequest> lst){
         if (lst == null) {
             lst = Collections.emptyList();
         }
-        if (!(lst instanceof List)) {
-            throw new IllegalArgumentException("Expected " + GroupingRequest.class + ", got " + lst.getClass() + ".");
-        }
-        this.groupingRequests = (List<GroupingRequest>) lst;
+        this.groupingRequests = lst;
     }
 
 

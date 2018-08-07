@@ -151,14 +151,8 @@ public class GroupingRequest {
      * @return The list of grouping requests.
      */
     @SuppressWarnings({ "unchecked" })
+    @Deprecated
     public static List<GroupingRequest> getRequests(Query query) {
-        Object lst = query.properties().get(PROP_REQUEST);
-        if (lst == null) {
-            return Collections.emptyList();
-        }
-        if (!(lst instanceof List)) {
-            throw new IllegalArgumentException("Expected " + GroupingRequest.class + ", got " + lst.getClass() + ".");
-        }
-        return (List<GroupingRequest>)lst;
+        return query.getSelect().getGrouping();
     }
 }
