@@ -7,7 +7,7 @@ package com.yahoo.search.searchchain;
  * a searcher should depend on some explicit functionality, not these
  * checkpoints.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class PhaseNames {
     private PhaseNames() {

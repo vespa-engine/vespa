@@ -24,7 +24,7 @@ public class Model {
     private final ImmutableList<ExpressionFunction> functions;
 
     /** Instances of each usage of the above function, where variables (if any) are replaced by their bindings */
-    private final ImmutableMap<String, ExpressionFunction> referredFunctions;
+    private final ImmutableMap<String, ExpressionFunction> referencedFunctions;
 
     private final ImmutableMap<String, LazyArrayContext> contextPrototypes;
 
@@ -32,26 +32,31 @@ public class Model {
         this(name, functions, Collections.emptyList());
     }
 
-    Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> referredFunctions) {
+    Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> referencedFunctions) {
         // TODO: Optimize functions
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
 
         ImmutableMap.Builder<String, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
-        for (ExpressionFunction function : referredFunctions)
-            functionsBuilder.put(function.getName(), function);
-        this.referredFunctions = functionsBuilder.build();
+        for (ExpressionFunction function : referencedFunctions)
+            functionsBuilder.put(function.getName(), optimize(function));
+        this.referencedFunctions = functionsBuilder.build();
 
         ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
         for (ExpressionFunction function : functions) {
             try {
-                contextBuilder.put(function.getName(), new LazyArrayContext(function.getBody(), this.referredFunctions));
+                contextBuilder.put(function.getName(), new LazyArrayContext(function.getBody(), this.referencedFunctions, this));
             }
             catch (RuntimeException e) {
                 throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);
             }
         }
         this.contextPrototypes = contextBuilder.build();
+    }
+
+    /** Returns an optimized version of the given function */
+    private ExpressionFunction optimize(ExpressionFunction function) {
+        return function; // TODO
     }
 
     public String name() { return name; }
@@ -85,8 +90,17 @@ public class Model {
         return null;
     }
 
-    /** Returns an immutable map of the bound function instances of this, indexed by the bound instance if */
-    Map<String, ExpressionFunction> boundFunctions() { return referredFunctions; }
+    /** Returns an immutable map of the referenced function instances of this, indexed by the bound instance id */
+    Map<String, ExpressionFunction> referencedFunctions() { return referencedFunctions; }
+
+    /** Returns the given referred function, or throws a IllegalArgumentException if it does not exist */
+    ExpressionFunction requireReferencedFunction(String id) {
+        ExpressionFunction function = referencedFunctions.get(id);
+        if (function == null)
+            throw new IllegalArgumentException("No function reference with id '" + id + "' in " + this + ". Referenced functions: " +
+                                               referencedFunctions.keySet().stream().collect(Collectors.joining(", ")));
+        return function;
+    }
 
     /**
      * Returns an evaluator which can be used to evaluate the given function in a single thread once.
@@ -97,7 +111,7 @@ public class Model {
      * @throws IllegalArgumentException if the function is not present
      */
     public FunctionEvaluator evaluatorOf(String function) {  // TODO: Parameter overloading?
-        return new FunctionEvaluator(requireContextProprotype(function).copy());
+        return new FunctionEvaluator(requireFunction(function), requireContextProprotype(function).copy());
     }
 
     @Override

@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
@@ -27,11 +26,9 @@ import java.util.Set;
  */
 final class LazyArrayContext extends Context implements ContextIndex {
 
-    private final RankingExpression expression;
     private final IndexedBindings indexedBindings;
 
-    private LazyArrayContext(RankingExpression expression, IndexedBindings indexedBindings) {
-        this.expression = expression;
+    private LazyArrayContext(IndexedBindings indexedBindings) {
         this.indexedBindings = indexedBindings.copy(this);
     }
 
@@ -40,9 +37,8 @@ final class LazyArrayContext extends Context implements ContextIndex {
      *
      * @param expression the expression to create a context for
      */
-    LazyArrayContext(RankingExpression expression, Map<String, ExpressionFunction> functions) {
-        this.expression = expression;
-        this.indexedBindings = new IndexedBindings(expression, functions, this);
+    LazyArrayContext(RankingExpression expression, Map<String, ExpressionFunction> functions, Model model) {
+        this.indexedBindings = new IndexedBindings(expression, functions, this, model);
     }
 
     /**
@@ -116,17 +112,12 @@ final class LazyArrayContext extends Context implements ContextIndex {
         return index;
     }
 
-    @Override
-    public String toString() { return "context of '" + expression.getName() + "'"; }
-
-    RankingExpression expression() { return expression; }
-
     /**
      * Creates a copy of this context suitable for evaluating against the same ranking expression
      * in a different thread or for re-binding free variables.
      */
     LazyArrayContext copy() {
-        return new LazyArrayContext(expression, indexedBindings);
+        return new LazyArrayContext(indexedBindings);
     }
 
     private static class IndexedBindings {
@@ -142,7 +133,14 @@ final class LazyArrayContext extends Context implements ContextIndex {
             this.values = values;
         }
 
-        IndexedBindings(RankingExpression expression, Map<String, ExpressionFunction> functions, LazyArrayContext owner) {
+        /**
+         * Creates indexed bindings for the given expressions.
+         * The given expression and functions may be inspected but cannot be stored.
+         */
+        IndexedBindings(RankingExpression expression,
+                        Map<String, ExpressionFunction> functions,
+                        LazyArrayContext owner,
+                        Model model) {
             Set<String> bindTargets = new LinkedHashSet<>();
             extractBindTargets(expression.getRoot(), functions, bindTargets);
 
@@ -158,7 +156,7 @@ final class LazyArrayContext extends Context implements ContextIndex {
             for (Map.Entry<String, ExpressionFunction> function : functions.entrySet()) {
                 Integer index = nameToIndex.get(function.getKey());
                 if (index != null) // Referenced in this, so bind it
-                    values[index] = new LazyValue(function.getValue(), owner);
+                    values[index] = new LazyValue(function.getKey(), owner, model);
             }
         }
 

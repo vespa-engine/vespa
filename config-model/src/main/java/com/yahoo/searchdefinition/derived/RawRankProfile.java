@@ -212,8 +212,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private Map<String, String> deriveMacroProperties(Map<String, ExpressionFunction> eMacros) {
             SerializationContext context = new SerializationContext(eMacros);
             for (Map.Entry<String, ExpressionFunction> e : eMacros.entrySet()) {
-                String script = e.getValue().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
-                context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), script);
+                String expression = e.getValue().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
+                context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expression);
+
             }
             return context.serializedFunctions();
         }
