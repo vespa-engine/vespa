@@ -164,7 +164,7 @@ public class SelectParser implements Parser {
 
 
     private QueryTree buildTree() {
-        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhere().getBytes()).get();
+        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhereString().getBytes()).get();
         if (inspector.field("error_message").valid()){
             throw new QueryException("Illegal query: "+inspector.field("error_message").asString() + ", at: "+ new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8));
         }

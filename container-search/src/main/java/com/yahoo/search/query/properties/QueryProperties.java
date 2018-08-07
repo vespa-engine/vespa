@@ -114,8 +114,8 @@ public class QueryProperties extends Properties {
             }
         }
         else if (key.size()==2 && key.first().equals(Select.SELECT)) {
-            if (key.last().equals(Select.WHERE)) return query.getSelect().getWhere();
-            if (key.last().equals(Select.GROUPING)) return query.getSelect().getGrouping();
+            if (key.last().equals(Select.WHERE)) return query.getSelect().getWhereString();
+            if (key.last().equals(Select.GROUPING)) return query.getSelect().getGroupingString();
         }
         else if (key.size()==2 && key.first().equals(Presentation.PRESENTATION)) {
             if (key.last().equals(Presentation.BOLDING)) return query.getPresentation().getBolding();
@@ -254,10 +254,8 @@ public class QueryProperties extends Properties {
             else if (key.size()==2 && key.first().equals(Select.SELECT)) {
                 if (key.last().equals(Select.WHERE)){
                     query.getSelect().setWhere(asString(value, ""));
-                    query.getModel().setType(asString(value, "SELECT"));
                 } else if (key.last().equals(Select.GROUPING)) {
                     query.getSelect().setGrouping(asString(value, ""));
-                    query.getModel().setType(asString(value, "SELECT"));
                 }
             }
             else if (key.first().equals("rankfeature") || key.first().equals("featureoverride") ) { // featureoverride is deprecated

@@ -249,7 +249,7 @@ public class Model implements Cloneable {
     public String getQueryString() { return queryString; }
 
     /**
-     * Returns the query as an object structure.
+     * Returns the query as an object structure. Remember to have the correct Query.Type set.
      * This causes parsing of the query string if it has changed since this was last called
      * (i.e query parsing is lazy)
      */

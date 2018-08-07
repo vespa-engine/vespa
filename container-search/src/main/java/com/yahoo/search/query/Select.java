@@ -56,8 +56,8 @@ public class Select implements Cloneable {
     }
 
 
-    /** returns the query owning this, never null */
-    public Query getParent() { return parent; }
+    /** Returns the query owning this, never null */
+    private Query getParent() { return parent; }
 
 
     /** Assigns the query owning this */
@@ -67,31 +67,24 @@ public class Select implements Cloneable {
     }
 
 
-    public static Select getFrom(Query q) {
-        return (Select) q.properties().get(argumentTypeName);
-    }
-
-
-    public void setQueryString(String queryString) {
-        model.setQueryString(queryString);
-    }
-
-
-    /** Set the where-clause for the query. Must be a JSON-string. */
+    /** Set the where-clause for the query. Must be a JSON-string, with the format described in the Select Reference doc. */
     public void setWhere(String where) {
         this.where = where;
+        model.setType(SELECT);
+
+        // Setting the queryTree to null
+        model.setQueryString(null);
     }
 
 
     /** Returns the where-clause in the query */
-    public String getWhere(){
+    public String getWhereString(){
         return this.where;
     }
 
 
-    /** Set the grouping-string for the query. Must be a JSON-string. */
+    /** Set the grouping-string for the query. Must be a JSON-string, with the format described in the Select Reference doc. */
     public void setGrouping(String grouping){
-
         this.grouping = grouping;
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
 
@@ -100,12 +93,11 @@ public class Select implements Cloneable {
                     .setRootOperation(step.getOperation())
                     .continuations().addAll(step.continuations());
         }
-
     }
 
 
     /** Returns the grouping in the query */
-    public String getGrouping(){
+    public String getGroupingString(){
         return this.grouping;
     }
 

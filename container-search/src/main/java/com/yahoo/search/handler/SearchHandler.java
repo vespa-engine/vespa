@@ -586,10 +586,9 @@ public class SearchHandler extends LoggingRequestHandler {
                 throw new QueryException("Illegal query: Query contains both yql- and select-parameter");
             }
 
-            // The query-parameter overrides the select-parameter. Removing them here to prevent further processing of select-parameters.
-            if (requestMap.containsKey("query")) {
-                requestMap.remove("select.where");
-                requestMap.remove("select.grouping");
+            // Throws QueryException if query contains both query- and select-parameter
+            if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) ) {
+                throw new QueryException("Illegal query: Query contains both query- and select-parameter");
             }
 
             return requestMap;
