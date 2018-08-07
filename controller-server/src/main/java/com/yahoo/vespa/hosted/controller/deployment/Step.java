@@ -66,10 +66,6 @@ public enum Step {
 
     public List<Step> prerequisites() { return prerequisites; }
 
-    public static Step last() {
-        return report;
-    }
-
     public enum Status {
 
         /** Step still has unsatisfied finish criteria -- it may not even have started. */
