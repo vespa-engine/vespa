@@ -320,9 +320,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_call_1(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
     }
     void make_call_1(const char *name) {
-        make_call_1(dynamic_cast<llvm::Function*>(module.getOrInsertFunction(name,
-                                builder.getDoubleTy(),
-                                builder.getDoubleTy(), nullptr)));
+        make_call_1(llvm::dyn_cast<llvm::Function>(
+                    module.getOrInsertFunction(name, builder.getDoubleTy(), builder.getDoubleTy(), nullptr)));
     }
 
     void make_call_2(llvm::Function *fun) {
@@ -337,10 +336,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_call_2(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
     }
     void make_call_2(const char *name) {
-        make_call_2(dynamic_cast<llvm::Function*>(module.getOrInsertFunction(name,
-                                builder.getDoubleTy(),
-                                builder.getDoubleTy(),
-                                builder.getDoubleTy(), nullptr)));
+        make_call_2(llvm::dyn_cast<llvm::Function>(
+                    module.getOrInsertFunction(name, builder.getDoubleTy(), builder.getDoubleTy(), builder.getDoubleTy(), nullptr)));
     }
 
     //-------------------------------------------------------------------------
