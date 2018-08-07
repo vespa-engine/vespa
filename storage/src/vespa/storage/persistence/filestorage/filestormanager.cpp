@@ -36,7 +36,6 @@ FileStorManager(const config::ConfigUri & configUri, const spi::PartitionStateLi
       _partitions(partitions),
       _providerCore(provider),
       _providerErrorWrapper(_providerCore),
-      _nodeUpInLastNodeStateSeenByProvider(false),
       _providerMetric(new spi::MetricPersistenceProvider(_providerErrorWrapper)),
       _provider(_providerMetric.get()),
       _bucketIdFactory(_component.getBucketIdFactory()),
@@ -886,21 +885,23 @@ FileStorManager::updateState()
     auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
     lib::ClusterState::CSP state(clusterStateBundle->getBaselineClusterState());
     lib::Node node(_component.getNodeType(), _component.getIndex());
-    bool nodeUp = state->getNodeState(node).getState().oneOf("uir");
 
     LOG(debug, "FileStorManager received cluster state '%s'", state->toString().c_str());
-    // If edge where we go down
-    if (_nodeUpInLastNodeStateSeenByProvider && !nodeUp) {
-        LOG(debug, "Received cluster state where this node is down; de-activating all buckets in database");
-        Deactivator deactivator;
-        _component.getBucketSpaceRepo().forEachBucket(deactivator, "FileStorManager::updateState");
-    }
     for (const auto &elem : _component.getBucketSpaceRepo()) {
         BucketSpace bucketSpace(elem.first);
-        spi::ClusterState spiState(*elem.second->getClusterState(), _component.getIndex(), *elem.second->getDistribution());
+        ContentBucketSpace &contentBucketSpace = *elem.second;
+        auto derivedClusterState = contentBucketSpace.getClusterState();
+        bool nodeUp = derivedClusterState->getNodeState(node).getState().oneOf("uir");
+        // If edge where we go down
+        if (contentBucketSpace.getNodeUpInLastNodeStateSeenByProvider() && !nodeUp) {
+            LOG(debug, "Received cluster state where this node is down; de-activating all buckets in database for bucket space %s", bucketSpace.toString().c_str());
+            Deactivator deactivator;
+            contentBucketSpace.bucketDatabase().all(deactivator, "FileStorManager::updateState");
+        }
+        contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(nodeUp);
+        spi::ClusterState spiState(*derivedClusterState, _component.getIndex(), *contentBucketSpace.getDistribution());
         _provider->setClusterState(bucketSpace, spiState);
     }
-    _nodeUpInLastNodeStateSeenByProvider = nodeUp;
 }
 
 void

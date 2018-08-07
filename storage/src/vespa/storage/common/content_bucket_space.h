@@ -22,6 +22,7 @@ private:
     mutable std::mutex _lock;
     std::shared_ptr<const lib::ClusterState> _clusterState;
     std::shared_ptr<const lib::Distribution> _distribution;
+    bool _nodeUpInLastNodeStateSeenByProvider;
 
 public:
     using UP = std::unique_ptr<ContentBucketSpace>;
@@ -33,6 +34,8 @@ public:
     std::shared_ptr<const lib::ClusterState> getClusterState() const;
     void setDistribution(std::shared_ptr<const lib::Distribution> distribution);
     std::shared_ptr<const lib::Distribution> getDistribution() const;
+    bool getNodeUpInLastNodeStateSeenByProvider() const;
+    void setNodeUpInLastNodeStateSeenByProvider(bool nodeUpInLastNodeStateSeenByProvider);
 };
 
 }
