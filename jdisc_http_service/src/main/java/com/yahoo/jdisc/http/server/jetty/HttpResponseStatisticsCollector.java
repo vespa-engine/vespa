@@ -37,7 +37,7 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     private final AtomicReference<FutureCallback> shutdown = new AtomicReference<>();
 
     public static enum HttpMethod {
-        GET, PATCH, POST, PUT, DELETE, UNKNOWN
+        GET, PATCH, POST, PUT, DELETE, OPTIONS, HEAD, OTHER
     }
 
     private static final String[] HTTP_RESPONSE_GROUPS = { Metrics.RESPONSES_1XX, Metrics.RESPONSES_2XX, Metrics.RESPONSES_3XX,
@@ -85,6 +85,7 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
             throws IOException, ServletException {
         inFlight.incrementAndGet();
 
+        /* The control flow logic here is mostly a copy from org.eclipse.jetty.server.handler.StatisticsHandler.handle(..) */
         try {
             Handler handler = getHandler();
             if (handler != null && shutdown.get() == null && isStarted()) {
@@ -150,8 +151,12 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
             return HttpMethod.PUT;
         case "DELETE":
             return HttpMethod.DELETE;
+        case "OPTIONS":
+            return HttpMethod.OPTIONS;
+        case "HEAD":
+            return HttpMethod.HEAD;
         default:
-            return HttpMethod.UNKNOWN;
+            return HttpMethod.OTHER;
         }
     }
 
@@ -188,6 +193,8 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
 
     @Override
     public Future<Void> shutdown() {
+        /* This shutdown callback logic is a copy from org.eclipse.jetty.server.handler.StatisticsHandler */
+
         FutureCallback shutdownCb = new FutureCallback(false);
         shutdown.compareAndSet(null, shutdownCb);
         shutdownCb = shutdown.get();
