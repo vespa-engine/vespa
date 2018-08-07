@@ -35,7 +35,7 @@ yca.ttl int default=0
 yca.retry int default=0
 
 # The form of the serialized query.
-queryType enum { LEGACY, PROGRAMMATIC, YQL } default=LEGACY
+queryType enum { LEGACY, PROGRAMMATIC, YQL, SELECT } default=LEGACY
 
 # How to do pinging against a backend.
 pingOption enum { DISABLE, NORMAL, YCA } default=NORMAL

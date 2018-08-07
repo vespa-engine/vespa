@@ -3,6 +3,7 @@ package com.yahoo.search.query.parser;
 
 import com.yahoo.prelude.query.parser.*;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.yql.YqlParser;
 
 /**
@@ -40,6 +41,8 @@ public final class ParserFactory {
                 return new ProgrammaticParser();
             case YQL:
                 return new YqlParser(environment);
+            case SELECT:
+                return new SelectParser(environment);
             default:
                 throw new UnsupportedOperationException(type.toString());
         }

@@ -789,7 +789,7 @@ public class YqlParser implements Parser {
             OperatorNode<ExpressionOperator> groupingAst = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(2).get(0);
             GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.<String> getArgument(0));
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
-            List<String> continuations = getAnnotation(groupingAst, "continuations", List.class, 
+            List<String> continuations = getAnnotation(groupingAst, "continuations", List.class,
                                                        Collections.emptyList(), "grouping continuations");
             for (String continuation : continuations) {
                 groupingStep.continuations().add(Continuation.fromString(continuation));

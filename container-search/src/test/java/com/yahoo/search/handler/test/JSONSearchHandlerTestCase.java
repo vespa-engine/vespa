@@ -11,7 +11,10 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import org.json.JSONObject;
 import org.junit.After;
@@ -21,8 +24,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -338,6 +343,35 @@ public class JSONSearchHandlerTestCase {
     }
 
 
+    @Test
+    public void testSelectParameter() throws Exception {
+        JSONObject json = new JSONObject();
+
+        JSONObject select = new JSONObject();
+
+            JSONObject where = new JSONObject();
+            where.put("where", "where");
+
+            JSONObject grouping = new JSONObject();
+            grouping.put("grouping", "grouping");
+
+        select.put("where", where);
+        select.put("grouping", grouping);
+
+        json.put("select", select);
+
+
+        // Create mapping
+        Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes("utf-8")).get();
+        Map<String, String> map = new HashMap<>();
+        searchHandler.createRequestMapping(inspector, map, "");
+
+        JSONObject processedWhere = new JSONObject(map.get("select.where"));
+        assertEquals(where.toString(), processedWhere.toString());
+
+        JSONObject processedGrouping = new JSONObject(map.get("select.grouping"));
+        assertEquals(grouping.toString(), processedGrouping.toString());
+    }
 
     @Test
     public void testRequestMapping() throws Exception {

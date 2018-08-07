@@ -580,8 +580,18 @@ public class SearchHandler extends LoggingRequestHandler {
             // Create request-mapping
             Map<String, String> requestMap = new HashMap<>();
             createRequestMapping(inspector, requestMap, "");
-            return requestMap;
 
+            // Throws QueryException if query contains both yql- and select-parameter
+            if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) ) {
+                throw new QueryException("Illegal query: Query contains both yql- and select-parameter");
+            }
+
+            // Throws QueryException if query contains both query- and select-parameter
+            if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) ) {
+                throw new QueryException("Illegal query: Query contains both query- and select-parameter");
+            }
+
+            return requestMap;
 
         } else {
             return request.propertyMap();
@@ -609,6 +619,10 @@ public class SearchHandler extends LoggingRequestHandler {
                     map.put(qualifiedKey, value.asString());
                     break;
                 case OBJECT:
+                    if (qualifiedKey.equals("select.where") || qualifiedKey.equals("select.grouping")){
+                        map.put(qualifiedKey, value.toString());
+                        break;
+                    }
                     createRequestMapping(value, map, qualifiedKey+".");
                     break;
             }

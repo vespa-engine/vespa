@@ -20,6 +20,7 @@ import com.yahoo.search.query.Presentation;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Ranking;
+import com.yahoo.search.query.Select;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.AttributeSorter;
@@ -100,7 +101,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         ADVANCED(3,"adv"),
         WEB(4,"web"),
         PROGRAMMATIC(5, "prog"),
-        YQL(6, "yql");
+        YQL(6, "yql"),
+        SELECT(7, "select");;
 
         private final int intValue;
         private final String stringValue;
@@ -170,6 +172,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** How results of this query should be presented */
     private Presentation presentation = new Presentation(this);
 
+    /** The selection of where-clause and grouping */
+    private Select select = new Select(this);
+
     //---------------- Tracing ----------------------------------------------------
 
     private static Logger log = Logger.getLogger(Query.class.getName());
@@ -207,6 +212,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(Presentation.PRESENTATION, new QueryProfileFieldType(Presentation.getArgumentType())));
         argumentType.addField(new FieldDescription(Ranking.RANKING, new QueryProfileFieldType(Ranking.getArgumentType())));
         argumentType.addField(new FieldDescription(Model.MODEL, new QueryProfileFieldType(Model.getArgumentType())));
+        argumentType.addField(new FieldDescription(Select.SELECT, new QueryProfileFieldType(Select.getArgumentType())));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
@@ -220,6 +226,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         addAliases(Ranking.getArgumentType(), propertyAliasesBuilder);
         addAliases(Model.getArgumentType(), propertyAliasesBuilder);
         addAliases(Presentation.getArgumentType(), propertyAliasesBuilder);
+        addAliases(Select.getArgumentType(), propertyAliasesBuilder);
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
     private static void addAliases(QueryProfileType arguments, Map<String, CompoundName> aliases) {
@@ -239,6 +246,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         registry.register(Query.getArgumentType().unfrozen());
         registry.register(Ranking.getArgumentType().unfrozen());
         registry.register(Model.getArgumentType().unfrozen());
+        registry.register(Select.getArgumentType().unfrozen());
         registry.register(Presentation.getArgumentType().unfrozen());
         registry.register(DefaultProperties.argumentType.unfrozen());
     }
@@ -383,6 +391,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         setFrom(properties,Model.getArgumentType(), context);
         setFrom(properties,Presentation.getArgumentType(), context);
         setFrom(properties,Ranking.getArgumentType(), context);
+        setFrom(properties, Select.getArgumentType(), context);
     }
 
     /**
@@ -981,6 +990,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Returns the presentation to be used for this query, never null */
     public Presentation getPresentation() { return presentation; }
+
+    /** Returns the select to be used for this query, never null */
+    public Select getSelect() { return select; }
 
     /** Returns the ranking to be used for this query, never null */
     public Ranking getRanking() { return ranking; }
