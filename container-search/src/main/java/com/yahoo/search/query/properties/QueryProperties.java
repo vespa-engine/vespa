@@ -3,10 +3,11 @@ package com.yahoo.search.query.properties;
 
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
+import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.*;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
-import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.MatchPhase;
@@ -14,10 +15,10 @@ import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.tensor.Tensor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+
 
 /**
  * Maps between the query model and text properties.
@@ -139,6 +140,7 @@ public class QueryProperties extends Properties {
             if (key.toString().equals(Model.MODEL)) return query.getModel();
             if (key.toString().equals(Ranking.RANKING)) return query.getRanking();
             if (key.toString().equals(Presentation.PRESENTATION)) return query.getPresentation();
+            if (key.toString().equals(GroupingExecutor.GROUPING_LIST)) return query.getSelect().getGrouping();
         }
         return super.get(key, context, substitution);
     }
@@ -253,9 +255,9 @@ public class QueryProperties extends Properties {
             }
             else if (key.size()==2 && key.first().equals(Select.SELECT)) {
                 if (key.last().equals(Select.WHERE)){
-                    query.getSelect().setWhere(asString(value, ""));
+                    query.getSelect().setWhereString(asString(value, ""));
                 } else if (key.last().equals(Select.GROUPING)) {
-                    query.getSelect().setGrouping(asString(value, ""));
+                    query.getSelect().setGroupingString(asString(value, ""));
                 }
             }
             else if (key.first().equals("rankfeature") || key.first().equals("featureoverride") ) { // featureoverride is deprecated
@@ -275,6 +277,8 @@ public class QueryProperties extends Properties {
                     query.setNoCache(asBoolean(value,false));
                 else if (key.equals(Query.GROUPING_SESSION_CACHE))
                     query.setGroupingSessionCache(asBoolean(value, false));
+                else if (key.equals(GroupingExecutor.GROUPING_LIST))
+                    query.getSelect().setGrouping(value);
                 else
                     super.set(key,value,context);
             }
