@@ -56,7 +56,6 @@ class FileStorManager : public StorageLinkQueued,
     const spi::PartitionStateList& _partitions;
     spi::PersistenceProvider& _providerCore;
     ProviderErrorWrapper _providerErrorWrapper;
-    bool _nodeUpInLastNodeStateSeenByProvider;
     spi::MetricPersistenceProvider::UP _providerMetric;
     spi::PersistenceProvider* _provider;
     
