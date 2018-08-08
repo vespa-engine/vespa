@@ -54,7 +54,7 @@ public class ZKMetricUpdaterTest {
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_CONNECTIONS), equalTo(2L));
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_LATENCY_AVERAGE), equalTo(444L));
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_LATENCY_MAX), equalTo(1234L));
-        assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_OUTSTANDING_CONNECTIONS), equalTo(12L));
+        assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_OUTSTANDING_REQUESTS), equalTo(12L));
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_ZNODES), equalTo(4L));
     }
 

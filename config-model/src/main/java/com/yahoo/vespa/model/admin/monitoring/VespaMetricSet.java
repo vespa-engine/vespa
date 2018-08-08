@@ -72,7 +72,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("configserver.zkAvgLatency.last", "configserver.zkAvgLatency"));
         metrics.add(new Metric("configserver.zkMaxLatency.last", "configserver.zkMaxLatency"));
         metrics.add(new Metric("configserver.zkConnections.last", "configserver.zkConnections"));
-        metrics.add(new Metric("configserver.zkOutstandingConnections.last", "configserver.zkOutstandingConnections"));
+        metrics.add(new Metric("configserver.zkOutstandingRequests.last", "configserver.zkOutstandingRequests"));
 
         return metrics;
     }

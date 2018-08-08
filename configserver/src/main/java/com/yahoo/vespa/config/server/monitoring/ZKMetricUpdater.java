@@ -32,7 +32,7 @@ public class ZKMetricUpdater extends TimerTask {
     public static final String METRIC_ZK_LATENCY_AVERAGE = getMetricName("zkAvgLatency");
     public static final String METRIC_ZK_LATENCY_MAX = getMetricName("zkMaxLatency");
     public static final String METRIC_ZK_CONNECTIONS = getMetricName("zkConnections");
-    public static final String METRIC_ZK_OUTSTANDING_CONNECTIONS = getMetricName("zkOutstandingConnections");
+    public static final String METRIC_ZK_OUTSTANDING_REQUESTS = getMetricName("zkOutstandingRequests");
 
     private final int CONNECTION_TIMEOUT_MS = 500;
     private final int WRITE_TIMEOUT_MS = 250;
@@ -64,7 +64,7 @@ public class ZKMetricUpdater extends TimerTask {
             data.put(METRIC_ZK_CONNECTIONS, value);
             break;
         case "zk_outstanding_requests":
-            data.put(METRIC_ZK_OUTSTANDING_CONNECTIONS, value);
+            data.put(METRIC_ZK_OUTSTANDING_REQUESTS, value);
             break;
         }
     }
