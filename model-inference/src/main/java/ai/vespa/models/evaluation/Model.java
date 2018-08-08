@@ -25,15 +25,16 @@ public class Model {
     private final ImmutableList<ExpressionFunction> functions;
 
     /** Instances of each usage of the above function, where variables (if any) are replaced by their bindings */
-    private final ImmutableMap<String, ExpressionFunction> referencedFunctions;
+    private final ImmutableMap<String, ExpressionFunction> referencedFunctions; // TODO: Index by Functionreferece
 
+    /** Context prototypes, indexed by function name (as all invocations of the same function share the same context prototype) */
     private final ImmutableMap<String, LazyArrayContext> contextPrototypes;
 
     public Model(String name, Collection<ExpressionFunction> functions) {
-        this(name, functions, Collections.emptyList());
+        this(name, functions, Collections.emptyMap());
     }
 
-    Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> referencedFunctions) {
+    Model(String name, Collection<ExpressionFunction> functions, Map<FunctionReference, ExpressionFunction> referencedFunctions) {
         // TODO: Optimize functions
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
@@ -41,10 +42,7 @@ public class Model {
         ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
         for (ExpressionFunction function : functions) {
             try {
-                contextBuilder.put(function.getName(),
-                                   new LazyArrayContext(function.getBody(),
-                                                        referencedFunctions.stream().collect(Collectors.toMap(e -> e.getName(), e -> e)),
-                                                        this));
+                contextBuilder.put(function.getName(), new LazyArrayContext(function.getBody(), referencedFunctions, this));
             }
             catch (RuntimeException e) {
                 throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);
@@ -53,9 +51,9 @@ public class Model {
         this.contextPrototypes = contextBuilder.build();
 
         ImmutableMap.Builder<String, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
-        for (ExpressionFunction function : referencedFunctions)
-            functionsBuilder.put(function.getName(), optimize(function,
-                                                              contextPrototypes.get(FunctionReference.fromSerial(function.getName()).get().serialForm())));
+        for (Map.Entry<FunctionReference, ExpressionFunction> function : referencedFunctions.entrySet())
+            functionsBuilder.put(function.getKey().serialForm(),
+                                 optimize(function.getValue(), contextPrototypes.get(function.getKey().functionName())));
         this.referencedFunctions = functionsBuilder.build();
     }
 

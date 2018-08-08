@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,7 +49,18 @@ class FunctionReference {
     @Override
     public String toString() { return serialForm(); }
 
-    // TODO: Equals and hashcode
+    @Override
+    public int hashCode() { return Objects.hash(name, instance); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if ( ! (o instanceof FunctionReference)) return false;
+        FunctionReference other = (FunctionReference)o;
+        if ( ! Objects.equals(this.name, other.name)) return false;
+        if ( ! Objects.equals(this.instance, other.instance)) return false;
+        return true;
+    }
 
     /** Returns a function reference from the given serial form, or empty if the string is not a valid reference */
     static Optional<FunctionReference> fromSerial(String serialForm) {

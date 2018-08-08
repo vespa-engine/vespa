@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * An array context supporting functions invocations implemented as lazy values.
@@ -38,7 +37,7 @@ final class LazyArrayContext extends Context implements ContextIndex {
      *
      * @param expression the expression to create a context for
      */
-    LazyArrayContext(RankingExpression expression, Map<String, ExpressionFunction> functions, Model model) {
+    LazyArrayContext(RankingExpression expression, Map<FunctionReference, ExpressionFunction> functions, Model model) {
         this.indexedBindings = new IndexedBindings(expression, functions, this, model);
     }
 
@@ -139,7 +138,7 @@ final class LazyArrayContext extends Context implements ContextIndex {
          * The given expression and functions may be inspected but cannot be stored.
          */
         IndexedBindings(RankingExpression expression,
-                        Map<String, ExpressionFunction> functions,
+                        Map<FunctionReference, ExpressionFunction> functions,
                         LazyArrayContext owner,
                         Model model) {
             Set<String> bindTargets = new LinkedHashSet<>();
@@ -154,17 +153,17 @@ final class LazyArrayContext extends Context implements ContextIndex {
                 nameToIndexBuilder.put(variable,i++);
             nameToIndex = nameToIndexBuilder.build();
 
-            for (Map.Entry<String, ExpressionFunction> function : functions.entrySet()) {
-                Integer index = nameToIndex.get(function.getKey());
+            for (Map.Entry<FunctionReference, ExpressionFunction> function : functions.entrySet()) {
+                Integer index = nameToIndex.get(function.getKey().serialForm());
                 if (index != null) // Referenced in this, so bind it
-                    values[index] = new LazyValue(function.getKey(), owner, model);
+                    values[index] = new LazyValue(function.getKey().serialForm(), owner, model);
             }
         }
 
-        private void extractBindTargets(ExpressionNode node, Map<String, ExpressionFunction> functions, Set<String> bindTargets) {
+        private void extractBindTargets(ExpressionNode node, Map<FunctionReference, ExpressionFunction> functions, Set<String> bindTargets) {
             if (isFunctionReference(node)) {
-                String reference = node.toString();
-                bindTargets.add(reference);
+                FunctionReference reference = FunctionReference.fromSerial(node.toString()).get();
+                bindTargets.add(reference.serialForm());
 
                 extractBindTargets(functions.get(reference).getBody().getRoot(), functions, bindTargets);
             }
