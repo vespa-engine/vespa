@@ -62,15 +62,9 @@ MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_lim
     }
 }
 
-MatchTools::MatchTools(QueryLimiter & queryLimiter,
-                       const vespalib::Doom & softDoom,
-                       const vespalib::Doom & hardDoom,
-                       const Query &query,
-                       MaybeMatchPhaseLimiter & match_limiter_in,
-                       const QueryEnvironment & queryEnv,
-                       const MatchDataLayout & mdl,
-                       const RankSetup & rankSetup,
-                       const Properties & featureOverrides)
+MatchTools::MatchTools(QueryLimiter & queryLimiter, const vespalib::Doom & softDoom, const vespalib::Doom & hardDoom,
+                       const Query &query, MaybeMatchPhaseLimiter & match_limiter_in, const QueryEnvironment & queryEnv,
+                       const MatchDataLayout & mdl, const RankSetup & rankSetup, const Properties & featureOverrides)
     : _queryLimiter(queryLimiter),
       _softDoom(softDoom),
       _hardDoom(hardDoom),
@@ -79,6 +73,7 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
       _queryEnv(queryEnv),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
+      _useDiversityFilter(false),
       _match_data(mdl.createMatchData()),
       _rank_program(),
       _search(),
@@ -117,19 +112,11 @@ MatchTools::setup_dump()
 //-----------------------------------------------------------------------------
 
 MatchToolsFactory::
-MatchToolsFactory(QueryLimiter               & queryLimiter,
-                  const vespalib::Doom       & softDoom,
-                  const vespalib::Doom       & hardDoom,
-                  ISearchContext             & searchContext,
-                  IAttributeContext          & attributeContext,
-                  const vespalib::stringref  & queryStack,
-                  const vespalib::string     & location,
-                  const ViewResolver         & viewResolver,
-                  const IDocumentMetaStore   & metaStore,
-                  const IIndexEnvironment    & indexEnv,
-                  const RankSetup            & rankSetup,
-                  const Properties           & rankProperties,
-                  const Properties           & featureOverrides)
+MatchToolsFactory(QueryLimiter & queryLimiter, const vespalib::Doom & softDoom, const vespalib::Doom & hardDoom,
+                  ISearchContext  & searchContext, IAttributeContext & attributeContext,
+                  const vespalib::stringref & queryStack, const vespalib::string & location, const ViewResolver & viewResolver,
+                  const IDocumentMetaStore & metaStore, const IIndexEnvironment & indexEnv,
+                  const RankSetup & rankSetup, const Properties & rankProperties, const Properties & featureOverrides)
     : _queryLimiter(queryLimiter),
       _requestContext(softDoom, attributeContext),
       _hardDoom(hardDoom),
@@ -168,12 +155,19 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                             AttributeLimiter::toDiversityCutoffStrategy(diversity_cutoff_strategy));
         } else if (_rankSetup.hasMatchPhaseDegradation()) {
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(), _requestContext,
-                            _rankSetup.getDegradationAttribute(), _rankSetup.getDegradationMaxHits(), !_rankSetup.isDegradationOrderAscending(),
-                            _rankSetup.getDegradationMaxFilterCoverage(),
-                            _rankSetup.getDegradationSamplePercentage(), _rankSetup.getDegradationPostFilterMultiplier(),
-                            _rankSetup.getDiversityAttribute(), _rankSetup.getDiversityMinGroups(),
-                            _rankSetup.getDiversityCutoffFactor(),
-                            AttributeLimiter::toDiversityCutoffStrategy(_rankSetup.getDiversityCutoffStrategy()));
+                    _rankSetup.getDegradationAttribute(), _rankSetup.getDegradationMaxHits(), !_rankSetup.isDegradationOrderAscending(),
+                    _rankSetup.getDegradationMaxFilterCoverage(), _rankSetup.getDegradationSamplePercentage(), _rankSetup.getDegradationPostFilterMultiplier(),
+                    _rankSetup.getDiversityAttribute(), _rankSetup.getDiversityMinGroups(), _rankSetup.getDiversityCutoffFactor(),
+                    AttributeLimiter::toDiversityCutoffStrategy(_rankSetup.getDiversityCutoffStrategy()));
+        } else if ( ! diversity_attribute.empty()) {
+            auto attr = attributeContext.getAttribute(diversity_attribute);
+            if (attr) {
+                size_t max_per_group = _rankSetup.getHeapSize()/diversity_min_groups;
+                _diversityFilter = DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group,
+                                                           diversity_min_groups, true);
+            } else {
+                LOG(warning, "Skipping diversity due to no %s attribute.", diversity_attribute.c_str());
+            }
         }
     }
     if ( ! _match_limiter) {
@@ -187,8 +181,10 @@ MatchTools::UP
 MatchToolsFactory::createMatchTools() const
 {
     assert(_valid);
-    return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getSoftDoom(), _hardDoom, _query,
-                                        *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
+    auto matchTools = std::make_unique<MatchTools>(_queryLimiter, _requestContext.getSoftDoom(), _hardDoom, _query,
+                                                   *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
+    matchTools->useDiversityFilter(static_cast<bool>(_diversityFilter));
+    return matchTools;
 }
 
 }

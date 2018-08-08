@@ -8,7 +8,7 @@
 
 namespace proton::matching {
 
-class MatchLoopCommunicator : public IMatchLoopCommunicator
+class MatchLoopCommunicator final : public IMatchLoopCommunicator
 {
 private:
     using IDiversifier = search::queryeval::IDiversifier;
@@ -19,8 +19,8 @@ private:
     struct SelectBest : vespalib::Rendezvous<Hits, Hits> {
         size_t topN;
         std::vector<uint32_t> _indexes;
-        std::unique_ptr<IDiversifier> _diversifier;
-        SelectBest(size_t n, size_t topN_in, std::unique_ptr<IDiversifier>);
+        IDiversifier         *_diversifier;
+        SelectBest(size_t n, size_t topN_in, IDiversifier *);
         ~SelectBest() override;
         void mingle() override;
         template<typename Q, typename F>
@@ -46,7 +46,7 @@ private:
 
 public:
     MatchLoopCommunicator(size_t threads, size_t topN);
-    MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier>);
+    MatchLoopCommunicator(size_t threads, size_t topN, IDiversifier * diversifier);
     ~MatchLoopCommunicator();
 
     double estimate_match_frequency(const Matches &matches) override {
