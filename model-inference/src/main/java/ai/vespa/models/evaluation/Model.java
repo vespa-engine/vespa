@@ -4,6 +4,7 @@ package ai.vespa.models.evaluation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -37,25 +38,29 @@ public class Model {
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
 
-        ImmutableMap.Builder<String, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
-        for (ExpressionFunction function : referencedFunctions)
-            functionsBuilder.put(function.getName(), optimize(function));
-        this.referencedFunctions = functionsBuilder.build();
-
         ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
         for (ExpressionFunction function : functions) {
             try {
-                contextBuilder.put(function.getName(), new LazyArrayContext(function.getBody(), this.referencedFunctions, this));
+                contextBuilder.put(function.getName(),
+                                   new LazyArrayContext(function.getBody(),
+                                                        referencedFunctions.stream().collect(Collectors.toMap(e -> e.getName(), e -> e)),
+                                                        this));
             }
             catch (RuntimeException e) {
                 throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);
             }
         }
         this.contextPrototypes = contextBuilder.build();
+
+        ImmutableMap.Builder<String, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
+        for (ExpressionFunction function : referencedFunctions)
+            functionsBuilder.put(function.getName(), optimize(function,
+                                                              contextPrototypes.get(FunctionReference.fromSerial(function.getName()).get().serialForm())));
+        this.referencedFunctions = functionsBuilder.build();
     }
 
     /** Returns an optimized version of the given function */
-    private ExpressionFunction optimize(ExpressionFunction function) {
+    private ExpressionFunction optimize(ExpressionFunction function, ContextIndex context) {
         return function; // TODO
     }
 
