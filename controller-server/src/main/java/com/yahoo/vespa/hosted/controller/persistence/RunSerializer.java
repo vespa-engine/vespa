@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -8,9 +9,12 @@ import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
+import com.yahoo.vespa.hosted.controller.deployment.Versions;
 
 import java.time.Instant;
 import java.util.EnumMap;
@@ -47,6 +51,13 @@ public class RunSerializer {
     private static final String startField = "start";
     private static final String endField = "end";
     private static final String abortedField = "aborted";
+    private static final String versionsField = "versions";
+    private static final String platformVersionField = "platform";
+    private static final String repositoryField = "repository";
+    private static final String branchField = "branch";
+    private static final String commitField = "commit";
+    private static final String buildField = "build";
+    private static final String sourceField = "source";
 
     RunStatus runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
@@ -71,11 +82,31 @@ public class RunSerializer {
                                        JobType.fromJobName(runObject.field(jobTypeField).asString()),
                                        runObject.field(numberField).asLong()),
                              steps,
+                             versionsFromSlime(runObject.field(versionsField)),
                              Instant.ofEpochMilli(runObject.field(startField).asLong()),
                              Optional.of(runObject.field(endField))
                                      .filter(Inspector::valid)
                                      .map(end -> Instant.ofEpochMilli(end.asLong())),
                              runObject.field(abortedField).asBool());
+    }
+
+    private Versions versionsFromSlime(Inspector versionsObject) {
+        Version targetPlatformVersion = Version.fromString(versionsObject.field(platformVersionField).asString());
+        ApplicationVersion targetApplicationVersion = ApplicationVersion.from(new SourceRevision(versionsObject.field(repositoryField).asString(),
+                                                                                                 versionsObject.field(branchField).asString(),
+                                                                                                 versionsObject.field(commitField).asString()),
+                                                                              versionsObject.field(buildField).asLong());
+        Optional<Version> sourcePlatformVersion = versionsObject.field(sourceField).valid()
+                ? Optional.of(Version.fromString(versionsObject.field(sourceField).field(platformVersionField).asString()))
+                : Optional.empty();
+        Optional<ApplicationVersion> sourceApplicationVersion = versionsObject.field(sourceField).valid()
+                ? Optional.of(ApplicationVersion.from(new SourceRevision(versionsObject.field(repositoryField).asString(),
+                                                                         versionsObject.field(branchField).asString(),
+                                                                         versionsObject.field(commitField).asString()),
+                                                      versionsObject.field(buildField).asLong()))
+                : Optional.empty();
+
+        return new Versions(targetPlatformVersion, targetApplicationVersion, sourcePlatformVersion, sourceApplicationVersion);
     }
 
     Slime toSlime(Iterable<RunStatus> runs) {
@@ -98,59 +129,84 @@ public class RunSerializer {
         runObject.setLong(startField, run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
         if (run.isAborted()) runObject.setBool(abortedField, true);
+
         Cursor stepsObject = runObject.setObject(stepsField);
         run.steps().forEach((step, status) -> stepsObject.setString(valueOf(step), valueOf(status)));
+
+        Cursor versionsObject = runObject.setObject(versionsField);
+        toSlime(run.versions().targetPlatform(), run.versions().targetApplication(), versionsObject);
+        run.versions().sourcePlatform().ifPresent(sourcePlatformVersion -> {
+            toSlime(sourcePlatformVersion,
+                    run.versions().sourceApplication()
+                   .orElseThrow(() -> new IllegalArgumentException("Source versions must be both present or absent.")),
+                    versionsObject.setObject(sourceField));
+        });
+    }
+
+    private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
+        versionsObject.setString(platformVersionField, platformVersion.toString());
+        SourceRevision targetSourceRevision = applicationVersion.source()
+                .orElseThrow(() -> new IllegalArgumentException("Source revision must be present in target application version."));
+        versionsObject.setString(repositoryField, targetSourceRevision.repository());
+        versionsObject.setString(branchField, targetSourceRevision.branch());
+        versionsObject.setString(commitField, targetSourceRevision.commit());
+        versionsObject.setLong(buildField, applicationVersion.buildNumber()
+                              .orElseThrow(() -> new IllegalArgumentException("Build number must be present in target application version.")));
     }
 
     static String valueOf(Step step) {
         switch (step) {
-            case deployInitialReal  : return "DIR";
-            case installInitialReal : return "IIR";
-            case deployReal         : return "DR" ;
-            case installReal        : return "IR" ;
-            case deactivateReal     : return "DAR";
-            case deployTester       : return "DT" ;
-            case installTester      : return "IT" ;
-            case deactivateTester   : return "DAT";
-            case startTests         : return "ST" ;
-            case endTests           : return "ET" ;
-            case report             : return "R"  ;
+            case deployInitialReal  : return "deployInitialReal";
+            case installInitialReal : return "installInitialReal";
+            case deployReal         : return "deployReal";
+            case installReal        : return "installReal";
+            case deactivateReal     : return "deactivateReal";
+            case deployTester       : return "deployTester";
+            case installTester      : return "installTester";
+            case deactivateTester   : return "deactivateTester";
+            case startTests         : return "startTests";
+            case endTests           : return "endTests";
+            case report             : return "report";
+
             default                 : throw new AssertionError("No value defined for '" + step + "'!");
         }
     }
 
     static Step stepOf(String step) {
         switch (step) {
-            case "DIR" : return deployInitialReal ;
-            case "IIR" : return installInitialReal;
-            case "DR"  : return deployReal        ;
-            case "IR"  : return installReal       ;
-            case "DAR" : return deactivateReal    ;
-            case "DT"  : return deployTester      ;
-            case "IT"  : return installTester     ;
-            case "DAT" : return deactivateTester  ;
-            case "ST"  : return startTests        ;
-            case "ET"  : return endTests          ;
-            case "R"   : return report            ;
-            default    : throw new IllegalArgumentException("No step defined by '" + step + "'!");
+            case "deployInitialReal"  : return deployInitialReal;
+            case "installInitialReal" : return installInitialReal;
+            case "deployReal"         : return deployReal;
+            case "installReal"        : return installReal;
+            case "deactivateReal"     : return deactivateReal;
+            case "deployTester"       : return deployTester;
+            case "installTester"      : return installTester;
+            case "deactivateTester"   : return deactivateTester;
+            case "startTests"         : return startTests;
+            case "endTests"           : return endTests;
+            case "report"             : return report;
+
+            default                   : throw new IllegalArgumentException("No step defined by '" + step + "'!");
         }
     }
 
     static String valueOf(Status status) {
         switch (status) {
-            case unfinished : return "U";
-            case failed     : return "F";
-            case succeeded  : return "S";
-            default  : throw new AssertionError("No value defined for '" + status + "'!");
+            case unfinished : return "unfinished";
+            case failed     : return "failed";
+            case succeeded  : return "succeeded";
+
+            default         : throw new AssertionError("No value defined for '" + status + "'!");
         }
     }
 
     static Status statusOf(String status) {
         switch (status) {
-            case "U" : return unfinished;
-            case "F" : return failed    ;
-            case "S" : return succeeded ;
-            default  : throw new IllegalArgumentException("No status defined by '" + status + "'!");
+            case "unfinished" : return unfinished;
+            case "failed"     : return failed;
+            case "succeeded"  : return succeeded;
+
+            default           : throw new IllegalArgumentException("No status defined by '" + status + "'!");
         }
     }
 

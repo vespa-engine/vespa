@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -195,7 +196,7 @@ public class JobController {
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type) {
+    public void start(ApplicationId id, JobType type, Versions versions) {
         controller.applications().lockIfPresent(id, application -> {
             if ( ! application.get().deploymentJobs().builtInternally())
                 throw new IllegalArgumentException(id + " is not built here!");
@@ -206,7 +207,7 @@ public class JobController {
                     throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
                 RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-                curator.writeLastRun(RunStatus.initial(newId, controller.clock().instant()));
+                curator.writeLastRun(RunStatus.initial(newId, versions, controller.clock().instant()));
             });
         });
     }

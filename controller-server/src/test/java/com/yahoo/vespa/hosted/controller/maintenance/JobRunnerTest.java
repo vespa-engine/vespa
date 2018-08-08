@@ -1,8 +1,10 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -10,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
+import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -40,7 +43,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
@@ -56,6 +58,14 @@ import static org.junit.Assert.fail;
  */
 public class JobRunnerTest {
 
+    static final Versions versions = new Versions(Version.fromString("1.2.3"),
+                                                  ApplicationVersion.from(new SourceRevision("repo",
+                                                                                             "branch",
+                                                                                             "bada55"),
+                                                                          321),
+                                                  Optional.empty(),
+                                                  Optional.empty());
+
     @Test
     public void multiThreadedExecutionFinishes() throws InterruptedException {
         DeploymentTester tester = new DeploymentTester();
@@ -67,15 +77,15 @@ public class JobRunnerTest {
                                          Executors.newFixedThreadPool(32), notifying(stepRunner, latch));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
 
-        jobs.start(id, systemTest);
+        jobs.start(id, systemTest, versions);
         try {
-            jobs.start(id, systemTest);
+            jobs.start(id, systemTest, versions);
             fail("Job is already running, so this should not be allowed!");
         }
         catch (IllegalStateException e) { }
-        jobs.start(id, stagingTest);
+        jobs.start(id, stagingTest, versions);
 
         assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(unfinished::equals));
         runner.maintain();
@@ -100,10 +110,10 @@ public class JobRunnerTest {
                                          inThreadExecutor(), mappedRunner(outcomes));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
         Supplier<RunStatus> run = () -> jobs.last(id, systemTest).get();
 
-        jobs.start(id, systemTest);
+        jobs.start(id, systemTest, versions);
         RunId first = run.get().id();
 
         Map<Step, Status> steps = run.get().steps();
@@ -155,7 +165,7 @@ public class JobRunnerTest {
         assertTrue(run.get().isAborted());
 
         // A new run is attempted.
-        jobs.start(id, systemTest);
+        jobs.start(id, systemTest, versions);
         assertEquals(first.number() + 1, run.get().id().number());
 
         // Run fails on tester deployment -- remaining run-always steps succeed, and the run finishes.
@@ -171,7 +181,7 @@ public class JobRunnerTest {
         assertEquals(2, jobs.runs(id, systemTest).size());
 
         // Start a third run, then unregister and wait for data to be deleted.
-        jobs.start(id, systemTest);
+        jobs.start(id, systemTest, versions);
         jobs.unregister(id);
         runner.maintain();
         assertFalse(jobs.last(id, systemTest).isPresent());
@@ -188,10 +198,10 @@ public class JobRunnerTest {
                                          Executors.newFixedThreadPool(32), waitingRunner(barrier));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, new SourceRevision("repo", "branch", "bada55"), new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
 
         RunId runId = new RunId(id, systemTest, 1);
-        jobs.start(id, systemTest);
+        jobs.start(id, systemTest, versions);
         runner.maintain();
         barrier.await();
         try {
