@@ -265,12 +265,15 @@ MatchThread::findMatches(MatchTools &tools)
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_scores = hits.getSortedHeapScores();
+            auto sorted_hits = hits.getSortedHeapHits();
             WaitTimer select_best_timer(wait_time_s);
-            size_t useHits = communicator.selectBest(sorted_scores);
+            auto kept_hits = communicator.selectBest(std::move(sorted_hits));
             select_best_timer.done();
             DocumentScorer scorer(tools.rank_program(), tools.search());
-            uint32_t reRanked = hits.reRank(scorer, tools.getHardDoom().doom() ? 0 : useHits);
+            if (tools.getHardDoom().doom()) {
+                kept_hits.clear();
+            }
+            uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling

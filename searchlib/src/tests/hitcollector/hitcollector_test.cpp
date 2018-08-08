@@ -149,10 +149,14 @@ struct Fixture {
         }
     }
     size_t reRank() {
-        return hc.reRank(scorer);
+        return hc.reRank(scorer, hc.getSortedHeapHits());
     }
     size_t reRank(size_t count) {
-        return hc.reRank(scorer, count);
+        auto hits = hc.getSortedHeapHits();
+        if (hits.size() > count) {
+            hits.resize(count);
+        }
+        return hc.reRank(scorer, std::move(hits));
     }
 };
 
@@ -231,18 +235,6 @@ TEST_F("testReRank - partial", AscendingScoreFixture)
     TEST_DO(checkResult(*rs, f.expBv.get()));
 }
 
-TEST_F("require that scores for 2nd phase candidates can be retrieved", DescendingScoreFixture)
-{
-    f.addHits();
-    std::vector<feature_t> scores = f.hc.getSortedHeapScores();
-    ASSERT_EQUAL(5u, scores.size());
-    EXPECT_EQUAL(100, scores[0]);
-    EXPECT_EQUAL(99, scores[1]);
-    EXPECT_EQUAL(98, scores[2]);
-    EXPECT_EQUAL(97, scores[3]);
-    EXPECT_EQUAL(96, scores[4]);
-}
-
 TEST_F("require that hits for 2nd phase candidates can be retrieved", DescendingScoreFixture)
 {
     f.addHits();
@@ -302,7 +294,7 @@ void testScaling(const std::vector<feature_t> &initScores,
 
     PredefinedScorer scorer(std::move(finalScores));
     // perform second phase ranking
-    EXPECT_EQUAL(2u, hc.reRank(scorer));
+    EXPECT_EQUAL(2u, hc.reRank(scorer, hc.getSortedHeapHits()));
 
     // check results
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
@@ -469,7 +461,7 @@ TEST_F("require that result set is merged correctly with second phase ranking (d
         f.hc.addHit(i, i + 1000);
         addExpectedHitForMergeTest(f, expRh, i);
     }
-    EXPECT_EQUAL(f.maxHeapSize, f.hc.reRank(scorer));
+    EXPECT_EQUAL(f.maxHeapSize, f.hc.reRank(scorer, f.hc.getSortedHeapHits()));
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
     TEST_DO(checkResult(*rs, expRh));
 }

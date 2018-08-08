@@ -167,10 +167,9 @@ public:
     }
 
     /**
-     * Returns a sorted vector of scores for the hits that are stored
+     * Returns a sorted vector of hits for the hits that are stored
      * in the heap. These are the candidates for re-ranking.
      */
-    std::vector<feature_t> getSortedHeapScores();
     std::vector<Hit> getSortedHeapHits();
 
     /**
@@ -178,8 +177,6 @@ public:
      * method on the given document scorer. The best m hits are sorted on doc id
      * so that score() is called in doc id order.
      **/
-    size_t reRank(DocumentScorer &scorer);
-    size_t reRank(DocumentScorer &scorer, size_t count);
     size_t reRank(DocumentScorer &scorer, std::vector<Hit> hits);
 
     std::pair<Scores, Scores> getRanges() const;

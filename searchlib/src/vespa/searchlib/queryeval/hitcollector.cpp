@@ -168,19 +168,6 @@ HitCollector::DocIdCollector<CollectRankedHit>::collectAndChangeCollector(uint32
     hc._collector = std::make_unique<BitVectorCollector<CollectRankedHit>>(hc); // note - self-destruct.
 }
 
-std::vector<feature_t>
-HitCollector::getSortedHeapScores()
-{
-    std::vector<feature_t> scores;
-    size_t scoresToReturn = std::min(_hits.size(), static_cast<size_t>(_maxReRankHitsSize));
-    scores.reserve(scoresToReturn);
-    sortHitsByScore(scoresToReturn);
-    for (size_t i = 0; i < scoresToReturn; ++i) {
-        scores.push_back(_hits[_scoreOrder[i]].second);
-    }
-    return scores;
-}
-
 std::vector<HitCollector::Hit>
 HitCollector::getSortedHeapHits()
 {
@@ -194,31 +181,10 @@ HitCollector::getSortedHeapHits()
     return scores;
 }
 
-
-size_t
-HitCollector::reRank(DocumentScorer &scorer)
-{
-    return reRank(scorer, _maxReRankHitsSize);
-}
-
-size_t
-HitCollector::reRank(DocumentScorer &scorer, size_t count)
-{
-    size_t hitsToReRank = std::min(_hits.size(), count);
-    if (_hasReRanked || hitsToReRank == 0) {
-        return 0;
-    }
-    sortHitsByScore(hitsToReRank);
-    std::vector<Hit> hits;
-    hits.reserve(hitsToReRank);
-    for (size_t i(0); i < hitsToReRank; i++) {
-        hits.push_back(_hits[_scoreOrder[i]]);
-    }
-    return reRank(scorer, std::move(hits));
-}
-
 size_t
 HitCollector::reRank(DocumentScorer &scorer, std::vector<Hit> hits) {
+    if (hits.empty()) { return 0; }
+    
     size_t hitsToReRank = hits.size();
     Scores &initScores = _ranges.first;
     Scores &finalScores = _ranges.second;

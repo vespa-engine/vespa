@@ -6,8 +6,11 @@
 namespace proton:: matching {
 
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
+    : MatchLoopCommunicator(threads, topN, std::unique_ptr<IDiversifier>())
+{}
+MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier)
     : _estimate_match_frequency(threads),
-      _selectBest(threads, topN),
+      _selectBest(threads, topN, std::move(diversifier)),
       _rangeCover(threads)
 {}
 MatchLoopCommunicator::~MatchLoopCommunicator() = default;
@@ -29,22 +32,47 @@ MatchLoopCommunicator::EstimateMatchFrequency::mingle()
     }
 }
 
+MatchLoopCommunicator::SelectBest::SelectBest(size_t n, size_t topN_in, std::unique_ptr<IDiversifier> diversifier)
+    : vespalib::Rendezvous<Hits, Hits>(n),
+      topN(topN_in),
+      _indexes(n, 0),
+      _diversifier(std::move(diversifier))
+{}
+MatchLoopCommunicator::SelectBest::~SelectBest() = default;
+
+template<typename Q, typename F>
+void
+MatchLoopCommunicator::SelectBest::mingle(Q & queue, F && accept) {
+    for (size_t picked = 0; picked < topN && !queue.empty(); ) {
+        uint32_t i = queue.front();
+        const Hit & hit = in(i)[_indexes[i]];
+        if (accept(hit.first)) {
+            out(i).push_back(hit);
+            ++picked;
+        }
+        if (in(i).size() > ++_indexes[i]) {
+            queue.adjust();
+        } else {
+            queue.pop_front();
+        }
+    }
+}
+
 void
 MatchLoopCommunicator::SelectBest::mingle()
 {
     vespalib::PriorityQueue<uint32_t, SelectCmp> queue(SelectCmp(*this));
     for (size_t i = 0; i < size(); ++i) {
         if (!in(i).empty()) {
+            out(i).reserve(std::min(topN, in(i).size()));
+            _indexes[i] = 0;
             queue.push(i);
         }
     }
-    for (size_t picked = 0; picked < topN && !queue.empty(); ++picked) {
-        uint32_t i = queue.front();
-        if (in(i).size() > ++out(i)) {
-            queue.adjust();
-        } else {
-            queue.pop_front();
-        }
+    if (_diversifier) {
+        mingle(queue, [diversifier=_diversifier.get()](uint32_t docId) { return diversifier->accepted(docId);});
+    } else {
+        mingle(queue, [](uint32_t) { return true;});
     }
 }
 
