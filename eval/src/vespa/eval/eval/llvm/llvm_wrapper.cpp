@@ -83,6 +83,19 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     std::vector<gbdt::Forest::UP> &forests;
     std::vector<PluginState::UP> &plugin_state;
 
+    llvm::FunctionType *make_call_1_fun_t() {
+        std::vector<llvm::Type*> param_types;
+        param_types.push_back(builder.getDoubleTy());
+        return llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
+    }
+
+    llvm::FunctionType *make_call_2_fun_t() {
+        std::vector<llvm::Type*> param_types;
+        param_types.push_back(builder.getDoubleTy());
+        param_types.push_back(builder.getDoubleTy());
+        return llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
+    }
+
     llvm::PointerType *make_eval_forest_funptr_t() {
         std::vector<llvm::Type*> param_types;
         param_types.push_back(builder.getVoidTy()->getPointerTo());
@@ -319,8 +332,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_call_1(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
     }
     void make_call_1(const char *name) {
-        make_call_1(llvm::dyn_cast<llvm::Function>(
-                    module.getOrInsertFunction(name, builder.getDoubleTy(), builder.getDoubleTy(), nullptr)));
+        make_call_1(llvm::dyn_cast<llvm::Function>(module.getOrInsertFunction(name, make_call_1_fun_t())));
     }
 
     void make_call_2(llvm::Function *fun) {
@@ -335,8 +347,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_call_2(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
     }
     void make_call_2(const char *name) {
-        make_call_2(llvm::dyn_cast<llvm::Function>(
-                    module.getOrInsertFunction(name, builder.getDoubleTy(), builder.getDoubleTy(), builder.getDoubleTy(), nullptr)));
+        make_call_2(llvm::dyn_cast<llvm::Function>(module.getOrInsertFunction(name, make_call_2_fun_t())));
     }
 
     //-------------------------------------------------------------------------
