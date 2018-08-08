@@ -44,10 +44,15 @@ Box<T> make_box(const T &t1, const T &t2, const T &t3, const T &t4) {
 }
 
 template <typename T>
-Box<T> make_box(const T &t1, const T &t2, const T &t3, const T &t4,
-                const T &t5)
+Box<T> make_box(const T &t1, const T &t2, const T &t3, const T &t4, const T &t5)
 {
     return Box<T>().add(t1).add(t2).add(t3).add(t4).add(t5);
+}
+
+template <typename T>
+Box<T> make_box(const T &t1, const T &t2, const T &t3, const T &t4, const T &t5, const T &t6)
+{
+    return Box<T>().add(t1).add(t2).add(t3).add(t4).add(t5).add(t6);
 }
 
 } // namespace vespalib
