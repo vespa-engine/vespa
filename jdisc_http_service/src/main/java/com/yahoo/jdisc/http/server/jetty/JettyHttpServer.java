@@ -25,6 +25,7 @@ import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -239,8 +240,11 @@ public class JettyHttpServer extends AbstractServerProvider {
         HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector();
         statisticsCollector.setHandler(gzipHandler);
 
+        StatisticsHandler statisticsHandler = newStatisticsHandler();
+        statisticsHandler.setHandler(statisticsCollector);
+
         HandlerCollection handlerCollection = new HandlerCollection();
-        handlerCollection.setHandlers(new Handler[] { statisticsCollector });
+        handlerCollection.setHandlers(new Handler[] { statisticsHandler });
         return handlerCollection;
     }
 
@@ -323,10 +327,16 @@ public class JettyHttpServer extends AbstractServerProvider {
         public void run() {
             HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) server.getHandler())
                     .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
-            if (statisticsCollector == null)
-                return;
+            if (statisticsCollector != null) {
+                setServerMetrics(statisticsCollector);
+            }
 
-            setServerMetrics(statisticsCollector);
+            // reset statisticsHandler to preserve earlier behavior
+            StatisticsHandler statisticsHandler = ((AbstractHandlerContainer) server.getHandler())
+                    .getChildHandlerByClass(StatisticsHandler.class);
+            if (statisticsHandler != null) {
+                statisticsHandler.statsReset();
+            }
 
             for (Connector connector : server.getConnectors()) {
                 setConnectorMetrics((JDiscServerConnector)connector);
@@ -362,6 +372,12 @@ public class JettyHttpServer extends AbstractServerProvider {
         metric.set(Metrics.CONNECTION_DURATION_MAX, statistics.getConnectionDurationMax(), connector.getConnectorMetricContext());
         metric.set(Metrics.CONNECTION_DURATION_MEAN, statistics.getConnectionDurationMean(), connector.getConnectorMetricContext());
         metric.set(Metrics.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getConnectorMetricContext());
+    }
+
+    private StatisticsHandler newStatisticsHandler() {
+        StatisticsHandler statisticsHandler = new StatisticsHandler();
+        statisticsHandler.statsReset();
+        return statisticsHandler;
     }
 
     private GzipHandler newGzipHandler(ServerConfig serverConfig) {
