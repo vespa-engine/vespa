@@ -160,7 +160,9 @@ final class LazyArrayContext extends Context implements ContextIndex {
             }
         }
 
-        private void extractBindTargets(ExpressionNode node, Map<FunctionReference, ExpressionFunction> functions, Set<String> bindTargets) {
+        private void extractBindTargets(ExpressionNode node,
+                                        Map<FunctionReference, ExpressionFunction> functions,
+                                        Set<String> bindTargets) {
             if (isFunctionReference(node)) {
                 FunctionReference reference = FunctionReference.fromSerial(node.toString()).get();
                 bindTargets.add(reference.serialForm());

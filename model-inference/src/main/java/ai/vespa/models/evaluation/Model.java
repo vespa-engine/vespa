@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
+import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +30,8 @@ public class Model {
 
     /** Context prototypes, indexed by function name (as all invocations of the same function share the same context prototype) */
     private final ImmutableMap<String, LazyArrayContext> contextPrototypes;
+
+    private final ExpressionOptimizer expressionOptimizer = new ExpressionOptimizer();
 
     public Model(String name, Collection<ExpressionFunction> functions) {
         this(name, functions, Collections.emptyMap());
@@ -61,7 +64,9 @@ public class Model {
 
     /** Returns an optimized version of the given function */
     private ExpressionFunction optimize(ExpressionFunction function, ContextIndex context) {
-        return function; // TODO
+        // Note: Optimization is in-place but we do not depend on that outside this method
+        expressionOptimizer.optimize(function.getBody(), context);
+        return function;
     }
 
     public String name() { return name; }

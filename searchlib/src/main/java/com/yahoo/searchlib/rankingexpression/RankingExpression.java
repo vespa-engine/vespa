@@ -35,10 +35,10 @@ import java.util.Map;
  * <h3>Simple usage</h3>
 <pre><code>
 try {
-    MapContext context=new MapContext();
-    context.put("one",1d);
-    RankingExpression expression=new RankingExpression("10*if(i&gt;35,if(i&gt;one,if(i&gt;=670,4,8),if(i&gt;8000,5,3)),if(i==478,90,91))");
-    double result=expression.evaluate(context);
+    MapContext context = new MapContext();
+    context.put("one", 1d);
+    RankingExpression expression = new RankingExpression("10*if(i&gt;35,if(i&gt;one,if(i&gt;=670,4,8),if(i&gt;8000,5,3)),if(i==478,90,91))");
+    double result = expression.evaluate(context);
    }
 catch (ParseException e) {
     throw new RuntimeException(e);
@@ -60,7 +60,7 @@ try {
     RankingExpression expression = new RankingExpression("10*if(i&gt;35,if(i&gt;one,if(i&gt;=670,4,8),if(i&gt;8000,5,3)),if(i==478,90,91))");
     ArrayContext contextPrototype = new ArrayContext(expression);
     ExpressionOptimizer optimizer = new ExpressionOptimizer(); // Increases evaluation speed of gbdt form expressions by 3-4x
-    OptimizationReport triviaAboutTheOptimization = optimizer.optimize(expression,contextPrototype);
+    OptimizationReport triviaAboutTheOptimization = optimizer.optimize(expression, contextPrototype);
 }
 catch (ParseException e) {
     throw new RuntimeException(e);
