@@ -45,8 +45,6 @@ import static org.mockito.Mockito.when;
  */
 public class CoredumpHandlerTest {
 
-    private final HttpClient httpClient = mock(HttpClient.class);
-    private final CoreCollector coreCollector = mock(CoreCollector.class);
     private static final Map<String, Object> attributes = new LinkedHashMap<>();
     private static final Map<String, Object> metadata = new LinkedHashMap<>();
     private static final String expectedMetadataFileContents = "{\"fields\":{" +
@@ -56,7 +54,7 @@ public class CoredumpHandlerTest {
             "\"vespa_version\":\"6.48.4\"," +
             "\"kernel_version\":\"2.6.32-573.22.1.el6.YAHOO.20160401.10.x86_64\"," +
             "\"docker_image\":\"vespa/ci:6.48.4\"}}";
-    private static final String feedEndpoint = "http://feed-endpoint.hostname.tld/feed";
+    private static final URI feedEndpoint = URI.create("http://feed-endpoint.hostname.tld/feed");
 
     static {
         attributes.put("hostname", "host123.yahoo.com");
@@ -71,6 +69,8 @@ public class CoredumpHandlerTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
+    private final HttpClient httpClient = mock(HttpClient.class);
+    private final CoreCollector coreCollector = mock(CoreCollector.class);
     private CoredumpHandler coredumpHandler;
     private Path crashPath;
     private Path donePath;
@@ -80,14 +80,13 @@ public class CoredumpHandlerTest {
         crashPath = folder.newFolder("crash").toPath();
         donePath = folder.newFolder("done").toPath();
 
-        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, donePath, attributes,
-                feedEndpoint);
+        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, donePath, feedEndpoint);
     }
 
     @Test
     public void ignoresIncompleteCoredumps() throws IOException {
         Path coredumpPath = createCoredump(".core.dump", Instant.now());
-        Path processingPath = coredumpHandler.enqueueCoredumps();
+        Path processingPath = coredumpHandler.enqueueCoredumps(crashPath);
 
         // The 'processing' directory should be empty
         assertFolderContents(processingPath);
@@ -120,7 +119,7 @@ public class CoredumpHandlerTest {
         createCoredump(oldestCoredump, startTime.minusSeconds(3600));
         createCoredump("core.dump1", startTime.minusSeconds(1000));
         createCoredump("core.dump2", startTime);
-        Path processingPath = coredumpHandler.enqueueCoredumps();
+        Path processingPath = coredumpHandler.enqueueCoredumps(crashPath);
 
         List<Path> processingCoredumps = Files.list(processingPath).collect(Collectors.toList());
         assertEquals(1, processingCoredumps.size());
@@ -132,7 +131,7 @@ public class CoredumpHandlerTest {
         assertEquals(Collections.singleton(oldestCoredump), filenamesInProcessingDirectory);
 
         // Running enqueueCoredumps should not start processing any new coredumps as we already are processing one
-        coredumpHandler.enqueueCoredumps();
+        coredumpHandler.enqueueCoredumps(crashPath);
         assertEquals(processingCoredumps, Files.list(processingPath).collect(Collectors.toList()));
         filenamesInProcessingDirectory = Files.list(processingCoredumps.get(0))
                 .map(file -> file.getFileName().toString())
@@ -143,7 +142,7 @@ public class CoredumpHandlerTest {
     @Test
     public void coredumpMetadataCollectAndWriteTest() throws IOException {
         createCoredump("core.dump", Instant.now());
-        Path processingPath = coredumpHandler.enqueueCoredumps();
+        Path processingPath = coredumpHandler.enqueueCoredumps(crashPath);
         Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
                 new RuntimeException("Expected to find directory with coredump in processing dir"));
         when(coreCollector.collect(eq(processingCoredumpPath.resolve("core.dump")))).thenReturn(metadata);
@@ -182,7 +181,7 @@ public class CoredumpHandlerTest {
         Path metadataPath = createProcessedCoredump(documentId);
 
         setNextHttpResponse(500, Optional.of("Internal server error"));
-        coredumpHandler.processAndReportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
+        coredumpHandler.processAndReportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME), attributes);
         validateNextHttpPost(documentId, expectedMetadataFileContents);
 
         // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
