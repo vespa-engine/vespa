@@ -579,6 +579,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
             // Create request-mapping
             Map<String, String> requestMap = new HashMap<>();
+
+            request.propertyMap().forEach(requestMap::put);
             createRequestMapping(inspector, requestMap, "");
 
             // Throws QueryException if query contains both yql- and select-parameter
