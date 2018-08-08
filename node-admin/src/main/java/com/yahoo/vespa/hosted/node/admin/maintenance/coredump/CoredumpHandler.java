@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,17 +43,15 @@ public class CoredumpHandler {
     private final Path coredumpsPath;
     private final Path doneCoredumpsPath;
     private final Map<String, Object> nodeAttributes;
-    private final Optional<Path> installStatePath;
     private final String feedEndpoint;
 
     public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path coredumpsPath, Path doneCoredumpsPath,
-                           Map<String, Object> nodeAttributes, Optional<Path> installStatePath, String feedEndpoint) {
+                           Map<String, Object> nodeAttributes, String feedEndpoint) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
         this.coredumpsPath = coredumpsPath;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.nodeAttributes = nodeAttributes;
-        this.installStatePath = installStatePath;
         this.feedEndpoint = feedEndpoint;
     }
 
@@ -133,7 +131,7 @@ public class CoredumpHandler {
         if (!Files.exists(metadataPath)) {
             Path coredumpPath = FileHelper.listContentsOfDirectory(coredumpDirectory).stream().findFirst()
                     .orElseThrow(() -> new RuntimeException("No coredump file found in processing directory " + coredumpDirectory));
-            Map<String, Object> metadata = coreCollector.collect(coredumpPath, installStatePath);
+            Map<String, Object> metadata = coreCollector.collect(coredumpPath);
             metadata.putAll(nodeAttributes);
 
             Map<String, Object> fields = new HashMap<>();

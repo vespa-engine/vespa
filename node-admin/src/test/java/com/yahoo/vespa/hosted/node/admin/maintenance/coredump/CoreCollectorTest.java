@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.yahoo.collections.Pair;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.system.ProcessExecuter;
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,10 +17,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -34,7 +33,7 @@ public class CoreCollectorTest {
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
     private final CoreCollector coreCollector = new CoreCollector(processExecuter);
 
-    private final Path INSTALL_STATE_PATH = Paths.get("/path/to/install.state");
+    private final String GDB_PATH = getDefaults().underVespaHome("bin64/gdb");
     private final Path TEST_CORE_PATH = Paths.get("/tmp/core.1234");
     private final Path TEST_BIN_PATH = Paths.get("/usr/bin/program");
     private final List<String> GDB_BACKTRACE = Arrays.asList("[New Thread 2703]",
@@ -42,16 +41,8 @@ public class CoreCollectorTest {
             "#0  0x00000000004004d8 in main (argv=0x1) at main.c:4", "4\t    printf(argv[3]);",
             "#0  0x00000000004004d8 in main (argv=0x1) at main.c:4");
 
-    private final List<String> INSTALL_STATE = Arrays.asList("package: some_package-0.0.2",
-            "variable 'value'",
-            "ca_file /path/to/ca.pem");
-
-    private final List<String> RPM_PACKAGES = Arrays.asList("some_package-0.0.2",
-            "another_package-1.0.6",
-            "last_pkg-3.10_102");
-
     @Rule
-    public TemporaryFolder folder= new TemporaryFolder();
+    public TemporaryFolder folder = new TemporaryFolder();
 
     private void mockExec(String[] cmd, String output) throws IOException {
         mockExec(cmd, output, "");
@@ -60,8 +51,6 @@ public class CoreCollectorTest {
     private void mockExec(String[] cmd, String output, String error) throws IOException {
         when(processExecuter.exec(cmd)).thenReturn(new Pair<>(error.isEmpty() ? 0 : 1, output + error));
     }
-
-    static final String GDB_PATH = getDefaults().underVespaHome("bin64/gdb");
 
     @Test
     public void extractsBinaryPathTest() throws IOException {
@@ -153,26 +142,12 @@ public class CoreCollectorTest {
         mockExec(new String[]{GDB_PATH, "-n", "-ex", "thread apply all bt", "-batch",
                         "/usr/bin/program", "/tmp/core.1234"},
                 String.join("\n", GDB_BACKTRACE));
-        mockExec(new String[]{"cat", INSTALL_STATE_PATH.toString()}, String.join("\n", INSTALL_STATE));
-        mockExec(new String[]{"rpm", "-qa"}, String.join("\n", RPM_PACKAGES));
 
         Map<String, Object> expectedData = new HashMap<>();
         expectedData.put("bin_path", TEST_BIN_PATH.toString());
         expectedData.put("backtrace", new ArrayList<>(GDB_BACKTRACE));
         expectedData.put("backtrace_all_threads", new ArrayList<>(GDB_BACKTRACE));
-        expectedData.put("install_state", new ArrayList<>(INSTALL_STATE));
-        expectedData.put("rpm_packages", new ArrayList<>(RPM_PACKAGES));
-        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.of(INSTALL_STATE_PATH)));
-    }
-
-    @Test
-    public void collectsPartialIfUnableToDetermineDumpingProgramTest() throws IOException {
-        // We fail to get backtrace and RPM packages, but install state works, make sure it is returned
-        mockExec(new String[]{"cat", INSTALL_STATE_PATH.toString()}, String.join("\n", INSTALL_STATE));
-
-        Map<String, Object> expectedData = new HashMap<>();
-        expectedData.put("install_state", new ArrayList<>(INSTALL_STATE));
-        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.of(INSTALL_STATE_PATH)));
+        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH));
     }
 
     @Test
@@ -185,7 +160,7 @@ public class CoreCollectorTest {
 
         Map<String, Object> expectedData = new HashMap<>();
         expectedData.put("bin_path", TEST_BIN_PATH.toString());
-        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.empty()));
+        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH));
     }
 
     @Test
@@ -219,7 +194,7 @@ public class CoreCollectorTest {
         expectedContentsOfCoredump.forEach(path -> {
             try {
                 path.toFile().createNewFile();
-            } catch (IOException ignored) { ignored.printStackTrace();}
+            } catch (IOException e) { e.printStackTrace();}
         });
         coreCollector.deleteDecompressedCoredump(coredumpPath.resolve(coreDumpFilename));
 
@@ -242,7 +217,7 @@ public class CoreCollectorTest {
         expectedContentsOfCoredump.forEach(path -> {
             try {
                 path.toFile().createNewFile();
-            } catch (IOException ignored) { ignored.printStackTrace();}
+            } catch (IOException e) { e.printStackTrace();}
         });
         coreCollector.deleteDecompressedCoredump(coredumpPath.resolve(coreDumpFilename));
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import org.apache.http.HttpHeaders;
@@ -81,7 +81,7 @@ public class CoredumpHandlerTest {
         donePath = folder.newFolder("done").toPath();
 
         coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, donePath, attributes,
-                Optional.empty(), feedEndpoint);
+                feedEndpoint);
     }
 
     @Test
@@ -146,7 +146,7 @@ public class CoredumpHandlerTest {
         Path processingPath = coredumpHandler.enqueueCoredumps();
         Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
                 new RuntimeException("Expected to find directory with coredump in processing dir"));
-        when(coreCollector.collect(eq(processingCoredumpPath.resolve("core.dump")), any())).thenReturn(metadata);
+        when(coreCollector.collect(eq(processingCoredumpPath.resolve("core.dump")))).thenReturn(metadata);
 
         // Inside 'processing' directory, there should be a new directory containing 'core.dump' file
         String returnedMetadata = coredumpHandler.collectMetadata(processingCoredumpPath, attributes);
