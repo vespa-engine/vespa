@@ -102,10 +102,18 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
             }
 
+            // The default /etc/hosts in a Docker container will add an entry pointing the hostname
+            // to the Docker-assigned IPv4 address. This means getaddrinfo, therefore
+            // InetAddress.getByName, will return the non-public IPv4 address. Which is used by
+            // ZooKeeper to listen to, which makes others' election port unreachable for
+            // config servers and cluster controllers.
+            //
+            // To avoid this, we just map the host's file into the Docker container.
+            command.withVolume("/etc/hosts", "/etc/hosts");
+
             if (!docker.networkNATed()) {
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
-                command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not necessary - review later
             } else {
                 // IPv6 - Assume always valid
                 Inet6Address ipV6Address = this.retriever.getIPv6Address(node.getHostname()).orElseThrow(
