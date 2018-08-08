@@ -48,8 +48,7 @@ double vespalib_eval_forest_proxy(Forest::eval_function eval_forest, const Fores
     }
 }
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 using namespace nodes;
 
@@ -656,11 +655,11 @@ LLVMWrapper::make_forest_fragment(size_t num_params, const std::vector<const Nod
 }
 
 void
-LLVMWrapper::compile(bool dump_module)
+LLVMWrapper::compile(llvm::raw_ostream * dumpStream)
 {
     std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
-    if (dump_module) {
-        _module->dump();
+    if (dumpStream) {
+        _module->print(*dumpStream, nullptr);
     }
     _engine.reset(llvm::EngineBuilder(std::move(_module)).setOptLevel(llvm::CodeGenOpt::Aggressive).create());
     assert(_engine && "llvm jit not available for your platform");
@@ -684,5 +683,4 @@ LLVMWrapper::~LLVMWrapper() {
     _context.reset();
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}
