@@ -17,22 +17,26 @@ import com.yahoo.tensor.TensorType;
  */
 class LazyValue extends Value {
 
-    /** The function computing the value of this */
-    private final ExpressionFunction function;
+    /** The reference to the function computing the value of this */
+    private final FunctionReference function;
 
     /** The context used to compute the function of this */
     private final Context context;
 
+    /** The model this is part of */
+    private final Model model;
+
     private Value computedValue = null;
 
-    public LazyValue(ExpressionFunction function, Context context) {
+    public LazyValue(FunctionReference function, Context context, Model model) {
         this.function = function;
         this.context = context;
+        this.model = model;
     }
 
     private Value computedValue() {
         if (computedValue == null)
-            computedValue = function.getBody().evaluate(context);
+            computedValue = model.requireReferencedFunction(function).getBody().evaluate(context);
         return computedValue;
     }
 
@@ -144,7 +148,7 @@ class LazyValue extends Value {
     }
 
     LazyValue copyFor(Context context) {
-        return new LazyValue(this.function, context);
+        return new LazyValue(this.function, context, model);
     }
 
 }

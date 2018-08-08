@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -13,10 +14,12 @@ import com.yahoo.tensor.TensorType;
 // This wraps all access to the context and the ranking expression to avoid incorrect usage
 public class FunctionEvaluator {
 
+    private final ExpressionFunction function;
     private final LazyArrayContext context;
     private boolean evaluated = false;
 
-    FunctionEvaluator(LazyArrayContext context) {
+    FunctionEvaluator(ExpressionFunction function, LazyArrayContext context) {
+        this.function = function;
         this.context = context;
     }
 
@@ -48,7 +51,7 @@ public class FunctionEvaluator {
 
     public Tensor evaluate() {
         evaluated = true;
-        return context.expression().evaluate(context).asTensor();
+        return function.getBody().evaluate(context).asTensor();
     }
 
 }

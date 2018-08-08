@@ -235,9 +235,9 @@ public class Model implements Cloneable {
      * Passing null causes this to be set to an empty string.
      */
     public void setQueryString(String queryString) {
-        if (queryString==null) queryString="";
+        if (queryString == null) queryString="";
         this.queryString = queryString;
-        queryTree=null; // Cause parsing of the new query string next time the tree is accessed
+        queryTree = null; // Cause parsing of the new query string next time the tree is accessed
     }
 
     /**

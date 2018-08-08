@@ -4,6 +4,8 @@ package ai.vespa.models.evaluation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
+import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -24,34 +26,47 @@ public class Model {
     private final ImmutableList<ExpressionFunction> functions;
 
     /** Instances of each usage of the above function, where variables (if any) are replaced by their bindings */
-    private final ImmutableMap<String, ExpressionFunction> referredFunctions;
+    private final ImmutableMap<FunctionReference, ExpressionFunction> referencedFunctions;
 
+    /** Context prototypes, indexed by function name (as all invocations of the same function share the same context prototype) */
     private final ImmutableMap<String, LazyArrayContext> contextPrototypes;
 
+    private final ExpressionOptimizer expressionOptimizer = new ExpressionOptimizer();
+
     public Model(String name, Collection<ExpressionFunction> functions) {
-        this(name, functions, Collections.emptyList());
+        this(name, functions, Collections.emptyMap());
     }
 
-    Model(String name, Collection<ExpressionFunction> functions, Collection<ExpressionFunction> referredFunctions) {
+    Model(String name, Collection<ExpressionFunction> functions, Map<FunctionReference, ExpressionFunction> referencedFunctions) {
         // TODO: Optimize functions
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
 
-        ImmutableMap.Builder<String, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
-        for (ExpressionFunction function : referredFunctions)
-            functionsBuilder.put(function.getName(), function);
-        this.referredFunctions = functionsBuilder.build();
-
         ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
         for (ExpressionFunction function : functions) {
             try {
-                contextBuilder.put(function.getName(), new LazyArrayContext(function.getBody(), this.referredFunctions));
+                contextBuilder.put(function.getName(), new LazyArrayContext(function.getBody(), referencedFunctions, this));
             }
             catch (RuntimeException e) {
                 throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);
             }
         }
         this.contextPrototypes = contextBuilder.build();
+
+        ImmutableMap.Builder<FunctionReference, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
+        for (Map.Entry<FunctionReference, ExpressionFunction> function : referencedFunctions.entrySet()) {
+            ExpressionFunction optimizedFunction = optimize(function.getValue(),
+                                                            contextPrototypes.get(function.getKey().functionName()));
+            functionsBuilder.put(function.getKey(), optimizedFunction);
+        }
+        this.referencedFunctions = functionsBuilder.build();
+    }
+
+    /** Returns an optimized version of the given function */
+    private ExpressionFunction optimize(ExpressionFunction function, ContextIndex context) {
+        // Note: Optimization is in-place but we do not depend on that outside this method
+        expressionOptimizer.optimize(function.getBody(), context);
+        return function;
     }
 
     public String name() { return name; }
@@ -85,8 +100,19 @@ public class Model {
         return null;
     }
 
-    /** Returns an immutable map of the bound function instances of this, indexed by the bound instance if */
-    Map<String, ExpressionFunction> boundFunctions() { return referredFunctions; }
+    /** Returns an immutable map of the referenced function instances of this */
+    Map<FunctionReference, ExpressionFunction> referencedFunctions() { return referencedFunctions; }
+
+    /** Returns the given referred function, or throws a IllegalArgumentException if it does not exist */
+    ExpressionFunction requireReferencedFunction(FunctionReference reference) {
+        ExpressionFunction function = referencedFunctions.get(reference);
+        if (function == null)
+            throw new IllegalArgumentException("No " + reference + " in " + this + ". References: " +
+                                               referencedFunctions.keySet().stream()
+                                                                           .map(FunctionReference::serialForm)
+                                                                           .collect(Collectors.joining(", ")));
+        return function;
+    }
 
     /**
      * Returns an evaluator which can be used to evaluate the given function in a single thread once.
@@ -97,7 +123,7 @@ public class Model {
      * @throws IllegalArgumentException if the function is not present
      */
     public FunctionEvaluator evaluatorOf(String function) {  // TODO: Parameter overloading?
-        return new FunctionEvaluator(requireContextProprotype(function).copy());
+        return new FunctionEvaluator(requireFunction(function), requireContextProprotype(function).copy());
     }
 
     @Override

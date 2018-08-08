@@ -38,7 +38,7 @@ public class RankProfilesImporterTest {
                        "70 * fieldMatch(title).completeness * pow(0 - fieldMatch(title).earliness,2) + " +
                        "30 * pow(0 - fieldMatch(description).earliness,2)",
                        macros);
-        assertEquals(4, macros.boundFunctions().size());
+        assertEquals(4, macros.referencedFunctions().size());
         assertBoundFunction("rankingExpression(fourtimessum@5cf279212355b980.67f1e87166cfef86)",
                             "4 * (match + rankBoost)", macros);
     }
@@ -51,7 +51,7 @@ public class RankProfilesImporterTest {
     }
 
     private void assertBoundFunction(String name, String expression, Model model) {
-        ExpressionFunction function = model.boundFunctions().get(name);
+        ExpressionFunction function = model.referencedFunctions().get(FunctionReference.fromSerial(name).get());
         assertNotNull("Function '" + name + "' is present", function);
         assertEquals(name, function.getName());
         assertEquals(expression, function.getBody().getRoot().toString());

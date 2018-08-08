@@ -43,6 +43,11 @@ public class ExpressionFunction {
 
     public RankingExpression getBody() { return body; }
 
+    /** Returns a copy of this with the body changed to the given value */
+    public ExpressionFunction withBody(RankingExpression body) {
+        return new ExpressionFunction(name, arguments, body);
+    }
+
     /**
      * Creates and returns an instance of this function based on the given
      * arguments. If function calls are nested, this call may produce

@@ -10,8 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Optional;
 
 /**
  * Converts RankProfilesConfig instances to RankingExpressions for evaluation
@@ -19,9 +18,6 @@ import java.util.regex.Pattern;
  * @author bratseth
  */
 class RankProfilesConfigImporter {
-
-    private static final Pattern expressionPattern =
-            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.rankingScript");
 
     /**
      * Returns a map of the models contained in this config, indexed on name.
@@ -43,23 +39,20 @@ class RankProfilesConfigImporter {
 
     private Model importProfile(RankProfilesConfig.Rankprofile profile) throws ParseException {
         List<ExpressionFunction> functions = new ArrayList<>();
-        List<ExpressionFunction> boundFunctions = new ArrayList<>();
+        Map<FunctionReference, ExpressionFunction> referencedFunctions = new HashMap<>();
         ExpressionFunction firstPhase = null;
         ExpressionFunction secondPhase = null;
         for (RankProfilesConfig.Rankprofile.Fef.Property property : profile.fef().property()) {
-            Matcher expressionMatcher = expressionPattern.matcher(property.name());
-            if ( expressionMatcher.matches()) {
-                String name = expressionMatcher.group(1);
-                String instance = expressionMatcher.group(2);
+            Optional<FunctionReference> reference = FunctionReference.fromSerial(property.name());
+            if ( reference.isPresent()) {
                 List<String> arguments = new ArrayList<>(); // TODO: Arguments?
-                RankingExpression expression = new RankingExpression(name, property.value());
+                RankingExpression expression = new RankingExpression(reference.get().functionName(), property.value());
 
-                if (instance == null) // free function;  make available in model under configured name
-                    functions.add(new ExpressionFunction(name, arguments, expression)); //
+                if (reference.get().isFree()) // make available in model under configured name
+                    functions.add(new ExpressionFunction(reference.get().functionName(), arguments, expression)); //
 
                 // Make all functions, bound or not available under the name they are referenced by in expressions
-                boundFunctions.add(new ExpressionFunction("rankingExpression(" + name + (instance != null ? instance : "") + ")",
-                                                          arguments, expression));
+                referencedFunctions.put(reference.get(), new ExpressionFunction(reference.get().serialForm(), arguments, expression));
             }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to macros
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),
@@ -76,7 +69,7 @@ class RankProfilesConfigImporter {
             functions.add(secondPhase);
 
         try {
-            return new Model(profile.name(), functions, boundFunctions);
+            return new Model(profile.name(), functions, referencedFunctions);
         }
         catch (RuntimeException e) {
             throw new IllegalArgumentException("Could not load model '" + profile.name() + "'", e);
