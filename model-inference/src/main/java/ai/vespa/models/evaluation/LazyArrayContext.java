@@ -156,7 +156,7 @@ final class LazyArrayContext extends Context implements ContextIndex {
             for (Map.Entry<FunctionReference, ExpressionFunction> function : functions.entrySet()) {
                 Integer index = nameToIndex.get(function.getKey().serialForm());
                 if (index != null) // Referenced in this, so bind it
-                    values[index] = new LazyValue(function.getKey().serialForm(), owner, model);
+                    values[index] = new LazyValue(function.getKey(), owner, model);
             }
         }
 

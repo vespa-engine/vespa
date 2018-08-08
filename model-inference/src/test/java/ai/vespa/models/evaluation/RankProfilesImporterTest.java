@@ -51,7 +51,7 @@ public class RankProfilesImporterTest {
     }
 
     private void assertBoundFunction(String name, String expression, Model model) {
-        ExpressionFunction function = model.referencedFunctions().get(name);
+        ExpressionFunction function = model.referencedFunctions().get(FunctionReference.fromSerial(name).get());
         assertNotNull("Function '" + name + "' is present", function);
         assertEquals(name, function.getName());
         assertEquals(expression, function.getBody().getRoot().toString());

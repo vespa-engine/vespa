@@ -17,8 +17,8 @@ import com.yahoo.tensor.TensorType;
  */
 class LazyValue extends Value {
 
-    /** The name of the function computing the value of this */
-    private final String functionName;
+    /** The reference to the function computing the value of this */
+    private final FunctionReference function;
 
     /** The context used to compute the function of this */
     private final Context context;
@@ -28,15 +28,15 @@ class LazyValue extends Value {
 
     private Value computedValue = null;
 
-    public LazyValue(String functionName, Context context, Model model) {
-        this.functionName = functionName;
+    public LazyValue(FunctionReference function, Context context, Model model) {
+        this.function = function;
         this.context = context;
         this.model = model;
     }
 
     private Value computedValue() {
         if (computedValue == null)
-            computedValue = model.requireReferencedFunction(functionName).getBody().evaluate(context);
+            computedValue = model.requireReferencedFunction(function).getBody().evaluate(context);
         return computedValue;
     }
 
@@ -132,7 +132,7 @@ class LazyValue extends Value {
 
     @Override
     public String toString() {
-        return "value of function '" + functionName + "'";
+        return "value of " + function;
     }
 
     @Override
@@ -148,7 +148,7 @@ class LazyValue extends Value {
     }
 
     LazyValue copyFor(Context context) {
-        return new LazyValue(this.functionName, context, model);
+        return new LazyValue(this.function, context, model);
     }
 
 }

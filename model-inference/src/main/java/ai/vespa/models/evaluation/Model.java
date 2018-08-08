@@ -25,7 +25,7 @@ public class Model {
     private final ImmutableList<ExpressionFunction> functions;
 
     /** Instances of each usage of the above function, where variables (if any) are replaced by their bindings */
-    private final ImmutableMap<String, ExpressionFunction> referencedFunctions; // TODO: Index by Functionreferece
+    private final ImmutableMap<FunctionReference, ExpressionFunction> referencedFunctions;
 
     /** Context prototypes, indexed by function name (as all invocations of the same function share the same context prototype) */
     private final ImmutableMap<String, LazyArrayContext> contextPrototypes;
@@ -50,10 +50,12 @@ public class Model {
         }
         this.contextPrototypes = contextBuilder.build();
 
-        ImmutableMap.Builder<String, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
-        for (Map.Entry<FunctionReference, ExpressionFunction> function : referencedFunctions.entrySet())
-            functionsBuilder.put(function.getKey().serialForm(),
-                                 optimize(function.getValue(), contextPrototypes.get(function.getKey().functionName())));
+        ImmutableMap.Builder<FunctionReference, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
+        for (Map.Entry<FunctionReference, ExpressionFunction> function : referencedFunctions.entrySet()) {
+            ExpressionFunction optimizedFunction = optimize(function.getValue(),
+                                                            contextPrototypes.get(function.getKey().functionName()));
+            functionsBuilder.put(function.getKey(), optimizedFunction);
+        }
         this.referencedFunctions = functionsBuilder.build();
     }
 
@@ -93,15 +95,17 @@ public class Model {
         return null;
     }
 
-    /** Returns an immutable map of the referenced function instances of this, indexed by the bound instance id */
-    Map<String, ExpressionFunction> referencedFunctions() { return referencedFunctions; }
+    /** Returns an immutable map of the referenced function instances of this */
+    Map<FunctionReference, ExpressionFunction> referencedFunctions() { return referencedFunctions; }
 
     /** Returns the given referred function, or throws a IllegalArgumentException if it does not exist */
-    ExpressionFunction requireReferencedFunction(String id) {
-        ExpressionFunction function = referencedFunctions.get(id);
+    ExpressionFunction requireReferencedFunction(FunctionReference reference) {
+        ExpressionFunction function = referencedFunctions.get(reference);
         if (function == null)
-            throw new IllegalArgumentException("No function reference with id '" + id + "' in " + this + ". Referenced functions: " +
-                                               referencedFunctions.keySet().stream().collect(Collectors.joining(", ")));
+            throw new IllegalArgumentException("No " + reference + " in " + this + ". References: " +
+                                               referencedFunctions.keySet().stream()
+                                                                           .map(FunctionReference::serialForm)
+                                                                           .collect(Collectors.joining(", ")));
         return function;
     }
 

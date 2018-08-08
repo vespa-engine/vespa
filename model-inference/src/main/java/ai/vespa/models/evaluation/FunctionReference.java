@@ -47,7 +47,8 @@ class FunctionReference {
     }
 
     @Override
-    public String toString() { return serialForm(); }
+    public String toString() { return "reference to function '" + name + "'" +
+                                      ( instance != null ? " instance '" + instance + "'" : ""); }
 
     @Override
     public int hashCode() { return Objects.hash(name, instance); }
