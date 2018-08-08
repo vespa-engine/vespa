@@ -140,7 +140,9 @@ public class QueryProperties extends Properties {
             if (key.toString().equals(Model.MODEL)) return query.getModel();
             if (key.toString().equals(Ranking.RANKING)) return query.getRanking();
             if (key.toString().equals(Presentation.PRESENTATION)) return query.getPresentation();
-            if (key.toString().equals(GroupingExecutor.GROUPING_LIST)) return query.getSelect().getGrouping();
+
+        } else if (key.toString().equals(GroupingRequest.PROP_REQUEST)) {
+            return query.getSelect().getGrouping();
         }
         return super.get(key, context, substitution);
     }
@@ -277,10 +279,11 @@ public class QueryProperties extends Properties {
                     query.setNoCache(asBoolean(value,false));
                 else if (key.equals(Query.GROUPING_SESSION_CACHE))
                     query.setGroupingSessionCache(asBoolean(value, false));
-                else if (key.equals(GroupingExecutor.GROUPING_LIST))
-                    query.getSelect().setGrouping((List<GroupingRequest>)value);
                 else
                     super.set(key,value,context);
+            } else if (key.toString().equals(GroupingRequest.PROP_REQUEST)) {
+                query.getSelect().setGrouping((List<GroupingRequest>) value);
+
             }
             else
                 super.set(key,value,context);

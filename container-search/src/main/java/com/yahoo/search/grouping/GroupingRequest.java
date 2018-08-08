@@ -22,7 +22,7 @@ import java.util.*;
  */
 public class GroupingRequest {
 
-    private final static CompoundName PROP_REQUEST = new CompoundName(GroupingRequest.class.getName() + ".Request");
+    public final static String PROP_REQUEST = GroupingRequest.class.getName() + ".Request";
     private final List<Continuation> continuations = new ArrayList<>();
     private final int requestId;
     private GroupingOperation root;

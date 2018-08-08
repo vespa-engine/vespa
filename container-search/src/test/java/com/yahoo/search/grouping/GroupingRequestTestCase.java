@@ -10,8 +10,10 @@ import com.yahoo.search.result.Hit;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -119,8 +121,8 @@ public class GroupingRequestTestCase {
         Query query = new Query();
         Field propName = GroupingRequest.class.getDeclaredField("PROP_REQUEST");
         propName.setAccessible(true);
-        query.properties().set((CompoundName)propName.get(null), new Object());
         try {
+            query.properties().set(propName.get(null).toString(), new Object());
             GroupingRequest.getRequests(query);
             fail();
         } catch (IllegalArgumentException e) {

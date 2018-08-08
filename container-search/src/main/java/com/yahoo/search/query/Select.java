@@ -34,7 +34,7 @@ public class Select implements Cloneable {
     private Query parent;
     private String where = "";
     private String grouping = "";
-    private List<GroupingRequest> groupingRequests = new ArrayList<>();
+    private List<GroupingRequest> groupingRequests = new ArrayList<>();3
 
     static {
         argumentType = new QueryProfileType(SELECT);
