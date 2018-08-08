@@ -542,12 +542,17 @@ function(install_java_artifact NAME)
 endfunction()
 
 function(install_java_artifact_dependencies NAME)
-    install(DIRECTORY "target/dependency/" DESTINATION lib/jars FILES_MATCHING PATTERN "*.jar")
+    install(DIRECTORY "target/dependency/" DESTINATION lib/jars/${NAME} FILES_MATCHING PATTERN "*.jar")
+    install(CODE "execute_process(COMMAND bash -c \"cd $ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/lib/jars && ln -sf ${NAME}/*.jar .\")")
 endfunction()
 
 function(install_fat_java_artifact NAME)
     install(FILES "target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
 endfunction()
+
+function(install_symlink TARGET LINK)
+    install(CODE "execute_process(COMMAND ln -sf ${CMAKE_INSTALL_PREFIX}/${TARGET} $ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${LINK})")
+endfunction(install_symlink)
 
 function(add_auxilliary_modules)
     if(EXTRA_PROJECTS)
@@ -557,8 +562,4 @@ function(add_auxilliary_modules)
         endforeach()
     endif()
 endfunction()
-
-function(install_symlink TARGET LINK)
-    install(CODE "execute_process(COMMAND ln -sf ${CMAKE_INSTALL_PREFIX}/${TARGET} $ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${LINK})")
-endfunction(install_symlink)
 
