@@ -6,7 +6,6 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -29,6 +28,10 @@ public class ZToken {
 
     public AthenzIdentity getIdentity() {
         return AthenzIdentities.from(token.getPrincipal());
+    }
+
+    public AthenzDomain getDomain() {
+        return new AthenzDomain(token.getDomain());
     }
 
     public List<AthenzRole> getRoles() {
