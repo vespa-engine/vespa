@@ -170,7 +170,10 @@ public class DeploymentTrigger {
         try {
             applications().lockOrThrow(job.applicationId(), application -> {
                 if (application.get().deploymentJobs().builtInternally())
-                    jobs.start(job.applicationId(), job.jobType);
+                    jobs.start(job.applicationId(), job.jobType, new Versions(job.triggering.platform(),
+                                                                              job.triggering.application(),
+                                                                              job.triggering.sourcePlatform(),
+                                                                              job.triggering.sourceApplication()));
                 else
                     buildService.trigger(job);
 

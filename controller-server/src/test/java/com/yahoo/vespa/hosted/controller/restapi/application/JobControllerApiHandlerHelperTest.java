@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -7,10 +8,12 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockLogStore;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -24,9 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,13 @@ public class JobControllerApiHandlerHelperTest {
 
     private final ApplicationId appId = ApplicationId.from("vespa", "music", "default");
     private final Instant start = Instant.parse("2018-06-27T10:12:35Z");
+    static final Versions versions = new Versions(Version.fromString("1.2.3"),
+                                                  ApplicationVersion.from(new SourceRevision("repo",
+                                                                                             "branch",
+                                                                                             "bada55"),
+                                                                          321),
+                                                  Optional.empty(),
+                                                  Optional.empty());
 
     private static Step lastStep = Step.values()[Step.values().length - 1];
 
@@ -131,7 +139,7 @@ public class JobControllerApiHandlerHelperTest {
             end = Optional.of(start.plusSeconds(duration));
         }
 
-        return new RunStatus(runId, stepStatusMap, start, end, false);
+        return new RunStatus(runId, stepStatusMap, versions, start, end, false);
     }
 
     private void compare(HttpResponse response, String expected) {
