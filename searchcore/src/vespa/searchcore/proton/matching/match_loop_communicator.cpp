@@ -47,7 +47,7 @@ MatchLoopCommunicator::SelectBest::mingle(Q & queue, F && accept) {
         uint32_t i = queue.front();
         const Hit & hit = in(i)[_indexes[i]];
         if (accept(hit.first)) {
-            out(i).emplace_back(hit);
+            out(i).push_back(hit);
             ++picked;
         }
         if (in(i).size() > ++_indexes[i]) {
@@ -64,9 +64,9 @@ MatchLoopCommunicator::SelectBest::mingle()
     vespalib::PriorityQueue<uint32_t, SelectCmp> queue(SelectCmp(*this));
     for (size_t i = 0; i < size(); ++i) {
         if (!in(i).empty()) {
-            queue.push(i);
-            out(i).reserve(in(i).size());
+            out(i).reserve(std::min(topN, in(i).size()));
             _indexes[i] = 0;
+            queue.push(i);
         }
     }
     if (_diversifier) {
