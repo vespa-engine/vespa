@@ -178,7 +178,7 @@ TEST("dump ir code to verify lazy casting") {
     Function function = Function::parse({"a", "b"}, "12==2+if(a==3&&a<10||b,10,5)");
     LLVMWrapper wrapper;
     size_t id = wrapper.make_function(function.num_params(), PassParams::SEPARATE, function.root(), {});
-    wrapper.compile(true); // dump module before compiling it
+    wrapper.compile(llvm::dbgs()); // dump module before compiling it
     using fun_type = double (*)(double, double);
     fun_type fun = (fun_type) wrapper.get_function_address(id);
     EXPECT_EQUAL(0.0, fun(0.0, 0.0));
