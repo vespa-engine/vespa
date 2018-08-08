@@ -3,7 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.hosted.node.admin.maintenance.FileHelper;
+import com.yahoo.vespa.hosted.node.maintainer.FileHelper;
+import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -25,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -46,18 +48,20 @@ public class CoredumpHandler {
     private final CoreCollector coreCollector;
     private final Path doneCoredumpsPath;
     private final URI feedEndpoint;
+    private final Optional<Supplier<Header>> requestHeaderSupplier;
 
     CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path doneCoredumpsPath,
-                    URI feedEndpoint) {
+                    URI feedEndpoint, Optional<Supplier<Header>> requestHeaderSupplier) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.feedEndpoint = feedEndpoint;
+        this.requestHeaderSupplier = requestHeaderSupplier;
     }
 
-    public CoredumpHandler(Path doneCoredumpsPath, URI feedEndpoint) {
+    public CoredumpHandler(Path doneCoredumpsPath, URI feedEndpoint, Optional<Supplier<Header>> requestHeaderSupplier) {
         this(createHttpClient(Duration.ofSeconds(5)), new CoreCollector(new ProcessExecuter()),
-                doneCoredumpsPath, feedEndpoint);
+                doneCoredumpsPath, feedEndpoint, requestHeaderSupplier);
     }
 
     public void processAll(Path coredumpsPath, Map<String, Object> nodeAttributes) throws IOException {
@@ -157,6 +161,7 @@ public class CoredumpHandler {
         HttpPost post = new HttpPost(feedEndpoint + "/" + documentId);
         post.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
         post.setEntity(new StringEntity(metadata));
+        requestHeaderSupplier.map(Supplier::get).ifPresent(post::addHeader);
 
         HttpResponse response = httpClient.execute(post);
         if (response.getStatusLine().getStatusCode() / 100 != 2) {

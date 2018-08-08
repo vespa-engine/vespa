@@ -80,7 +80,7 @@ public class CoredumpHandlerTest {
         crashPath = folder.newFolder("crash").toPath();
         donePath = folder.newFolder("done").toPath();
 
-        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, donePath, feedEndpoint);
+        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, donePath, feedEndpoint, Optional.empty());
     }
 
     @Test
