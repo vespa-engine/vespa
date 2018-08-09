@@ -33,7 +33,7 @@ public class StoredInteger implements Supplier<OptionalInt> {
     public OptionalInt get() {
         if (!hasBeenRead) {
             try {
-                String value = new String(Files.readAllBytes(path));
+                String value = new String(Files.readAllBytes(path)).trim();
                 this.value = OptionalInt.of(Integer.valueOf(value));
             } catch (NoSuchFileException e) {
                 this.value = OptionalInt.empty();
