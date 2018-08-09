@@ -103,15 +103,15 @@ public class Dispatcher extends AbstractComponent {
 
     /** Return a map of hits by their search node (partition) id */
     private static ListMap<Integer, FastHit> hitsByNode(Result result) {
-        ListMap<Integer, FastHit> hitsByPartition = new ListMap<>();
+        ListMap<Integer, FastHit> hitsByNode = new ListMap<>();
         for (Iterator<Hit> i = result.hits().unorderedDeepIterator() ; i.hasNext(); ) {
             Hit h = i.next();
             if ( ! (h instanceof FastHit)) continue;
             FastHit hit = (FastHit)h;
 
-            hitsByPartition.put(hit.getDistributionKey(), hit);
+            hitsByNode.put(hit.getDistributionKey(), hit);
         }
-        return hitsByPartition;
+        return hitsByNode;
     }
 
     /** Send a getDocsums request to a node. Responses will be added to the given receiver. */
