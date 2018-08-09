@@ -9,6 +9,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -61,9 +62,10 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     public static ImmutableSet<String> getAllowedClientHostnames() { return allowedClientHostnames; }
     
     private void writeConfigToDisk(ZookeeperServerConfig config) {
-       String cfg = transformConfigToString(config);
-       try (FileWriter writer = new FileWriter(getDefaults().underVespaHome(config.zooKeeperConfigFile()))) {
-           writer.write(cfg);
+       String configFilePath = getDefaults().underVespaHome(config.zooKeeperConfigFile());
+       new File(configFilePath).getParentFile().mkdirs();
+       try (FileWriter writer = new FileWriter(configFilePath)) {
+           writer.write(transformConfigToString(config));
            writeMyIdFile(config);
        } catch (IOException e) {
            throw new RuntimeException("Error writing zookeeper config", e);
