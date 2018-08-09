@@ -83,7 +83,7 @@ public class ApplicationSerializerTest {
         statusList.add(JobStatus.initial(JobType.stagingTest)
                                 .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, empty(), "Test 2", Instant.ofEpochMilli(5))
                                 .withCompletion(11, Optional.of(JobError.unknown), Instant.ofEpochMilli(6)));
-        statusList.add(JobStatus.initial(JobType.from(main, zone1).get())
+        statusList.add(JobStatus.initial(JobType.from(main, zone1))
                                 .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, deployments.stream().findFirst(), "Test 3", Instant.ofEpochMilli(6))
                                 .withCompletion(11, empty(), Instant.ofEpochMilli(7)));
 

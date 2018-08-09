@@ -374,7 +374,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the zone of the given job type. */
     private ZoneId zone(JobType type) {
-        return type.zone(controller.system()).get();
+        return type.zone(controller.system());
     }
 
     /** Returns the triggering of the currently running job, i.e., this job. */

@@ -253,8 +253,7 @@ public class DeploymentTester {
 
     public void deploy(JobType job, Application application, Optional<ApplicationPackage> applicationPackage,
                        boolean deployCurrentVersion) {
-        job.zone(controller().system()).ifPresent(zone -> tester.deploy(application, zone, applicationPackage,
-                                                                        deployCurrentVersion));
+        tester.deploy(application, job.zone(controller().system()), applicationPackage, deployCurrentVersion);
     }
 
     public void deployAndNotify(Application application, String upgradePolicy, boolean success, JobType job) {
@@ -279,13 +278,13 @@ public class DeploymentTester {
         }
         // Deactivate test deployments after deploy. This replicates the behaviour of the tenant pipeline
         if (job.isTest()) {
-            controller().applications().deactivate(application, job.zone(controller().system()).get());
+            controller().applications().deactivate(application, job.zone(controller().system()));
         }
         jobCompletion(job).application(application).success(success).submit();
     }
 
     public Optional<JobStatus.JobRun> firstFailing(Application application, JobType job) {
-        return tester.controller().applications().get(application.id()).get()
+        return tester.controller().applications().require(application.id())
                      .deploymentJobs().jobStatus().get(job).firstFailing();
     }
 

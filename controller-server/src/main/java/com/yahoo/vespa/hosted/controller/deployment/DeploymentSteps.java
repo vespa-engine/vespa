@@ -98,8 +98,7 @@ public class DeploymentSteps {
 
     /** Resolve job from deployment zone */
     private JobType toJob(DeploymentSpec.DeclaredZone zone) {
-        return JobType.from(system.get(), zone.environment(), zone.region().orElse(null))
-                      .orElseThrow(() -> new IllegalArgumentException("Invalid zone " + zone));
+        return JobType.from(system.get(), zone.environment(), zone.region().orElse(null));
     }
 
     /** Resolve jobs from steps */
