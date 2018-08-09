@@ -3,12 +3,16 @@
 #include "match_tools.h"
 #include "querynodes.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
+using search::queryeval::IDiversifier;
+using search::attribute::diversity::DiversityFilter;
+
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
 using namespace search::fef::indexproperties::matching;
@@ -138,9 +142,10 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _queryEnv(indexEnv, attributeContext, rankProperties),
       _mdl(),
       _rankSetup(rankSetup),
-      _featureOverrides(featureOverrides)
+      _featureOverrides(featureOverrides),
+      _diversityParams(),
+      _valid(_query.buildTree(queryStack, location, viewResolver, indexEnv))
 {
-    _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv);
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
@@ -161,19 +166,21 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         double diversity_cutoff_factor = DiversityCutoffFactor::lookup(rankProperties);
         vespalib::string diversity_cutoff_strategy = DiversityCutoffStrategy::lookup(rankProperties);
         if (!limit_attribute.empty() && limit_maxhits > 0) {
-            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(), _requestContext,
-                            limit_attribute, limit_maxhits, !limit_ascending, limit_max_filter_coverage,
-                            samplePercentage, postFilterMultiplier,
-                            diversity_attribute, diversity_min_groups, diversity_cutoff_factor,
-                            AttributeLimiter::toDiversityCutoffStrategy(diversity_cutoff_strategy));
+            _diversityParams = std::make_unique<DiversityParams>(diversity_attribute, diversity_min_groups, diversity_cutoff_factor,
+                                                                 AttributeLimiter::toDiversityCutoffStrategy(diversity_cutoff_strategy));
+            DegradationParams degradationParams(limit_attribute, limit_maxhits, !limit_ascending, limit_max_filter_coverage,
+                                                samplePercentage, postFilterMultiplier);
+            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
+                                                                 _requestContext, degradationParams, *_diversityParams);
         } else if (_rankSetup.hasMatchPhaseDegradation()) {
-            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(), _requestContext,
-                            _rankSetup.getDegradationAttribute(), _rankSetup.getDegradationMaxHits(), !_rankSetup.isDegradationOrderAscending(),
-                            _rankSetup.getDegradationMaxFilterCoverage(),
-                            _rankSetup.getDegradationSamplePercentage(), _rankSetup.getDegradationPostFilterMultiplier(),
-                            _rankSetup.getDiversityAttribute(), _rankSetup.getDiversityMinGroups(),
-                            _rankSetup.getDiversityCutoffFactor(),
-                            AttributeLimiter::toDiversityCutoffStrategy(_rankSetup.getDiversityCutoffStrategy()));
+            _diversityParams = std::make_unique<DiversityParams>(_rankSetup.getDiversityAttribute(), _rankSetup.getDiversityMinGroups(),
+                                                                 _rankSetup.getDiversityCutoffFactor(),
+                                                                 AttributeLimiter::toDiversityCutoffStrategy(_rankSetup.getDiversityCutoffStrategy()));
+            DegradationParams degradationParams(_rankSetup.getDegradationAttribute(), _rankSetup.getDegradationMaxHits(), !_rankSetup.isDegradationOrderAscending(),
+                                                _rankSetup.getDegradationMaxFilterCoverage(), _rankSetup.getDegradationSamplePercentage(),
+                                                _rankSetup.getDegradationPostFilterMultiplier());
+            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
+                                                                 _requestContext, degradationParams, *_diversityParams);
         }
     }
     if ( ! _match_limiter) {
@@ -189,6 +196,20 @@ MatchToolsFactory::createMatchTools() const
     assert(_valid);
     return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getSoftDoom(), _hardDoom, _query,
                                         *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
+}
+
+std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
+{
+    if (!_diversityParams || _diversityParams->_attribute.empty()) {
+        return std::unique_ptr<IDiversifier>();
+    }
+    auto attr = _requestContext.getAttribute(_diversityParams->_attribute);
+    if ( !attr) {
+        LOG(warning, "Skipping diversity due to no %s attribute.", _diversityParams->_attribute.c_str());
+        return std::unique_ptr<IDiversifier>();
+    }
+    size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams->_min_groups;
+    return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams->_min_groups, true);
 }
 
 }
