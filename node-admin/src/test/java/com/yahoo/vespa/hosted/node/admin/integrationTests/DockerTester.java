@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.concurrent.classlock.ClassLocking;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -70,6 +72,17 @@ public class DockerTester implements AutoCloseable {
                 .pathResolver(new PathResolver(PATH_TO_VESPA_HOME, Paths.get("/tmp"), Paths.get("/tmp")))
                 .cloud("mycloud")
                 .build();
+
+        NodeSpec hostSpec = new NodeSpec.Builder()
+                .hostname(DOCKER_HOST_HOSTNAME)
+                .state(Node.State.active)
+                .nodeType(NodeType.host)
+                .flavor("default")
+                .wantedRestartGeneration(1L)
+                .currentRestartGeneration(1L)
+                .build();
+        nodeRepositoryMock.updateNodeRepositoryNode(hostSpec);
+
         Clock clock = Clock.systemUTC();
         DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null, new IPAddressesImpl());
         StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, null, environment, callOrderVerifier, clock);
