@@ -20,9 +20,11 @@ import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
+import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,6 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,14 +57,23 @@ public class StorageMaintainer {
     private final DockerOperations dockerOperations;
     private final ProcessExecuter processExecuter;
     private final Environment environment;
+    private final Optional<CoredumpHandler> coredumpHandler;
     private final Clock clock;
 
     private final Map<ContainerName, MaintenanceThrottler> maintenanceThrottlerByContainerName = new ConcurrentHashMap<>();
 
-    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter, MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
+    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
+                             MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
+        this(dockerOperations, processExecuter, metricReceiver, environment, null, clock);
+    }
+
+    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
+                             MetricReceiverWrapper metricReceiver, Environment environment,
+                             CoredumpHandler coredumpHandler, Clock clock) {
         this.dockerOperations = dockerOperations;
         this.processExecuter = processExecuter;
         this.environment = environment;
+        this.coredumpHandler = Optional.ofNullable(coredumpHandler);
         this.clock = clock;
 
         Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
@@ -295,17 +307,38 @@ public class StorageMaintainer {
 
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         addHandleCoredumpsCommand(maintainerExecutor, containerName, node);
-
         maintainerExecutor.execute();
+
         getMaintenanceThrottlerFor(containerName).updateNextHandleCoredumpsTime();
     }
 
+    /**
+     * Will either schedule coredump execution in the given maintainerExecutor or run coredump handling
+     * directly if {@link #coredumpHandler} is set.
+     */
     private void addHandleCoredumpsCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName, NodeSpec node) {
-        if (!environment.getCoredumpFeedEndpoint().isPresent()) {
+        final Path coredumpsPath = environment.pathInNodeAdminFromPathInNode(
+                containerName, environment.pathInNodeUnderVespaHome("var/crash"));
+        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(node);
+        if (coredumpHandler.isPresent()) {
+            try {
+                coredumpHandler.get().processAll(coredumpsPath, nodeAttributes);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to process coredumps", e);
+            }
+        } else {
             // Core dump handling is disabled.
-            return;
-        }
+            if (!environment.getCoredumpFeedEndpoint().isPresent()) return;
 
+            maintainerExecutor.addJob("handle-core-dumps")
+                    .withArgument("coredumpsPath", coredumpsPath)
+                    .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
+                    .withArgument("attributes", nodeAttributes)
+                    .withArgument("feedEndpoint", environment.getCoredumpFeedEndpoint().get());
+        }
+    }
+
+    private Map<String, Object> getCoredumpNodeAttributes(NodeSpec node) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", node.getHostname());
         attributes.put("parent_hostname", environment.getParentHostHostname());
@@ -321,13 +354,7 @@ public class StorageMaintainer {
             attributes.put("application", owner.getApplication());
             attributes.put("instance", owner.getInstance());
         });
-
-        maintainerExecutor.addJob("handle-core-dumps")
-                .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
-                .withArgument("coredumpsPath", environment.pathInNodeAdminFromPathInNode(
-                        containerName, environment.pathInNodeUnderVespaHome("var/crash")))
-                .withArgument("feedEndpoint", environment.getCoredumpFeedEndpoint().get())
-                .withArgument("attributes", attributes);
+        return Collections.unmodifiableMap(attributes);
     }
 
     /**
@@ -448,6 +475,8 @@ public class StorageMaintainer {
         }
 
         void execute() {
+            if (jobs.isEmpty()) return;
+
             String args;
             try {
                 args = objectMapper.writeValueAsString(jobs);

@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class PrefixLogger {
     private final String prefix;
