@@ -47,16 +47,13 @@ public class CuratorDatabaseClient {
     private static final Logger log = Logger.getLogger(CuratorDatabaseClient.class.getName());
 
     private static final Path root = Path.fromString("/provision/v1");
-
+    private static final Path lockRoot = root.append("locks");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
-
     private final CuratorDatabase curatorDatabase;
-
     private final Clock clock;
-    
     private final Zone zone;
 
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
@@ -278,9 +275,8 @@ public class CuratorDatabaseClient {
 
     /** Creates an returns the path to the lock for this application */
     private Path lockPath(ApplicationId application) {
-        Path lockPath = 
-                root
-                .append("locks")
+        Path lockPath =
+                lockRoot
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());
@@ -304,7 +300,7 @@ public class CuratorDatabaseClient {
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
     public Lock lockInactive() {
-        return lock(root.append("locks").append("unallocatedLock"), defaultLockTimeout);
+        return lock(lockRoot.append("unallocatedLock"), defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
@@ -348,7 +344,7 @@ public class CuratorDatabaseClient {
     }
     
     public Lock lockInactiveJobs() {
-        return lock(root.append("locks").append("inactiveJobsLock"), defaultLockTimeout);
+        return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
     private Path inactiveJobsPath() {
@@ -371,7 +367,7 @@ public class CuratorDatabaseClient {
     }
 
     public Lock lockInfrastructureVersions() {
-        return lock(root.append("locks").append("infrastructureVersionsLock"), defaultLockTimeout);
+        return lock(lockRoot.append("infrastructureVersionsLock"), defaultLockTimeout);
     }
 
     private Path infrastructureVersionsPath() {
