@@ -50,6 +50,8 @@ public class AthenzCredentialsMaintainer {
 
     private static final Duration EXPIRY_MARGIN = Duration.ofDays(1);
     private static final Duration REFRESH_PERIOD = Duration.ofDays(1);
+    private static final Duration REFRESH_BACKOFF = Duration.ofHours(1); // Backoff when refresh fails to ensure ZTS is not DDoS'ed.
+
     private static final Path CONTAINER_SIA_DIRECTORY = Paths.get("/var/lib/sia");
 
     private final boolean enabled;
@@ -66,6 +68,8 @@ public class AthenzCredentialsMaintainer {
     private final IdentityDocumentClient identityDocumentClient;
     private final InstanceCsrGenerator csrGenerator;
     private final AthenzService configserverIdentity;
+
+    private Instant lastRefreshAttempt = Instant.EPOCH; // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
 
     public AthenzCredentialsMaintainer(String hostname,
                                        Environment environment,
@@ -121,8 +125,15 @@ public class AthenzCredentialsMaintainer {
             Duration age = Duration.between(certificate.getNotBefore().toInstant(), now);
             if (shouldRefreshCredentials(age)) {
                 log.info(String.format("Certificate is ready to be refreshed (age=%s)", age.toString()));
-                refreshIdentity();
-                return true;
+                if (shouldThrottleRefreshAttempts(now)) {
+                    log.warning(String.format("Skipping refresh attempt as last refresh was on %s (less than %s ago)",
+                                              lastRefreshAttempt.toString(), REFRESH_BACKOFF.toString()));
+                    return false;
+                } else {
+                    lastRefreshAttempt = now;
+                    refreshIdentity();
+                    return true;
+                }
             }
             log.debug("Certificate is still valid");
             return false;
@@ -147,6 +158,10 @@ public class AthenzCredentialsMaintainer {
 
     private boolean shouldRefreshCredentials(Duration age) {
         return age.compareTo(REFRESH_PERIOD) >= 0;
+    }
+
+    private boolean shouldThrottleRefreshAttempts(Instant now) {
+        return REFRESH_BACKOFF.compareTo(Duration.between(lastRefreshAttempt, now)) > 0;
     }
 
     private X509Certificate readCertificateFromFile() throws IOException {
