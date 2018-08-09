@@ -171,6 +171,7 @@ struct MyWorld {
         schema.addIndexField(Schema::IndexField("tensor_field", DataType::TENSOR));
         schema.addAttributeField(Schema::AttributeField("a1", DataType::INT32));
         schema.addAttributeField(Schema::AttributeField("a2", DataType::INT32));
+        schema.addAttributeField(Schema::AttributeField("a3", DataType::INT32));
         schema.addAttributeField(Schema::AttributeField("predicate_field", DataType::BOOLEANTREE));
 
         // config
@@ -207,6 +208,16 @@ struct MyWorld {
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
                 attr->add(i * 2, docid); // value = docid * 2
+            }
+            assert(docid + 1 == NUM_DOCS);
+            attributeContext.add(attr);
+        }
+        {
+            SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("a3");
+            AttributeVector::DocId docid;
+            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+                attr->addDoc(docid);
+                attr->add(i%10, docid);
             }
             assert(docid + 1 == NUM_DOCS);
             attributeContext.add(attr);
@@ -329,6 +340,12 @@ struct MyWorld {
         { return SearchReply::UP(); }
     };
 
+    MatchToolsFactory::UP get_mtf(SearchRequest::SP req) {
+        Matcher::SP matcher = createMatcher();
+        search::fef::Properties overrides;
+        return matcher->create_match_tools_factory(*req, searchContext, attributeContext, metaStore, overrides);
+    }
+
     double get_first_phase_termwise_limit() {
         Matcher::SP matcher = createMatcher();
         SearchRequest::SP request = createSimpleRequest("f1", "spread");
@@ -407,7 +424,7 @@ MyWorld::MyWorld()
       clock(),
       queryLimiter()
 {}
-MyWorld::~MyWorld() {}
+MyWorld::~MyWorld() = default;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
@@ -526,6 +543,78 @@ TEST("require that re-ranking is performed (multi-threaded)") {
         EXPECT_GREATER(world.matchingStats.matchTimeAvg(), 0.0000001);
         EXPECT_GREATER(world.matchingStats.rerankTimeAvg(), 0.0000001);
     }
+}
+
+using namespace search::fef::indexproperties::matchphase;
+TEST("require that re-ranking is diverse") {
+    MyWorld world;
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.basicResults();
+    SearchRequest::SP request = world.createSimpleRequest("f1", "spread");
+    auto mtf = world.get_mtf(request);
+    auto diversity = mtf->createDiversifier();
+    EXPECT_FALSE(diversity);
+    auto & rankProperies = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperies.add(DiversityAttribute::NAME, "a2")
+                 .add(DiversityMinGroups::NAME, "3")
+                 .add(DiversityCutoffStrategy::NAME, "strict");
+    mtf = world.get_mtf(request);
+    diversity = mtf->createDiversifier();
+    EXPECT_TRUE(diversity);
+    SearchReply::UP reply = world.performSearch(request, 1);
+    EXPECT_EQUAL(9u, world.matchingStats.docsMatched());
+    EXPECT_EQUAL(9u, world.matchingStats.docsRanked());
+    EXPECT_EQUAL(3u, world.matchingStats.docsReRanked());
+    ASSERT_TRUE(reply->hits.size() == 9u);
+    EXPECT_EQUAL(document::DocumentId("doc::900").getGlobalId(),  reply->hits[0].gid);
+    EXPECT_EQUAL(1800.0, reply->hits[0].metric);
+    EXPECT_EQUAL(document::DocumentId("doc::800").getGlobalId(),  reply->hits[1].gid);
+    EXPECT_EQUAL(1600.0, reply->hits[1].metric);
+    EXPECT_EQUAL(document::DocumentId("doc::700").getGlobalId(),  reply->hits[2].gid);
+    EXPECT_EQUAL(1400.0, reply->hits[2].metric);
+    EXPECT_EQUAL(document::DocumentId("doc::600").getGlobalId(),  reply->hits[3].gid);
+    EXPECT_EQUAL(600.0, reply->hits[3].metric);
+    EXPECT_EQUAL(document::DocumentId("doc::500").getGlobalId(),  reply->hits[4].gid);
+    EXPECT_EQUAL(500.0, reply->hits[4].metric);
+    EXPECT_GREATER(world.matchingStats.matchTimeAvg(), 0.0000001);
+    EXPECT_GREATER(world.matchingStats.rerankTimeAvg(), 0.0000001);
+}
+
+TEST("require that re-ranking is forced diverse") {
+    MyWorld world;
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.basicResults();
+    SearchRequest::SP request = world.createSimpleRequest("f1", "spread");
+    auto mtf = world.get_mtf(request);
+    auto diversity = mtf->createDiversifier();
+    EXPECT_FALSE(diversity);
+    auto & rankProperies = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperies.add(DiversityAttribute::NAME, "a3")
+                 .add(DiversityMinGroups::NAME, "3")
+                 .add(DiversityCutoffStrategy::NAME, "strict");
+    mtf = world.get_mtf(request);
+    diversity = mtf->createDiversifier();
+    EXPECT_TRUE(diversity);
+    SearchReply::UP reply = world.performSearch(request, 1);
+    EXPECT_EQUAL(9u, world.matchingStats.docsMatched());
+    EXPECT_EQUAL(9u, world.matchingStats.docsRanked());
+    EXPECT_EQUAL(1u, world.matchingStats.docsReRanked());
+    ASSERT_TRUE(reply->hits.size() == 9u);
+    EXPECT_EQUAL(document::DocumentId("doc::900").getGlobalId(),  reply->hits[0].gid);
+    EXPECT_EQUAL(1800.0, reply->hits[0].metric);
+    //TODO This is of course incorrect until the selectBest method sees everything.
+    EXPECT_EQUAL(document::DocumentId("doc::800").getGlobalId(),  reply->hits[1].gid);
+    EXPECT_EQUAL(800.0, reply->hits[1].metric);
+    EXPECT_EQUAL(document::DocumentId("doc::700").getGlobalId(),  reply->hits[2].gid);
+    EXPECT_EQUAL(700.0, reply->hits[2].metric);
+    EXPECT_EQUAL(document::DocumentId("doc::600").getGlobalId(),  reply->hits[3].gid);
+    EXPECT_EQUAL(600.0, reply->hits[3].metric);
+    EXPECT_EQUAL(document::DocumentId("doc::500").getGlobalId(),  reply->hits[4].gid);
+    EXPECT_EQUAL(500.0, reply->hits[4].metric);
+    EXPECT_GREATER(world.matchingStats.matchTimeAvg(), 0.0000001);
+    EXPECT_GREATER(world.matchingStats.rerankTimeAvg(), 0.0000001);
 }
 
 TEST("require that sortspec can be used (multi-threaded)") {
@@ -659,8 +748,7 @@ TEST("require that getSummaryFeatures can use cached query setup") {
 
     DocsumRequest::SP docsum_request(new DocsumRequest);  // no stack dump
     docsum_request->sessionId = request->sessionId;
-    docsum_request->
-        propertiesMap.lookupCreate(search::MapNames::CACHES).add("query", "true");
+    docsum_request->propertiesMap.lookupCreate(search::MapNames::CACHES).add("query", "true");
     docsum_request->hits.push_back(DocsumRequest::Hit());
     docsum_request->hits.back().docid = 30;
 
