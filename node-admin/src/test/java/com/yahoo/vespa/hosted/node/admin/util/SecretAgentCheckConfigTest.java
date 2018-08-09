@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class SecretAgentCheckConfigTest {
 

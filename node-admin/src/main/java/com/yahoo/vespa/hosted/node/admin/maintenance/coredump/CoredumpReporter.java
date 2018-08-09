@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public interface CoredumpReporter {
 
