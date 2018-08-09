@@ -35,8 +35,6 @@
   "currentRebootGeneration": 1,
   "vespaVersion": "6.43.0",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.43.0",
-  "hostedVersion": "6.43.0",
-  "convergedStateVersion": "6.43.0",
   "failCount": 1,
   "hardwareFailure": true,
   "hardwareFailureDescription": "memory_mcelog",

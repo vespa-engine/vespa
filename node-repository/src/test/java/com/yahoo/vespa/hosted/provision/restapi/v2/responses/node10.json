@@ -35,8 +35,6 @@
   "currentRebootGeneration": 0,
   "vespaVersion": "5.104.142",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:5.104.142",
-  "hostedVersion": "5.104.142",
-  "convergedStateVersion": "5.104.142",
   "failCount": 0,
   "hardwareFailure": false,
   "wantToRetire": false,

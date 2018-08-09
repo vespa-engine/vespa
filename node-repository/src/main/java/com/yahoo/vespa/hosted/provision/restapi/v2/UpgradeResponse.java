@@ -32,10 +32,7 @@ public class UpgradeResponse extends HttpResponse {
         Cursor root = slime.setObject();
 
         Cursor versionsObject = root.setObject("versions");
-        infrastructureVersions.getTargetVersions().entrySet().stream()
-                .sorted(Comparator.comparing(Map.Entry::getKey)) // Sort for stable tests
-                .forEach(entry ->
-                        versionsObject.setString(entry.getKey().name(), entry.getValue().toFullString()));
+        infrastructureVersions.getTargetVersions().forEach((nodeType, version) -> versionsObject.setString(nodeType.name(), version.toFullString()));
 
         new JsonFormat(true).encode(stream, slime);
     }

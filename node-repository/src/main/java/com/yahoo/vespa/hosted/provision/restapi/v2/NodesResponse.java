@@ -174,9 +174,6 @@ class NodesResponse extends HttpResponse {
                 .ifPresent(version -> {
                     object.setString("vespaVersion", version.toFullString());
                     object.setString("currentDockerImage", nodeRepository.dockerImage().withTag(version).asString());
-                    // TODO: Remove these when they are no longer read
-                    object.setString("hostedVersion", version.toFullString());
-                    object.setString("convergedStateVersion", version.toFullString());
                 });
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailureDescription().isPresent());

@@ -20,7 +20,7 @@ public class NodeListFilter extends NodeFilter {
 
     private NodeListFilter(List<Node> nodes, NodeFilter next) {
         super(next);
-        this.nodes = ImmutableSet.copyOf(nodes);
+        this.nodes = ImmutableSet.copyOf(Objects.requireNonNull(nodes, "nodes cannot be null"));
     }
 
     @Override

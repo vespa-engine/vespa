@@ -73,7 +73,6 @@ import java.util.stream.Stream;
 public class NodeRepository extends AbstractComponent {
 
     private final CuratorDatabaseClient db;
-    private final Curator curator;
     private final Clock clock;
     private final Zone zone;
     private final NodeFlavors flavors;
@@ -96,7 +95,6 @@ public class NodeRepository extends AbstractComponent {
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
                           DockerImage dockerImage, boolean useCuratorClientCache) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
-        this.curator = curator;
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;

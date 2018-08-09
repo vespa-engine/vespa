@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.node.filter;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.provision.HostFilter;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -22,8 +21,7 @@ public class ParentHostFilter extends NodeFilter {
     /** Creates a node filter which filters using the given parent host name */
     private ParentHostFilter(Set<String> parentHostNames, NodeFilter next) {
         super(next);
-        Objects.requireNonNull(parentHostNames, "parentHostNames cannot be null.");
-        this.parentHostNames = ImmutableSet.copyOf(parentHostNames);
+        this.parentHostNames = ImmutableSet.copyOf(Objects.requireNonNull(parentHostNames, "parentHostNames cannot be null"));
     }
 
     @Override

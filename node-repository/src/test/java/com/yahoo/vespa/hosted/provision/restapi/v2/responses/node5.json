@@ -18,8 +18,6 @@
   "currentRebootGeneration": 0,
   "vespaVersion": "1.2.3",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:1.2.3",
-  "hostedVersion": "1.2.3",
-  "convergedStateVersion": "1.2.3",
   "failCount": 1,
   "hardwareFailure": false,
   "wantToRetire": false,

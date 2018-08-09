@@ -2,18 +2,11 @@
 package com.yahoo.vespa.hosted.provision.node.filter;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Collections;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,7 +22,7 @@ public class StateFilter extends NodeFilter {
     /** Creates a node filter which filters using the given host filter */
     private StateFilter(Set<Node.State> states, NodeFilter next) {
         super(next);
-        Objects.requireNonNull(states, "state cannot be null, use an empty optional");
+        Objects.requireNonNull(states, "state cannot be null, use an empty set");
         this.states = ImmutableSet.copyOf(states);
     }
 
