@@ -3,21 +3,9 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.hosted.node.maintainer.FileHelper;
-import org.apache.http.Header;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
+import com.yahoo.vespa.hosted.node.admin.maintenance.FileHelper;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -26,10 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Finds coredumps, collects metadata and reports them
@@ -44,24 +30,18 @@ public class CoredumpHandler {
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final HttpClient httpClient;
     private final CoreCollector coreCollector;
     private final Path doneCoredumpsPath;
-    private final URI feedEndpoint;
-    private final Optional<Supplier<Header>> requestHeaderSupplier;
+    private final CoredumpReporter coredumpReporter;
 
-    CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path doneCoredumpsPath,
-                    URI feedEndpoint, Optional<Supplier<Header>> requestHeaderSupplier) {
-        this.httpClient = httpClient;
-        this.coreCollector = coreCollector;
-        this.doneCoredumpsPath = doneCoredumpsPath;
-        this.feedEndpoint = feedEndpoint;
-        this.requestHeaderSupplier = requestHeaderSupplier;
+    public CoredumpHandler(CoredumpReporter coredumpReporter, Path doneCoredumpsPath) {
+        this(new CoreCollector(new ProcessExecuter()), coredumpReporter, doneCoredumpsPath);
     }
 
-    public CoredumpHandler(Path doneCoredumpsPath, URI feedEndpoint, Optional<Supplier<Header>> requestHeaderSupplier) {
-        this(createHttpClient(Duration.ofSeconds(5)), new CoreCollector(new ProcessExecuter()),
-                doneCoredumpsPath, feedEndpoint, requestHeaderSupplier);
+    CoredumpHandler(CoreCollector coreCollector, CoredumpReporter coredumpReporter, Path doneCoredumpsPath) {
+        this.coreCollector = coreCollector;
+        this.coredumpReporter = coredumpReporter;
+        this.doneCoredumpsPath = doneCoredumpsPath;
     }
 
     public void processAll(Path coredumpsPath, Map<String, Object> nodeAttributes) throws IOException {
@@ -81,8 +61,8 @@ public class CoredumpHandler {
     }
 
     private void handleNewCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) {
-        Path processingCoredumps = enqueueCoredumps(coredumpsPath);
-        processAndReportCoredumps(processingCoredumps, nodeAttributes);
+        enqueueCoredumps(coredumpsPath);
+        processAndReportCoredumps(coredumpsPath, nodeAttributes);
     }
 
 
@@ -90,10 +70,10 @@ public class CoredumpHandler {
      * Moves a coredump to a new directory under the processing/ directory. Limit to only processing
      * one coredump at the time, starting with the oldest.
      */
-    Path enqueueCoredumps(Path coredumpsPath) {
-        Path processingCoredumpsPath = coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
+    void enqueueCoredumps(Path coredumpsPath) {
+        Path processingCoredumpsPath = getProcessingCoredumpsPath(coredumpsPath);
         processingCoredumpsPath.toFile().mkdirs();
-        if (!FileHelper.listContentsOfDirectory(processingCoredumpsPath).isEmpty()) return processingCoredumpsPath;
+        if (!FileHelper.listContentsOfDirectory(processingCoredumpsPath).isEmpty()) return;
 
         FileHelper.listContentsOfDirectory(coredumpsPath).stream()
                 .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
@@ -105,8 +85,6 @@ public class CoredumpHandler {
                         logger.log(Level.WARNING, "Failed to process coredump " + coredumpPath, e);
                     }
                 });
-
-        return processingCoredumpsPath;
     }
 
     void processAndReportCoredumps(Path processingCoredumpsPath, Map<String, Object> nodeAttributes) {
@@ -114,25 +92,29 @@ public class CoredumpHandler {
 
         FileHelper.listContentsOfDirectory(processingCoredumpsPath).stream()
                 .filter(path -> path.toFile().isDirectory())
-                .forEach(coredumpDirectory -> {
-                    try {
-                        String metadata = collectMetadata(coredumpDirectory, nodeAttributes);
-                        report(coredumpDirectory, metadata);
-                        finishProcessing(coredumpDirectory);
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, "Failed to report coredump " + coredumpDirectory, e);
-                    }
-                });
+                .forEach(coredumpDirectory -> processAndReportSingleCoredump(coredumpDirectory, nodeAttributes));
     }
 
-    Path enqueueCoredumpForProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
+    private void processAndReportSingleCoredump(Path coredumpDirectory, Map<String, Object> nodeAttributes) {
+        try {
+            String metadata = collectMetadata(coredumpDirectory, nodeAttributes);
+            String coredumpId = coredumpDirectory.getFileName().toString();
+            coredumpReporter.reportCoredump(coredumpId, metadata);
+            finishProcessing(coredumpDirectory);
+            logger.info("Successfully reported coredump " + coredumpId);
+        } catch (Throwable e) {
+            logger.log(Level.WARNING, "Failed to report coredump " + coredumpDirectory, e);
+        }
+    }
+
+    private void enqueueCoredumpForProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
         // Make coredump readable
         coredumpPath.toFile().setReadable(true, false);
 
         // Create new directory for this coredump and move it into it
         Path folder = processingCoredumpsPath.resolve(UUID.randomUUID().toString());
         folder.toFile().mkdirs();
-        return Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
+        Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
     }
 
     String collectMetadata(Path coredumpDirectory, Map<String, Object> nodeAttributes) throws IOException {
@@ -154,41 +136,14 @@ public class CoredumpHandler {
         }
     }
 
-    void report(Path coredumpDirectory, String metadata) throws IOException {
-        // Use core dump UUID as document ID
-        String documentId = coredumpDirectory.getFileName().toString();
-
-        HttpPost post = new HttpPost(feedEndpoint + "/" + documentId);
-        post.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-        post.setEntity(new StringEntity(metadata));
-        requestHeaderSupplier.map(Supplier::get).ifPresent(post::addHeader);
-
-        HttpResponse response = httpClient.execute(post);
-        if (response.getStatusLine().getStatusCode() / 100 != 2) {
-            String result = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
-                    .lines().collect(Collectors.joining("\n"));
-            throw new RuntimeException("POST to " + post.getURI() + " failed with HTTP: " +
-                    response.getStatusLine().getStatusCode() + " [" + result + "]");
-        }
-        EntityUtils.consume(response.getEntity());
-        logger.info("Successfully reported coredump " + documentId);
-    }
-
-    void finishProcessing(Path coredumpDirectory) throws IOException {
+    private void finishProcessing(Path coredumpDirectory) throws IOException {
         Files.move(coredumpDirectory, doneCoredumpsPath.resolve(coredumpDirectory.getFileName()));
     }
 
-    private static HttpClient createHttpClient(Duration timeout) {
-        int timeoutInMillis = (int) timeout.toMillis();
-        return HttpClientBuilder.create()
-                .setUserAgent("node-admin-core-dump-reporter")
-                .setDefaultRequestConfig(RequestConfig.custom()
-                        .setConnectTimeout(timeoutInMillis)
-                        .setConnectionRequestTimeout(timeoutInMillis)
-                        .setSocketTimeout(timeoutInMillis)
-                        .build())
-                .setMaxConnTotal(100)
-                .setMaxConnPerRoute(10)
-                .build();
+    /**
+     * @return Path to directory where coredumps are temporarily moved while still being processed
+     */
+    static Path getProcessingCoredumpsPath(Path coredumpsPath) {
+        return coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
     }
 }

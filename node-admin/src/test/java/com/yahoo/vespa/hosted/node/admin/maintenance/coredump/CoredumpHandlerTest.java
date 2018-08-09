@@ -1,25 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.DefaultHttpResponseFactory;
-import org.apache.http.message.BasicStatusLine;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.ArgumentCaptor;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -28,13 +15,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -54,7 +41,6 @@ public class CoredumpHandlerTest {
             "\"vespa_version\":\"6.48.4\"," +
             "\"kernel_version\":\"2.6.32-573.22.1.el6.YAHOO.20160401.10.x86_64\"," +
             "\"docker_image\":\"vespa/ci:6.48.4\"}}";
-    private static final URI feedEndpoint = URI.create("http://feed-endpoint.hostname.tld/feed");
 
     static {
         attributes.put("hostname", "host123.yahoo.com");
@@ -69,24 +55,26 @@ public class CoredumpHandlerTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
-    private final HttpClient httpClient = mock(HttpClient.class);
     private final CoreCollector coreCollector = mock(CoreCollector.class);
+    private final CoredumpReporter coredumpReporter = mock(CoredumpReporter.class);
     private CoredumpHandler coredumpHandler;
     private Path crashPath;
     private Path donePath;
+    private Path processingPath;
 
     @Before
     public void setup() throws IOException {
         crashPath = folder.newFolder("crash").toPath();
         donePath = folder.newFolder("done").toPath();
+        processingPath = CoredumpHandler.getProcessingCoredumpsPath(crashPath);
 
-        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, donePath, feedEndpoint, Optional.empty());
+        coredumpHandler = new CoredumpHandler(coreCollector, coredumpReporter, donePath);
     }
 
     @Test
     public void ignoresIncompleteCoredumps() throws IOException {
         Path coredumpPath = createCoredump(".core.dump", Instant.now());
-        Path processingPath = coredumpHandler.enqueueCoredumps(crashPath);
+        coredumpHandler.enqueueCoredumps(crashPath);
 
         // The 'processing' directory should be empty
         assertFolderContents(processingPath);
@@ -98,8 +86,7 @@ public class CoredumpHandlerTest {
     @Test
     public void startProcessingTest() throws IOException {
         Path coredumpPath = createCoredump("core.dump", Instant.now());
-        Path processingPath = crashPath.resolve("processing_dir");
-        coredumpHandler.enqueueCoredumpForProcessing(coredumpPath, processingPath);
+        coredumpHandler.enqueueCoredumps(crashPath);
 
         // Contents of 'crash' should be only the 'processing' directory
         assertFolderContents(crashPath, processingPath.getFileName().toString());
@@ -119,7 +106,7 @@ public class CoredumpHandlerTest {
         createCoredump(oldestCoredump, startTime.minusSeconds(3600));
         createCoredump("core.dump1", startTime.minusSeconds(1000));
         createCoredump("core.dump2", startTime);
-        Path processingPath = coredumpHandler.enqueueCoredumps(crashPath);
+        coredumpHandler.enqueueCoredumps(crashPath);
 
         List<Path> processingCoredumps = Files.list(processingPath).collect(Collectors.toList());
         assertEquals(1, processingCoredumps.size());
@@ -142,7 +129,7 @@ public class CoredumpHandlerTest {
     @Test
     public void coredumpMetadataCollectAndWriteTest() throws IOException {
         createCoredump("core.dump", Instant.now());
-        Path processingPath = coredumpHandler.enqueueCoredumps(crashPath);
+        coredumpHandler.enqueueCoredumps(crashPath);
         Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
                 new RuntimeException("Expected to find directory with coredump in processing dir"));
         when(coreCollector.collect(eq(processingCoredumpPath.resolve("core.dump")))).thenReturn(metadata);
@@ -166,41 +153,31 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    public void reportSuccessCoredumpTest() throws IOException, URISyntaxException {
+    public void reportSuccessCoredumpTest() throws IOException {
         final String documentId = "UIDD-ABCD-EFGH";
-        Path coredumpPath = createProcessedCoredump(documentId);
+        createProcessedCoredump(documentId);
 
-        setNextHttpResponse(200, Optional.empty());
-        coredumpHandler.report(coredumpPath.getParent(), expectedMetadataFileContents);
-        validateNextHttpPost(documentId, expectedMetadataFileContents);
+        coredumpHandler.processAndReportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME), attributes);
+        verify(coredumpReporter).reportCoredump(eq(documentId), eq(expectedMetadataFileContents));
+
+        // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
+        assertFolderContents(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
+        assertFolderContents(donePath.resolve(documentId), CoredumpHandler.METADATA_FILE_NAME);
     }
 
     @Test
-    public void reportFailCoredumpTest() throws IOException, URISyntaxException {
+    public void reportFailCoredumpTest() throws IOException {
         final String documentId = "UIDD-ABCD-EFGH";
         Path metadataPath = createProcessedCoredump(documentId);
 
-        setNextHttpResponse(500, Optional.of("Internal server error"));
+        doThrow(new RuntimeException()).when(coredumpReporter).reportCoredump(any(), any());
         coredumpHandler.processAndReportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME), attributes);
-        validateNextHttpPost(documentId, expectedMetadataFileContents);
+        verify(coredumpReporter).reportCoredump(eq(documentId), eq(expectedMetadataFileContents));
 
         // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
         assertFolderContents(donePath);
         assertFolderContents(metadataPath.getParent(), CoredumpHandler.METADATA_FILE_NAME);
     }
-
-    @Test
-    public void finishProcessingTest() throws IOException {
-        final String documentId = "UIDD-ABCD-EFGH";
-
-        Path coredumpPath = createProcessedCoredump(documentId);
-        coredumpHandler.finishProcessing(coredumpPath.getParent());
-
-        // The coredump should've been moved out of 'processing' and into 'done'
-        assertFolderContents(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
-        assertFolderContents(donePath.resolve(documentId), CoredumpHandler.METADATA_FILE_NAME);
-    }
-
 
     private static void assertFolderContents(Path pathToFolder, String... filenames) throws IOException {
         Set<Path> expectedContentsOfFolder = Arrays.stream(filenames)
@@ -225,25 +202,4 @@ public class CoredumpHandlerTest {
         coredumpPath.getParent().toFile().mkdirs();
         return Files.write(coredumpPath, expectedMetadataFileContents.getBytes());
     }
-
-    private void setNextHttpResponse(int code, Optional<String> message) throws IOException {
-        DefaultHttpResponseFactory responseFactory = new DefaultHttpResponseFactory();
-        HttpResponse httpResponse = responseFactory.newHttpResponse(
-                new BasicStatusLine(HttpVersion.HTTP_1_1, code, null), null);
-        if (message.isPresent()) httpResponse.setEntity(new StringEntity(message.get()));
-
-        when(httpClient.execute(any())).thenReturn(httpResponse);
-    }
-
-    private void validateNextHttpPost(String documentId, String expectedBody) throws IOException, URISyntaxException {
-        ArgumentCaptor<HttpPost> capturedPost = ArgumentCaptor.forClass(HttpPost.class);
-        verify(httpClient).execute(capturedPost.capture());
-
-        URI expectedURI = new URI(feedEndpoint + "/" + documentId);
-        assertEquals(expectedURI, capturedPost.getValue().getURI());
-        assertEquals("application/json", capturedPost.getValue().getHeaders(HttpHeaders.CONTENT_TYPE)[0].getValue());
-        assertEquals(expectedBody,
-                new BufferedReader(new InputStreamReader(capturedPost.getValue().getEntity().getContent())).readLine());
-    }
-
 }
