@@ -6,11 +6,12 @@
 namespace proton:: matching {
 
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
-    : MatchLoopCommunicator(threads, topN, std::unique_ptr<IDiversifier>())
+    : MatchLoopCommunicator(threads, topN, nullptr)
 {}
-MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier)
+
+MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, IDiversifier * diversifier)
     : _estimate_match_frequency(threads),
-      _selectBest(threads, topN, std::move(diversifier)),
+      _selectBest(threads, topN, diversifier),
       _rangeCover(threads)
 {}
 MatchLoopCommunicator::~MatchLoopCommunicator() = default;
@@ -32,11 +33,11 @@ MatchLoopCommunicator::EstimateMatchFrequency::mingle()
     }
 }
 
-MatchLoopCommunicator::SelectBest::SelectBest(size_t n, size_t topN_in, std::unique_ptr<IDiversifier> diversifier)
+MatchLoopCommunicator::SelectBest::SelectBest(size_t n, size_t topN_in, IDiversifier * diversifier)
     : vespalib::Rendezvous<Hits, Hits>(n),
       topN(topN_in),
       _indexes(n, 0),
-      _diversifier(std::move(diversifier))
+      _diversifier(diversifier)
 {}
 MatchLoopCommunicator::SelectBest::~SelectBest() = default;
 
@@ -70,7 +71,7 @@ MatchLoopCommunicator::SelectBest::mingle()
         }
     }
     if (_diversifier) {
-        mingle(queue, [diversifier=_diversifier.get()](uint32_t docId) { return diversifier->accepted(docId);});
+        mingle(queue, [diversifier=_diversifier](uint32_t docId) { return diversifier->accepted(docId);});
     } else {
         mingle(queue, [](uint32_t) { return true;});
     }

@@ -56,9 +56,10 @@ TEST_F("require that selectBest gives appropriate results for single thread", Ma
     TEST_DO(equal(3u, make_box<Hit>({1, 5}, {2, 4}, {3, 3}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}))));
 }
 
-TEST_F("require that selectBest gives appropriate results for single thread with filter",
-       MatchLoopCommunicator(num_threads, 3, std::make_unique<EveryOdd>()))
+TEST("require that selectBest gives appropriate results for single thread with filter")
 {
+    EveryOdd everyOdd;
+    MatchLoopCommunicator f1(num_threads, 3, &everyOdd);
     TEST_DO(equal(1u, make_box<Hit>({1, 5}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}))));
     TEST_DO(equal(2u, make_box<Hit>({1, 5}, {3, 3}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}))));
     TEST_DO(equal(3u, make_box<Hit>({1, 5}, {3, 3}, {5, 1}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}, {6, 0}))));

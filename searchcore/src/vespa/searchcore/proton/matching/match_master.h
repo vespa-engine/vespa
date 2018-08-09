@@ -23,12 +23,9 @@ private:
 
 public:
     const MatchingStats & getStats() const { return _stats; }
-    ResultProcessor::Result::UP match(const MatchParams &params,
-                                      vespalib::ThreadBundle &threadBundle,
-                                      const MatchToolsFactory &matchToolsFactory,
-                                      ResultProcessor &resultProcessor,
-                                      uint32_t distributionKey,
-                                      uint32_t numSearchPartitions);
+    ResultProcessor::Result::UP match(const MatchParams &params, vespalib::ThreadBundle &threadBundle,
+                                      const MatchToolsFactory &matchToolsFactory, ResultProcessor &resultProcessor,
+                                      uint32_t distributionKey, uint32_t numSearchPartitions);
 
     static std::shared_ptr<search::FeatureSet>
     getFeatureSet(const MatchToolsFactory &matchToolsFactory,
