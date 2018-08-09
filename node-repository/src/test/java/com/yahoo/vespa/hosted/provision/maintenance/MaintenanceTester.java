@@ -67,4 +67,8 @@ public class MaintenanceTester {
                 .collect(Collectors.toList());
     }
 
+    public JobControl jobControl() {
+        return new JobControl(nodeRepository.database());
+    }
+
 }
