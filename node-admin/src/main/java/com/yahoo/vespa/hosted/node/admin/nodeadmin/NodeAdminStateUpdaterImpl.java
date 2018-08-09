@@ -236,12 +236,13 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
+        boolean hostIsActiveInNR = nodeRepository.getNode(dockerHostHostName).getState() == Node.State.active;
         switch (wantedState) {
             case RESUMED:
-                orchestrator.resume(dockerHostHostName);
+                if (hostIsActiveInNR) orchestrator.resume(dockerHostHostName);
                 break;
             case SUSPENDED_NODE_ADMIN:
-                orchestrator.suspend(dockerHostHostName);
+                if (hostIsActiveInNR) orchestrator.suspend(dockerHostHostName);
                 break;
             case SUSPENDED:
                 // Fetch active nodes from node repo before suspending nodes.
@@ -252,11 +253,12 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
                 // We should also suspend host's hostname to suspend node-admin
                 List<String> nodesInActiveState = getNodesInActiveState();
 
-                List<String> nodesToSuspend = new ArrayList<>();
-                nodesToSuspend.addAll(nodesInActiveState);
-                nodesToSuspend.add(dockerHostHostName);
-                orchestrator.suspend(dockerHostHostName, nodesToSuspend);
-                log.info("Orchestrator allows suspension of " + nodesToSuspend);
+                List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
+                if (hostIsActiveInNR) nodesToSuspend.add(dockerHostHostName);
+                if (!nodesToSuspend.isEmpty()) {
+                    orchestrator.suspend(dockerHostHostName, nodesToSuspend);
+                    log.info("Orchestrator allows suspension of " + nodesToSuspend);
+                }
 
                 // The node agent services are stopped by this thread, which is OK only
                 // because the node agents are frozen (see above).
