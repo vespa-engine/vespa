@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -322,11 +323,13 @@ public class CuratorDatabaseClient {
         return curatorDatabase.lock(path, timeout);
     }
 
+    private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
+        return curatorDatabase.getData(path).filter(data -> data.length > 0).map(mapper);
+    }
+
     public Set<String> readInactiveJobs() {
         try {
-            byte[] data = curatorDatabase.getData(inactiveJobsPath()).get();
-            if (data.length == 0) return new HashSet<>(); // inactive jobs has never been written
-            return stringSetSerializer.fromJson(data);
+            return read(inactiveJobsPath(), stringSetSerializer::fromJson).orElseGet(HashSet::new);
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
@@ -351,11 +354,8 @@ public class CuratorDatabaseClient {
         return root.append("inactiveJobs");
     }
 
-
     public Map<NodeType, Version> readInfrastructureVersions() {
-        byte[] data = curatorDatabase.getData(infrastructureVersionsPath()).get();
-        if (data.length == 0) return new HashMap<>(); // infrastructure versions have never been written
-        return InfrastructureVersionsSerializer.fromJson(data);
+        return read(infrastructureVersionsPath(), InfrastructureVersionsSerializer::fromJson).orElseGet(HashMap::new);
     }
 
     public void writeInfrastructureVersions(Map<NodeType, Version> infrastructureVersions) {
@@ -373,4 +373,5 @@ public class CuratorDatabaseClient {
     private Path infrastructureVersionsPath() {
         return root.append("infrastructureVersions");
     }
+
 }
