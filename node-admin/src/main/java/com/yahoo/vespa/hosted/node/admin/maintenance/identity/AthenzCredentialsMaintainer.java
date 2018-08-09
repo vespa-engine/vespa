@@ -189,24 +189,27 @@ public class AthenzCredentialsMaintainer {
                         .withKeyStore(privateKeyFile.toFile(), certificateFile.toFile())
                         .withTrustStore(trustStorePath.toFile(), KeyStoreType.JKS)
                         .build();
-        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentity, containerIdentitySslContext)) {
-            InstanceIdentity instanceIdentity =
-                    ztsClient.refreshInstance(
-                            configserverIdentity,
-                            containerIdentity,
-                            identityDocument.providerUniqueId().asDottedString(),
-                            false,
-                            csr);
-            writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
-            log.info("Instance successfully refreshed and credentials written to file");
-        } catch (ZtsClientException e) {
-            // TODO Find out why certificate was revoked and hopefully remove this workaround
-            if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
-                log.error("Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
-                registerIdentity();
+        try {
+            try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentity, containerIdentitySslContext)) {
+                InstanceIdentity instanceIdentity =
+                        ztsClient.refreshInstance(
+                                configserverIdentity,
+                                containerIdentity,
+                                identityDocument.providerUniqueId().asDottedString(),
+                                false,
+                                csr);
+                writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
+                log.info("Instance successfully refreshed and credentials written to file");
+            } catch (ZtsClientException e) {
+                if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
+                    log.error("Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
+                    registerIdentity();
+                } else {
+                    throw e;
+                }
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (Exception e) {
+            log.error("Certificate refresh failed: " + e.getMessage(), e);
         }
     }
 
