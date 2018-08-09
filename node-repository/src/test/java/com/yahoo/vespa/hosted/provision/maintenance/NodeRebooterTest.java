@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class NodeRebooterTest {
 
     @Test
-    public void testRebootScheduling() throws InterruptedException {
+    public void testRebootScheduling() {
         Duration rebootInterval = Duration.ofMinutes(250);
         MaintenanceTester tester = new MaintenanceTester();
         tester.createReadyTenantNodes(15);

@@ -8,8 +8,6 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
-import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -39,7 +37,7 @@ import static org.mockito.Mockito.when;
 public class NodeFailerTest {
 
     @Test
-    public void nodes_for_suspended_applications_are_not_failed() throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
+    public void nodes_for_suspended_applications_are_not_failed() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
         tester.suspend(NodeFailTester.app1);
 
@@ -57,7 +55,7 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void node_failing() throws InterruptedException {
+    public void node_failing() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // For a day all nodes work so nothing happens
