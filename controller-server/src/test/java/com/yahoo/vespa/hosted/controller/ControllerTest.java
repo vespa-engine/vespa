@@ -236,61 +236,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testCleanupOfStaleDeploymentData() throws IOException {
-        DeploymentTester tester = new DeploymentTester();
-        tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
-        tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "cd-us-central-1"));
-
-        Supplier<Map<JobType, JobStatus>> statuses = () ->
-                tester.application(ApplicationId.from("vespa", "canary", "default"))
-                      .deploymentJobs().jobStatus();
-
-        // Current system version, matches version in test data
-        Version version = Version.fromString("6.141.117");
-        tester.upgradeSystem(version);
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
-
-        // Load test data data
-        byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/canary-with-stale-data.json"));
-        Application application = tester.controllerTester().createApplication(SlimeUtils.jsonToSlime(json));
-
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("canary")
-                .region("cd-us-central-1")
-                .build();
-        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
-
-        long cdJobsCount = statuses.get().keySet().stream()
-                        .filter(type -> type.zone(SystemName.cd).isPresent())
-                        .count();
-
-        long mainJobsCount = statuses.get().keySet().stream()
-                .filter(type -> type.zone(main).isPresent() && ! type.zone(SystemName.cd).isPresent())
-                .count();
-
-        assertEquals("Irrelevant (main) data is present.", 8, mainJobsCount);
-
-        // New version is released
-        version = Version.fromString("6.142.1");
-        tester.upgradeSystem(version);
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
-
-        // Test environment passes
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
-
-        long newCdJobsCount = statuses.get().keySet().stream()
-                .filter(type -> type.zone(SystemName.cd).isPresent())
-                .count();
-
-        long newMainJobsCount = statuses.get().keySet().stream()
-                .filter(type -> type.zone(main).isPresent() && ! type.zone(SystemName.cd).isPresent())
-                .count();
-
-        assertEquals("Irrelevant (main) job data is removed.", 0, newMainJobsCount);
-        assertEquals("Relevant (cd) data is not removed.", cdJobsCount, newCdJobsCount);
-    }
-
-    @Test
     public void testDnsAliasRegistration() {
         DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
