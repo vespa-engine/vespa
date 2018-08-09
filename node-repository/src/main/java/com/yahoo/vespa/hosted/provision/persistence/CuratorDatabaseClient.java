@@ -23,12 +23,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -355,14 +355,14 @@ public class CuratorDatabaseClient {
     }
 
     public Map<NodeType, Version> readInfrastructureVersions() {
-        return read(infrastructureVersionsPath(), InfrastructureVersionsSerializer::fromJson).orElseGet(HashMap::new);
+        return read(infrastructureVersionsPath(), NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
 
     public void writeInfrastructureVersions(Map<NodeType, Version> infrastructureVersions) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(infrastructureVersionsPath().getAbsolute(),
-                InfrastructureVersionsSerializer.toJson(infrastructureVersions)));
+                                                         NodeTypeVersionsSerializer.toJson(infrastructureVersions)));
         transaction.commit();
     }
 
