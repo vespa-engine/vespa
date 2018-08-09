@@ -41,6 +41,40 @@ void tag_match_data(const HandleRecorder::HandleSet &handles, MatchData &match_d
     }
 }
 
+std::unique_ptr<DegradationParams>
+getDegradationParams(const RankSetup & rankSetup, const Properties & rankProperties)
+{
+    vespalib::string limit_attribute = DegradationAttribute::lookup(rankProperties);
+    size_t limit_maxhits = DegradationMaxHits::lookup(rankProperties);
+    if (!limit_attribute.empty() && limit_maxhits > 0) {
+        bool limit_ascending = DegradationAscendingOrder::lookup(rankProperties);
+        double limit_max_filter_coverage = DegradationMaxFilterCoverage::lookup(rankProperties);
+        double samplePercentage = DegradationSamplePercentage::lookup(rankProperties);
+        double postFilterMultiplier = DegradationPostFilterMultiplier::lookup(rankProperties);
+        return std::make_unique<DegradationParams>(limit_attribute, limit_maxhits, !limit_ascending,
+                                                   limit_max_filter_coverage, samplePercentage, postFilterMultiplier);
+    } else if (rankSetup.hasMatchPhaseDegradation()) {
+        return std::make_unique<DegradationParams>(rankSetup.getDegradationAttribute(), rankSetup.getDegradationMaxHits(),
+                                                   !rankSetup.isDegradationOrderAscending(), rankSetup.getDegradationMaxFilterCoverage(),
+                                                   rankSetup.getDegradationSamplePercentage(), rankSetup.getDegradationPostFilterMultiplier());
+    }
+    return std::unique_ptr<DegradationParams>();
+}
+
+DiversityParams
+getDiversityParams(const RankSetup & rankSetup, const Properties & rankProperties)
+{
+    vespalib::string diversity_attribute = DiversityAttribute::lookup(rankProperties);
+
+    return (!diversity_attribute.empty())
+        ? DiversityParams(diversity_attribute, DiversityMinGroups::lookup(rankProperties),
+                          DiversityCutoffFactor::lookup(rankProperties),
+                          AttributeLimiter::toDiversityCutoffStrategy(DiversityCutoffStrategy::lookup(rankProperties)))
+        : DiversityParams(rankSetup.getDiversityAttribute(), rankSetup.getDiversityMinGroups(),
+                          rankSetup.getDiversityCutoffFactor(),
+                          AttributeLimiter::toDiversityCutoffStrategy(rankSetup.getDiversityCutoffStrategy()));
+}
+
 } // namespace proton::matching::<unnamed>
 
 void
@@ -155,32 +189,12 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.fetchPostings();
         _query.freeze();
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
-        vespalib::string limit_attribute = DegradationAttribute::lookup(rankProperties);
-        size_t limit_maxhits = DegradationMaxHits::lookup(rankProperties);
-        bool limit_ascending = DegradationAscendingOrder::lookup(rankProperties);
-        double limit_max_filter_coverage = DegradationMaxFilterCoverage::lookup(rankProperties);
-        double samplePercentage = DegradationSamplePercentage::lookup(rankProperties);
-        double postFilterMultiplier = DegradationPostFilterMultiplier::lookup(rankProperties);
-        vespalib::string diversity_attribute = DiversityAttribute::lookup(rankProperties);
-        uint32_t diversity_min_groups = DiversityMinGroups::lookup(rankProperties);
-        double diversity_cutoff_factor = DiversityCutoffFactor::lookup(rankProperties);
-        vespalib::string diversity_cutoff_strategy = DiversityCutoffStrategy::lookup(rankProperties);
-        if (!limit_attribute.empty() && limit_maxhits > 0) {
-            _diversityParams = std::make_unique<DiversityParams>(diversity_attribute, diversity_min_groups, diversity_cutoff_factor,
-                                                                 AttributeLimiter::toDiversityCutoffStrategy(diversity_cutoff_strategy));
-            DegradationParams degradationParams(limit_attribute, limit_maxhits, !limit_ascending, limit_max_filter_coverage,
-                                                samplePercentage, postFilterMultiplier);
+        _diversityParams = getDiversityParams(_rankSetup, rankProperties);
+        std::unique_ptr<DegradationParams> degradationParams = getDegradationParams(_rankSetup, rankProperties);
+
+        if (degradationParams) {
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
-                                                                 _requestContext, degradationParams, *_diversityParams);
-        } else if (_rankSetup.hasMatchPhaseDegradation()) {
-            _diversityParams = std::make_unique<DiversityParams>(_rankSetup.getDiversityAttribute(), _rankSetup.getDiversityMinGroups(),
-                                                                 _rankSetup.getDiversityCutoffFactor(),
-                                                                 AttributeLimiter::toDiversityCutoffStrategy(_rankSetup.getDiversityCutoffStrategy()));
-            DegradationParams degradationParams(_rankSetup.getDegradationAttribute(), _rankSetup.getDegradationMaxHits(), !_rankSetup.isDegradationOrderAscending(),
-                                                _rankSetup.getDegradationMaxFilterCoverage(), _rankSetup.getDegradationSamplePercentage(),
-                                                _rankSetup.getDegradationPostFilterMultiplier());
-            _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
-                                                                 _requestContext, degradationParams, *_diversityParams);
+                                                                 _requestContext, *degradationParams, _diversityParams);
         }
     }
     if ( ! _match_limiter) {
@@ -200,17 +214,17 @@ MatchToolsFactory::createMatchTools() const
 
 std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
 {
-    if (!_diversityParams || _diversityParams->_attribute.empty()) {
+    if (_diversityParams._attribute.empty()) {
         return std::unique_ptr<IDiversifier>();
     }
-    auto attr = _requestContext.getAttribute(_diversityParams->_attribute);
+    auto attr = _requestContext.getAttribute(_diversityParams._attribute);
     if ( !attr) {
-        LOG(warning, "Skipping diversity due to no %s attribute.", _diversityParams->_attribute.c_str());
+        LOG(warning, "Skipping diversity due to no %s attribute.", _diversityParams._attribute.c_str());
         return std::unique_ptr<IDiversifier>();
     }
-    size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams->_min_groups;
-    return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams->_min_groups,
-                                   _diversityParams->_cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
+    size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams._min_groups;
+    return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams._min_groups,
+                                   _diversityParams._cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
 }
 
 }

@@ -82,7 +82,7 @@ private:
     search::fef::MatchDataLayout      _mdl;
     const search::fef::RankSetup    & _rankSetup;
     const search::fef::Properties   & _featureOverrides;
-    std::unique_ptr<DiversityParams>  _diversityParams;
+    DiversityParams                   _diversityParams;
     bool                              _valid;
 public:
     typedef std::unique_ptr<MatchToolsFactory> UP;

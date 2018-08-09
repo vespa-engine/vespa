@@ -70,6 +70,7 @@ struct NoMatchPhaseLimiter : MaybeMatchPhaseLimiter {
 
 struct DiversityParams {
     using CutoffStrategy = AttributeLimiter::DiversityCutoffStrategy;
+    DiversityParams() : DiversityParams("", 0, 0, CutoffStrategy::LOOSE) { }
     DiversityParams(const vespalib::string & attribute, uint32_t min_groups,
                     double cutoff_factor, CutoffStrategy cutoff_strategy)
         : _attribute(attribute),
