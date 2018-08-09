@@ -488,7 +488,7 @@ public class DeploymentTriggerTest {
         tester.completeUpgradeWithError(application, v2, applicationPackage, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, applicationPackage);
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
-        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main)).version());
         tester.deploymentTrigger().cancelChange(application.id(), false);
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         Instant triggered = app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
@@ -512,15 +512,15 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, stagingTest);
 
         tester.assertRunning(productionUsCentral1, application.id());
-        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
-        assertEquals(Long.valueOf(42L), app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(Long.valueOf(42L), app.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().get());
         assertNotEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, applicationPackage);
-        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
-        assertEquals(Long.valueOf(43), app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(Long.valueOf(43), app.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().get());
 
         // Change is again strictly dominated, and us-central-1 is skipped, even though it is still failing.
         tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time for retry
@@ -556,8 +556,8 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, true, stagingTest);
         tester.deploymentTrigger().cancelChange(application.id(), true);
         tester.deploy(productionEuWest1, application, applicationPackage);
-        assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main).get()).version());
-        assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main).get()).version());
+        assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main)).version());
+        assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main)).version());
 
         // New application version should run system and staging tests against both 6.1 and 6.2, in no particular order.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();

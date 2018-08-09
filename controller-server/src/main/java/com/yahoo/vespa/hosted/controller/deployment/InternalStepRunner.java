@@ -65,8 +65,8 @@ import static java.util.logging.Level.WARNING;
  * Runs steps of a deployment job against its provided controller.
  *
  * A dual-purpose logger is set up for each thread that runs a step here:
- *   1. All messages are logged to a buffer which is stored in an external log storage at the end of execution, and
- *   2. all messages are also logged through the usual logging framework; thus, by default, any messages of level
+ *   1. all messages are logged to a buffer which is stored in an external log storage at the end of execution, and
+ *   2. all messages are also logged through the usual logging framework; by default, any messages of level
  *      {@code Level.INFO} or higher end up in the Vespa log, and all messages may be sent there by means of log-control.
  *
  * @author jonmv
@@ -259,7 +259,6 @@ public class InternalStepRunner implements StepRunner {
     private boolean nodesConverged(ApplicationId id, JobType type, Version target) {
         List<Node> nodes = controller.configServer().nodeRepository().list(zone(type), id, Arrays.asList(active, reserved));
         for (Node node : nodes)
-            // TODO jvenstad: Add ALLOWED_TO_BE_DOWN and reboot and restart generation information as well.
             logger.get().log(String.format("%70s: %-12s%-25s%-32s%s",
                                            node.hostname(),
                                            node.serviceState(),
@@ -276,7 +275,9 @@ public class InternalStepRunner implements StepRunner {
 
     private boolean servicesConverged(ApplicationId id, JobType type) {
         // TODO jvenstad: Print information for each host.
-        return controller.configServer().serviceConvergence(new DeploymentId(id, zone(type))).map(ServiceConvergence::converged).orElse(false);
+        return controller.configServer().serviceConvergence(new DeploymentId(id, zone(type)))
+                         .map(ServiceConvergence::converged)
+                         .orElse(false);
     }
 
     private Status startTests(RunId id) {
@@ -373,7 +374,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the zone of the given job type. */
     private ZoneId zone(JobType type) {
-        return type.zone(controller.system()).get();
+        return type.zone(controller.system());
     }
 
     /** Returns the triggering of the currently running job, i.e., this job. */

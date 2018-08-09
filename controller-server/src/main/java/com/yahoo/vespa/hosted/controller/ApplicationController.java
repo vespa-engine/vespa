@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -285,8 +286,7 @@ public class ApplicationController {
                 applicationPackage = applicationPackageFromDeployer.orElseThrow(
                         () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
             } else {
-                JobType jobType = JobType.from(controller.system(), zone)
-                                         .orElseThrow(() -> new IllegalArgumentException("No job found for zone " + zone));
+                JobType jobType = JobType.from(controller.system(), zone);
                 Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
                 if (    ! job.isPresent()
                      || ! job.get().lastTriggered().isPresent()
@@ -429,11 +429,9 @@ public class ApplicationController {
     }
 
     private LockedApplication deleteUnreferencedDeploymentJobs(LockedApplication application) {
-        for (JobType job : application.get().deploymentJobs().jobStatus().keySet()) {
-            Optional<ZoneId> zone = job.zone(controller.system());
-
-            if ( ! job.isProduction() || (zone.isPresent() && application.get().deploymentSpec().includes(
-                    zone.get().environment(), zone.map(ZoneId::region))))
+        for (JobType job : JobList.from(application.get()).production().mapToList(JobStatus::type)) {
+            ZoneId zone = job.zone(controller.system());
+            if (application.get().deploymentSpec().includes(zone.environment(), Optional.of(zone.region())))
                 continue;
             application = application.withoutDeploymentJob(job);
         }

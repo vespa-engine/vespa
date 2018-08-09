@@ -105,7 +105,7 @@ public class ControllerTest {
                                                .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant().truncatedTo(MILLIS))
                                                .withTriggering(version1,
                                                                applicationVersion,
-                                                               Optional.of(tester.application(app1.id()).deployments().get(productionCorpUsEast1.zone(main).get())),
+                                                               Optional.of(tester.application(app1.id()).deployments().get(productionCorpUsEast1.zone(main))),
                                                                "",
                                                                tester.clock().instant().truncatedTo(MILLIS)); // Re-triggering (due to failure) has application version info
 
@@ -130,7 +130,7 @@ public class ControllerTest {
         applicationVersion = tester.application("app1").change().application().get();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant().truncatedTo(MILLIS))
+                              .withTriggering(version1, applicationVersion, Optional.of(tester.application(app1.id()).deployments().get(productionCorpUsEast1.zone(main))), "", tester.clock().instant().truncatedTo(MILLIS))
                               .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS)),
                      app1.id(), tester.controller());
         tester.clock().advance(Duration.ofHours(1)); // Stop retrying
@@ -139,7 +139,7 @@ public class ControllerTest {
 
         // production job succeeding now
         expectedJobStatus = expectedJobStatus
-                .withTriggering(version1, applicationVersion, productionCorpUsEast1.zone(main).map(tester.application(app1.id()).deployments()::get), "", tester.clock().instant().truncatedTo(MILLIS))
+                .withTriggering(version1, applicationVersion, Optional.of(tester.application(app1.id()).deployments().get(productionCorpUsEast1.zone(main))), "", tester.clock().instant().truncatedTo(MILLIS))
                 .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
@@ -168,7 +168,7 @@ public class ControllerTest {
                          e.getMessage());
         }
         assertNotNull("Zone was not removed",
-                      applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(main).get()));
+                      applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(main)));
         JobStatus jobStatus = applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1);
         assertNotNull("Deployment job was not removed", jobStatus);
         assertEquals(42, jobStatus.lastCompleted().get().id());
@@ -184,7 +184,7 @@ public class ControllerTest {
         tester.jobCompletion(component).application(app1).nextBuildNumber(2).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertNull("Zone was removed",
-                   applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(main).get()));
+                   applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(main)));
         assertNull("Deployment job was removed", applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1));
     }
 
@@ -233,61 +233,6 @@ public class ControllerTest {
         assertEquals(1, rotationStatus.size());
         assertEquals(rotationStatus.get("qrs-endpoint").getStatus(), EndpointStatus.Status.out);
         assertEquals("unit-test", rotationStatus.get("qrs-endpoint").getReason());
-    }
-
-    @Test
-    public void testCleanupOfStaleDeploymentData() throws IOException {
-        DeploymentTester tester = new DeploymentTester();
-        tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
-        tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "cd-us-central-1"));
-
-        Supplier<Map<JobType, JobStatus>> statuses = () ->
-                tester.application(ApplicationId.from("vespa", "canary", "default"))
-                      .deploymentJobs().jobStatus();
-
-        // Current system version, matches version in test data
-        Version version = Version.fromString("6.141.117");
-        tester.upgradeSystem(version);
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
-
-        // Load test data data
-        byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/canary-with-stale-data.json"));
-        Application application = tester.controllerTester().createApplication(SlimeUtils.jsonToSlime(json));
-
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("canary")
-                .region("cd-us-central-1")
-                .build();
-        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
-
-        long cdJobsCount = statuses.get().keySet().stream()
-                        .filter(type -> type.zone(SystemName.cd).isPresent())
-                        .count();
-
-        long mainJobsCount = statuses.get().keySet().stream()
-                .filter(type -> type.zone(main).isPresent() && ! type.zone(SystemName.cd).isPresent())
-                .count();
-
-        assertEquals("Irrelevant (main) data is present.", 8, mainJobsCount);
-
-        // New version is released
-        version = Version.fromString("6.142.1");
-        tester.upgradeSystem(version);
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
-
-        // Test environment passes
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
-
-        long newCdJobsCount = statuses.get().keySet().stream()
-                .filter(type -> type.zone(SystemName.cd).isPresent())
-                .count();
-
-        long newMainJobsCount = statuses.get().keySet().stream()
-                .filter(type -> type.zone(main).isPresent() && ! type.zone(SystemName.cd).isPresent())
-                .count();
-
-        assertEquals("Irrelevant (main) job data is removed.", 0, newMainJobsCount);
-        assertEquals("Relevant (cd) data is not removed.", cdJobsCount, newCdJobsCount);
     }
 
     @Test
@@ -530,21 +475,21 @@ public class ControllerTest {
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         JobStatus expected = JobStatus.initial(stagingTest)
-                                      .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                                      .withTriggering(vespaVersion, version, Optional.ofNullable(tester.application(app.id()).deployments().get(productionCorpUsEast1.zone(main))), "",
                                                       tester.clock().instant().truncatedTo(MILLIS))
                                       .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         assertStatus(expected, app.id(), tester.controller());
 
         // Deploy in production
         expected = JobStatus.initial(productionCorpUsEast1)
-                            .withTriggering(vespaVersion, version, productionCorpUsEast1.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                            .withTriggering(vespaVersion, version, Optional.ofNullable(tester.application(app.id()).deployments().get(productionCorpUsEast1.zone(main))), "",
                                             tester.clock().instant().truncatedTo(MILLIS))
                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
         assertStatus(expected, app.id(), tester.controller());
 
         expected = JobStatus.initial(productionUsEast3)
-                            .withTriggering(vespaVersion, version, productionUsEast3.zone(main).map(tester.application(app.id()).deployments()::get), "",
+                            .withTriggering(vespaVersion, version, Optional.ofNullable(tester.application(app.id()).deployments().get(productionUsEast3.zone(main))), "",
                                             tester.clock().instant().truncatedTo(MILLIS))
                             .withCompletion(42, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);

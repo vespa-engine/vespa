@@ -251,7 +251,7 @@ public class DeploymentTrigger {
     }
 
     private Optional<Deployment> deploymentFor(Application application, JobType jobType) {
-        return Optional.ofNullable(application.deployments().get(jobType.zone(controller.system()).get()));
+        return Optional.ofNullable(application.deployments().get(jobType.zone(controller.system())));
     }
 
     private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {

@@ -1,9 +1,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 
 import java.time.Instant;
 import java.util.Collections;
