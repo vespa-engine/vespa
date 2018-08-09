@@ -163,14 +163,12 @@ public class NodeSerializer {
     }
 
     private Status statusFromSlime(Inspector object) {
-        // TODO: Simplify after June 2017
-        boolean wantToDeprovision = object.field(wantToDeprovisionKey).valid() && object.field(wantToDeprovisionKey).asBool();
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureDescriptionFromSlime(object),
                           object.field(wantToRetireKey).asBool(),
-                          wantToDeprovision,
+                          object.field(wantToDeprovisionKey).asBool(),
                           removeQuotedNulls(hardwareDivergenceFromSlime(object)));
     }
 
