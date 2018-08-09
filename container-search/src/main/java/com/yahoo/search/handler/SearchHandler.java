@@ -580,8 +580,9 @@ public class SearchHandler extends LoggingRequestHandler {
             // Create request-mapping
             Map<String, String> requestMap = new HashMap<>();
 
-            request.propertyMap().forEach(requestMap::put);
             createRequestMapping(inspector, requestMap, "");
+
+            requestMap.putAll(request.propertyMap());
 
             // Throws QueryException if query contains both yql- and select-parameter
             if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) ) {
