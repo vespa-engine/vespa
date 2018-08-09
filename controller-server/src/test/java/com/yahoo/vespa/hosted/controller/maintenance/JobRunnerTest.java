@@ -58,7 +58,7 @@ import static org.junit.Assert.fail;
  */
 public class JobRunnerTest {
 
-    static final Versions versions = new Versions(Version.fromString("1.2.3"),
+    private static final Versions versions = new Versions(Version.fromString("1.2.3"),
                                                   ApplicationVersion.from(new SourceRevision("repo",
                                                                                              "branch",
                                                                                              "bada55"),
