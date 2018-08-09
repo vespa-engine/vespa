@@ -61,18 +61,18 @@ public class RunSerializerTest {
         assertFalse(run.hasEnded());
         assertFalse(run.isAborted());
         assertEquals(ImmutableMap.<Step, Step.Status>builder()
-                    .put(deployInitialReal, unfinished)
-                    .put(installInitialReal, failed)
-                    .put(deployReal, succeeded)
-                    .put(installReal, unfinished)
-                    .put(deactivateReal, failed)
-                    .put(deployTester, succeeded)
-                    .put(installTester, unfinished)
-                    .put(deactivateTester, failed)
-                    .put(startTests, succeeded)
-                    .put(endTests, unfinished)
-                    .put(report, failed)
-                    .build(),
+                             .put(deployInitialReal, unfinished)
+                             .put(installInitialReal, failed)
+                             .put(deployReal, succeeded)
+                             .put(installReal, unfinished)
+                             .put(deactivateReal, failed)
+                             .put(deployTester, succeeded)
+                             .put(installTester, unfinished)
+                             .put(deactivateTester, failed)
+                             .put(startTests, succeeded)
+                             .put(endTests, unfinished)
+                             .put(report, failed)
+                             .build(),
                      run.steps());
 
         run = run.aborted().finished(Instant.now());

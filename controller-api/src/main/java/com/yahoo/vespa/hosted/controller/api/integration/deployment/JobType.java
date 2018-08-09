@@ -63,11 +63,6 @@ public enum JobType {
         }
     }
 
-    /** Returns the region of this job type, or null if it does not have a region */
-    public Optional<RegionName> region(SystemName system) {
-        return zone(system).map(ZoneId::region);
-    }
-
     public static Optional<JobType> fromOptionalJobName(String jobName) {
         return Stream.of(values())
                      .filter(jobType -> jobType.jobName.equals(jobName))

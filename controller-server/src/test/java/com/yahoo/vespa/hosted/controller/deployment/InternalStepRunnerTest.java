@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author freva
  */
-public class IntegerationStepRunnerTest {
+public class InternalStepRunnerTest {
 
     @Test
     public void generates_correct_services_xml_test() {
@@ -31,4 +31,5 @@ public class IntegerationStepRunnerTest {
             throw new UncheckedIOException(e);
         }
     }
+
 }

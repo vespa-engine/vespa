@@ -39,7 +39,7 @@ public class JobControllerApiHandlerHelperTest {
 
     private final ApplicationId appId = ApplicationId.from("vespa", "music", "default");
     private final Instant start = Instant.parse("2018-06-27T10:12:35Z");
-    static final Versions versions = new Versions(Version.fromString("1.2.3"),
+    private static final Versions versions = new Versions(Version.fromString("1.2.3"),
                                                   ApplicationVersion.from(new SourceRevision("repo",
                                                                                              "branch",
                                                                                              "bada55"),
