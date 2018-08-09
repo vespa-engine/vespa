@@ -181,9 +181,7 @@ public class CoreCollectorTest {
         final String documentId = "UIDD-ABCD-EFGH";
         final String coreDumpFilename = "core.dump";
 
-        Path coredumpPath = folder.newFolder("crash").toPath()
-                .resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)
-                .resolve(documentId);
+        Path coredumpPath = folder.newFolder("crash").toPath().resolve(documentId);
         coredumpPath.toFile().mkdirs();
         coredumpPath.resolve(coreDumpFilename).toFile().createNewFile();
 
@@ -205,9 +203,7 @@ public class CoreCollectorTest {
         final String documentId = "UIDD-ABCD-EFGH";
         final String coreDumpFilename = "core.dump";
 
-        Path coredumpPath = folder.newFolder("crash").toPath()
-                .resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)
-                .resolve(documentId);
+        Path coredumpPath = folder.newFolder("crash").toPath().resolve(documentId);
         coredumpPath.toFile().mkdirs();
 
         Set<Path> expectedContentsOfCoredump = new HashSet<>(Arrays.asList(

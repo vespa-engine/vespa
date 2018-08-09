@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  */
 public class CoredumpHandler {
 
-    static final String PROCESSING_DIRECTORY_NAME = "processing";
+    private static final String PROCESSING_DIRECTORY_NAME = "processing";
     static final String METADATA_FILE_NAME = "metadata.json";
 
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
@@ -87,7 +87,8 @@ public class CoredumpHandler {
                 });
     }
 
-    void processAndReportCoredumps(Path processingCoredumpsPath, Map<String, Object> nodeAttributes) {
+    void processAndReportCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) {
+        Path processingCoredumpsPath = getProcessingCoredumpsPath(coredumpsPath);
         doneCoredumpsPath.toFile().mkdirs();
 
         FileHelper.listContentsOfDirectory(processingCoredumpsPath).stream()

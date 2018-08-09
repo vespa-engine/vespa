@@ -157,11 +157,11 @@ public class CoredumpHandlerTest {
         final String documentId = "UIDD-ABCD-EFGH";
         createProcessedCoredump(documentId);
 
-        coredumpHandler.processAndReportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME), attributes);
+        coredumpHandler.processAndReportCoredumps(crashPath, attributes);
         verify(coredumpReporter).reportCoredump(eq(documentId), eq(expectedMetadataFileContents));
 
         // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
-        assertFolderContents(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
+        assertFolderContents(processingPath);
         assertFolderContents(donePath.resolve(documentId), CoredumpHandler.METADATA_FILE_NAME);
     }
 
@@ -171,7 +171,7 @@ public class CoredumpHandlerTest {
         Path metadataPath = createProcessedCoredump(documentId);
 
         doThrow(new RuntimeException()).when(coredumpReporter).reportCoredump(any(), any());
-        coredumpHandler.processAndReportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME), attributes);
+        coredumpHandler.processAndReportCoredumps(crashPath, attributes);
         verify(coredumpReporter).reportCoredump(eq(documentId), eq(expectedMetadataFileContents));
 
         // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
@@ -195,8 +195,7 @@ public class CoredumpHandlerTest {
     }
 
     private Path createProcessedCoredump(String documentId) throws IOException {
-        Path coredumpPath = crashPath
-                .resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)
+        Path coredumpPath = processingPath
                 .resolve(documentId)
                 .resolve(CoredumpHandler.METADATA_FILE_NAME);
         coredumpPath.getParent().toFile().mkdirs();
