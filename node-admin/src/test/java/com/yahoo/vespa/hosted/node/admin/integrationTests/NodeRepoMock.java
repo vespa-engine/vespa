@@ -8,11 +8,11 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttribu
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Mock with some simple logic
@@ -37,7 +37,9 @@ public class NodeRepoMock implements NodeRepository {
     @Override
     public List<NodeSpec> getNodes(String baseHostName) {
         synchronized (monitor) {
-            return new ArrayList<>(nodeRepositoryNodesByHostname.values());
+            return nodeRepositoryNodesByHostname.values().stream()
+                    .filter(node -> baseHostName.equals(node.getParentHostname().orElse(null)))
+                    .collect(Collectors.toList());
         }
     }
 
@@ -64,12 +66,10 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public void setNodeState(String hostName, Node.State nodeState) {
-        Optional<NodeSpec> node = getOptionalNode(hostName);
-
         synchronized (monitor) {
-            node.ifPresent(nrn -> updateNodeRepositoryNode(new NodeSpec.Builder(nrn)
+            updateNodeRepositoryNode(new NodeSpec.Builder(getNode(hostName))
                     .state(nodeState)
-                    .build()));
+                    .build());
             callOrderVerifier.add("setNodeState " + hostName + " to " + nodeState);
         }
     }

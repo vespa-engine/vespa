@@ -20,7 +20,7 @@ public class MultiDockerTest {
             NodeSpec nodeSpec2 = addAndWaitForNode(
                     dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
 
-            dockerTester.addNodeRepositoryNode(
+            dockerTester.addChildNodeRepositoryNode(
                     new NodeSpec.Builder(nodeSpec2)
                             .state(Node.State.dirty)
                             .minCpuCores(1)
@@ -77,7 +77,7 @@ public class MultiDockerTest {
                 .minDiskAvailableGb(1)
                 .build();
 
-        tester.addNodeRepositoryNode(nodeSpec);
+        tester.addChildNodeRepositoryNode(nodeSpec);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (tester.nodeAdmin.getListOfHosts().size() != tester.nodeRepositoryMock.getNumberOfContainerSpecs()) {

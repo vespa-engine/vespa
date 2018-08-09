@@ -41,8 +41,9 @@ import static org.mockito.Mockito.when;
 public class DockerTester implements AutoCloseable {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofMillis(100);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofMillis(10);
-    private static final Path pathToVespaHome = Paths.get("/opt/vespa");
-    static final String NODE_PROGRAM = pathToVespaHome.resolve("bin/vespa-nodectl").toString();
+    private static final Path PATH_TO_VESPA_HOME = Paths.get("/opt/vespa");
+    static final String NODE_PROGRAM = PATH_TO_VESPA_HOME.resolve("bin/vespa-nodectl").toString();
+    static final String DOCKER_HOST_HOSTNAME = "host.domain.tld";
 
     final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     final Docker dockerMock = new DockerMock(callOrderVerifier);
@@ -66,7 +67,7 @@ public class DockerTester implements AutoCloseable {
                 .region("us-east-1")
                 .environment("prod")
                 .system("main")
-                .pathResolver(new PathResolver(pathToVespaHome, Paths.get("/tmp"), Paths.get("/tmp")))
+                .pathResolver(new PathResolver(PATH_TO_VESPA_HOME, Paths.get("/tmp"), Paths.get("/tmp")))
                 .cloud("mycloud")
                 .build();
         Clock clock = Clock.systemUTC();
@@ -81,13 +82,16 @@ public class DockerTester implements AutoCloseable {
                 orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL, athenzCredentialsMaintainer);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
         nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock, orchestratorMock, storageMaintainer,
-                nodeAdmin, "basehostname", clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL,
+                nodeAdmin, DOCKER_HOST_HOSTNAME, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL,
                 Optional.of(new ClassLocking()));
         nodeAdminStateUpdater.start();
     }
 
-    void addNodeRepositoryNode(NodeSpec nodeSpec) {
-        nodeRepositoryMock.updateNodeRepositoryNode(nodeSpec);
+    /** Adds a node to node-repository mock that is running on this host */
+    void addChildNodeRepositoryNode(NodeSpec nodeSpec) {
+        nodeRepositoryMock.updateNodeRepositoryNode(new NodeSpec.Builder(nodeSpec)
+                .parentHostname(DOCKER_HOST_HOSTNAME)
+                .build());
     }
 
     @Override
