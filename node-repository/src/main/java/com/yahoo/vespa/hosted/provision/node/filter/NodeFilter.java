@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.provision.node.filter;
 
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.util.Objects;
-
 /**
  * A chainable node filter
  *
@@ -14,7 +12,7 @@ public abstract class NodeFilter {
 
     private final NodeFilter next;
 
-    /** Creates a node filter with a nchained filter, or null if this is the last filter */
+    /** Creates a node filter with a chained filter, or null if this is the last filter */
     protected NodeFilter(NodeFilter next) {
         this.next = next;
     }
