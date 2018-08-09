@@ -135,7 +135,7 @@ vespalib::string make_compressable_state_string() {
         ss << " ." << i << ".s:d";
     }
     return vespalib::make_string("version:123 distributor:100%s storage:100%s",
-                                 ss.str().c_str(), ss.str().c_str());
+                                 ss.str().data(), ss.str().data());
 }
 
 }

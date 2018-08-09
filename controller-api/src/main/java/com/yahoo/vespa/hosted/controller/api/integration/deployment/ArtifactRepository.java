@@ -21,10 +21,10 @@ public interface ArtifactRepository {
     /** Returns the system application package of the given version. */
     byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version);
 
-    /** Stores the given tester application fat jar of the given version. */
-    void putTesterJar(ApplicationId tester, String applicationVersion, byte[] fatTestJar);
+    /** Stores the given tester application package of the given version. Does NOT contain the services.xml. */
+    void putTesterPackage(ApplicationId tester, String applicationVersion, byte[] testerPackage);
 
-    /** Returns the tester application fat jar of the given version. */
-    byte[] getTesterJar(ApplicationId tester, String applicationVersion);
+    /** Returns the tester application package of the given version. Does NOT contain the services.xml. */
+    byte[] getTesterPackage(ApplicationId tester, String applicationVersion);
 
 }

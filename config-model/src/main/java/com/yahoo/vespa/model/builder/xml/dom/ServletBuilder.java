@@ -27,7 +27,7 @@ public class ServletBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Ser
     }
 
     private SimpleComponent createServletComponent(Element servletElement) {
-        ComponentModel componentModel = new ComponentModel(BundleInstantiationSpecificationBuilder.build(servletElement, false));
+        ComponentModel componentModel = new ComponentModel(BundleInstantiationSpecificationBuilder.build(servletElement));
         return new SimpleComponent(componentModel);
     }
 

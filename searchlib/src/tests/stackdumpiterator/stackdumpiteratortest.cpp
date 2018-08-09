@@ -172,12 +172,12 @@ StackDumpIteratorTest::ShowResult(int testNo,
             delete item;
             break;
         }
-        if (strncmp(item->_indexName.c_str(), idx.c_str(), idx.size()) != 0) {
+        if (strncmp(item->_indexName.c_str(), idx.data(), idx.size()) != 0) {
             results |= ITERATOR_ERROR_WRONG_INDEX;
             delete item;
             break;
         }
-        if (strncmp(item->_term.c_str(), term.c_str(), term.size()) != 0) {
+        if (strncmp(item->_term.c_str(), term.data(), term.size()) != 0) {
             results |= ITERATOR_ERROR_WRONG_TERM;
             delete item;
             break;

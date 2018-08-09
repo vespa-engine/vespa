@@ -20,11 +20,6 @@ public interface BuildService {
      */
     JobState stateOf(BuildJob buildJob);
 
-    /**
-     * Returns whether the given build job should be performed by this build service.
-     */
-    default boolean builds(BuildJob buildJob) { return true; }
-
     enum JobState {
 
         /** Job is not running, and may be triggered. */

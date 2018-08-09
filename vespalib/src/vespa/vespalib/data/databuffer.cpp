@@ -11,11 +11,11 @@ size_t padbefore(size_t alignment, const char *buf) {
 
 DataBuffer::DataBuffer(size_t len, size_t alignment, const Alloc & initial)
     : _alignment(alignment),
-      _externalBuf(NULL),
-      _bufstart(NULL),
-      _bufend(NULL),
-      _datapt(NULL),
-      _freept(NULL),
+      _externalBuf(nullptr),
+      _bufstart(nullptr),
+      _bufend(nullptr),
+      _datapt(nullptr),
+      _freept(nullptr),
       _buffer(initial.create(0))
 {
     assert(_alignment > 0);
@@ -29,7 +29,7 @@ DataBuffer::DataBuffer(size_t len, size_t alignment, const Alloc & initial)
         _datapt = _bufstart + padbefore(alignment, _bufstart);
         _freept = _datapt;
         _bufend = _bufstart + bufsize;
-        assert(_bufstart != NULL);
+        assert(_bufstart != nullptr);
     }
 }
 
@@ -68,8 +68,8 @@ DataBuffer::shrink(size_t newsize)
     if (getBufSize() <= newsize || getDataLen() > newsize) {
         return false;
     }
-    char *newbuf = NULL;
-    char *newdata = NULL;
+    char *newbuf = nullptr;
+    char *newdata = nullptr;
     newsize += (_alignment - 1);
     Alloc newBuf(_buffer.create(newsize));
     if (newsize != 0) {

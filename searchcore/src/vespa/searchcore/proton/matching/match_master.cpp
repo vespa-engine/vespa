@@ -10,8 +10,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_master");
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 using namespace search::fef;
 using search::queryeval::SearchIterator;
@@ -23,15 +22,15 @@ struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     IMatchLoopCommunicator &communicator;
     fastos::StopWatch rerank_time;
     TimedMatchLoopCommunicator(IMatchLoopCommunicator &com) : communicator(com) {}
-    virtual double estimate_match_frequency(const Matches &matches) override {
+    double estimate_match_frequency(const Matches &matches) override {
         return communicator.estimate_match_frequency(matches);
     }
-    virtual size_t selectBest(const std::vector<feature_t> &sortedScores) override {
-        size_t result = communicator.selectBest(sortedScores);
+    Hits selectBest(Hits sortedHits) override {
+        Hits result = communicator.selectBest(std::move(sortedHits));
         rerank_time.start();
         return result;
     }
-    virtual RangePair rangeCover(const RangePair &ranges) override {
+    RangePair rangeCover(const RangePair &ranges) override {
         RangePair result = communicator.rangeCover(ranges);
         rerank_time.stop();
         return result;
@@ -131,18 +130,15 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
         if (search.seek(docs[i])) {
             uint32_t docId = search.getDocId();
             search.unpack(docId);
-            search::feature_t * f = fs.getFeaturesByIndex(
-                    fs.addDocId(docId));
+            search::feature_t * f = fs.getFeaturesByIndex(fs.addDocId(docId));
             for (uint32_t j = 0; j < featureNames.size(); ++j) {
                 f[j] = resolver.resolve(j).as_number(docId);
             }
         } else {
-            LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. "
-                "Skipping hit", docs[i]);
+            LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
         }
     }
     return retval;
 }
 
-} // namespace proton::matching
-} // namespace proton
+}

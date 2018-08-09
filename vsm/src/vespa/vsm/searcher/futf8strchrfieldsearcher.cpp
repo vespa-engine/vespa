@@ -222,7 +222,7 @@ size_t FUTF8StrChrFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
 {
   _folded.reserve(f.size()+16*3);  //Enable fulle xmm0 store
   size_t unalignedStart(0);
-  bool ascii7Bit = lfoldua(f.c_str(), f.size(), &_folded[0], unalignedStart);
+  bool ascii7Bit = lfoldua(f.data(), f.size(), &_folded[0], unalignedStart);
   if (ascii7Bit) {
     char * folded = &_folded[unalignedStart];
     /// Add the pattern 00 01 00 to avoid multiple eof tests of falling off the edge.
@@ -240,7 +240,7 @@ size_t FUTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, const size_t min
 {
   _folded.reserve(f.size()+16*3);  //Enable fulle xmm0 store
   size_t unalignedStart(0);
-  bool ascii7Bit = lfoldua(f.c_str(), f.size(), &_folded[0], unalignedStart);
+  bool ascii7Bit = lfoldua(f.data(), f.size(), &_folded[0], unalignedStart);
   if (ascii7Bit) {
     char * folded = &_folded[unalignedStart];
     /// Add the pattern 00 01 00 to avoid multiple eof tests of falling off the edge.

@@ -7,6 +7,8 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace search {
 
@@ -36,14 +38,8 @@ class UseStringEnum : public UseAttr
 public:
     UseStringEnum(const IAttributeVector & attr)
         : UseAttr(attr) {}
-    bool mapToken(const ISearchContext &context, int64_t &token) const
-    {
-        attribute::IAttributeVector::EnumHandle handle;
-        if (attribute().findEnum(context.queryTerm().getTerm(), handle)) {
-            token = handle;
-            return true;
-        }
-        return false;
+    auto mapToken(const ISearchContext &context) const {
+        return attribute().findFoldedEnums(context.queryTerm()->getTerm());
     }
     int64_t getToken(uint32_t docId) const {
         return attribute().getEnum(docId);
@@ -56,14 +52,13 @@ class UseInteger : public UseAttr
 {
 public:
     UseInteger(const IAttributeVector & attr) : UseAttr(attr) {}
-    bool mapToken(const ISearchContext &context, int64_t &token) const
-    {
+    std::vector<int64_t> mapToken(const ISearchContext &context) const {
+        std::vector<int64_t> result;
         Int64Range range(context.getAsIntegerTerm());
         if (range.isPoint()) {
-            token = range.lower();
-            return true;
+            result.push_back(range.lower());
         }
-        return false;
+        return result;
     }
     int64_t getToken(uint32_t docId) const {
         return attribute().getInt(docId);
@@ -92,8 +87,7 @@ public:
         : _tfmd(tfmd), _attr(attr), _map(), _weight(0)
     {
         for (size_t i = 0; i < contexts.size(); ++i) {
-            int64_t token(0);
-            if (_attr.mapToken(*contexts[i], token)) {
+            for (int64_t token : _attr.mapToken(*contexts[i])) {
                 _map[token] = weights[i];
             }
         }
@@ -174,11 +168,11 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
         assert(isSingleValue);
         (void) isSingleValue;
         if (isString) {
-            return queryeval::SearchIterator::UP(new AttributeFilter<UseStringEnum>(tfmd, _attr, _weights, _contexts));
+            return std::make_unique<AttributeFilter<UseStringEnum>>(tfmd, _attr, _weights, _contexts);
         } else {
             assert(isInteger);
             (void) isInteger;
-            return queryeval::SearchIterator::UP(new AttributeFilter<UseInteger>(tfmd, _attr, _weights, _contexts));
+            return std::make_unique<AttributeFilter<UseInteger>>(tfmd, _attr, _weights, _contexts);
         }
     }
 }
@@ -187,10 +181,34 @@ void
 AttributeWeightedSetBlueprint::fetchPostings(bool strict)
 {
     if (strict) {
-        for (size_t i = 0; i < _contexts.size(); ++i) {
-            _contexts[i]->fetchPostings(true);
+        for (auto * context : _contexts) {
+            context->fetchPostings(true);
         }
     }
+}
+
+void
+AttributeWeightedSetBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
+{
+    ComplexLeafBlueprint::visitMembers(visitor);
+    visitor.visitString("attribute", _attr.getName());
+    visitor.openStruct("terms", "TermList");
+    for (size_t i = 0; i < _contexts.size(); ++i) {
+        const ISearchContext * context = _contexts[i];
+        visitor.openStruct(vespalib::make_string("[%zu]", i), "Term");
+        visitor.visitBool("valid", context->valid());
+        if (context-> valid()) {
+            bool isString = (_attr.isStringType() && _attr.hasEnum());
+            if (isString) {
+                visitor.visitString("term", context->queryTerm()->getTerm());
+            } else {
+                visitor.visitInt("term", context->getAsIntegerTerm().lower());
+            }
+            visitor.visitInt("weight", _weights[i]);
+        }
+        visitor.closeStruct();
+    }
+    visitor.closeStruct();
 }
 
 } // namespace search

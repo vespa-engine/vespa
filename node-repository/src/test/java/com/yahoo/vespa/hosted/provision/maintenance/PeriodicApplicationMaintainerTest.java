@@ -29,10 +29,10 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
@@ -52,25 +53,35 @@ public class PeriodicApplicationMaintainerTest {
 
     private NodeRepository nodeRepository;
     private Fixture fixture;
+    private ManualClock clock;
 
     @Before
     public void before() {
         Curator curator = new MockCurator();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
-        this.nodeRepository = new NodeRepository(nodeFlavors, curator, new ManualClock(), zone,
+        this.clock = new ManualClock();
+        this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                  new MockNameResolver().mockAnyLookup(),
                                                  new DockerImage("docker-registry.domain.tld:8080/dist/vespa"),
                                                  true);
         this.fixture = new Fixture(zone, nodeRepository, nodeFlavors, curator);
-    }
 
-    @Test
-    public void test_application_maintenance() {
         createReadyNodes(15, nodeRepository, nodeFlavors);
         createHostNodes(2, nodeRepository, nodeFlavors);
+    }
 
+    @After
+    public void after() {
+        this.fixture.maintainer.deconstruct();
+    }
+
+    @Test(timeout = 60_000)
+    public void test_application_maintenance() {
         // Create applications
         fixture.activate();
+
+        // Exhaust initial wait period
+        clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
 
         // Fail and park some nodes
         nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
@@ -103,7 +114,7 @@ public class PeriodicApplicationMaintainerTest {
                      0, fixture.getNodes(Node.State.active).retired().size());
 
         // Cause maintenance deployment which will update the applications with the re-activated nodes
-        ((ManualClock)nodeRepository.clock()).advance(Duration.ofMinutes(35)); // Otherwise redeploys are inhibited
+        clock.advance(Duration.ofMinutes(35)); // Otherwise redeploys are inhibited
         fixture.runApplicationMaintainer();
         assertEquals("Superflous content nodes are retired",
                      reactivatedInApp2, fixture.getNodes(Node.State.active).retired().size());
@@ -111,11 +122,8 @@ public class PeriodicApplicationMaintainerTest {
                      reactivatedInApp1, fixture.getNodes(Node.State.inactive).size());
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void deleted_application_is_not_reactivated() {
-        createReadyNodes(15, nodeRepository, nodeFlavors);
-        createHostNodes(2, nodeRepository, nodeFlavors);
-
         // Create applications
         fixture.activate();
 
@@ -127,34 +135,79 @@ public class PeriodicApplicationMaintainerTest {
         assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
 
         // Nodes belonging to app2 are inactive after maintenance
-        fixture.runApplicationMaintainer(Optional.of(frozenActiveNodes));
+        fixture.maintainer.setOverriddenNodesNeedingMaintenance(frozenActiveNodes);
+        fixture.runApplicationMaintainer();
         assertEquals("Inactive nodes were incorrectly activated after maintenance", fixture.wantedNodesApp2,
                      nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void application_deploy_inhibits_redeploy_for_a_while() {
-        ManualClock clock = (ManualClock)nodeRepository.clock();
-        createReadyNodes(15, nodeRepository, nodeFlavors);
-        createHostNodes(2, nodeRepository, nodeFlavors);
-
-        // Create applications
         fixture.activate();
+
+        // Holds off on deployments a while after starting
+        fixture.runApplicationMaintainer();
+        assertFalse("No deployment expected", fixture.deployer.lastDeployTime(fixture.app1).isPresent());
+        assertFalse("No deployment expected", fixture.deployer.lastDeployTime(fixture.app2).isPresent());
+        // Exhaust initial wait period
+        clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+
+        // First deployment of applications
         fixture.runApplicationMaintainer();
         Instant firstDeployTime = clock.instant();
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
-        ((ManualClock) nodeRepository.clock()).advance(Duration.ofMinutes(5));
+        clock.advance(Duration.ofMinutes(5));
         fixture.runApplicationMaintainer();
-        // Too soo: Not redeployed:
+        // Too soon: Not redeployed:
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
 
-        ((ManualClock) nodeRepository.clock()).advance(Duration.ofMinutes(30));
+        clock.advance(Duration.ofMinutes(30));
         fixture.runApplicationMaintainer();
         // Redeployed:
         assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app1).get());
         assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app2).get());
+    }
+
+    @Test(timeout = 60_000)
+    public void queues_all_eligible_applications_for_deployment() throws Exception {
+        fixture.activate();
+
+        // Exhaust initial wait period
+        clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+
+        // Lock deployer to simulate slow deployments
+        fixture.deployer.lock().lockInterruptibly();
+
+        try {
+            // Queues all eligible applications
+            assertEquals(2, fixture.maintainer.applicationsNeedingMaintenance().size());
+            fixture.runApplicationMaintainer(false);
+            assertEquals(2, fixture.maintainer.pendingDeployments());
+
+            // Enough time passes to make applications eligible for another periodic deployment
+            clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            fixture.runApplicationMaintainer(false);
+
+            // Deployments are not re-queued as previous deployments are still pending
+            assertEquals(2, fixture.maintainer.pendingDeployments());
+
+            // Slow deployments complete
+            fixture.deployer.lock().unlock();
+            fixture.runApplicationMaintainer();
+            Instant deployTime = clock.instant();
+            assertEquals(deployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
+            assertEquals(deployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+
+            // Too soon: Already deployed recently
+            clock.advance(Duration.ofMinutes(5));
+            assertEquals(0, fixture.maintainer.applicationsNeedingMaintenance().size());
+        } finally {
+            if (fixture.deployer.lock().isHeldByCurrentThread()) {
+                fixture.deployer.lock().unlock();
+            }
+        }
     }
 
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
@@ -180,7 +233,7 @@ public class PeriodicApplicationMaintainerTest {
         final NodeRepository nodeRepository;
         final NodeRepositoryProvisioner provisioner;
         final Curator curator;
-        final Deployer deployer;
+        final MockDeployer deployer;
 
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
@@ -188,6 +241,8 @@ public class PeriodicApplicationMaintainerTest {
         final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
+
+        private final TestablePeriodicApplicationMaintainer maintainer;
 
         Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors, Curator curator) {
             this.nodeRepository = nodeRepository;
@@ -200,6 +255,8 @@ public class PeriodicApplicationMaintainerTest {
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2,
                                                                Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
             this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
+            this.maintainer = new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofDays(1), // Long duration to prevent scheduled runs during test
+                                                                        Duration.ofMinutes(30));
         }
 
         void activate() {
@@ -223,11 +280,12 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         void runApplicationMaintainer() {
-            runApplicationMaintainer(Optional.empty());
+            runApplicationMaintainer(true);
         }
 
-        void runApplicationMaintainer(Optional<List<Node>> overriddenNodesNeedingMaintenance) {
-            new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), overriddenNodesNeedingMaintenance).run();
+        void runApplicationMaintainer(boolean waitForDeployments) {
+            maintainer.run();
+            while (waitForDeployments && fixture.maintainer.pendingDeployments() != 0);
         }
 
         NodeList getNodes(Node.State ... states) {
@@ -236,28 +294,30 @@ public class PeriodicApplicationMaintainerTest {
 
     }
     
-    public static class TestablePeriodicApplicationMaintainer extends PeriodicApplicationMaintainer {
+    private static class TestablePeriodicApplicationMaintainer extends PeriodicApplicationMaintainer {
 
-        private Optional<List<Node>> overriddenNodesNeedingMaintenance;
-        
-        TestablePeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
-                                              Optional<List<Node>> overriddenNodesNeedingMaintenance) {
-            super(deployer, nodeRepository, interval, new JobControl(nodeRepository.database()));
+        private List<Node> overriddenNodesNeedingMaintenance;
+
+        TestablePeriodicApplicationMaintainer setOverriddenNodesNeedingMaintenance(List<Node> overriddenNodesNeedingMaintenance) {
             this.overriddenNodesNeedingMaintenance = overriddenNodesNeedingMaintenance;
+            return this;
         }
 
-        @Override
-        protected void deploy(ApplicationId application) {
-            deployWithLock(application);
+        TestablePeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
+                                              Duration minTimeBetweenRedeployments) {
+            super(deployer, nodeRepository, interval, minTimeBetweenRedeployments, new JobControl(nodeRepository.database()));
         }
-
-        protected void throttle(int applicationCount) { }
 
         @Override
         protected List<Node> nodesNeedingMaintenance() {
-            if (overriddenNodesNeedingMaintenance.isPresent())
-                return overriddenNodesNeedingMaintenance.get();
-            return super.nodesNeedingMaintenance();
+            return overriddenNodesNeedingMaintenance != null
+                    ? overriddenNodesNeedingMaintenance
+                    : super.nodesNeedingMaintenance();
+        }
+
+        @Override
+        protected boolean shouldBeDeployedOnThisServer(ApplicationId application) {
+            return true;
         }
 
     }

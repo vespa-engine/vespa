@@ -4,9 +4,7 @@
 
 #include "diversity.h"
 
-namespace search {
-namespace attribute {
-namespace diversity {
+namespace search::attribute::diversity {
 
 template <typename ITR>
 ForwardRange<ITR>::ForwardRange(const ForwardRange &) = default;
@@ -18,7 +16,7 @@ ForwardRange<ITR>::ForwardRange(const ITR &lower, const ITR &upper)
 {}
 
 template <typename ITR>
-ForwardRange<ITR>::~ForwardRange() { }
+ForwardRange<ITR>::~ForwardRange() = default;
 
 template <typename ITR>
 ReverseRange<ITR>::ReverseRange(const ReverseRange &) = default;
@@ -31,8 +29,6 @@ ReverseRange<ITR>::ReverseRange(const ITR &lower, const ITR &upper)
 
 
 template <typename ITR>
-ReverseRange<ITR>::~ReverseRange() { }
+ReverseRange<ITR>::~ReverseRange() = default;
 
-}
-}
 }

@@ -30,6 +30,7 @@
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <atomic>
+#include <optional>
 
 namespace storage {
 
@@ -82,13 +83,19 @@ public:
             api::MessageType::Id    msgType;
             api::StorageMessage::Id msgId;
 
-
             LockEntry() : timestamp(0), priority(0), msgType(), msgId(0) { }
 
             LockEntry(uint8_t priority_, api::MessageType::Id msgType_, api::StorageMessage::Id msgId_)
                 : timestamp(time(nullptr)), priority(priority_), msgType(msgType_), msgId(msgId_)
             { }
         };
+
+        struct MultiLockEntry {
+            std::optional<LockEntry> _exclusiveLock;
+            using SharedLocks = vespalib::hash_map<api::StorageMessage::Id, LockEntry>;
+            SharedLocks _sharedLocks;
+        };
+
         Stripe(const FileStorHandlerImpl & owner, MessageSender & messageSender);
         ~Stripe();
         void flush();
@@ -105,19 +112,16 @@ public:
             vespalib::MonitorGuard guard(_lock);
             return _queue.size();
         }
-        void release(const document::Bucket & bucket){
-            vespalib::MonitorGuard guard(_lock);
-            _lockedBuckets.erase(bucket);
-            guard.broadcast();
-        }
+        void release(const document::Bucket & bucket, api::LockingRequirements reqOfReleasedLock,
+                     api::StorageMessage::Id lockMsgId);
 
-        bool isLocked(const vespalib::MonitorGuard &, const document::Bucket&) const noexcept;
+        bool isLocked(const vespalib::MonitorGuard &, const document::Bucket&,
+                      api::LockingRequirements lockReq) const noexcept;
 
-        void lock(const vespalib::MonitorGuard &, const document::Bucket & bucket, const LockEntry & lockEntry) {
-            _lockedBuckets.insert(std::make_pair(bucket, lockEntry));
-        }
+        void lock(const vespalib::MonitorGuard &, const document::Bucket & bucket,
+                  api::LockingRequirements lockReq, const LockEntry & lockEntry);
 
-        std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket);
+        std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
 
         FileStorHandler::LockedMessage getNextMessage(uint32_t timeout, Disk & disk);
@@ -131,9 +135,11 @@ public:
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
     private:
         bool hasActive(vespalib::MonitorGuard & monitor, const AbortBucketOperationsCommand& cmd) const;
+        // Precondition: the bucket used by `iter`s operation is not locked in a way that conflicts
+        // with its locking requirements.
         FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, PriorityIdx & idx,
                                                   PriorityIdx::iterator iter);
-        typedef vespalib::hash_map<document::Bucket, LockEntry, document::Bucket::hash> LockedBuckets;
+        using LockedBuckets = vespalib::hash_map<document::Bucket, MultiLockEntry, document::Bucket::hash>;
         const FileStorHandlerImpl  &_owner;
         MessageSender              &_messageSender;
         FileStorStripeMetrics      *_metrics;
@@ -178,8 +184,8 @@ public:
             return _stripes[stripeId].getNextMessage(lck);
         }
         std::shared_ptr<FileStorHandler::BucketLockInterface>
-        lock(const document::Bucket & bucket) {
-            return stripe(bucket).lock(bucket);
+        lock(const document::Bucket & bucket, api::LockingRequirements lockReq) {
+            return stripe(bucket).lock(bucket, lockReq);
         }
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code) {
             stripe(bucket).failOperations(bucket, code);
@@ -194,7 +200,7 @@ public:
             // Disperse bucket bits by multiplying with the 64-bit FNV-1 prime.
             // This avoids an inherent affinity between the LSB of a bucket's bits
             // and the stripe an operation ends up on.
-            return bucket.getBucketId().getRawId() * 1099511628211ULL;
+            return bucket.getBucketId().getId() * 1099511628211ULL;
         }
         Stripe & stripe(const document::Bucket & bucket) {
             return _stripes[dispersed_bucket_bits(bucket) % _stripes.size()];
@@ -208,15 +214,20 @@ public:
 
     class BucketLock : public FileStorHandler::BucketLockInterface {
     public:
+        // TODO refactor, too many params
         BucketLock(const vespalib::MonitorGuard & guard, Stripe& disk, const document::Bucket &bucket,
-                   uint8_t priority, api::MessageType::Id msgType, api::StorageMessage::Id);
+                   uint8_t priority, api::MessageType::Id msgType, api::StorageMessage::Id,
+                   api::LockingRequirements lockReq);
         ~BucketLock();
 
         const document::Bucket &getBucket() const override { return _bucket; }
+        api::LockingRequirements lockingRequirements() const noexcept override { return _lockReq; }
 
     private:
         Stripe & _stripe;
         document::Bucket _bucket;
+        api::StorageMessage::Id _uniqueMsgId;
+        api::LockingRequirements _lockReq;
     };
 
     FileStorHandlerImpl(uint32_t numStripes, MessageSender&, FileStorMetrics&,
@@ -253,8 +264,8 @@ public:
     uint32_t getNextStripeId(uint32_t disk);
 
     std::shared_ptr<FileStorHandler::BucketLockInterface>
-    lock(const document::Bucket & bucket, uint16_t disk) {
-        return _diskInfo[disk].lock(bucket);
+    lock(const document::Bucket & bucket, uint16_t disk, api::LockingRequirements lockReq) {
+        return _diskInfo[disk].lock(bucket, lockReq);
     }
 
     void addMergeStatus(const document::Bucket&, MergeStatus::SP);

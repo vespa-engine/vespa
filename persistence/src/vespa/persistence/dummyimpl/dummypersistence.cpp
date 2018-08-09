@@ -528,7 +528,7 @@ DummyPersistence::get(const Bucket& b,
         b.toString().c_str(),
         did.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-    BucketContentGuard::UP bc(acquireBucketWithLock(b));
+    BucketContentGuard::UP bc(acquireBucketWithLock(b, LockMode::Shared));
     if (!bc.get()) {
     } else {
         DocEntry::SP entry((*bc)->getEntry(did));
@@ -568,7 +568,7 @@ DummyPersistence::createIterator(
                     "Got invalid/unparseable document selection string");
         }
     }
-    BucketContentGuard::UP bc(acquireBucketWithLock(b));
+    BucketContentGuard::UP bc(acquireBucketWithLock(b, LockMode::Shared));
     if (!bc.get()) {
         return CreateIteratorResult(Result::TRANSIENT_ERROR, "Bucket not found");
     }
@@ -656,7 +656,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
         it = iter->second.get();
     }
 
-    BucketContentGuard::UP bc(acquireBucketWithLock(it->_bucket));
+    BucketContentGuard::UP bc(acquireBucketWithLock(it->_bucket, LockMode::Shared));
     if (!bc.get()) {
         ctx.trace(9, "finished iterate(); bucket not found");
         return IterateResult(Result::TRANSIENT_ERROR, "Bucket not found");
@@ -942,11 +942,11 @@ DummyPersistence::isActive(const Bucket& b) const
 
 BucketContentGuard::~BucketContentGuard()
 {
-    _persistence.releaseBucketNoLock(_content);
+    _persistence.releaseBucketNoLock(_content, _lock_mode);
 }
 
 BucketContentGuard::UP
-DummyPersistence::acquireBucketWithLock(const Bucket& b) const
+DummyPersistence::acquireBucketWithLock(const Bucket& b, LockMode lock_mode) const
 {
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     vespalib::MonitorGuard lock(_monitor);
@@ -955,28 +955,32 @@ DummyPersistence::acquireBucketWithLock(const Bucket& b) const
     if (it == ncp._content[b.getPartition()].end()) {
         return BucketContentGuard::UP();
     }
-    // Sanity check that SPI-level locking is doing its job correctly.
-    // Atomic CAS might be a bit overkill, but since we "release" the bucket
-    // outside of the mutex, we want to ensure the write is visible across all
-    // threads.
-    bool my_false(false);
-    bool bucketNotInUse(it->second->_inUse.compare_exchange_strong(my_false, true));
-    if (!bucketNotInUse) {
-        LOG(error, "Attempted to acquire %s, but it was already marked as being in use!",
-            b.toString().c_str());
-        LOG_ABORT("should not reach here");
+    if (lock_mode == LockMode::Exclusive) {
+        // Sanity check that SPI-level locking is doing its job correctly.
+        // Atomic CAS might be a bit overkill, but since we "release" the bucket
+        // outside of the mutex, we want to ensure the write is visible across all
+        // threads.
+        bool my_false(false);
+        bool bucketNotInUse(it->second->_inUse.compare_exchange_strong(my_false, true));
+        if (!bucketNotInUse) {
+            LOG(error, "Attempted to acquire %s, but it was already marked as being in use!",
+                b.toString().c_str());
+            LOG_ABORT("dummy persistence bucket locking invariant violation");
+        }
     }
 
-    return BucketContentGuard::UP(new BucketContentGuard(ncp, *it->second));
+    return std::make_unique<BucketContentGuard>(ncp, *it->second, lock_mode);
 }
 
 void
-DummyPersistence::releaseBucketNoLock(const BucketContent& bc) const
+DummyPersistence::releaseBucketNoLock(const BucketContent& bc, LockMode lock_mode) const noexcept
 {
-    bool my_true(true);
-    bool bucketInUse(bc._inUse.compare_exchange_strong(my_true, false));
-    assert(bucketInUse);
-    (void) bucketInUse;
+    if (lock_mode == LockMode::Exclusive) {
+        bool my_true(true);
+        bool bucketInUse(bc._inUse.compare_exchange_strong(my_true, false));
+        assert(bucketInUse);
+        (void) bucketInUse;
+    }
 }
 
 }

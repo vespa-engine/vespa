@@ -24,7 +24,7 @@ ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> rep
       _numFs4Hits(numFs4Hits)
 { }
 
-ResultProcessor::Result::~Result() { }
+ResultProcessor::Result::~Result() = default;
 
 ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const vespalib::string &ss)
     : sorter(FastS_DefaultResultSorter::instance()),
@@ -43,7 +43,7 @@ ResultProcessor::Context::Context(Sort::UP s, PartialResult::UP r, GroupingConte
       groupingSource(grouping.get())
 { }
 
-ResultProcessor::Context::~Context() { }
+ResultProcessor::Context::~Context() = default;
 
 void
 ResultProcessor::GroupingSource::merge(Source &s) {
@@ -75,11 +75,11 @@ ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
       _wasMerged(false)
 {
     if (!_groupingContext.empty()) {
-        _groupingSession.reset(new GroupingSession(sessionId, _groupingContext, attrContext));
+        _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext);
     }
 }
 
-ResultProcessor::~ResultProcessor() { }
+ResultProcessor::~ResultProcessor() = default;
 
 void
 ResultProcessor::prepareThreadContextCreation(size_t num_threads)
@@ -95,19 +95,19 @@ ResultProcessor::prepareThreadContextCreation(size_t num_threads)
 ResultProcessor::Context::UP
 ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey)
 {
-    Sort::UP sort(new Sort(distributionKey, hardDoom, _attrContext, _sortSpec));
-    PartialResult::UP result(new PartialResult((_offset + _hits), sort->hasSortData()));
+    auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec);
+    auto result = std::make_unique<PartialResult>((_offset + _hits), sort->hasSortData());
     search::grouping::GroupingContext::UP groupingContext;
-    if (_groupingSession.get() != 0) {
+    if (_groupingSession) {
         groupingContext = _groupingSession->createThreadContext(thread_id, _attrContext);
     }
-    return Context::UP(new Context(std::move(sort), std::move(result), std::move(groupingContext)));
+    return std::make_unique<Context>(std::move(sort), std::move(result), std::move(groupingContext));
 }
 
 ResultProcessor::Result::UP
 ResultProcessor::makeReply(PartialResultUP full_result)
 {
-    search::engine::SearchReply::UP reply(new search::engine::SearchReply());
+    auto reply = std::make_unique<search::engine::SearchReply>();
     const search::IDocumentMetaStore &metaStore = _metaStore;
     search::engine::SearchReply &r = *reply;
     PartialResult &result = *full_result;
@@ -158,7 +158,7 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         assert(sortOffset == sortDataSize);
     }
     numFs4Hits += reply->hits.size();
-    return Result::UP(new Result(std::move(reply), numFs4Hits));
+    return std::make_unique<Result>(std::move(reply), numFs4Hits);
 }
 
 }

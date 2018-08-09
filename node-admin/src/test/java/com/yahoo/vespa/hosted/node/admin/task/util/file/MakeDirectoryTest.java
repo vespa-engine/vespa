@@ -25,7 +25,7 @@ public class MakeDirectoryTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final TestTaskContext context = new TestTaskContext();
 
-    private String path = "/parent/dir";
+    private final String path = "/parent/dir";
     private String permissions = "rwxr----x";
     private String owner = "test-owner";
     private String group = "test-group";

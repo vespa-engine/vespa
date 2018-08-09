@@ -283,13 +283,16 @@ public class SearchHandler extends LoggingRequestHandler {
 
 
     private HttpSearchResponse handleBody(HttpRequest request){
-        // Find query profile
-        String queryProfileName = request.getProperty("queryProfile");
+
+        Map<String, String> requestMap = requestMapFromRequest(request);
+
+        // Get query profile
+        String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
+
+        Query query = new Query(request, requestMap, queryProfile);
+
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
-
-        Query query = queryFromRequest(request, queryProfile);
-
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
 
         // Find and execute search chain if we have a valid query
@@ -558,9 +561,10 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
+    private Map<String, String> requestMapFromRequest(HttpRequest request) {
 
-    private Query queryFromRequest(HttpRequest request, CompiledQueryProfile queryProfile){
-        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST && request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE).equals(JSON_CONTENT_TYPE)) {
+        if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST
+            && JSON_CONTENT_TYPE.equals(request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE))) {
             Inspector inspector;
             try {
                 byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
@@ -576,16 +580,26 @@ public class SearchHandler extends LoggingRequestHandler {
             // Create request-mapping
             Map<String, String> requestMap = new HashMap<>();
             createRequestMapping(inspector, requestMap, "");
-            return new Query(request, requestMap, queryProfile);
 
+            // Throws QueryException if query contains both yql- and select-parameter
+            if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) ) {
+                throw new QueryException("Illegal query: Query contains both yql- and select-parameter");
+            }
+
+            // Throws QueryException if query contains both query- and select-parameter
+            if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) ) {
+                throw new QueryException("Illegal query: Query contains both query- and select-parameter");
+            }
+
+            return requestMap;
 
         } else {
-            return new Query(request, queryProfile);
+            return request.propertyMap();
 
         }
     }
 
-    public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent){
+    public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent) {
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String qualifiedKey = parent + key;
             switch (value.type()) {
@@ -605,14 +619,16 @@ public class SearchHandler extends LoggingRequestHandler {
                     map.put(qualifiedKey, value.asString());
                     break;
                 case OBJECT:
+                    if (qualifiedKey.equals("select.where") || qualifiedKey.equals("select.grouping")){
+                        map.put(qualifiedKey, value.toString());
+                        break;
+                    }
                     createRequestMapping(value, map, qualifiedKey+".");
                     break;
             }
 
         });
     }
-
-
 
 }
 

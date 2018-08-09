@@ -83,10 +83,10 @@ public:
     enum Flag { READONLY = 1, CREATE = 2, DIRECTIO = 4, TRUNC = 8 };
 
     /** Create a file instance, without opening the file. */
-    File(const vespalib::stringref & filename);
+    File(vespalib::stringref filename);
 
     /** Create a file instance of an already open file. */
-    File(int fileDescriptor, const vespalib::stringref & filename);
+    File(int fileDescriptor, vespalib::stringref filename);
 
     /** Copying a file instance, moves any open file descriptor. */
     File(File& f);
@@ -99,7 +99,7 @@ public:
      * Make this instance point at another file.
      * Closes the old file it it was open.
      */
-    void setFilename(const vespalib::stringref & filename);
+    void setFilename(vespalib::stringref filename);
 
     const vespalib::string& getFilename() const { return _filename; }
 
@@ -188,7 +188,17 @@ public:
      * @throw   IoException If we failed to read from file.
      * @return  The content of the file.
      */
-    static vespalib::string readAll(const vespalib::stringref & path);
+    static vespalib::string readAll(vespalib::stringref path);
+
+    /**
+     * Sync file or directory.
+     *
+     * This is a convenience function for the member functions open() and
+     * sync(), see there for more details.
+     *
+     * @throw IoException If we failed to sync the file.
+     */
+    static void sync(vespalib::stringref path);
 
     virtual void sync();
     virtual bool close();
@@ -273,7 +283,7 @@ extern vespalib::string getCurrentDirectory();
  *
  * @return True if it did not exist, false if it did.
  */
-extern bool mkdir(const vespalib::stringref & directory, bool recursive = true);
+extern bool mkdir(const vespalib::string & directory, bool recursive = true);
 
 /**
  * Change working directory.
@@ -281,7 +291,7 @@ extern bool mkdir(const vespalib::stringref & directory, bool recursive = true);
  * @param directory   The directory to change to.
  * @throw IoException If we failed to change to the new working directory.
  */
-extern void chdir(const vespalib::stringref & directory);
+extern void chdir(const vespalib::string & directory);
 
 /**
  * Remove a directory.
@@ -293,7 +303,7 @@ extern void chdir(const vespalib::stringref & directory);
  *
  * @return True if directory existed, false if not.
  */
-extern bool rmdir(const vespalib::stringref & directory, bool recursive = false);
+extern bool rmdir(const vespalib::string & directory, bool recursive = false);
 
 /**
  * Stat a file.
@@ -302,7 +312,7 @@ extern bool rmdir(const vespalib::stringref & directory, bool recursive = false)
  * @return A file info object if everything went well, a null pointer if the
  *         file was not found.
  */
-extern FileInfo::UP stat(const vespalib::stringref & path);
+extern FileInfo::UP stat(const vespalib::string & path);
 
 /**
  * Stat a file. Give info on symlink rather than on file pointed to.
@@ -311,14 +321,14 @@ extern FileInfo::UP stat(const vespalib::stringref & path);
  * @return A file info object if everything went well, a null pointer if the
  *         file was not found.
  */
-extern FileInfo::UP lstat(const vespalib::stringref & path);
+extern FileInfo::UP lstat(const vespalib::string & path);
 
 /**
  * Check if a file exists or not. See also pathExists.
  *
  * @throw IoException If we failed to stat the file.
  */
-extern bool fileExists(const vespalib::stringref & path);
+extern bool fileExists(const vespalib::string & path);
 
 /**
  * Check if a path exists, i.e. whether it's a symbolic link, regular file,
@@ -328,7 +338,7 @@ extern bool fileExists(const vespalib::stringref & path);
  * This function returns true, while fileExists returns true only if the path
  * the symbolic link points to exists.
  */
-extern inline bool pathExists(const vespalib::stringref & path) {
+extern inline bool pathExists(const vespalib::string & path) {
     return (lstat(path).get() != 0);
 }
 
@@ -336,7 +346,7 @@ extern inline bool pathExists(const vespalib::stringref & path) {
  * Get the filesize of the given file. Ignoring if it exists or not.
  * (None-existing files will be reported to have size zero)
  */
-extern inline off_t getFileSize(const vespalib::stringref & path) {
+extern inline off_t getFileSize(const vespalib::string & path) {
     FileInfo::UP info(stat(path));
     return (info.get() == 0 ? 0 : info->_size);
 }
@@ -347,7 +357,7 @@ extern inline off_t getFileSize(const vespalib::stringref & path) {
  * @return True if it is a plain file, false if it don't exist or isn't.
  * @throw IoException If we failed to stat the file.
  */
-extern inline bool isPlainFile(const vespalib::stringref & path) {
+extern inline bool isPlainFile(const vespalib::string & path) {
     FileInfo::UP info(stat(path));
     return (info.get() && info->_plainfile);
 }
@@ -358,7 +368,7 @@ extern inline bool isPlainFile(const vespalib::stringref & path) {
  * @return True if it is a directory, false if it don't exist or isn't.
  * @throw IoException If we failed to stat the file.
  */
-extern bool isDirectory(const vespalib::stringref & path);
+extern bool isDirectory(const vespalib::string & path);
 
 /**
  * Check whether a path is a symlink.
@@ -366,7 +376,7 @@ extern bool isDirectory(const vespalib::stringref & path);
  * @return True if path exists and is a symbolic link.
  * @throw IoException If there's an unexpected stat failure.
  */
-extern inline bool isSymLink(const vespalib::stringref & path) {
+extern inline bool isSymLink(const vespalib::string & path) {
     FileInfo::UP info(lstat(path));
     return (info.get() && info->_symlink);
 }
@@ -384,8 +394,8 @@ extern inline bool isSymLink(const vespalib::stringref & path) {
  * @param newPath Relative link to be created. See above note for semantics.
  * @throw IoException if we fail to create the symlink.
  */
-extern void symlink(const vespalib::stringref & oldPath,
-                    const vespalib::stringref & newPath);
+extern void symlink(const vespalib::string & oldPath,
+                    const vespalib::string & newPath);
 
 /**
  * Read and return the contents of symbolic link at the given path.
@@ -394,7 +404,7 @@ extern void symlink(const vespalib::stringref & oldPath,
  * @return Contents of symbolic link.
  * @throw IoException if we cannot read the link.
  */
-extern vespalib::string readLink(const vespalib::stringref & path);
+extern vespalib::string readLink(const vespalib::string & path);
 
 /**
  * Remove the given file.
@@ -403,7 +413,7 @@ extern vespalib::string readLink(const vespalib::stringref & path);
  * @return True if file was removed, false if it did not exist.
  * @throw IoException If we failed to unlink the file.
  */
-extern bool unlink(const vespalib::stringref & filename);
+extern bool unlink(const vespalib::string & filename);
 
 /**
  * Rename the file at frompath to topath.
@@ -421,16 +431,16 @@ extern bool unlink(const vespalib::stringref & filename);
  * @throw IoException If we failed to rename the file.
  * @return True if file was renamed, false if frompath did not exist.
  */
-extern bool rename(const vespalib::stringref & frompath,
-                   const vespalib::stringref & topath,
+extern bool rename(const vespalib::string & frompath,
+                   const vespalib::string & topath,
                    bool copyDeleteBetweenFilesystems = true,
                    bool createTargetDirectoryIfMissing = false);
 
 /**
  * Copies a file to a destination using Direct IO.
  */
-extern void copy(const vespalib::stringref & frompath,
-                 const vespalib::stringref & topath,
+extern void copy(const vespalib::string & frompath,
+                 const vespalib::string & topath,
                  bool createTargetDirectoryIfMissing = false,
                  bool useDirectIO = true);
 
@@ -438,11 +448,11 @@ extern void copy(const vespalib::stringref & frompath,
  * List the contents of the given directory.
  */
 typedef std::vector<vespalib::string> DirectoryList;
-extern DirectoryList listDirectory(const vespalib::stringref & path);
+extern DirectoryList listDirectory(const vespalib::string & path);
 
 extern MallocAutoPtr getAlignedBuffer(size_t size);
 
-string dirname(const stringref name);
-string getOpenErrorString(const int osError, const stringref name);
+string dirname(stringref name);
+string getOpenErrorString(const int osError, stringref name);
 
 } // vespalib

@@ -67,6 +67,8 @@ public:
     virtual uint32_t get(DocId docId, WeightedConstChar *buffer, uint32_t sz) const override;
     virtual uint32_t get(DocId docId, WeightedEnum *buffer, uint32_t sz) const override;
     virtual bool findEnum(const char * value, EnumHandle & e) const override;
+    virtual std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
+
     virtual const char * getStringFromEnum(EnumHandle e) const override;
     virtual std::unique_ptr<ISearchContext> createSearchContext(std::unique_ptr<QueryTermSimple> term,
                                                                 const SearchContextParams &params) const override;

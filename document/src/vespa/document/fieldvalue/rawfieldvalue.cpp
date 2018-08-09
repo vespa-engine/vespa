@@ -15,13 +15,13 @@ void
 RawFieldValue::printXml(XmlOutputStream& out) const
 {
     out << XmlBase64Content()
-        << XmlContentWrapper(_value.c_str(), _value.size());
+        << XmlContentWrapper(_value.data(), _value.size());
 }
 
 void
 RawFieldValue::print(std::ostream& out, bool, const std::string&) const
 {
-    StringUtil::printAsHex(out, _value.c_str(), _value.size());
+    StringUtil::printAsHex(out, _value.data(), _value.size());
 }
 
 } // document

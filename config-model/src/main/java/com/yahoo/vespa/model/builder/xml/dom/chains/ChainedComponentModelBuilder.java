@@ -15,7 +15,7 @@ public class ChainedComponentModelBuilder extends GenericChainedComponentModelBu
 
     public ChainedComponentModelBuilder(Element spec) {
         super(spec);
-        bundleInstantiationSpec = BundleInstantiationSpecificationBuilder.build(spec, false);
+        bundleInstantiationSpec = BundleInstantiationSpecificationBuilder.build(spec);
     }
 
     public ChainedComponentModel build() {

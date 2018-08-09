@@ -84,9 +84,10 @@ NumericFieldValue<Number>::operator=(const vespalib::stringref & value)
         // so detect these in front.
     if ((value.size() > 2) && (value[0] == '0') && ((value[1] | 0x20) == 'x')) {
         char* endp;
-            // It is safe to assume that all hex numbers can be contained within
-            // 64 bit unsigned value.
-        unsigned long long val = strtoull(value.c_str(), &endp, 16);
+        // It is safe to assume that all hex numbers can be contained within
+        // 64 bit unsigned value.
+        // FIXME C++17 range-safe from_chars() instead of strtoull()
+        unsigned long long val = strtoull(value.data(), &endp, 16);
         if (*endp == '\0') {
                 // Allow numbers to be specified in range max signed to max
                 // unsigned. These become negative numbers.

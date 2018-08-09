@@ -119,14 +119,14 @@ StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched)
     this->_plsc = static_cast<attribute::IPostingListSearchContext *>(this);
     if (this->valid()) {
         if (this->isPrefix()) {
-            FoldedComparatorType comp(enumStore, queryTerm().getTerm(), true);
+            FoldedComparatorType comp(enumStore, queryTerm()->getTerm(), true);
             lookupRange(comp, comp);
         } else if (this->isRegex()) {
-            vespalib::string prefix(vespalib::Regexp::get_prefix(this->queryTerm().getTerm()));
+            vespalib::string prefix(vespalib::Regexp::get_prefix(this->queryTerm()->getTerm()));
             FoldedComparatorType comp(enumStore, prefix.c_str(), true);
             lookupRange(comp, comp);
         } else {
-            FoldedComparatorType comp(enumStore, queryTerm().getTerm());
+            FoldedComparatorType comp(enumStore, queryTerm()->getTerm());
             lookupTerm(comp);
         }
     }

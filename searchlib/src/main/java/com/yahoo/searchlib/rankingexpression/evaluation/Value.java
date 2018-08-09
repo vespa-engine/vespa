@@ -115,4 +115,12 @@ public abstract class Value {
             return new DoubleValue(Double.parseDouble(value));
     }
 
+    public static Value of(Tensor tensor) {
+        return new TensorValue(tensor);
+    }
+
+    public static Value of(double scalar) {
+        return new DoubleValue(scalar);
+    }
+
 }

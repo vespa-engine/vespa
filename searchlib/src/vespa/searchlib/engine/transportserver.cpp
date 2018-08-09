@@ -322,7 +322,7 @@ TransportServer::logPacket(const vespalib::stringref &msg, FNET_Packet *p, FNET_
     } else {
         str = vespalib::make_string("packet { pcode=%u }", p->GetPCODE());
     }
-    LOG(debug, "%s (chid=%u, conn=%u):\n%s", msg.c_str(), chid, conntag, str.c_str());
+    LOG(debug, "%s (chid=%u, conn=%u):\n%s", msg.data(), chid, conntag, str.c_str());
 }
 
 void

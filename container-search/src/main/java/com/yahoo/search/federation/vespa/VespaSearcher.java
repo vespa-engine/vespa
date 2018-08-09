@@ -140,6 +140,8 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
             return Query.Type.PROGRAMMATIC;
         } else if (providerQueryType == ProviderConfig.QueryType.YQL) {
             return Query.Type.YQL;
+        } else if (providerQueryType == ProviderConfig.QueryType.SELECT) {
+            return Query.Type.SELECT;
         } else {
             throw new RuntimeException("Query type " + providerQueryType + " unsupported.");
         }

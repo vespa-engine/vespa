@@ -79,7 +79,7 @@ LiteralFieldValueB::fastCompare(const FieldValue& other) const
 void
 LiteralFieldValueB::printXml(XmlOutputStream& out) const
 {
-    out << XmlContentWrapper(_value.c_str(), _value.size());
+    out << XmlContentWrapper(_value.data(), _value.size());
 }
 
 void
@@ -106,7 +106,7 @@ LiteralFieldValueB::getAsString() const
 std::pair<const char*, size_t>
 LiteralFieldValueB::getAsRaw() const
 {
-    return std::make_pair(_value.c_str(), _value.size());
+    return std::make_pair(_value.data(), _value.size());
 }
 
 void

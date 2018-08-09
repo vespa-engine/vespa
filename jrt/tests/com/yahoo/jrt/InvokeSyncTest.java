@@ -26,8 +26,8 @@ public class InvokeSyncTest {
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
-        acceptor = server.listen(new Spec(Test.PORT));
-        target   = client.connect(new Spec("localhost", Test.PORT));
+        acceptor = server.listen(new Spec(0));
+        target   = client.connect(new Spec("localhost", acceptor.port()));
         server.addMethod(new Method("concat", "ss", "s", this, "rpc_concat")
                          .methodDesc("Concatenate 2 strings")
                          .paramDesc(0, "str1", "a string")
@@ -74,12 +74,12 @@ public class InvokeSyncTest {
     public void testRpcInvoker() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         System.setOut(new PrintStream(baos));
-        RpcInvoker.main(new String[] {"-h", "localhost:"+Test.PORT, "concat", "s:foo", "s:bar"});
+        RpcInvoker.main(new String[] {"-h", "localhost:"+acceptor.port(), "concat", "s:foo", "s:bar"});
         baos.flush();
         assertEquals(baos.toString(), "foobar\n");
         baos.reset();
         System.setOut(new PrintStream(baos));
-        RpcInvoker.main(new String[] {"-h", "localhost:"+Test.PORT, "alltypes", "b:1", "h:2", "i:3", "l:4", "f:5.0", "d:6.0", "s:baz"});
+        RpcInvoker.main(new String[] {"-h", "localhost:"+acceptor.port(), "alltypes", "b:1", "h:2", "i:3", "l:4", "f:5.0", "d:6.0", "s:baz"});
         baos.flush();
         assertEquals(baos.toString(), "This was alltypes. The string param was: baz\n");
     }

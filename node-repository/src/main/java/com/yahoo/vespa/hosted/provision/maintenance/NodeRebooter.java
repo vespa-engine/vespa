@@ -35,7 +35,7 @@ public class NodeRebooter extends Maintainer {
 
     @Override
     protected void maintain() {
-        // Reboot candidates: Nodes in long-term states, which we know an safely orchestrate a reboot
+        // Reboot candidates: Nodes in long-term states, which we know can safely orchestrate a reboot
         List<Node> rebootCandidates = nodeRepository().getNodes(NodeType.tenant, Node.State.active, Node.State.ready);
         rebootCandidates.addAll(nodeRepository().getNodes(NodeType.proxy, Node.State.active, Node.State.ready));
         rebootCandidates.addAll(nodeRepository().getNodes(NodeType.host, Node.State.active, Node.State.ready));

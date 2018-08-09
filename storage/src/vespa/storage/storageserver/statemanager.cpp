@@ -375,7 +375,7 @@ considerInsertDerivedTransition(const lib::State &currentBaseline,
             ((currentDerived != currentBaseline) || (newDerived != newBaseline)));
     if (considerDerivedTransition && (transitions.find(bucketSpace) == transitions.end())) {
         transitions[bucketSpace] = vespalib::make_string("%s space: '%s' to '%s'",
-                                                         document::FixedBucketSpaces::to_string(bucketSpace).c_str(),
+                                                         document::FixedBucketSpaces::to_string(bucketSpace).data(),
                                                          currentDerived.getName().c_str(),
                                                          newDerived.getName().c_str());
     }

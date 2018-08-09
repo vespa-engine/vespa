@@ -36,7 +36,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
 
     private Component buildComponent(Element spec) {
         BundleInstantiationSpecification bundleSpec =
-                BundleInstantiationSpecificationBuilder.build(spec, false).nestInNamespace(namespace);
+                BundleInstantiationSpecificationBuilder.build(spec).nestInNamespace(namespace);
 
         return new Component<Component<?, ?>, ComponentModel>(new ComponentModel(bundleSpec));
     }

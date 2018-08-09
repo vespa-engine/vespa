@@ -16,7 +16,7 @@ void StrChrFieldSearcher::onValue(const document::FieldValue & fv)
 {
     const document::LiteralFieldValueB & sfv = static_cast<const document::LiteralFieldValueB &>(fv);
     vespalib::stringref val = sfv.getValueRef();
-    FieldRef fr(val.c_str(), std::min(maxFieldLength(), val.size()));
+    FieldRef fr(val.data(), std::min(maxFieldLength(), val.size()));
     matchDoc(fr);
 }
 

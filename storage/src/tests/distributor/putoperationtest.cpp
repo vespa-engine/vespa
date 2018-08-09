@@ -572,8 +572,8 @@ parseBucketInfoString(const std::string& nodeList) {
     BucketInfo entry;
     for (uint32_t i = 0; i < tokenizer.size(); i++) {
         vespalib::StringTokenizer tokenizer2(tokenizer[i], "-");
-        int node = atoi(tokenizer2[0].c_str());
-        int size = atoi(tokenizer2[1].c_str());
+        int node = atoi(tokenizer2[0].data());
+        int size = atoi(tokenizer2[1].data());
         bool trusted = (tokenizer2[2] == "true");
 
         entry.addNode(BucketCopy(0,

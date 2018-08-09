@@ -386,16 +386,16 @@ QueryTermSimple::QueryTermSimple(const string & term_, SearchTerm type) :
         }
         _valid = (numParts >= 2) && (numParts < NELEMS(parts));
         if (_valid && numParts > 2) {
-            _rangeLimit = strtol(parts[2].c_str(), NULL, 0);
+            _rangeLimit = strtol(parts[2].data(), nullptr, 0);
             if (numParts > 3) {
                 _valid = (numParts >= 5);
                 if (_valid) {
                     _diversityAttribute = parts[3];
-                    _maxPerGroup = strtoul(parts[4].c_str(), NULL, 0);
+                    _maxPerGroup = strtoul(parts[4].data(), nullptr, 0);
                     if ((_maxPerGroup > 0) && (numParts > 5)) {
                         char *err = nullptr;
-                        size_t cutoffGroups = strtoul(parts[5].c_str(), &err, 0);
-                        if ((err == nullptr) || (size_t(err - parts[5].c_str()) == parts[5].size())) {
+                        size_t cutoffGroups = strtoul(parts[5].data(), &err, 0);
+                        if ((err == nullptr) || (size_t(err - parts[5].data()) == parts[5].size())) {
                             _diversityCutoffGroups = cutoffGroups;
                         }
                         if (numParts > 6) {

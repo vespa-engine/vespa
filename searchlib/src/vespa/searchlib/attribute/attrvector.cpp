@@ -51,6 +51,19 @@ bool StringDirectAttribute::findEnum(const char * key, EnumHandle & e) const
     return false;
 }
 
+
+// XXX this is not really correct
+std::vector<StringDirectAttribute::EnumHandle>
+StringDirectAttribute::findFoldedEnums(const char *key) const
+{
+    std::vector<EnumHandle> result;
+    EnumHandle handle;
+    if (findEnum(key, handle)) {
+        result.push_back(handle);
+    }
+    return result;
+}
+
 void StringDirectAttribute::onSave(IAttributeSaveTarget & saveTarget)
 {
     assert(!saveTarget.getEnumerated());

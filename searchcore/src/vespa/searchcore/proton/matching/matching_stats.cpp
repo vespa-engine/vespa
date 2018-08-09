@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matching_stats.h"
+#include <cmath>
 
 namespace proton::matching {
 
@@ -12,6 +13,9 @@ MatchingStats::Partition &get_writable_partition(std::vector<MatchingStats::Part
     }
     return state[id];
 }
+
+constexpr double MIN_TIMEOUT_SEC = 0.001;
+constexpr double MAX_CHANGE_FACTOR = 5;
 
 } // namespace proton::matching::<unnamed>
 
@@ -62,6 +66,7 @@ MatchingStats::add(const MatchingStats &rhs)
     _docsReRanked += rhs._docsReRanked;
     _softDoomed += rhs.softDoomed();
 
+
     _queryCollateralTime.add(rhs._queryCollateralTime);
     _queryLatency.add(rhs._queryLatency);
     _matchTime.add(rhs._matchTime);
@@ -75,10 +80,19 @@ MatchingStats::add(const MatchingStats &rhs)
 
 MatchingStats &
 MatchingStats::updatesoftDoomFactor(double hardLimit, double softLimit, double duration) {
-    if (duration < softLimit) {
-        _softDoomFactor += 0.01*(softLimit - duration)/hardLimit;
-    } else {
-        _softDoomFactor += 0.02*(softLimit - duration)/hardLimit;
+    // The safety capping here should normally not be necessary as all input numbers
+    // will normally be within reasonable values.
+    // It is merely a safety measure to avoid overflow on bad input as can happen with time senstive stuff
+    // in any soft real time system.
+    if ((hardLimit >= MIN_TIMEOUT_SEC) && (softLimit >= MIN_TIMEOUT_SEC)) {
+        double diff = (softLimit - duration)/hardLimit;
+        if (duration < softLimit) {
+            diff = std::min(diff, _softDoomFactor*MAX_CHANGE_FACTOR);
+            _softDoomFactor += 0.01*diff;
+        } else {
+            diff = std::max(diff, -_softDoomFactor*MAX_CHANGE_FACTOR);
+            _softDoomFactor += 0.02*diff;
+        }
     }
     return *this;
 }

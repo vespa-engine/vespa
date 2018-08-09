@@ -2,8 +2,7 @@
 
 #include "match_params.h"
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -30,8 +29,6 @@ MatchParams::MatchParams(uint32_t          numDocs_in,
       offset(offset_in),
       hits(hits_in),
       rankDropLimit(rankDropLimit_in)
-{
-}
+{ }
 
-} // namespace proton::matching
-} // namespace proton
+}

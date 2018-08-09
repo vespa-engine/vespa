@@ -15,9 +15,7 @@ PostingListMerger<DataT>::PostingListMerger(uint32_t docIdLimit)
 }
 
 template <typename DataT>
-PostingListMerger<DataT>::~PostingListMerger()
-{
-}
+PostingListMerger<DataT>::~PostingListMerger() = default;
 
 template <typename DataT>
 void

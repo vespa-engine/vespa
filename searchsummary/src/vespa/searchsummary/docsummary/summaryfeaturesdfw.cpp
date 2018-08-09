@@ -68,7 +68,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState
             json.appendDouble(0.0);
         }
         json.endObject();
-        vespalib::Memory value(json.toString().c_str(), json.toString().size());
+        vespalib::Memory value(json.toString().data(), json.toString().size());
         if (type == RES_STRING || type == RES_LONG_STRING) {
             target.insertString(value);
         }

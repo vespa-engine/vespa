@@ -48,6 +48,18 @@ FloatingPointAttributeTemplate<T>::findEnum(const char *value, EnumHandle &e) co
 }
 
 template<typename T>
+std::vector<EnumStoreBase::EnumHandle>
+FloatingPointAttributeTemplate<T>::findFoldedEnums(const char *value) const
+{
+    std::vector<EnumHandle> result;
+    EnumHandle h;
+    if (findEnum(value, h)) {
+        result.push_back(h);
+    }
+    return result;
+}
+
+template<typename T>
 bool
 FloatingPointAttributeTemplate<T>::isUndefined(DocId doc) const {
     return attribute::isUndefined(get(doc));

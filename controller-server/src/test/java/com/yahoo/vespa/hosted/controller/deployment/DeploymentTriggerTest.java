@@ -480,7 +480,6 @@ public class DeploymentTriggerTest {
                 .environment(Environment.prod)
                 .region("us-central-1")
                 .region("eu-west-1")
-                .upgradePolicy("canary")
                 .build();
         tester.deployCompletely(application, applicationPackage);
 
@@ -497,7 +496,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(1));
 
         Version v1 = new Version("7.1");
-        tester.upgradeSystem(v1); // Downgrade, but it works, since the app is a canary.
+        tester.upgradeSystem(v1); // Downgrade to cut down on the amount of code.
         assertEquals(Change.of(v1), app.get().change());
 
         // 7.1 proceeds 'til the last job, where it fails; us-central-1 is skipped, as current change is strictly dominated by what's deployed there.

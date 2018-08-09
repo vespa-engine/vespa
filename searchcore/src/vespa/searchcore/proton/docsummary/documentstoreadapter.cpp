@@ -66,10 +66,10 @@ DocumentStoreAdapter::writeField(const FieldValue &value, ResType type)
                 const LiteralFieldValueB & lfv =
                     static_cast<const LiteralFieldValueB &>(value);
                 vespalib::stringref s = lfv.getValueRef();
-                return writeStringField(s.c_str(), s.size(), type);
+                return writeStringField(s.data(), s.size(), type);
             } else {
                 vespalib::string s = value.getAsString();
-                return writeStringField(s.c_str(), s.size(), type);
+                return writeStringField(s.data(), s.size(), type);
             }
         }
     case RES_DATA:

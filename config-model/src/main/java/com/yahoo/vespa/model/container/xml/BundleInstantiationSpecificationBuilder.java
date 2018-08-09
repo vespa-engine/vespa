@@ -4,11 +4,10 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.processing.handler.ProcessingHandler;
-import com.yahoo.search.handler.SearchHandler;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This object builds a bundle instantiation spec from an XML element.
@@ -17,14 +16,13 @@ import java.util.*;
  */
 public class BundleInstantiationSpecificationBuilder {
 
-    public static BundleInstantiationSpecification build(Element spec, boolean legacyMode) {
+    public static BundleInstantiationSpecification build(Element spec) {
         ComponentSpecification id = XmlHelper.getIdRef(spec);
         ComponentSpecification classId = getComponentSpecification(spec, "class");
         ComponentSpecification bundle = getComponentSpecification(spec, "bundle");
 
         BundleInstantiationSpecification instSpec = new BundleInstantiationSpecification(id, classId, bundle);
-        if ( ! legacyMode) // TODO: Remove?
-            validate(instSpec);
+        validate(instSpec);
 
         return bundle == null ? setBundleForKnownClass(instSpec) : instSpec;
     }

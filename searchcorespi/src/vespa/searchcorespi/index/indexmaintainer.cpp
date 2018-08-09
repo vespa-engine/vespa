@@ -16,6 +16,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <sstream>
 #include <vespa/searchcorespi/flush/closureflushtask.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/fastos/file.h>
@@ -999,6 +1000,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec)
             _activeFusionSchema.reset();
             _activeFusionPrunedSchema.reset();
         }
+        vespalib::File::sync(vespalib::dirname(fail_dir));
         return fusion_spec.last_fusion_id;
     }
 

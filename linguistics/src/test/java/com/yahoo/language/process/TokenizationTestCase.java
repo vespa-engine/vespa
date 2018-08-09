@@ -64,6 +64,8 @@ public class TokenizationTestCase {
                        Arrays.asList("on"), null);
         assertTokenize("\uFF2F\uFF2E", Language.ENGLISH, StemMode.SHORTEST, false,
                        Arrays.asList("on"), null);
+
+
     }
 
     @Test

@@ -9,7 +9,8 @@ ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace)
       _bucketDatabase(),
       _lock(),
       _clusterState(),
-      _distribution()
+      _distribution(),
+      _nodeUpInLastNodeStateSeenByProvider(false)
 {
 }
 
@@ -39,6 +40,20 @@ ContentBucketSpace::getDistribution() const
 {
     std::lock_guard guard(_lock);
     return _distribution;
+}
+
+bool
+ContentBucketSpace::getNodeUpInLastNodeStateSeenByProvider() const
+{
+    std::lock_guard guard(_lock);
+    return _nodeUpInLastNodeStateSeenByProvider;
+}
+
+void
+ContentBucketSpace::setNodeUpInLastNodeStateSeenByProvider(bool nodeUpInLastNodeStateSeenByProvider)
+{
+    std::lock_guard guard(_lock);
+    _nodeUpInLastNodeStateSeenByProvider = nodeUpInLastNodeStateSeenByProvider;
 }
 
 }

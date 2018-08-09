@@ -40,20 +40,20 @@ MemoryDataStoreTest::testVariableSizeVector()
     for (size_t i(0); i < 10000; i++) {
         asciistream os;
         os << i;
-        v.push_back(os.str().c_str(), os.str().size());
+        v.push_back(os.str().data(), os.str().size());
     }
     for (size_t i(0); i < v.size(); i++) {
         asciistream os;
         os << i;
         EXPECT_EQUAL(os.str().size(), v[i].size());
-        EXPECT_EQUAL(0, memcmp(os.str().c_str(), v[i].data(), os.str().size()));
+        EXPECT_EQUAL(0, memcmp(os.str().data(), v[i].data(), os.str().size()));
     }
     size_t i(0);
     for (auto it(v.begin()), mt(v.end()); it != mt; it++, i++) {
         asciistream os;
         os << i;
         EXPECT_EQUAL(os.str().size(), it->size());
-        EXPECT_EQUAL(0, memcmp(os.str().c_str(), (*it).data(), os.str().size()));
+        EXPECT_EQUAL(0, memcmp(os.str().data(), (*it).data(), os.str().size()));
     }
     
 }

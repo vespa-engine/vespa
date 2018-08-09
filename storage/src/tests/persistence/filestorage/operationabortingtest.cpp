@@ -86,9 +86,9 @@ public:
     std::unique_ptr<vespalib::Barrier> _queueBarrier;
     std::unique_ptr<vespalib::Barrier> _completionBarrier;
 
-    void setupDisks(uint32_t diskCount, uint32_t queueBarrierThreads) {
-        FileStorTestFixture::setupDisks(diskCount);
-        _dummyProvider.reset(new spi::dummy::DummyPersistence(_node->getTypeRepo(), diskCount));
+    void setupProviderAndBarriers(uint32_t queueBarrierThreads) {
+        FileStorTestFixture::setupPersistenceThreads(1);
+        _dummyProvider.reset(new spi::dummy::DummyPersistence(_node->getTypeRepo(), 1));
         _queueBarrier.reset(new vespalib::Barrier(queueBarrierThreads));
         _completionBarrier.reset(new vespalib::Barrier(2));
         _blockingProvider = new BlockingMockProvider(*_dummyProvider, *_queueBarrier, *_completionBarrier);
@@ -219,7 +219,7 @@ makeAbortCmd(const Container& buckets)
 void
 OperationAbortingTest::testAbortMessageClearsRelevantQueuedOperations()
 {
-    setupDisks(1, 2);
+    setupProviderAndBarriers(2);
     TestFileStorComponents c(*this, "testAbortMessageClearsRelevantQueuedOperations");
     document::BucketId bucket(16, 1);
     createBucket(bucket);
@@ -305,7 +305,7 @@ public:
 void
 OperationAbortingTest::testWaitForCurrentOperationCompletionForAbortedBucket()
 {
-    setupDisks(1, 3);
+    setupProviderAndBarriers(3);
     TestFileStorComponents c(*this, "testWaitForCurrentOperationCompletionForAbortedBucket");
 
     document::BucketId bucket(16, 1);
@@ -386,7 +386,7 @@ OperationAbortingTest::doTestSpecificOperationsNotAborted(const char* testName,
                                                           const std::vector<api::StorageMessage::SP>& msgs,
                                                           bool shouldCreateBucketInitially)
 {
-    setupDisks(1, 2);
+    setupProviderAndBarriers(2);
     TestFileStorComponents c(*this, testName);
     document::BucketId bucket(16, 1);
     document::BucketId blockerBucket(16, 2);    

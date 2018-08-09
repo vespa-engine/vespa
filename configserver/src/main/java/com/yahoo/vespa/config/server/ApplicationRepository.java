@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -62,17 +61,10 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -97,7 +89,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
     private final ConfigserverConfig configserverConfig;
-    private final Environment environment;
     private final FileDistributionStatus fileDistributionStatus;
 
     @Inject
@@ -139,7 +130,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.httpProxy = httpProxy;
         this.clock = clock;
         this.configserverConfig = configserverConfig;
-        this.environment = Environment.from(configserverConfig.environment());
         this.fileDistributionStatus = fileDistributionStatus;
     }
 
@@ -250,7 +240,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         // Keep manually deployed tenant applications on the latest version, don't change version otherwise
         // TODO: Remove this and always use version from session once controller starts upgrading manual deployments
-        Version version = decideVersion(application, environment, newSession.getVespaVersion(), bootstrap);
+        Version version = decideVersion(application, zone().environment(), newSession.getVespaVersion(), bootstrap);
                 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
                                                  false /* don't validate as this is already deployed */, version,
@@ -292,15 +282,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId) {
-        Zone zone = new Zone(Environment.from(configserverConfig.environment()), RegionName.from(configserverConfig.region()));
         List<String> hostedZonesToUseDeleteApplication =
                 Arrays.asList("dev.us-east-1", "dev.corp-us-east-1", "test.us-east-1",
                               "prod.corp-us-east-1", "prod.aws-us-east-1a", "prod.aws-us-west-1b");
-        boolean useDeleteApplicationLegacyInThisZone = !hostedZonesToUseDeleteApplication.contains(zone.toString());
+        boolean useDeleteApplicationLegacyInThisZone = !hostedZonesToUseDeleteApplication.contains(zone().toString());
 
         // TODO: Use deleteApplication() in all zones
         if (configserverConfig.deleteApplicationLegacy() ||
-                (configserverConfig.hostedVespa() && SystemName.from(configserverConfig.system()) == SystemName.main &&
+                (configserverConfig.hostedVespa() && zone().system() == SystemName.main &&
                         useDeleteApplicationLegacyInThisZone)) {
             return deleteApplicationLegacy(applicationId);
         } else {
@@ -463,7 +452,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private Set<ApplicationId> listApplications() {
+    Set<ApplicationId> listApplications() {
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().listApplications().stream())
                 .collect(Collectors.toSet());
@@ -561,8 +550,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public void deleteOldSessions() {
+    public void deleteExpiredLocalSessions() {
         listApplications().forEach(app -> tenantRepository.getTenant(app.tenant()).getLocalSessionRepo().purgeOldSessions());
+    }
+
+    public int deleteExpiredRemoteSessions(Duration expiryTime) {
+        return listApplications()
+                .stream()
+                .map(app -> tenantRepository.getTenant(app.tenant()).getRemoteSessionRepo()
+                        // TODO: Delete in all zones
+                        .deleteExpiredSessions(expiryTime, zone().system() == SystemName.cd))
+                .mapToInt(i -> i)
+                .sum();
     }
 
     // ---------------- Tenant operations ----------------------------------------------------------------
@@ -608,7 +607,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getLocalSession(tenant, sessionId).getMetaData();
     }
 
-    ConfigserverConfig configserverConfig() {
+    public ConfigserverConfig configserverConfig() {
         return configserverConfig;
     }
 
@@ -677,53 +676,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    boolean redeployAllApplications(Duration maxDuration, Duration sleepBetweenRetries) throws InterruptedException {
-        Instant end = Instant.now().plus(maxDuration);
-        Set<ApplicationId> applicationsNotRedeployed = listApplications();
-        do {
-            applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
-            if ( ! applicationsNotRedeployed.isEmpty()) {
-                Thread.sleep(sleepBetweenRetries.toMillis());
-            }
-        } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
-
-        if ( ! applicationsNotRedeployed.isEmpty()) {
-            log.log(LogLevel.ERROR, "Redeploying applications not finished after " + maxDuration +
-                    ", exiting, applications that failed redeployment: " + applicationsNotRedeployed);
-            return false;
-        }
-        return true;
-    }
-
-    // Returns the set of applications that failed to redeploy
-    private Set<ApplicationId> redeployApplications(Set<ApplicationId> applicationIds) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                                new DaemonThreadFactory("redeploy apps"));
-        // Keep track of deployment per application
-        Map<ApplicationId, Future<?>> futures = new HashMap<>();
-        Set<ApplicationId> failedDeployments = new HashSet<>();
-
-        for (ApplicationId appId : applicationIds) {
-            Optional<com.yahoo.config.provision.Deployment> deploymentOptional = deployFromLocalActive(appId, true /* bootstrap */);
-            if ( ! deploymentOptional.isPresent()) continue;
-
-            futures.put(appId, executor.submit(deploymentOptional.get()::activate));
-        }
-
-        for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
-            try {
-                f.getValue().get();
-            } catch (ExecutionException e) {
-                ApplicationId app = f.getKey();
-                log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);
-                failedDeployments.add(app);
-            }
-        }
-        executor.shutdown();
-        executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
-        return failedDeployments;
-    }
-
     private LocalSession getExistingSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return getLocalSession(tenant, applicationRepo.getSessionIdForApplication(applicationId));
@@ -766,6 +718,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Slime deployLog = new Slime();
         deployLog.setObject();
         return deployLog;
+    }
+
+    public Zone zone() {
+        return new Zone(SystemName.from(configserverConfig.system()),
+                        Environment.from(configserverConfig.environment()),
+                        RegionName.from(configserverConfig.region()));
     }
 
 }

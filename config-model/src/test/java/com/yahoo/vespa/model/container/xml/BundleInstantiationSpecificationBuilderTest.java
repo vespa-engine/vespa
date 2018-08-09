@@ -53,7 +53,7 @@ public class BundleInstantiationSpecificationBuilderTest {
         InputStream xmlStream = IOUtils.toInputStream(xml);
         Element component = XmlHelper.getDocumentBuilder().parse(xmlStream).getDocumentElement();
 
-        BundleInstantiationSpecification spec = BundleInstantiationSpecificationBuilder.build(component, false);
+        BundleInstantiationSpecification spec = BundleInstantiationSpecificationBuilder.build(component);
         assertThat(spec.bundle, is(ComponentSpecification.fromString(expectedBundle)));
     }
 }

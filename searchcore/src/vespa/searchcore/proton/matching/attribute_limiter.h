@@ -10,8 +10,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <mutex>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * This class is responsible for creating attribute-based search
@@ -51,6 +50,4 @@ private:
     DiversityCutoffStrategy                    _diversityCutoffStrategy;
 };
 
-} // namespace proton::matching
-} // namespace proton
-
+}

@@ -6,13 +6,20 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * Removes unused zookeeper data (for now only data used by old file distribution code is removed)
+ * Removes unused zookeeper data
  *
  * @author hmusum
  */
 public class ZooKeeperDataMaintainer extends Maintainer {
+
+    private static final List<String> pathsToDelete = Arrays.asList(
+            "/vespa/filedistribution", // Path to file distribution data used before Vespa 6.213
+            "/vespa/config" //  Path to config data used before Vespa 6
+    );
 
     ZooKeeperDataMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
         super(applicationRepository, curator, interval);
@@ -20,8 +27,6 @@ public class ZooKeeperDataMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        curator.delete(Path.fromString("/vespa/filedistribution"));
-        curator.delete(Path.fromString("/vespa/config"));
-        curator.delete(Path.fromString("/provision/v1/defaultFlavor"));
+        pathsToDelete.forEach(path -> curator.delete(Path.fromString(path)));
     }
 }

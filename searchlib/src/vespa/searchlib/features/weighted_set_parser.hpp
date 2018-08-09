@@ -24,13 +24,13 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
             if (colonPos != vespalib::string::npos) {
                 vespalib::string tmpKey(item.substr(0, colonPos));
                 vespalib::string::size_type start(tmpKey.find_first_not_of(' '));
-                vespalib::stringref key(tmpKey.c_str() + start, colonPos - start);
+                vespalib::stringref key(tmpKey.data() + start, colonPos - start);
                 vespalib::stringref value(item.substr(colonPos+1));
                 output.insert(key, value);
             } else {
                 logWarning(vespalib::make_string(
                         "Could not parse item '%s' in input string '%s', skipping. "
-                    "Expected ':' between key and weight.", item.c_str(), input.c_str()));
+                    "Expected ':' between key and weight.", vespalib::string(item).c_str(), input.c_str()));
             }
             if (commaPos != vespalib::string::npos) {
                 s = s.substr(commaPos+1);

@@ -6,8 +6,7 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/util/rand48.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor for the random feature outputting a number in the interval [0, 1>.
@@ -22,7 +21,6 @@ public:
     RandomExecutor(uint64_t seed, uint64_t matchSeed);
     void execute(uint32_t docId) override;
 };
-
 
 /**
  * Implements the blueprint for the random feature.
@@ -45,6 +43,4 @@ public:
     search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-
-} // namespace features
-} // namespace search
+}

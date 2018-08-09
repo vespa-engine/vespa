@@ -20,8 +20,8 @@ import java.util.concurrent.Executor;
  * Handler of statistics http requests. Temporary hack as a step towards a more
  * general network interface.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Steinar Knutsen
+ * @author Einar M R Rosenvinge
  */
 public class StatisticsRequestHandler extends ThreadedHttpRequestHandler {
 

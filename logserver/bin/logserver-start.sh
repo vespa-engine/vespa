@@ -76,7 +76,7 @@ cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
 
 addopts="-server -Xms64m -Xmx256m -XX:MaxDirectMemorySize=76m -XX:MaxJavaStackTraceDepth=1000000"
 
-oomopt="-XX:OnOutOfMemoryError=kill -9 %p"
+oomopt="-XX:+ExitOnOutOfMemoryError"
 
 jar="-jar $ROOT/lib/jars/logserver-jar-with-dependencies.jar"
 

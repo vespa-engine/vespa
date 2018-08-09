@@ -10,7 +10,7 @@
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
 #include "feedhandler.h"
-#include "i_document_db_config_owner.h"
+#include "document_db_config_owner.h"
 #include "i_document_subdb_owner.h"
 #include "i_feed_handler_owner.h"
 #include "i_lid_space_compaction_handler.h"
@@ -53,7 +53,7 @@ namespace matching { class SessionManager; }
  * to ensure that there are never multiple writers. Unless explicitly stated,
  * none of the methods of this class are thread-safe.
  */
-class DocumentDB : public IDocumentDBConfigOwner,
+class DocumentDB : public DocumentDBConfigOwner,
                    public IReplayConfig,
                    public IFeedHandlerOwner,
                    public IDocumentSubDBOwner,

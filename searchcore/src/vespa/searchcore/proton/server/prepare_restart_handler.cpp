@@ -50,8 +50,7 @@ PrepareRestartHandler::performPrepareRestart(const ProtonConfig &protonCfg, std:
 {
     _running = true;
     lock.unlock();
-    auto strategy = std::make_shared<PrepareRestartFlushStrategy>(createPrepareRestartConfig(protonCfg));
-    _flushEngine.setStrategy(strategy);
+    _flushEngine.setStrategy(std::make_shared<PrepareRestartFlushStrategy>(createPrepareRestartConfig(protonCfg)));
     lock.lock();
     _running = false;
     _cond.notify_all();

@@ -1800,7 +1800,7 @@ parseInputData(const std::string& data,
     for (uint32_t i = 0; i < tokenizer.size(); i++) {
         vespalib::StringTokenizer tok2(tokenizer[i], ":");
 
-        uint16_t node = atoi(tok2[0].c_str());
+        uint16_t node = atoi(tok2[0].data());
 
         state.setNodeReplied(node);
         auto &pendingTransition = state.getPendingBucketSpaceDbTransition(makeBucketSpace());
@@ -1811,19 +1811,19 @@ parseInputData(const std::string& data,
                 vespalib::StringTokenizer tok4(tok3[j], "/");
 
                 pendingTransition.addNodeInfo(
-                        document::BucketId(16, atoi(tok4[0].c_str())),
+                        document::BucketId(16, atoi(tok4[0].data())),
                         BucketCopy(
                                 timestamp,
                                 node,
                                 api::BucketInfo(
-                                        atoi(tok4[1].c_str()),
-                                        atoi(tok4[2].c_str()),
-                                        atoi(tok4[3].c_str()),
-                                        atoi(tok4[2].c_str()),
-                                        atoi(tok4[3].c_str()))));
+                                        atoi(tok4[1].data()),
+                                        atoi(tok4[2].data()),
+                                        atoi(tok4[3].data()),
+                                        atoi(tok4[2].data()),
+                                        atoi(tok4[3].data()))));
             } else {
                 pendingTransition.addNodeInfo(
-                        document::BucketId(16, atoi(tok3[j].c_str())),
+                        document::BucketId(16, atoi(tok3[j].data())),
                         BucketCopy(timestamp,
                                    node,
                                    api::BucketInfo(3, 3, 3, 3, 3)));

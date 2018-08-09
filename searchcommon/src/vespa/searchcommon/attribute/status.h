@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 class Status
 {
@@ -14,13 +13,8 @@ public:
     Status(const vespalib::string &name);
     Status();
 
-    void
-    updateStatistics(uint64_t numValues,
-                     uint64_t numUniqueValue,
-                     uint64_t allocated,
-                     uint64_t used,
-                     uint64_t dead,
-                     uint64_t onHold);
+    void updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,
+                          uint64_t used, uint64_t dead, uint64_t onHold);
 
     uint64_t getNumDocs()                  const { return _numDocs; }
     uint64_t getNumValues()                const { return _numValues; }
@@ -33,32 +27,18 @@ public:
     uint64_t getLastSyncToken()            const { return _lastSyncToken; }
     uint64_t getUpdateCount()              const { return _updates; }
     uint64_t getNonIdempotentUpdateCount() const { return _nonIdempotentUpdates; }
-    uint32_t
-    getBitVectors() const
-    {
-        return _bitVectors;
-    }
+    uint32_t getBitVectors() const { return _bitVectors; }
 
     void setNumDocs(uint64_t v)                  { _numDocs = v; }
     void incNumDocs()                            { ++_numDocs; }
     void setLastSyncToken(uint64_t v)            { _lastSyncToken = v; }
     void incUpdates(uint64_t v=1)                { _updates += v; }
     void incNonIdempotentUpdates(uint64_t v = 1) { _nonIdempotentUpdates += v; }
-    void
-    incBitVectors()
-    {
-        ++_bitVectors;
-    }
-
-    void
-    decBitVectors()
-    {
-        --_bitVectors;
-    }
+    void incBitVectors() { ++_bitVectors; }
+    void decBitVectors() { --_bitVectors; }
 
     static vespalib::string
-    createName(const vespalib::stringref &index,
-               const vespalib::stringref & attr);
+    createName(vespalib::stringref index, vespalib::stringref attr);
 private:
     uint64_t _numDocs;
     uint64_t _numValues;
@@ -76,5 +56,3 @@ private:
 };
 
 }
-}
-

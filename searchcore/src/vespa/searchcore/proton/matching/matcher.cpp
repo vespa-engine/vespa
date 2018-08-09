@@ -56,9 +56,10 @@ FeatureSet::SP
 findFeatureSet(const DocsumRequest &req, MatchToolsFactory &mtf, bool summaryFeatures)
 {
     std::vector<uint32_t> docs;
-    for (size_t i = 0; i < req.hits.size(); ++i) {
-        if (req.hits[i].docid != search::endDocId) {
-            docs.push_back(req.hits[i].docid);
+    docs.reserve(req.hits.size());
+    for (const auto & hit : req.hits) {
+        if (hit.docid != search::endDocId) {
+            docs.push_back(hit.docid);
         }
     }
     std::sort(docs.begin(), docs.end());
@@ -102,7 +103,7 @@ Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IA
         bool searchSessionCached = cache_props.lookup("query").found();
         if (searchSessionCached) {
             SearchSession::SP session(sessionMgr.pickSearch(sessionId));
-            if (session.get()) {
+            if (session) {
                 MatchToolsFactory &mtf = session->getMatchToolsFactory();
                 FeatureSet::SP result = findFeatureSet(req, mtf, summaryFeatures);
                 session->releaseEnumGuards();
@@ -117,7 +118,7 @@ Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IA
     if (!mtf->valid()) {
         LOG(warning, "getFeatureSet(%s): query execution failed (invalid query). Returning empty feature set",
                      (summaryFeatures ? "summary features" : "rank features"));
-        return FeatureSet::SP(new FeatureSet());
+        return std::make_shared<FeatureSet>();
     }
     return findFeatureSet(req, *mtf, summaryFeatures);
 }
@@ -136,7 +137,7 @@ Matcher::Matcher(const search::index::Schema &schema, const Properties &props, c
 {
     search::features::setup_search_features(_blueprintFactory);
     search::fef::test::setup_fef_test_plugin(_blueprintFactory);
-    _rankSetup.reset(new search::fef::RankSetup(_blueprintFactory, _indexEnv));
+    _rankSetup = std::make_shared<search::fef::RankSetup>(_blueprintFactory, _indexEnv);
     _rankSetup->configure(); // reads config values from the property map
     if (!_rankSetup->compile()) {
         throw vespalib::IllegalArgumentException("failed to compile rank setup", VESPA_STRLOC);
@@ -224,14 +225,14 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             shouldCacheSearchSession = cache_props.lookup("query").found();
             if (shouldCacheGroupingSession) {
                 GroupingSession::UP session(sessionMgr.pickGrouping(sessionId));
-                if (session.get()) {
+                if (session) {
                     return handleGroupingSession(sessionMgr, groupingContext, std::move(session));
                 }
             }
         }
         const Properties *feature_overrides = &request.propertiesMap.featureOverrides();
         if (shouldCacheSearchSession) {
-            owned_objects.feature_overrides.reset(new Properties(*feature_overrides));
+            owned_objects.feature_overrides = std::make_unique<Properties>(*feature_overrides);
             feature_overrides = owned_objects.feature_overrides.get();
         }
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,

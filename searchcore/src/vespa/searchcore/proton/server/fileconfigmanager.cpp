@@ -229,6 +229,7 @@ FileConfigManager::FileConfigManager(const vespalib::string &baseDir,
       _protonConfig()
 {
     vespalib::mkdir(baseDir, false);
+    vespalib::File::sync(vespalib::dirname(baseDir));
     if (!_info.load())
         _info.save();
     removeInvalid();
@@ -297,6 +298,8 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
     bool saveHistorySchemaRes = historySchema.saveToFile(snapDir + "/historyschema.txt");
     assert(saveHistorySchemaRes);
     (void) saveHistorySchemaRes;
+    vespalib::File::sync(snapDir);
+    vespalib::File::sync(_baseDir);
 
     _info.validateSnapshot(serialNum);
 
@@ -402,6 +405,7 @@ FileConfigManager::removeInvalid()
             LOG(warning, "Removing obsolete config directory '%s' failed due to %s", snapDir.c_str(), e.what());
         }
     }
+    vespalib::File::sync(_baseDir);
     for (const auto &serial : toRem) {
         _info.removeSnapshot(serial);
     }

@@ -68,9 +68,7 @@ AttributeHeader::AttributeHeader(const vespalib::string &fileName,
 {
 }
 
-AttributeHeader::~AttributeHeader()
-{
-}
+AttributeHeader::~AttributeHeader() = default;
 
 void
 AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)

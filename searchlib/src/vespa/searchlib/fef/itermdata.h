@@ -6,8 +6,7 @@
 #include <vespa/searchlib/query/weight.h>
 #include <cstddef>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Interface to static match data for a single unit (term/phrase/etc).
@@ -84,6 +83,4 @@ public:
     void next() { ++_idx; }
 };
 
-} // namespace fef
-} // namespace search
-
+}

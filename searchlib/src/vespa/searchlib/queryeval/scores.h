@@ -4,8 +4,7 @@
 
 #include <vespa/searchlib/common/feature.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 struct Scores {
     feature_t low;
@@ -16,6 +15,4 @@ struct Scores {
     bool isValid() const { return low <= high; }
 };
 
-}  // namespace queryeval
-}  // namespace search
-
+}

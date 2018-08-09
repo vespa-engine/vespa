@@ -153,6 +153,8 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
             EXPECT_TRUE(strcmp(attr.get(doc), uniqueStrings[0].c_str()) == 0);
             uint32_t e;
             EXPECT_TRUE(attr.findEnum(uniqueStrings[0].c_str(), e));
+            EXPECT_EQUAL(1u, attr.findFoldedEnums(uniqueStrings[0].c_str()).size());
+            EXPECT_EQUAL(e, attr.findFoldedEnums(uniqueStrings[0].c_str())[0]);
             EXPECT_TRUE(attr.getEnum(doc) == e);
         }
 

@@ -191,7 +191,7 @@ namespace {
             try{
                 std::vector<uint16_t> nvect;
                 distribution.getIdealNodes(nodeType, state, results[i].bucket,
-                                           nvect, upStates.c_str(), redundancy);
+                                           nvect, upStates.data(), redundancy);
                 IdealNodeList nodes;
                 for (uint32_t j=0, m=nvect.size(); j<m; ++j) {
                     nodes.push_back(Node(nodeType, nvect[j]));

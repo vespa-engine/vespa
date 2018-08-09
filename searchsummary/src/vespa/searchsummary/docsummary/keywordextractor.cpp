@@ -195,7 +195,7 @@ KeywordExtractor::ExtractKeywords(vespalib::stringref buf) const
                             phraseterms_was_added = true;
                         }
 
-                        keywords.append(term.c_str(), term.size());
+                        keywords.append(term.data(), term.size());
                     }
                 }
             }
@@ -218,7 +218,7 @@ KeywordExtractor::ExtractKeywords(vespalib::stringref buf) const
                 vespalib::stringref term = si.getTerm();
                 if ( !term.empty() && useful(creator)) {
                     // An actual string to add
-                    keywords.append(term.c_str(), term.size());
+                    keywords.append(term.data(), term.size());
                     keywords.append("\0", 1);
                 }
             }

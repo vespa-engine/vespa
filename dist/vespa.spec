@@ -56,7 +56,7 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc29}
-BuildRequires: llvm4.0-devel >= 4.0
+BuildRequires: llvm3.9-devel >= 3.9.1
 BuildRequires: boost-devel >= 1.66
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -130,10 +130,10 @@ Requires: llvm4.0-libs >= 4.0
 %define _vespa_llvm_include_directory /usr/include/llvm4.0
 %endif
 %if 0%{?fc29}
-Requires: llvm4.0-libs >= 4.0
-%define _vespa_llvm_version 4.0
-%define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
-%define _vespa_llvm_include_directory /usr/include/llvm4.0
+Requires: llvm3.9-libs >= 3.9.1
+%define _vespa_llvm_version 3.9
+%define _vespa_llvm_link_directory /usr/lib64/llvm3.9/lib
+%define _vespa_llvm_include_directory /usr/include/llvm3.9
 %endif
 %define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}%{?_vespa_gtest_link_directory:;%{_vespa_gtest_link_directory}}
 %define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}%{?_vespa_gtest_include_directory:;%{_vespa_gtest_include_directory}}
@@ -162,7 +162,7 @@ source %{_devtoolset_enable} || true
 source %{_rhmaven35_enable} || true
 %endif
 sh bootstrap.sh java
-mvn --batch-mode -nsu -T 2C install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+mvn --batch-mode -nsu -T 1  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \

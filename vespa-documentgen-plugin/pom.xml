@@ -14,8 +14,15 @@
   <name>Vespa DocumentGen Plugin</name>
   <dependencies>
     <dependency>
+      <!-- TODO: Explicitly list deps instead - container-dev is for bundle development. -->
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-dev</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <!-- TODO: Excluded from container-dev. Remove when deps are explicitly listed.  -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>linguistics</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

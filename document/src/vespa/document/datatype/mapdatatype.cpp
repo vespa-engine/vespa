@@ -73,7 +73,7 @@ MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
             *fv = keyValue;
             path.insert(path.begin(), std::make_unique<FieldPathEntry>(valueType, dataType, std::move(fv)));
         }
-    } else if (memcmp(remainFieldName.c_str(), "key", 3) == 0) {
+    } else if (memcmp(remainFieldName.data(), "key", 3) == 0) {
         size_t endPos = 3;
         if (remainFieldName[endPos] == '.') {
             endPos++;
@@ -82,7 +82,7 @@ MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
         keyType.buildFieldPath(path, remainFieldName.substr(endPos));
 
         path.insert(path.begin(), std::make_unique<FieldPathEntry>(dataType, keyType, valueType, true, false));
-    } else if (memcmp(remainFieldName.c_str(), "value", 5) == 0) {
+    } else if (memcmp(remainFieldName.data(), "value", 5) == 0) {
         size_t endPos = 5;
         if (remainFieldName[endPos] == '.') {
             endPos++;

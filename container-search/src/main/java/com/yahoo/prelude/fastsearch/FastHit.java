@@ -125,13 +125,15 @@ public class FastHit extends Hit {
      * found. The row count is used to decode the part id into a column and a
      * row number: the number of n least significant bits required to hold the
      * highest row number are the row bits, the rest are column bits.
+     *
+     * Note: Remove partId when all dispatching happens from the container dispatcher, not fdispatch
      */
     public void setPartId(int partId) { this.partId = partId; }
 
     /** Returns the index of the node this hit originated at */
     public int getDistributionKey() { return distributionKey; }
 
-    /** Returns the index of the node this hit originated at */
+    /** Sets the index of the node this hit originated at */
     public void setDistributionKey(int distributionKey) { this.distributionKey = distributionKey; }
 
     /**

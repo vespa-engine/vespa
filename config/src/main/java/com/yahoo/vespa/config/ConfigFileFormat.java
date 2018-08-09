@@ -13,9 +13,9 @@ import java.util.Stack;
 
 /**
  * @author lulf
- * @since 5.1
  */
 public class ConfigFileFormat implements SlimeFormat, ObjectTraverser {
+
     private final InnerCNode root;
     private DataOutputStream out = null;
     private Stack<Node> nodeStack;

@@ -134,11 +134,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         return lhsId.compareTo(rhsId);
     }
 
-    // in seconds
-    public long getCreateTime() {
-        return zooKeeperClient.readCreateTime();
-    }
-
     public void waitUntilActivated(TimeoutBudget timeoutBudget) {
         zooKeeperClient.getActiveWaiter().awaitCompletion(timeoutBudget.timeLeft());
     }

@@ -37,11 +37,14 @@ FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT li
 }
 
 void
-FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc,
+FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     if (_attributeWriter->hasStructFieldAttribute()) {
-        _attributeWriter->update(serialNum, *doc.get(), lid, immediateCommit, onWriteDone);
+        const std::unique_ptr<const Document> & doc = futureDoc.get();
+        if (doc) {
+            _attributeWriter->update(serialNum, *doc, lid, immediateCommit, onWriteDone);
+        }
     }
 }
 

@@ -32,7 +32,7 @@ UcaConverter::UcaConverter(vespalib::stringref locale, vespalib::stringref stren
     Collator *coll(NULL);
     {
         std::lock_guard<std::mutex> guard(_GlobalDirtyICUThreadSafeLock);
-        coll = Collator::createInstance(icu::Locale(locale.c_str()), status);
+        coll = Collator::createInstance(icu::Locale(locale.data()), status);
     }
     if(U_SUCCESS(status)) {
         _collator.reset(coll);

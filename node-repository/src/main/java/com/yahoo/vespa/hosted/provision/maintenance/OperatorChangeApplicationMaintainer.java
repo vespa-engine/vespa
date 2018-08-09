@@ -53,9 +53,6 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
                 .anyMatch(event -> event.agent() == Agent.operator && event.at().isAfter(instant));
     }
 
-    @Override
-    protected void throttle(int applicationCount) { }
-
     /** 
      * Deploy in the maintenance thread to avoid scheduling multiple deployments of the same application if it takes
      * longer to deploy than the (short) maintenance interval of this

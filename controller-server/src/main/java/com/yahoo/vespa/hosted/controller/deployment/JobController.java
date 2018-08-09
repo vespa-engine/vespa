@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -169,14 +170,14 @@ public class JobController {
     }
 
     /** Registers the given application, such that it may have deployment jobs run here. */
-    void register(ApplicationId id) {
+    public void register(ApplicationId id) {
         controller.applications().lockIfPresent(id, application ->
                 controller.applications().store(application.withBuiltInternally(true)));
     }
 
     /** Accepts and stores a new application package and test jar pair under a generated application version key. */
     public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
-                                     byte[] applicationPackage, byte[] applicationTestJar) {
+                                     byte[] applicationPackage, byte[] applicationTestPackage) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
             controller.applications().store(application.withBuiltInternally(true));
@@ -185,14 +186,17 @@ public class JobController {
             version.set(ApplicationVersion.from(revision, run));
 
             // TODO smorgrav: Store the pair.
-
-            notifyOfNewSubmission(id, revision, run);
+//            controller.applications().artifacts().putApplicationPackage(id, version.toString(), applicationPackage);
+//            controller.applications().artifacts().putTesterPackage(
+//                    InternalStepRunner.testerOf(id), version.toString(), applicationTestPackage);
+//
+//            notifyOfNewSubmission(id, revision, run);
         });
         return version.get();
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type) {
+    public void start(ApplicationId id, JobType type, Versions versions) {
         controller.applications().lockIfPresent(id, application -> {
             if ( ! application.get().deploymentJobs().builtInternally())
                 throw new IllegalArgumentException(id + " is not built here!");
@@ -203,7 +207,7 @@ public class JobController {
                     throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
                 RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-                curator.writeLastRun(RunStatus.initial(newId, controller.clock().instant()));
+                curator.writeLastRun(RunStatus.initial(newId, versions, controller.clock().instant()));
             });
         });
     }
@@ -265,7 +269,7 @@ public class JobController {
     private void notifyOfNewSubmission(ApplicationId id, SourceRevision revision, long number) {
         DeploymentJobs.JobReport report = new DeploymentJobs.JobReport(id,
                                                                        JobType.component,
-                                                                       Long.MAX_VALUE, // TODO jvenstad: Clean up this!
+                                                                       1,
                                                                        number,
                                                                        Optional.of(revision),
                                                                        Optional.empty());

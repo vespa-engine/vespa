@@ -46,7 +46,7 @@ MapValueUpdate::checkCompatibility(const Field& field) const
 	    if (_key->getClass().id() != IntFieldValue::classId) {
             throw IllegalArgumentException(vespalib::make_string(
                     "Key for field '%s' is of wrong type (expected '%s', was '%s').",
-                    field.getName().c_str(), DataType::INT->toString().c_str(),
+                    field.getName().data(), DataType::INT->toString().c_str(),
                     _key->getDataType()->toString().c_str()), VESPA_STRLOC);
         }
     } else if (field.getDataType().getClass().id() == WeightedSetDataType::classId) {
@@ -54,7 +54,7 @@ MapValueUpdate::checkCompatibility(const Field& field) const
         if (!type.getNestedType().isValueType(*_key)) {
             throw IllegalArgumentException(vespalib::make_string(
                     "Key for field '%s' is of wrong type (expected '%s', was '%s').",
-                    field.getName().c_str(), DataType::INT->toString().c_str(),
+                    field.getName().data(), DataType::INT->toString().c_str(),
                     _key->getDataType()->toString().c_str()), VESPA_STRLOC);
         }
     } else {
@@ -71,9 +71,9 @@ MapValueUpdate::applyTo(FieldValue& value) const
         ArrayFieldValue& val(static_cast<ArrayFieldValue&>(value));
         int32_t index = _key->getAsInt();
         if (index < 0 || static_cast<uint32_t>(index) >= val.size()) {
-            throw IllegalStateException(vespalib::make_string(
-                    "Tried to update element %i in an array of %zu elements",
-		            index, val.size()), VESPA_STRLOC);
+            // Silently ignoring updates with index out of bounds matches
+            // behavior of functionally identical fieldpath updates.
+            return true;
         }
         if (!_update->applyTo(val[_key->getAsInt()])) {
             val.remove(_key->getAsInt());

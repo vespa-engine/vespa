@@ -13,6 +13,8 @@ vespa_add_library(searchcore_server STATIC
     disk_mem_usage_sampler.cpp
     disk_mem_usage_forwarder.cpp
     docstorevalidator.cpp
+    document_db_config_owner.cpp
+    document_db_directory_holder.cpp
     document_db_explorer.cpp
     document_db_flush_config.cpp
     document_db_maintenance_config.cpp
@@ -73,6 +75,7 @@ vespa_add_library(searchcore_server STATIC
     proton_config_fetcher.cpp
     proton_config_snapshot.cpp
     proton_configurer.cpp
+    proton_disk_layout.cpp
     prune_session_cache_job.cpp
     pruneremoveddocumentsjob.cpp
     putdonecontext.cpp

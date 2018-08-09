@@ -113,6 +113,10 @@ public class QueryProperties extends Properties {
                 if (key.get(1).equals(Ranking.PROPERTIES)) return ranking.getProperties().get(key.rest().rest().toString());
             }
         }
+        else if (key.size()==2 && key.first().equals(Select.SELECT)) {
+            if (key.last().equals(Select.WHERE)) return query.getSelect().getWhereString();
+            if (key.last().equals(Select.GROUPING)) return query.getSelect().getGroupingString();
+        }
         else if (key.size()==2 && key.first().equals(Presentation.PRESENTATION)) {
             if (key.last().equals(Presentation.BOLDING)) return query.getPresentation().getBolding();
             if (key.last().equals(Presentation.SUMMARY)) return query.getPresentation().getSummary();
@@ -246,6 +250,13 @@ public class QueryProperties extends Properties {
                     query.getPresentation().setSummaryFields(asString(value,""));
                 else if ( ! key.last().equals(Presentation.REPORT_COVERAGE)) // TODO: Change this line to "else" on Vespa 7
                     throwIllegalParameter(key.last(), Presentation.PRESENTATION);
+            }
+            else if (key.size()==2 && key.first().equals(Select.SELECT)) {
+                if (key.last().equals(Select.WHERE)){
+                    query.getSelect().setWhere(asString(value, ""));
+                } else if (key.last().equals(Select.GROUPING)) {
+                    query.getSelect().setGrouping(asString(value, ""));
+                }
             }
             else if (key.first().equals("rankfeature") || key.first().equals("featureoverride") ) { // featureoverride is deprecated
                 setRankingFeature(query, key.rest().toString(), toSpecifiedType(key.rest().toString(), value, profileRegistry.getTypeRegistry().getComponent("features")));

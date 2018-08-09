@@ -106,27 +106,36 @@ Service::terminate(bool catchable, bool dumpState)
         runPreShutdownCommand();
         LOG(debug, "%s: terminate(%s)", name().c_str(), catchable ? "cleanly" : "NOW");
         resetRestartPenalty();
+        kill(_pid, SIGCONT); // if it was stopped for some reason
         if (catchable) {
-            setState(TERMINATING);
-            int ret = kill(_pid, SIGTERM);
-            LOG(debug, "%s: kill -SIGTERM %d: %s", name().c_str(), (int)_pid,
-                ret == 0 ? "OK" : strerror(errno));
-            return ret;
+            if (_state != TERMINATING) {
+                int ret = kill(_pid, SIGTERM);
+                if (ret == 0) {
+                    setState(TERMINATING);
+                } else {
+                    LOG(warning, "%s: kill -SIGTERM %d failed: %s",
+                        name().c_str(), (int)_pid, strerror(errno));
+                }
+                return ret;
+            }
+            // already sent SIGTERM
+            return 0;
         } else {
             if (dumpState && _state != KILLING) {
-                vespalib::string pstackCmd = make_string("pstack %d > %s/%s.pstack.%d",
+                vespalib::string pstackCmd = make_string("pstack %d > %s/%s.pstack.%d 2>&1",
                                                          _pid, getVespaTempDir().c_str(), name().c_str(), _pid);
-                LOG(info, "%s:%d failed to stop. Stack dumped at %s", name().c_str(), _pid, pstackCmd.c_str());
+                LOG(info, "%s:%d failed to stop. Stack dumping with %s", name().c_str(), _pid, pstackCmd.c_str());
                 int pstackRet = system(pstackCmd.c_str());
                 if (pstackRet != 0) {
                     LOG(warning, "'%s' failed with return value %d", pstackCmd.c_str(), pstackRet);
                 }
             }
             setState(KILLING);
-            kill(_pid, SIGCONT); // if it was stopped for some reason
             int ret = kill(_pid, SIGKILL);
-            LOG(debug, "%s: kill -SIGKILL %d: %s", name().c_str(), (int)_pid,
-                ret == 0 ? "OK" : strerror(errno));
+            if (ret != 0) {
+                LOG(warning, "%s: kill -SIGKILL %d failed: %s",
+                    name().c_str(), (int)_pid, strerror(errno));
+            }
             return ret;
         }
     }

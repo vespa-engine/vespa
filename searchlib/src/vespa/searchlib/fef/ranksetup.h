@@ -8,8 +8,7 @@
 #include "blueprintresolver.h"
 #include "rank_program.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * A rank setup contains information about how initial and final rank
@@ -403,5 +402,4 @@ public:
     void prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const;
 };
 
-} // namespace fef
-} // namespace search
+}

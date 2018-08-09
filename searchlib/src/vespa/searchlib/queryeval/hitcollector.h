@@ -10,16 +10,14 @@
 #include <vespa/vespalib/util/sort.h>
 #include <vespa/fastos/dynamiclibrary.h>
 
-namespace search {
-
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * This class is used to store all hits found during parallel query evaluation.
  **/
 class HitCollector {
 public:
-    typedef std::pair<uint32_t, feature_t> Hit;
+    using Hit = std::pair<uint32_t, feature_t>;
 
     /**
      * Interface used to calculate the second phase score for the documents being re-ranked.
@@ -169,18 +167,17 @@ public:
     }
 
     /**
-     * Returns a sorted vector of scores for the hits that are stored
+     * Returns a sorted vector of hits for the hits that are stored
      * in the heap. These are the candidates for re-ranking.
      */
-    std::vector<feature_t> getSortedHeapScores();
+    std::vector<Hit> getSortedHeapHits();
 
     /**
      * Re-ranks the m (=maxHeapSize) best hits by invoking the score()
      * method on the given document scorer. The best m hits are sorted on doc id
      * so that score() is called in doc id order.
      **/
-    size_t reRank(DocumentScorer &scorer);
-    size_t reRank(DocumentScorer &scorer, size_t count);
+    size_t reRank(DocumentScorer &scorer, std::vector<Hit> hits);
 
     std::pair<Scores, Scores> getRanges() const;
     void setRanges(const std::pair<Scores, Scores> &ranges);
@@ -200,6 +197,4 @@ private:
     HitCollector &operator=(const HitCollector &);  // Not implemented
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

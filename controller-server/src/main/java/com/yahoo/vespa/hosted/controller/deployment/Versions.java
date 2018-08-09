@@ -9,7 +9,10 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
+import java.util.Objects;
 import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Source and target versions for an application.
@@ -26,10 +29,13 @@ public class Versions {
 
     public Versions(Version targetPlatform, ApplicationVersion targetApplication, Optional<Version> sourcePlatform,
                     Optional<ApplicationVersion> sourceApplication) {
-        this.targetPlatform = targetPlatform;
-        this.targetApplication = targetApplication;
-        this.sourcePlatform = sourcePlatform;
-        this.sourceApplication = sourceApplication;
+        if (sourcePlatform.isPresent() ^ sourceApplication.isPresent())
+            throw new IllegalArgumentException("Sources must both be present or absent.");
+
+        this.targetPlatform = requireNonNull(targetPlatform);
+        this.targetApplication = requireNonNull(targetApplication);
+        this.sourcePlatform = requireNonNull(sourcePlatform);
+        this.sourceApplication = requireNonNull(sourceApplication);
     }
 
     /** Target platform version for this */

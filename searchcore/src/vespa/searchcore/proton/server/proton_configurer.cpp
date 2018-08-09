@@ -4,7 +4,9 @@
 #include "proton_config_snapshot.h"
 #include "bootstrapconfig.h"
 #include "i_proton_configurer_owner.h"
-#include "i_document_db_config_owner.h"
+#include "document_db_config_owner.h"
+#include "document_db_directory_holder.h"
+#include "i_proton_disk_layout.h"
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -38,7 +40,8 @@ getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
 
 
 ProtonConfigurer::ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
-                                   IProtonConfigurerOwner &owner)
+                                   IProtonConfigurerOwner &owner,
+                                   const std::unique_ptr<IProtonDiskLayout> &diskLayout)
     : IProtonConfigurer(),
       _executor(executor),
       _owner(owner),
@@ -47,7 +50,8 @@ ProtonConfigurer::ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
       _activeConfigSnapshot(),
       _mutex(),
       _allowReconfig(false),
-      _componentConfig()
+      _componentConfig(),
+      _diskLayout(diskLayout)
 {
 }
 
@@ -134,6 +138,9 @@ ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     }
     const auto &bootstrapConfig = configSnapshot->getBootstrapConfig();
     const ProtonConfig &protonConfig = bootstrapConfig->getProtonConfig();
+    if (initialConfig) {
+        pruneInitialDocumentDBDirs(*configSnapshot);
+    }
     _owner.applyConfig(bootstrapConfig);
     for (const auto &ddbConfig : protonConfig.documentdb) {
         DocTypeName docTypeName(ddbConfig.inputdoctypename);
@@ -162,14 +169,28 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
     const auto &documentDBConfig = cfgitr->second;
     auto dbitr(_documentDBs.find(docTypeName));
     if (dbitr == _documentDBs.end()) {
-        auto *newdb = _owner.addDocumentDB(docTypeName, bucketSpace, configId, bootstrapConfig, documentDBConfig, initializeThreads);
-        if (newdb != nullptr) {
-            auto insres = _documentDBs.insert(std::make_pair(docTypeName, newdb));
+        auto newdb = _owner.addDocumentDB(docTypeName, bucketSpace, configId, bootstrapConfig, documentDBConfig, initializeThreads);
+        if (newdb) {
+            auto insres = _documentDBs.insert(std::make_pair(docTypeName, std::make_pair(newdb, newdb->getDocumentDBDirectoryHolder())));
             assert(insres.second);
         }
     } else {
-        dbitr->second->reconfigure(documentDBConfig);
+        auto documentDB = dbitr->second.first.lock();
+        assert(documentDB);
+        documentDB->reconfigure(documentDBConfig);
     }
+}
+
+void
+ProtonConfigurer::pruneInitialDocumentDBDirs(const ProtonConfigSnapshot &configSnapshot)
+{
+    std::set<DocTypeName> docTypeNames;
+    const auto &bootstrapConfig = configSnapshot.getBootstrapConfig();
+    const ProtonConfig &protonConfig = bootstrapConfig->getProtonConfig();
+    for (const auto &ddbConfig : protonConfig.documentdb) {
+        docTypeNames.emplace(ddbConfig.inputdoctypename);
+    }
+    _diskLayout->initAndPruneUnused(docTypeNames);
 }
 
 void
@@ -189,6 +210,8 @@ ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot)
         auto found(newDocTypes.find(dbitr->first));
         if (found == newDocTypes.end()) {
             _owner.removeDocumentDB(dbitr->first);
+            DocumentDBDirectoryHolder::waitUntilDestroyed(dbitr->second.second);
+            _diskLayout->remove(dbitr->first);
             dbitr = _documentDBs.erase(dbitr);
         } else {
             ++dbitr;

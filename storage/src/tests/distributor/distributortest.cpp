@@ -176,11 +176,11 @@ private:
                     trusted = true;
                 }
 
-                uint16_t node = atoi(tokenizer2[0].c_str());
+                uint16_t node = atoi(tokenizer2[0].data());
                 if (tokenizer2[1] == "r") {
                     removedNodes.push_back(node);
                 } else {
-                    uint32_t checksum = atoi(tokenizer2[1].c_str());
+                    uint32_t checksum = atoi(tokenizer2[1].data());
                     changedNodes.push_back(
                             BucketCopy(
                                     i + 1,

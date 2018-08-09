@@ -4,19 +4,19 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.jdisc.http.filter.security.athenz.AthenzPrincipalFilter;
+import com.yahoo.jdisc.http.filter.security.athenz.AthenzPrincipalFilterConfig;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 import com.yahoo.yolean.chain.After;
 
 import java.security.Principal;
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -38,13 +38,10 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
     private final String principalHeaderName;
 
     @Inject
-    public UserAuthWithAthenzPrincipalFilter(ZmsKeystore zmsKeystore,
-                                             Executor executor,
-                                             AthenzConfig athenzConfig,
-                                             CorsFilterConfig corsConfig) {
-        super(zmsKeystore, executor, athenzConfig, corsConfig);
+    public UserAuthWithAthenzPrincipalFilter(AthenzPrincipalFilterConfig filterConfig, AthenzConfig athenzConfig, CorsFilterConfig corsConfig) {
+        super(filterConfig, corsConfig);
         this.userAuthenticationPassThruAttribute = athenzConfig.userAuthenticationPassThruAttribute();
-        this.principalHeaderName = athenzConfig.principalHeaderName();
+        this.principalHeaderName = filterConfig.principalHeaderName();
     }
 
     @Override

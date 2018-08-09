@@ -44,12 +44,16 @@ public class ExpressionOptimizer {
         return null;
     }
 
-    public OptimizationReport optimize(RankingExpression expression, AbstractArrayContext arrayContext) {
+    public OptimizationReport optimize(RankingExpression expression, ContextIndex contextIndex) {
         OptimizationReport report = new OptimizationReport();
         // Note: Order of optimizations matter
-        gbdtOptimizer.optimize(expression, arrayContext, report);
-        gbdtForestOptimizer.optimize(expression, arrayContext, report);
+        gbdtOptimizer.optimize(expression, contextIndex, report);
+        gbdtForestOptimizer.optimize(expression, contextIndex, report);
         return report;
+    }
+
+    public OptimizationReport optimize(RankingExpression expression, AbstractArrayContext arrayContext) {
+        return optimize(expression, (ContextIndex)arrayContext);
     }
 
 }

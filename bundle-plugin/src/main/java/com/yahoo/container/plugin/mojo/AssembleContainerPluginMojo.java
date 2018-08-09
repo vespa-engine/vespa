@@ -9,10 +9,12 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 
 import java.io.File;
@@ -37,6 +39,9 @@ public class AssembleContainerPluginMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}")
     private MavenProject project = null;
 
+    @Component
+    private MavenProjectHelper projectHelper;
+
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session = null;
 
@@ -45,6 +50,12 @@ public class AssembleContainerPluginMojo extends AbstractMojo {
 
     @Parameter(alias = "UseCommonAssemblyIds", defaultValue = "false")
     private boolean useCommonAssemblyIds = false;
+
+    @Parameter(alias = "AttachBundle", defaultValue = "false")
+    private boolean attachBundleToArtifact;
+
+    @Parameter(alias = "BundleClassifier", defaultValue = "bundle")
+    private String bundleClassifierName;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -76,6 +87,13 @@ public class AssembleContainerPluginMojo extends AbstractMojo {
         addClassesDirectory(jarWithDependencies);
         addDependencies(jarWithDependencies);
         createArchive(jarFiles.get(Dependencies.WITH), jarWithDependencies);
+
+        if (attachBundleToArtifact) {
+            projectHelper.attachArtifact(project,
+                                         project.getArtifact().getType(),
+                                         bundleClassifierName,
+                                         jarFiles.get(Dependencies.WITH));
+        }
     }
 
     private File jarFileInBuildDirectory(String name, String suffix) {

@@ -81,7 +81,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesters'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
             "    <binding>http://*/application/v4/*</binding>\n" +
             "  </handler>\n" +

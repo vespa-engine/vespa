@@ -15,7 +15,7 @@ namespace proton {
 
 namespace flushengine { class ITlsStatsFactory; }
 
-class FlushEngine : public FastOS_Runnable
+class FlushEngine final : public FastOS_Runnable
 {
 public:
     class FlushMeta {
@@ -37,9 +37,7 @@ private:
     struct FlushInfo : public FlushMeta
     {
         FlushInfo();
-        FlushInfo(uint32_t taskId,
-                  const IFlushTarget::SP &target,
-                  const vespalib::string &destination);
+        FlushInfo(uint32_t taskId, const IFlushTarget::SP &target, const vespalib::string &destination);
         ~FlushInfo();
 
         IFlushTarget::SP  _target;
@@ -96,14 +94,13 @@ public:
      * @param numThreads The number of worker threads to use.
      * @param idleInterval The interval between when flushes are checked whne there are no one progressing.
      */
-    FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory>
-                tlsStatsFactory,
+    FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
                 IFlushStrategy::SP strategy, uint32_t numThreads, uint32_t idleIntervalMS);
 
     /**
      * Destructor. Waits for all pending tasks to complete.
      */
-    ~FlushEngine();
+    ~FlushEngine() override;
 
     /**
      * Observe and reset internal executor stats
@@ -145,19 +142,8 @@ public:
      * @param flushHandler The handler to register.
      * @return The replaced handler, if any.
      */
-    IFlushHandler::SP
-    putFlushHandler(const DocTypeName &docTypeName,
-                    const IFlushHandler::SP &flushHandler);
+    IFlushHandler::SP putFlushHandler(const DocTypeName &docTypeName, const IFlushHandler::SP &flushHandler);
 
-    /**
-     * Returns the flush handler for the given document type. If no handler was
-     * registered, this method returns an empty shared pointer.
-     *
-     * @param docType The document type whose handler to return.
-     * @return The registered handler, if any.
-     */
-    IFlushHandler::SP
-    getFlushHandler(const DocTypeName &docTypeName) const;
 
     /**
      * Removes and returns the flush handler for the given document type. If no
@@ -166,10 +152,8 @@ public:
      * @param docType The document type whose handler to remove.
      * @return The removed handler, if any.
      */
-    IFlushHandler::SP
-    removeFlushHandler(const DocTypeName &docTypeName);
+    IFlushHandler::SP removeFlushHandler(const DocTypeName &docTypeName);
 
-    // Implements FastOS_Runnable.
     void Run(FastOS_ThreadInterface *thread, void *arg) override;
 
     FlushMetaSet getCurrentlyFlushingSet() const;

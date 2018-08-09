@@ -119,7 +119,7 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     public ArrayContext clone() {
         ArrayContext clone = (ArrayContext)super.clone();
         clone.values = new Value[nameToIndex().size()];
-        Arrays.fill(values,constantZero);
+        Arrays.fill(values, constantZero);
         return clone;
     }
 

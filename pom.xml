@@ -56,6 +56,7 @@
         <module>container-dev</module>
         <module>container-di</module>
         <module>container-disc</module>
+        <module>container-integration-test</module>
         <module>container-jersey2</module>
         <module>container-messagebus</module>
         <module>container-search-and-docproc</module>
@@ -93,6 +94,7 @@
         <module>messagebus-disc</module>
         <module>messagebus</module>
         <module>metrics</module>
+        <module>model-inference</module>
         <module>node-repository</module>
         <module>node-admin</module>
         <module>node-maintainer</module>

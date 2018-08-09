@@ -6,8 +6,7 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/util/random_normal.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor for the random normal feature outputting a
@@ -61,7 +60,4 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
-
-} // namespace features
-} // namespace search
-
+}

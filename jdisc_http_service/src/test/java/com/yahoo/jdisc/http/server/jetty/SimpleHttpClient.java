@@ -6,12 +6,14 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.GzipCompressingEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
@@ -59,7 +61,7 @@ public class SimpleHttpClient {
         if (sslContext != null) {
             SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(
                     sslContext,
-                    SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+                    NoopHostnameVerifier.INSTANCE);
             builder.setSSLSocketFactory(sslConnectionFactory);
 
             Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
@@ -151,6 +153,11 @@ public class SimpleHttpClient {
 
         public RequestExecutor setContent(final String content) {
             this.entity = new StringEntity(content, StandardCharsets.UTF_8);
+            return this;
+        }
+
+        public RequestExecutor setGzipContent(String content) {
+            this.entity = new GzipCompressingEntity(new StringEntity(content, StandardCharsets.UTF_8));
             return this;
         }
 

@@ -78,11 +78,11 @@ public class Model implements Cloneable {
     private String defaultIndex = null;
     private Query.Type type = Query.Type.ALL;
     private Query parent;
-    private Set<String> sources=new LinkedHashSet<>();
-    private Set<String> restrict=new LinkedHashSet<>();
+    private Set<String> sources = new LinkedHashSet<>();
+    private Set<String> restrict = new LinkedHashSet<>();
     private String searchPath;
     private String documentDbName = null;
-    private Execution execution=new Execution(new Execution.Context(null, null, null, null, null));
+    private Execution execution = new Execution(new Execution.Context(null, null, null, null, null));
 
     public Model(Query query) {
         setParent(query);
@@ -101,7 +101,7 @@ public class Model implements Cloneable {
      */
     @Deprecated
     public void traceLanguage() {
-        if (getParent().getTraceLevel()<2) return;
+        if (getParent().getTraceLevel() < 2) return;
         if (language != null) {
             getParent().trace("Language " + getLanguage() + " specified directly as a parameter", false, 2);
         }
@@ -235,9 +235,9 @@ public class Model implements Cloneable {
      * Passing null causes this to be set to an empty string.
      */
     public void setQueryString(String queryString) {
-        if (queryString==null) queryString="";
+        if (queryString == null) queryString="";
         this.queryString = queryString;
-        queryTree=null; // Cause parsing of the new query string next time the tree is accessed
+        queryTree = null; // Cause parsing of the new query string next time the tree is accessed
     }
 
     /**
@@ -249,7 +249,7 @@ public class Model implements Cloneable {
     public String getQueryString() { return queryString; }
 
     /**
-     * Returns the query as an object structure.
+     * Returns the query as an object structure. Remember to have the correct Query.Type set.
      * This causes parsing of the query string if it has changed since this was last called
      * (i.e query parsing is lazy)
      */

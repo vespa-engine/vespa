@@ -35,7 +35,7 @@ ArithmeticValueUpdate::checkCompatibility(const Field& field) const
     if ( ! field.getDataType().inherits(NumericDataType::classId)) {
         throw IllegalArgumentException(vespalib::make_string(
                 "Can not perform arithmetic update on non-numeric field '%s'.",
-                field.getName().c_str()), VESPA_STRLOC);	
+                field.getName().data()), VESPA_STRLOC);
     }
 }
 

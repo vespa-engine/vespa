@@ -36,8 +36,10 @@ public interface EnvironmentResource {
 
     String API_PATH = "environment";
 
+    String APPLICATION_TEST_ZIP = "applicationTestZip";
     String APPLICATION_ZIP = "applicationZip";
     String DEPLOY_OPTIONS = "deployOptions";
+    String SUBMIT_OPTIONS = "submitOptions";
 
     @POST
     @Path("{environmentId}/region/{regionId}/instance/{instanceId}/deploy")

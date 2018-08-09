@@ -61,6 +61,7 @@ cache<P>::cache(BackingStore & b, size_t maxBytes) :
     _race(0),
     _insert(0),
     _write(0),
+    _update(0),
     _erase(0),
     _invalidate(0),
     _lookup(0),
@@ -120,16 +121,25 @@ cache<P>::read(const K & key)
 
 template< typename P >
 void
-cache<P>::write(const K & key, const V & value)
+cache<P>::write(const K & key, V value)
 {
+    size_t newSize = calcSize(key, value);
     vespalib::LockGuard storeGuard(getLock(key));
     {
         vespalib::LockGuard guard(_hashLock);
-        (*this)[key] = value;
-        _sizeBytes += calcSize(key, value);
+        if (Lru::hasKey(key)) {
+            _sizeBytes -= calcSize(key, (*this)[key]);
+            _update++;
+        }
+    }
+
+    _store.write(key, value);
+    {
+        vespalib::LockGuard guard(_hashLock);
+        (*this)[key] = std::move(value);
+        _sizeBytes += newSize;
         _write++;
     }
-    _store.write(key, value);
 }
 
 template< typename P >

@@ -33,7 +33,7 @@ public class GBDTOptimizer extends Optimizer {
      * @param report     the optimization report to which actions of this is logged
      */
     @Override
-    public void optimize(RankingExpression expression, AbstractArrayContext context, OptimizationReport report) {
+    public void optimize(RankingExpression expression, ContextIndex context, OptimizationReport report) {
         if (!isEnabled()) return;
 
         this.report = report;
@@ -60,7 +60,7 @@ public class GBDTOptimizer extends Optimizer {
      *
      * @return the optimized expression
      */
-    private ExpressionNode optimize(ExpressionNode node, AbstractArrayContext context) {
+    private ExpressionNode optimize(ExpressionNode node, ContextIndex context) {
         if (node instanceof ArithmeticNode) {
             Iterator<ExpressionNode> childIt = ((ArithmeticNode)node).children().iterator();
             ExpressionNode ret = optimize(childIt.next(), context);
@@ -77,7 +77,7 @@ public class GBDTOptimizer extends Optimizer {
         return node;
     }
 
-    private ExpressionNode createGBDTNode(IfNode cNode, AbstractArrayContext context) {
+    private ExpressionNode createGBDTNode(IfNode cNode,ContextIndex context) {
         List<Double> values = new ArrayList<>();
         try {
             consumeNode(cNode, values, context);
@@ -93,7 +93,7 @@ public class GBDTOptimizer extends Optimizer {
     /**
      * Recursively consume nodes into the value list Returns the number of values produced by this.
      */
-    private int consumeNode(ExpressionNode node, List<Double> values, AbstractArrayContext context) {
+    private int consumeNode(ExpressionNode node, List<Double> values, ContextIndex context) {
         int beforeIndex = values.size();
         if ( node instanceof IfNode) {
             IfNode ifNode = (IfNode)node;
@@ -113,7 +113,7 @@ public class GBDTOptimizer extends Optimizer {
     }
 
     /** Consumes the if condition and return the size of the values resulting, for convenience */
-    private int consumeIfCondition(ExpressionNode condition, List<Double> values, AbstractArrayContext context) {
+    private int consumeIfCondition(ExpressionNode condition, List<Double> values, ContextIndex context) {
         if (condition instanceof ComparisonNode) {
             ComparisonNode comparison = (ComparisonNode)condition;
             if (comparison.getOperator() == TruthOperator.SMALLER)
@@ -138,7 +138,7 @@ public class GBDTOptimizer extends Optimizer {
         return values.size();
     }
 
-    private double getVariableIndex(ExpressionNode node, AbstractArrayContext context) {
+    private double getVariableIndex(ExpressionNode node, ContextIndex context) {
         if (!(node instanceof ReferenceNode)) {
             throw new IllegalArgumentException("Contained a left-hand comparison expression " +
                                                "which was not a feature value but was: " + node);

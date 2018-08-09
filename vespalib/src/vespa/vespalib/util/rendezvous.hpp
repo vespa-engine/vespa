@@ -19,6 +19,9 @@ Rendezvous<IN, OUT>::Rendezvous(size_t n)
 }
 
 template <typename IN, typename OUT>
+Rendezvous<IN, OUT>::~Rendezvous() = default;
+
+template <typename IN, typename OUT>
 OUT
 Rendezvous<IN, OUT>::rendezvous(const IN &input)
 {

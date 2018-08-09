@@ -109,6 +109,13 @@ section h3.section-subheading {
     margin-top: 0;
 }
 
+header .help-title {
+    color: #FFC43C;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+
 .text-muted {
     color: #303030;
 }
@@ -242,7 +249,7 @@ header .methodselector{
   -webkit-transition:.3s;
   transition:.3s
 }
-
+header .intro-help:hover {background-color: #4EA2D6 !important;}
 header .methodselector:hover {background-color: #79B4D8;}
 header .button:hover {background-color: #79B4D8;}
 header .removeRow:hover {background-color: #79B4D8;}
@@ -480,11 +487,27 @@ header .intro-copy {
     padding-left: 50px;
     transform: translateX(-50%);
 }
+
+header .intro-help {
+    display: inline-block;
+    margin-top: 15px;
+    width: 134px;
+    height: 45px;
+
+    border-top-left-radius: 29%;
+    border-top-right-radius: 26%;
+    border-bottom-right-radius: 27%;
+    border-bottom-left-radius: 29%;
+
+}
+
 header .intro-refresh {
     display: inline-block;
     margin-top: 15px;
+    margin-left: 25px;
     transform: translateX(-50%);
 }
+
 
 @media (min-height: 1150px) {
     header .intro-down-arrow {

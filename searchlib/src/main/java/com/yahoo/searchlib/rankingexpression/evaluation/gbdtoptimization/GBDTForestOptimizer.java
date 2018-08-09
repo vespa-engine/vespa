@@ -2,8 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext;
-import com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext;
+import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport;
 import com.yahoo.searchlib.rankingexpression.evaluation.Optimizer;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
@@ -34,7 +33,7 @@ public class GBDTForestOptimizer extends Optimizer {
      * @param report     the optimization report to which actions of this is logged
      */
     @Override
-    public void optimize(RankingExpression expression, AbstractArrayContext context, OptimizationReport report) {
+    public void optimize(RankingExpression expression, ContextIndex context, OptimizationReport report) {
         if ( ! isEnabled()) return;
 
         this.report = report;

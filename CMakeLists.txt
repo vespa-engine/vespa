@@ -20,6 +20,8 @@ include(build_settings.cmake)
 # Enable CTest unit testing
 enable_testing()
 
+vespa_install_data(valgrind-suppressions.txt etc/vespa)
+
 # Include vespa config definitions in every target
 include_directories(BEFORE ${CMAKE_BINARY_DIR}/configdefinitions/src)
 
@@ -45,6 +47,7 @@ add_subdirectory(container-disc)
 add_subdirectory(container-jersey2)
 add_subdirectory(container-messagebus)
 add_subdirectory(container-search)
+add_subdirectory(container-search-gui)
 add_subdirectory(container-search-and-docproc)
 add_subdirectory(clustercontroller-apps)
 add_subdirectory(clustercontroller-apputil)

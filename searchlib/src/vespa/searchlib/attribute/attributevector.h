@@ -500,6 +500,8 @@ public:
 
     // Implements IAttributeVector
     bool findEnum(const char *value, EnumHandle &e) const override;
+    std::vector<EnumHandle> findFoldedEnums(const char *) const override;
+
     const char * getStringFromEnum(EnumHandle e) const override;
 
 ///// Modify API
@@ -536,16 +538,15 @@ public:
         typedef std::unique_ptr<SearchContext> UP;
         ~SearchContext();
 
-        // Implements attribute::ISearchContext
-        virtual unsigned int approximateHits() const override;
-        virtual queryeval::SearchIterator::UP createIterator(fef::TermFieldMatchData *matchData, bool strict) override;
-        virtual void fetchPostings(bool strict) override;
-        virtual bool valid() const override { return false; }
-        virtual Int64Range getAsIntegerTerm() const override { return Int64Range(); }
-        virtual const QueryTermBase &queryTerm() const override {
-            return *static_cast<const QueryTermBase *>(NULL);
+        unsigned int approximateHits() const override;
+        queryeval::SearchIterator::UP createIterator(fef::TermFieldMatchData *matchData, bool strict) override;
+        void fetchPostings(bool strict) override;
+        bool valid() const override { return false; }
+        Int64Range getAsIntegerTerm() const override { return Int64Range(); }
+        const QueryTermBase * queryTerm() const override {
+            return static_cast<const QueryTermBase *>(nullptr);
         }
-        virtual const vespalib::string &attributeName() const override {
+        const vespalib::string &attributeName() const override {
             return _attr.getName();
         }
 

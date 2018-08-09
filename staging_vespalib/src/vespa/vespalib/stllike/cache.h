@@ -101,7 +101,7 @@ public:
      * Update the cache and write through to backing store.
      * Object is then put at head of LRU list.
      */
-    void write(const K & key, const V & value);
+    void write(const K & key, V value);
 
     /**
      * Tell if an object with given key exists in the cache.
@@ -148,6 +148,7 @@ private:
     mutable size_t      _race;
     mutable size_t      _insert;
     mutable size_t      _write;
+    mutable size_t      _update;
     mutable size_t      _erase;
     mutable size_t      _invalidate;
     mutable size_t      _lookup;

@@ -179,7 +179,7 @@ public:
      * @return true if the schema could be loaded.
      **/
     bool
-    loadFromFile(const vespalib::stringref & fileName);
+    loadFromFile(const vespalib::string & fileName);
 
     /**
      * Save this schema to the file with the given name.
@@ -188,7 +188,7 @@ public:
      * @return true if the schema could be saved.
      **/
     bool
-    saveToFile(const vespalib::stringref & fileName) const;
+    saveToFile(const vespalib::string & fileName) const;
 
     vespalib::string toString() const;
 

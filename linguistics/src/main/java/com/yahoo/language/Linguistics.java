@@ -41,7 +41,12 @@ public interface Linguistics {
         CHARACTER_CLASSES
     }
 
-    /** The same as new com.yahoo.language.simple.SimpleLinguistics(). Prefer using that directly. */
+    /**
+     * The same as new com.yahoo.language.simple.SimpleLinguistics(). Prefer using that directly.
+     *
+     * @deprecated use new com.yahoo.language.simple.SimpleLinguistics()
+     */
+    @Deprecated // TODO: Remove this field on Vespa 7
     Linguistics SIMPLE = new SimpleLinguistics();
 
     /**

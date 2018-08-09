@@ -22,8 +22,8 @@ public class BackTargetTest {
     public void setUp() throws ListenFailedException {
         server   = new Supervisor(new Transport());
         client   = new Supervisor(new Transport());
-        acceptor = server.listen(new Spec(Test.PORT));
-        target   = client.connect(new Spec("localhost", Test.PORT));
+        acceptor = server.listen(new Spec(0));
+        target   = client.connect(new Spec("localhost", acceptor.port()));
 
         server.addMethod(new Method("inc", "", "", this, "server_inc"));
         server.addMethod(new Method("sample_target", "", "", this,

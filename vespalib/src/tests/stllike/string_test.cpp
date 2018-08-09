@@ -265,10 +265,10 @@ TEST("testString") {
     // Test std::string conversion of empty string
     stringref sref;
     std::string stdString(sref);
-    EXPECT_TRUE(strcmp("", sref.c_str()) == 0);
+    EXPECT_TRUE(strcmp("", sref.data()) == 0);
     stdString = "abc";
     stringref sref2(stdString);
-    EXPECT_TRUE(stdString.c_str() == sref2.c_str());
+    EXPECT_TRUE(stdString.c_str() == sref2.data());
     EXPECT_TRUE(stdString == sref2);
     EXPECT_TRUE(sref2 == stdString);
     {

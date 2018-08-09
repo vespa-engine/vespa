@@ -5,17 +5,31 @@
     "number": 112358,
     "start": 1196676930000,
     "steps": {
-      "DIR": "U",
-      "IIR": "F",
-      "DR":  "S",
-      "IR":  "U",
-      "DAR": "F",
-      "DT":  "S",
-      "IT":  "U",
-      "DAT": "F",
-      "ST":  "S",
-      "ET":  "U",
-      "R":   "F"
+      "deployInitialReal": "unfinished",
+      "installInitialReal": "failed",
+      "deployReal": "succeeded",
+      "installReal": "unfinished",
+      "deactivateReal": "failed",
+      "deployTester": "succeeded",
+      "installTester": "unfinished",
+      "deactivateTester": "failed",
+      "startTests": "succeeded",
+      "endTests": "unfinished",
+      "report": "failed"
+    },
+    "versions": {
+      "platform": "1.2.3",
+      "repository": "git@github.com:user/repo.git",
+      "branch": "master",
+      "commit": "f00bad",
+      "build": 123,
+      "source": {
+        "platform": "1.2.3",
+        "repository": "git@github.com:user/repo.git",
+        "branch": "master",
+        "commit": "badb17",
+        "build": 122
+      }
     }
   }
 ]

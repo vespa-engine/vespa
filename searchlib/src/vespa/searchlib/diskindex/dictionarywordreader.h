@@ -106,8 +106,8 @@ public:
     }
 
     bool
-    open(const vespalib::stringref & dictionaryName,
-         const vespalib::stringref & wordMapName,
+    open(const vespalib::string & dictionaryName,
+         const vespalib::string & wordMapName,
          const TuneFileSeqRead &tuneFileRead);
 
     void

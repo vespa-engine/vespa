@@ -32,13 +32,13 @@ Regexp::compile(const vespalib::stringref & re, Flags flags)
     preg->fastmap = static_cast<char *>(malloc(256));
     preg->buffer = NULL;
     preg->allocated = 0;
-    const char * error = re_compile_pattern(re.c_str(), re.size(), preg);
+    const char * error = re_compile_pattern(re.data(), re.size(), preg);
     if (error != 0) {
-        LOG(warning, "invalid regexp '%s': %s", re.c_str(), error);
+        LOG(warning, "invalid regexp '%s': %s", vespalib::string(re).c_str(), error);
         return false;
     }
     if (re_compile_fastmap(preg) != 0) {
-        LOG(warning, "re_compile_fastmap failed for regexp '%s'", re.c_str());
+        LOG(warning, "re_compile_fastmap failed for regexp '%s'", vespalib::string(re).c_str());
         return false;
     }
     return true;
@@ -57,7 +57,7 @@ Regexp::match(const vespalib::stringref & s) const
 {
     if ( ! valid() ) { return false; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
-    int pos(re_search(preg, s.c_str(), s.size(), 0, s.size(), NULL));
+    int pos(re_search(preg, s.data(), s.size(), 0, s.size(), NULL));
     if (pos < -1) {
         throw IllegalArgumentException(make_string("re_search failed with code(%d)", pos));
     }
@@ -70,13 +70,13 @@ vespalib::string Regexp::replace(const vespalib::stringref & s, const vespalib::
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
     vespalib::string modified;
     int prev(0);
-    for(int pos(re_search(preg, s.c_str(), s.size(), 0, s.size(), NULL));
+    for(int pos(re_search(preg, s.data(), s.size(), 0, s.size(), NULL));
         pos >=0;
-        pos = re_search(preg, s.c_str()+prev, s.size()-prev, 0, s.size()-prev, NULL))
+        pos = re_search(preg, s.data()+prev, s.size()-prev, 0, s.size()-prev, NULL))
     {
         modified += s.substr(prev, pos);
         modified += replacement;
-        int count = re_match(preg, s.c_str()+prev, s.size()-prev, pos, NULL);
+        int count = re_match(preg, s.data()+prev, s.size()-prev, pos, NULL);
         prev += pos + count;
     }
     modified += s.substr(prev);

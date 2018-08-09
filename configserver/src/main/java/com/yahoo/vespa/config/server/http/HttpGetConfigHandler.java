@@ -13,7 +13,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import java.util.Optional;
 
 /**
- * HTTP handler for a v2 getConfig operation
+ * HTTP handler for a v1 getConfig operation
  *
  * @author Ulf Lilleengen
  */

@@ -35,10 +35,10 @@ import java.util.Map;
  * <h3>Simple usage</h3>
 <pre><code>
 try {
-    MapContext context=new MapContext();
-    context.put("one",1d);
-    RankingExpression expression=new RankingExpression("10*if(i&gt;35,if(i&gt;one,if(i&gt;=670,4,8),if(i&gt;8000,5,3)),if(i==478,90,91))");
-    double result=expression.evaluate(context);
+    MapContext context = new MapContext();
+    context.put("one", 1d);
+    RankingExpression expression = new RankingExpression("10*if(i&gt;35,if(i&gt;one,if(i&gt;=670,4,8),if(i&gt;8000,5,3)),if(i==478,90,91))");
+    double result = expression.evaluate(context);
    }
 catch (ParseException e) {
     throw new RuntimeException(e);
@@ -57,10 +57,10 @@ ArrayContext contextPrototype;
 // Create reusable, gbdt optimized expression and context.
 // The expression is multithread-safe while the context created is not
 try {
-    RankingExpression expression=new RankingExpression("10*if(i&gt;35,if(i&gt;one,if(i&gt;=670,4,8),if(i&gt;8000,5,3)),if(i==478,90,91))");
-    ArrayContext contextPrototype=new ArrayContext(expression);
-    ExpressionOptimizer optimizer=new ExpressionOptimizer(); // Increases evaluation speed of gbdt form expressions by 3-4x
-    OptimizationReport triviaAboutTheOptimization=optimizer.optimize(expression,contextPrototype);
+    RankingExpression expression = new RankingExpression("10*if(i&gt;35,if(i&gt;one,if(i&gt;=670,4,8),if(i&gt;8000,5,3)),if(i==478,90,91))");
+    ArrayContext contextPrototype = new ArrayContext(expression);
+    ExpressionOptimizer optimizer = new ExpressionOptimizer(); // Increases evaluation speed of gbdt form expressions by 3-4x
+    OptimizationReport triviaAboutTheOptimization = optimizer.optimize(expression, contextPrototype);
 }
 catch (ParseException e) {
     throw new RuntimeException(e);
@@ -69,9 +69,9 @@ catch (ParseException e) {
 ...
 
 // Execution (many)
-context=contextPrototype.clone(); // If evaluation is multithreaded - skip this if execution is single-threaded
+context = contextPrototype.clone(); // If evaluation is multithreaded - skip this if execution is single-threaded
 context.put("one",1d);
-double result=expression.evaluate(context);
+double result = expression.evaluate(context);
 </code></pre>
  *
  * @author Simon Thoresen Hult
@@ -276,7 +276,7 @@ public class RankingExpression implements Serializable {
      * Returns the value of evaluating this expression over the given context.
      *
      * @param context The variable bindings to use for this evaluation.
-     * @return The evaluation result.
+     * @return the evaluation result.
      * @throws IllegalArgumentException if there are variables which are not bound in the given map
      */
     public Value evaluate(Context context) {

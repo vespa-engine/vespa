@@ -12,7 +12,7 @@ SummaryException::SummaryException(const vespalib::stringref &msg,
                                    FastOS_FileInterface &file,
                                    const vespalib::stringref &location)
     : IoException(make_string("%s : Failing file = '%s'. Reason given by OS = '%s'",
-                              msg.c_str(), file.GetFileName(), file.getLastErrorString().c_str()),
+                              vespalib::string(msg).c_str(), file.GetFileName(), file.getLastErrorString().c_str()),
                   getErrorType(file.GetLastError()), location)
 { }
 

@@ -4,8 +4,7 @@
 #include "termwise_helper.h"
 #include <vespa/searchlib/common/bitvector.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 AndNotSearch::doSeek(uint32_t docid)
@@ -160,5 +159,4 @@ AndNotSearch::or_hits_into(BitVector &result, uint32_t begin_id) {
     result.orWith(*get_hits(begin_id));
 }
 
-}  // namespace queryeval
-}  // namespace search
+}

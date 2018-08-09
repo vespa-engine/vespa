@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include <vector>
 #include "multisearch.h"
 #include <vespa/searchlib/attribute/attributeiterators.h>
 #include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A simple implementation of the AndNot search operation.
@@ -97,6 +95,4 @@ private:
     void doUnpack(uint32_t docid) override;
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

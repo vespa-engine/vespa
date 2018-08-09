@@ -226,7 +226,7 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     _isPrefix(qTerm->isPrefix()),
     _isRegex(qTerm->isRegex()),
     _queryTerm(std::move(qTerm)),
-    _termUCS4(queryTerm().getUCS4Term()),
+    _termUCS4(queryTerm()->getUCS4Term()),
     _bufferLen(toBeSearched.getMaxValueCount()),
     _buffer()
 {
@@ -247,9 +247,9 @@ StringAttribute::StringSearchContext::valid() const {
     return (_queryTerm.get() && (!_queryTerm->empty()));
 }
 
-const QueryTermBase &
+const QueryTermBase *
 StringAttribute::StringSearchContext::queryTerm() const {
-    return static_cast<const QueryTermBase &>(*_queryTerm);
+    return static_cast<const QueryTermBase *>(_queryTerm.get());
 }
 
 uint32_t StringAttribute::clearDoc(DocId doc)

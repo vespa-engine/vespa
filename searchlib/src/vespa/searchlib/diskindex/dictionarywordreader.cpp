@@ -28,8 +28,8 @@ DictionaryWordReader::~DictionaryWordReader()
 
 
 bool
-DictionaryWordReader::open(const vespalib::stringref &dictionaryName,
-                           const vespalib::stringref & wordMapName,
+DictionaryWordReader::open(const vespalib::string & dictionaryName,
+                           const vespalib::string & wordMapName,
                            const TuneFileSeqRead &tuneFileRead)
 {
     _old2newwordfile.reset(new Fast_BufferedFile(new FastOS_File));

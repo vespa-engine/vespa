@@ -5,18 +5,18 @@
 #include "collectiontype.h"
 #include "basictype.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace search {
-
-class IDocumentWeightAttribute;
-class QueryTermSimple;
-
-namespace tensor {
-class ITensorAttribute;
+    class IDocumentWeightAttribute;
+    class QueryTermSimple;
 }
 
-namespace attribute {
+namespace search::tensor {
+    class ITensorAttribute;
+}
+
+namespace search::attribute {
 
 class ISearchContext;
 class SearchContextParams;
@@ -251,6 +251,16 @@ public:
     virtual bool findEnum(const char * value, EnumHandle & e) const = 0;
 
     /**
+     * Finds all enum values matching the given string value.
+     * This method will only have effect if @ref getBasicType() returns BasicType::STRING and
+     * @ref hasEnum() returns true.
+     *
+     * @param value the string value to lookup.
+     * @return vector of EnumHandles, size 0 if no match found.
+     **/
+    virtual std::vector<EnumHandle> findFoldedEnums(const char * value) const = 0;
+
+    /**
      * Given an enum handle, returns the string it refers to.
      * This method will only have effect if @ref getBasicType() returns BasicType::STRING and
      * @ref hasEnum() returns true.
@@ -427,6 +437,4 @@ private:
 
 };
 
-} // namespace fef
-} // namespace search
-
+}

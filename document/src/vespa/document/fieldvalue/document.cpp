@@ -32,12 +32,13 @@ void documentTypeError(const vespalib::stringref & name) __attribute__((noinline
 void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) __attribute__((noinline));
 
 void documentTypeError(const vespalib::stringref & name) {
-    throw IllegalArgumentException(make_string("Cannot generate a document with non-document type %s.", name.c_str()), VESPA_STRLOC);
+    throw IllegalArgumentException(make_string("Cannot generate a document with non-document type %s.",
+                                               vespalib::string(name).c_str()), VESPA_STRLOC);
 }
 
 void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) {
     throw IllegalArgumentException(make_string("Trying to create a document with type %s that don't match the id (type %s).",
-                                               type.c_str(), docidType.c_str()),
+                                               vespalib::string(type).c_str(), vespalib::string(docidType).c_str()),
                                    VESPA_STRLOC);
 }
 

@@ -44,6 +44,7 @@ public:
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
     bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
     bool findEnum(const char * value, EnumHandle & e) const override = 0;
+    std::vector<EnumHandle> findFoldedEnums(const char *value) const override = 0;
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override;
     uint32_t get(DocId doc, double * v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override;
@@ -103,7 +104,7 @@ private:
     protected:
         bool valid() const override;
 
-        const QueryTermBase & queryTerm() const override;
+        const QueryTermBase * queryTerm() const override;
         bool isMatch(const char *src) const {
             if (__builtin_expect(isRegex(), false)) {
                 return getRegex()->match(src);

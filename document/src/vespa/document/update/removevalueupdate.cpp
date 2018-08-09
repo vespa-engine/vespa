@@ -44,7 +44,7 @@ RemoveValueUpdate::checkCompatibility(const Field& field) const
             throw IllegalArgumentException(
                     "Cannot remove value of type "
                     + _key->getDataType()->toString() + " from field "
-                    + field.getName().c_str() + " of container type "
+                    + field.getName() + " of container type "
                     + field.getDataType().toString(), VESPA_STRLOC);
         }
     } else {

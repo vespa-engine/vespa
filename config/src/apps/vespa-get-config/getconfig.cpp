@@ -49,7 +49,8 @@ GetConfig::usage()
     fprintf(stderr, "usage: %s -n name -i configId\n", _argv[0]);
     fprintf(stderr, "-n name           (config name, including namespace, on the form <namespace>.<name>)\n");
     fprintf(stderr, "-i configId       (config id, optional)\n");
-    fprintf(stderr, "-j                (output config as json)\n");
+    fprintf(stderr, "-j                (output config as json, optional)\n");
+    fprintf(stderr, "-l                (output config in legacy cfg format, optional)\n");
     fprintf(stderr, "-a schema         (config def schema file, optional)\n");
     fprintf(stderr, "-v defVersion     (config definition version, optional, deprecated)\n");
     fprintf(stderr, "-m defMd5         (definition md5sum, optional)\n");
@@ -134,6 +135,9 @@ GetConfig::Main()
             break;
         case 'j':
             printAsJson = true;
+            break;
+        case 'l':
+            printAsJson = false;
             break;
         case 'm':
             defMD5 = optArg;

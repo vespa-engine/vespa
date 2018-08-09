@@ -130,6 +130,10 @@ public class VespaMetricSet {
         metrics.add(new Metric("http.status.4xx.rate"));
         metrics.add(new Metric("http.status.5xx.rate"));
 
+        metrics.add(new Metric("jdisc.http.request.uri_length.average"));
+        metrics.add(new Metric("jdisc.http.request.uri_length.max"));
+        metrics.add(new Metric("jdisc.http.request.content_size.average"));
+        metrics.add(new Metric("jdisc.http.request.content_size.max"));
         return metrics;
     }
 
@@ -169,6 +173,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("active_queries.average", "active_queries"));
         metrics.add(new Metric("feed.latency.average"));
         metrics.add(new Metric("queries.rate", "queries"));
+        metrics.add(new Metric("query_container_latency.average"));
         metrics.add(new Metric("query_latency.average", "mean_query_latency"));
         metrics.add(new Metric("query_latency.max", "max_query_latency"));
         metrics.add(new Metric("query_latency.95percentile", "95p_query_latency"));

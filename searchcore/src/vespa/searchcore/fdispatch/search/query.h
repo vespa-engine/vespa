@@ -70,6 +70,6 @@ private:
                             const vespalib::stringref &b)
     {
         return (a.size() == b.size() &&
-                memcmp(a.c_str(), b.c_str(), a.size()) == 0);
+                memcmp(a.data(), b.data(), a.size()) == 0);
     }
 };
