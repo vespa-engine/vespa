@@ -209,7 +209,8 @@ std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
         return std::unique_ptr<IDiversifier>();
     }
     size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams->_min_groups;
-    return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams->_min_groups, true);
+    return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams->_min_groups,
+                                   _diversityParams->_cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
 }
 
 }
