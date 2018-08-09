@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
@@ -12,7 +10,6 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.client.InstanceCsrGenerator;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
@@ -54,8 +51,6 @@ public class AthenzCredentialsMaintainer {
     private static final Duration EXPIRY_MARGIN = Duration.ofDays(1);
     private static final Duration REFRESH_PERIOD = Duration.ofDays(1);
     private static final Path CONTAINER_SIA_DIRECTORY = Paths.get("/var/lib/sia");
-
-    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final boolean enabled;
     private final PrefixLogger log;
@@ -177,7 +172,7 @@ public class AthenzCredentialsMaintainer {
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             false,
                             csr);
-            writeIdentityDocument(signedIdentityDocument);
+            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
             writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
             log.info("Instance successfully registered and credentials written to file");
         } catch (IOException e) {
@@ -186,7 +181,7 @@ public class AthenzCredentialsMaintainer {
     }
 
     private void refreshIdentity() {
-        SignedIdentityDocument identityDocument = readIdentityDocument();
+        SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         Pkcs10Csr csr = csrGenerator.generateCsr(containerIdentity, identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
         SSLContext containerIdentitySslContext =
@@ -210,27 +205,6 @@ public class AthenzCredentialsMaintainer {
                 log.error("Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
                 registerIdentity();
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private SignedIdentityDocument readIdentityDocument() {
-        try {
-            SignedIdentityDocumentEntity entity = mapper.readValue(identityDocumentFile.toFile(), SignedIdentityDocumentEntity.class);
-            return EntityBindingsMapper.toSignedIdentityDocument(entity);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private void writeIdentityDocument(SignedIdentityDocument signedIdentityDocument) {
-        try {
-            SignedIdentityDocumentEntity entity =
-                    EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument);
-            Path tempIdentityDocumentFile = toTempPath(identityDocumentFile);
-            mapper.writeValue(tempIdentityDocumentFile.toFile(), entity);
-            Files.move(tempIdentityDocumentFile, identityDocumentFile, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
