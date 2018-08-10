@@ -94,7 +94,7 @@
         <module>messagebus-disc</module>
         <module>messagebus</module>
         <module>metrics</module>
-        <module>model-inference</module>
+        <module>model-evaluation</module>
         <module>node-repository</module>
         <module>node-admin</module>
         <module>node-maintainer</module>

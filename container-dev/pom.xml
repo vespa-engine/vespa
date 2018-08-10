@@ -88,7 +88,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>model-inference</artifactId>
+      <artifactId>model-evaluation</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
