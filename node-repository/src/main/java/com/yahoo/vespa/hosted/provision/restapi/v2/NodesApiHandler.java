@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -15,7 +16,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -37,7 +38,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
@@ -99,7 +99,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
         if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(maintenance.jobControl());
-        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(maintenance.infrastructureVersions());
+        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(maintenance.infrastructureVersions(), nodeRepository.osVersions());
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
@@ -139,7 +139,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Updated " + node.hostname());
         }
         else if (path.startsWith("/nodes/v2/upgrade/")) {
-            return setInfrastructureVersion(request);
+            return setTargetVersions(request);
         }
 
         throw new NotFoundException("Nothing at '" + path + "'");
@@ -256,7 +256,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             path = path.substring(0, path.length()-1);
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return path;
-        return path.substring(lastSlash + 1, path.length());
+        return path.substring(lastSlash + 1);
     }
 
     private static boolean isPatchOverride(HttpRequest request) {
@@ -280,19 +280,33 @@ public class NodesApiHandler extends LoggingRequestHandler {
         return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
     }
 
-    private MessageResponse setInfrastructureVersion(HttpRequest request) {
+    private MessageResponse setTargetVersions(HttpRequest request) {
         NodeType nodeType = NodeType.valueOf(lastElement(request.getUri().getPath()).toLowerCase());
         Inspector inspector = toSlime(request.getData()).get();
+        List<String> messageParts = new ArrayList<>(2);
 
-        Inspector versionField = inspector.field("version");
-        if (!versionField.valid())
-            throw new IllegalArgumentException("'version' is missing");
-        Version version = Version.fromString(versionField.asString());
         boolean force = inspector.field("force").asBool();
+        Inspector versionField = inspector.field("version");
+        Inspector osVersionField = inspector.field("osVersion");
 
-        maintenance.infrastructureVersions().setTargetVersion(nodeType, version, force);
+        if (versionField.valid()) {
+            Version version = Version.fromString(versionField.asString());
+            maintenance.infrastructureVersions().setTargetVersion(nodeType, version, force);
+            messageParts.add("version to " + version.toFullString());
+        }
 
-        return new MessageResponse("Set version for " + nodeType + " to " + version.toFullString());
+        if (osVersionField.valid()) {
+            Version osVersion = Version.fromString(osVersionField.asString());
+            nodeRepository.osVersions().setTarget(nodeType, osVersion, force);
+            messageParts.add("osVersion to " + osVersion.toFullString());
+        }
+
+        if (messageParts.isEmpty()) {
+            throw new IllegalArgumentException("At least one of 'version' and 'osVersion' must be set");
+        }
+
+        return new MessageResponse("Set " + String.join(", ", messageParts) +
+                                   " for nodes of type " + nodeType);
     }
 
     private static String hostnamesAsString(List<Node> nodes) {

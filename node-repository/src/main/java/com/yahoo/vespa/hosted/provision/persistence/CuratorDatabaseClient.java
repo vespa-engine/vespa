@@ -71,6 +71,7 @@ public class CuratorDatabaseClient {
             curatorDatabase.create(toPath(state));
         curatorDatabase.create(inactiveJobsPath());
         curatorDatabase.create(infrastructureVersionsPath());
+        curatorDatabase.create(osVersionsPath());
     }
 
     /**
@@ -374,4 +375,23 @@ public class CuratorDatabaseClient {
         return root.append("infrastructureVersions");
     }
 
+    public Map<NodeType, Version> readOsVersions() {
+        return read(osVersionsPath(), NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
+    }
+
+    public void writeOsVersions(Map<NodeType, Version> versions) {
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(osVersionsPath().getAbsolute(),
+                                                         NodeTypeVersionsSerializer.toJson(versions)));
+        transaction.commit();
+    }
+
+    public Lock lockOsVersions() {
+        return lock(lockRoot.append("osVersionsLock"), defaultLockTimeout);
+    }
+
+    private Path osVersionsPath() {
+        return root.append("osVersions");
+    }
 }

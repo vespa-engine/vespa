@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -506,21 +505,21 @@ public class RestApiTest {
     @Test
     public void test_upgrade() throws IOException {
         // Initially, no versions are set
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"), "{\"versions\":{}}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"), "{\"versions\":{},\"osVersions\":{}}");
 
         // Set version for config and confighost
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
                         Utf8.toBytes("{\"version\": \"6.123.456\"}"),
                         Request.Method.PATCH),
-                "{\"message\":\"Set version for config to 6.123.456\"}");
+                "{\"message\":\"Set version to 6.123.456 for nodes of type config\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
                         Utf8.toBytes("{\"version\": \"6.123.456\"}"),
                         Request.Method.PATCH),
-                "{\"message\":\"Set version for confighost to 6.123.456\"}");
+                "{\"message\":\"Set version to 6.123.456 for nodes of type confighost\"}");
 
         // Verify versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\"}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\"},\"osVersions\":{}}");
 
         // Downgrade without force fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -534,11 +533,51 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
                         Utf8.toBytes("{\"version\": \"6.123.1\",\"force\":true}"),
                         Request.Method.PATCH),
-                "{\"message\":\"Set version for confighost to 6.123.1\"}");
+                "{\"message\":\"Set version to 6.123.1 for nodes of type confighost\"}");
 
         // Verify version has been updated
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"},\"osVersions\":{}}");
+
+        // Upgrade OS for confighost and host
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Set osVersion to 7.5.2 for nodes of type confighost\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/host",
+                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Set osVersion to 7.5.2 for nodes of type host\"}");
+
+        // OS versions are set
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
+                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"}}");
+
+        // Upgrade OS and Vespa together
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                                   Utf8.toBytes("{\"version\": \"6.124.42\", \"osVersion\": \"7.5.2\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Set version to 6.124.42, osVersion to 7.5.2 for nodes of type confighost\"}");
+
+        // Attempt to upgrade unsupported node type
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
+                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
+                                   Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Setting target OS version for config nodes is unsupported\"}");
+
+        // Attempt to downgrade OS
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                                   Utf8.toBytes("{\"osVersion\": \"7.4.2\"}"),
+                                   Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot set target OS version to 7.4.2 without setting 'force', as it's lower than the current version: 7.5.2\"}");
+
+        // Downgrading OS with force succeeds
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                                   Utf8.toBytes("{\"osVersion\": \"7.4.2\", \"force\": true}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Set osVersion to 7.4.2 for nodes of type confighost\"}");
     }
 
     /** Tests the rendering of each node separately to make it easier to find errors */
