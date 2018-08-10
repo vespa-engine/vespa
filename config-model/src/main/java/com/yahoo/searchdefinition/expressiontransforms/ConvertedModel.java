@@ -69,7 +69,7 @@ public class ConvertedModel {
                           ModelImporter modelImporter,
                           Map<Path, ImportedModel> importedModels) {
         ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
-        if ( ! store.hasStoredModel()) // not converted yet - access TensorFlow model files
+        if ( ! store.hasStoredModel()) // not converted yet - access from models/ directory
             convertedExpression = importModel(store, context.rankProfile(), context.queryProfiles(), modelImporter, importedModels);
         else
             convertedExpression = transformFromStoredModel(store, context.rankProfile());
@@ -88,10 +88,10 @@ public class ConvertedModel {
 
     public ExpressionNode expression() { return convertedExpression; }
 
-    ExpressionNode transformFromImportedModel(ImportedModel model,
-                                              ModelStore store,
-                                              RankProfile profile,
-                                              QueryProfileRegistry queryProfiles) {
+    private ExpressionNode transformFromImportedModel(ImportedModel model,
+                                                      ModelStore store,
+                                                      RankProfile profile,
+                                                      QueryProfileRegistry queryProfiles) {
         // Add constants
         Set<String> constantsReplacedByMacros = new HashSet<>();
         model.smallConstants().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
@@ -631,12 +631,24 @@ public class ConvertedModel {
     }
 
     /** Encapsulates the arguments to the import feature */
-    static abstract class FeatureArguments {
+    static class FeatureArguments {
 
         Path modelPath;
 
         /** Optional arguments */
         Optional<String> signature, output;
+
+        public FeatureArguments(Arguments arguments) {
+            this(Path.fromString(asString(arguments.expressions().get(0))),
+                 optionalArgument(1, arguments),
+                 optionalArgument(2, arguments));
+        }
+
+        public FeatureArguments(Path modelPath, Optional<String> signature, Optional<String> output) {
+            this.modelPath = modelPath;
+            this.signature = signature;
+            this.output = output;
+        }
 
         /** Returns modelPath with slashes replaced by underscores */
         public String modelName() { return modelPath.toString().replace('/', '_').replace('.', '_'); }
@@ -676,26 +688,26 @@ public class ConvertedModel {
             return fileName.toString();
         }
 
-        Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
+        private static Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
             if (argumentIndex >= arguments.expressions().size())
                 return Optional.empty();
             return Optional.of(asString(arguments.expressions().get(argumentIndex)));
         }
 
-        String asString(ExpressionNode node) {
+        private static String asString(ExpressionNode node) {
             if ( ! (node instanceof ConstantNode))
                 throw new IllegalArgumentException("Expected a constant string as argument, but got '" + node);
             return stripQuotes(((ConstantNode)node).sourceString());
         }
 
-        private String stripQuotes(String s) {
+        private static String stripQuotes(String s) {
             if ( ! isQuoteSign(s.codePointAt(0))) return s;
             if ( ! isQuoteSign(s.codePointAt(s.length() - 1 )))
                 throw new IllegalArgumentException("argument [" + s + "] is missing endquote");
             return s.substring(1, s.length()-1);
         }
 
-        private boolean isQuoteSign(int c) {
+        private static boolean isQuoteSign(int c) {
             return c == '\'' || c == '"';
         }
 

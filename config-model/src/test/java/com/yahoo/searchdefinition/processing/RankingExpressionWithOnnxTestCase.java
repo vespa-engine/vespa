@@ -164,7 +164,7 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx','y'): " +
-                            "Model does not have the specified output 'y'",
+                            "Model does not have the specified signature 'y'",
                     Exceptions.toMessageString(expected));
         }
     }

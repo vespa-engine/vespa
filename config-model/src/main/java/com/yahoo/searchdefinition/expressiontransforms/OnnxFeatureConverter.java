@@ -47,8 +47,8 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
         if ( ! feature.getName().equals("onnx")) return feature;
 
         try {
-            ConvertedModel.FeatureArguments arguments = new OnnxFeatureArguments(feature.getArguments());
-            ConvertedModel convertedModel = new ConvertedModel(arguments, context, onnxImporter, importedModels);
+            ConvertedModel convertedModel = new ConvertedModel(asFeatureArguments(feature.getArguments()),
+                                                               context, onnxImporter, importedModels);
             return convertedModel.expression();
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
@@ -56,18 +56,14 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
         }
     }
 
-    static class OnnxFeatureArguments extends ConvertedModel.FeatureArguments {
-        public OnnxFeatureArguments(Arguments arguments) {
-            if (arguments.isEmpty())
-                throw new IllegalArgumentException("An onnx node must take an argument pointing to " +
-                        "the tensorflow model directory under [application]/models");
-            if (arguments.expressions().size() > 3)
-                throw new IllegalArgumentException("An onnx feature can have at most 2 arguments");
+    private ConvertedModel.FeatureArguments asFeatureArguments(Arguments arguments) {
+        if (arguments.isEmpty())
+            throw new IllegalArgumentException("An onnx node must take an argument pointing to " +
+                                               "the onnx model directory under [application]/models");
+        if (arguments.expressions().size() > 3)
+            throw new IllegalArgumentException("An onnx feature can have at most 2 arguments");
 
-            modelPath = Path.fromString(asString(arguments.expressions().get(0)));
-            output = optionalArgument(1, arguments);
-            signature = Optional.of("default");
-        }
+        return new ConvertedModel.FeatureArguments(arguments);
     }
 
 }
