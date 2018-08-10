@@ -7,13 +7,14 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface DockerOperations {
 
-    void createContainer(ContainerName containerName, NodeSpec node);
+    void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData);
 
     void startContainer(ContainerName containerName, NodeSpec node);
 
