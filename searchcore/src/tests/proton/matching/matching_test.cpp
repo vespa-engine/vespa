@@ -545,8 +545,7 @@ TEST("require that re-ranking is performed (multi-threaded)") {
     }
 }
 
-using namespace search::fef::indexproperties::matchphase;
-TEST("require that re-ranking is diverse") {
+TEST("require that re-ranking is not diverse when not requested to be.") {
     MyWorld world;
     world.basicSetup();
     world.setupSecondPhaseRanking();
@@ -555,12 +554,22 @@ TEST("require that re-ranking is diverse") {
     auto mtf = world.create_mtf(request);
     auto diversity = mtf->createDiversifier();
     EXPECT_FALSE(diversity);
+}
+
+using namespace search::fef::indexproperties::matchphase;
+TEST("require that re-ranking is diverse with diversity = 1/1") {
+    MyWorld world;
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.basicResults();
+    SearchRequest::SP request = world.createSimpleRequest("f1", "spread");
+    auto mtf = world.create_mtf(request);
     auto & rankProperies = request->propertiesMap.lookupCreate(MapNames::RANK);
     rankProperies.add(DiversityAttribute::NAME, "a2")
                  .add(DiversityMinGroups::NAME, "3")
                  .add(DiversityCutoffStrategy::NAME, "strict");
     mtf = world.create_mtf(request);
-    diversity = mtf->createDiversifier();
+    auto diversity = mtf->createDiversifier();
     EXPECT_TRUE(diversity);
     SearchReply::UP reply = world.performSearch(request, 1);
     EXPECT_EQUAL(9u, world.matchingStats.docsMatched());
@@ -581,7 +590,7 @@ TEST("require that re-ranking is diverse") {
     EXPECT_GREATER(world.matchingStats.rerankTimeAvg(), 0.0000001);
 }
 
-TEST("require that re-ranking is forced diverse") {
+TEST("require that re-ranking is diverse with diversity = 1/10") {
     MyWorld world;
     world.basicSetup();
     world.setupSecondPhaseRanking();
