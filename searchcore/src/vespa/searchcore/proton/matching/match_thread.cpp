@@ -23,6 +23,8 @@ using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::fef::FeatureResolver;
 using search::fef::LazyValue;
+using search::queryeval::HitCollector;
+using search::queryeval::SortedHitSequence;
 
 namespace {
 
@@ -62,6 +64,16 @@ LazyValue get_score_feature(const RankProgram &rankProgram) {
     FeatureResolver resolver(rankProgram.get_seeds());
     assert(resolver.num_features() == 1u);
     return resolver.resolve(0);
+}
+
+std::vector<HitCollector::Hit> extract_hits(SortedHitSequence seq, size_t size_hint) {
+    std::vector<HitCollector::Hit> ret;
+    ret.reserve(size_hint);
+    while (seq.valid()) {
+        ret.push_back(seq.get());
+        seq.next();
+    }
+    return ret;
 }
 
 } // namespace proton::matching::<unnamed>
@@ -258,14 +270,14 @@ MatchThread::findMatches(MatchTools &tools)
     if (isFirstThread()) {
         LOG(debug, "SearchIterator after MultiBitVectorIteratorBase::optimize(): %s", tools.search().asString().c_str());
     }
-    HitCollector hits(matchParams.numDocs, matchParams.arraySize, matchParams.heapSize);
+    HitCollector hits(matchParams.numDocs, matchParams.arraySize);
     match_loop_helper(tools, hits);
     if (tools.has_second_phase_rank()) {
         { // 2nd phase ranking
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_hits = hits.getSortedHeapHits();
+            auto sorted_hits = extract_hits(hits.getSortedHitSequence(matchParams.heapSize), matchParams.heapSize);
             WaitTimer select_best_timer(wait_time_s);
             auto kept_hits = communicator.selectBest(std::move(sorted_hits));
             select_best_timer.done();
