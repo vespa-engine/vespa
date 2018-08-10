@@ -58,6 +58,7 @@ public class NodeSerializer {
     private static final String wantToRetireKey = "wantToRetire";
     private static final String wantToDeprovisionKey = "wantToDeprovision";
     private static final String hardwareDivergenceKey = "hardwareDivergence";
+    private static final String osVersionKey = "osVersion";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -114,6 +115,7 @@ public class NodeSerializer {
         object.setString(nodeTypeKey, toString(node.type()));
         node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString(hardwareDivergenceKey,
                                                                                             hardwareDivergence));
+        node.status().osVersion().ifPresent(version -> object.setString(osVersionKey, version.toString()));
     }
 
     private void toSlime(Allocation allocation, Cursor object) {
@@ -169,7 +171,8 @@ public class NodeSerializer {
                           hardwareFailureDescriptionFromSlime(object),
                           object.field(wantToRetireKey).asBool(),
                           object.field(wantToDeprovisionKey).asBool(),
-                          removeQuotedNulls(hardwareDivergenceFromSlime(object)));
+                          removeQuotedNulls(hardwareDivergenceFromSlime(object)),
+                          versionFromSlime(object.field(osVersionKey)));
     }
 
     private Flavor flavorFromSlime(Inspector object) {
