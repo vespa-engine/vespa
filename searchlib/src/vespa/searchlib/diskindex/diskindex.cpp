@@ -199,7 +199,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch,
 }
 
 DiskIndex::LookupResult::UP
-DiskIndex::lookup(uint32_t index, const vespalib::stringref & word)
+DiskIndex::lookup(uint32_t index, vespalib::stringref word)
 {
     /** Only used for testing */
     IndexList indexes;
@@ -252,7 +252,7 @@ unite(const DiskIndex::IndexList & indexes, const DiskIndex::LookupResultVector 
 }
 
 DiskIndex::LookupResultVector
-DiskIndex::lookup(const std::vector<uint32_t> & indexes, const vespalib::stringref & word)
+DiskIndex::lookup(const std::vector<uint32_t> & indexes, vespalib::stringref word)
 {
     Key key(indexes, word);
     LookupResultVector result;

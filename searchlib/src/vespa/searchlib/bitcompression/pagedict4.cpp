@@ -102,7 +102,7 @@ typedef PageDict4StartOffset StartOffset;
 
 static uint32_t
 getLCP(vespalib::stringref word,
-       const vespalib::stringref &prevWord)
+       vespalib::stringref prevWord)
 {
     size_t len1 = word.size();
     size_t len2 = prevWord.size();
@@ -1327,9 +1327,9 @@ void
 PageDict4SPLookupRes::
 lookup(const SSReader &ssReader,
        const void *sparsePage,
-       const vespalib::stringref &key,
-       const vespalib::stringref &l6Word,
-       const vespalib::stringref &lastSPWord,
+       vespalib::stringref key,
+       vespalib::stringref l6Word,
+       vespalib::stringref lastSPWord,
        const StartOffset &l6StartOffset,
        uint64_t l6WordNum,
        uint64_t lowestPageNum)
@@ -1525,9 +1525,9 @@ bool
 PageDict4PLookupRes::
 lookup(const SSReader &ssReader,
        const void *page,
-       const vespalib::stringref &key,
-       const vespalib::stringref &l3Word,
-       const vespalib::stringref &lastPWord,
+       vespalib::stringref key,
+       vespalib::stringref l3Word,
+       vespalib::stringref lastPWord,
        const StartOffset &l3StartOffset,
        uint64_t l3WordNum)
 {

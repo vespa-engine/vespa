@@ -610,9 +610,9 @@ public:
     void
     lookup(const SSReader &ssReader,
            const void *sparsePage,
-           const vespalib::stringref &key,
-           const vespalib::stringref &l6Word,
-           const vespalib::stringref &lastSPWord,
+           vespalib::stringref key,
+           vespalib::stringref l6Word,
+           vespalib::stringref lastSPWord,
            const StartOffset         &l6StartOffset,
            uint64_t l6WordNum,
            uint64_t lowestPageNum);
@@ -641,9 +641,9 @@ public:
     bool
     lookup(const SSReader &ssReader,
            const void *page,
-           const vespalib::stringref &key,
-           const vespalib::stringref &l3Word,
-           const vespalib::stringref &lastPWord,
+           vespalib::stringref key,
+           vespalib::stringref l3Word,
+           vespalib::stringref lastPWord,
            const StartOffset &l3StartOffset,
            uint64_t l3WordNum);
 };

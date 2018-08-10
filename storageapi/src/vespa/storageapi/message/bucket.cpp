@@ -453,7 +453,7 @@ RequestBucketInfoCommand::RequestBucketInfoCommand(
 RequestBucketInfoCommand::RequestBucketInfoCommand(
         document::BucketSpace bucketSpace,
         uint16_t distributor, const lib::ClusterState& state,
-        const vespalib::stringref & distributionHash)
+        vespalib::stringref distributionHash)
     : StorageCommand(MessageType::REQUESTBUCKETINFO),
       _bucketSpace(bucketSpace),
       _buckets(),

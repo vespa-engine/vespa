@@ -165,7 +165,7 @@ private:
     vespalib::string _name;
     vespalib::string _backing;
     const char * c_str(size_t sz) const { return _backing.c_str() + sz; }
-    void set(StringRef & e, const vespalib::stringref & s);
+    void set(StringRef & e, vespalib::stringref s);
 public:
     FS4Properties(FS4Properties &&);
     FS4Properties &operator=(FS4Properties &&);
@@ -178,11 +178,11 @@ public:
         setName(val.data(), val.size());
     }
     void setKey(uint32_t entry, const char *key, uint32_t keySize);
-    void setKey(uint32_t entry, const vespalib::stringref &val) {
+    void setKey(uint32_t entry, vespalib::stringref val) {
         setKey(entry, val.data(), val.size());
     }
     void setValue(uint32_t entry, const char *value, uint32_t valueSize);
-    void setValue(uint32_t entry, const vespalib::stringref &val) {
+    void setValue(uint32_t entry, vespalib::stringref val) {
         setValue(entry, val.data(), val.size());
     }
     uint32_t size() const { return _entries.size(); }

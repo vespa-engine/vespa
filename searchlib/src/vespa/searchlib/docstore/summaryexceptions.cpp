@@ -10,7 +10,7 @@ namespace search {
 
 SummaryException::SummaryException(vespalib::stringref msg,
                                    FastOS_FileInterface &file,
-                                   const vespalib::stringref &location)
+                                   vespalib::stringref location)
     : IoException(make_string("%s : Failing file = '%s'. Reason given by OS = '%s'",
                               vespalib::string(msg).c_str(), file.GetFileName(), file.getLastErrorString().c_str()),
                   getErrorType(file.GetLastError()), location)

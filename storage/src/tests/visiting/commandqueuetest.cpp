@@ -34,7 +34,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(CommandQueueTest);
 
 namespace {
     std::shared_ptr<api::CreateVisitorCommand> getCommand(
-            const vespalib::stringref & name, int timeout,
+            vespalib::stringref name, int timeout,
             uint8_t priority = 0)
     {
         vespalib::asciistream ost;

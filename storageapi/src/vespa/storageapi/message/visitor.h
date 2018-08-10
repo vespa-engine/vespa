@@ -54,9 +54,9 @@ private:
 
 public:
     CreateVisitorCommand(document::BucketSpace bucketSpace,
-                         const vespalib::stringref & libraryName,
-                         const vespalib::stringref & instanceId,
-                         const vespalib::stringref & docSelection);
+                         vespalib::stringref libraryName,
+                         vespalib::stringref instanceId,
+                         vespalib::stringref docSelection);
 
     /** Create another command with similar visitor settings. */
     CreateVisitorCommand(const CreateVisitorCommand& template_);

@@ -14,9 +14,9 @@ IMPLEMENT_COMMAND(VisitorInfoCommand, VisitorInfoReply)
 IMPLEMENT_REPLY(VisitorInfoReply)
 
 CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
-                                           const vespalib::stringref & libraryName,
-                                           const vespalib::stringref & instanceId,
-                                           const vespalib::stringref & docSelection)
+                                           vespalib::stringref libraryName,
+                                           vespalib::stringref instanceId,
+                                           vespalib::stringref docSelection)
     : StorageCommand(MessageType::VISITOR_CREATE),
       _bucketSpace(bucketSpace),
       _libName(libraryName),

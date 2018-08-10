@@ -19,7 +19,7 @@ Blueprint::defineInput(vespalib::stringref inName,
 
 void
 Blueprint::describeOutput(vespalib::stringref outName,
-                          const vespalib::stringref &desc,
+                          vespalib::stringref desc,
                           const FeatureType &type)
 {
     (void) desc;

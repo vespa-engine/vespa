@@ -188,7 +188,7 @@ class GetCommand : public BucketInfoCommand {
 
 public:
     GetCommand(const document::Bucket &bucket, const document::DocumentId&,
-               const vespalib::stringref & fieldSet, Timestamp before = MAX_TIMESTAMP);
+               vespalib::stringref fieldSet, Timestamp before = MAX_TIMESTAMP);
     ~GetCommand() override;
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
     const document::DocumentId& getDocumentId() const { return _docId; }

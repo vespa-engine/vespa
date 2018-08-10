@@ -138,8 +138,8 @@ public:
         }
 
         BaseName(vespalib::stringref base,
-                 const vespalib::stringref &snap,
-                 const vespalib::stringref &name);
+                 vespalib::stringref snap,
+                 vespalib::stringref name);
         ~BaseName();
 
         string getIndexName() const;

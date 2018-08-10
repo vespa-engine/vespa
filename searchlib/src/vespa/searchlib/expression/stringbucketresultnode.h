@@ -23,7 +23,7 @@ public:
     DECLARE_EXPRESSIONNODE(StringBucketResultNode);
     DECLARE_NBO_SERIALIZE;
     StringBucketResultNode();
-    StringBucketResultNode(vespalib::stringref  from, const vespalib::stringref & to);
+    StringBucketResultNode(vespalib::stringref  from, vespalib::stringref to);
     StringBucketResultNode(ResultNode::UP from, ResultNode::UP to) : _from(from.release()), _to(to.release()) {}
     ~StringBucketResultNode();
     size_t hash() const override;
@@ -32,7 +32,7 @@ public:
     int contains(const ConstBufferRef & v) const { return contains(v.c_str()); }
     int contains(const char * v) const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    StringBucketResultNode &setRange(vespalib::stringref  from, const vespalib::stringref & to) {
+    StringBucketResultNode &setRange(vespalib::stringref  from, vespalib::stringref to) {
         _from.reset(new StringResultNode(from));
         _to.reset(new StringResultNode(to));
         return *this;

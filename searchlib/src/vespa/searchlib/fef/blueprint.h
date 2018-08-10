@@ -97,7 +97,7 @@ protected:
      * @param outName output name
      * @param desc output description
      **/
-    void describeOutput(vespalib::stringref outName, const vespalib::stringref &desc,
+    void describeOutput(vespalib::stringref outName, vespalib::stringref desc,
                         const FeatureType &type = FeatureType::number());
 
 public:

@@ -32,7 +32,7 @@ createSpec(FRT_Supervisor &orb)
 
 
 void
-discard(std::vector<vespalib::string> &vec, const vespalib::stringref & val)
+discard(std::vector<vespalib::string> &vec, vespalib::stringref val)
 {
     uint32_t i = 0;
     uint32_t size = vec.size();

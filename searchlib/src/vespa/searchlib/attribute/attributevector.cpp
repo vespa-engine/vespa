@@ -59,8 +59,8 @@ namespace search {
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(AttributeVector, vespalib::Identifiable);
 
 AttributeVector::BaseName::BaseName(vespalib::stringref base,
-                                    const vespalib::stringref &snap,
-                                    const vespalib::stringref &name)
+                                    vespalib::stringref snap,
+                                    vespalib::stringref name)
     : string(base),
       _name(name)
 {

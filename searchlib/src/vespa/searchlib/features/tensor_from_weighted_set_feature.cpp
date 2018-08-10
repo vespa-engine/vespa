@@ -36,7 +36,7 @@ namespace {
 struct WeightedStringVector
 {
     std::vector<IAttributeVector::WeightedString> _data;
-    void insert(vespalib::stringref key, const vespalib::stringref &weight) {
+    void insert(vespalib::stringref key, vespalib::stringref weight) {
         _data.emplace_back(key, util::strToNum<int32_t>(weight));
     }
 };

@@ -239,7 +239,7 @@ FS4Properties::allocEntries(uint32_t cnt)
     _backing.reserve(cnt*2*40); // Assume strings are average 40 bytes
 }
 
-void FS4Properties::set(StringRef & e, const vespalib::stringref & s)
+void FS4Properties::set(StringRef & e, vespalib::stringref s)
 {
     e.first = _backing.size();
     e.second = s.size();

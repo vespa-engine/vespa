@@ -31,7 +31,7 @@ vespalib::string stripWhitespace(const vespalib::string& s) {
 }
 
 vespalib::string getLine(vespalib::stringref  key,
-                         const vespalib::stringref& content)
+                         vespalib::stringref content)
 {
     vespalib::string::size_type start(0);
     vespalib::string::size_type stop(content.find('\n'));

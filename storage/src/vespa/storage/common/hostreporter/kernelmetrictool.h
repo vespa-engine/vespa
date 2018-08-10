@@ -16,7 +16,7 @@ vespalib::string readFile(const char* fileName);
 vespalib::string stripWhitespace(const vespalib::string& s);
 
 vespalib::string getLine(vespalib::stringref  key,
-                         const vespalib::stringref& content);
+                         vespalib::stringref content);
 
 vespalib::string getToken(uint32_t index, const vespalib::string& line);
 

@@ -73,7 +73,7 @@ private:
 
 public:
     ReturnCode();
-    explicit ReturnCode(Result result, const vespalib::stringref & msg = "");
+    explicit ReturnCode(Result result, vespalib::stringref msg = "");
     ReturnCode(const document::DocumentTypeRepo &repo,
                document::ByteBuffer& buffer);
     ReturnCode(const ReturnCode &);

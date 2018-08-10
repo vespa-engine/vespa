@@ -121,7 +121,7 @@ FieldWriter::flush()
 
 
 void
-FieldWriter::newWord(uint64_t wordNum, const vespalib::stringref &word)
+FieldWriter::newWord(uint64_t wordNum, vespalib::stringref word)
 {
     assert(wordNum <= _numWordIds);
     assert(wordNum != noWordNum());

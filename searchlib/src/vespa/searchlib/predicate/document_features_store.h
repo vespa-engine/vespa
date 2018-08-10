@@ -39,7 +39,7 @@ class DocumentFeaturesStore {
         }
 
     public:
-        KeyComp(const WordStore &word_store, const vespalib::stringref &word)
+        KeyComp(const WordStore &word_store, vespalib::stringref word)
             : _word_store(word_store),
               _word(word) {
         }

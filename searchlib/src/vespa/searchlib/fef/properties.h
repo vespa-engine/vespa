@@ -167,7 +167,7 @@ public:
      * @param key the key
      * @param value the value
      **/
-    Properties &add(vespalib::stringref key, const vespalib::stringref &value);
+    Properties &add(vespalib::stringref key, vespalib::stringref value);
 
     /**
      * Obtain the number of values for a given key.
@@ -272,7 +272,7 @@ public:
      * @param key the key to look up
      **/
     Property lookup(vespalib::stringref namespace1,
-                    const vespalib::stringref &key) const;
+                    vespalib::stringref key) const;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -287,8 +287,8 @@ public:
      * @param key the key to look up
      **/
     Property lookup(vespalib::stringref namespace1,
-                    const vespalib::stringref &namespace2,
-                    const vespalib::stringref &key) const;
+                    vespalib::stringref namespace2,
+                    vespalib::stringref key) const;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -304,9 +304,9 @@ public:
      * @param key the key to look up
      **/
     Property lookup(vespalib::stringref namespace1,
-                    const vespalib::stringref &namespace2,
-                    const vespalib::stringref &namespace3,
-                    const vespalib::stringref &key) const;
+                    vespalib::stringref namespace2,
+                    vespalib::stringref namespace3,
+                    vespalib::stringref key) const;
 
     void swap(Properties & rhs);
 };
