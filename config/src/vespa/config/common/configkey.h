@@ -8,12 +8,12 @@ namespace config {
 
 class ConfigKey {
 public:
-    ConfigKey(const vespalib::stringref & configId,
+    ConfigKey(vespalib::stringref  configId,
               const vespalib::stringref & defName,
               const vespalib::stringref & defNamespace,
               const vespalib::stringref & defMd5);
 
-    ConfigKey(const vespalib::stringref & configId,
+    ConfigKey(vespalib::stringref  configId,
               const vespalib::stringref & defName,
               const vespalib::stringref & defNamespace,
               const vespalib::stringref & defMd5,
@@ -37,7 +37,7 @@ public:
     const std::vector<vespalib::string> & getDefSchema() const;
 
     template <typename ConfigType>
-    static const ConfigKey create(const vespalib::stringref & configId)
+    static const ConfigKey create(vespalib::stringref  configId)
     {
         return ConfigKey(configId, ConfigType::CONFIG_DEF_NAME,
                                    ConfigType::CONFIG_DEF_NAMESPACE,
