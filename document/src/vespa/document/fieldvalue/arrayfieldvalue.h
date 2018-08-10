@@ -27,7 +27,7 @@ private:
     bool containsValue(const FieldValue& val) const override;
     bool removeValue(const FieldValue& val) override;
     fieldvalue::ModificationStatus iterateSubset(
-            int startPos, int endPos, const vespalib::stringref & variable,
+            int startPos, int endPos, vespalib::stringref variable,
             PathRange nested,
             fieldvalue::IteratorHandler& handler) const;
     fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;

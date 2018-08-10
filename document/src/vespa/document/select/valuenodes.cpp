@@ -25,7 +25,7 @@ namespace {
 }
 
 namespace {
-    bool documentTypeEqualsName(const DocumentType& type, const vespalib::stringref& name)
+    bool documentTypeEqualsName(const DocumentType& type, vespalib::stringref name)
     {
         if (type.getName() == name) return true;
         for (std::vector<const DocumentType *>::const_iterator it
@@ -434,7 +434,7 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
 }
 
 IdValueNode::IdValueNode(const BucketIdFactory& bucketIdFactory,
-                         const vespalib::stringref & name, const vespalib::stringref & type,
+                         vespalib::stringref name, vespalib::stringref type,
                          int widthBits, int divisionBits)
     : _bucketIdFactory(bucketIdFactory),
       _id(name),
@@ -857,7 +857,7 @@ FunctionValueNode::print(std::ostream& out, bool verbose,
 }
 
 ArithmeticValueNode::ArithmeticValueNode(
-        std::unique_ptr<ValueNode> left, const vespalib::stringref & op,
+        std::unique_ptr<ValueNode> left, vespalib::stringref op,
         std::unique_ptr<ValueNode> right)
     : _operator(),
       _left(std::move(left)),

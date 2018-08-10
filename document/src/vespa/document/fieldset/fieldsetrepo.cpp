@@ -38,8 +38,8 @@ parseSpecialValues(vespalib::stringref  name)
 
 FieldSet::UP
 parseFieldCollection(const DocumentTypeRepo& repo,
-                     const vespalib::stringref & docType,
-                     const vespalib::stringref & fieldNames)
+                     vespalib::stringref docType,
+                     vespalib::stringref fieldNames)
 {
     const DocumentType* typePtr = repo.getDocumentType(docType);
     if (!typePtr) {
@@ -68,7 +68,7 @@ parseFieldCollection(const DocumentTypeRepo& repo,
 }
 
 FieldSet::UP
-FieldSetRepo::parse(const DocumentTypeRepo& repo, const vespalib::stringref & str)
+FieldSetRepo::parse(const DocumentTypeRepo& repo, vespalib::stringref str)
 {
     if (str[0] == '[') {
         return parseSpecialValues(str);

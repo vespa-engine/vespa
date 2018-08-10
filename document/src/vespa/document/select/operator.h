@@ -70,7 +70,7 @@ public:
     // Delegates to Value::regexCompare
     ResultList compare(const Value& a, const Value& b) const override;
     ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
-    ResultList match(const vespalib::string & val, const vespalib::stringref & expr) const;
+    ResultList match(const vespalib::string & val, vespalib::stringref expr) const;
 
     static const RegexOperator REGEX;
 

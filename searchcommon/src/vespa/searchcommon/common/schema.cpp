@@ -17,7 +17,7 @@ namespace {
 template <typename T>
 void
 writeFields(vespalib::asciistream & os,
-            const vespalib::stringref &prefix,
+            vespalib::stringref prefix,
             const std::vector<T> & fields)
 {
     os << prefix << "[" << fields.size() << "]\n";
@@ -100,7 +100,7 @@ Schema::Field::Field(const std::vector<vespalib::string> & lines)
 Schema::Field::~Field() { }
 
 void
-Schema::Field::write(vespalib::asciistream & os, const vespalib::stringref & prefix) const
+Schema::Field::write(vespalib::asciistream & os, vespalib::stringref prefix) const
 {
     os << prefix << "name " << _name << "\n";
     os << prefix << "datatype " << getTypeName(_dataType) << "\n";
@@ -157,7 +157,7 @@ Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
 }
 
 void
-Schema::IndexField::write(vespalib::asciistream & os, const vespalib::stringref & prefix) const
+Schema::IndexField::write(vespalib::asciistream & os, vespalib::stringref prefix) const
 {
     Field::write(os, prefix);
     os << prefix << "prefix " << (_prefix ? "true" : "false") << "\n";

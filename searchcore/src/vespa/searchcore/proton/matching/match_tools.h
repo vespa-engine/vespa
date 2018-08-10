@@ -92,7 +92,7 @@ public:
                       const vespalib::Doom & hardDoom,
                       ISearchContext &searchContext,
                       search::attribute::IAttributeContext &attributeContext,
-                      const vespalib::stringref &queryStack,
+                      vespalib::stringref queryStack,
                       const vespalib::string &location,
                       const ViewResolver &viewResolver,
                       const search::IDocumentMetaStore &metaStore,

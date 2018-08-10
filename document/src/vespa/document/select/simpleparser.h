@@ -12,7 +12,7 @@ class Parser {
 public:
     virtual ~Parser() { }
     virtual bool parse(vespalib::stringref  s) = 0;
-    const vespalib::stringref & getRemaining() const { return _remaining; }
+    vespalib::stringref getRemaining() const { return _remaining; }
 protected:
     void setRemaining(vespalib::stringref  s) { _remaining = s; }
 private:

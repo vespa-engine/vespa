@@ -64,7 +64,7 @@ public:
     /**
        Creates a field entry for an array, map or wset traversal using a variable.
     */
-    FieldPathEntry(const DataType & dataType, const vespalib::stringref & variableName);
+    FieldPathEntry(const DataType & dataType, vespalib::stringref variableName);
 
     FieldPathEntry * clone() const { return new FieldPathEntry(*this); }
 

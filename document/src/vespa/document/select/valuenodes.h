@@ -242,7 +242,7 @@ public:
     enum Type { SCHEME, NS, TYPE, USER, GROUP, GID, SPEC, BUCKET, ORDER, ALL };
 
     IdValueNode(const BucketIdFactory& bucketIdFactory,
-                const vespalib::stringref & name, const vespalib::stringref & type,
+                vespalib::stringref name, vespalib::stringref type,
                 int widthBits = -1, int divisionBits = -1);
 
     Type getType() const { return _type; }
@@ -318,7 +318,7 @@ public:
     enum Operator { ADD, SUB, MUL, DIV, MOD };
 
     ArithmeticValueNode(std::unique_ptr<ValueNode> left,
-                        const vespalib::stringref & op,
+                        vespalib::stringref op,
                         std::unique_ptr<ValueNode> right);
 
     Operator getOperator() const { return _operator; }

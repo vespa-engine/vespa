@@ -63,8 +63,8 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent, uint64_t secondsPassed) const override;
 
     // These should never be called on metrics set.
-    int64_t getLongValue(const stringref & id) const override;
-    double getDoubleValue(const stringref & id) const override;
+    int64_t getLongValue(stringref id) const override;
+    double getDoubleValue(stringref id) const override;
 
     const Metric* getMetric(const String& name) const;
     Metric* getMetric(const String& name) {

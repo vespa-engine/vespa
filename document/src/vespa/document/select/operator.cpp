@@ -123,7 +123,7 @@ RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) cons
 }
 
 ResultList
-RegexOperator::match(const vespalib::string& val, const vespalib::stringref & expr) const
+RegexOperator::match(const vespalib::string& val, vespalib::stringref expr) const
 {
         // Should we catch this in parsing?
     if (expr.size() == 0) return ResultList(Result::True);

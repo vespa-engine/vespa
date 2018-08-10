@@ -67,7 +67,7 @@ private:
         return (strcmp(a, b) == 0);
     }
     static bool cmp_str_ref(vespalib::stringref a,
-                            const vespalib::stringref &b)
+                            vespalib::stringref b)
     {
         return (a.size() == b.size() &&
                 memcmp(a.data(), b.data(), a.size()) == 0);

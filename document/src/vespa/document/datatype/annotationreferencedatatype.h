@@ -20,7 +20,7 @@ public:
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
     AnnotationReferenceDataType *clone() const override;
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void onBuildFieldPath(FieldPath & path, const vespalib::stringref &remainFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
 
     DECLARE_IDENTIFIABLE(AnnotationReferenceDataType);
 };

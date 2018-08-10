@@ -35,7 +35,7 @@ public:
      * @param field the name of the field
      **/
     ViewResolver &add(vespalib::stringref view,
-                      const vespalib::stringref &field);
+                      vespalib::stringref field);
 
     /**
      * Resolve a view to obtain the set of fields it

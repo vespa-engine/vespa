@@ -23,7 +23,7 @@ public:
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     ReferenceDataType* clone() const override;
-    void onBuildFieldPath(FieldPath & path, const vespalib::stringref& remainingFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainingFieldName) const override;
 };
 
 } // document

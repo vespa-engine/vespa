@@ -52,7 +52,7 @@ public:
 
         virtual void
         write(vespalib::asciistream & os,
-              const vespalib::stringref & prefix) const;
+              vespalib::stringref prefix) const;
 
         const vespalib::string &getName() const { return _name; }
         DataType getDataType() const { return _dataType; }
@@ -97,7 +97,7 @@ public:
 
         void
         write(vespalib::asciistream &os,
-              const vespalib::stringref &prefix) const override;
+              vespalib::stringref prefix) const override;
 
         bool hasPrefix() const { return _prefix; }
         bool hasPhrases() const { return _phrases; }

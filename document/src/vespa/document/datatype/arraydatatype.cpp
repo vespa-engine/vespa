@@ -43,7 +43,7 @@ ArrayDataType::operator==(const DataType& other) const
 }
 
 void
-ArrayDataType::onBuildFieldPath(FieldPath & path, const vespalib::stringref & remainFieldName) const
+ArrayDataType::onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const
 {
     if (remainFieldName[0] == '[') {
         size_t endPos = remainFieldName.find(']');

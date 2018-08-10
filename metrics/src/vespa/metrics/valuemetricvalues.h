@@ -37,9 +37,9 @@ struct ValueMetricValues : MetricValueClass {
     void relaxedLoadFrom(const AtomicImpl& source) noexcept;
 
     template<typename T>
-    T getValue(const stringref & id) const;
-    double getDoubleValue(const stringref & id) const override;
-    uint64_t getLongValue(const stringref & id) const override;
+    T getValue(stringref id) const;
+    double getDoubleValue(stringref id) const override;
+    uint64_t getLongValue(stringref id) const override;
     void output(const std::string& id, std::ostream& out) const override;
     void output(const std::string& id, vespalib::JsonStream& stream) const override;
     template<typename A, typename T>

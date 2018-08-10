@@ -7,7 +7,7 @@ namespace proton::matching {
 
 ViewResolver &
 ViewResolver::add(vespalib::stringref view,
-                  const vespalib::stringref &field)
+                  vespalib::stringref field)
 {
     _map[view].push_back(field);
     return *this;

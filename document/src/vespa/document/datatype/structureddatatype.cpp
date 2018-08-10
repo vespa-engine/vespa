@@ -54,7 +54,7 @@ int32_t StructuredDataType::createId(vespalib::stringref name)
 }
 
 void
-StructuredDataType::onBuildFieldPath(FieldPath & path, const vespalib::stringref & remainFieldName) const
+StructuredDataType::onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const
 {
     vespalib::stringref currFieldName(remainFieldName);
     vespalib::stringref subFieldName;
