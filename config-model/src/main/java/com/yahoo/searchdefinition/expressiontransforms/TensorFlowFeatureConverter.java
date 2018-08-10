@@ -10,6 +10,7 @@ import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.io.UncheckedIOException;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public class TensorFlowFeatureConverter extends MLImportFeatureConverter {
+public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext>  {
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 

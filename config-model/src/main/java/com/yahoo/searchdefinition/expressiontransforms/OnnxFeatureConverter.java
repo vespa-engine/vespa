@@ -11,6 +11,7 @@ import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.io.UncheckedIOException;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ import java.util.Optional;
  * @author bratseth
  * @author lesters
  */
-public class OnnxFeatureConverter extends MLImportFeatureConverter {
+public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     private final OnnxImporter onnxImporter = new OnnxImporter();
 
