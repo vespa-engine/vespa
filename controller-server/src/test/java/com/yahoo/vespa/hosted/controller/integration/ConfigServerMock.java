@@ -6,11 +6,13 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
+import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
@@ -51,10 +53,25 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
+    private ConfigChangeActions configChangeActions = null;
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
         bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all());
+    }
+
+    public void setConfigChangeActions(ConfigChangeActions configChangeActions) {
+        this.configChangeActions = configChangeActions;
+    }
+
+    /** Assigns a reserved tenant node to the given deployment, with initial versions. */
+    public void provision(ZoneId zone, ApplicationId application) {
+        nodeRepository().putByHostname(zone, new Node(HostName.from("host-" + application.serializedForm()),
+                                                      Node.State.reserved,
+                                                      NodeType.tenant,
+                                                      Optional.of(application),
+                                                      initialVersion,
+                                                      initialVersion));
     }
 
     public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
@@ -135,6 +152,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         }
         applications.put(deployment.applicationId(), new Application(deployment.applicationId(), lastPrepareVersion));
 
+        if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
+            provision(deployment.zoneId(), deployment.applicationId());
+
         return new PreparedApplication() {
 
             @Override
@@ -160,18 +180,20 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 Application application = applications.get(deployment.applicationId());
                 application.activate();
                 for (Node node : nodeRepository.list(deployment.zoneId(), deployment.applicationId())) {
-                    nodeRepository.add(deployment.zoneId(), new Node(node.hostname(),
-                                                                     node.state(), node.type(),
-                                                                     node.owner(),
-                                                                     node.currentVersion(),
-                                                                     application.version().get()));
+                    nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
+                                                                               node.state(), node.type(),
+                                                                               node.owner(),
+                                                                               node.currentVersion(),
+                                                                               application.version().get()));
                 }
                 serviceStatus.remove(deployment); // Deployment is no longer converging after new deployment
 
                 PrepareResponse prepareResponse = new PrepareResponse();
                 prepareResponse.message = "foo";
-                prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(),
-                                                                              Collections.emptyList());
+                prepareResponse.configChangeActions = configChangeActions != null
+                        ? configChangeActions
+                        : new ConfigChangeActions(Collections.emptyList(),
+                                                  Collections.emptyList());
                 prepareResponse.tenant = new TenantId("tenant");
                 return prepareResponse;
             }
@@ -181,11 +203,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public void restart(DeploymentId deployment, Optional<Hostname> hostname) {
+        nodeRepository().requestRestart(deployment, hostname.map(Identifier::id).map(HostName::from));
     }
 
     @Override
     public void deactivate(DeploymentId deployment) {
         applications.remove(deployment.applicationId());
+        nodeRepository().removeByHostname(deployment.zoneId(),
+                                          nodeRepository().list(deployment.zoneId(), deployment.applicationId()));
     }
 
     // Returns a canned example response
