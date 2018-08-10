@@ -11,7 +11,7 @@
 #include <mutex>
 
 namespace proton::matching {
-
+    
 /**
  * This class is responsible for creating attribute-based search
  * iterators that are used to limit the search space. Each search

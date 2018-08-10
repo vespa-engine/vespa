@@ -12,8 +12,7 @@ using search::queryeval::IRequestContext;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::NoUnpack;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -68,25 +67,16 @@ LimitedSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "second", getSecond());
 }
 
-MatchPhaseLimiter::MatchPhaseLimiter(uint32_t docIdLimit,
-                                     Searchable &searchable_attributes,
+MatchPhaseLimiter::MatchPhaseLimiter(uint32_t docIdLimit, Searchable &searchable_attributes,
                                      IRequestContext & requestContext,
-                                     const vespalib::string &attribute_name,
-                                     size_t max_hits, bool descending,
-                                     double max_filter_coverage,
-                                     double samplePercentage, double postFilterMultiplier,
-                                     const vespalib::string &diversity_attribute,
-                                     uint32_t diversity_min_groups,
-                                     double diversify_cutoff_factor,
-                                     AttributeLimiter::DiversityCutoffStrategy diversity_cutoff_strategy)
-    : _postFilterMultiplier(postFilterMultiplier),
-      _maxFilterCoverage(max_filter_coverage),
-      _calculator(max_hits, diversity_min_groups, samplePercentage),
-      _limiter_factory(searchable_attributes, requestContext, attribute_name, descending,
-                       diversity_attribute, diversify_cutoff_factor, diversity_cutoff_strategy),
+                                     DegradationParams degradation, DiversityParams diversity)
+    : _postFilterMultiplier(degradation.post_filter_multiplier),
+      _maxFilterCoverage(degradation.max_filter_coverage),
+      _calculator(degradation.max_hits, diversity.min_groups, degradation.sample_percentage),
+      _limiter_factory(searchable_attributes, requestContext, degradation.attribute, degradation.descending,
+                       diversity.attribute, diversity.cutoff_factor, diversity.cutoff_strategy),
       _coverage(docIdLimit)
-{
-}
+{ }
 
 namespace {
 
@@ -108,8 +98,7 @@ do_limit(AttributeLimiter &limiter_factory, SearchIterator::UP search,
 } // namespace proton::matching::<unnamed>
 
 SearchIterator::UP
-MatchPhaseLimiter::maybe_limit(SearchIterator::UP search,
-                               double match_freq, size_t num_docs)
+MatchPhaseLimiter::maybe_limit(SearchIterator::UP search, double match_freq, size_t num_docs)
 {
     size_t wanted_num_docs = _calculator.wanted_num_docs(match_freq);
     size_t max_filter_docs = static_cast<size_t>(num_docs * _maxFilterCoverage);
@@ -145,5 +134,4 @@ MatchPhaseLimiter::getDocIdSpaceEstimate() const
     return _coverage.getEstimate();
 }
 
-} // namespace proton::matching
-} // namespace proton
+}

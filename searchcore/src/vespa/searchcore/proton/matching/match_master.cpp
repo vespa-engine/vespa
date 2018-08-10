@@ -62,7 +62,7 @@ MatchMaster::match(const MatchParams &params,
     fastos::StopWatch query_latency_time;
     query_latency_time.start();
     vespalib::DualMergeDirector mergeDirector(threadBundle.size());
-    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize);
+    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, matchToolsFactory.createDiversifier());
     TimedMatchLoopCommunicator timedCommunicator(communicator);
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);
 

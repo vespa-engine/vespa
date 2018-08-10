@@ -16,6 +16,8 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/searchlib/queryeval/idiversifier.h>
+
 
 namespace proton::matching {
 
@@ -71,16 +73,17 @@ public:
 class MatchToolsFactory : public vespalib::noncopyable
 {
 private:
-    QueryLimiter                  & _queryLimiter;
-    RequestContext                  _requestContext;
-    const vespalib::Doom            _hardDoom;
-    Query                           _query;
-    MaybeMatchPhaseLimiter::UP      _match_limiter;
-    QueryEnvironment                _queryEnv;
-    search::fef::MatchDataLayout    _mdl;
-    const search::fef::RankSetup  & _rankSetup;
-    const search::fef::Properties & _featureOverrides;
-    bool                            _valid;
+    QueryLimiter                    & _queryLimiter;
+    RequestContext                    _requestContext;
+    const vespalib::Doom              _hardDoom;
+    Query                             _query;
+    MaybeMatchPhaseLimiter::UP        _match_limiter;
+    QueryEnvironment                  _queryEnv;
+    search::fef::MatchDataLayout      _mdl;
+    const search::fef::RankSetup    & _rankSetup;
+    const search::fef::Properties   & _featureOverrides;
+    DiversityParams                   _diversityParams;
+    bool                              _valid;
 public:
     typedef std::unique_ptr<MatchToolsFactory> UP;
 
@@ -101,6 +104,7 @@ public:
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
+    std::unique_ptr<search::queryeval::IDiversifier> createDiversifier() const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
 };
