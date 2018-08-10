@@ -133,10 +133,6 @@ public class GroupingRequest {
      */
     public static GroupingRequest newInstance(Query query) {
         List<GroupingRequest> lst = getRequests(query);
-        if (lst.isEmpty()) {
-            lst = new LinkedList<>();
-            query.getSelect().setGrouping(lst);
-        }
         GroupingRequest ret = new GroupingRequest(lst.size());
         lst.add(ret);
         return ret;

@@ -107,17 +107,8 @@ public class Select implements Cloneable {
     }
 
 
-    /** Returns the query's {@link GroupingRequest} objects */
+    /** Returns the query's {@link GroupingRequest} objects, as mutable list */
     public List<GroupingRequest> getGrouping(){ return groupingRequests; }
-
-
-    /** Set the query's list of {@link GroupingRequest} objects */
-    public void setGrouping(List<GroupingRequest> lst){
-        if (lst == null) {
-            lst = Collections.emptyList();
-        }
-        this.groupingRequests = lst;
-    }
 
 
     @Override
