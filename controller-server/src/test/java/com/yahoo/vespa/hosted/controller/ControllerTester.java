@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityServ
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockLogStore;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -69,6 +70,7 @@ public final class ControllerTester {
     private final EntityService entityService;
     private final MockBuildService buildService;
     private final MetricsServiceMock metricsService;
+    private final RoutingGeneratorMock routingGenerator;
 
     private Controller controller;
 
@@ -77,7 +79,7 @@ public final class ControllerTester {
         this(new AthenzDbMock(), clock, new ConfigServerMock(new ZoneRegistryMock()),
              new ZoneRegistryMock(), new GitHubMock(), curatorDb, rotationsConfig,
              new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService(),
-             metricsService);
+             metricsService, new RoutingGeneratorMock());
     }
 
     public ControllerTester(ManualClock clock) {
@@ -101,7 +103,7 @@ public final class ControllerTester {
                              GitHubMock gitHub, CuratorDb curator, RotationsConfig rotationsConfig,
                              MemoryNameService nameService, ArtifactRepositoryMock artifactRepository,
                              EntityService entityService, MockBuildService buildService,
-                             MetricsServiceMock metricsService) {
+                             MetricsServiceMock metricsService, RoutingGeneratorMock routingGenerator) {
         this.athenzDb = athenzDb;
         this.clock = clock;
         this.configServer = configServer;
@@ -114,9 +116,10 @@ public final class ControllerTester {
         this.entityService = entityService;
         this.buildService = buildService;
         this.metricsService = metricsService;
+        this.routingGenerator = routingGenerator;
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService, artifactRepository, entityService, buildService,
-                                           metricsService);
+                                           metricsService, routingGenerator);
 
         // Make root logger use time from manual clock
         Logger.getLogger("").getHandlers()[0].setFilter(
@@ -150,10 +153,13 @@ public final class ControllerTester {
 
     public MetricsServiceMock metricsService() { return metricsService; }
 
+    public RoutingGeneratorMock routingGenerator() { return routingGenerator; }
+
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
         controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
-                                      nameService, artifactRepository, entityService, buildService, metricsService);
+                                      nameService, artifactRepository, entityService, buildService, metricsService,
+                                      routingGenerator);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -267,7 +273,8 @@ public final class ControllerTester {
                                                GitHubMock gitHub, ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb, MemoryNameService nameService,
                                                ArtifactRepository artifactRepository, EntityService entityService,
-                                               BuildService buildService, MetricsServiceMock metricsService) {
+                                               BuildService buildService, MetricsServiceMock metricsService,
+                                               RoutingGenerator routingGenerator) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                gitHub,
@@ -278,7 +285,7 @@ public final class ControllerTester {
                                                configServer,
                                                metricsService,
                                                nameService,
-                                               new RoutingGeneratorMock(),
+                                               routingGenerator,
                                                new ChefMock(),
                                                clock,
                                                new AthenzClientFactoryMock(athensDb),
