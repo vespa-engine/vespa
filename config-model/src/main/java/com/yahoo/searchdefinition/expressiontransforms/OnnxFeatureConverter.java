@@ -46,28 +46,16 @@ public class OnnxFeatureConverter extends MLImportFeatureConverter {
         if ( ! feature.getName().equals("onnx")) return feature;
 
         try {
-            FeatureArguments arguments = new OnnxFeatureArguments(feature.getArguments());
-            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
-            if ( ! store.hasStoredModel()) // not converted yet - access Onnx model files
-                return transformFromOnnxModel(store, context.rankProfile(), context.queryProfiles());
-            else
-                return transformFromStoredModel(store, context.rankProfile());
+            ConvertedModel.FeatureArguments arguments = new OnnxFeatureArguments(feature.getArguments());
+            ConvertedModel convertedModel = new ConvertedModel(arguments, context, onnxImporter, importedModels);
+            return convertedModel.expression();
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use Onnx model from " + feature, e);
         }
     }
 
-    private ExpressionNode transformFromOnnxModel(ModelStore store,
-                                                  RankProfile profile,
-                                                  QueryProfileRegistry queryProfiles) {
-        ImportedModel model = importedModels.computeIfAbsent(store.arguments().modelPath(),
-                                                         k -> onnxImporter.importModel(store.arguments().modelName(),
-                                                                                       store.modelDir()));
-        return transformFromImportedModel(model, store, profile, queryProfiles);
-    }
-
-    static class OnnxFeatureArguments extends FeatureArguments {
+    static class OnnxFeatureArguments extends ConvertedModel.FeatureArguments {
         public OnnxFeatureArguments(Arguments arguments) {
             if (arguments.isEmpty())
                 throw new IllegalArgumentException("An onnx node must take an argument pointing to " +

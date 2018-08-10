@@ -43,28 +43,17 @@ public class TensorFlowFeatureConverter extends MLImportFeatureConverter {
         if ( ! feature.getName().equals("tensorflow")) return feature;
 
         try {
-            FeatureArguments arguments = new TensorFlowFeatureArguments(feature.getArguments());
-            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
-            if ( ! store.hasStoredModel()) // not converted yet - access TensorFlow model files
-                return transformFromTensorFlowModel(store, context.rankProfile(), context.queryProfiles());
-            else
-                return transformFromStoredModel(store, context.rankProfile());
+            ConvertedModel.FeatureArguments arguments = new TensorFlowFeatureArguments(feature.getArguments());
+            ConvertedModel convertedModel = new ConvertedModel(arguments, context, tensorFlowImporter, importedModels);
+            return convertedModel.expression();
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
         }
     }
 
-    private ExpressionNode transformFromTensorFlowModel(ModelStore store,
-                                                          RankProfile profile,
-                                                          QueryProfileRegistry queryProfiles) {
-        ImportedModel model = importedModels.computeIfAbsent(store.arguments().modelPath(),
-                k -> tensorFlowImporter.importModel(store.arguments().modelName(),
-                        store.modelDir()));
-        return transformFromImportedModel(model, store, profile, queryProfiles);
-    }
+    static class TensorFlowFeatureArguments extends ConvertedModel.FeatureArguments {
 
-    static class TensorFlowFeatureArguments extends FeatureArguments {
         public TensorFlowFeatureArguments(Arguments arguments) {
             if (arguments.isEmpty())
                 throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
@@ -76,6 +65,7 @@ public class TensorFlowFeatureConverter extends MLImportFeatureConverter {
             signature = optionalArgument(1, arguments);
             output = optionalArgument(2, arguments);
         }
+
     }
 
 }
