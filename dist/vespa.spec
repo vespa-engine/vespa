@@ -100,6 +100,7 @@ Requires: gdb
 Requires: net-tools
 %if 0%{?centos}
 Requires: llvm5.0
+%define _vespa_llvm_version 5.0
 %define _extra_link_directory /usr/lib64/llvm5.0/lib;/opt/vespa-gtest/lib;/opt/vespa-cppunit/lib
 %define _extra_include_directory /usr/include/llvm5.0;/opt/vespa-boost/include;/opt/vespa-gtest/include;/opt/vespa-cppunit/include
 %endif
