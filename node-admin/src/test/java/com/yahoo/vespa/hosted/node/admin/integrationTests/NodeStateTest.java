@@ -27,7 +27,7 @@ public class NodeStateTest {
             .build();
 
     private void setup(DockerTester tester) throws InterruptedException {
-        tester.addNodeRepositoryNode(initialNodeSpec);
+        tester.addChildNodeRepositoryNode(initialNodeSpec);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (tester.nodeAdmin.getListOfHosts().size() == 0) {
@@ -45,7 +45,7 @@ public class NodeStateTest {
         try (DockerTester dockerTester = new DockerTester()) {
             setup(dockerTester);
             // Change node state to dirty
-            dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
+            dockerTester.addChildNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
                     .state(Node.State.dirty)
                     .minCpuCores(1)
                     .minMainMemoryAvailableGb(1)
@@ -74,7 +74,7 @@ public class NodeStateTest {
             DockerImage newDockerImage = new DockerImage("newDockerImage");
 
             // Change node state to inactive and change the wanted docker image
-            dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
+            dockerTester.addChildNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
                     .wantedDockerImage(newDockerImage)
                     .state(Node.State.inactive)
                     .minCpuCores(1)
@@ -89,7 +89,7 @@ public class NodeStateTest {
 
 
             // Change node state to active
-            dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
+            dockerTester.addChildNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
                     .wantedDockerImage(newDockerImage)
                     .state(Node.State.active)
                     .minCpuCores(1)

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.concurrent.classlock.ClassLocking;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -41,8 +43,9 @@ import static org.mockito.Mockito.when;
 public class DockerTester implements AutoCloseable {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofMillis(100);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofMillis(10);
-    private static final Path pathToVespaHome = Paths.get("/opt/vespa");
-    static final String NODE_PROGRAM = pathToVespaHome.resolve("bin/vespa-nodectl").toString();
+    private static final Path PATH_TO_VESPA_HOME = Paths.get("/opt/vespa");
+    static final String NODE_PROGRAM = PATH_TO_VESPA_HOME.resolve("bin/vespa-nodectl").toString();
+    static final String DOCKER_HOST_HOSTNAME = "host.domain.tld";
 
     final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     final Docker dockerMock = new DockerMock(callOrderVerifier);
@@ -66,9 +69,20 @@ public class DockerTester implements AutoCloseable {
                 .region("us-east-1")
                 .environment("prod")
                 .system("main")
-                .pathResolver(new PathResolver(pathToVespaHome, Paths.get("/tmp"), Paths.get("/tmp")))
+                .pathResolver(new PathResolver(PATH_TO_VESPA_HOME, Paths.get("/tmp"), Paths.get("/tmp")))
                 .cloud("mycloud")
                 .build();
+
+        NodeSpec hostSpec = new NodeSpec.Builder()
+                .hostname(DOCKER_HOST_HOSTNAME)
+                .state(Node.State.active)
+                .nodeType(NodeType.host)
+                .flavor("default")
+                .wantedRestartGeneration(1L)
+                .currentRestartGeneration(1L)
+                .build();
+        nodeRepositoryMock.updateNodeRepositoryNode(hostSpec);
+
         Clock clock = Clock.systemUTC();
         DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null, new IPAddressesImpl());
         StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, null, environment, callOrderVerifier, clock);
@@ -81,13 +95,16 @@ public class DockerTester implements AutoCloseable {
                 orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL, athenzCredentialsMaintainer);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
         nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock, orchestratorMock, storageMaintainer,
-                nodeAdmin, "basehostname", clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL,
+                nodeAdmin, DOCKER_HOST_HOSTNAME, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL,
                 Optional.of(new ClassLocking()));
         nodeAdminStateUpdater.start();
     }
 
-    void addNodeRepositoryNode(NodeSpec nodeSpec) {
-        nodeRepositoryMock.updateNodeRepositoryNode(nodeSpec);
+    /** Adds a node to node-repository mock that is running on this host */
+    void addChildNodeRepositoryNode(NodeSpec nodeSpec) {
+        nodeRepositoryMock.updateNodeRepositoryNode(new NodeSpec.Builder(nodeSpec)
+                .parentHostname(DOCKER_HOST_HOSTNAME)
+                .build());
     }
 
     @Override

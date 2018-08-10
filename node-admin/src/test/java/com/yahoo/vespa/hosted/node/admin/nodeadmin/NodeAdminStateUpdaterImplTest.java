@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl.TRANSITION_EXCEPTION_MESSAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -55,7 +56,7 @@ public class NodeAdminStateUpdaterImplTest {
 
     @Test
     public void testStateConvergence() {
-        mockNodeRepo(4);
+        mockNodeRepo(Node.State.active, 4);
         List<String> activeHostnames = nodeRepository.getNodes(parentHostname).stream()
                 .map(NodeSpec::getHostname)
                 .collect(Collectors.toList());
@@ -159,7 +160,7 @@ public class NodeAdminStateUpdaterImplTest {
     @Test
     public void half_transition_revert() {
         final String exceptionMsg = "Cannot allow to suspend because some reason";
-        mockNodeRepo(3);
+        mockNodeRepo(Node.State.active, 3);
 
         // Initially everything is frozen to force convergence
         when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
@@ -186,6 +187,33 @@ public class NodeAdminStateUpdaterImplTest {
         verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Make sure that we unfreeze!
     }
 
+    @Test
+    public void do_not_orchestrate_host_when_not_active() {
+        when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofHours(1));
+        when(nodeAdmin.setFrozen(anyBoolean())).thenReturn(true);
+        mockNodeRepo(Node.State.ready, 3);
+
+        // Resume and suspend only require that node-agents are frozen and permission from
+        // orchestrator to resume/suspend host. Therefore, if host is not active, we only need to freeze.
+        tickAfter(0);
+        refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
+        verify(orchestrator, never()).resume(eq(parentHostname));
+
+        assertResumeStateError(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN, TRANSITION_EXCEPTION_MESSAGE);
+        tickAfter(0);
+        refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN);
+        verify(orchestrator, never()).suspend(eq(parentHostname));
+
+        // When doing batch suspend, only suspend the containers if the host is not active
+        List<String> activeHostnames = nodeRepository.getNodes(parentHostname).stream()
+                .map(NodeSpec::getHostname)
+                .collect(Collectors.toList());
+        assertResumeStateError(NodeAdminStateUpdater.State.SUSPENDED, TRANSITION_EXCEPTION_MESSAGE);
+        tickAfter(0);
+        refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
+        verify(orchestrator, times(1)).suspend(eq(parentHostname), eq(activeHostnames));
+    }
+
     private void assertResumeStateError(NodeAdminStateUpdater.State targetState, String reason) {
         try {
             refresher.setResumeStateAndCheckIfResumed(targetState);
@@ -195,7 +223,7 @@ public class NodeAdminStateUpdaterImplTest {
         }
     }
 
-    private void mockNodeRepo(int numberOfNodes) {
+    private void mockNodeRepo(Node.State hostState, int numberOfNodes) {
         List<NodeSpec> containersToRun = IntStream.range(0, numberOfNodes)
                 .mapToObj(i -> new NodeSpec.Builder()
                         .hostname("host" + i + ".test.yahoo.com")
@@ -209,6 +237,16 @@ public class NodeAdminStateUpdaterImplTest {
                 .collect(Collectors.toList());
 
         when(nodeRepository.getNodes(eq(parentHostname))).thenReturn(containersToRun);
+
+        when(nodeRepository.getNode(eq(parentHostname))).thenReturn(new NodeSpec.Builder()
+                .hostname(parentHostname)
+                .state(hostState)
+                .nodeType(NodeType.tenant)
+                .flavor("default")
+                .minCpuCores(1)
+                .minMainMemoryAvailableGb(1)
+                .minDiskAvailableGb(1)
+                .build());
     }
 
     private void tickAfter(int seconds) {
