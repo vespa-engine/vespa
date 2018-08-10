@@ -85,7 +85,7 @@ ConfigParser::deQuote(const vespalib::string & source)
 namespace {
 
 bool
-getValueForKey(vespalib::stringref  key, const vespalib::stringref & line,
+getValueForKey(vespalib::stringref  key, vespalib::stringref line,
                vespalib::string& retval)
 {
     if (line.length() <= key.length()) {

@@ -9,14 +9,14 @@ namespace config {
 class ConfigKey {
 public:
     ConfigKey(vespalib::stringref  configId,
-              const vespalib::stringref & defName,
-              const vespalib::stringref & defNamespace,
-              const vespalib::stringref & defMd5);
+              vespalib::stringref defName,
+              vespalib::stringref defNamespace,
+              vespalib::stringref defMd5);
 
     ConfigKey(vespalib::stringref  configId,
-              const vespalib::stringref & defName,
-              const vespalib::stringref & defNamespace,
-              const vespalib::stringref & defMd5,
+              vespalib::stringref defName,
+              vespalib::stringref defNamespace,
+              vespalib::stringref defMd5,
               const std::vector<vespalib::string> & defSchema);
 
     ConfigKey(const ConfigKey &);
