@@ -44,21 +44,24 @@ void
 MultiValueEnumAttribute<B, M>::reEnumerate()
 {
     // update MultiValueMapping with new EnumIndex values.
-    EnumModifier enumGuard(this->getEnumModifier());
-    for (DocId doc = 0; doc < this->getNumDocs(); ++doc) {
-        vespalib::ConstArrayRef<WeightedIndex> indicesRef(this->_mvMapping.get(doc));
-        WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
-
-        for (uint32_t i = 0; i < indices.size(); ++i) {
-            EnumIndex oldIndex = indices[i].value();
-            EnumIndex newIndex;
-            this->_enumStore.getCurrentIndex(oldIndex, newIndex);
-            indices[i] = WeightedIndex(newIndex, indices[i].weight());
+    this->logEnumStoreEvent("compactfixup", "drain");
+    {
+        EnumModifier enumGuard(this->getEnumModifier());
+        this->logEnumStoreEvent("compactfixup", "start");
+        for (DocId doc = 0; doc < this->getNumDocs(); ++doc) {
+            vespalib::ConstArrayRef<WeightedIndex> indicesRef(this->_mvMapping.get(doc));
+            WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
+            for (uint32_t i = 0; i < indices.size(); ++i) {
+                EnumIndex oldIndex = indices[i].value();
+                EnumIndex newIndex;
+                this->_enumStore.getCurrentIndex(oldIndex, newIndex);
+                indices[i] = WeightedIndex(newIndex, indices[i].weight());
+            }
+            std::atomic_thread_fence(std::memory_order_release);
+            this->_mvMapping.replace(doc, indices);
         }
-
-        std::atomic_thread_fence(std::memory_order_release);
-        this->_mvMapping.replace(doc, indices);
     }
+    this->logEnumStoreEvent("compactfixup", "complete");
 }
 
 template <typename B, typename M>
@@ -197,9 +200,12 @@ std::unique_ptr<AttributeSaver>
 MultiValueEnumAttribute<B, M>::onInitSave()
 {
     {
+        this->logEnumStoreEvent("reenumerate", "drain");
         EnumModifier enumGuard(this->getEnumModifier());
+        this->logEnumStoreEvent("reenumerate", "start");
         this->_enumStore.reEnumerate();
     }
+    this->logEnumStoreEvent("reenumerate", "complete");
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
                                              takeGuard());
     return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex>>

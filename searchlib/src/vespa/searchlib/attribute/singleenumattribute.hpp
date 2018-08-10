@@ -137,16 +137,21 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::reEnumerate()
 {
-    EnumModifier enumGuard(this->getEnumModifier());
-    for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
-        EnumIndex oldIdx = _enumIndices[i];
-        if (oldIdx.valid()) {
-            EnumIndex newIdx;
-            this->_enumStore.getCurrentIndex(oldIdx, newIdx);
-            std::atomic_thread_fence(std::memory_order_release);
-            _enumIndices[i] = newIdx;
+    this->logEnumStoreEvent("compactfixup", "drain");
+    {
+        EnumModifier enumGuard(this->getEnumModifier());
+        this->logEnumStoreEvent("compactfixup", "start");
+        for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
+            EnumIndex oldIdx = _enumIndices[i];
+            if (oldIdx.valid()) {
+                EnumIndex newIdx;
+                this->_enumStore.getCurrentIndex(oldIdx, newIdx);
+                std::atomic_thread_fence(std::memory_order_release);
+                _enumIndices[i] = newIdx;
+            }
         }
     }
+    this->logEnumStoreEvent("compactfixup", "complete");
 }
 
 template <typename B>
@@ -303,9 +308,12 @@ std::unique_ptr<AttributeSaver>
 SingleValueEnumAttribute<B>::onInitSave()
 {
     {
+        this->logEnumStoreEvent("reenumerate", "drain");
         EnumModifier enumGuard(this->getEnumModifier());
+        this->logEnumStoreEvent("reenumerate", "start");
         this->_enumStore.reEnumerate();
     }
+    this->logEnumStoreEvent("reenumerate", "complete");
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
                                              takeGuard());
     return std::make_unique<SingleValueEnumAttributeSaver>

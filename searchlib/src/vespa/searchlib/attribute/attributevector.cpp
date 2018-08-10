@@ -20,6 +20,7 @@
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/searchlib/util/logutil.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");
@@ -887,6 +888,17 @@ MemoryUsage
 AttributeVector::getChangeVectorMemoryUsage() const
 {
     return MemoryUsage(0, 0, 0, 0);
+}
+
+void
+AttributeVector::logEnumStoreEvent(const char *reason, const char *stage)
+{
+    vespalib::JSONStringer jstr;
+    jstr.beginObject();
+    jstr.appendKey("path").appendString(getBaseFileName());
+    jstr.endObject();
+    vespalib::string eventName(make_string("%s.attribute.enumstore.%s", reason, stage));
+    EV_STATE(eventName.c_str(), jstr.toString().data());
 }
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);
