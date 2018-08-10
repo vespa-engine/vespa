@@ -78,7 +78,7 @@ struct DiversityParams {
           cutoff_factor(cutoff_factor_),
           cutoff_strategy(cutoff_strategy_)
     { }
-
+    bool enabled() const { return !attribute.empty() && (min_groups > 0); }
     vespalib::string  attribute;
     uint32_t          min_groups;
     double            cutoff_factor;
@@ -95,6 +95,7 @@ struct DegradationParams {
           sample_percentage(sample_percentage_),
           post_filter_multiplier(post_filter_multiplier_)
     { }
+    bool enabled() const { return !attribute.empty() && (max_hits > 0); }
     vespalib::string attribute;
     size_t           max_hits;
     bool             descending;

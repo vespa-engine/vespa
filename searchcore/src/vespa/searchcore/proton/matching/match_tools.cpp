@@ -41,38 +41,25 @@ void tag_match_data(const HandleRecorder::HandleSet &handles, MatchData &match_d
     }
 }
 
-std::unique_ptr<DegradationParams>
-getDegradationParams(const RankSetup & rankSetup, const Properties & rankProperties)
+DegradationParams
+extractDegradationParams(const RankSetup &rankSetup, const Properties &rankProperties)
 {
-    vespalib::string limit_attribute = DegradationAttribute::lookup(rankProperties);
-    size_t limit_maxhits = DegradationMaxHits::lookup(rankProperties);
-    if (!limit_attribute.empty() && limit_maxhits > 0) {
-        bool limit_ascending = DegradationAscendingOrder::lookup(rankProperties);
-        double limit_max_filter_coverage = DegradationMaxFilterCoverage::lookup(rankProperties);
-        double samplePercentage = DegradationSamplePercentage::lookup(rankProperties);
-        double postFilterMultiplier = DegradationPostFilterMultiplier::lookup(rankProperties);
-        return std::make_unique<DegradationParams>(limit_attribute, limit_maxhits, !limit_ascending,
-                                                   limit_max_filter_coverage, samplePercentage, postFilterMultiplier);
-    } else if (rankSetup.hasMatchPhaseDegradation()) {
-        return std::make_unique<DegradationParams>(rankSetup.getDegradationAttribute(), rankSetup.getDegradationMaxHits(),
-                                                   !rankSetup.isDegradationOrderAscending(), rankSetup.getDegradationMaxFilterCoverage(),
-                                                   rankSetup.getDegradationSamplePercentage(), rankSetup.getDegradationPostFilterMultiplier());
-    }
-    return std::unique_ptr<DegradationParams>();
+    return DegradationParams(DegradationAttribute::lookup(rankProperties, rankSetup.getDegradationAttribute()),
+                             DegradationMaxHits::lookup(rankProperties, rankSetup.getDegradationMaxHits()),
+                             !DegradationAscendingOrder::lookup(rankProperties, rankSetup.isDegradationOrderAscending()),
+                             DegradationMaxFilterCoverage::lookup(rankProperties, rankSetup.getDegradationMaxFilterCoverage()),
+                             DegradationSamplePercentage::lookup(rankProperties, rankSetup.getDegradationSamplePercentage()),
+                             DegradationPostFilterMultiplier::lookup(rankProperties, rankSetup.getDegradationPostFilterMultiplier()));
+
 }
 
 DiversityParams
-getDiversityParams(const RankSetup & rankSetup, const Properties & rankProperties)
+extractDiversityParams(const RankSetup &rankSetup, const Properties &rankProperties)
 {
-    vespalib::string diversity_attribute = DiversityAttribute::lookup(rankProperties);
-
-    return (!diversity_attribute.empty())
-        ? DiversityParams(diversity_attribute, DiversityMinGroups::lookup(rankProperties),
-                          DiversityCutoffFactor::lookup(rankProperties),
-                          AttributeLimiter::toDiversityCutoffStrategy(DiversityCutoffStrategy::lookup(rankProperties)))
-        : DiversityParams(rankSetup.getDiversityAttribute(), rankSetup.getDiversityMinGroups(),
-                          rankSetup.getDiversityCutoffFactor(),
-                          AttributeLimiter::toDiversityCutoffStrategy(rankSetup.getDiversityCutoffStrategy()));
+    return DiversityParams(DiversityAttribute::lookup(rankProperties, rankSetup.getDiversityAttribute()),
+                           DiversityMinGroups::lookup(rankProperties, rankSetup.getDiversityMinGroups()),
+                           DiversityCutoffFactor::lookup(rankProperties, rankSetup.getDiversityCutoffFactor()),
+                           AttributeLimiter::toDiversityCutoffStrategy(DiversityCutoffStrategy::lookup(rankProperties, rankSetup.getDiversityCutoffStrategy())));
 }
 
 } // namespace proton::matching::<unnamed>
@@ -189,12 +176,12 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.fetchPostings();
         _query.freeze();
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
-        _diversityParams = getDiversityParams(_rankSetup, rankProperties);
-        std::unique_ptr<DegradationParams> degradationParams = getDegradationParams(_rankSetup, rankProperties);
+        _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
+        DegradationParams degradationParams = extractDegradationParams(_rankSetup, rankProperties);
 
-        if (degradationParams) {
+        if (degradationParams.enabled()) {
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
-                                                                 _requestContext, *degradationParams, _diversityParams);
+                                                                 _requestContext, degradationParams, _diversityParams);
         }
     }
     if ( ! _match_limiter) {
@@ -214,7 +201,7 @@ MatchToolsFactory::createMatchTools() const
 
 std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
 {
-    if (_diversityParams.attribute.empty()) {
+    if ( !_diversityParams.enabled() ) {
         return std::unique_ptr<IDiversifier>();
     }
     auto attr = _requestContext.getAttribute(_diversityParams.attribute);
