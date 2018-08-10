@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -578,6 +579,26 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"osVersion\": \"7.4.2\", \"force\": true}"),
                                    Request.Method.PATCH),
                        "{\"message\":\"Set osVersion to 7.4.2 for nodes of type confighost\"}");
+    }
+
+    @Test
+    public void test_os_version() throws Exception {
+        // Schedule OS upgrade
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/host",
+                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Set osVersion to 7.5.2 for nodes of type host\"}");
+
+        // Other node type does not return wanted OS version
+        Response r = container.handleRequest(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"));
+        assertFalse("Response omits wantedOsVersions field", r.getBodyAsString().contains("wantedOsVersion"));
+
+        // Node updates its node object after upgrading OS
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"currentOsVersion\": \"7.5.2\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-os-upgrade-complete.json");
     }
 
     /** Tests the rendering of each node separately to make it easier to find errors */
