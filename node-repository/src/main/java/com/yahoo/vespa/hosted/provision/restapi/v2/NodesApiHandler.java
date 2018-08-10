@@ -53,7 +53,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private final NodeRepository nodeRepository;
     private final NodeRepositoryMaintenance maintenance;
     private final NodeFlavors nodeFlavors;
-    private static final String nodeTypeKey = "type";
 
     @Inject
     public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
@@ -224,7 +223,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 additionalIpAddresses,
                 parentHostname,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
-                nodeTypeFromSlime(inspector.field(nodeTypeKey)));
+                nodeTypeFromSlime(inspector.field("type")));
     }
 
     private static NodeType nodeTypeFromSlime(Inspector object) {
