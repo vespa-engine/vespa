@@ -114,18 +114,15 @@ public class NodesApiHandler extends LoggingRequestHandler {
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
             List<Node> failedNodes = nodeRepository.failRecursively(lastElement(path), Agent.operator, "Failed through the nodes/v2 API");
-            String failedHostnames = failedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
-            return new MessageResponse("Moved " + failedHostnames + " to failed");
+            return new MessageResponse("Moved " + hostnamesAsString(failedNodes) + " to failed");
         }
         else if (path.startsWith("/nodes/v2/state/parked/")) {
             List<Node> parkedNodes = nodeRepository.parkRecursively(lastElement(path), Agent.operator, "Parked through the nodes/v2 API");
-            String parkedHostnames = parkedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
-            return new MessageResponse("Moved " + parkedHostnames + " to parked");
+            return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to parked");
         }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
             List<Node> dirtiedNodes = nodeRepository.dirtyRecursively(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
-            String dirtiedHostnames = dirtiedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
-            return new MessageResponse("Moved " + dirtiedHostnames + " to dirty");
+            return new MessageResponse("Moved " + hostnamesAsString(dirtiedNodes) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
             nodeRepository.reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");
@@ -230,7 +227,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 nodeTypeFromSlime(inspector.field(nodeTypeKey)));
     }
 
-    private NodeType nodeTypeFromSlime(Inspector object) {
+    private static NodeType nodeTypeFromSlime(Inspector object) {
         if (! object.valid()) return NodeType.tenant; // default
         switch (object.asString()) {
             case "tenant" : return NodeType.tenant;
@@ -255,7 +252,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         return filter;
     }
 
-    private String lastElement(String path) {
+    private static String lastElement(String path) {
         if (path.endsWith("/"))
             path = path.substring(0, path.length()-1);
         int lastSlash = path.lastIndexOf("/");
@@ -263,7 +260,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         return path.substring(lastSlash + 1, path.length());
     }
 
-    private boolean isPatchOverride(HttpRequest request) {
+    private static boolean isPatchOverride(HttpRequest request) {
         // Since Jersey's HttpUrlConnector does not support PATCH we support this by override this on POST requests.
         String override = request.getHeader("X-HTTP-Method-Override");
         if (override != null) {
@@ -298,4 +295,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
         return new MessageResponse("Set version for " + nodeType + " to " + version.toFullString());
     }
+
+    private static String hostnamesAsString(List<Node> nodes) {
+        return nodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
+    }
+
 }
