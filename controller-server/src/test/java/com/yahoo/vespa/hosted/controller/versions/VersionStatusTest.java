@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -61,8 +60,8 @@ public class VersionStatusTest {
         Version oldest = new Version(5);
         for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
             for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
-                tester.configServer().nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(),
-                                                                          node.owner(), oldest, node.wantedVersion()));
+                tester.configServer().nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(),
+                                                                                    node.owner(), oldest, node.wantedVersion()));
                 break;
             }
         }

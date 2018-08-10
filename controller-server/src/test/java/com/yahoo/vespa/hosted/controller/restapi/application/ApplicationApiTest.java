@@ -338,7 +338,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST a 'restart application' command with a host filter (other filters not supported yet)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart?hostname=host1", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "Requested restart of tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
+                              "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"No node with the hostname host1 is known.\"}", 500);
 
         // GET services
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/service", GET)

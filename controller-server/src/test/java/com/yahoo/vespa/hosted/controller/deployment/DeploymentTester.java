@@ -181,25 +181,17 @@ public class DeploymentTester {
                                         .buildNumber(buildNumber)
                                         .uploadArtifact(applicationPackage)
                                         .submit();
-        completeDeployment(application, applicationPackage, Optional.of(failOnJob), true);
-        assertTrue(applications().require(application.id()).change().isPresent());
+        completeDeployment(application, applicationPackage, Optional.ofNullable(failOnJob));
     }
 
     public void deployCompletely(Application application, ApplicationPackage applicationPackage, long buildNumber) {
-        jobCompletion(JobType.component).application(application)
-                                        .buildNumber(buildNumber)
-                                        .uploadArtifact(applicationPackage)
-                                        .submit();
-        assertTrue(applications().require(application.id()).change().isPresent());
-        completeDeployment(application, applicationPackage, Optional.empty(), true);
+        completeDeploymentWithError(application, applicationPackage, buildNumber, null);
     }
 
-    private void completeDeployment(Application application, ApplicationPackage applicationPackage,
-                                    Optional<JobType> failOnJob, boolean includingProductionZones) {
+    private void completeDeployment(Application application, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
+        assertTrue(applications().require(application.id()).change().isPresent());
         DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
         List<JobType> jobs = steps.jobs();
-        if ( ! includingProductionZones)
-            jobs = jobs.stream().filter(job -> ! job.isProduction()).collect(Collectors.toList());
         for (JobType job : jobs) {
             boolean failJob = failOnJob.map(j -> j.equals(job)).orElse(false);
             deployAndNotify(application, applicationPackage, ! failJob, job);
@@ -210,11 +202,8 @@ public class DeploymentTester {
         if (failOnJob.isPresent()) {
             assertTrue(applications().require(application.id()).change().isPresent());
             assertTrue(applications().require(application.id()).deploymentJobs().hasFailures());
-        } else if (includingProductionZones) {
+        } else {
             assertFalse(applications().require(application.id()).change().isPresent());
-        }
-        else {
-            assertTrue(applications().require(application.id()).change().isPresent());
         }
     }
 
@@ -225,7 +214,7 @@ public class DeploymentTester {
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
         assertTrue(application + " has a change", applications().require(application.id()).change().isPresent());
         assertEquals(Change.of(version), applications().require(application.id()).change());
-        completeDeployment(application, applicationPackage, Optional.empty(), true);
+        completeDeployment(application, applicationPackage, Optional.empty());
     }
 
     public void completeUpgradeWithError(Application application, Version version, String upgradePolicy, JobType failOnJob) {
@@ -239,7 +228,7 @@ public class DeploymentTester {
     private void completeUpgradeWithError(Application application, Version version, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
         assertTrue(applications().require(application.id()).change().isPresent());
         assertEquals(Change.of(version), applications().require(application.id()).change());
-        completeDeployment(application, applicationPackage, failOnJob, true);
+        completeDeployment(application, applicationPackage, failOnJob);
     }
 
     public void deploy(JobType job, Application application, ApplicationPackage applicationPackage) {

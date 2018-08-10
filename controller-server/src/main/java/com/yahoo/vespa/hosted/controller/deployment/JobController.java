@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -11,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -36,9 +36,9 @@ import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.te
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
  *
- * Keys are the {@link ApplicationId} of the real application, for which the deployment job is run, and the
- * {@link JobType} of the real deployment to test.
- * Although the deployment jobs are themselves applications, their IDs are not to be referenced.
+ * Keys are the {@link ApplicationId} of the real application, for which the deployment job is run, the
+ * {@link JobType} to run, and the strictly increasing run number of this combination.
+ * The deployment jobs run tests using regular applications, but these tester application IDs are not to be used elsewhere.
  *
  * Jobs consist of sets of {@link Step}s, defined in {@link JobProfile}s.
  * Each run is represented by a {@link RunStatus}, which holds the status of each step of the run, as well as
@@ -63,7 +63,7 @@ public class JobController {
     public void updateStorage() {
         for (ApplicationId id : applications())
             for (JobType type : jobs(id)) {
-                locked(id, type, runs -> {
+                locked(id, type, runs -> { // runs is unmodified, and written back as such.
                     curator.readLastRun(id, type).ifPresent(curator::writeLastRun);
                 });
             }
@@ -89,14 +89,6 @@ public class JobController {
         try (Lock __ = curator.lock(id.application(), id.type())) {
             logs.append(id, step.name(), log);
         }
-    }
-
-    // TODO jvenstad: Remove this, and let the DeploymentTrigger trigger directly with the correct BuildService.
-    /** Returns whether the given application has registered with this build service. */
-    public boolean builds(ApplicationId id) {
-        return controller.applications().get(id)
-                         .map(application -> application.deploymentJobs().builtInternally())
-                         .orElse(false);
     }
 
     /** Returns a list of all application which have registered. */
@@ -180,17 +172,21 @@ public class JobController {
                                      byte[] applicationPackage, byte[] applicationTestPackage) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
-            controller.applications().store(application.withBuiltInternally(true));
-
             long run = nextBuild(id);
             version.set(ApplicationVersion.from(revision, run));
 
-            // TODO smorgrav: Store the pair.
-//            controller.applications().artifacts().putApplicationPackage(id, version.toString(), applicationPackage);
-//            controller.applications().artifacts().putTesterPackage(
-//                    InternalStepRunner.testerOf(id), version.toString(), applicationTestPackage);
-//
-//            notifyOfNewSubmission(id, revision, run);
+            controller.applications().artifacts().putApplicationPackage(id,
+                                                                        version.toString(),
+                                                                        applicationPackage);
+            controller.applications().artifacts().putTesterPackage(InternalStepRunner.testerOf(id),
+                                                                   version.toString(),
+                                                                   applicationTestPackage);
+
+            application = application.withBuiltInternally(true);
+            controller.applications().store(controller.applications().withUpdatedConfig(application,
+                                                                                        new ApplicationPackage(applicationPackage)));
+
+            notifyOfNewSubmission(id, revision, run);
         });
         return version.get();
     }

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 

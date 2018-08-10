@@ -306,18 +306,8 @@ public class ApplicationController {
             validate(applicationPackage.deploymentSpec());
 
             // Update application with information from application package
-            if ( ! preferOldestVersion) {
-                // Store information about application package
-                application = application.with(applicationPackage.deploymentSpec());
-                application = application.with(applicationPackage.validationOverrides());
-
-                // Delete zones not listed in DeploymentSpec, if allowed
-                // We do this at deployment time to be able to return a validation failure message when necessary
-                application = deleteRemovedDeployments(application);
-
-                // Clean up deployment jobs that are no longer referenced by deployment spec
-                application = deleteUnreferencedDeploymentJobs(application);
-
+            if ( ! preferOldestVersion && ! application.get().deploymentJobs().builtInternally()) {
+                application = withUpdatedConfig(application, applicationPackage);
                 store(application); // store missing information even if we fail deployment below
             }
 
@@ -339,6 +329,24 @@ public class ApplicationController {
             store(application);
             return result;
         }
+    }
+
+    /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
+    public LockedApplication withUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+        // Store information about application package
+        application = application.with(applicationPackage.deploymentSpec());
+        application = application.with(applicationPackage.validationOverrides());
+
+        // Delete zones not listed in DeploymentSpec, if allowed
+        // We do this at deployment time for externally built applications, and at submission time
+        // for internally built ones, to be able to return a validation failure message when necessary
+        application = withoutDeletedDeployments(application);
+
+        // Clean up deployment jobs that are no longer referenced by deployment spec
+        application = withoutUnreferencedDeploymentJobs(application);
+
+        store(application);
+        return(application);
     }
 
     /** Deploy a system application to given zone */
@@ -403,7 +411,7 @@ public class ApplicationController {
         return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 
-    private LockedApplication deleteRemovedDeployments(LockedApplication application) {
+    private LockedApplication withoutDeletedDeployments(LockedApplication application) {
         List<Deployment> deploymentsToRemove = application.get().productionDeployments().values().stream()
                 .filter(deployment -> ! application.get().deploymentSpec().includes(deployment.zone().environment(),
                                                                                     Optional.of(deployment.zone().region())))
@@ -428,7 +436,7 @@ public class ApplicationController {
         return applicationWithRemoval;
     }
 
-    private LockedApplication deleteUnreferencedDeploymentJobs(LockedApplication application) {
+    private LockedApplication withoutUnreferencedDeploymentJobs(LockedApplication application) {
         for (JobType job : JobList.from(application.get()).production().mapToList(JobStatus::type)) {
             ZoneId zone = job.zone(controller.system());
             if (application.get().deploymentSpec().includes(zone.environment(), Optional.of(zone.region())))

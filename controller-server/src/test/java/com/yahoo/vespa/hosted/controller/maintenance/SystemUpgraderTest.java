@@ -245,8 +245,8 @@ public class SystemUpgraderTest {
         assertWantedVersion(application, version, zones);
         for (ZoneId zone : zones) {
             for (Node node : nodeRepository().list(zone, application.id(), SystemApplication.activeStates())) {
-                nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
-                                                    node.wantedVersion(), node.wantedVersion()));
+                nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                                                              node.wantedVersion(), node.wantedVersion()));
             }
 
             assertCurrentVersion(application, version, zone);
@@ -269,8 +269,8 @@ public class SystemUpgraderTest {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().add(zone, new Node(node.hostname(), Node.State.failed, node.type(), node.owner(),
-                                            node.currentVersion(), node.wantedVersion()));
+        nodeRepository().putByHostname(zone, new Node(node.hostname(), Node.State.failed, node.type(), node.owner(),
+                                                      node.currentVersion(), node.wantedVersion()));
     }
 
     private void assertSystemVersion(Version version) {
