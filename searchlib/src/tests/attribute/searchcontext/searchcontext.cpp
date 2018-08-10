@@ -429,7 +429,7 @@ SearchContextTest::getSearch(const V & vec, const T & term, QueryTermSimple::Sea
 ResultSetPtr
 SearchContextTest::performSearch(SearchIterator & sb, uint32_t numDocs)
 {
-    HitCollector hc(numDocs, numDocs, 0);
+    HitCollector hc(numDocs, numDocs);
     sb.initRange(1, numDocs);
     // assume strict toplevel search object located at start
     for (sb.seek(1u); ! sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
