@@ -391,6 +391,7 @@ protected:
 
     virtual AddressSpace getEnumStoreAddressSpaceUsage() const;
     virtual AddressSpace getMultiValueAddressSpaceUsage() const;
+    void logEnumStoreEvent(const char *reason, const char *stage);
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);
