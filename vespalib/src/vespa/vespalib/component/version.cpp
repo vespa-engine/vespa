@@ -63,8 +63,8 @@ Version::verifySanity()
 }
 
 // Precondition: input.empty() == false
-static int parseInteger(const stringref & input) __attribute__((noinline));
-static int parseInteger(const stringref & input)
+static int parseInteger(stringref input) __attribute__((noinline));
+static int parseInteger(stringref input)
 {
     const char *s = input.data();
     unsigned char firstDigit = s[0];

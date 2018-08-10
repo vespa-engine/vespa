@@ -20,7 +20,7 @@ DiskState::DiskState()
     setState(State::UP);
 }
 
-DiskState::DiskState(const State& state, const vespalib::stringref & description,
+DiskState::DiskState(const State& state, vespalib::stringref description,
                      double capacity)
     : _state(0),
       _description(description),
@@ -79,7 +79,7 @@ DiskState::DiskState(vespalib::stringref  serialized)
 }
 
 void
-DiskState::serialize(vespalib::asciistream & out, const vespalib::stringref & prefix,
+DiskState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
                      bool includeDescription, bool useOldFormat) const
 {
         // Always give node state if not part of a system state

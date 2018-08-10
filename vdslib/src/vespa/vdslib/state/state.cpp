@@ -39,7 +39,7 @@ State::get(vespalib::stringref  serialized)
             "Unknown state " + serialized + " given.", VESPA_STRLOC);
 }
 
-State::State(vespalib::stringref  name, const vespalib::stringref & serialized,
+State::State(vespalib::stringref  name, vespalib::stringref serialized,
              uint8_t rank, bool validDisk,
              bool validDistributorReported, bool validStorageReported,
              bool validDistributorWanted, bool validStorageWanted,

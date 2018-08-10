@@ -26,7 +26,7 @@ class State : public vespalib::Printable {
     bool _validClusterState;
 
     State(const State&);
-    State(vespalib::stringref  name, const vespalib::stringref & serialized,
+    State(vespalib::stringref  name, vespalib::stringref serialized,
           uint8_t rank, bool validDisk,
           bool validDistributorReported, bool validStorageReported,
           bool validDistributorWanted, bool validStorageWanted,

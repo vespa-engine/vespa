@@ -63,7 +63,7 @@ public:
      * @param replacement text to replace the pattern.
      * @return modified string.
      **/
-    vespalib::string replace(vespalib::stringref  s, const vespalib::stringref & replacement) const;
+    vespalib::string replace(vespalib::stringref  s, vespalib::stringref replacement) const;
 
     /**
      * Look at the given regular expression and identify the prefix

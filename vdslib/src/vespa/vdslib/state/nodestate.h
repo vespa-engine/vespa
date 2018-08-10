@@ -43,7 +43,7 @@ public:
     NodeState(NodeState &&);
     NodeState & operator = (NodeState &&);
     NodeState(const NodeType& nodeType, const State&,
-              const vespalib::stringref & description = "",
+              vespalib::stringref description = "",
               double capacity = 1.0, uint16_t reliability = 1);
     /** Set type if you want to verify that content fit with the given type. */
     NodeState(vespalib::stringref  serialized, const NodeType* nodeType = 0);
@@ -54,7 +54,7 @@ public:
      * part of the system state. Don't set prefix if you want to be able to
      * recreate the nodestate with NodeState(string) function.
      */
-    void serialize(vespalib::asciistream & out, const vespalib::stringref & prefix = "",
+    void serialize(vespalib::asciistream & out, vespalib::stringref prefix = "",
                    bool includeDescription = true,
                    bool includeDiskDescription = false,
                    bool useOldFormat = false) const;

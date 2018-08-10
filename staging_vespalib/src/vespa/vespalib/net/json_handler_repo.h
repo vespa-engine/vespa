@@ -34,7 +34,7 @@ private:
         vespalib::string path_prefix;
         const JsonGetHandler *handler;
         Hook(size_t seq_in,
-             const vespalib::stringref &prefix_in,
+             vespalib::stringref prefix_in,
              const JsonGetHandler &handler_in)
             : seq(seq_in), path_prefix(prefix_in), handler(&handler_in) {}
         bool operator <(const Hook &rhs) const {

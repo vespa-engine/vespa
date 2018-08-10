@@ -58,7 +58,7 @@ swap(ExceptionPtr &a, ExceptionPtr &b)
 
 //-----------------------------------------------------------------------------
 
-Exception::Exception(const stringref &msg, const stringref &location,
+Exception::Exception(stringref msg, stringref location,
                      int skipStack)
     : _what(),
       _msg(msg),
@@ -69,8 +69,8 @@ Exception::Exception(const stringref &msg, const stringref &location,
 {
 }
 
-Exception::Exception(const stringref &msg, const Exception &cause,
-                     const stringref &location, int skipStack)
+Exception::Exception(stringref msg, const Exception &cause,
+                     stringref location, int skipStack)
     : _what(),
       _msg(msg),
       _location(location),

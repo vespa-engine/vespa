@@ -46,7 +46,7 @@ Token stripString(vespalib::stringref  source,
 }
 
 void parse(TokenList& output,
-           const vespalib::stringref & source,
+           vespalib::stringref source,
            const AsciiSet & separators,
            const AsciiSet & strip)
 {
@@ -67,8 +67,8 @@ void parse(TokenList& output,
 namespace vespalib {
 
 StringTokenizer::StringTokenizer(vespalib::stringref  source,
-                                 const vespalib::stringref & separators,
-                                 const vespalib::stringref & strip)
+                                 vespalib::stringref separators,
+                                 vespalib::stringref strip)
     : _tokens()
 {
     AsciiSet sep(separators);

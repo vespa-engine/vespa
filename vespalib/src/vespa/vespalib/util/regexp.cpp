@@ -64,7 +64,7 @@ Regexp::match(vespalib::stringref  s) const
     return pos >= 0;
 }
 
-vespalib::string Regexp::replace(vespalib::stringref  s, const vespalib::stringref & replacement) const
+vespalib::string Regexp::replace(vespalib::stringref  s, vespalib::stringref replacement) const
 {
     if ( ! valid() ) { return s; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));

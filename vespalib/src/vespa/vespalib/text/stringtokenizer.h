@@ -42,8 +42,8 @@ public:
      * @param strip      Characters to be stripped from both ends of each token
      **/
     StringTokenizer(vespalib::stringref  source,
-                    const vespalib::stringref & separators = ",",
-                    const vespalib::stringref & strip = " \t\f\r\n");
+                    vespalib::stringref separators = ",",
+                    vespalib::stringref strip = " \t\f\r\n");
 
     /** Remove any empty tokens from the token list */
     void removeEmptyTokens();

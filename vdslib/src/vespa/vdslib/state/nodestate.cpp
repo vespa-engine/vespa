@@ -37,7 +37,7 @@ NodeState::NodeState()
 }
 
 NodeState::NodeState(const NodeType& type, const State& state,
-                     const vespalib::stringref & description,
+                     vespalib::stringref description,
                      double capacity, uint16_t reliability)
     : _type(&type),
       _state(0),
@@ -269,7 +269,7 @@ namespace {
 }
 
 void
-NodeState::serialize(vespalib::asciistream & out, const vespalib::stringref & prefix,
+NodeState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
                      bool includeDescription, bool includeDiskDescription,
                      bool useOldFormat) const
 {

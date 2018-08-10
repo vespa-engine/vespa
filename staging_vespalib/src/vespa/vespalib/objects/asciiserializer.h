@@ -18,7 +18,7 @@ public:
     AsciiSerializer &put(const IFieldBase &field, uint64_t value) override;
     AsciiSerializer &put(const IFieldBase &field, float value) override;
     AsciiSerializer &put(const IFieldBase &field, double value) override;
-    AsciiSerializer &put(const IFieldBase &field, const stringref &val) override;
+    AsciiSerializer &put(const IFieldBase &field, stringref val) override;
 
     const asciistream &getStream() const { return _stream; }
     asciistream &getStream() { return _stream; }

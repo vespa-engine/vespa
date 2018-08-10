@@ -22,10 +22,10 @@ public:
     typedef std::shared_ptr<DiskState> SP;
 
     DiskState();
-    DiskState(const State&, const vespalib::stringref & description = "", double capacity = 1.0);
+    DiskState(const State&, vespalib::stringref description = "", double capacity = 1.0);
     explicit DiskState(vespalib::stringref  serialized);
 
-    void serialize(vespalib::asciistream & out, const vespalib::stringref & prefix = "",
+    void serialize(vespalib::asciistream & out, vespalib::stringref prefix = "",
                    bool includeReason = true, bool useOldFormat = false) const;
 
     const State& getState() const { return *_state; }
