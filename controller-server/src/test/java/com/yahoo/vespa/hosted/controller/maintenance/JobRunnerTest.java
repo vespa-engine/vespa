@@ -59,12 +59,12 @@ import static org.junit.Assert.fail;
 public class JobRunnerTest {
 
     private static final Versions versions = new Versions(Version.fromString("1.2.3"),
-                                                  ApplicationVersion.from(new SourceRevision("repo",
-                                                                                             "branch",
-                                                                                             "bada55"),
-                                                                          321),
-                                                  Optional.empty(),
-                                                  Optional.empty());
+                                                          ApplicationVersion.from(new SourceRevision("repo",
+                                                                                                     "branch",
+                                                                                                     "bada55"),
+                                                                                  321),
+                                                          Optional.empty(),
+                                                          Optional.empty());
 
     @Test
     public void multiThreadedExecutionFinishes() throws InterruptedException {
@@ -226,7 +226,7 @@ public class JobRunnerTest {
         assertEquals(Optional.empty(), jobs.last(id, systemTest));
     }
 
-    private static ExecutorService inThreadExecutor() {
+    public static ExecutorService inThreadExecutor() {
         return new AbstractExecutorService() {
             AtomicBoolean shutDown = new AtomicBoolean(false);
             @Override public void shutdown() { shutDown.set(true); }

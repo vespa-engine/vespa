@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -11,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -172,8 +172,6 @@ public class JobController {
                                      byte[] applicationPackage, byte[] applicationTestPackage) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
-            controller.applications().store(application.withBuiltInternally(true));
-
             long run = nextBuild(id);
             version.set(ApplicationVersion.from(revision, run));
 
@@ -183,6 +181,10 @@ public class JobController {
             controller.applications().artifacts().putTesterPackage(InternalStepRunner.testerOf(id),
                                                                    version.toString(),
                                                                    applicationTestPackage);
+
+            application = application.withBuiltInternally(true);
+            controller.applications().store(controller.applications().withUpdatedConfig(application,
+                                                                                        new ApplicationPackage(applicationPackage)));
 
             notifyOfNewSubmission(id, revision, run);
         });
