@@ -174,7 +174,7 @@ public:
     ~FS4Properties();
     void allocEntries(uint32_t cnt);
     void setName(const char *name, uint32_t nameSize) { _name.assign(name, nameSize); }
-    void setName(const vespalib::stringref &val) {
+    void setName(vespalib::stringref val) {
         setName(val.data(), val.size());
     }
     void setKey(uint32_t entry, const char *key, uint32_t keySize);
@@ -282,7 +282,7 @@ public:
     uint32_t  _errorCode;
     string    _message;
 
-    void setErrorMessage(const vespalib::stringref &msg) { _message = msg; }
+    void setErrorMessage(vespalib::stringref msg) { _message = msg; }
 
     FS4Packet_ERROR();
     ~FS4Packet_ERROR();
@@ -464,12 +464,12 @@ public:
     string    _stackDump;     // if QF_PARSEDQUERY
 
     void setQueryFlags(uint32_t qflags) { _qflags = ACTIVE_QUERY_FLAGS & qflags; }
-    void setRanking(const vespalib::stringref &ranking) { _ranking = ranking; }
-    void setSortSpec(const vespalib::stringref &spec) { _sortSpec = spec; }
-    void setGroupSpec(const vespalib::stringref &spec) { _groupSpec = spec; }
-    void setSessionId(const vespalib::stringref &sid) { _sessionId = sid; }
-    void setLocation(const vespalib::stringref &loc) { _location = loc; }
-    void setStackDump(const vespalib::stringref &buf) { _stackDump = buf; }
+    void setRanking(vespalib::stringref ranking) { _ranking = ranking; }
+    void setSortSpec(vespalib::stringref spec) { _sortSpec = spec; }
+    void setGroupSpec(vespalib::stringref spec) { _groupSpec = spec; }
+    void setSessionId(vespalib::stringref sid) { _sessionId = sid; }
+    void setLocation(vespalib::stringref loc) { _location = loc; }
+    void setStackDump(vespalib::stringref buf) { _stackDump = buf; }
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp getTimeout() const;
     uint32_t getQueryFlags() const { return _qflags; }
@@ -512,10 +512,10 @@ public:
 
     void AllocateDocIDs(uint32_t cnt);
 
-    void setResultClassName(const vespalib::stringref &name) { _resultClassName = name; }
-    void setStackDump(const vespalib::stringref &buf) { _stackDump = buf; }
-    void setRanking(const vespalib::stringref &ranking) { _ranking = ranking; }
-    void setLocation(const vespalib::stringref &loc) { _location = loc; }
+    void setResultClassName(vespalib::stringref name) { _resultClassName = name; }
+    void setStackDump(vespalib::stringref buf) { _stackDump = buf; }
+    void setRanking(vespalib::stringref ranking) { _ranking = ranking; }
+    void setLocation(vespalib::stringref loc) { _location = loc; }
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp getTimeout() const;
 

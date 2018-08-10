@@ -46,7 +46,7 @@ public:
     PageDict4RandRead();
     ~PageDict4RandRead();
 
-    bool lookup(const vespalib::stringref &word, uint64_t &wordNum,
+    bool lookup(vespalib::stringref word, uint64_t &wordNum,
                 PostingListOffsetAndCounts &offsetAndCounts) override;
 
     bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;

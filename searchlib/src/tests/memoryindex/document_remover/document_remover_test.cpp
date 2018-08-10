@@ -18,7 +18,7 @@ struct WordFieldPair
 {
     vespalib::string _word;
     uint32_t _fieldId;
-    WordFieldPair(const vespalib::stringref &word, uint32_t fieldId)
+    WordFieldPair(vespalib::stringref word, uint32_t fieldId)
         : _word(word), _fieldId(fieldId)
     {}
     bool operator<(const WordFieldPair &rhs) {

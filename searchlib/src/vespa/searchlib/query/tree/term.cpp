@@ -7,7 +7,7 @@ namespace search::query {
 
 Term::~Term() = default;
 
-Term::Term(const vespalib::stringref &view, int32_t id, Weight weight) :
+Term::Term(vespalib::stringref view, int32_t id, Weight weight) :
     _view(view),
     _id(id),
     _weight(weight),

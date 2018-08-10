@@ -16,7 +16,7 @@ class GenericTensorAttribute : public TensorAttribute
 {
     GenericTensorStore _genericTensorStore; // data store for serialized tensors
 public:
-    GenericTensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg);
+    GenericTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
     virtual ~GenericTensorAttribute();
     virtual void setTensor(DocId docId, const Tensor &tensor) override;
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;

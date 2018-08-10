@@ -135,7 +135,7 @@ FieldWriter::newWord(uint64_t wordNum, const vespalib::stringref &word)
 
 
 void
-FieldWriter::newWord(const vespalib::stringref &word)
+FieldWriter::newWord(vespalib::stringref word)
 {
     newWord(_wordNum + 1, word);
 }

@@ -169,7 +169,7 @@ private:
     void discardRequests();
 
     // convenience method used to log packets
-    static void logPacket(const vespalib::stringref &msg, FNET_Packet *p, FNET_Channel *ch, FNET_Connection *conn);
+    static void logPacket(vespalib::stringref msg, FNET_Packet *p, FNET_Channel *ch, FNET_Connection *conn);
 
     void updateQueryMetrics(double latency_s);
     void updateDocsumMetrics(double latency_s, uint32_t numDocs);

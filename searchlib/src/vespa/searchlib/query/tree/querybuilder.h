@@ -118,24 +118,24 @@ typename NodeTypes::Equiv *createEquiv(int32_t id, Weight weight) {
     return new typename NodeTypes::Equiv(id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::Phrase *createPhrase(const vespalib::stringref &view, int32_t id, Weight weight) {
+typename NodeTypes::Phrase *createPhrase(vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::Phrase(view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::SameElement *createSameElement(const vespalib::stringref &view) {
+typename NodeTypes::SameElement *createSameElement(vespalib::stringref view) {
     return new typename NodeTypes::SameElement(view);
 }
 template <class NodeTypes>
-typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(const vespalib::stringref &view, int32_t id, Weight weight) {
+typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::WeightedSetTerm(view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::DotProduct *createDotProduct(const vespalib::stringref &view, int32_t id, Weight weight) {
+typename NodeTypes::DotProduct *createDotProduct(vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::DotProduct(view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::WandTerm *
-createWandTerm(const vespalib::stringref &view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
+createWandTerm(vespalib::stringref view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
     return new typename NodeTypes::WandTerm(view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
 }
 template <class NodeTypes>
@@ -155,12 +155,12 @@ typename NodeTypes::ONear *createONear(size_t distance) {
 // Term nodes
 template <class NodeTypes>
 typename NodeTypes::NumberTerm *
-createNumberTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createNumberTerm(vespalib::stringref term, const vespalib::stringref &view, int32_t id, Weight weight) {
     return new typename NodeTypes::NumberTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::PrefixTerm *
-createPrefixTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createPrefixTerm(vespalib::stringref term, const vespalib::stringref &view, int32_t id, Weight weight) {
     return new typename NodeTypes::PrefixTerm(term, view, id, weight);
 }
 template <class NodeTypes>
@@ -170,17 +170,17 @@ createRangeTerm(const Range &term, const vespalib::stringref &view, int32_t id, 
 }
 template <class NodeTypes>
 typename NodeTypes::StringTerm *
-createStringTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createStringTerm(vespalib::stringref term, const vespalib::stringref &view, int32_t id, Weight weight) {
     return new typename NodeTypes::StringTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::SubstringTerm *
-createSubstringTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createSubstringTerm(vespalib::stringref term, const vespalib::stringref &view, int32_t id, Weight weight) {
     return new typename NodeTypes::SubstringTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::SuffixTerm *
-createSuffixTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createSuffixTerm(vespalib::stringref term, const vespalib::stringref &view, int32_t id, Weight weight) {
     return new typename NodeTypes::SuffixTerm(term, view, id, weight);
 }
 
@@ -198,7 +198,7 @@ createPredicateQuery(PredicateQueryTerm::UP term, const vespalib::stringref &vie
 
 template <class NodeTypes>
 typename NodeTypes::RegExpTerm *
-createRegExpTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createRegExpTerm(vespalib::stringref term, const vespalib::stringref &view, int32_t id, Weight weight) {
     return new typename NodeTypes::RegExpTerm(term, view, id, weight);
 }
 

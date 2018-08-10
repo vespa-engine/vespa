@@ -36,7 +36,7 @@ public:
 
 }
 
-GenericTensorAttribute::GenericTensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg)
+GenericTensorAttribute::GenericTensorAttribute(vespalib::stringref baseFileName, const Config &cfg)
     : TensorAttribute(baseFileName, cfg, _genericTensorStore)
 {
 }

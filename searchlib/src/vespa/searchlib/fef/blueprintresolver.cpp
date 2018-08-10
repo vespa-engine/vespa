@@ -192,7 +192,7 @@ BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
 }
 
 void
-BlueprintResolver::addSeed(const vespalib::stringref &feature)
+BlueprintResolver::addSeed(vespalib::stringref feature)
 {
     _seeds.push_back(feature);
 }

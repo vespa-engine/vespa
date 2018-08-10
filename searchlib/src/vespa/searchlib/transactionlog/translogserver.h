@@ -69,7 +69,7 @@ private:
 
     void logMetric() const;
     std::vector<vespalib::string> getDomainNames();
-    Domain::SP findDomain(const vespalib::stringref &name);
+    Domain::SP findDomain(vespalib::stringref name);
     vespalib::string dir()        const { return _baseDir + "/" + _name; }
     vespalib::string domainList() const { return dir() + "/" + _name + ".domains"; }
 

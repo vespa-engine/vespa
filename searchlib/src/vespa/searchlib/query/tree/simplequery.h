@@ -27,23 +27,23 @@ struct SimpleEquiv : Equiv {
         : Equiv(id, weight) {}
 };
 struct SimplePhrase : Phrase {
-    SimplePhrase(const vespalib::stringref &view, int32_t id, Weight weight)
+    SimplePhrase(vespalib::stringref view, int32_t id, Weight weight)
         : Phrase(view, id, weight) {}
 };
 
 struct SimpleSameElement : SameElement {
-    SimpleSameElement(const vespalib::stringref &view) : SameElement(view) {}
+    SimpleSameElement(vespalib::stringref view) : SameElement(view) {}
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {
-    SimpleWeightedSetTerm(const vespalib::stringref &view, int32_t id, Weight weight)
+    SimpleWeightedSetTerm(vespalib::stringref view, int32_t id, Weight weight)
         : WeightedSetTerm(view, id, weight) {}
 };
 struct SimpleDotProduct : DotProduct {
-    SimpleDotProduct(const vespalib::stringref &view, int32_t id, Weight weight)
+    SimpleDotProduct(vespalib::stringref view, int32_t id, Weight weight)
         : DotProduct(view, id, weight) {}
 };
 struct SimpleWandTerm : WandTerm {
-    SimpleWandTerm(const vespalib::stringref &view, int32_t id, Weight weight,
+    SimpleWandTerm(vespalib::stringref view, int32_t id, Weight weight,
                    uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
         : WandTerm(view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
 };

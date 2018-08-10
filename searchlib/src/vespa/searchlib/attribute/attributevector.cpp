@@ -58,7 +58,7 @@ namespace search {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(AttributeVector, vespalib::Identifiable);
 
-AttributeVector::BaseName::BaseName(const vespalib::stringref &base,
+AttributeVector::BaseName::BaseName(vespalib::stringref base,
                                     const vespalib::stringref &snap,
                                     const vespalib::stringref &name)
     : string(base),
@@ -118,7 +118,7 @@ AttributeVector::BaseName::getSnapshotName() const
 
 
 AttributeVector::BaseName::string
-AttributeVector::BaseName::createAttributeName(const vespalib::stringref & s)
+AttributeVector::BaseName::createAttributeName(vespalib::stringref  s)
 {
     size_t p(s.rfind('/'));
     if (p == string::npos) {
@@ -158,7 +158,7 @@ AttributeVector::ValueModifier::~ValueModifier() {
 }
 
 
-AttributeVector::AttributeVector(const vespalib::stringref &baseFileName, const Config &c)
+AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config &c)
     : _baseFileName(baseFileName),
       _config(c),
       _interlock(std::make_shared<attribute::Interlock>()),
@@ -383,14 +383,14 @@ AttributeVector::loadFile(const char *suffix)
 
 
 bool
-AttributeVector::saveAs(const vespalib::stringref &baseFileName)
+AttributeVector::saveAs(vespalib::stringref baseFileName)
 {
     _baseFileName = baseFileName;
     return save();
 }
 
 bool
-AttributeVector::saveAs(const vespalib::stringref &baseFileName,
+AttributeVector::saveAs(vespalib::stringref baseFileName,
                         IAttributeSaveTarget & saveTarget)
 {
     _baseFileName = baseFileName;

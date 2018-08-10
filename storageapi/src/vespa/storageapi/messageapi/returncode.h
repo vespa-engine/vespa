@@ -87,7 +87,7 @@ public:
     size_t getSerializedSize() const override;
 
     const vespalib::string& getMessage() const { return _message; }
-    void setMessage(const vespalib::stringref & message) { _message = message; }
+    void setMessage(vespalib::stringref  message) { _message = message; }
 
     Result getResult() const { return _result; }
 

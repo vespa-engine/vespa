@@ -14,13 +14,13 @@ PropertiesMap::PropertiesMap()
 PropertiesMap::~PropertiesMap() { }
 
 fef::Properties &
-PropertiesMap::lookupCreate(const vespalib::stringref &name)
+PropertiesMap::lookupCreate(vespalib::stringref name)
 {
     return _propertiesMap[name];
 }
 
 const fef::Properties &
-PropertiesMap::lookup(const vespalib::stringref &name) const
+PropertiesMap::lookup(vespalib::stringref name) const
 {
     PropsMap::const_iterator pos = _propertiesMap.find(name);
     if (pos == _propertiesMap.end()) {

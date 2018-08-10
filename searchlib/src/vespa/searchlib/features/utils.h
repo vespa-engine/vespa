@@ -35,7 +35,7 @@ template <typename T>
 T strToNum(vespalib::stringref str);
 
 template <typename T>
-feature_t getAsFeature(const T &value) __attribute__((__always_inline__));
+feature_t getAsFeature(T value) __attribute__((__always_inline__));
 
 /**
  * Converts the given value to a feature value.
@@ -44,7 +44,7 @@ feature_t getAsFeature(const T &value) __attribute__((__always_inline__));
  * @return The feature value.
  */
 template <typename T>
-inline feature_t getAsFeature(const T &value)
+inline feature_t getAsFeature(T value)
 {
     return static_cast<feature_t>(value);
 }
@@ -56,7 +56,7 @@ inline feature_t getAsFeature(const T &value)
  * @return The feature value.
  */
 template <>
-inline feature_t getAsFeature<ConstCharPtr>(const ConstCharPtr & value) {
+inline feature_t getAsFeature<ConstCharPtr>(ConstCharPtr value) {
     return static_cast<feature_t>(vespalib::hash_code(value, strlen(value)));
 }
 
@@ -67,18 +67,7 @@ inline feature_t getAsFeature<ConstCharPtr>(const ConstCharPtr & value) {
  * @return The feature value.
  */
 template <>
-inline feature_t getAsFeature<vespalib::string>(const vespalib::string & value) {
-    return static_cast<feature_t>(vespalib::hash_code(value));
-}
-
-/**
- * Specialization for a string value.
- *
- * @param value The string to convert.
- * @return The feature value.
- */
-template <>
-inline feature_t getAsFeature<vespalib::stringref>(const vespalib::stringref & value) {
+inline feature_t getAsFeature<vespalib::stringref>(vespalib::stringref value) {
     return static_cast<feature_t>(vespalib::hash_code(value));
 }
 

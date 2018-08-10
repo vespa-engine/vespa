@@ -69,7 +69,7 @@ public:
     {}
 
     virtual void
-    startWord(const vespalib::stringref &word) override
+    startWord(vespalib::stringref word) override
     {
         assert(_insideField);
         assert(!_insideWord);
@@ -452,7 +452,7 @@ public:
     {
     }
 
-    WrapInserter &word(const vespalib::stringref &word_)
+    WrapInserter &word(vespalib::stringref word_)
     {
         _inserter.setNextWord(word_);
         return *this;

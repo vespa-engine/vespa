@@ -141,7 +141,7 @@ public:
      * startOffset represents file position / accNumDocs after word.
      */
     void
-    addL6Skip(const vespalib::stringref &word,
+    addL6Skip(vespalib::stringref word,
               const StartOffset &startOffset,
               uint64_t wordNum,
               uint64_t pageNum,
@@ -153,7 +153,7 @@ public:
      * startOffset represents file position / accNumDocs at start of entry.
      */
     void
-    addOverflowCounts(const vespalib::stringref &word,
+    addOverflowCounts(vespalib::stringref word,
                       const Counts &counts,
                       const StartOffset &startOffset,
                       uint64_t wordNum);
@@ -263,7 +263,7 @@ public:
     resetPage();
 
     void
-    addL3Skip(const vespalib::stringref &word,
+    addL3Skip(vespalib::stringref word,
               const StartOffset &startOffset,
               uint64_t wordNum,
               uint64_t pageNum);
@@ -293,7 +293,7 @@ public:
      * startOffset represents file position / accNumDocs at start of entry.
      */
     void
-    addOverflowCounts(const vespalib::stringref &word,
+    addOverflowCounts(vespalib::stringref word,
                       const Counts &counts,
                       const StartOffset &startOffset,
                       uint64_t wordNum)
@@ -386,7 +386,7 @@ private:
     EC &_pe;
 
     void
-    addOverflowCounts(const vespalib::stringref &word,
+    addOverflowCounts(vespalib::stringref word,
                       const Counts &counts);
 
 public:
@@ -408,7 +408,7 @@ public:
     resetPage();
 
     void
-    addCounts(const vespalib::stringref &word,
+    addCounts(vespalib::stringref word,
               const Counts &counts);
 
     void
@@ -493,7 +493,7 @@ public:
         {
         }
 
-        L7Entry(const vespalib::stringref &l7Word,
+        L7Entry(vespalib::stringref l7Word,
                 const StartOffset         &l7StartOffset,
                 uint64_t l7WordNum,
                 uint64_t l6Offset,
@@ -511,7 +511,7 @@ public:
         }
 
         bool
-        operator<(const vespalib::stringref &word) const
+        operator<(vespalib::stringref word) const
         {
             return _l7Word < word;
         }
@@ -576,7 +576,7 @@ public:
     setup(DC &ssd);
 
     PageDict4SSLookupRes
-    lookup(const vespalib::stringref &key);
+    lookup(vespalib::stringref key);
 
     PageDict4SSLookupRes
     lookupOverflow(uint64_t wordNum) const;

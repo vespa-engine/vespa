@@ -28,7 +28,7 @@ private:
      * @param name name of properties
      * @return the properties
      **/
-    const Props &lookup(const vespalib::stringref &name) const;
+    const Props &lookup(vespalib::stringref name) const;
 
 public:
     typedef PropsMap::const_iterator ITR;
@@ -43,7 +43,7 @@ public:
      * @param name name of properties
      * @return the properties
      **/
-    Props &lookupCreate(const vespalib::stringref &name);
+    Props &lookupCreate(vespalib::stringref name);
 
     /**
      * Obtain the number of named collection of properties held by

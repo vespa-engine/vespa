@@ -81,7 +81,7 @@ protected:
      * @param inName feature name of input
      * @param type accepted input type
      **/
-    const FeatureType &defineInput(const vespalib::stringref &inName,
+    const FeatureType &defineInput(vespalib::stringref inName,
                                    AcceptInput accept = AcceptInput::NUMBER);
 
     /**
@@ -97,7 +97,7 @@ protected:
      * @param outName output name
      * @param desc output description
      **/
-    void describeOutput(const vespalib::stringref &outName, const vespalib::stringref &desc,
+    void describeOutput(vespalib::stringref outName, const vespalib::stringref &desc,
                         const FeatureType &type = FeatureType::number());
 
 public:
@@ -107,7 +107,7 @@ public:
      * class. The @ref setup method is used to tailor a blueprint
      * object for a specific set of parameters.
      **/
-    Blueprint(const vespalib::stringref & baseName);
+    Blueprint(vespalib::stringref  baseName);
 
     /**
      * Obtain the base name of this blueprint. This method will
@@ -164,7 +164,7 @@ public:
      * before invoking the @ref setup method (and must not be invoked
      * by others).
      **/
-    void setName(const vespalib::stringref &name) { _name = name; }
+    void setName(vespalib::stringref name) { _name = name; }
 
     /**
      * Obtain the name of this blueprint.

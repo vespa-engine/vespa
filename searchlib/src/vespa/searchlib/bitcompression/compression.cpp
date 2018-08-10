@@ -267,7 +267,7 @@ writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength)
 template <bool bigEndian>
 void
 FeatureEncodeContext<bigEndian>::
-writeString(const vespalib::stringref &buf)
+writeString(vespalib::stringref buf)
 {
     size_t len = buf.size();
     for (unsigned int i = 0; i < len; ++i) {

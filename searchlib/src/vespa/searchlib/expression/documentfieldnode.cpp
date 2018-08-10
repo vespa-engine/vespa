@@ -49,7 +49,7 @@ DocumentFieldNode & DocumentFieldNode::operator = (const DocumentFieldNode & rhs
 }
 
 std::unique_ptr<ResultNode>
-deduceResultNode(const vespalib::stringref & fieldName, const FieldValue & fv, bool preserveAccurateTypes, bool nestedMultiValue)
+deduceResultNode(vespalib::stringref  fieldName, const FieldValue & fv, bool preserveAccurateTypes, bool nestedMultiValue)
 {
     std::unique_ptr<ResultNode> value;
     const Identifiable::RuntimeClass & cInfo = fv.getClass();

@@ -167,7 +167,7 @@ public:
      * @param key the key
      * @param value the value
      **/
-    Properties &add(const vespalib::stringref &key, const vespalib::stringref &value);
+    Properties &add(vespalib::stringref key, const vespalib::stringref &value);
 
     /**
      * Obtain the number of values for a given key.
@@ -175,7 +175,7 @@ public:
      * @return number of values for the given key
      * @param key the key
      **/
-    uint32_t count(const vespalib::stringref &key) const;
+    uint32_t count(vespalib::stringref key) const;
 
     /**
      * Remove all values for the given key.
@@ -183,7 +183,7 @@ public:
      * @return this object, for chaining
      * @param key the key
      **/
-    Properties &remove(const vespalib::stringref &key);
+    Properties &remove(vespalib::stringref key);
 
     /**
      * Import all key/value pairs from src into this object. All
@@ -248,7 +248,7 @@ public:
      * @param ns the namespace to visit
      * @param visitor the object being notified of key/value pairs inside the namespace
      **/
-    void visitNamespace(const vespalib::stringref &ns,
+    void visitNamespace(vespalib::stringref ns,
                         IPropertiesVisitor &visitor) const;
 
     /**
@@ -258,7 +258,7 @@ public:
      * @return object encapsulating lookup result
      * @param key the key to look up
      **/
-    Property lookup(const vespalib::stringref &key) const;
+    Property lookup(vespalib::stringref key) const;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -271,7 +271,7 @@ public:
      * @param namespace1 the namespace
      * @param key the key to look up
      **/
-    Property lookup(const vespalib::stringref &namespace1,
+    Property lookup(vespalib::stringref namespace1,
                     const vespalib::stringref &key) const;
 
     /**
@@ -286,7 +286,7 @@ public:
      * @param namespace the second namespace
      * @param key the key to look up
      **/
-    Property lookup(const vespalib::stringref &namespace1,
+    Property lookup(vespalib::stringref namespace1,
                     const vespalib::stringref &namespace2,
                     const vespalib::stringref &key) const;
 
@@ -303,7 +303,7 @@ public:
      * @param namespace the third namespace
      * @param key the key to look up
      **/
-    Property lookup(const vespalib::stringref &namespace1,
+    Property lookup(vespalib::stringref namespace1,
                     const vespalib::stringref &namespace2,
                     const vespalib::stringref &namespace3,
                     const vespalib::stringref &key) const;
