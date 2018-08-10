@@ -71,6 +71,13 @@ public class NodeRepositoryMock implements NodeRepository {
                       .forEach(node -> putByHostname(zone, node));
     }
 
+    public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {
+        modifyNodes(deployment, hostName, node -> {
+            assert node.wantedVersion().equals(version);
+            return new Node(node.hostname(), node.state(), node.type(), node.owner(), version, version);
+        });
+    }
+
     public void modifyNodes(DeploymentId deployment, Optional<HostName> hostname, UnaryOperator<Node> modification) {
         List<Node> nodes = hostname.map(host -> require(host))
                                    .map(Collections::singletonList)

@@ -36,7 +36,7 @@ public class JobRunner extends Maintainer {
     }
 
     @TestOnly
-    JobRunner(Controller controller, Duration duration, JobControl jobControl, ExecutorService executors, StepRunner runner) {
+    public JobRunner(Controller controller, Duration duration, JobControl jobControl, ExecutorService executors, StepRunner runner) {
         super(controller, duration, jobControl);
         this.jobs = controller.jobController();
         this.executors = executors;

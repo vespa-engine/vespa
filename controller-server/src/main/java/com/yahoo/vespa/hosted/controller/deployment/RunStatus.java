@@ -142,6 +142,7 @@ public class RunStatus {
     public String toString() {
         return "RunStatus{" +
                "id=" + id +
+               ", versions=" + versions +
                ", start=" + start +
                ", end=" + end +
                ", aborted=" + aborted +

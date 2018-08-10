@@ -124,14 +124,14 @@ public class InternalStepRunner implements StepRunner {
         logger.log("Deploying platform version " +
                          triggering.sourcePlatform().orElse(triggering.platform()) +
                         " and application version " +
-                         triggering.sourceApplication().orElse(triggering.application()) + " ...");
+                         triggering.sourceApplication().orElse(triggering.application()).id() + " ...");
         return deployReal(id, true, logger);
     }
 
     private Status deployReal(RunId id, ByteArrayLogger logger) {
         JobStatus.JobRun triggering = triggering(id.application(), id.type());
         logger.log("Deploying platform version " + triggering.platform() +
-                         " and application version " + triggering.application() + " ...");
+                         " and application version " + triggering.application().id() + " ...");
         return deployReal(id, false, logger);
     }
 
@@ -259,7 +259,7 @@ public class InternalStepRunner implements StepRunner {
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, ByteArrayLogger logger) {
         List<Node> nodes = controller.configServer().nodeRepository().list(zone(type), id, Arrays.asList(active, reserved));
         for (Node node : nodes)
-            logger.log(String.format("%70s: %-12s%-25s%-32s%s",
+            logger.log(String.format("%70s: %-16s%-25s%-32s%s",
                                            node.hostname(),
                                            node.serviceState(),
                                            node.wantedVersion() + (node.currentVersion().equals(node.wantedVersion()) ? "" : " <-- " + node.currentVersion()),
@@ -288,7 +288,8 @@ public class InternalStepRunner implements StepRunner {
                                   .map(zoneEndpoints -> "- " + zoneEndpoints.getKey() + ":\n" +
                                                         zoneEndpoints.getValue().stream()
                                                                      .map(uri -> " |-- " + uri)
-                                                                     .collect(Collectors.joining("\n"))));
+                                                                     .collect(Collectors.joining("\n")))
+                                  .collect(Collectors.joining("\n")));
         if ( ! endpoints.containsKey(zone(id.type()))) {
             if (timedOut(id.application(), id.type(), endpointTimeout)) {
                 logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
@@ -346,7 +347,11 @@ public class InternalStepRunner implements StepRunner {
 
     private Status deactivateReal(RunId id, ByteArrayLogger logger) {
         logger.log("Deactivating deployment of " + id.application() + " in " + zone(id.type()) + " ...");
-        return deactivate(id.application(), id.type());
+        Status status = deactivate(id.application(), id.type());
+        if (status == succeeded)
+            controller.applications().lockOrThrow(id.application(), application ->
+                    controller.applications().store(application.withoutDeploymentIn(zone(id.type()))));
+        return status;
     }
 
     private Status deactivateTester(RunId id, ByteArrayLogger logger) {
@@ -419,6 +424,7 @@ public class InternalStepRunner implements StepRunner {
         ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
         application(id).deployments().keySet()
                   .forEach(zone -> controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
+                                             .filter(endpoints -> ! endpoints.isEmpty())
                                              .ifPresent(endpoints -> deployments.put(zone, endpoints)));
         return deployments.build();
     }
@@ -529,6 +535,7 @@ public class InternalStepRunner implements StepRunner {
             for (String line : record.getMessage().split("\n"))
                 out.println(timestamp + ": " + line);
 
+            record.setSourceClassName(null);
             getParent().log(record);
         }
 
