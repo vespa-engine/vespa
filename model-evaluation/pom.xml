@@ -11,7 +11,7 @@
     <version>6-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
-  <artifactId>model-inference</artifactId>
+  <artifactId>model-evaluation</artifactId>
   <version>6-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
   <dependencies>
