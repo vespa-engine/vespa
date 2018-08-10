@@ -102,7 +102,7 @@ public:
      * any bytes that aren't valid UTF-8 with the Unicode REPLACEMENT
      * CHARACTER (U+FFFD).
      **/
-    static vespalib::string convert(const vespalib::stringref& input);
+    static vespalib::string convert(vespalib::stringref  input);
 };
 
 

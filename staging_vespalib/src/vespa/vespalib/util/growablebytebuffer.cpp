@@ -69,7 +69,7 @@ GrowableByteBuffer::putDouble(double v)
 }
 
 void
-GrowableByteBuffer::putString(const vespalib::stringref& v)
+GrowableByteBuffer::putString(vespalib::stringref  v)
 {
     putInt(v.size());
     putBytes(v.data(), v.size());

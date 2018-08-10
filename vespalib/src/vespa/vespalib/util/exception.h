@@ -61,9 +61,9 @@
 #define VESPA_DEFINE_EXCEPTION(MyClass, Parent)                            \
 class MyClass : public Parent {                                            \
 public:                                                                    \
-    MyClass(const vespalib::stringref &msg,                                \
+    MyClass(vespalib::stringref msg,                                \
             const vespalib::stringref &location = "", int skipStack = 0);  \
-    MyClass(const vespalib::stringref &msg, const Exception &cause,        \
+    MyClass(vespalib::stringref msg, const Exception &cause,        \
             const vespalib::stringref &location = "", int skipStack = 0);  \
     VESPA_DEFINE_EXCEPTION_SPINE(MyClass)                                  \
 };
@@ -77,10 +77,10 @@ public:                                                                    \
  * @param MyClass the name of your class
  **/
 #define VESPA_IMPLEMENT_EXCEPTION(MyClass, Parent)                           \
-    MyClass::MyClass(const vespalib::stringref &msg,                         \
+    MyClass::MyClass(vespalib::stringref msg,                         \
             const vespalib::stringref &location, int skipStack)     \
         : Parent(msg, location, skipStack + 1) {}                            \
-    MyClass::MyClass(const vespalib::stringref &msg, const Exception &cause, \
+    MyClass::MyClass(vespalib::stringref msg, const Exception &cause, \
             const vespalib::stringref &location, int skipStack)     \
         : Parent(msg, cause, location, skipStack + 1) {}                     \
     VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)

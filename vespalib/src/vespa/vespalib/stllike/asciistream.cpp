@@ -59,7 +59,7 @@ asciistream::asciistream() :
     _precision(6)
 { }
 
-asciistream::asciistream(const stringref & buf) :
+asciistream::asciistream(stringref buf) :
     _rPos(0),
     _wbuf(),
     _rbuf(buf),
@@ -555,7 +555,7 @@ string asciistream::getline(char delim)
     return line;
 }
 
-asciistream asciistream::createFromFile(const stringref & fileName)
+asciistream asciistream::createFromFile(stringref fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
@@ -576,7 +576,7 @@ asciistream asciistream::createFromFile(const stringref & fileName)
     return is;
 }
 
-asciistream asciistream::createFromDevice(const stringref & fileName)
+asciistream asciistream::createFromDevice(stringref fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;

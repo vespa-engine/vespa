@@ -19,7 +19,7 @@ LibraryPool::~LibraryPool()
 }
 
 void
-LibraryPool::loadLibrary(const stringref & libName)
+LibraryPool::loadLibrary(stringref libName)
 {
     LockGuard guard(_lock);
     if (_libraries.find(libName) == _libraries.end()) {
@@ -36,7 +36,7 @@ LibraryPool::loadLibrary(const stringref & libName)
 }
 
 FastOS_DynamicLibrary *
-LibraryPool::get(const stringref & name)
+LibraryPool::get(stringref name)
 {
     LockGuard guard(_lock);
     LibraryMap::const_iterator found(_libraries.find(name));
@@ -46,7 +46,7 @@ LibraryPool::get(const stringref & name)
 }
 
 const FastOS_DynamicLibrary *
-LibraryPool::get(const stringref & name) const
+LibraryPool::get(stringref name) const
 {
     LockGuard guard(_lock);
     LibraryMap::const_iterator found(_libraries.find(name));

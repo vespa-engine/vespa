@@ -41,7 +41,7 @@ public:
      * @param separators The characters to be used as token separators
      * @param strip      Characters to be stripped from both ends of each token
      **/
-    StringTokenizer(const vespalib::stringref & source,
+    StringTokenizer(vespalib::stringref  source,
                     const vespalib::stringref & separators = ",",
                     const vespalib::stringref & strip = " \t\f\r\n");
 

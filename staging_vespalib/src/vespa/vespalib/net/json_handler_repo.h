@@ -59,9 +59,9 @@ private:
         std::vector<Hook> hooks;
         std::vector<Resource> root_resources;
         State() : lock(), seq(0), hooks(), root_resources() {}
-        size_t bind(const vespalib::stringref &path_prefix,
+        size_t bind(vespalib::stringref path_prefix,
                     const JsonGetHandler &get_handler);
-        size_t add_root_resource(const vespalib::stringref &path);
+        size_t add_root_resource(vespalib::stringref path);
         void unbind(size_t my_seq);
     };
 
@@ -79,9 +79,9 @@ private:
 
 public:
     JsonHandlerRepo() : _state(std::make_shared<State>()) {}
-    Token::UP bind(const vespalib::stringref &path_prefix,
+    Token::UP bind(vespalib::stringref path_prefix,
                    const JsonGetHandler &get_handler);
-    Token::UP add_root_resource(const vespalib::stringref &path);
+    Token::UP add_root_resource(vespalib::stringref path);
     std::vector<vespalib::string> get_root_resources() const;
     vespalib::string get(const vespalib::string &host,
                          const vespalib::string &path,
