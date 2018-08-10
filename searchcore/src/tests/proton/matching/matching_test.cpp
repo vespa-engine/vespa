@@ -332,15 +332,15 @@ struct MyWorld {
 
         MySearchHandler(Matcher::SP matcher) : _matcher(matcher) {}
 
-        virtual DocsumReply::UP getDocsums(const DocsumRequest &) override
-        { return DocsumReply::UP(); }
-        virtual SearchReply::UP match(const ISearchHandler::SP &,
-                                      const SearchRequest &,
-                                      vespalib::ThreadBundle &) const override
-        { return SearchReply::UP(); }
+        DocsumReply::UP getDocsums(const DocsumRequest &) override {
+            return DocsumReply::UP();
+        }
+        SearchReply::UP match(const ISearchHandler::SP &, const SearchRequest &, vespalib::ThreadBundle &) const override {
+            return SearchReply::UP();
+        }
     };
 
-    MatchToolsFactory::UP get_mtf(SearchRequest::SP req) {
+    MatchToolsFactory::UP create_mtf(SearchRequest::SP req) {
         Matcher::SP matcher = createMatcher();
         search::fef::Properties overrides;
         return matcher->create_match_tools_factory(*req, searchContext, attributeContext, metaStore, overrides);
@@ -552,14 +552,14 @@ TEST("require that re-ranking is diverse") {
     world.setupSecondPhaseRanking();
     world.basicResults();
     SearchRequest::SP request = world.createSimpleRequest("f1", "spread");
-    auto mtf = world.get_mtf(request);
+    auto mtf = world.create_mtf(request);
     auto diversity = mtf->createDiversifier();
     EXPECT_FALSE(diversity);
     auto & rankProperies = request->propertiesMap.lookupCreate(MapNames::RANK);
     rankProperies.add(DiversityAttribute::NAME, "a2")
                  .add(DiversityMinGroups::NAME, "3")
                  .add(DiversityCutoffStrategy::NAME, "strict");
-    mtf = world.get_mtf(request);
+    mtf = world.create_mtf(request);
     diversity = mtf->createDiversifier();
     EXPECT_TRUE(diversity);
     SearchReply::UP reply = world.performSearch(request, 1);
@@ -587,14 +587,14 @@ TEST("require that re-ranking is forced diverse") {
     world.setupSecondPhaseRanking();
     world.basicResults();
     SearchRequest::SP request = world.createSimpleRequest("f1", "spread");
-    auto mtf = world.get_mtf(request);
+    auto mtf = world.create_mtf(request);
     auto diversity = mtf->createDiversifier();
     EXPECT_FALSE(diversity);
     auto & rankProperies = request->propertiesMap.lookupCreate(MapNames::RANK);
     rankProperies.add(DiversityAttribute::NAME, "a3")
                  .add(DiversityMinGroups::NAME, "3")
                  .add(DiversityCutoffStrategy::NAME, "strict");
-    mtf = world.get_mtf(request);
+    mtf = world.create_mtf(request);
     diversity = mtf->createDiversifier();
     EXPECT_TRUE(diversity);
     SearchReply::UP reply = world.performSearch(request, 1);
