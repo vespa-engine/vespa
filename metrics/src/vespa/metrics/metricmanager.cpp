@@ -189,7 +189,7 @@ namespace {
     struct Path {
         vespalib::StringTokenizer _path;
 
-        Path(const vespalib::stringref & fullpath) : _path(fullpath, ".") { }
+        Path(vespalib::stringref  fullpath) : _path(fullpath, ".") { }
 
         vespalib::string toString() const {
             vespalib::asciistream ost;

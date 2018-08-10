@@ -106,7 +106,7 @@ FieldValue::toXml(const std::string& indent) const
 
 // Subtypes should implement the conversion functions that make sense
 
-FieldValue& FieldValue::operator=(const vespalib::stringref &)
+FieldValue& FieldValue::operator=(vespalib::stringref )
 {
     throw vespalib::IllegalArgumentException(
             "Cannot assign string to datatype " + getDataType()->toString(),

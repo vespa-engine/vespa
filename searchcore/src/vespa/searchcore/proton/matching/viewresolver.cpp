@@ -6,7 +6,7 @@
 namespace proton::matching {
 
 ViewResolver &
-ViewResolver::add(const vespalib::stringref &view,
+ViewResolver::add(vespalib::stringref view,
                   const vespalib::stringref &field)
 {
     _map[view].push_back(field);
@@ -14,7 +14,7 @@ ViewResolver::add(const vespalib::stringref &view,
 }
 
 bool
-ViewResolver::resolve(const vespalib::stringref &view,
+ViewResolver::resolve(vespalib::stringref view,
                       std::vector<vespalib::string> &fields) const
 {
     Map::const_iterator pos = _map.find(view);

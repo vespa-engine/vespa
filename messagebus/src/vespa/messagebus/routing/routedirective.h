@@ -23,7 +23,7 @@ public:
      *
      * @param name The name of the route to insert.
      */
-    RouteDirective(const vespalib::stringref &name);
+    RouteDirective(vespalib::stringref name);
 
     /**
      * Returns the name of the route to insert.

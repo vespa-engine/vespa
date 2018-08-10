@@ -13,7 +13,7 @@ namespace document {
 namespace {
 
 FieldSet::UP
-parseSpecialValues(const vespalib::stringref & name)
+parseSpecialValues(vespalib::stringref  name)
 {
     FieldSet::UP fs;
     if ((name.size() == 4) && (name[1] == 'i') && (name[2] == 'd') && (name[3] == ']')) {

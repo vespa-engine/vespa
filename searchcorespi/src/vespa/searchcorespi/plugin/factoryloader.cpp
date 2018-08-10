@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/searchcorespi/plugin/factoryloader.h>
+#include "factoryloader.h"
 #include <vespa/vespalib/util/exceptions.h>
 
 using vespalib::stringref;
@@ -13,18 +13,16 @@ FactoryLoader::FactoryLoader() :
 {
 }
 
-FactoryLoader::~FactoryLoader()
-{
-}
+FactoryLoader::~FactoryLoader() = default;
 
 IIndexManagerFactory::UP
-FactoryLoader::create(const stringref & factory)
+FactoryLoader::create(stringref factory)
 {
     typedef IIndexManagerFactory* (*FuncT)();
     _libraries.loadLibrary(factory);
     const FastOS_DynamicLibrary & lib = *_libraries.get(factory);
     FuncT registrationMethod = reinterpret_cast<FuncT>(lib.GetSymbol("createIndexManagerFactory"));
-    if (registrationMethod == NULL) {
+    if (registrationMethod == nullptr) {
         throw IllegalArgumentException(make_string("Failed locating symbol 'createIndexManagerFactory' in library '%s' for factory '%s'.",
                                                    lib.GetLibName(), vespalib::string(factory).c_str()));
     }

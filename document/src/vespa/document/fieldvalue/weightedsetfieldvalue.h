@@ -97,7 +97,7 @@ public:
 
         // Utility functions for easy use of weighted sets of primitives
 
-    bool add(const vespalib::stringref & val, int32_t weight = 1)
+    bool add(vespalib::stringref  val, int32_t weight = 1)
         { return add(*createNested() = val, weight); }
     bool add(int32_t val, int32_t weight = 1)
         { return add(*createNested() = val, weight); }
@@ -108,7 +108,7 @@ public:
     bool add(double val, int32_t weight = 1)
         { return add(*createNested() = val, weight); }
 
-    int32_t get(const vespalib::stringref & val) const
+    int32_t get(vespalib::stringref  val) const
         { return get(*createNested() = val); }
     int32_t get(int32_t val) const
         { return get(*createNested() = val); }
@@ -119,7 +119,7 @@ public:
     int32_t get(double val) const
         { return get(*createNested() = val); }
 
-    void increment(const vespalib::stringref & val, int32_t weight = 1)
+    void increment(vespalib::stringref  val, int32_t weight = 1)
         { increment(*createNested() = val, weight); }
     void increment(int32_t val, int32_t weight = 1)
         { increment(*createNested() = val, weight); }
@@ -130,7 +130,7 @@ public:
     void increment(double val, int32_t weight = 1)
         { increment(*createNested() = val, weight); }
 
-    void decrement(const vespalib::stringref & val, int32_t weight = 1)
+    void decrement(vespalib::stringref  val, int32_t weight = 1)
         { decrement(*createNested() = val, weight); }
     void decrement(int32_t val, int32_t weight = 1)
         { decrement(*createNested() = val, weight); }

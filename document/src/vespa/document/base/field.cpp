@@ -11,7 +11,7 @@ namespace document {
 
 Field::Field() : Field("", 0, *DataType::INT, false) { }
 
-Field::Field(const vespalib::stringref & name, int fieldId,
+Field::Field(vespalib::stringref  name, int fieldId,
              const DataType& dataType, bool headerField)
     : FieldBase(name),
       _dataType(&dataType),
@@ -19,7 +19,7 @@ Field::Field(const vespalib::stringref & name, int fieldId,
       _isHeaderField(headerField)
 { }
 
-Field::Field(const vespalib::stringref & name,
+Field::Field(vespalib::stringref  name,
              const DataType& dataType, bool headerField)
     : FieldBase(name),
       _dataType(&dataType),

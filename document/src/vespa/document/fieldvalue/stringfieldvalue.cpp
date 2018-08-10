@@ -87,7 +87,7 @@ StringFieldValue::doClearSpanTrees() {
     _annotationData.reset();
 }
 
-const SpanTree * StringFieldValue::findTree(const SpanTrees & trees, const stringref & name)
+const SpanTree * StringFieldValue::findTree(const SpanTrees & trees, stringref name)
 {
     for(const auto & tree : trees) {
         if (tree->getName() == name) {
@@ -97,7 +97,7 @@ const SpanTree * StringFieldValue::findTree(const SpanTrees & trees, const strin
     return nullptr;
 }
 
-StringFieldValue &StringFieldValue::operator=(const stringref& value)
+StringFieldValue &StringFieldValue::operator=(stringref value)
 {
     setValue(value);
     _annotationData.reset();

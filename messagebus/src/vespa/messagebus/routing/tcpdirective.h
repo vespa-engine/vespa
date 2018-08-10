@@ -26,7 +26,7 @@ public:
      * @param port    The port to connect to.
      * @param session The session to route to.
      */
-    TcpDirective(const vespalib::stringref &host, uint32_t port, const vespalib::stringref &session);
+    TcpDirective(vespalib::stringref host, uint32_t port, const vespalib::stringref &session);
 
     /**
      * Returns the host to connect to. This may be an ip address or a name.

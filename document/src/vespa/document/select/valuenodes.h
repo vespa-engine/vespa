@@ -19,7 +19,7 @@ class InvalidValueNode : public ValueNode
 {
     vespalib::string _name;
 public:
-    InvalidValueNode(const vespalib::stringref & name);
+    InvalidValueNode(vespalib::stringref  name);
 
     std::unique_ptr<Value> getValue(const Context&) const override {
         return std::unique_ptr<Value>(new InvalidValue());
@@ -55,7 +55,7 @@ class StringValueNode : public ValueNode
 {
     vespalib::string _value;
 public:
-    explicit StringValueNode(const vespalib::stringref & val);
+    explicit StringValueNode(vespalib::stringref  val);
 
     const vespalib::string& getValue() const { return _value; }
 
@@ -280,7 +280,7 @@ class FunctionValueNode : public ValueNode
 public:
     enum Function { LOWERCASE, HASH, ABS };
 
-    FunctionValueNode(const vespalib::stringref & name, std::unique_ptr<ValueNode> src);
+    FunctionValueNode(vespalib::stringref  name, std::unique_ptr<ValueNode> src);
 
     Function getFunction() const { return _function; }
     const vespalib::string &getFunctionName(void) const { return _funcname; }

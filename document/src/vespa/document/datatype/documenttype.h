@@ -50,12 +50,12 @@ public:
     typedef std::shared_ptr<DocumentType> SP;
 
     DocumentType();
-    DocumentType(const vespalib::stringref &name, int32_t id);
-    DocumentType(const vespalib::stringref &name, int32_t id,
+    DocumentType(vespalib::stringref name, int32_t id);
+    DocumentType(vespalib::stringref name, int32_t id,
                  const StructDataType& fields);
 
-    DocumentType(const vespalib::stringref &name);
-    DocumentType(const vespalib::stringref &name,
+    DocumentType(vespalib::stringref name);
+    DocumentType(vespalib::stringref name,
                  const StructDataType& fields);
 
     ~DocumentType();
@@ -82,9 +82,9 @@ public:
     uint32_t getFieldCount() const override {
         return _fields->getFieldCount();
     }
-    const Field & getField(const vespalib::stringref & name) const override;
+    const Field & getField(vespalib::stringref  name) const override;
     const Field & getField(int fieldId) const override;
-    bool hasField(const vespalib::stringref &name) const override;
+    bool hasField(vespalib::stringref name) const override;
     bool hasField(int fieldId) const override;
     Field::Set getFieldSet() const override;
     DocumentType* clone() const override;

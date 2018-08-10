@@ -34,7 +34,7 @@ public:
      * @param view the name of the view
      * @param field the name of the field
      **/
-    ViewResolver &add(const vespalib::stringref &view,
+    ViewResolver &add(vespalib::stringref view,
                       const vespalib::stringref &field);
 
     /**
@@ -47,7 +47,7 @@ public:
      * @param fields vector that will be filled out with the fields
      *               that are part of the requested view.
      **/
-    bool resolve(const vespalib::stringref &view,
+    bool resolve(vespalib::stringref view,
                  std::vector<vespalib::string> &fields) const;
 
     /**

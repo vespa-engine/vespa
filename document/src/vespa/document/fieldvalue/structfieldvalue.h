@@ -83,8 +83,8 @@ public:
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
 
-    bool hasField(const vespalib::stringref & name) const override;
-    const Field& getField(const vespalib::stringref & name) const override;
+    bool hasField(vespalib::stringref  name) const override;
+    const Field& getField(vespalib::stringref  name) const override;
     void clear() override;
 
     const CompressionConfig &getCompressionConfig() const;

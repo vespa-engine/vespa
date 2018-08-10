@@ -40,7 +40,7 @@ public:
     int compare(const FieldValue& other) const override;
     int fastCompare(const FieldValue& other) const override final;
 
-    FieldValue& operator=(const vespalib::stringref &) override;
+    FieldValue& operator=(vespalib::stringref ) override;
     FieldValue& operator=(int32_t) override;
     FieldValue& operator=(int64_t) override;
     FieldValue& operator=(float) override;

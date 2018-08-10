@@ -30,7 +30,7 @@ public:
     typedef std::unique_ptr<Node> UP;
     typedef std::shared_ptr<Node> SP;
 
-    Node(const vespalib::stringref & name) : _name(name), _parentheses(false) {}
+    Node(vespalib::stringref  name) : _name(name), _parentheses(false) {}
     ~Node() override {}
 
     void setParentheses() { _parentheses = true; }

@@ -13,12 +13,12 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructuredDataType, DataType);
 
 StructuredDataType::StructuredDataType() = default;
 
-StructuredDataType::StructuredDataType(const vespalib::stringref &name)
+StructuredDataType::StructuredDataType(vespalib::stringref name)
     : DataType(name, createId(name))
 {
 }
 
-StructuredDataType::StructuredDataType(const vespalib::stringref &name, int dataTypeId)
+StructuredDataType::StructuredDataType(vespalib::stringref name, int dataTypeId)
     : DataType(name, dataTypeId)
 {
 }
@@ -30,7 +30,7 @@ bool StructuredDataType::operator==(const DataType& type) const
 }
 
 namespace {
-uint32_t crappyJavaStringHash(const vespalib::stringref &value) {
+uint32_t crappyJavaStringHash(vespalib::stringref value) {
     uint32_t h = 0;
     for (uint32_t i = 0; i < value.size(); ++i) {
         h = 31 * h + value[i];
@@ -39,7 +39,7 @@ uint32_t crappyJavaStringHash(const vespalib::stringref &value) {
 }
 }  // namespace
 
-int32_t StructuredDataType::createId(const vespalib::stringref &name)
+int32_t StructuredDataType::createId(vespalib::stringref name)
 {
     if (name == "document") {
         return 8;

@@ -25,7 +25,7 @@ public:
     FastS_query(const search::docsummary::GetDocsumArgs &docsumArgs);
     ~FastS_query();
 
-    void SetStackDump(const vespalib::stringref& stackDump);
+    void SetStackDump(vespalib::stringref  stackDump);
     void SetSortSpec(const char *spec) { _sortSpec = spec; }
     void SetLocation(const char *loc) { _location = loc; }
     void SetRankProperties(const search::fef::Properties &rp) { _rankProperties = rp; }
@@ -66,7 +66,7 @@ private:
             return false;
         return (strcmp(a, b) == 0);
     }
-    static bool cmp_str_ref(const vespalib::stringref &a,
+    static bool cmp_str_ref(vespalib::stringref a,
                             const vespalib::stringref &b)
     {
         return (a.size() == b.size() &&

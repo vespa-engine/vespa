@@ -35,7 +35,7 @@ FastS_query::FastS_query(const search::docsummary::GetDocsumArgs &docsumArgs)
 
 
 void
-FastS_query::SetStackDump(const vespalib::stringref &stackRef)
+FastS_query::SetStackDump(vespalib::stringref stackRef)
 {
     _stackDump = stackRef;
 }
