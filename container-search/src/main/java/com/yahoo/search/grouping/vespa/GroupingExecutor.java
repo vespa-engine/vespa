@@ -46,8 +46,7 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 public class GroupingExecutor extends Searcher {
 
     public final static String COMPONENT_NAME = "GroupingExecutor";
-    private final static String GROUPING_LIST = "GroupingList";
-    private final static CompoundName PROP_GROUPINGLIST = newCompoundName(GROUPING_LIST);
+    private final static CompoundName PROP_GROUPINGLIST = newCompoundName("GroupingList");
     private final static Logger log = Logger.getLogger(GroupingExecutor.class.getName());
 
     /**

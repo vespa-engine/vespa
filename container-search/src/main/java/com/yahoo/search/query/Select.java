@@ -10,9 +10,6 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.yql.VespaGroupingStep;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 
 /**
@@ -30,11 +27,11 @@ public class Select implements Cloneable {
     public static final String WHERE = "where";
     public static final String GROUPING = "grouping";
 
+
     private static Model model;
     private Query parent;
     private String where = "";
     private String grouping = "";
-    private List<GroupingRequest> groupingRequests = new ArrayList<>();
 
     static {
         argumentType = new QueryProfileType(SELECT);
@@ -70,10 +67,8 @@ public class Select implements Cloneable {
     }
 
 
-    /** Set the where-clause for the query. Must be a JSON-string, with the format described in the Select Reference doc:
-     * @see <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">https://docs.vespa.ai/documentation/reference/select-reference.html</a>
-     */
-    public void setWhereString(String where) {
+    /** Set the where-clause for the query. Must be a JSON-string, with the format described in the Select Reference doc - https://docs.vespa.ai/documentation/reference/select-reference.html. */
+    public void setWhere(String where) {
         this.where = where;
         model.setType(SELECT);
 
@@ -83,13 +78,13 @@ public class Select implements Cloneable {
 
 
     /** Returns the where-clause in the query */
-    public String getWhereString(){ return where; }
+    public String getWhereString(){
+        return this.where;
+    }
 
 
-    /** Set the grouping-string for the query. Must be a JSON-string, with the format described in the Select Reference doc:
-     * @see <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">https://docs.vespa.ai/documentation/reference/select-reference.html</a>
-     * */
-    public void setGroupingString(String grouping){
+    /** Set the grouping-string for the query. Must be a JSON-string, with the format described in the Select Reference doc - https://docs.vespa.ai/documentation/reference/select-reference.html. */
+    public void setGrouping(String grouping){
         this.grouping = grouping;
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
 
@@ -103,12 +98,8 @@ public class Select implements Cloneable {
 
     /** Returns the grouping in the query */
     public String getGroupingString(){
-        return grouping;
+        return this.grouping;
     }
-
-
-    /** Returns the query's {@link GroupingRequest} objects, as mutable list */
-    public List<GroupingRequest> getGrouping(){ return groupingRequests; }
 
 
     @Override
