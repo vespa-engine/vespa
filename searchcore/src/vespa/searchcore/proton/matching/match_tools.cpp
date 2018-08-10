@@ -214,17 +214,17 @@ MatchToolsFactory::createMatchTools() const
 
 std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
 {
-    if (_diversityParams._attribute.empty()) {
+    if (_diversityParams.attribute.empty()) {
         return std::unique_ptr<IDiversifier>();
     }
-    auto attr = _requestContext.getAttribute(_diversityParams._attribute);
+    auto attr = _requestContext.getAttribute(_diversityParams.attribute);
     if ( !attr) {
-        LOG(warning, "Skipping diversity due to no %s attribute.", _diversityParams._attribute.c_str());
+        LOG(warning, "Skipping diversity due to no %s attribute.", _diversityParams.attribute.c_str());
         return std::unique_ptr<IDiversifier>();
     }
-    size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams._min_groups;
-    return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams._min_groups,
-                                   _diversityParams._cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
+    size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams.min_groups;
+    return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams.min_groups,
+                                   _diversityParams.cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
 }
 
 }

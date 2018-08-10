@@ -71,36 +71,36 @@ struct NoMatchPhaseLimiter : MaybeMatchPhaseLimiter {
 struct DiversityParams {
     using CutoffStrategy = AttributeLimiter::DiversityCutoffStrategy;
     DiversityParams() : DiversityParams("", 0, 0, CutoffStrategy::LOOSE) { }
-    DiversityParams(const vespalib::string & attribute, uint32_t min_groups,
-                    double cutoff_factor, CutoffStrategy cutoff_strategy)
-        : _attribute(attribute),
-          _min_groups(min_groups),
-          _cutoff_factor(cutoff_factor),
-          _cutoff_strategy(cutoff_strategy)
+    DiversityParams(const vespalib::string & attribute_, uint32_t min_groups_,
+                    double cutoff_factor_, CutoffStrategy cutoff_strategy_)
+        : attribute(attribute_),
+          min_groups(min_groups_),
+          cutoff_factor(cutoff_factor_),
+          cutoff_strategy(cutoff_strategy_)
     { }
 
-    vespalib::string  _attribute;
-    uint32_t          _min_groups;
-    double            _cutoff_factor;
-    CutoffStrategy    _cutoff_strategy;
+    vespalib::string  attribute;
+    uint32_t          min_groups;
+    double            cutoff_factor;
+    CutoffStrategy    cutoff_strategy;
 };
 
 struct DegradationParams {
-    DegradationParams(const vespalib::string &attribute, size_t max_hits, bool descending, double max_filter_coverage,
-                      double sample_percentage, double post_filter_multiplier)
-        : _attribute(attribute),
-          _max_hits(max_hits),
-          _descending(descending),
-          _max_filter_coverage(max_filter_coverage),
-          _sample_percentage(sample_percentage),
-          _post_filter_multiplier(post_filter_multiplier)
+    DegradationParams(const vespalib::string &attribute_, size_t max_hits_, bool descending_,
+                      double max_filter_coverage_, double sample_percentage_, double post_filter_multiplier_)
+        : attribute(attribute_),
+          max_hits(max_hits_),
+          descending(descending_),
+          max_filter_coverage(max_filter_coverage_),
+          sample_percentage(sample_percentage_),
+          post_filter_multiplier(post_filter_multiplier_)
     { }
-    vespalib::string _attribute;
-    size_t           _max_hits;
-    bool             _descending;
-    double           _max_filter_coverage;
-    double           _sample_percentage;
-    double           _post_filter_multiplier;
+    vespalib::string attribute;
+    size_t           max_hits;
+    bool             descending;
+    double           max_filter_coverage;
+    double           sample_percentage;
+    double           post_filter_multiplier;
 };
 
 /**
