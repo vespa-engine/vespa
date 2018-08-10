@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsM
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
@@ -273,8 +274,8 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainer(NodeSpec node) {
-        createContainerData(environment, node);
-        dockerOperations.createContainer(containerName, node);
+        ContainerData containerData = createContainerData(environment, node);
+        dockerOperations.createContainer(containerName, node, containerData);
         dockerOperations.startContainer(containerName, node);
         lastCpuMetric = new CpuUsageReporter();
 
@@ -737,5 +738,12 @@ public class NodeAgentImpl implements NodeAgent {
         orchestrator.suspend(hostname);
     }
 
-    protected void createContainerData(Environment environment, NodeSpec node) { }
+    protected ContainerData createContainerData(Environment environment, NodeSpec node) {
+        return new ContainerData() {
+            @Override
+            public void addFile(Path pathInContainer, String data) {
+                throw new UnsupportedOperationException("addFile not implemented");
+            }
+        };
+    }
 }
