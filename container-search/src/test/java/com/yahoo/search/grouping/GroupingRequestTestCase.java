@@ -10,10 +10,8 @@ import com.yahoo.search.result.Hit;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -115,7 +113,20 @@ public class GroupingRequestTestCase {
         GroupingRequest bar = GroupingRequest.newInstance(query);
         assertEquals(Arrays.asList(foo, bar), GroupingRequest.getRequests(query));
     }
-    
+
+    @Test
+    public void requireThatGetRequestThrowsIllegalArgumentOnBadProperty() throws Exception {
+        Query query = new Query();
+        Field propName = GroupingRequest.class.getDeclaredField("PROP_REQUEST");
+        propName.setAccessible(true);
+        query.properties().set((CompoundName)propName.get(null), new Object());
+        try {
+            GroupingRequest.getRequests(query);
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
 
     private static RootGroup newRootGroup(int id) {
         return new RootGroup(id, new Continuation() {

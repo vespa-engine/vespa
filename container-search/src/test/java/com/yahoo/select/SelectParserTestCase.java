@@ -15,12 +15,14 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
+import com.yahoo.search.federation.ProviderConfig;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
+import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -667,7 +669,7 @@ public class SelectParserTestCase {
         assertEquals("default:query", query.getModel().getQueryTree().toString());
         assertEquals(Query.Type.ALL, query.getModel().getType());
 
-        query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
+        query.getSelect().setWhere("{\"contains\" : [\"default\", \"select\"] }");
         assertEquals("default:select", query.getModel().getQueryTree().toString());
         assertEquals(Query.Type.SELECT, query.getModel().getType());
     }
@@ -676,7 +678,7 @@ public class SelectParserTestCase {
     @Test
     public void testOverridingWhereQueryTree() {
         Query query = new Query();
-        query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
+        query.getSelect().setWhere("{\"contains\" : [\"default\", \"select\"] }");
         assertEquals("default:select", query.getModel().getQueryTree().toString());
         assertEquals(Query.Type.SELECT, query.getModel().getType());
 

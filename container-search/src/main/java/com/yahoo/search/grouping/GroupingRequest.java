@@ -22,6 +22,7 @@ import java.util.*;
  */
 public class GroupingRequest {
 
+    private final static CompoundName PROP_REQUEST = new CompoundName(GroupingRequest.class.getName() + ".Request");
     private final List<Continuation> continuations = new ArrayList<>();
     private final int requestId;
     private GroupingOperation root;
@@ -133,6 +134,10 @@ public class GroupingRequest {
      */
     public static GroupingRequest newInstance(Query query) {
         List<GroupingRequest> lst = getRequests(query);
+        if (lst.isEmpty()) {
+            lst = new LinkedList<>();
+            query.properties().set(PROP_REQUEST, lst);
+        }
         GroupingRequest ret = new GroupingRequest(lst.size());
         lst.add(ret);
         return ret;
@@ -146,8 +151,14 @@ public class GroupingRequest {
      * @return The list of grouping requests.
      */
     @SuppressWarnings({ "unchecked" })
-    @Deprecated
     public static List<GroupingRequest> getRequests(Query query) {
-        return query.getSelect().getGrouping();
+        Object lst = query.properties().get(PROP_REQUEST);
+        if (lst == null) {
+            return Collections.emptyList();
+        }
+        if (!(lst instanceof List)) {
+            throw new IllegalArgumentException("Expected " + GroupingRequest.class + ", got " + lst.getClass() + ".");
+        }
+        return (List<GroupingRequest>)lst;
     }
 }
