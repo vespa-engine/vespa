@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
+import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
@@ -248,6 +249,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         filter = StateFilter.from(request.getProperty("state"), filter);
         filter = NodeTypeFilter.from(request.getProperty("type"), filter);
         filter = ParentHostFilter.from(request.getProperty("parentHost"), filter);
+        filter = NodeOsVersionFilter.from(request.getProperty("osVersion"), filter);
         return filter;
     }
 

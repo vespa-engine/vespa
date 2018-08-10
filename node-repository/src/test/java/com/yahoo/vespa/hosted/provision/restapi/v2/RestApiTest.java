@@ -599,6 +599,19 @@ public class RestApiTest {
                                    Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-os-upgrade-complete.json");
+
+        // Another node upgrades
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
+                                   Utf8.toBytes("{\"currentOsVersion\": \"7.5.2\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
+
+        // Filter nodes by osVersion
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/?osVersion=7.5.2"),
+                       "{\"nodes\":[" +
+                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com\"}," +
+                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}" +
+                       "]}");
     }
 
     /** Tests the rendering of each node separately to make it easier to find errors */
