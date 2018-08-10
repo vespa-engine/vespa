@@ -21,7 +21,7 @@ import java.util.*;
  * @author Simon Thoresen Hult
  */
 public class GroupingRequest {
-    
+
     private final List<Continuation> continuations = new ArrayList<>();
     private final int requestId;
     private GroupingOperation root;

@@ -115,19 +115,7 @@ public class GroupingRequestTestCase {
         GroupingRequest bar = GroupingRequest.newInstance(query);
         assertEquals(Arrays.asList(foo, bar), GroupingRequest.getRequests(query));
     }
-
-    @Test
-    public void requireThatGetRequestThrowsIllegalArgumentOnBadProperty() throws Exception {
-        Query query = new Query();
-        String propName = GroupingRequest.class.getName() + ".Request";
-        try {
-            query.properties().set(propName, new Object());
-            GroupingRequest.getRequests(query);
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-    }
+    
 
     private static RootGroup newRootGroup(int id) {
         return new RootGroup(id, new Continuation() {
