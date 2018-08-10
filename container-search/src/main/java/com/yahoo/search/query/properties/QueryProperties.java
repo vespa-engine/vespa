@@ -141,9 +141,8 @@ public class QueryProperties extends Properties {
             if (key.toString().equals(Ranking.RANKING)) return query.getRanking();
             if (key.toString().equals(Presentation.PRESENTATION)) return query.getPresentation();
 
-        } else if (key.toString().equals(GroupingRequest.PROP_REQUEST)) {
-            return query.getSelect().getGrouping();
         }
+
         return super.get(key, context, substitution);
     }
 
@@ -281,11 +280,7 @@ public class QueryProperties extends Properties {
                     query.setGroupingSessionCache(asBoolean(value, false));
                 else
                     super.set(key,value,context);
-            } else if (key.toString().equals(GroupingRequest.PROP_REQUEST)) {
-                query.getSelect().setGrouping((List<GroupingRequest>) value);
-
-            }
-            else
+            } else
                 super.set(key,value,context);
         }
         catch (Exception e) { // Make sure error messages are informative. This should be moved out of this properties implementation

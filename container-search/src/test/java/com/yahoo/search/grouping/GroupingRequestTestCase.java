@@ -119,10 +119,9 @@ public class GroupingRequestTestCase {
     @Test
     public void requireThatGetRequestThrowsIllegalArgumentOnBadProperty() throws Exception {
         Query query = new Query();
-        Field propName = GroupingRequest.class.getDeclaredField("PROP_REQUEST");
-        propName.setAccessible(true);
+        String propName = GroupingRequest.class.getName() + ".Request";
         try {
-            query.properties().set(propName.get(null).toString(), new Object());
+            query.properties().set(propName, new Object());
             GroupingRequest.getRequests(query);
             fail();
         } catch (IllegalArgumentException e) {

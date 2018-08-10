@@ -21,8 +21,7 @@ import java.util.*;
  * @author Simon Thoresen Hult
  */
 public class GroupingRequest {
-
-    public final static String PROP_REQUEST = GroupingRequest.class.getName() + ".Request";
+    
     private final List<Continuation> continuations = new ArrayList<>();
     private final int requestId;
     private GroupingOperation root;
@@ -136,7 +135,7 @@ public class GroupingRequest {
         List<GroupingRequest> lst = getRequests(query);
         if (lst.isEmpty()) {
             lst = new LinkedList<>();
-            query.properties().set(PROP_REQUEST, lst);
+            query.getSelect().setGrouping(lst);
         }
         GroupingRequest ret = new GroupingRequest(lst.size());
         lst.add(ret);
