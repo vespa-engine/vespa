@@ -38,6 +38,7 @@ import java.util.stream.IntStream;
 
 /**
  * @author mortent
+ * @author jonmv
  */
 public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
@@ -74,7 +75,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                     initialVersion
                                             ))
                                             .collect(Collectors.toList());
-                nodeRepository().add(zone, nodes);
+                nodeRepository().putByHostname(zone, nodes);
                 convergeServices(application.id(), zone);
             }
         }
@@ -98,8 +99,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     /** Set version for system applications in given zone */
     public void setVersion(ApplicationId application, ZoneId zone, Version version) {
         for (Node node : nodeRepository().list(zone, application)) {
-            nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
-                                                version, version));
+            nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                                                          version, version));
         }
     }
 

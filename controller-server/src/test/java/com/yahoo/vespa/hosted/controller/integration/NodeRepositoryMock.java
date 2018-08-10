@@ -17,25 +17,24 @@ import java.util.stream.Collectors;
 
 /**
  * @author mpolden
+ * @author jonmv
  */
 public class NodeRepositoryMock implements NodeRepository {
 
     private final Map<ZoneId, Map<HostName, Node>> nodeRepository = new HashMap<>();
 
-    public void add(ZoneId zone, List<Node> nodes) {
-        nodeRepository.compute(zone, (k, v) -> {
-            if (v == null) {
-                v = new HashMap<>();
-            }
-            for (Node node : nodes) {
-                v.put(node.hostname(), node);
-            }
-            return v;
-        });
+    public void putByHostname(ZoneId zone, List<Node> nodes) {
+        nodeRepository.putIfAbsent(zone, new HashMap<>());
+        nodeRepository.get(zone).putAll(nodes.stream().collect(Collectors.toMap(node -> node.hostname(),
+                                                                                node -> node)));
     }
 
-    public void add(ZoneId zone, Node node) {
-        add(zone, Collections.singletonList(node));
+    public void putByHostname(ZoneId zone, Node node) {
+        putByHostname(zone, Collections.singletonList(node));
+    }
+
+    public void removeByHostname(ZoneId zone, List<Node> nodes) {
+        nodes.forEach(node -> nodeRepository.get(zone).remove(node.hostname()));
     }
 
     public void clear() {

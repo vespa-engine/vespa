@@ -64,7 +64,7 @@ import static java.util.logging.Level.WARNING;
 /**
  * Runs steps of a deployment job against its provided controller.
  *
- * A dual-purpose logger is set up for each thread that runs a step here:
+ * A dual-purpose logger is set up for each step run here:
  *   1. all messages are logged to a buffer which is stored in an external log storage at the end of execution, and
  *   2. all messages are also logged through the usual logging framework; by default, any messages of level
  *      {@code Level.INFO} or higher end up in the Vespa log, and all messages may be sent there by means of log-control.
@@ -85,7 +85,6 @@ public class InternalStepRunner implements StepRunner {
 
     private final Controller controller;
     private final TesterCloud testerCloud;
-    private final ThreadLocal<ByteArrayLogger> logger = new ThreadLocal<>();
 
     public InternalStepRunner(Controller controller, TesterCloud testerCloud) {
         this.controller = controller;
@@ -392,7 +391,7 @@ public class InternalStepRunner implements StepRunner {
     private DeploymentJobs.JobReport report(RunStatus run) {
         return new DeploymentJobs.JobReport(run.id().application(),
                                             run.id().type(),
-                                            Long.MAX_VALUE,
+                                            1,
                                             run.id().number(),
                                             Optional.empty(),
                                             run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());

@@ -370,7 +370,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Jobs sorted according to deployment spec
         List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
                 .steps(application.deploymentSpec())
-                .sortBy(application.deploymentJobs().jobStatus().values());
+                .sortedJobs(application.deploymentJobs().jobStatus().values());
 
         Cursor deploymentsArray = object.setArray("deploymentJobs");
         for (JobStatus job : jobStatus) {
@@ -411,7 +411,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = controller.applications().deploymentTrigger()
                 .steps(application.deploymentSpec())
-                .sortBy2(application.deployments().values());
+                .sortedDeployments(application.deployments().values());
         Cursor instancesArray = object.setArray("instances");
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
