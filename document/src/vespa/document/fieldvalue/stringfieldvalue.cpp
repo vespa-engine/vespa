@@ -109,7 +109,7 @@ FieldValue & StringFieldValue::assign(const FieldValue & rhs)
     if (rhs.inherits(StringFieldValue::classId)) {
         *this = static_cast<const StringFieldValue &>(rhs);
     } else {
-        *this = static_cast<stringref >(rhs.getAsString());
+        *this = rhs.getAsString().operator stringref();
     }
     return *this;
 }
