@@ -38,7 +38,7 @@ class MySearchHandler : public ISearchHandler {
     std::string _name;
     stringref _reply;
 public:
-    MySearchHandler(const std::string &name = "my", const stringref &reply = MYREPLY)
+    MySearchHandler(const std::string &name = "my", stringref reply = MYREPLY)
         : _name(name), _reply(reply)
     {}
 
@@ -181,7 +181,7 @@ TEST("requireThatHandlersAreStored") {
 }
 
 bool
-assertDocsumReply(SummaryEngine &engine, const std::string &searchDocType, const stringref &expReply) {
+assertDocsumReply(SummaryEngine &engine, const std::string &searchDocType, stringref expReply) {
     DocsumRequest::UP request(createRequest());
     request->propertiesMap.lookupCreate(search::MapNames::MATCH).add("documentdb.searchdoctype", searchDocType);
     MyDocsumClient client;

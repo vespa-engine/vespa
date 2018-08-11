@@ -101,8 +101,8 @@ typedef PageDict4StartOffset StartOffset;
 #define K_VALUE_COUNTFILE_L6_ACCNUMDOCS 16
 
 static uint32_t
-getLCP(const vespalib::stringref &word,
-       const vespalib::stringref &prevWord)
+getLCP(vespalib::stringref word,
+       vespalib::stringref prevWord)
 {
     size_t len1 = word.size();
     size_t len2 = prevWord.size();
@@ -118,7 +118,7 @@ getLCP(const vespalib::stringref &word,
 
 
 static void
-addLCPWord(const vespalib::stringref &word, size_t lcp, std::vector<char> &v)
+addLCPWord(vespalib::stringref word, size_t lcp, std::vector<char> &v)
 {
     v.push_back(lcp);
     size_t pos = lcp;
@@ -189,7 +189,7 @@ PageDict4SSWriter::~PageDict4SSWriter()
 }
 
 void
-PageDict4SSWriter::addL6Skip(const vespalib::stringref &word,
+PageDict4SSWriter::addL6Skip(vespalib::stringref word,
                              const StartOffset &startOffset,
                              uint64_t wordNum,
                              uint64_t pageNum,
@@ -226,7 +226,7 @@ PageDict4SSWriter::addL6Skip(const vespalib::stringref &word,
 
 void
 PageDict4SSWriter::
-addOverflowCounts(const vespalib::stringref &word,
+addOverflowCounts(vespalib::stringref word,
                   const Counts &counts,
                   const StartOffset &startOffset,
                   uint64_t wordNum)
@@ -454,7 +454,7 @@ PageDict4SPWriter::resetPage()
 
 
 void
-PageDict4SPWriter::addL3Skip(const vespalib::stringref &word,
+PageDict4SPWriter::addL3Skip(vespalib::stringref word,
                              const StartOffset &startOffset,
                              uint64_t wordNum,
                              uint64_t pageNum)
@@ -771,7 +771,7 @@ PageDict4PWriter::resetPage()
 
 void
 PageDict4PWriter::
-addCounts(const vespalib::stringref &word,
+addCounts(vespalib::stringref word,
           const Counts &counts)
 {
     assert(_countsWordOffset == _words.size());
@@ -825,7 +825,7 @@ addCounts(const vespalib::stringref &word,
 
 /* Private use */
 void
-PageDict4PWriter::addOverflowCounts(const vespalib::stringref &word,
+PageDict4PWriter::addOverflowCounts(vespalib::stringref word,
                                     const Counts &counts)
 {
     assert(_countsEntries == 0);
@@ -1082,7 +1082,7 @@ PageDict4SSReader::setup(DC &ssd)
 
 PageDict4SSLookupRes
 PageDict4SSReader::
-lookup(const vespalib::stringref &key)
+lookup(vespalib::stringref key)
 {
     PageDict4SSLookupRes res;
 
@@ -1327,9 +1327,9 @@ void
 PageDict4SPLookupRes::
 lookup(const SSReader &ssReader,
        const void *sparsePage,
-       const vespalib::stringref &key,
-       const vespalib::stringref &l6Word,
-       const vespalib::stringref &lastSPWord,
+       vespalib::stringref key,
+       vespalib::stringref l6Word,
+       vespalib::stringref lastSPWord,
        const StartOffset &l6StartOffset,
        uint64_t l6WordNum,
        uint64_t lowestPageNum)
@@ -1525,9 +1525,9 @@ bool
 PageDict4PLookupRes::
 lookup(const SSReader &ssReader,
        const void *page,
-       const vespalib::stringref &key,
-       const vespalib::stringref &l3Word,
-       const vespalib::stringref &lastPWord,
+       vespalib::stringref key,
+       vespalib::stringref l3Word,
+       vespalib::stringref lastPWord,
        const StartOffset &l3StartOffset,
        uint64_t l3WordNum)
 {

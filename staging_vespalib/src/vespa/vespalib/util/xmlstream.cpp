@@ -446,18 +446,18 @@ XmlContentWrapper::XmlContentWrapper(const char* value, uint32_t size)
 using CharP = char *;
 using ConstCharP = const char *;
 
-template XmlAttribute::XmlAttribute(const std::string &, const std::string &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const vespalib::string &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const vespalib::stringref &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const CharP &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const ConstCharP &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const bool &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const int16_t &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const int32_t &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const int64_t &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const uint16_t &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const uint32_t &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const uint64_t &, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, const double &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, std::string, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, vespalib::string, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, vespalib::stringref, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, CharP, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, ConstCharP, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, bool, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, int16_t, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, int32_t, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, int64_t, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, uint16_t, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, uint32_t, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, uint64_t, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, double, unsigned int);
 
 }

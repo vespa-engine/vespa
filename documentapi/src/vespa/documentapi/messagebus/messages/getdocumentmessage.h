@@ -46,7 +46,7 @@ public:
      * @param fieldSet The fields to retrieve (comma-separated)
      */
     GetDocumentMessage(const document::DocumentId &documentId,
-                       const vespalib::stringref & fieldSet);
+                       vespalib::stringref fieldSet);
 
     ~GetDocumentMessage();
 

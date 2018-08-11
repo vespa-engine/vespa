@@ -38,7 +38,7 @@ shouldCreateMapper(const ValueType &tensorType)
 
 }
 
-TensorAttribute::TensorAttribute(const vespalib::stringref &baseFileName,
+TensorAttribute::TensorAttribute(vespalib::stringref baseFileName,
                                  const Config &cfg,
                                  TensorStore &tensorStore)
     : NotImplementedAttribute(baseFileName, cfg),

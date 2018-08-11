@@ -19,7 +19,7 @@ public:
     typedef std::unique_ptr<AnnotationType> UP;
     typedef std::shared_ptr<AnnotationType> SP;
 
-    AnnotationType(int id, const vespalib::stringref &name)
+    AnnotationType(int id, vespalib::stringref name)
         : _id(id), _name(name), _type(0) {}
     void setDataType(const DataType &type) { _type = &type; }
 

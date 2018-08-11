@@ -124,7 +124,7 @@ private:
 static ItemName _G_ItemName;
 
 vespalib::string
-SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
+SimpleQueryStack::StackbufToString(vespalib::stringref theBuf)
 {
     vespalib::string result;
 

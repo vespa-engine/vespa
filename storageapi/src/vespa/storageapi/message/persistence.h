@@ -188,13 +188,13 @@ class GetCommand : public BucketInfoCommand {
 
 public:
     GetCommand(const document::Bucket &bucket, const document::DocumentId&,
-               const vespalib::stringref & fieldSet, Timestamp before = MAX_TIMESTAMP);
+               vespalib::stringref fieldSet, Timestamp before = MAX_TIMESTAMP);
     ~GetCommand() override;
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
-    void setFieldSet(const vespalib::stringref & fieldSet) { _fieldSet = fieldSet; }
+    void setFieldSet(vespalib::stringref  fieldSet) { _fieldSet = fieldSet; }
 
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

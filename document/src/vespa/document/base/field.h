@@ -48,7 +48,7 @@ public:
      * @param type The datatype of the field.
      * @param headerField Whether or not this is a "header" field.
      */
-    Field(const vespalib::stringref & name, int fieldId,
+    Field(vespalib::stringref  name, int fieldId,
           const DataType &type, bool headerField);
 
     Field();
@@ -61,7 +61,7 @@ public:
      * @param dataType The datatype of the field.
      * @param headerField Whether or not this is a "header" field.
      */
-    Field(const vespalib::stringref & name, const DataType &dataType, bool headerField);
+    Field(vespalib::stringref  name, const DataType &dataType, bool headerField);
 
     Field* clone() const override { return new Field(*this); }
     std::unique_ptr<FieldValue> createValue() const;

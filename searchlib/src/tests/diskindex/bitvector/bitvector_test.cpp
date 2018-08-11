@@ -20,7 +20,7 @@ struct FieldWriterWrapper
     FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds);
 
     FieldWriterWrapper &
-    newWord(const vespalib::stringref &word);
+    newWord(vespalib::stringref word);
 
     FieldWriterWrapper &
     add(uint32_t docId);
@@ -51,7 +51,7 @@ FieldWriterWrapper::open(const std::string &path,
 }
 
 FieldWriterWrapper &
-FieldWriterWrapper::newWord(const vespalib::stringref &word)
+FieldWriterWrapper::newWord(vespalib::stringref word)
 {
     _writer.newWord(word);
     return *this;

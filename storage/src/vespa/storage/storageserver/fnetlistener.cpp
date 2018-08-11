@@ -43,7 +43,7 @@ FNetListener::getListenPort() const
 }
 
 void
-FNetListener::registerHandle(const vespalib::stringref & handle) {
+FNetListener::registerHandle(vespalib::stringref  handle) {
     _slobrokRegister.registerName(handle);
     while (_slobrokRegister.busy()) {
         LOG(debug, "Waiting to register in slobrok");

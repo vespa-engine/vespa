@@ -238,7 +238,7 @@ TransLogServer::getDomainNames()
 }
 
 Domain::SP
-TransLogServer::findDomain(const stringref &domainName)
+TransLogServer::findDomain(stringref domainName)
 {
     Guard domainGuard(_lock);
     Domain::SP domain;

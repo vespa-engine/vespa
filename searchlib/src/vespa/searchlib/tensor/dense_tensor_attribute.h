@@ -19,7 +19,7 @@ class DenseTensorAttribute : public TensorAttribute
 {
     DenseTensorStore _denseTensorStore;
 public:
-    DenseTensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg);
+    DenseTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
     virtual ~DenseTensorAttribute();
     virtual void setTensor(DocId docId, const Tensor &tensor) override;
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;

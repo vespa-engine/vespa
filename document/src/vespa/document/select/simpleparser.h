@@ -11,10 +11,10 @@ namespace document::select::simple {
 class Parser {
 public:
     virtual ~Parser() { }
-    virtual bool parse(const vespalib::stringref & s) = 0;
-    const vespalib::stringref & getRemaining() const { return _remaining; }
+    virtual bool parse(vespalib::stringref  s) = 0;
+    vespalib::stringref getRemaining() const { return _remaining; }
 protected:
-    void setRemaining(const vespalib::stringref & s) { _remaining = s; }
+    void setRemaining(vespalib::stringref  s) { _remaining = s; }
 private:
     vespalib::stringref _remaining;
 };
@@ -44,7 +44,7 @@ public:
     IdSpecParser(const BucketIdFactory& bucketIdFactory) :
         _bucketIdFactory(bucketIdFactory)
     {}
-    bool parse(const vespalib::stringref & s) override;
+    bool parse(vespalib::stringref  s) override;
     const IdValueNode & getId() const { return static_cast<const IdValueNode &>(getValue()); }
     bool isUserSpec() const { return getId().getType() == IdValueNode::USER; }
 private:
@@ -54,7 +54,7 @@ private:
 class OperatorParser : public Parser
 {
 public:
-    bool parse(const vespalib::stringref & s) override;
+    bool parse(vespalib::stringref  s) override;
     const Operator * getOperator() const { return _operator; }
 private:
     const Operator *_operator;
@@ -63,13 +63,13 @@ private:
 class StringParser : public Parser, public ValueResult
 {
 public:
-    bool parse(const vespalib::stringref & s) override;
+    bool parse(vespalib::stringref  s) override;
 };
 
 class IntegerParser : public Parser, public ValueResult
 {
 public:
-    bool parse(const vespalib::stringref & s) override;
+    bool parse(vespalib::stringref  s) override;
 };
 
 class SelectionParser : public Parser, public NodeResult
@@ -78,7 +78,7 @@ public:
     SelectionParser(const BucketIdFactory& bucketIdFactory) :
         _bucketIdFactory(bucketIdFactory)
     {}
-    bool parse(const vespalib::stringref & s) override;
+    bool parse(vespalib::stringref  s) override;
 private:
     const BucketIdFactory & _bucketIdFactory;
 };

@@ -127,19 +127,19 @@ public:
     {
     public:
         typedef vespalib::string string;
-        BaseName(const vespalib::stringref &s)
+        BaseName(vespalib::stringref s)
             : string(s),
               _name(createAttributeName(s))
         { }
-        BaseName & operator = (const vespalib::stringref & s) {
+        BaseName & operator = (vespalib::stringref  s) {
             BaseName n(s);
             std::swap(*this, n);
             return *this;
         }
 
-        BaseName(const vespalib::stringref &base,
-                 const vespalib::stringref &snap,
-                 const vespalib::stringref &name);
+        BaseName(vespalib::stringref base,
+                 vespalib::stringref snap,
+                 vespalib::stringref name);
         ~BaseName();
 
         string getIndexName() const;
@@ -147,7 +147,7 @@ public:
         const string & getAttributeName() const { return _name; }
         string getDirName() const;
     private:
-        static string createAttributeName(const vespalib::stringref & s);
+        static string createAttributeName(vespalib::stringref  s);
         string _name;
     };
 
@@ -205,7 +205,7 @@ protected:
     }
 
 
-    AttributeVector(const vespalib::stringref &baseFileName, const Config & c);
+    AttributeVector(vespalib::stringref baseFileName, const Config & c);
 
     void checkSetMaxValueCount(int index) {
         _highestValueCount = std::max(index, _highestValueCount);
@@ -403,7 +403,7 @@ public:
     BasicType getInternalBasicType() const { return _config.basicType(); }
     CollectionType getInternalCollectionType() const { return _config.collectionType(); }
     const BaseName & getBaseFileName() const { return _baseFileName; }
-    void setBaseFileName(const vespalib::stringref & name) { _baseFileName = name; }
+    void setBaseFileName(vespalib::stringref  name) { _baseFileName = name; }
 
     // Implements IAttributeVector
     const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
@@ -437,13 +437,13 @@ public:
      * Updates the base file name of this attribute vector and saves
      * it to file(s)
      */
-    bool saveAs(const vespalib::stringref &baseFileName);
+    bool saveAs(vespalib::stringref baseFileName);
 
     /**
      * Updates the base file name of this attribute vector and saves
      * it using the given saveTarget
      */
-    bool saveAs(const vespalib::stringref &baseFileName, IAttributeSaveTarget &saveTarget);
+    bool saveAs(vespalib::stringref baseFileName, IAttributeSaveTarget &saveTarget);
 
     /** Saves this attribute vector to file(s) **/
     bool save();

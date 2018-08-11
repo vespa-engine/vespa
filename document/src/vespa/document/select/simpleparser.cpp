@@ -21,7 +21,7 @@ bool icmp(char c, char l)
     return tolower(c) == l;
 }
 
-bool IdSpecParser::parse(const vespalib::stringref & s)
+bool IdSpecParser::parse(vespalib::stringref  s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
@@ -74,7 +74,7 @@ bool IdSpecParser::parse(const vespalib::stringref & s)
     return retval;
 }
 
-bool OperatorParser::parse(const vespalib::stringref & s)
+bool OperatorParser::parse(vespalib::stringref  s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
@@ -118,7 +118,7 @@ bool OperatorParser::parse(const vespalib::stringref & s)
     return retval;
 }
 
-bool StringParser::parse(const vespalib::stringref & s)
+bool StringParser::parse(vespalib::stringref  s)
 {
     bool retval(false);
     setRemaining(s);
@@ -143,7 +143,7 @@ bool StringParser::parse(const vespalib::stringref & s)
     return retval;
 }
 
-bool IntegerParser::parse(const vespalib::stringref & s)
+bool IntegerParser::parse(vespalib::stringref  s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
@@ -165,7 +165,7 @@ bool IntegerParser::parse(const vespalib::stringref & s)
     return retval;
 }
 
-bool SelectionParser::parse(const vespalib::stringref & s)
+bool SelectionParser::parse(vespalib::stringref  s)
 {
     bool retval(false);
     IdSpecParser id(_bucketIdFactory);

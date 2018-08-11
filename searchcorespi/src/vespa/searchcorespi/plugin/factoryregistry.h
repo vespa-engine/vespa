@@ -22,23 +22,23 @@ public:
      * @param factory The factory instance for producing IndexManagers.
      * @throws vespalib::IllegalArgument if factory is already registered.
      */
-    void add(const vespalib::stringref & uniqueName, const IIndexManagerFactory::SP & factory);
+    void add(vespalib::stringref  uniqueName, const IIndexManagerFactory::SP & factory);
     /**
      * Will unregister a factory. Should be called when a sharedlibrary is being unloaded.
      * @param uniqueName Unique name of factory to remove from registry.
      * @throws vespalib::IllegalArgument if factory is already registered.
      */
-    void remove(const vespalib::stringref & uniqueName);
+    void remove(vespalib::stringref  uniqueName);
     /**
      * This method will fetch a factory given its unique name.
      * @param name The name of the factory to return.
      * @return The factory.
      */
-    const IIndexManagerFactory::SP & get(const vespalib::stringref & uniqueName) const;
+    const IIndexManagerFactory::SP & get(vespalib::stringref  uniqueName) const;
     /**
      * Returns true if a factory with the given name has been registered.
      */
-    bool isRegistered(const vespalib::stringref & uniqueName) const;
+    bool isRegistered(vespalib::stringref  uniqueName) const;
 
 private:
     typedef std::map<vespalib::string, IIndexManagerFactory::SP> Registry;

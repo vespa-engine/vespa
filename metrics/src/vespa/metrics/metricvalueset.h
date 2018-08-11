@@ -39,8 +39,8 @@ struct MetricValueClass {
     using stringref = vespalib::stringref;
     virtual ~MetricValueClass() {}
 
-    virtual double getDoubleValue(const stringref & id) const = 0;
-    virtual uint64_t getLongValue(const stringref & id) const = 0;
+    virtual double getDoubleValue(stringref id) const = 0;
+    virtual uint64_t getLongValue(stringref id) const = 0;
     virtual void output(const std::string& id, std::ostream&) const = 0;
     virtual void output(const std::string& id, vespalib::JsonStream&) const = 0;
     std::string toString(const std::string& id);

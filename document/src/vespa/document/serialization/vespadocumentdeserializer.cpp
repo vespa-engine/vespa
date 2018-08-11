@@ -249,7 +249,7 @@ void VespaDocumentDeserializer::read(PredicateFieldValue &value) {
 
 namespace {
 template <typename FV>
-void setValue(FV &field_value, const stringref &val, bool use_ref) {
+void setValue(FV &field_value, stringref val, bool use_ref) {
     if (use_ref) {
         field_value.setValueRef(val);
     } else {

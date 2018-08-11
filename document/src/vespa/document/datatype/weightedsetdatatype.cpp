@@ -83,7 +83,7 @@ WeightedSetDataType::operator==(const DataType& other) const
 }
 
 void
-WeightedSetDataType::onBuildFieldPath(FieldPath & path, const vespalib::stringref & remainFieldName) const
+WeightedSetDataType::onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const
 {
     MapDataType::buildFieldPathImpl(path, *this, remainFieldName, getNestedType(), *DataType::INT);
 }

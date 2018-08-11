@@ -33,7 +33,7 @@ ReferenceDataType* ReferenceDataType::clone() const {
     return new ReferenceDataType(_targetDocType, getId());
 }
 
-void ReferenceDataType::onBuildFieldPath(FieldPath &, const vespalib::stringref& remainingFieldName) const {
+void ReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref remainingFieldName) const {
     if ( ! remainingFieldName.empty() ) {
         throw IllegalArgumentException(make_string("Reference data type does not support further field recursion: '%s'",
                                                    vespalib::string(remainingFieldName).c_str()), VESPA_STRLOC);

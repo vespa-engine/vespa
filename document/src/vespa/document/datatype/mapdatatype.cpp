@@ -57,7 +57,7 @@ MapDataType::operator==(const DataType& other) const
 
 void
 MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
-                                const vespalib::stringref &remainFieldName,
+                                vespalib::stringref remainFieldName,
                                 const DataType &keyType, const DataType &valueType)
 {
     if (!remainFieldName.empty() && remainFieldName[0] == '{') {
@@ -97,7 +97,7 @@ MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
 }
 
 void
-MapDataType::onBuildFieldPath(FieldPath & fieldPath, const vespalib::stringref &remainFieldName) const
+MapDataType::onBuildFieldPath(FieldPath & fieldPath, vespalib::stringref remainFieldName) const
 {
     buildFieldPathImpl(fieldPath, *this, remainFieldName, getKeyType(), getValueType());
 }

@@ -113,7 +113,7 @@ public:
     virtual std::string toXml(const std::string& indent = "") const;
 
     // Utility functions to set commonly used value types.
-    virtual FieldValue& operator=(const vespalib::stringref &);
+    virtual FieldValue& operator=(vespalib::stringref );
     virtual FieldValue& operator=(int32_t);
     virtual FieldValue& operator=(int64_t);
     virtual FieldValue& operator=(float);

@@ -64,7 +64,7 @@ public:
 
     // Convenience functions for using primitives directly
 
-    bool add(const vespalib::stringref & val)
+    bool add(vespalib::stringref  val)
         { return addValue(*createNested() = val); }
     bool add(int32_t val)
         { return addValue(*createNested() = val); }
@@ -75,7 +75,7 @@ public:
     bool add(double val)
         { return addValue(*createNested() = val); }
 
-    bool contains(const vespalib::stringref & val)
+    bool contains(vespalib::stringref  val)
         { return containsValue(*createNested() = val); }
     bool contains(int32_t val)
         { return containsValue(*createNested() = val); }
@@ -86,7 +86,7 @@ public:
     bool contains(double val)
         { return containsValue(*createNested() = val); }
 
-    bool remove(const vespalib::stringref & val)
+    bool remove(vespalib::stringref  val)
         { return removeValue(*createNested() = val); }
     bool remove(int32_t val)
         { return removeValue(*createNested() = val); }

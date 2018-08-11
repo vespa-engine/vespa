@@ -38,7 +38,7 @@ public:
     bool usePositionData() const { return _position_data; }
 
 protected:
-    Term(const vespalib::stringref &view, int32_t id, Weight weight);
+    Term(vespalib::stringref view, int32_t id, Weight weight);
 };
 
 class TermNode : public Node, public Term {

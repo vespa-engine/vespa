@@ -97,17 +97,13 @@ private:
     int _port;
     vespalib::string _protocol;
 
-    vespalib::string make_message(int port, const vespalib::stringref &protocol,
-                                  const vespalib::stringref &msg);
+    vespalib::string make_message(int port, vespalib::stringref protocol, vespalib::stringref msg);
 
 public:
-    PortListenException(int port, const vespalib::stringref &protocol,
-                        const vespalib::stringref &msg = "",
-                        const vespalib::stringref &location = "", int skipStack = 0);
-    PortListenException(int port, const vespalib::stringref &protocol,
-                        const Exception &cause,
-                        const vespalib::stringref &msg = "",
-                        const vespalib::stringref &location = "", int skipStack = 0);
+    PortListenException(int port, vespalib::stringref protocol, vespalib::stringref msg = "",
+                        vespalib::stringref location = "", int skipStack = 0);
+    PortListenException(int port, vespalib::stringref protocol, const Exception &cause, vespalib::stringref msg = "",
+                        vespalib::stringref location = "", int skipStack = 0);
     PortListenException(PortListenException &&) = default;
     PortListenException & operator = (PortListenException &&) = default;
     PortListenException(const PortListenException &);
@@ -131,14 +127,12 @@ public:
                 TOO_MANY_OPEN_FILES, DIRECTORY_HAVE_CONTENT, FILE_FULL,
                 ALREADY_EXISTS };
 
-    IoException(const stringref & msg, Type type, const stringref & location,
-                int skipStack = 0);
-    IoException(const stringref & msg, Type type, const Exception& cause,
-                const stringref & location, int skipStack = 0);
+    IoException(stringref msg, Type type, stringref location, int skipStack = 0);
+    IoException(stringref msg, Type type, const Exception& cause, stringref location, int skipStack = 0);
 
     VESPA_DEFINE_EXCEPTION_SPINE(IoException);
 
-    static string createMessage(const stringref  & msg, Type type);
+    static string createMessage(stringref msg, Type type);
 
     Type getType() const { return _type; }
 

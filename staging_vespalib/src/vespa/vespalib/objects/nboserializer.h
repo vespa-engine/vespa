@@ -18,7 +18,7 @@ public:
     NBOSerializer &put(const IFieldBase &field, uint64_t value) override;
     NBOSerializer &put(const IFieldBase &field, float value) override;
     NBOSerializer &put(const IFieldBase &field, double value) override;
-    NBOSerializer &put(const IFieldBase &field, const stringref &val) override;
+    NBOSerializer &put(const IFieldBase &field, stringref val) override;
 
     NBOSerializer &get(const IFieldBase &field, bool &value) override;
     NBOSerializer &get(const IFieldBase &field, uint8_t &value) override;

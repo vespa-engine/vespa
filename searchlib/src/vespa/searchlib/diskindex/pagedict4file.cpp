@@ -321,7 +321,7 @@ PageDict4FileSeqWrite::~PageDict4FileSeqWrite()
 
 
 void
-PageDict4FileSeqWrite::writeWord(const vespalib::stringref &word,
+PageDict4FileSeqWrite::writeWord(vespalib::stringref word,
                                  const PostingListCounts &counts)
 {
     _pWriter->addCounts(word, counts);

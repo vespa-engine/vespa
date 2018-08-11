@@ -13,7 +13,7 @@ class IDocsumEnvironment;
 class FeaturesDFW : public IDocsumFieldWriter
 {
 protected:
-    void featureDump(vespalib::JSONStringer & json, const vespalib::stringref & name, double feature);
+    void featureDump(vespalib::JSONStringer & json, vespalib::stringref name, double feature);
 };
 
 class SummaryFeaturesDFW : public FeaturesDFW

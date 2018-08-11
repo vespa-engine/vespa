@@ -61,10 +61,10 @@
 #define VESPA_DEFINE_EXCEPTION(MyClass, Parent)                            \
 class MyClass : public Parent {                                            \
 public:                                                                    \
-    MyClass(const vespalib::stringref &msg,                                \
-            const vespalib::stringref &location = "", int skipStack = 0);  \
-    MyClass(const vespalib::stringref &msg, const Exception &cause,        \
-            const vespalib::stringref &location = "", int skipStack = 0);  \
+    MyClass(vespalib::stringref msg,                                \
+            vespalib::stringref location = "", int skipStack = 0);  \
+    MyClass(vespalib::stringref msg, const Exception &cause,        \
+            vespalib::stringref location = "", int skipStack = 0);  \
     VESPA_DEFINE_EXCEPTION_SPINE(MyClass)                                  \
 };
 
@@ -77,11 +77,11 @@ public:                                                                    \
  * @param MyClass the name of your class
  **/
 #define VESPA_IMPLEMENT_EXCEPTION(MyClass, Parent)                           \
-    MyClass::MyClass(const vespalib::stringref &msg,                         \
-            const vespalib::stringref &location, int skipStack)     \
+    MyClass::MyClass(vespalib::stringref msg,                         \
+            vespalib::stringref location, int skipStack)     \
         : Parent(msg, location, skipStack + 1) {}                            \
-    MyClass::MyClass(const vespalib::stringref &msg, const Exception &cause, \
-            const vespalib::stringref &location, int skipStack)     \
+    MyClass::MyClass(vespalib::stringref msg, const Exception &cause, \
+            vespalib::stringref location, int skipStack)     \
         : Parent(msg, cause, location, skipStack + 1) {}                     \
     VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)
 
@@ -186,7 +186,7 @@ public:
      *                  should send (skipStack + 1) to the parent constructor (see
      *                  \ref VESPA_DEFINE_EXCEPTION for subclass implementation).
      **/
-    Exception(const stringref &msg, const stringref& location = "", int skipStack = 0);
+    Exception(stringref msg, stringref location = "", int skipStack = 0);
     /**
      * @brief Construct an exception with a message, a causing exception, and a source code location.
      * @param msg A user-readable message describing the problem
@@ -198,8 +198,8 @@ public:
      *                  should send (skipStack + 1) to the parent constructor (see
      *                  \ref VESPA_DEFINE_EXCEPTION for subclass implementation).
      **/
-    Exception(const stringref &msg, const Exception &cause,
-              const stringref &location = "", int skipStack = 0);
+    Exception(stringref msg, const Exception &cause,
+              stringref location = "", int skipStack = 0);
     Exception(const Exception &);
     Exception & operator = (const Exception &);
     Exception(Exception &&) = default;

@@ -180,8 +180,8 @@ public:
      * @param id The part of the metric to extract. For instance, an average
      *           metric have average,
      */
-    virtual int64_t getLongValue(const stringref & id) const = 0;
-    virtual double getDoubleValue(const stringref & id) const = 0;
+    virtual int64_t getLongValue(stringref id) const = 0;
+    virtual double getDoubleValue(stringref id) const = 0;
 
     /**
      * When snapshotting we need to be able to add data from one set of metrics

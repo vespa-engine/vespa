@@ -15,7 +15,7 @@ SearchPath::Element::Element()
 }
 
 vespalib::stringref
-SearchPath::parseElement(const vespalib::stringref &spec, size_t numNodes)
+SearchPath::parseElement(vespalib::stringref spec, size_t numNodes)
 {
     _elements.push_back(Element());
     vespalib::string::size_type specSepPos(spec.find('/'));
@@ -32,7 +32,7 @@ SearchPath::parseElement(const vespalib::stringref &spec, size_t numNodes)
 }
 
 void
-SearchPath::parsePartList(const vespalib::stringref &partSpec, size_t numNodes)
+SearchPath::parsePartList(vespalib::stringref partSpec, size_t numNodes)
 {
     try {
         if (!partSpec.empty() && (partSpec[0] != '*')) {
@@ -94,7 +94,7 @@ SearchPath::parsePartRange(vespalib::asciistream &spec, size_t numNodes)
 }
 
 void
-SearchPath::parseRow(const vespalib::stringref &rowSpec)
+SearchPath::parseRow(vespalib::stringref rowSpec)
 {
     if (!rowSpec.empty()) {
         // FIXME C++17 range-safe from_chars() instead of strtoul()

@@ -55,7 +55,7 @@ AttributeNode::AttributeNode() :
 
 AttributeNode::~AttributeNode() {}
 
-AttributeNode::AttributeNode(const vespalib::stringref &name) :
+AttributeNode::AttributeNode(vespalib::stringref name) :
     FunctionNode(),
     _scratchResult(new AttributeResult()),
     _hasMultiValue(false),

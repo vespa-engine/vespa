@@ -16,7 +16,7 @@ ReturnCode & ReturnCode::operator = (const ReturnCode &) = default;
 ReturnCode & ReturnCode::operator = (ReturnCode &&) = default;
 ReturnCode::~ReturnCode() {}
 
-ReturnCode::ReturnCode(Result result, const vespalib::stringref & msg)
+ReturnCode::ReturnCode(Result result, vespalib::stringref msg)
     : _result(result),
       _message(msg)
 {}

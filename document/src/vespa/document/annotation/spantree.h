@@ -21,7 +21,7 @@ public:
     typedef AnnotationVector::const_iterator const_iterator;
 
     template <typename T>
-    SpanTree(const vespalib::stringref &name, std::unique_ptr<T> root)
+    SpanTree(vespalib::stringref name, std::unique_ptr<T> root)
         : _name(name),
           _root(std::move(root)) {
         assert(_root.get());

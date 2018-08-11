@@ -14,7 +14,7 @@ const NodeType NodeType::STORAGE("storage", 0);
 const NodeType NodeType::DISTRIBUTOR("distributor", 1);
 
 const NodeType&
-NodeType::get(const vespalib::stringref & serialized)
+NodeType::get(vespalib::stringref  serialized)
 {
     if (serialized == STORAGE._name) {
         return STORAGE;
@@ -26,7 +26,7 @@ NodeType::get(const vespalib::stringref & serialized)
             "Unknown node type " + serialized + " given.", VESPA_STRLOC);
 }
 
-NodeType::NodeType(const vespalib::stringref & name, uint16_t enumValue)
+NodeType::NodeType(vespalib::stringref  name, uint16_t enumValue)
     : _enumValue(enumValue), _name(name)
 {
 }

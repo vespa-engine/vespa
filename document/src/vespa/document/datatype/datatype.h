@@ -38,12 +38,12 @@ protected:
      * everyone to be able to use them. Only tests and the type manager reading
      * config should need to create datatypes.
      */
-    DataType(const vespalib::stringref& name, int dataTypeId);
+    DataType(vespalib::stringref  name, int dataTypeId);
 
     /**
      * Creates a datatype using the hash of name as the id.
      */
-    explicit DataType(const vespalib::stringref& name);
+    explicit DataType(vespalib::stringref  name);
 
 public:
     virtual ~DataType();
@@ -128,14 +128,14 @@ public:
      *                         MUST be null-terminated.
      * @return pointer to field path or null if an error occured
      */
-    void buildFieldPath(FieldPath & fieldPath, const vespalib::stringref & remainFieldName) const;
+    void buildFieldPath(FieldPath & fieldPath, vespalib::stringref remainFieldName) const;
 
     /** @throws FieldNotFoundException if field does not exist. */
     virtual const Field& getField(int fieldId) const;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(DataType);
 private:
-    virtual void onBuildFieldPath(FieldPath & fieldPath, const vespalib::stringref & remainFieldName) const = 0;
+    virtual void onBuildFieldPath(FieldPath & fieldPath, vespalib::stringref remainFieldName) const = 0;
 };
 
 } // document

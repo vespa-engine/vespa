@@ -234,7 +234,7 @@ SumMetric<AddendMetric>::generateSum() const
 
 template<typename AddendMetric>
 int64_t
-SumMetric<AddendMetric>::getLongValue(const stringref & id) const
+SumMetric<AddendMetric>::getLongValue(stringref id) const
 {
     std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
     if (sum.second.get() == 0) return 0;
@@ -243,7 +243,7 @@ SumMetric<AddendMetric>::getLongValue(const stringref & id) const
 
 template<typename AddendMetric>
 double
-SumMetric<AddendMetric>::getDoubleValue(const stringref & id) const
+SumMetric<AddendMetric>::getDoubleValue(stringref id) const
 {
     std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
     if (sum.second.get() == 0) return 0.0;

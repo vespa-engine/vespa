@@ -43,11 +43,11 @@ public:
 private:
     ElementVector _elements;
 
-    vespalib::stringref parseElement(const vespalib::stringref &spec, size_t numNodes);
-    void parsePartList(const vespalib::stringref &partSpec, size_t numNodes);
+    vespalib::stringref parseElement(vespalib::stringref spec, size_t numNodes);
+    void parsePartList(vespalib::stringref partSpec, size_t numNodes);
     void parsePartList(vespalib::asciistream &spec, size_t numNodes);
     void parsePartRange(vespalib::asciistream &spec, size_t numNodes);
-    void parseRow(const vespalib::stringref &rowSpec);
+    void parseRow(vespalib::stringref rowSpec);
 
 public:
     SearchPath(const vespalib::string &spec, size_t numNodes);

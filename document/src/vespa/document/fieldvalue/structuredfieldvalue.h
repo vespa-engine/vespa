@@ -112,12 +112,12 @@ public:
     const DataType *getDataType() const override { return _type; }
 
     /** Wrapper for DataType's hasField() function. */
-    virtual bool hasField(const vespalib::stringref & name) const = 0;
+    virtual bool hasField(vespalib::stringref  name) const = 0;
     /**
      * Wrapper for DataType's getField() function.
      * @throws FieldNotFoundException If no field with given name exist.
      */
-    virtual const Field& getField(const vespalib::stringref & name) const = 0;
+    virtual const Field& getField(vespalib::stringref  name) const = 0;
 
     void beginTransaction();
     void commitTransaction();
@@ -136,7 +136,7 @@ public:
         return getFieldValue(field);
     }
     /** @return Retrieve value of given field. Null pointer if not set. */
-    FieldValue::UP getValue(const vespalib::stringref & name) const {
+    FieldValue::UP getValue(vespalib::stringref  name) const {
         return getFieldValue(getField(name));
     }
     /** @return True if value is set. */
@@ -159,16 +159,16 @@ public:
     virtual void clear() = 0;
 
         // Utility functions for easy but less efficient access
-    bool hasValue(const vespalib::stringref & fieldName) const
+    bool hasValue(vespalib::stringref  fieldName) const
         { return hasFieldValue(getField(fieldName)); }
-    void remove(const vespalib::stringref & fieldName)
+    void remove(vespalib::stringref  fieldName)
         { removeFieldValue(getField(fieldName)); }
-    void setValue(const vespalib::stringref & fieldName, const FieldValue& value)
+    void setValue(vespalib::stringref  fieldName, const FieldValue& value)
         { setFieldValue(getField(fieldName), value); }
     template<typename PrimitiveType>
     void set(const Field& field, PrimitiveType value);
     template<typename PrimitiveType>
-    void set(const vespalib::stringref & fieldName, PrimitiveType value);
+    void set(vespalib::stringref  fieldName, PrimitiveType value);
 
     size_t getSetFieldCount() const {
         size_t count = 0;

@@ -305,7 +305,7 @@ TransportServer::discardRequests()
 }
 
 void
-TransportServer::logPacket(const vespalib::stringref &msg, FNET_Packet *p, FNET_Channel *ch, FNET_Connection *conn)
+TransportServer::logPacket(vespalib::stringref msg, FNET_Packet *p, FNET_Channel *ch, FNET_Connection *conn)
 {
     uint32_t chid = -1;
     uint32_t conntag = -1;

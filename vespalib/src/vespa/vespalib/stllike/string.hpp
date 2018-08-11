@@ -156,46 +156,46 @@ small_string<StackSize>::append(const void * s, size_type addSz)
 }
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const vespalib::small_string<StackSize> & b)
+small_string<StackSize>
+operator + (const small_string<StackSize> & a, const small_string<StackSize> & b)
 {   
-    vespalib::small_string<StackSize> t(a);
+    small_string<StackSize> t(a);
     t += b;
     return t;
 }
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const vespalib::stringref & b)
+small_string<StackSize>
+operator + (const small_string<StackSize> & a, stringref b)
 {
-    vespalib::small_string<StackSize> t(a);
+    small_string<StackSize> t(a);
     t += b;
     return t;
 }
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const vespalib::stringref & a, const vespalib::small_string<StackSize> & b)
+small_string<StackSize>
+operator + (stringref  a, const small_string<StackSize> & b)
 {
-    vespalib::small_string<StackSize> t(a);
+    small_string<StackSize> t(a);
     t += b;
     return t;
 }
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const char * b)
+small_string<StackSize>
+operator + (const small_string<StackSize> & a, const char * b)
 {
-    vespalib::small_string<StackSize> t(a);
+    small_string<StackSize> t(a);
     t += b;
     return t;
 }
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const char * a, const vespalib::small_string<StackSize> & b)
+small_string<StackSize>
+operator + (const char * a, const small_string<StackSize> & b)
 {
-    vespalib::small_string<StackSize> t(a);
+    small_string<StackSize> t(a);
     t += b;
     return t;
 }

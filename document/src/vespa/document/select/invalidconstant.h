@@ -20,7 +20,7 @@ namespace select {
 class InvalidConstant : public Node
 {
 public:
-    explicit InvalidConstant(const vespalib::stringref &value);
+    explicit InvalidConstant(vespalib::stringref value);
 
     ResultList contains(const Context&) const override { return ResultList(Result::Invalid); }
     ResultList trace(const Context&, std::ostream& trace) const override;

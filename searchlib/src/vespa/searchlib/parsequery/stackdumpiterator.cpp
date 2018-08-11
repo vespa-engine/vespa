@@ -9,7 +9,7 @@ using search::query::PredicateQueryTerm;
 
 namespace search {
 
-SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(const vespalib::stringref &buf) :
+SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref buf) :
     _buf(buf.begin()),
     _bufEnd(buf.end()),
     _bufLen(buf.size()),

@@ -176,7 +176,7 @@ public:
      * Construct a reader for the given block of data
      * @param input data to read UTF-8 from (can be read-only)
      **/
-    Utf8Reader(const stringref &input)
+    Utf8Reader(stringref input)
         : stringref(input), _pos(0)
     {}
 

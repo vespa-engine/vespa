@@ -98,7 +98,7 @@ public:
     }
 
     const string & getFieldSet() const { return _fieldSet; }
-    void setFieldSet(const vespalib::stringref & fieldSet) { _fieldSet = fieldSet; }
+    void setFieldSet(vespalib::stringref  fieldSet) { _fieldSet = fieldSet; }
 
     bool visitInconsistentBuckets() const { return _visitInconsistentBuckets; }
     void setVisitInconsistentBuckets(bool val) { _visitInconsistentBuckets = val; }

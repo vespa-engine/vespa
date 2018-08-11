@@ -38,8 +38,8 @@ public:
         fastos::TimeStamp _timestamp;
 
     public:
-        Field(const vespalib::stringref &n, DataType dt);
-        Field(const vespalib::stringref &n, DataType dt, CollectionType ct);
+        Field(vespalib::stringref n, DataType dt);
+        Field(vespalib::stringref n, DataType dt, CollectionType ct);
 
         /**
          * Create this field based on the given config lines.
@@ -52,7 +52,7 @@ public:
 
         virtual void
         write(vespalib::asciistream & os,
-              const vespalib::stringref & prefix) const;
+              vespalib::stringref prefix) const;
 
         const vespalib::string &getName() const { return _name; }
         DataType getDataType() const { return _dataType; }
@@ -81,8 +81,8 @@ public:
         uint32_t _avgElemLen;
 
     public:
-        IndexField(const vespalib::stringref &name, DataType dt);
-        IndexField(const vespalib::stringref &name, DataType dt, CollectionType ct);
+        IndexField(vespalib::stringref name, DataType dt);
+        IndexField(vespalib::stringref name, DataType dt, CollectionType ct);
         /**
          * Create this index field based on the given config lines.
          **/
@@ -97,7 +97,7 @@ public:
 
         void
         write(vespalib::asciistream &os,
-              const vespalib::stringref &prefix) const override;
+              vespalib::stringref prefix) const override;
 
         bool hasPrefix() const { return _prefix; }
         bool hasPhrases() const { return _phrases; }
@@ -122,7 +122,7 @@ public:
         std::vector<vespalib::string> _fields;
 
     public:
-        FieldSet(const vespalib::stringref & n) : _name(n), _fields() {}
+        FieldSet(vespalib::stringref  n) : _name(n), _fields() {}
 
         /**
          * Create this field collection based on the given config lines.
@@ -131,7 +131,7 @@ public:
 
         ~FieldSet();
 
-        FieldSet &addField(const vespalib::stringref &fieldName) {
+        FieldSet &addField(vespalib::stringref fieldName) {
             _fields.push_back(fieldName);
             return *this;
         }
@@ -285,7 +285,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getIndexFieldId(const vespalib::stringref & name) const;
+    uint32_t getIndexFieldId(vespalib::stringref  name) const;
 
     /**
      * Check if a field is an index
@@ -294,7 +294,7 @@ public:
      * @param name the name of the field.
      **/
     bool
-    isIndexField(const vespalib::stringref & name) const
+    isIndexField(vespalib::stringref  name) const
     {
         return _indexIds.find(name) != _indexIds.end();
     }
@@ -306,7 +306,7 @@ public:
      * @param name the name of the field.
      **/
     bool
-    isSummaryField(const vespalib::stringref & name) const
+    isSummaryField(vespalib::stringref  name) const
     {
         return _summaryIds.find(name) != _summaryIds.end();
     }
@@ -317,7 +317,7 @@ public:
      * @param name the name of the field.
      **/
     bool
-    isAttributeField(const vespalib::stringref & name) const
+    isAttributeField(vespalib::stringref  name) const
     {
         return _attributeIds.find(name) != _attributeIds.end();
     }
@@ -347,7 +347,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getAttributeFieldId(const vespalib::stringref & name) const;
+    uint32_t getAttributeFieldId(vespalib::stringref  name) const;
 
     /**
      * Get information about a specific summary field using the given fieldId.
@@ -374,7 +374,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getSummaryFieldId(const vespalib::stringref & name) const;
+    uint32_t getSummaryFieldId(vespalib::stringref  name) const;
 
     /**
      * Get information about a specific field set
@@ -395,7 +395,7 @@ public:
      * @param name the name of the field set.
      **/
     uint32_t
-    getFieldSetId(const vespalib::stringref &name) const;
+    getFieldSetId(vespalib::stringref name) const;
 
     const std::vector<ImportedAttributeField> &getImportedAttributeFields() const {
         return _importedAttributeFields;

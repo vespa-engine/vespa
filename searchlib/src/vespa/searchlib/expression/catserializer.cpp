@@ -14,7 +14,7 @@ using vespalib::Deserializer;
 using vespalib::string;
 using vespalib::stringref;
 
-CatSerializer & CatSerializer::put(const IFieldBase & field, const stringref & value)
+CatSerializer & CatSerializer::put(const IFieldBase & field, stringref value)
 {
     (void) field;
     getStream().write(value.data(), value.size());

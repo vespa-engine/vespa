@@ -10,7 +10,7 @@ namespace search {
 namespace fef {
 
 const FeatureType &
-Blueprint::defineInput(const vespalib::stringref &inName,
+Blueprint::defineInput(vespalib::stringref inName,
                        AcceptInput accept)
 {
     assert(_dependency_handler != nullptr);
@@ -18,8 +18,8 @@ Blueprint::defineInput(const vespalib::stringref &inName,
 }
 
 void
-Blueprint::describeOutput(const vespalib::stringref &outName,
-                          const vespalib::stringref &desc,
+Blueprint::describeOutput(vespalib::stringref outName,
+                          vespalib::stringref desc,
                           const FeatureType &type)
 {
     (void) desc;
@@ -27,7 +27,7 @@ Blueprint::describeOutput(const vespalib::stringref &outName,
     _dependency_handler->define_output(outName, type);
 }
 
-Blueprint::Blueprint(const vespalib::stringref & baseName)
+Blueprint::Blueprint(vespalib::stringref  baseName)
     : _baseName(baseName),
       _name(),
       _dependency_handler(nullptr)

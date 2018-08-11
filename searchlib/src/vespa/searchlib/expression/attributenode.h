@@ -69,7 +69,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     DECLARE_EXPRESSIONNODE(AttributeNode);
     AttributeNode();
-    AttributeNode(const vespalib::stringref &name);
+    AttributeNode(vespalib::stringref name);
     AttributeNode(const search::attribute::IAttributeVector & attribute);
     AttributeNode(const AttributeNode & attribute);
     AttributeNode & operator = (const AttributeNode & attribute);

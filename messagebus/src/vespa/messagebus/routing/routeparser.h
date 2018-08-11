@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
 #include "hop.h"
 #include "route.h"
 
@@ -15,12 +14,12 @@ namespace mbus {
 class RouteParser {
 private:
     static bool isWhitespace(char c);
-    static IHopDirective::SP createDirective(const vespalib::stringref &str);
-    static IHopDirective::SP createErrorDirective(const vespalib::stringref &str);
-    static IHopDirective::SP createPolicyDirective(const vespalib::stringref &str);
-    static IHopDirective::SP createRouteDirective(const vespalib::stringref &str);
-    static IHopDirective::SP createTcpDirective(const vespalib::stringref &str);
-    static IHopDirective::SP createVerbatimDirective(const vespalib::stringref &str);
+    static IHopDirective::SP createDirective(vespalib::stringref str);
+    static IHopDirective::SP createErrorDirective(vespalib::stringref str);
+    static IHopDirective::SP createPolicyDirective(vespalib::stringref str);
+    static IHopDirective::SP createRouteDirective(vespalib::stringref str);
+    static IHopDirective::SP createTcpDirective(vespalib::stringref str);
+    static IHopDirective::SP createVerbatimDirective(vespalib::stringref str);
 
 public:
     /**

@@ -51,7 +51,7 @@ public:
     IndexBuilder(const Schema &schema); 
     virtual ~IndexBuilder();
 
-    virtual void startWord(const vespalib::stringref &word) override;
+    virtual void startWord(vespalib::stringref word) override;
     virtual void endWord() override;
     virtual void startDocument(uint32_t docId) override;
     virtual void endDocument() override;
@@ -65,9 +65,9 @@ public:
 
     // TODO: methods for document summary.
     inline FieldHandle & getIndexFieldHandle(uint32_t fieldId); 
-    void setPrefix(const vespalib::stringref &prefix);
+    void setPrefix(vespalib::stringref prefix);
 
-    vespalib::string appendToPrefix(const vespalib::stringref &name);
+    vespalib::string appendToPrefix(vespalib::stringref name);
 
     void
     open(uint32_t docIdLimit, uint64_t numWordIds,

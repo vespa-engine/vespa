@@ -22,7 +22,7 @@ public:
      *
      * @param msg The error message.
      */
-    ErrorDirective(const vespalib::stringref &msg);
+    ErrorDirective(vespalib::stringref msg);
 
     /**
      * Returns the error string that is to be assigned to the reply.

@@ -28,9 +28,9 @@ public:
     bool operator==(const DataType& other) const override;
     MapDataType* clone() const override { return new MapDataType(*this); }
 
-    void onBuildFieldPath(FieldPath & path, const vespalib::stringref &remainFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
     static void buildFieldPathImpl(FieldPath & path, const DataType& dataType,
-                                   const vespalib::stringref &remainFieldName,
+                                   vespalib::stringref remainFieldName,
                                    const DataType &keyType, const DataType &valueType);
 
     DECLARE_IDENTIFIABLE(MapDataType);

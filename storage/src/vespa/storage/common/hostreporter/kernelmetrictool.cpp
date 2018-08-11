@@ -30,8 +30,8 @@ vespalib::string stripWhitespace(const vespalib::string& s) {
     return s.substr(start, stop - start + 1);
 }
 
-vespalib::string getLine(const vespalib::stringref& key,
-                         const vespalib::stringref& content)
+vespalib::string getLine(vespalib::stringref  key,
+                         vespalib::stringref content)
 {
     vespalib::string::size_type start(0);
     vespalib::string::size_type stop(content.find('\n'));
@@ -63,7 +63,7 @@ uint32_t getTokenCount(const vespalib::string& line) {
     return st.size();
 }
 
-uint64_t toLong(const vespalib::stringref& s, int base) {
+uint64_t toLong(vespalib::stringref  s, int base) {
     char* endptr;
     // FIXME C++17 range-safe from_chars() instead of strtoull()
     uint64_t result(strtoull(s.data(), &endptr, base));

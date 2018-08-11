@@ -86,7 +86,7 @@ TensorReader::getNumCells() {
 
 }
 
-DenseTensorAttribute::DenseTensorAttribute(const vespalib::stringref &baseFileName,
+DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName,
                                  const Config &cfg)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
       _denseTensorStore(cfg.tensorType())

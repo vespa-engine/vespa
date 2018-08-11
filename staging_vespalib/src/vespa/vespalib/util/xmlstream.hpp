@@ -9,7 +9,7 @@
 namespace vespalib::xml {
 
 template<typename T>
-XmlAttribute::XmlAttribute(const std::string& name, const T& value, uint32_t flags)
+XmlAttribute::XmlAttribute(const std::string& name, T value, uint32_t flags)
     : _name(name),
       _value(),
       _next()

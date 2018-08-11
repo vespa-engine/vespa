@@ -111,8 +111,8 @@ public:
      * @param word the word to lookup.
      * @return the lookup result or NULL if the word is not found.
      **/
-    LookupResult::UP lookup(uint32_t indexId, const vespalib::stringref & word);
-    LookupResultVector lookup(const std::vector<uint32_t> & indexes, const vespalib::stringref & word);
+    LookupResult::UP lookup(uint32_t indexId, vespalib::stringref word);
+    LookupResultVector lookup(const std::vector<uint32_t> & indexes, vespalib::stringref word);
 
 
     /**

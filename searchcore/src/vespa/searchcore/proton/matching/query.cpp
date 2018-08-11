@@ -103,7 +103,7 @@ Query::Query() = default;
 Query::~Query() = default;
 
 bool
-Query::buildTree(const vespalib::stringref &stack, const string &location,
+Query::buildTree(vespalib::stringref stack, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv)
 {
     SimpleQueryStackDumpIterator stack_dump_iterator(stack);

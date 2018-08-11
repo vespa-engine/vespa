@@ -21,7 +21,7 @@ public:
     virtual Serializer & put(const IFieldBase & field, uint64_t value) = 0;
     virtual Serializer & put(const IFieldBase & field, float value) = 0;
     virtual Serializer & put(const IFieldBase & field, double value) = 0;
-    virtual Serializer & put(const IFieldBase & field, const stringref & value) = 0;
+    virtual Serializer & put(const IFieldBase & field, stringref value) = 0;
 
     virtual Serializer & put(const IFieldBase & field, const Identifiable & value);
     virtual Serializer & put(const IFieldBase & field, int8_t value);
@@ -40,7 +40,7 @@ public:
     Serializer & operator << (int64_t  value) { return put(_unspecifiedField, value); }
     Serializer & operator << (float value)    { return put(_unspecifiedField, value); }
     Serializer & operator << (double value)   { return put(_unspecifiedField, value); }
-    Serializer & operator << (const stringref & value) { return put(_unspecifiedField, value); }
+    Serializer & operator << (stringref value) { return put(_unspecifiedField, value); }
     template <typename T>
     Serializer & operator << (const vespalib::Array<T> & v);
     template <typename T>

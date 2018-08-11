@@ -76,7 +76,7 @@ public:
     template <typename T> void addDataType(unique_ptr<T> type);
 
     const DataType *lookup(int32_t id) const;
-    const DataType *lookup(const stringref &name) const;
+    const DataType *lookup(stringref name) const;
     const DataType &findOrThrow(int32_t id) const;
 };
 
@@ -127,7 +127,7 @@ const DataType *Repo::lookup(int32_t id) const {
     return FindPtr(_types, id);
 }
 
-const DataType *Repo::lookup(const stringref &n) const {
+const DataType *Repo::lookup(stringref n) const {
     return FindPtr(_name_map, n);
 }
 
@@ -523,7 +523,7 @@ DocumentTypeRepo::getDocumentType(int32_t type_id) const {
 }
 
 const DocumentType *
-DocumentTypeRepo::getDocumentType(const stringref &name) const {
+DocumentTypeRepo::getDocumentType(stringref name) const {
     DocumentTypeMap::const_iterator it = _doc_types->find(DocumentType::createId(name));
 
     if (it != _doc_types->end() && it->second->doc_type->getName() == name) {
@@ -544,7 +544,7 @@ DocumentTypeRepo::getDataType(const DocumentType &doc_type, int32_t id) const {
 }
 
 const DataType *
-DocumentTypeRepo::getDataType(const DocumentType &doc_type, const stringref &name) const {
+DocumentTypeRepo::getDataType(const DocumentType &doc_type, stringref name) const {
     const DataTypeRepo *dt_repo = FindPtr(*_doc_types, doc_type.getId());
     return dt_repo ? dt_repo->repo.lookup(name) : nullptr;
 }

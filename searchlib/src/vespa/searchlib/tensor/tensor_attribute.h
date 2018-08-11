@@ -32,7 +32,7 @@ protected:
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
     using RefCopyVector = vespalib::Array<RefType>;
-    TensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg,
+    TensorAttribute(vespalib::stringref baseFileName, const Config &cfg,
                     TensorStore &tensorStore);
     virtual ~TensorAttribute();
     virtual const ITensorAttribute *asTensorAttribute() const override;

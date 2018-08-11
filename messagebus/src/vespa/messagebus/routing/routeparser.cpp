@@ -18,13 +18,13 @@ RouteParser::isWhitespace(char c)
 }
 
 IHopDirective::SP
-RouteParser::createRouteDirective(const stringref &str)
+RouteParser::createRouteDirective(stringref str)
 {
     return IHopDirective::SP(new RouteDirective(str));
 }
 
 IHopDirective::SP
-RouteParser::createTcpDirective(const stringref &str)
+RouteParser::createTcpDirective(stringref str)
 {
     size_t posP = str.find(":");
     if (posP == string::npos || posP == 0) {
@@ -41,7 +41,7 @@ RouteParser::createTcpDirective(const stringref &str)
 }
 
 IHopDirective::SP
-RouteParser::createPolicyDirective(const stringref &str)
+RouteParser::createPolicyDirective(stringref str)
 {
     size_t pos = str.find(":");
     if (pos == string::npos) {
@@ -51,19 +51,19 @@ RouteParser::createPolicyDirective(const stringref &str)
 }
 
 IHopDirective::SP
-RouteParser::createVerbatimDirective(const stringref &str)
+RouteParser::createVerbatimDirective(stringref str)
 {
     return IHopDirective::SP(new VerbatimDirective(str));
 }
 
 IHopDirective::SP
-RouteParser::createErrorDirective(const stringref &str)
+RouteParser::createErrorDirective(stringref str)
 {
     return IHopDirective::SP(new ErrorDirective(str));
 }
 
 IHopDirective::SP
-RouteParser::createDirective(const stringref &str)
+RouteParser::createDirective(stringref str)
 {
     if (str.size() > 2 && str[0] == '[') {
         return createPolicyDirective(str.substr(1, str.size() - 2));

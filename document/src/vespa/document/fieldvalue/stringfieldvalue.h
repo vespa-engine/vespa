@@ -30,7 +30,7 @@ public:
     StringFieldValue(const StringFieldValue &rhs);
 
     StringFieldValue &operator=(const StringFieldValue &rhs);
-    StringFieldValue &operator=(const vespalib::stringref &value) override;
+    StringFieldValue &operator=(vespalib::stringref value) override;
     ~StringFieldValue();
 
     FieldValue &assign(const FieldValue &) override;
@@ -48,7 +48,7 @@ public:
         return _annotationData ? _annotationData->getSerializedAnnotations() : vespalib::ConstBufferRef();
     }
     bool hasSpanTrees() const { return _annotationData ? _annotationData->hasSpanTrees() : false; }
-    static const SpanTree *findTree(const SpanTrees &trees, const vespalib::stringref &name);
+    static const SpanTree *findTree(const SpanTrees &trees, vespalib::stringref name);
     void clearSpanTrees() {
         if (_annotationData) {
             doClearSpanTrees();

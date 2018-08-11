@@ -101,7 +101,7 @@ public:
      *
      * @param feature feature name to use as a seed
      **/
-    void addSeed(const vespalib::stringref &feature);
+    void addSeed(vespalib::stringref feature);
 
     /**
      * Create Blueprints for all seeds and dependencies and enumerate

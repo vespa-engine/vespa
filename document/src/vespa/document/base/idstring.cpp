@@ -49,8 +49,8 @@ IdString::toString() const
 namespace {
 
 void reportError(const char* part) __attribute__((noinline));
-void reportError(const stringref & s) __attribute__((noinline));
-void reportError(const stringref & s, const char* part) __attribute__((noinline));
+void reportError(stringref s) __attribute__((noinline));
+void reportError(stringref s, const char* part) __attribute__((noinline));
 void reportTooShortDocId(const char * id, size_t sz) __attribute__((noinline));
 void reportNoSchemeSeparator(const char * id) __attribute__((noinline));
 
@@ -58,13 +58,12 @@ void reportError(const char* part)
 {
     throw IdParseException(make_string("Unparseable id: No %s separator ':' found", part), VESPA_STRLOC);
 }
-void reportError(const stringref & s, const char* part)
+void reportError(stringref s, const char* part)
 {
-    throw IdParseException(make_string("Unparseable %s '%s': Not an unsigned 64-bit number", part,
-                                   string(s).c_str()), VESPA_STRLOC);
+    throw IdParseException(make_string("Unparseable %s '%s': Not an unsigned 64-bit number", part, string(s).c_str()), VESPA_STRLOC);
 }
 
-void reportError(const stringref & s)
+void reportError(stringref s)
 {
     throw IdParseException(make_string("Unparseable order doc scheme '%s': Scheme must contain parameters on the form (width, division)",
                                        string(s).c_str()), VESPA_STRLOC);
@@ -76,13 +75,10 @@ void reportNoSchemeSeparator(const char * id)
 
 void reportTooShortDocId(const char * id, size_t sz)
 {
-    throw IdParseException(
-            make_string(
-                    "Unparseable id '%s': It is too short(%li) "
-                    "to make any sense", id, sz), VESPA_STRLOC);
+    throw IdParseException( make_string( "Unparseable id '%s': It is too short(%li) " "to make any sense", id, sz), VESPA_STRLOC);
 }
 
-uint64_t getAsNumber(const stringref & s, const char* part) {
+uint64_t getAsNumber(stringref s, const char* part) {
     char* errPos = NULL;
     uint64_t value = strtoull(s.data(), &errPos, 10);
 
@@ -93,7 +89,7 @@ uint64_t getAsNumber(const stringref & s, const char* part) {
 }
 
 void
-getOrderDocBits(const stringref& scheme, uint16_t & widthBits, uint16_t & divisionBits)
+getOrderDocBits(stringref scheme, uint16_t & widthBits, uint16_t & divisionBits)
 {
     const char* parenPos = reinterpret_cast<const char*>(
             memchr(scheme.data(), '(', scheme.size()));
@@ -194,7 +190,7 @@ fmemchr(const char * s, const char * e)
 }  // namespace
 
 
-IdString::Offsets::Offsets(uint32_t maxComponents, uint32_t namespaceOffset, const stringref & id)
+IdString::Offsets::Offsets(uint32_t maxComponents, uint32_t namespaceOffset, stringref id)
 {
     _offsets[0] = namespaceOffset;
     size_t index(1);
@@ -213,7 +209,7 @@ IdString::Offsets::Offsets(uint32_t maxComponents, uint32_t namespaceOffset, con
     _offsets[maxComponents] = id.size() + 1; // 1 is added due to the implicitt accounting for ':'
 }
 
-IdString::IdString(uint32_t maxComponents, uint32_t namespaceOffset, const stringref & rawId) :
+IdString::IdString(uint32_t maxComponents, uint32_t namespaceOffset, stringref rawId) :
     _offsets(maxComponents, namespaceOffset, rawId),
     _rawId(rawId)
 {
@@ -274,13 +270,13 @@ union LocationUnion {
     IdString::LocationType _location[2];
 };
 
-IdString::LocationType makeLocation(const stringref &s) {
+IdString::LocationType makeLocation(stringref s) {
     LocationUnion location;
     fastc_md5sum(reinterpret_cast<const unsigned char*>(s.data()), s.size(), location._key);
     return location._location[0];
 }
 
-uint64_t parseNumber(const stringref &number) {
+uint64_t parseNumber(stringref number) {
     char* errPos = NULL;
     errno = 0;
     uint64_t n = strtoul(number.data(), &errPos, 10);
@@ -297,7 +293,7 @@ uint64_t parseNumber(const stringref &number) {
 }
 
 void setLocation(IdString::LocationType &loc, IdString::LocationType val,
-                 bool &has_set_location, const stringref &key_values) {
+                 bool &has_set_location, stringref key_values) {
     if (has_set_location) {
         throw IdParseException("Illegal key combination in "
                                + key_values);
@@ -309,7 +305,7 @@ void setLocation(IdString::LocationType &loc, IdString::LocationType val,
 
 }  // namespace
 
-IdIdString::IdIdString(const stringref & id)
+IdIdString::IdIdString(stringref id)
     : IdString(4, 3, id),
       _location(0),
       _groupOffset(0),
@@ -364,26 +360,26 @@ GroupDocIdString::getLocation() const
     return makeLocation(getGroup());
 }
 
-DocIdString::DocIdString(const stringref & ns, const stringref & id) :
+DocIdString::DocIdString(stringref ns, stringref id) :
     IdString(2, 4, "doc:" + ns + ":" + id)
 {
     validate();
 }
 
-DocIdString::DocIdString(const stringref & rawId) :
+DocIdString::DocIdString(stringref rawId) :
     IdString(2, 4, rawId)
 {
     validate();
 }
 
-UserDocIdString::UserDocIdString(const stringref & rawId) :
+UserDocIdString::UserDocIdString(stringref rawId) :
     IdString(3, 8, rawId),
     _userId(getAsNumber(rawId.substr(offset(1), offset(2) - offset(1) - 1), "userid"))
 {
     validate();
 }
 
-GroupDocIdString::GroupDocIdString(const stringref & rawId) :
+GroupDocIdString::GroupDocIdString(stringref rawId) :
     IdString(3, 9, rawId)
 {
     validate();
@@ -395,7 +391,7 @@ GroupDocIdString::locationFromGroupName(vespalib::stringref name)
     return makeLocation(name);
 }
 
-OrderDocIdString::OrderDocIdString(const stringref & rawId) :
+OrderDocIdString::OrderDocIdString(stringref rawId) :
     IdString(4, static_cast<const char *>(memchr(rawId.data(), ':', rawId.size())) - rawId.data() + 1, rawId),
     _widthBits(0),
     _divisionBits(0),

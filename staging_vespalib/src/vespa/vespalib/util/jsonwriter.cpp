@@ -173,7 +173,7 @@ JSONWriter::appendNull()
 }
 
 JSONWriter &
-JSONWriter::appendKey(const vespalib::stringref & str)
+JSONWriter::appendKey(stringref  str)
 {
     considerComma();
     indent();
@@ -243,7 +243,7 @@ JSONWriter::appendUInt64(uint64_t v)
 }
 
 JSONWriter &
-JSONWriter::appendString(const vespalib::stringref & str)
+JSONWriter::appendString(stringref  str)
 {
     considerComma();
     quote(str.data(), str.size());
@@ -252,7 +252,7 @@ JSONWriter::appendString(const vespalib::stringref & str)
 }
 
 JSONWriter &
-JSONWriter::appendJSON(const vespalib::stringref & json)
+JSONWriter::appendJSON(stringref  json)
 {
     considerComma();
     (*_os) << json;

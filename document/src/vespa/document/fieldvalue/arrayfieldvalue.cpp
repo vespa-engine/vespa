@@ -180,7 +180,7 @@ ArrayFieldValue::hasChanged() const
 
 fieldvalue::ModificationStatus
 ArrayFieldValue::iterateSubset(int startPos, int endPos,
-                               const vespalib::stringref & variable,
+                               vespalib::stringref variable,
                                PathRange nested,
                                fieldvalue::IteratorHandler& handler) const
 {
