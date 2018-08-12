@@ -27,7 +27,7 @@ Blueprint::describeOutput(vespalib::stringref outName,
     _dependency_handler->define_output(outName, type);
 }
 
-Blueprint::Blueprint(vespalib::stringref  baseName)
+Blueprint::Blueprint(vespalib::stringref baseName)
     : _baseName(baseName),
       _name(),
       _dependency_handler(nullptr)

@@ -125,7 +125,7 @@ private:
     void trimRecentlyCompletedList(framework::SecondTime currentTime);
     void handleNonExistingVisitorCall(const Event& entry, api::ReturnCode& code);
 
-    std::shared_ptr<Visitor> createVisitor(vespalib::stringref  libName,
+    std::shared_ptr<Visitor> createVisitor(vespalib::stringref libName,
                                            const vdslib::Parameters& params,
                                            vespalib::asciistream & error);
 

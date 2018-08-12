@@ -27,7 +27,7 @@ public:
     void RPC_getCurrentTime(FRT_RPCRequest *req);
     void RPC_setDistributionStates(FRT_RPCRequest* req);
 
-    void registerHandle(vespalib::stringref  handle);
+    void registerHandle(vespalib::stringref handle);
     void close();
     int getListenPort() const;
 

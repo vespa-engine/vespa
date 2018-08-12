@@ -44,7 +44,7 @@ FactoryRegistry::get(stringref uniqueName) const
 }
 
 bool
-FactoryRegistry::isRegistered(vespalib::stringref  uniqueName) const
+FactoryRegistry::isRegistered(vespalib::stringref uniqueName) const
 {
     LockGuard guard(_lock);
     Registry::const_iterator found = _registry.find(uniqueName);

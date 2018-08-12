@@ -107,7 +107,7 @@ public:
      * class. The @ref setup method is used to tailor a blueprint
      * object for a specific set of parameters.
      **/
-    Blueprint(vespalib::stringref  baseName);
+    Blueprint(vespalib::stringref baseName);
 
     /**
      * Obtain the base name of this blueprint. This method will

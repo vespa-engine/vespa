@@ -15,14 +15,14 @@ vespalib::string readFile(const char* fileName);
 
 vespalib::string stripWhitespace(const vespalib::string& s);
 
-vespalib::string getLine(vespalib::stringref  key,
+vespalib::string getLine(vespalib::stringref key,
                          vespalib::stringref content);
 
 vespalib::string getToken(uint32_t index, const vespalib::string& line);
 
 uint32_t getTokenCount(const vespalib::string& line);
 
-uint64_t toLong(vespalib::stringref  s, int base = 0) ;
+uint64_t toLong(vespalib::stringref s, int base = 0) ;
 
 } /* namespace kernelmetrictool */
 } /* namespace storage */
