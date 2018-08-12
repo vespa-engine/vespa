@@ -32,7 +32,7 @@ public:
     {
     public:
       Value() { }
-      Value(vespalib::stringref  s) : vespalib::string(s) { }
+      Value(vespalib::stringref s) : vespalib::string(s) { }
       Value(const vespalib::string & s) : vespalib::string(s) { }
       Value(const void *v, size_t sz) : vespalib::string(v, sz) { }
       size_t length() const  { return size() - 1; }

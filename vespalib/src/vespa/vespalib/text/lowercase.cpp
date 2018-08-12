@@ -6,7 +6,7 @@
 namespace vespalib {
 
 vespalib::string
-LowerCase::convert(vespalib::stringref  input)
+LowerCase::convert(vespalib::stringref input)
 {
     vespalib::string output;
     Utf8Reader r(input);

@@ -24,14 +24,14 @@ class NodeType  {
     uint16_t _enumValue;
     vespalib::string _name;
 
-    NodeType(vespalib::stringref  name, uint16_t enumValue);
+    NodeType(vespalib::stringref name, uint16_t enumValue);
 
 public:
     static const NodeType DISTRIBUTOR;
     static const NodeType STORAGE;
 
     /** Throws vespalib::IllegalArgumentException if invalid state given. */
-    static const NodeType& get(vespalib::stringref  serialized);
+    static const NodeType& get(vespalib::stringref serialized);
     const vespalib::string& serialize() const { return _name; }
 
     operator uint16_t() const { return _enumValue; }

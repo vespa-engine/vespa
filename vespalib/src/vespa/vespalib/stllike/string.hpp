@@ -175,7 +175,7 @@ operator + (const small_string<StackSize> & a, stringref b)
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (stringref  a, const small_string<StackSize> & b)
+operator + (stringref a, const small_string<StackSize> & b)
 {
     small_string<StackSize> t(a);
     t += b;

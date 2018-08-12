@@ -46,7 +46,7 @@ public:
               vespalib::stringref description = "",
               double capacity = 1.0, uint16_t reliability = 1);
     /** Set type if you want to verify that content fit with the given type. */
-    NodeState(vespalib::stringref  serialized, const NodeType* nodeType = 0);
+    NodeState(vespalib::stringref serialized, const NodeType* nodeType = 0);
     ~NodeState();
 
     /**
@@ -77,7 +77,7 @@ public:
     void setReliability(uint16_t reliability);
     void setInitProgress(vespalib::Double initProgress);
     void setStartTimestamp(uint64_t startTimestamp);
-    void setDescription(vespalib::stringref  desc) { _description = desc; }
+    void setDescription(vespalib::stringref desc) { _description = desc; }
 
     void setDiskCount(uint16_t count);
     void setDiskState(uint16_t index, const DiskState&);

@@ -62,7 +62,7 @@ public:
     void setVersion(uint32_t version) { _version = version; }
     void setClusterState(const State& state);
     void setNodeState(const Node& node, const NodeState& state);
-    void setDescription(vespalib::stringref  s) { _description = s; }
+    void setDescription(vespalib::stringref s) { _description = s; }
     void setDistributionBitCount(uint16_t count) { _distributionBits = count; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

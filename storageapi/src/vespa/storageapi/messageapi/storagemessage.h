@@ -163,7 +163,7 @@ private:
     MessageType *_reply;
     const MessageType *_replyOf;
 
-    MessageType(vespalib::stringref  name, Id id, const MessageType* replyOf = 0);
+    MessageType(vespalib::stringref name, Id id, const MessageType* replyOf = 0);
 public:
     static const MessageType DOCBLOCK;
     static const MessageType DOCBLOCK_REPLY;
@@ -280,7 +280,7 @@ private:
 
 public:
     StorageMessageAddress(const mbus::Route& route);
-    StorageMessageAddress(vespalib::stringref  clusterName,
+    StorageMessageAddress(vespalib::stringref clusterName,
                           const lib::NodeType& type, uint16_t index,
                           Protocol protocol = STORAGE);
     ~StorageMessageAddress();

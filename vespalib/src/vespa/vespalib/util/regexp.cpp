@@ -24,7 +24,7 @@ Regexp::Flags::enableICASE()
 }
 
 bool
-Regexp::compile(vespalib::stringref  re, Flags flags)
+Regexp::compile(vespalib::stringref re, Flags flags)
 {
     re_set_syntax(flags.flags());
     regex_t *preg = (regex_t *)_data;
@@ -45,7 +45,7 @@ Regexp::compile(vespalib::stringref  re, Flags flags)
 }
 
 
-Regexp::Regexp(vespalib::stringref  re, Flags flags)
+Regexp::Regexp(vespalib::stringref re, Flags flags)
     : _valid(false),
       _data(new regex_t)
 {
@@ -53,7 +53,7 @@ Regexp::Regexp(vespalib::stringref  re, Flags flags)
 }
 
 bool
-Regexp::match(vespalib::stringref  s) const
+Regexp::match(vespalib::stringref s) const
 {
     if ( ! valid() ) { return false; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
@@ -64,7 +64,7 @@ Regexp::match(vespalib::stringref  s) const
     return pos >= 0;
 }
 
-vespalib::string Regexp::replace(vespalib::stringref  s, vespalib::stringref replacement) const
+vespalib::string Regexp::replace(vespalib::stringref s, vespalib::stringref replacement) const
 {
     if ( ! valid() ) { return s; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
@@ -92,7 +92,7 @@ Regexp::~Regexp()
 
 namespace {
 
-bool has_option(vespalib::stringref  re) {
+bool has_option(vespalib::stringref re) {
     return (re.find('|') != re.npos);
 }
 
@@ -119,7 +119,7 @@ vespalib::string escape(vespalib::stringref str) {
 } // namespace vespalib::<unnamed>
 
 vespalib::string
-Regexp::get_prefix(vespalib::stringref  re)
+Regexp::get_prefix(vespalib::stringref re)
 {
     vespalib::string prefix;
     if ((re.size() > 0) && (re.data()[0] == '^') && !has_option(re)) {
