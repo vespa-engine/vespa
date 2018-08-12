@@ -74,7 +74,7 @@ endif()
 
 if(VESPA_LLVM_VERSION)
 else()
-set (VESPA_LLVM_VERSION "3.9")
+set (VESPA_LLVM_VERSION "6.0")
 endif()
 
 if(VESPA_USER)
