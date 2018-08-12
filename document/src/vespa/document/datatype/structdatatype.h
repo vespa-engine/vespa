@@ -48,7 +48,7 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     uint32_t getFieldCount() const override { return _idFieldMap.size(); }
 
-    const Field& getField(vespalib::stringref  name) const override;
+    const Field& getField(vespalib::stringref name) const override;
 
     /**
      * Retrieves a field based on its ID. To determine which ID to use, we also

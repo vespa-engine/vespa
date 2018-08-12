@@ -24,7 +24,7 @@ namespace {
     }
 }
 
-DocType::DocType(vespalib::stringref  doctype)
+DocType::DocType(vespalib::stringref doctype)
     : Node("DocType"),
       _doctype(doctype)
 {

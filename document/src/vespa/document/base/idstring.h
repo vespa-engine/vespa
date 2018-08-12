@@ -24,7 +24,7 @@ public:
     static const vespalib::string & getTypeName(Type t);
 
     /** @throws document::IdParseException If parsing of id scheme failed. */
-    static IdString::UP createIdString(vespalib::stringref  id) { return createIdString(id.data(), id.size()); }
+    static IdString::UP createIdString(vespalib::stringref id) { return createIdString(id.data(), id.size()); }
     static IdString::UP createIdString(const char *id, size_t sz);
 
     ~IdString() {}
@@ -129,8 +129,8 @@ private:
  */
 class DocIdString final : public IdString {
 public:
-    DocIdString(vespalib::stringref  ns, vespalib::stringref id);
-    DocIdString(vespalib::stringref  rawId);
+    DocIdString(vespalib::stringref ns, vespalib::stringref id);
+    DocIdString(vespalib::stringref rawId);
 private:
     DocIdString* clone() const override { return new DocIdString(*this); }
     Type getType() const override { return DOC; }
@@ -150,7 +150,7 @@ private:
  */
 class UserDocIdString final : public IdString {
 public:
-    UserDocIdString(vespalib::stringref  rawId);
+    UserDocIdString(vespalib::stringref rawId);
 
     virtual int64_t getUserId() const { return _userId; }
     bool hasNumber() const override { return true; }
@@ -172,7 +172,7 @@ private:
  */
 class OrderDocIdString final : public IdString {
 public:
-    OrderDocIdString(vespalib::stringref  rawId);
+    OrderDocIdString(vespalib::stringref rawId);
 
     int64_t  getUserId() const { return _location; }
     uint16_t getWidthBits() const { return _widthBits; }
@@ -207,7 +207,7 @@ private:
  */
 class GroupDocIdString : public IdString {
 public:
-    GroupDocIdString(vespalib::stringref  rawId);
+    GroupDocIdString(vespalib::stringref rawId);
     bool hasGroup() const override { return true; }
     vespalib::stringref getGroup() const override { return getComponent(1); }
     LocationType getLocation() const override;

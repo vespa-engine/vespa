@@ -55,7 +55,7 @@ struct FieldName {
 
 template <typename T>
 uint32_t
-getFieldId(vespalib::stringref  name, const T &map)
+getFieldId(vespalib::stringref name, const T &map)
 {
     typename T::const_iterator it = map.find(name);
     return (it != map.end()) ? it->second : Schema::UNKNOWN_FIELD_ID;
@@ -398,19 +398,19 @@ Schema::addFieldSet(const FieldSet &fieldSet)
 }
 
 uint32_t
-Schema::getIndexFieldId(vespalib::stringref  name) const
+Schema::getIndexFieldId(vespalib::stringref name) const
 {
     return getFieldId(name, _indexIds);
 }
 
 uint32_t
-Schema::getAttributeFieldId(vespalib::stringref  name) const
+Schema::getAttributeFieldId(vespalib::stringref name) const
 {
     return getFieldId(name, _attributeIds);
 }
 
 uint32_t
-Schema::getSummaryFieldId(vespalib::stringref  name) const
+Schema::getSummaryFieldId(vespalib::stringref name) const
 {
     return getFieldId(name, _summaryIds);
 }

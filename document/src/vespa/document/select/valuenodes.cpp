@@ -38,7 +38,7 @@ namespace {
     }
 }
 
-InvalidValueNode::InvalidValueNode(vespalib::stringref  name)
+InvalidValueNode::InvalidValueNode(vespalib::stringref name)
     : _name(name)
 { }
 
@@ -79,7 +79,7 @@ NullValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
-StringValueNode::StringValueNode(vespalib::stringref  val)
+StringValueNode::StringValueNode(vespalib::stringref val)
     : _value(val)
 {
 }
@@ -686,7 +686,7 @@ namespace {
     }
 }
 
-FunctionValueNode::FunctionValueNode(vespalib::stringref  name,
+FunctionValueNode::FunctionValueNode(vespalib::stringref name,
                                      std::unique_ptr<ValueNode> src)
     : _function(),
       _funcname(name),

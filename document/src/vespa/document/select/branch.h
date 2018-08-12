@@ -22,7 +22,7 @@ namespace select {
 class Branch : public Node
 {
 public:
-    Branch(vespalib::stringref  name) : Node(name) {}
+    Branch(vespalib::stringref name) : Node(name) {}
 
     bool isLeafNode() const override { return false; }
 };

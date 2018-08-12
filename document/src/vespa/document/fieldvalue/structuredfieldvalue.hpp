@@ -31,7 +31,7 @@ StructuredFieldValue::set(const Field& field, PrimitiveType value)
 
 template<typename PrimitiveType>
 void
-StructuredFieldValue::set(vespalib::stringref  fieldName, PrimitiveType value)
+StructuredFieldValue::set(vespalib::stringref fieldName, PrimitiveType value)
 {
     set(getField(fieldName), value);
 }
