@@ -24,7 +24,7 @@ private:
     static std::map<vespalib::string, vsvector> splitMap( const vsvector & config);
 
     static vespalib::string deQuote(const vespalib::string & source);
-    static void throwNoDefaultValue(vespalib::stringref  key);
+    static void throwNoDefaultValue(vespalib::stringref key);
 
     template<typename T>
     static T convert(const vsvector &);
@@ -32,43 +32,43 @@ private:
     static vespalib::string arrayToString(const vsvector &);
 
     template<typename T, typename V>
-    static T parseInternal(vespalib::stringref  key, const V & config);
+    static T parseInternal(vespalib::stringref key, const V & config);
     template<typename T, typename V>
-    static T parseInternal(vespalib::stringref  key, const V & config, T defaultValue);
+    static T parseInternal(vespalib::stringref key, const V & config, T defaultValue);
 
     template<typename T, typename V>
-    static std::vector<T> parseArrayInternal(vespalib::stringref  key, const V & config);
+    static std::vector<T> parseArrayInternal(vespalib::stringref key, const V & config);
     template<typename T, typename V>
-    static std::map<vespalib::string, T> parseMapInternal(vespalib::stringref  key, const V & config);
+    static std::map<vespalib::string, T> parseMapInternal(vespalib::stringref key, const V & config);
     template<typename T, typename V>
-    static T parseStructInternal(vespalib::stringref  key, const V & config);
+    static T parseStructInternal(vespalib::stringref key, const V & config);
 
 public:
-    static void stripLinesForKey(vespalib::stringref  key,
+    static void stripLinesForKey(vespalib::stringref key,
                                  std::set<vespalib::string>& config);
-    static vespalib::string stripWhitespace(vespalib::stringref  source);
+    static vespalib::string stripWhitespace(vespalib::stringref source);
 
     template<typename T>
-    static T parse(vespalib::stringref  key, const vsvector & config) {
+    static T parse(vespalib::stringref key, const vsvector & config) {
         return parseInternal<T, vsvector>(key, config);
     }
     template<typename T>
-    static T parse(vespalib::stringref  key, const vsvector & config, T defaultValue) {
+    static T parse(vespalib::stringref key, const vsvector & config, T defaultValue) {
         return parseInternal(key, config, defaultValue);
     }
 
     template<typename T>
-    static std::vector<T> parseArray(vespalib::stringref  key, const vsvector & config) {
+    static std::vector<T> parseArray(vespalib::stringref key, const vsvector & config) {
         return parseArrayInternal<T, vsvector>(key, config);
     }
 
     template<typename T>
-    static std::map<vespalib::string, T> parseMap(vespalib::stringref  key, const vsvector & config) {
+    static std::map<vespalib::string, T> parseMap(vespalib::stringref key, const vsvector & config) {
         return parseMapInternal<T, vsvector>(key, config);
     }
 
     template<typename T>
-    static T parseStruct(vespalib::stringref  key, const vsvector & config) {
+    static T parseStruct(vespalib::stringref key, const vsvector & config) {
         return parseStructInternal<T, vsvector>(key, config);
     }
 
@@ -76,7 +76,7 @@ public:
 
 template<typename T, typename V>
 T
-ConfigParser::parseInternal(vespalib::stringref  key, const V & config)
+ConfigParser::parseInternal(vespalib::stringref key, const V & config)
 {
     V lines = getLinesForKey(key, config);
 
@@ -88,7 +88,7 @@ ConfigParser::parseInternal(vespalib::stringref  key, const V & config)
 
 template<typename T, typename V>
 T
-ConfigParser::parseInternal(vespalib::stringref  key, const V & config, T defaultValue)
+ConfigParser::parseInternal(vespalib::stringref key, const V & config, T defaultValue)
 {
     V lines = getLinesForKey(key, config);
 
@@ -107,7 +107,7 @@ ConfigParser::convert(const vsvector & lines) {
 
 template<typename T, typename V>
 std::map<vespalib::string, T>
-ConfigParser::parseMapInternal(vespalib::stringref  key, const V & config)
+ConfigParser::parseMapInternal(vespalib::stringref key, const V & config)
 {
     V lines = getLinesForKey(key, config);
     typedef std::map<vespalib::string, V> SplittedMap;
@@ -121,7 +121,7 @@ ConfigParser::parseMapInternal(vespalib::stringref  key, const V & config)
 
 template<typename T, typename V>
 std::vector<T>
-ConfigParser::parseArrayInternal(vespalib::stringref  key, const V & config)
+ConfigParser::parseArrayInternal(vespalib::stringref key, const V & config)
 {
     V lines = getLinesForKey(key, config);
     std::vector<V> split = splitArray(lines);
@@ -136,7 +136,7 @@ ConfigParser::parseArrayInternal(vespalib::stringref  key, const V & config)
 
 template<typename T, typename V>
 T
-ConfigParser::parseStructInternal(vespalib::stringref  key, const V & config)
+ConfigParser::parseStructInternal(vespalib::stringref key, const V & config)
 {
     V lines = getLinesForKey(key, config);
 
