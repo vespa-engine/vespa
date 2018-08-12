@@ -25,7 +25,7 @@ private:
     vespalib::string _name;
 
 public:
-    Operator(vespalib::stringref  name);
+    Operator(vespalib::stringref name);
     virtual ~Operator() {}
 
     virtual ResultList compare(const Value&, const Value&) const = 0;
@@ -33,7 +33,7 @@ public:
                          std::ostream& trace) const = 0;
     const vespalib::string& getName() const { return _name; }
 
-    static const Operator& get(vespalib::stringref  name);
+    static const Operator& get(vespalib::stringref name);
 
     bool operator==(const Operator& op) const
         { return (_name == op._name); }
@@ -48,7 +48,7 @@ private:
     ResultList (Value::*_comparator)(const Value&) const;
 
 public:
-    FunctionOperator(vespalib::stringref  name,
+    FunctionOperator(vespalib::stringref name,
                 ResultList (Value::*comparator)(const Value&) const)
         : Operator(name), _comparator(comparator) {}
 
@@ -65,7 +65,7 @@ public:
 
 class RegexOperator : public Operator {
 public:
-    RegexOperator(vespalib::stringref  name);
+    RegexOperator(vespalib::stringref name);
 
     // Delegates to Value::regexCompare
     ResultList compare(const Value& a, const Value& b) const override;
@@ -84,13 +84,13 @@ private:
 
 class GlobOperator : public RegexOperator {
 public:
-    GlobOperator(vespalib::stringref  name);
+    GlobOperator(vespalib::stringref name);
 
     // Delegates to Value::globCompare
     ResultList compare(const Value& a, const Value& b) const override;
     ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
-    vespalib::string convertToRegex(vespalib::stringref  globpattern) const;
-    static bool containsVariables(vespalib::stringref  expression);
+    vespalib::string convertToRegex(vespalib::stringref globpattern) const;
+    static bool containsVariables(vespalib::stringref expression);
 
     static const GlobOperator GLOB;
 private:

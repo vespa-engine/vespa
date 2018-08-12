@@ -144,8 +144,8 @@ public:
     asciistream & operator << (Precision v);
     asciistream & operator >> (Precision v);
     void eatWhite();
-    static asciistream createFromFile(stringref  fileName);
-    static asciistream createFromDevice(stringref  fileName);
+    static asciistream createFromFile(stringref fileName);
+    static asciistream createFromDevice(stringref fileName);
     string getline(char delim='\n');
     std::vector<string> getlines(char delim='\n');
     char getFill() const noexcept { return _fill; }
@@ -166,15 +166,15 @@ private:
     }
     void write(const void * buf, size_t len);
     size_t length() const { return _rbuf.size(); }
-    size_t       _rPos;
-    string       _wbuf;
-    stringref    _rbuf;
-    Base         _base;
-    FloatSpec    _floatSpec;
+    size_t        _rPos;
+    string        _wbuf;
+    stringref     _rbuf;
+    Base          _base;
+    FloatSpec     _floatSpec;
     FloatModifier _floatModifier;
-    uint32_t     _width;
-    char         _fill;
-    uint8_t      _precision;
+    uint32_t      _width;
+    char          _fill;
+    uint8_t       _precision;
 };
 
 ssize_t getline(asciistream & is, vespalib::string & line, char delim='\n');

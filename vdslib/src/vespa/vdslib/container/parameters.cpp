@@ -111,7 +111,7 @@ Parameters* Parameters::clone() const
     return new Parameters(*this);
 }
 
-vespalib::stringref Parameters::get(vespalib::stringref  id, vespalib::stringref def) const
+vespalib::stringref Parameters::get(vespalib::stringref id, vespalib::stringref def) const
 {
     ParametersMap::const_iterator it = _parameters.find(id);
     if (it == _parameters.end()) return def;

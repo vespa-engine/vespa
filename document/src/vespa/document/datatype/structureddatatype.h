@@ -20,17 +20,17 @@ class StructuredDataType : public DataType {
 
 protected:
     StructuredDataType();
-    StructuredDataType(vespalib::stringref  name);
-    StructuredDataType(vespalib::stringref  name, int32_t dataTypeId);
+    StructuredDataType(vespalib::stringref name);
+    StructuredDataType(vespalib::stringref name, int32_t dataTypeId);
 
 
 public:
     virtual uint32_t getFieldCount() const = 0;
 
     /** @throws FieldNotFoundException if field does not exist. */
-    virtual const Field& getField(vespalib::stringref  name) const = 0;
+    virtual const Field& getField(vespalib::stringref name) const = 0;
 
-    virtual bool hasField(vespalib::stringref  name) const = 0;
+    virtual bool hasField(vespalib::stringref name) const = 0;
     virtual bool hasField(int32_t fieldId) const = 0;
 
     virtual Field::Set getFieldSet() const = 0;

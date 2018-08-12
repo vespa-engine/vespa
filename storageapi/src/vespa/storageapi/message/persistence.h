@@ -194,7 +194,7 @@ public:
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
-    void setFieldSet(vespalib::stringref  fieldSet) { _fieldSet = fieldSet; }
+    void setFieldSet(vespalib::stringref fieldSet) { _fieldSet = fieldSet; }
 
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

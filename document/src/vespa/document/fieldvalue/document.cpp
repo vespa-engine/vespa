@@ -28,10 +28,10 @@ bool isLegalVersion(uint16_t version) {
     return (6 <= version) && (version <= 8);
 }
 
-void documentTypeError(vespalib::stringref  name) __attribute__((noinline));
+void documentTypeError(vespalib::stringref name) __attribute__((noinline));
 void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) __attribute__((noinline));
 
-void documentTypeError(vespalib::stringref  name) {
+void documentTypeError(vespalib::stringref name) {
     throw IllegalArgumentException(make_string("Cannot generate a document with non-document type %s.",
                                                vespalib::string(name).c_str()), VESPA_STRLOC);
 }

@@ -131,7 +131,7 @@ public:
             : string(s),
               _name(createAttributeName(s))
         { }
-        BaseName & operator = (vespalib::stringref  s) {
+        BaseName & operator = (vespalib::stringref s) {
             BaseName n(s);
             std::swap(*this, n);
             return *this;
@@ -147,7 +147,7 @@ public:
         const string & getAttributeName() const { return _name; }
         string getDirName() const;
     private:
-        static string createAttributeName(vespalib::stringref  s);
+        static string createAttributeName(vespalib::stringref s);
         string _name;
     };
 
@@ -403,7 +403,7 @@ public:
     BasicType getInternalBasicType() const { return _config.basicType(); }
     CollectionType getInternalCollectionType() const { return _config.collectionType(); }
     const BaseName & getBaseFileName() const { return _baseFileName; }
-    void setBaseFileName(vespalib::stringref  name) { _baseFileName = name; }
+    void setBaseFileName(vespalib::stringref name) { _baseFileName = name; }
 
     // Implements IAttributeVector
     const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }

@@ -73,7 +73,7 @@ public:
  **/
 class IntegerVector : public VectorBase<int64_t, int64_t, feature_t> {
 public:
-    void insert(vespalib::stringref  label, vespalib::stringref value) {
+    void insert(vespalib::stringref label, vespalib::stringref value) {
         _vector.push_back(std::make_pair(util::strToNum<int64_t>(label), util::strToNum<feature_t>(value)));
     }
 };
@@ -85,7 +85,7 @@ class StringVector : public VectorBase<vespalib::string, const char *, feature_t
 public:
     StringVector();
     ~StringVector();
-    void insert(vespalib::stringref  label, vespalib::stringref value) {
+    void insert(vespalib::stringref label, vespalib::stringref value) {
         _vector.push_back(std::make_pair(label, util::strToNum<feature_t>(value)));
     }
 };
@@ -98,7 +98,7 @@ private:
     const search::attribute::IAttributeVector * _attribute;
 public:
     EnumVector(const search::attribute::IAttributeVector * attribute) : _attribute(attribute) {}
-    void insert(vespalib::stringref  label, vespalib::stringref value) {
+    void insert(vespalib::stringref label, vespalib::stringref value) {
         search::attribute::EnumHandle e;
         if (_attribute->findEnum(label.data(), e)) {
             _vector.push_back(std::make_pair(e, util::strToNum<feature_t>(value)));

@@ -38,12 +38,12 @@ protected:
      * everyone to be able to use them. Only tests and the type manager reading
      * config should need to create datatypes.
      */
-    DataType(vespalib::stringref  name, int dataTypeId);
+    DataType(vespalib::stringref name, int dataTypeId);
 
     /**
      * Creates a datatype using the hash of name as the id.
      */
-    explicit DataType(vespalib::stringref  name);
+    explicit DataType(vespalib::stringref name);
 
 public:
     virtual ~DataType();

@@ -70,11 +70,11 @@ public:
         _lastGarbageCollectionChange = lastChangeTime;
     }
 
-    bool stateCheckerIsActive(vespalib::stringref  stateCheckerName) const {
+    bool stateCheckerIsActive(vespalib::stringref stateCheckerName) const {
         return _blockedStateCheckers.find(stateCheckerName) == _blockedStateCheckers.end();
     }
 
-    void disableStateChecker(vespalib::stringref  stateCheckerName) {
+    void disableStateChecker(vespalib::stringref stateCheckerName) {
         _blockedStateCheckers.insert(stateCheckerName);
     }
 

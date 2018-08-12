@@ -69,7 +69,7 @@ template std::ostream & operator << (std::ostream & os, const string & v);
 template std::istream & operator >> (std::istream & is, string & v);
 
 string
-operator + (stringref  a, const char * b)
+operator + (stringref a, const char * b)
 {
     string t(a);
     t += b;
@@ -85,7 +85,7 @@ operator + (const char * a, stringref b)
 }
 
 string
-operator + (stringref  a, stringref b)
+operator + (stringref a, stringref b)
 {
     string t(a);
     t += b;

@@ -13,7 +13,7 @@ namespace document::select {
 
 Operator::OperatorMap Operator::_operators;
 
-Operator::Operator(vespalib::stringref  name)
+Operator::Operator(vespalib::stringref name)
     : _name(name)
 {
     OperatorMap::iterator it = _operators.find(name);
@@ -24,7 +24,7 @@ Operator::Operator(vespalib::stringref  name)
 }
 
 const Operator&
-Operator::get(vespalib::stringref  name)
+Operator::get(vespalib::stringref name)
 {
     OperatorMap::iterator it = _operators.find(name);
     if (it == _operators.end()) {
@@ -75,7 +75,7 @@ FunctionOperator::LT("<", &Value::operator<);
 const FunctionOperator
 FunctionOperator::NE("!=", &Value::operator!=);
 
-RegexOperator::RegexOperator(vespalib::stringref  name)
+RegexOperator::RegexOperator(vespalib::stringref name)
     : Operator(name)
 {
 }
@@ -133,7 +133,7 @@ RegexOperator::match(const vespalib::string& val, vespalib::stringref expr) cons
 
 const RegexOperator RegexOperator::REGEX("=~");
 
-GlobOperator::GlobOperator(vespalib::stringref  name)
+GlobOperator::GlobOperator(vespalib::stringref name)
     : RegexOperator(name)
 {
 }
@@ -187,7 +187,7 @@ GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const
 }
 
 vespalib::string
-GlobOperator::convertToRegex(vespalib::stringref  globpattern) const
+GlobOperator::convertToRegex(vespalib::stringref globpattern) const
 {
     vespalib::asciistream ost;
     ost << '^';
@@ -219,7 +219,7 @@ GlobOperator::convertToRegex(vespalib::stringref  globpattern) const
 }
 
 bool
-GlobOperator::containsVariables(vespalib::stringref  expression)
+GlobOperator::containsVariables(vespalib::stringref expression)
 {
     for (size_t i=0, n=expression.size(); i<n; ++i) {
         if (expression[i] == '*' || expression[i] == '?') {

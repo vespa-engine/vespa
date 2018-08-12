@@ -94,7 +94,7 @@ RegisterAPI::~RegisterAPI()
 
 
 void
-RegisterAPI::registerName(vespalib::stringref  name)
+RegisterAPI::registerName(vespalib::stringref name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     for (uint32_t i = 0; i < _names.size(); ++i) {
@@ -111,7 +111,7 @@ RegisterAPI::registerName(vespalib::stringref  name)
 
 
 void
-RegisterAPI::unregisterName(vespalib::stringref  name)
+RegisterAPI::unregisterName(vespalib::stringref name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _busy = true;

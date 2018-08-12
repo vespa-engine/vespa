@@ -71,7 +71,7 @@ public:
         return *this;
      }
     nbostream & operator << (const char * v) { uint32_t sz(strlen(v)); (*this) << sz; write(v, sz); return *this; }
-    nbostream & operator << (vespalib::stringref  v) { uint32_t sz(v.size()); (*this) << sz; write(v.data(), sz); return *this; }
+    nbostream & operator << (vespalib::stringref v) { uint32_t sz(v.size()); (*this) << sz; write(v.data(), sz); return *this; }
     nbostream & operator << (const vespalib::string & v) { uint32_t sz(v.size()); (*this) << sz; write(v.c_str(), sz); return *this; }
     nbostream & operator >> (vespalib::string & v) {
         uint32_t sz; (*this) >> sz;

@@ -25,7 +25,7 @@ public:
     FastS_query(const search::docsummary::GetDocsumArgs &docsumArgs);
     ~FastS_query();
 
-    void SetStackDump(vespalib::stringref  stackDump);
+    void SetStackDump(vespalib::stringref stackDump);
     void SetSortSpec(const char *spec) { _sortSpec = spec; }
     void SetLocation(const char *loc) { _location = loc; }
     void SetRankProperties(const search::fef::Properties &rp) { _rankProperties = rp; }

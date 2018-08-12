@@ -78,7 +78,7 @@ namespace {
     };
 }
 
-NodeState::NodeState(vespalib::stringref  serialized, const NodeType* type)
+NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
     : _type(type),
       _state(&State::UP),
       _description(),

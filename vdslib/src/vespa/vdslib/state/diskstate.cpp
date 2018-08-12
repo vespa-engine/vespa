@@ -30,7 +30,7 @@ DiskState::DiskState(const State& state, vespalib::stringref description,
     setCapacity(capacity);
 }
 
-DiskState::DiskState(vespalib::stringref  serialized)
+DiskState::DiskState(vespalib::stringref serialized)
     : _state(&State::UP),
       _description(""),
       _capacity(1.0)

@@ -82,7 +82,7 @@ public:
     uint32_t getFieldCount() const override {
         return _fields->getFieldCount();
     }
-    const Field & getField(vespalib::stringref  name) const override;
+    const Field & getField(vespalib::stringref name) const override;
     const Field & getField(int fieldId) const override;
     bool hasField(vespalib::stringref name) const override;
     bool hasField(int fieldId) const override;

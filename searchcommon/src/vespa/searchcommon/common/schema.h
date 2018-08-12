@@ -122,7 +122,7 @@ public:
         std::vector<vespalib::string> _fields;
 
     public:
-        FieldSet(vespalib::stringref  n) : _name(n), _fields() {}
+        FieldSet(vespalib::stringref n) : _name(n), _fields() {}
 
         /**
          * Create this field collection based on the given config lines.
@@ -285,7 +285,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getIndexFieldId(vespalib::stringref  name) const;
+    uint32_t getIndexFieldId(vespalib::stringref name) const;
 
     /**
      * Check if a field is an index
@@ -294,7 +294,7 @@ public:
      * @param name the name of the field.
      **/
     bool
-    isIndexField(vespalib::stringref  name) const
+    isIndexField(vespalib::stringref name) const
     {
         return _indexIds.find(name) != _indexIds.end();
     }
@@ -306,7 +306,7 @@ public:
      * @param name the name of the field.
      **/
     bool
-    isSummaryField(vespalib::stringref  name) const
+    isSummaryField(vespalib::stringref name) const
     {
         return _summaryIds.find(name) != _summaryIds.end();
     }
@@ -317,7 +317,7 @@ public:
      * @param name the name of the field.
      **/
     bool
-    isAttributeField(vespalib::stringref  name) const
+    isAttributeField(vespalib::stringref name) const
     {
         return _attributeIds.find(name) != _attributeIds.end();
     }
@@ -347,7 +347,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getAttributeFieldId(vespalib::stringref  name) const;
+    uint32_t getAttributeFieldId(vespalib::stringref name) const;
 
     /**
      * Get information about a specific summary field using the given fieldId.
@@ -374,7 +374,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getSummaryFieldId(vespalib::stringref  name) const;
+    uint32_t getSummaryFieldId(vespalib::stringref name) const;
 
     /**
      * Get information about a specific field set

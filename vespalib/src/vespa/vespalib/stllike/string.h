@@ -327,13 +327,13 @@ public:
     small_string & push_back(char c)              { return append(&c, 1); }
     small_string & append(char c)                 { return append(&c, 1); }
     small_string & append(const char * s)         { return append(s, strlen(s)); }
-    small_string & append(stringref  s)           { return append(s.data(), s.size()); }
+    small_string & append(stringref s)           { return append(s.data(), s.size()); }
     small_string & append(const std::string & s)  { return append(s.data(), s.size()); }
     small_string & append(const small_string & s) { return append(s.data(), s.size()); }
     small_string & append(const void * s, size_type sz);
     small_string & operator += (char c)                 { return append(c); }
     small_string & operator += (const char * s)         { return append(s); }
-    small_string & operator += (stringref  s)           { return append(s); }
+    small_string & operator += (stringref s)           { return append(s); }
     small_string & operator += (const std::string & s)  { return append(s); }
     small_string & operator += (const small_string & s) { return append(s); }
 
@@ -581,7 +581,7 @@ operator + (const small_string<StackSize> & a, stringref b);
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (stringref  a, const small_string<StackSize> & b);
+operator + (stringref a, const small_string<StackSize> & b);
 
 template<uint32_t StackSize>
 small_string<StackSize>
@@ -612,9 +612,9 @@ operator < (const T& a, const small_string<StackSize>& b)
     return b > a;
 }
 
-string operator + (stringref  a, stringref b);
+string operator + (stringref a, stringref b);
 string operator + (const char * a, stringref b);
-string operator + (stringref  a, const char * b);
+string operator + (stringref a, const char * b);
 
 inline bool contains(stringref text, stringref key) {
     return text.find(key) != stringref::npos;

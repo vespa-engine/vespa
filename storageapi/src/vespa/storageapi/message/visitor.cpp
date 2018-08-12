@@ -140,7 +140,7 @@ CreateVisitorReply::print(std::ostream& out, bool verbose,
     }
 }
 
-DestroyVisitorCommand::DestroyVisitorCommand(vespalib::stringref  instanceId)
+DestroyVisitorCommand::DestroyVisitorCommand(vespalib::stringref instanceId)
     : StorageCommand(MessageType::VISITOR_DESTROY),
       _instanceId(instanceId)
 {

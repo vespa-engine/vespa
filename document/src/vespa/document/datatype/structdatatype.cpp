@@ -33,7 +33,7 @@ StructDataType::StructDataType(vespalib::stringref name)
       _compressionConfig()
 { }
 
-StructDataType::StructDataType(vespalib::stringref  name, int32_t dataTypeId)
+StructDataType::StructDataType(vespalib::stringref name, int32_t dataTypeId)
     : StructuredDataType(name, dataTypeId),
       _nameFieldMap(),
       _idFieldMap(),
@@ -122,7 +122,7 @@ StructDataType::createFieldValue() const
 }
 
 const Field&
-StructDataType::getField(vespalib::stringref  name) const
+StructDataType::getField(vespalib::stringref name) const
 {
     StringFieldMap::const_iterator it(_nameFieldMap.find(name));
     if (it == _nameFieldMap.end()) {

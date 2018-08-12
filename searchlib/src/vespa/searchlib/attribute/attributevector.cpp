@@ -118,7 +118,7 @@ AttributeVector::BaseName::getSnapshotName() const
 
 
 AttributeVector::BaseName::string
-AttributeVector::BaseName::createAttributeName(vespalib::stringref  s)
+AttributeVector::BaseName::createAttributeName(vespalib::stringref s)
 {
     size_t p(s.rfind('/'));
     if (p == string::npos) {

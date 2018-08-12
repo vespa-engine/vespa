@@ -85,7 +85,7 @@ vespalib::string GlobalId::toString() const {
 }
 
 GlobalId
-GlobalId::parse(vespalib::stringref  source)
+GlobalId::parse(vespalib::stringref source)
 {
     if (source.substr(0, 6) != "gid(0x") {
         throw vespalib::IllegalArgumentException(
