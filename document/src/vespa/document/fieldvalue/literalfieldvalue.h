@@ -68,7 +68,7 @@ public:
     FieldValue& assign(const FieldValue&) override;
     bool hasChanged() const  override{ return _altered; }
 
-    FieldValue& operator=(vespalib::stringref ) override;
+    FieldValue& operator=(vespalib::stringref) override;
     FieldValue& operator=(int32_t) override;
     FieldValue& operator=(int64_t) override;
     FieldValue& operator=(float) override;

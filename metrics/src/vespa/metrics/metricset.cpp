@@ -76,11 +76,11 @@ MetricSet::getMetricInternal(const String& name) const
     return 0;
 }
 
-int64_t MetricSet::getLongValue(stringref ) const {
+int64_t MetricSet::getLongValue(stringref) const {
     assert(false);
     return 0;
 }
-double MetricSet::getDoubleValue(stringref ) const {
+double MetricSet::getDoubleValue(stringref) const {
     assert(false);
     return 0;
 }
