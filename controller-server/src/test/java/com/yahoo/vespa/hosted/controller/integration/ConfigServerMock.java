@@ -118,7 +118,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         this.prepareException = prepareException;
     }
 
-    /** Set version for system applications in given zone */
+    /** Set version for an application in a given zone */
     public void setVersion(ApplicationId application, ZoneId zone, Version version) {
         for (Node node : nodeRepository().list(zone, application)) {
             nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),

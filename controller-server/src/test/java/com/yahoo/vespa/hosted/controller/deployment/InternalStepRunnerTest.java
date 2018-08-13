@@ -153,6 +153,12 @@ public class InternalStepRunnerTest {
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
         runJob(JobType.productionUsWest1);
+        assertTrue(app().productionDeployments().values().stream()
+                        .allMatch(deployment -> deployment.version().equals(version)));
+        assertTrue(tester.configServer().nodeRepository()
+                         .list(JobType.productionUsWest1.zone(tester.controller().system()), appId).stream()
+                         .allMatch(node -> node.currentVersion().equals(version)));
+        assertFalse(app().change().isPresent());
     }
 
     /** Runs the whole of the given job, successfully. */
@@ -180,14 +186,15 @@ public class InternalStepRunnerTest {
         }
 
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installReal));
-        tester.configServer().convergeServices(appId, zone);
         tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), run.versions().targetPlatform());
+        runner.run();
+        assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installReal));
+        tester.configServer().convergeServices(appId, zone);
         runner.run();
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installReal));
 
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installTester));
         tester.configServer().convergeServices(testerOf(appId), zone);
-        tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), run.versions().targetPlatform());
         runner.run();
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installTester));
 
@@ -229,7 +236,7 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    public void restartsServicesAndWaitsForRestart() {
+    public void restartsServicesAndWaitsForRestartAndReboot() {
         RunId id = newRun(JobType.productionUsWest1);
         ZoneId zone = id.type().zone(tester.controller().system());
         HostName host = tester.configServer().hostFor(appId, zone);
@@ -248,8 +255,12 @@ public class InternalStepRunnerTest {
         tester.configServer().convergeServices(appId, zone);
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
 
-        tester.configServer().nodeRepository().doRestart(new DeploymentId(appId, zone),
-                                                         Optional.of(host));
+        tester.configServer().nodeRepository().doRestart(new DeploymentId(appId, zone), Optional.of(host));
+        tester.configServer().nodeRepository().requestReboot(new DeploymentId(appId, zone), Optional.of(host));
+        runner.run();
+        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
+
+        tester.configServer().nodeRepository().doReboot(new DeploymentId(appId, zone), Optional.of(host));
         runner.run();
         assertEquals(succeeded, jobs.run(id).get().steps().get(Step.installReal));
     }
@@ -272,6 +283,7 @@ public class InternalStepRunnerTest {
                             .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         return run.id();
     }
+
     // Catch and retry on various exceptions, in different steps.
     // Wait for convergence of various kinds.
     // Verify deactivation post-job-death?
