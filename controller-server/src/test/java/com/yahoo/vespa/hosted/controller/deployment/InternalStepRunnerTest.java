@@ -6,8 +6,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
@@ -33,6 +37,7 @@ import java.util.logging.Logger;
 
 import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -205,8 +210,45 @@ public class InternalStepRunnerTest {
         routing.removeEndpoints(new DeploymentId(testerOf(appId), zone));
     }
 
+    @Test
+    public void refeedRequirementBlocksDeployment() {
+        RunId id = newRun(JobType.productionUsWest1);
+        tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.emptyList(),
+                                                                             Collections.singletonList(new RefeedAction("Refeed",
+                                                                                                                        false,
+                                                                                                                        "doctype",
+                                                                                                                        "cluster",
+                                                                                                                        Collections.emptyList(),
+                                                                                                                        Collections.singletonList("Refeed it!")))));
+        runner.run();
 
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.deployReal));
+        assertTrue(jobs.run(id).get().hasFailed());
+    }
 
+    @Test
+    public void restartsServicesWhenExpectedTo() {
+
+    }
+
+    private RunId newRun(JobType type) {
+        assertTrue(jobs.runs(appId, type).isEmpty()); // Use this only once per test.
+        jobs.register(appId);
+        newSubmission(appId);
+        tester.readyJobTrigger().maintain();
+
+        if (type.isProduction()) {
+            runJob(JobType.systemTest);
+            runJob(JobType.stagingTest);
+            tester.readyJobTrigger().maintain();
+        }
+
+        RunStatus run = jobs.active().stream()
+                            .filter(r -> r.id().type() == type)
+                            .findAny()
+                            .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
+        return run.id();
+    }
     // Catch and retry on various exceptions, in different steps.
     // Wait for convergence of various kinds.
     // Verify deactivation post-job-death?
