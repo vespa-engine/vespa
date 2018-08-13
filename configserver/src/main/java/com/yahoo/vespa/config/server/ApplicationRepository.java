@@ -399,7 +399,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, boolean deleteFromDisk) {
+    public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath) {
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
         // Find all file references in use
@@ -424,7 +424,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
                 .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .collect(Collectors.toSet());
-        if (deleteFromDisk && fileReferencesToDelete.size() > 0) {
+        if (fileReferencesToDelete.size() > 0) {
             log.log(LogLevel.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
                 File file = new File(fileReferencesPath, fileReference);
