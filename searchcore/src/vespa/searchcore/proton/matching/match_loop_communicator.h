@@ -53,7 +53,7 @@ public:
         return _estimate_match_frequency.rendezvous(matches);
     }
     Hits selectBest(Hits sortedHits) override {
-        return _selectBest.rendezvous(sortedHits);
+        return _selectBest.rendezvous(std::move(sortedHits));
     }
     RangePair rangeCover(const RangePair &ranges) override {
         return _rangeCover.rendezvous(ranges);
