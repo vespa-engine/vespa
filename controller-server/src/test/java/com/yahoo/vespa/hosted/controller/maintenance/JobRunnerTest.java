@@ -226,6 +226,23 @@ public class JobRunnerTest {
         assertEquals(Optional.empty(), jobs.last(id, systemTest));
     }
 
+    @Test
+    public void timeout() {
+        DeploymentTester tester = new DeploymentTester();
+        JobController jobs = tester.controller().jobController();
+        Map<Step, Status> outcomes = new EnumMap<>(Step.class);
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
+                                         inThreadExecutor(), mappedRunner(outcomes));
+
+        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
+        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
+
+        jobs.start(id, systemTest, versions);
+        tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));
+        runner.run();
+        assertTrue(jobs.last(id, systemTest).get().isAborted());
+    }
+
     public static ExecutorService inThreadExecutor() {
         return new AbstractExecutorService() {
             AtomicBoolean shutDown = new AtomicBoolean(false);

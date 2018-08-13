@@ -25,6 +25,7 @@ import java.util.logging.Logger;
  */
 public class JobRunner extends Maintainer {
 
+    static final Duration jobTimeout = Duration.ofDays(1);
     private static final Logger log = Logger.getLogger(JobRunner.class.getName());
 
     private final JobController jobs;
@@ -67,6 +68,8 @@ public class JobRunner extends Maintainer {
         steps.forEach(step -> executors.execute(() -> advance(run.id(), step)));
         if (steps.isEmpty())
             jobs.finish(run.id());
+        else if (run.start().isBefore(controller().clock().instant().minus(jobTimeout)))
+            jobs.abort(run.id());
     }
 
     /** Attempts to advance the status of the given step, for the given run. */
