@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -267,7 +266,7 @@ public class DeploymentTester {
         }
         // Deactivate test deployments after deploy. This replicates the behaviour of the tenant pipeline
         if (job.isTest()) {
-            controller().applications().deactivate(application, job.zone(controller().system()));
+            controller().applications().deactivate(application.id(), job.zone(controller().system()));
         }
         jobCompletion(job).application(application).success(success).submit();
     }

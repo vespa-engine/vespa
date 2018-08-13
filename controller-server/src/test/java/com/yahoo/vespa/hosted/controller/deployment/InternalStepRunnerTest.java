@@ -4,11 +4,19 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Inspector;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
@@ -24,17 +32,21 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -70,8 +82,12 @@ public class InternalStepRunnerTest {
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller(), cloud));
         routing.putEndpoints(new DeploymentId(null, null), Collections.emptyList()); // Turn off default behaviour for the mock.
-    }
 
+        // Get deployment job logs to stderr.
+        Logger.getLogger(InternalStepRunner.class.getName()).setLevel(DEBUG);
+        Logger.getLogger("").setLevel(DEBUG);
+        Logger.getLogger("").getHandlers()[0].setLevel(DEBUG);
+    }
 
     @Test
     public void canRegisterAndRunDirectly() {
@@ -81,7 +97,6 @@ public class InternalStepRunnerTest {
 
         deployNewPlatform(new Version("7.1"));
     }
-
 
     @Test
     public void canSwitchFromScrewdriver() {
@@ -116,6 +131,7 @@ public class InternalStepRunnerTest {
                                                                            false)));
     }
 
+    /** Completely deploys a new submission. */
     private void deployNewSubmission() {
         assertTrue(app().deploymentJobs().builtInternally());
         ApplicationVersion applicationVersion = newSubmission(appId);
@@ -130,6 +146,7 @@ public class InternalStepRunnerTest {
         runJob(JobType.productionUsWest1);
     }
 
+    /** Completely deploys the given, new platform. */
     private void deployNewPlatform(Version version) {
         assertTrue(app().deploymentJobs().builtInternally());
 
@@ -142,13 +159,16 @@ public class InternalStepRunnerTest {
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
         runJob(JobType.productionUsWest1);
+        assertTrue(app().productionDeployments().values().stream()
+                        .allMatch(deployment -> deployment.version().equals(version)));
+        assertTrue(tester.configServer().nodeRepository()
+                         .list(JobType.productionUsWest1.zone(tester.controller().system()), appId).stream()
+                         .allMatch(node -> node.currentVersion().equals(version)));
+        assertFalse(app().change().isPresent());
     }
 
+    /** Runs the whole of the given job, successfully. */
     private void runJob(JobType type) {
-        Logger.getLogger(InternalStepRunner.class.getName()).setLevel(DEBUG);
-        Logger.getLogger("").setLevel(DEBUG);
-        Logger.getLogger("").getHandlers()[0].setLevel(DEBUG);
-
         tester.readyJobTrigger().maintain();
         RunStatus run = jobs.active().stream()
                             .filter(r -> r.id().type() == type)
@@ -172,14 +192,15 @@ public class InternalStepRunnerTest {
         }
 
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installReal));
-        tester.configServer().convergeServices(appId, zone);
         tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), run.versions().targetPlatform());
+        runner.run();
+        assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installReal));
+        tester.configServer().convergeServices(appId, zone);
         runner.run();
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installReal));
 
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installTester));
         tester.configServer().convergeServices(testerOf(appId), zone);
-        tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), run.versions().targetPlatform());
         runner.run();
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installTester));
 
@@ -199,17 +220,169 @@ public class InternalStepRunnerTest {
         runner.run();
         assertTrue(jobs.run(run.id()).get().hasEnded());
         assertFalse(jobs.run(run.id()).get().hasFailed());
+        assertEquals(type.isProduction(), app().deployments().containsKey(zone));
+        assertTrue(tester.configServer().nodeRepository().list(zone, testerOf(appId)).isEmpty());
 
         if ( ! app().deployments().containsKey(zone))
             routing.removeEndpoints(deployment);
         routing.removeEndpoints(new DeploymentId(testerOf(appId), zone));
     }
 
+    @Test
+    public void refeedRequirementBlocksDeployment() {
+        RunId id = newRun(JobType.productionUsWest1);
+        tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.emptyList(),
+                                                                             Collections.singletonList(new RefeedAction("Refeed",
+                                                                                                                        false,
+                                                                                                                        "doctype",
+                                                                                                                        "cluster",
+                                                                                                                        Collections.emptyList(),
+                                                                                                                        Collections.singletonList("Refeed it!")))));
+        runner.run();
 
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.deployReal));
+    }
 
-    // Catch and retry on various exceptions, in different steps.
-    // Wait for convergence of various kinds.
-    // Verify deactivation post-job-death?
+    @Test
+    public void restartsServicesAndWaitsForRestartAndReboot() {
+        RunId id = newRun(JobType.productionUsWest1);
+        ZoneId zone = id.type().zone(tester.controller().system());
+        HostName host = tester.configServer().hostFor(appId, zone);
+        tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.singletonList(new RestartAction("cluster",
+                                                                                                                         "container",
+                                                                                                                         "search",
+                                                                                                                         Collections.singletonList(new ServiceInfo("queries",
+                                                                                                                                                                   "search",
+                                                                                                                                                                   "config",
+                                                                                                                                                                   host.value())),
+                                                                                                                         Collections.singletonList("Restart it!"))),
+                                                                             Collections.emptyList()));
+        runner.run();
+        assertEquals(succeeded, jobs.run(id).get().steps().get(Step.deployReal));
+
+        tester.configServer().convergeServices(appId, zone);
+        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
+
+        tester.configServer().nodeRepository().doRestart(new DeploymentId(appId, zone), Optional.of(host));
+        tester.configServer().nodeRepository().requestReboot(new DeploymentId(appId, zone), Optional.of(host));
+        runner.run();
+        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
+
+        tester.clock().advance(InternalStepRunner.installationTimeout.plus(Duration.ofSeconds(1)));
+        runner.run();
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.installReal));
+    }
+
+    @Test
+    public void waitsForEndpointsAndTimesOut() {
+        newRun(JobType.systemTest);
+
+        runner.run();
+        tester.configServer().convergeServices(appId, JobType.stagingTest.zone(tester.controller().system()));
+        runner.run();
+        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(appId, JobType.stagingTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(testerOf(appId), JobType.stagingTest.zone(tester.controller().system()));
+        runner.run();
+
+        // Tester fails to show up for system tests, and the real deployment for staging tests.
+        setEndpoints(appId, JobType.systemTest.zone(tester.controller().system()));
+        setEndpoints(testerOf(appId), JobType.stagingTest.zone(tester.controller().system()));
+
+        tester.clock().advance(InternalStepRunner.endpointTimeout.plus(Duration.ofSeconds(1)));
+        runner.run();
+        assertEquals(failed, jobs.last(appId, JobType.systemTest).get().steps().get(Step.startTests));
+        assertEquals(failed, jobs.last(appId, JobType.stagingTest).get().steps().get(Step.startTests));
+    }
+
+    @Test
+    public void testsFailIfEndpointsAreGone() {
+        RunId id = startSystemTestTests();
+        cloud.set(new byte[0], TesterCloud.Status.NOT_STARTED);
+        runner.run();
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
+    }
+
+    @Test
+    public void testsFailIfTestsFailRemotely() {
+        RunId id = startSystemTestTests();
+        cloud.set("Failure!".getBytes(), TesterCloud.Status.FAILURE);
+        runner.run();
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
+        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tests failed.", "Failure!");
+    }
+
+    @Test
+    public void testsFailIfTestsErr() {
+        RunId id = startSystemTestTests();
+        cloud.set("Error!".getBytes(), TesterCloud.Status.ERROR);
+        runner.run();
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
+        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tester failed running its tests!", "Error!");
+    }
+
+    @Test
+    public void testsSucceedWhenTheyDoRemotely() {
+        RunId id = startSystemTestTests();
+        runner.run();
+        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
+        assertEquals(URI.create(routing.endpoints(new DeploymentId(testerOf(appId), JobType.systemTest.zone(tester.controller().system()))).get(0).getEndpoint()),
+                     cloud.testerUrl());
+        Inspector configObject = SlimeUtils.jsonToSlime(cloud.config()).get();
+        assertEquals(appId.serializedForm(), configObject.field("application").asString());
+        assertEquals(JobType.systemTest.zone(tester.controller().system()).value(), configObject.field("zone").asString());
+        assertEquals(tester.controller().system().name(), configObject.field("system").asString());
+        assertEquals(1, configObject.field("endpoints").children());
+        assertEquals(1, configObject.field("endpoints").field(JobType.systemTest.zone(tester.controller().system()).value()).entries());
+        configObject.field("endpoints").field(JobType.systemTest.zone(tester.controller().system()).value()).traverse((ArrayTraverser) (__, endpoint) ->
+                assertEquals(routing.endpoints(new DeploymentId(appId, JobType.systemTest.zone(tester.controller().system()))).get(0).getEndpoint(), endpoint.asString()));
+
+        cloud.set("Success!".getBytes(), TesterCloud.Status.SUCCESS);
+        runner.run();
+        assertEquals(succeeded, jobs.run(id).get().steps().get(Step.endTests));
+        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tests still running ...", "Tests completed successfully.", "Success!");
+    }
+
+    private void assertLogMessages(RunId id, Step step, String... messages) {
+        String pattern = Stream.of(messages)
+                               .map(message -> "\\[[^]]*] : " + message + "\n")
+                               .collect(Collectors.joining());
+        String logs = new String(jobs.details(id).get().get(step).get());
+        if ( ! logs.matches(pattern))
+            throw new AssertionError("Expected a match for\n'''\n" + pattern + "\n'''\nbut got\n'''\n" + logs + "\n'''");
+    }
+
+    private RunId startSystemTestTests() {
+        RunId id = newRun(JobType.systemTest);
+        runner.run();
+        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        setEndpoints(appId, JobType.systemTest.zone(tester.controller().system()));
+        setEndpoints(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        runner.run();
+        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
+        return id;
+    }
+
+    private RunId newRun(JobType type) {
+        assertFalse(app().deploymentJobs().builtInternally()); // Use this only once per test.
+        jobs.register(appId);
+        newSubmission(appId);
+        tester.readyJobTrigger().maintain();
+
+        if (type.isProduction()) {
+            runJob(JobType.systemTest);
+            runJob(JobType.stagingTest);
+            tester.readyJobTrigger().maintain();
+        }
+
+        RunStatus run = jobs.active().stream()
+                            .filter(r -> r.id().type() == type)
+                            .findAny()
+                            .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
+        return run.id();
+    }
 
     @Test
     public void generates_correct_services_xml_test() {

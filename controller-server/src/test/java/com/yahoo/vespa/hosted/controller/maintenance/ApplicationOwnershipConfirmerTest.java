@@ -73,8 +73,8 @@ public class ApplicationOwnershipConfirmerTest {
 
         // The user deletes all production deployments — see that the issue is forgotten.
         assertEquals("Confirmation issue for user is sitll open.", issueId, userApp.get().ownershipIssueId());
-        tester.controller().applications().deactivate(userApp.get(), userApp.get().productionDeployments().keySet().stream().findAny().get());
-        tester.controller().applications().deactivate(userApp.get(), userApp.get().productionDeployments().keySet().stream().findAny().get());
+        tester.controller().applications().deactivate(userApp.get().id(), userApp.get().productionDeployments().keySet().stream().findAny().get());
+        tester.controller().applications().deactivate(userApp.get().id(), userApp.get().productionDeployments().keySet().stream().findAny().get());
         assertTrue("No production deployments are listed for user.", userApp.get().productionDeployments().isEmpty());
         confirmer.maintain();
         confirmer.maintain();

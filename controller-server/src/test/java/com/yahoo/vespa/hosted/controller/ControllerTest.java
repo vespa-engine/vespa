@@ -305,8 +305,8 @@ public class ControllerTest {
                     .build();
             tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
             tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-            tester.applications().deactivate(app1, ZoneId.from(Environment.test, RegionName.from("us-east-1")));
-            tester.applications().deactivate(app1, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
+            tester.applications().deactivate(app1.id(), ZoneId.from(Environment.test, RegionName.from("us-east-1")));
+            tester.applications().deactivate(app1.id(), ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
             tester.applications().deleteApplication(app1.id(), Optional.of(new NToken("ntoken")));
             try (RotationLock lock = tester.applications().rotationRepository().lock()) {
                 assertTrue("Rotation is unassigned",

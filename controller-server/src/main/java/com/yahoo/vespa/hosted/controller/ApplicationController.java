@@ -579,8 +579,8 @@ public class ApplicationController {
     }
 
     /** Deactivate application in the given zone */
-    public void deactivate(Application application, ZoneId zone) {
-        lockOrThrow(application.id(), lockedApplication -> store(deactivate(lockedApplication, zone)));
+    public void deactivate(ApplicationId application, ZoneId zone) {
+        lockOrThrow(application, lockedApplication -> store(deactivate(lockedApplication, zone)));
     }
 
     /**

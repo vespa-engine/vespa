@@ -86,8 +86,8 @@ public class DnsMaintainerTest {
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
 
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
-        tester.applications().deactivate(application, ZoneId.from(Environment.test, RegionName.from("us-east-1")));
-        tester.applications().deactivate(application, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
+        tester.applications().deactivate(application.id(), ZoneId.from(Environment.test, RegionName.from("us-east-1")));
+        tester.applications().deactivate(application.id(), ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
         tester.applications().deleteApplication(application.id(), Optional.of(new NToken("ntoken")));
 
         // DnsMaintainer removes records
