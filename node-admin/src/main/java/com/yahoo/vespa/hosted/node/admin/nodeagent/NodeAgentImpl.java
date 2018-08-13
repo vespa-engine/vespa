@@ -476,7 +476,7 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(node);
                 break;
             case active:
-                storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
+                storageMaintainer.handleCoreDumpsForContainer(containerName, node);
 
                 storageMaintainer.getDiskUsageFor(containerName)
                         .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.getMinDiskAvailableGb())
@@ -490,7 +490,6 @@ public class NodeAgentImpl implements NodeAgent {
                 }
                 container = removeContainerIfNeededUpdateContainerState(node, container);
                 if (! container.isPresent()) {
-                    storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
                     containerState = STARTING;
                     startContainer(node);
                     containerState = UNKNOWN;

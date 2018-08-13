@@ -291,10 +291,8 @@ public class StorageMaintainer {
 
     /**
      * Checks if container has any new coredumps, reports and archives them if so
-     *
-     * @param force Set to true to bypass throttling
      */
-    public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node, boolean force) {
+    public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node) {
         // Sample number of coredumps on the host
         try (Stream<Path> files = Files.list(environment.pathInNodeAdminToDoneCoredumps())) {
             numberOfCoredumpsOnHost.sample(files.count());
@@ -302,14 +300,9 @@ public class StorageMaintainer {
             // Ignore for now - this is either test or a misconfiguration
         }
 
-        // Return early if throttled
-        if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow() && !force) return;
-
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         addHandleCoredumpsCommand(maintainerExecutor, containerName, node);
         maintainerExecutor.execute();
-
-        getMaintenanceThrottlerFor(containerName).updateNextHandleCoredumpsTime();
     }
 
     /**
@@ -513,7 +506,6 @@ public class StorageMaintainer {
 
     private class MaintenanceThrottler {
         private Instant nextRemoveOldFilesAt = Instant.EPOCH;
-        private Instant nextHandleOldCoredumpsAt = Instant.EPOCH;
 
         void updateNextRemoveOldFilesTime() {
             nextRemoveOldFilesAt = clock.instant().plus(Duration.ofHours(1));
@@ -523,17 +515,8 @@ public class StorageMaintainer {
             return !nextRemoveOldFilesAt.isAfter(clock.instant());
         }
 
-        void updateNextHandleCoredumpsTime() {
-            nextHandleOldCoredumpsAt = clock.instant().plus(Duration.ofMinutes(5));
-        }
-
-        boolean shouldHandleCoredumpsNow() {
-            return !nextHandleOldCoredumpsAt.isAfter(clock.instant());
-        }
-
         void reset() {
             nextRemoveOldFilesAt = Instant.EPOCH;
-            nextHandleOldCoredumpsAt = Instant.EPOCH;
         }
     }
 }

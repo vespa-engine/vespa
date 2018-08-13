@@ -92,39 +92,22 @@ public class StorageMaintainerTest {
         storageMaintainer.removeOldFilesFromNode(containerName);
         verifyProcessExecuterCalled(1);
 
-        // Coredump handler has its own throttler
-        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
-        verifyProcessExecuterCalled(2);
-
-
         clock.advance(Duration.ofMinutes(61));
         storageMaintainer.removeOldFilesFromNode(containerName);
+        verifyProcessExecuterCalled(2);
+
+        // Coredump handling is unthrottled
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node);
         verifyProcessExecuterCalled(3);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node);
         verifyProcessExecuterCalled(4);
-
-        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
-        verifyProcessExecuterCalled(4);
-
-        storageMaintainer.handleCoreDumpsForContainer(containerName, node, true);
-        verifyProcessExecuterCalled(5);
-
-        storageMaintainer.handleCoreDumpsForContainer(containerName, node, true);
-        verifyProcessExecuterCalled(6);
-
-        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
-        verifyProcessExecuterCalled(6);
-
 
         // cleanupNodeStorage is unthrottled and it should reset previous times
         storageMaintainer.cleanupNodeStorage(containerName, node);
-        verifyProcessExecuterCalled(7);
+        verifyProcessExecuterCalled(5);
         storageMaintainer.cleanupNodeStorage(containerName, node);
-        verifyProcessExecuterCalled(8);
-
-        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
-        verifyProcessExecuterCalled(9);
+        verifyProcessExecuterCalled(6);
     }
 
     @Test
