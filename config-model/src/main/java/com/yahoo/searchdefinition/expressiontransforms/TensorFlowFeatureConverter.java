@@ -10,6 +10,7 @@ import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.io.UncheckedIOException;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public class TensorFlowFeatureConverter extends MLImportFeatureConverter {
+public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext>  {
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
@@ -43,39 +44,23 @@ public class TensorFlowFeatureConverter extends MLImportFeatureConverter {
         if ( ! feature.getName().equals("tensorflow")) return feature;
 
         try {
-            FeatureArguments arguments = new TensorFlowFeatureArguments(feature.getArguments());
-            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
-            if ( ! store.hasStoredModel()) // not converted yet - access TensorFlow model files
-                return transformFromTensorFlowModel(store, context.rankProfile(), context.queryProfiles());
-            else
-                return transformFromStoredModel(store, context.rankProfile());
+            ConvertedModel convertedModel = new ConvertedModel(asFeatureArguments(feature.getArguments()),
+                                                               context, tensorFlowImporter, importedModels);
+            return convertedModel.expression();
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
         }
     }
 
-    private ExpressionNode transformFromTensorFlowModel(ModelStore store,
-                                                          RankProfile profile,
-                                                          QueryProfileRegistry queryProfiles) {
-        ImportedModel model = importedModels.computeIfAbsent(store.arguments().modelPath(),
-                k -> tensorFlowImporter.importModel(store.arguments().modelName(),
-                        store.modelDir()));
-        return transformFromImportedModel(model, store, profile, queryProfiles);
-    }
+    private ConvertedModel.FeatureArguments asFeatureArguments(Arguments arguments) {
+        if (arguments.isEmpty())
+            throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
+                                               "the tensorflow model directory under [application]/models");
+        if (arguments.expressions().size() > 3)
+            throw new IllegalArgumentException("A tensorflow feature can have at most 3 arguments");
 
-    static class TensorFlowFeatureArguments extends FeatureArguments {
-        public TensorFlowFeatureArguments(Arguments arguments) {
-            if (arguments.isEmpty())
-                throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
-                        "the tensorflow model directory under [application]/models");
-            if (arguments.expressions().size() > 3)
-                throw new IllegalArgumentException("A tensorflow feature can have at most 3 arguments");
-
-            modelPath = Path.fromString(asString(arguments.expressions().get(0)));
-            signature = optionalArgument(1, arguments);
-            output = optionalArgument(2, arguments);
-        }
+        return new ConvertedModel.FeatureArguments(arguments);
     }
 
 }

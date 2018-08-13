@@ -17,6 +17,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ModelImporter;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -25,7 +26,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
-import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -46,28 +46,57 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Base class for replacing instances of a pseudofeature for imported ML
- * ranking models with native Vespa ranking expressions.
+ * A machine learned model imported from the models/ directory in the application package.
+ * This encapsulates the difference between reading a model
+ * - from a file application package, where it is represented by an ImportedModel, and
+ * - from a ZK application package, where the models/ directory is unavailable and models are read from
+ *   generated files stored in file distribution or ZooKeeper.
  *
  * @author bratseth
- * @author lesters
  */
-abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
+public class ConvertedModel {
 
-    ExpressionNode transformFromImportedModel(ImportedModel model,
-                                                          ModelStore store,
-                                                          RankProfile profile,
-                                                          QueryProfileRegistry queryProfiles) {
+    private final ExpressionNode convertedExpression;
+
+    public ConvertedModel(FeatureArguments arguments,
+                          RankProfileTransformContext context,
+                          ModelImporter modelImporter,
+                          Map<Path, ImportedModel> importedModels) {
+        ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
+        if ( ! store.hasStoredModel()) // not converted yet - access from models/ directory
+            convertedExpression = importModel(store, context.rankProfile(), context.queryProfiles(), modelImporter, importedModels);
+        else
+            convertedExpression = transformFromStoredModel(store, context.rankProfile());
+    }
+
+    private ExpressionNode importModel(ModelStore store,
+                                       RankProfile profile,
+                                       QueryProfileRegistry queryProfiles,
+                                       ModelImporter modelImporter,
+                                       Map<Path, ImportedModel> importedModels) {
+        ImportedModel model = importedModels.computeIfAbsent(store.arguments().modelPath(),
+                                                             k -> modelImporter.importModel(store.arguments().modelName(),
+                                                                                            store.modelDir()));
+        return transformFromImportedModel(model, store, profile, queryProfiles);
+    }
+
+    public ExpressionNode expression() { return convertedExpression; }
+
+    private ExpressionNode transformFromImportedModel(ImportedModel model,
+                                                      ModelStore store,
+                                                      RankProfile profile,
+                                                      QueryProfileRegistry queryProfiles) {
         // Add constants
         Set<String> constantsReplacedByMacros = new HashSet<>();
         model.smallConstants().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
         model.largeConstants().forEach((k, v) -> transformLargeConstant(store, profile, queryProfiles,
-                constantsReplacedByMacros, k, v));
+                                                                        constantsReplacedByMacros, k, v));
 
         // Find the specified expression
         ImportedModel.Signature signature = chooseSignature(model, store.arguments().signature());
@@ -121,16 +150,16 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
                 throw new IllegalArgumentException("No signatures are available");
             if (importResult.signatures().size() > 1)
                 throw new IllegalArgumentException("Model has multiple signatures (" +
-                        Joiner.on(", ").join(importResult.signatures().keySet()) +
-                        "), one must be specified " +
-                        "as a second argument to tensorflow()");
+                                                   Joiner.on(", ").join(importResult.signatures().keySet()) +
+                                                   "), one must be specified " +
+                                                   "as a second argument to tensorflow()");
             return importResult.signatures().values().stream().findFirst().get();
         }
         else {
             ImportedModel.Signature signature = importResult.signatures().get(signatureName.get());
             if (signature == null)
                 throw new IllegalArgumentException("Model does not have the specified signature '" +
-                        signatureName.get() + "'");
+                                                   signatureName.get() + "'");
             return signature;
         }
     }
@@ -145,9 +174,9 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
                 throw new IllegalArgumentException("No outputs are available" + skippedOutputsDescription(signature));
             if (signature.outputs().size() > 1)
                 throw new IllegalArgumentException(signature + " has multiple outputs (" +
-                        Joiner.on(", ").join(signature.outputs().keySet()) +
-                        "), one must be specified " +
-                        "as a third argument to tensorflow()");
+                                                   Joiner.on(", ").join(signature.outputs().keySet()) +
+                                                   "), one must be specified " +
+                                                   "as a third argument to tensorflow()");
             return signature.outputs().get(signature.outputs().keySet().stream().findFirst().get());
         }
         else {
@@ -155,10 +184,10 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
             if (output == null) {
                 if (signature.skippedOutputs().containsKey(outputName.get()))
                     throw new IllegalArgumentException("Could not use output '" + outputName.get() + "': " +
-                            signature.skippedOutputs().get(outputName.get()));
+                                                       signature.skippedOutputs().get(outputName.get()));
                 else
                     throw new IllegalArgumentException("Model does not have the specified output '" +
-                            outputName.get() + "'");
+                                                       outputName.get() + "'");
             }
             return output;
         }
@@ -177,14 +206,14 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
             TensorType macroType = macroOverridingConstant.getRankingExpression().type(profile.typeContext(queryProfiles));
             if ( ! macroType.equals(constantValue.type()))
                 throw new IllegalArgumentException("Macro '" + constantName + "' replaces the constant with this name. " +
-                        typeMismatchExplanation(constantValue.type(), macroType));
+                                                   typeMismatchExplanation(constantValue.type(), macroType));
             constantsReplacedByMacros.add(constantName); // will replace constant(constantName) by constantName later
         }
         else {
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
             if ( ! profile.getSearch().getRankingConstants().containsKey(constantName)) {
                 profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
-                        constantPath.toString()));
+                                                                           constantPath.toString()));
             }
         }
     }
@@ -229,8 +258,8 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
             RankProfile.Macro macro = profile.getMacros().get(macroName);
             if (macro == null)
                 throw new IllegalArgumentException("Model refers input '" + macroName +
-                        "' of type " + requiredType + " but this macro is not present in " +
-                        profile);
+                                                   "' of type " + requiredType + " but this macro is not present in " +
+                                                   profile);
             // TODO: We should verify this in the (function reference(s) this is invoked (starting from first/second
             // phase and summary features), as it may only resolve correctly given those bindings
             // Or, probably better, annotate the macros with type constraints here and verify during general
@@ -238,20 +267,20 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
             TensorType actualType = macro.getRankingExpression().getRoot().type(profile.typeContext(queryProfiles));
             if ( actualType == null)
                 throw new IllegalArgumentException("Model refers input '" + macroName +
-                        "' of type " + requiredType +
-                        " which must be produced by a macro in the rank profile, but " +
-                        "this macro references a feature which is not declared");
+                                                   "' of type " + requiredType +
+                                                   " which must be produced by a macro in the rank profile, but " +
+                                                   "this macro references a feature which is not declared");
             if ( ! actualType.isAssignableTo(requiredType))
                 throw new IllegalArgumentException("Model refers input '" + macroName + "'. " +
-                        typeMismatchExplanation(requiredType, actualType));
+                                                   typeMismatchExplanation(requiredType, actualType));
         }
     }
 
     private String typeMismatchExplanation(TensorType requiredType, TensorType actualType) {
         return "The required type of this is " + requiredType + ", but this macro returns " + actualType +
-                (actualType.rank() == 0 ? ". This is often due to missing declaration of query tensor features " +
-                        "in query profile types - see the documentation."
-                        : "");
+               (actualType.rank() == 0 ? ". This is often due to missing declaration of query tensor features " +
+                                         "in query profile types - see the documentation."
+                                       : "");
     }
 
     /**
@@ -281,7 +310,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
             RankProfile.Macro macro = profile.getMacros().get(macroName);
             if (macro == null) {
                 throw new IllegalArgumentException("Model refers to generated macro '" + macroName +
-                        "but this macro is not present in " + profile);
+                                                   "but this macro is not present in " + profile);
             }
             RankingExpression macroExpression = macro.getRankingExpression();
             macroExpression.setRoot(reduceBatchDimensionsAtInput(macroExpression.getRoot(), model, typeContext));
@@ -362,9 +391,9 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         if (expandDimensionsType.dimensions().size() > 0) {
             ExpressionNode generatedExpression = new ConstantNode(new DoubleValue(1.0));
             Generate generatedFunction = new Generate(expandDimensionsType,
-                    new GeneratorLambdaFunctionNode(expandDimensionsType,
-                            generatedExpression)
-                            .asLongListToDoubleOperator());
+                                                      new GeneratorLambdaFunctionNode(expandDimensionsType,
+                                                                                      generatedExpression)
+                                                              .asLongListToDoubleOperator());
             Join expand = new Join(TensorFunctionNode.wrapArgument(node), generatedFunction, ScalarFunctions.multiply());
             return new TensorFunctionNode(expand);
         }
@@ -379,7 +408,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
                                                        Set<String> constantsReplacedByMacros) {
         if (constantsReplacedByMacros.isEmpty()) return expression;
         return new RankingExpression(expression.getName(),
-                replaceConstantsByMacros(expression.getRoot(), constantsReplacedByMacros));
+                                     replaceConstantsByMacros(expression.getRoot(), constantsReplacedByMacros));
     }
 
     private ExpressionNode replaceConstantsByMacros(ExpressionNode node, Set<String> constantsReplacedByMacros) {
@@ -394,8 +423,8 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         if (node instanceof CompositeNode) { // not else: this matches some of the same nodes as the outer if above
             CompositeNode composite = (CompositeNode)node;
             return composite.setChildren(composite.children().stream()
-                    .map(child -> replaceConstantsByMacros(child, constantsReplacedByMacros))
-                    .collect(Collectors.toList()));
+                                                  .map(child -> replaceConstantsByMacros(child, constantsReplacedByMacros))
+                                                  .collect(Collectors.toList()));
         }
         return node;
     }
@@ -459,7 +488,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
          */
         void writeConverted(RankingExpression expression) {
             application.getFile(arguments.expressionPath())
-                    .writeFile(new StringReader(expression.getRoot().toString()));
+                       .writeFile(new StringReader(expression.getRoot().toString()));
         }
 
         /** Reads the previously stored ranking expression for these arguments */
@@ -478,7 +507,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         /** Adds this macro expression to the application package to it can be read later. */
         void writeMacro(String name, RankingExpression expression) {
             application.getFile(arguments.macrosPath()).appendFile(name + "\t" +
-                    expression.getRoot().toString() + "\n");
+                                                                   expression.getRoot().toString() + "\n");
         }
 
         /** Reads the previously stored macro expressions for these arguments */
@@ -540,7 +569,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
 
             // Remember the constant in a file we replicate in ZooKeeper
             application.getFile(arguments.largeConstantsPath().append(name + ".constant"))
-                    .writeFile(new StringReader(name + ":" + constant.type() + ":" + correct(constantPath)));
+                       .writeFile(new StringReader(name + ":" + constant.type() + ":" + correct(constantPath)));
 
             // Write content explicitly as a file on the file system as this is distributed using file distribution
             createIfNeeded(constantsPath);
@@ -576,14 +605,14 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
         public void writeSmallConstant(String name, Tensor constant) {
             // Secret file format for remembering constants:
             application.getFile(arguments.smallConstantsPath()).appendFile(name + "\t" +
-                    constant.type().toString() + "\t" +
-                    constant.toString() + "\n");
+                                                                           constant.type().toString() + "\t" +
+                                                                           constant.toString() + "\n");
         }
 
         /** Workaround for being constructed with the .preprocessed dir as root while later being used outside it */
         private Path correct(Path path) {
             if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(FilesApplicationPackage.preprocessed)
-                    && ! path.elements().contains(FilesApplicationPackage.preprocessed)) {
+                && ! path.elements().contains(FilesApplicationPackage.preprocessed)) {
                 return Path.fromString(FilesApplicationPackage.preprocessed).append(path);
             }
             else {
@@ -602,12 +631,24 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
     }
 
     /** Encapsulates the arguments to the import feature */
-    static abstract class FeatureArguments {
+    static class FeatureArguments {
 
         Path modelPath;
 
         /** Optional arguments */
         Optional<String> signature, output;
+
+        public FeatureArguments(Arguments arguments) {
+            this(Path.fromString(asString(arguments.expressions().get(0))),
+                 optionalArgument(1, arguments),
+                 optionalArgument(2, arguments));
+        }
+
+        public FeatureArguments(Path modelPath, Optional<String> signature, Optional<String> output) {
+            this.modelPath = modelPath;
+            this.signature = signature;
+            this.output = output;
+        }
 
         /** Returns modelPath with slashes replaced by underscores */
         public String modelName() { return modelPath.toString().replace('/', '_').replace('.', '_'); }
@@ -634,7 +675,7 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
 
         public Path expressionPath() {
             return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR
-                    .append(modelPath).append("expressions").append(expressionFileName());
+                           .append(modelPath).append("expressions").append(expressionFileName());
         }
 
         private String expressionFileName() {
@@ -647,28 +688,29 @@ abstract class MLImportFeatureConverter extends ExpressionTransformer<RankProfil
             return fileName.toString();
         }
 
-        Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
+        private static Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
             if (argumentIndex >= arguments.expressions().size())
                 return Optional.empty();
             return Optional.of(asString(arguments.expressions().get(argumentIndex)));
         }
 
-        String asString(ExpressionNode node) {
+        private static String asString(ExpressionNode node) {
             if ( ! (node instanceof ConstantNode))
                 throw new IllegalArgumentException("Expected a constant string as argument, but got '" + node);
             return stripQuotes(((ConstantNode)node).sourceString());
         }
 
-        private String stripQuotes(String s) {
+        private static String stripQuotes(String s) {
             if ( ! isQuoteSign(s.codePointAt(0))) return s;
             if ( ! isQuoteSign(s.codePointAt(s.length() - 1 )))
                 throw new IllegalArgumentException("argument [" + s + "] is missing endquote");
             return s.substring(1, s.length()-1);
         }
 
-        private boolean isQuoteSign(int c) {
+        private static boolean isQuoteSign(int c) {
             return c == '\'' || c == '"';
         }
 
     }
+
 }

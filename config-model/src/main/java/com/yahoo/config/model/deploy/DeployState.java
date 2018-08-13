@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -22,6 +23,7 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -65,6 +67,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Zone zone;
     private final QueryProfiles queryProfiles;
     private final SemanticRules semanticRules;
+    //private final ImmutableMap<String, ImportedModel> importedMlModels;
     private final ValidationOverrides validationOverrides;
     private final Version wantedNodeVespaVersion;
     private final Instant now;
@@ -98,6 +101,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
+
         this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
@@ -209,6 +213,9 @@ public class DeployState implements ConfigDefinitionStore {
     public QueryProfiles getQueryProfiles() { return queryProfiles; }
 
     public SemanticRules getSemanticRules() { return semanticRules; }
+
+    /** The (machine learned) models imported from the models/ directory, as an unmodifiable map indexed by model name */
+    //public Map<String, ImportedModel> importedMlModels() { return importedMlModels; }
 
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 

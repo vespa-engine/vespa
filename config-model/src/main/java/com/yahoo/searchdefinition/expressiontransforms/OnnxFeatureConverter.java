@@ -11,6 +11,7 @@ import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.io.UncheckedIOException;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ import java.util.Optional;
  * @author bratseth
  * @author lesters
  */
-public class OnnxFeatureConverter extends MLImportFeatureConverter {
+public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     private final OnnxImporter onnxImporter = new OnnxImporter();
 
@@ -46,39 +47,23 @@ public class OnnxFeatureConverter extends MLImportFeatureConverter {
         if ( ! feature.getName().equals("onnx")) return feature;
 
         try {
-            FeatureArguments arguments = new OnnxFeatureArguments(feature.getArguments());
-            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
-            if ( ! store.hasStoredModel()) // not converted yet - access Onnx model files
-                return transformFromOnnxModel(store, context.rankProfile(), context.queryProfiles());
-            else
-                return transformFromStoredModel(store, context.rankProfile());
+            ConvertedModel convertedModel = new ConvertedModel(asFeatureArguments(feature.getArguments()),
+                                                               context, onnxImporter, importedModels);
+            return convertedModel.expression();
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use Onnx model from " + feature, e);
         }
     }
 
-    private ExpressionNode transformFromOnnxModel(ModelStore store,
-                                                  RankProfile profile,
-                                                  QueryProfileRegistry queryProfiles) {
-        ImportedModel model = importedModels.computeIfAbsent(store.arguments().modelPath(),
-                                                         k -> onnxImporter.importModel(store.arguments().modelName(),
-                                                                                       store.modelDir()));
-        return transformFromImportedModel(model, store, profile, queryProfiles);
-    }
+    private ConvertedModel.FeatureArguments asFeatureArguments(Arguments arguments) {
+        if (arguments.isEmpty())
+            throw new IllegalArgumentException("An onnx node must take an argument pointing to " +
+                                               "the onnx model directory under [application]/models");
+        if (arguments.expressions().size() > 3)
+            throw new IllegalArgumentException("An onnx feature can have at most 2 arguments");
 
-    static class OnnxFeatureArguments extends FeatureArguments {
-        public OnnxFeatureArguments(Arguments arguments) {
-            if (arguments.isEmpty())
-                throw new IllegalArgumentException("An onnx node must take an argument pointing to " +
-                        "the tensorflow model directory under [application]/models");
-            if (arguments.expressions().size() > 3)
-                throw new IllegalArgumentException("An onnx feature can have at most 2 arguments");
-
-            modelPath = Path.fromString(asString(arguments.expressions().get(0)));
-            output = optionalArgument(1, arguments);
-            signature = Optional.of("default");
-        }
+        return new ConvertedModel.FeatureArguments(arguments);
     }
 
 }

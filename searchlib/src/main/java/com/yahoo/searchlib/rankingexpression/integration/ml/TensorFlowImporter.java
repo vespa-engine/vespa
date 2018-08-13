@@ -23,6 +23,7 @@ public class TensorFlowImporter extends ModelImporter {
      * @param modelName the name of the model to import, consisting of characters in [A-Za-z0-9_]
      * @param modelDir the directory containing the TensorFlow model files to import
      */
+    @Override
     public ImportedModel importModel(String modelName, String modelDir) {
         try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
             return importModel(modelName, model);
