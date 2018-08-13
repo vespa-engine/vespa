@@ -96,14 +96,11 @@ public class AthenzCredentialsMaintainer {
         this.clock = Clock.systemUTC();
     }
 
-    /**
-     * @return Returns true if credentials were updated
-     */
-    public boolean converge() {
+    public void converge() {
         try {
             if (!enabled) {
                 log.debug("Feature disabled on this host - not fetching certificate");
-                return false;
+                return;
             }
             log.debug("Checking certificate");
             Instant now = clock.instant();
@@ -113,14 +110,14 @@ public class AthenzCredentialsMaintainer {
                 Files.createDirectories(certificateFile.getParent());
                 Files.createDirectories(identityDocumentFile.getParent());
                 registerIdentity();
-                return true;
+                return;
             }
             X509Certificate certificate = readCertificateFromFile();
             Instant expiry = certificate.getNotAfter().toInstant();
             if (isCertificateExpired(expiry, now)) {
                 log.info(String.format("Certificate has expired (expiry=%s)", expiry.toString()));
                 registerIdentity();
-                return true;
+                return;
             }
             Duration age = Duration.between(certificate.getNotBefore().toInstant(), now);
             if (shouldRefreshCredentials(age)) {
@@ -128,15 +125,14 @@ public class AthenzCredentialsMaintainer {
                 if (shouldThrottleRefreshAttempts(now)) {
                     log.warning(String.format("Skipping refresh attempt as last refresh was on %s (less than %s ago)",
                                               lastRefreshAttempt.toString(), REFRESH_BACKOFF.toString()));
-                    return false;
+                    return;
                 } else {
                     lastRefreshAttempt = now;
                     refreshIdentity();
-                    return true;
+                    return;
                 }
             }
             log.debug("Certificate is still valid");
-            return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
