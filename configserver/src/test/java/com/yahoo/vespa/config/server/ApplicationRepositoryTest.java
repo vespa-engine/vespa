@@ -168,14 +168,7 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        boolean deleteFiles = false;
-        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
-        assertEquals(Collections.singleton("foo"), toBeDeleted);
-        assertTrue(filereferenceDir.exists());
-        assertTrue(filereferenceDir2.exists());
-
-        deleteFiles = true;
-        toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
+        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir);
         assertEquals(Collections.singleton("foo"), toBeDeleted);
         assertFalse(filereferenceDir.exists());
         assertTrue(filereferenceDir2.exists());
