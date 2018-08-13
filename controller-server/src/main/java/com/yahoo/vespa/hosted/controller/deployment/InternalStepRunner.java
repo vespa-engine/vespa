@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
@@ -25,7 +24,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 
 import java.io.ByteArrayOutputStream;
@@ -138,7 +136,7 @@ public class InternalStepRunner implements StepRunner {
         return deploy(id.application(),
                       id.type(),
                       () -> controller.applications().deploy(id.application(),
-                                                             zone(id.type()),
+                                                             id.type().zone(controller.system()),
                                                              Optional.empty(),
                                                              new DeployOptions(false,
                                                                                Optional.empty(),
@@ -154,7 +152,7 @@ public class InternalStepRunner implements StepRunner {
                       id.type(),
                       () -> controller.applications().deployTester(testerOf(id.application()),
                                                                    testerPackage(id),
-                                                                   zone(id.type()),
+                                                                   id.type().zone(controller.system()),
                                                                    new DeployOptions(true,
                                                                                      Optional.of(controller.systemVersion()),
                                                                                      false,
@@ -193,7 +191,7 @@ public class InternalStepRunner implements StepRunner {
                                                                   .sorted().distinct()
                                                                   .map(Hostname::new)
                                                                   .forEach(hostname -> {
-                                                                      controller.applications().restart(new DeploymentId(id, zone(type)), Optional.of(hostname));
+                                                                      controller.applications().restart(new DeploymentId(id, type.zone(controller.system())), Optional.of(hostname));
                                                                       logger.log("Restarting services on host " + hostname.id() + ".");
                                                                   });
             logger.log("Deployment successful.");
@@ -256,7 +254,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, ByteArrayLogger logger) {
-        List<Node> nodes = controller.configServer().nodeRepository().list(zone(type), id, Arrays.asList(active, reserved));
+        List<Node> nodes = controller.configServer().nodeRepository().list(type.zone(controller.system()), id, Arrays.asList(active, reserved));
         for (Node node : nodes)
             logger.log(String.format("%70s: %-16s%-25s%-32s%s",
                                            node.hostname(),
@@ -274,7 +272,7 @@ public class InternalStepRunner implements StepRunner {
 
     private boolean servicesConverged(ApplicationId id, JobType type) {
         // TODO jvenstad: Print information for each host.
-        return controller.configServer().serviceConvergence(new DeploymentId(id, zone(type)))
+        return controller.configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())))
                          .map(ServiceConvergence::converged)
                          .orElse(false);
     }
@@ -289,7 +287,7 @@ public class InternalStepRunner implements StepRunner {
                                                                      .map(uri -> " |-- " + uri)
                                                                      .collect(Collectors.joining("\n")))
                                   .collect(Collectors.joining("\n")));
-        if ( ! endpoints.containsKey(zone(id.type()))) {
+        if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
             if (timedOut(id.application(), id.type(), endpointTimeout)) {
                 logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
                 return failed;
@@ -304,7 +302,7 @@ public class InternalStepRunner implements StepRunner {
             logger.log("Starting tests ...");
             testerCloud.startTests(testerEndpoint.get(),
                                    TesterCloud.Suite.of(id.type()),
-                                   testConfig(id.application(), zone(id.type()), controller.system(), endpoints));
+                                   testConfig(id.application(), id.type().zone(controller.system()), controller.system(), endpoints));
             return succeeded;
         }
 
@@ -345,13 +343,13 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Status deactivateReal(RunId id, ByteArrayLogger logger) {
-        logger.log("Deactivating deployment of " + id.application() + " in " + zone(id.type()) + " ...");
+        logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
         controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
         return succeeded;
     }
 
     private Status deactivateTester(RunId id, ByteArrayLogger logger) {
-        logger.log("Deactivating tester of " + id.application() + " in " + zone(id.type()) + " ...");
+        logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
         controller.jobController().deactivateTester(id.application(), id.type());
         return succeeded;
     }
@@ -366,19 +364,9 @@ public class InternalStepRunner implements StepRunner {
         return controller.applications().require(id);
     }
 
-    /** Returns the zone of the given job type. */
-    private ZoneId zone(JobType type) {
-        return type.zone(controller.system());
-    }
-
-    /** Returns the triggering of the currently running job, i.e., this job. */
-    private JobStatus.JobRun triggering(ApplicationId id, JobType type) {
-        return application(id).deploymentJobs().statusOf(type).get().lastTriggered().get();
-    }
-
     /** Returns whether the time elapsed since the last real deployment in the given zone is more than the given timeout. */
     private boolean timedOut(ApplicationId id, JobType type, Duration timeout) {
-        return application(id).deployments().get(zone(type)).at().isBefore(controller.clock().instant().minus(timeout));
+        return application(id).deployments().get(type.zone(controller.system())).at().isBefore(controller.clock().instant().minus(timeout));
     }
 
     /** Returns a generated job report for the given run. */
@@ -421,7 +409,7 @@ public class InternalStepRunner implements StepRunner {
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
     private Optional<URI> testerEndpoint(RunId id) {
         ApplicationId tester = testerOf(id.application());
-        return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, zone(id.type())))
+        return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
                          .flatMap(uris -> uris.stream()
                                               .filter(uri -> uri.getHost().contains(String.format("%s--%s--%s.",
                                                                                                   tester.instance().value(),
