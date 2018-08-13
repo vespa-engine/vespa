@@ -242,13 +242,12 @@ public class JobController {
                });
     }
 
-    // TODO jvenstad: Urgh, clean this up somehow?
     public void deactivateTester(ApplicationId id, JobType type) {
         try {
             controller.configServer().deactivate(new DeploymentId(testerOf(id), type.zone(controller.system())));
         }
         catch (NoInstanceException ignored) {
-            // ok; already gone
+            // Already gone -- great!
         }
     }
 

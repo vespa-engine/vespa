@@ -820,7 +820,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
 
         // Attempt to deactivate application even if the deployment is not known by the controller
-        controller.applications().deactivate(application, ZoneId.from(environment, region));
+        controller.applications().deactivate(application.id(), ZoneId.from(environment, region));
 
         // TODO: Change to return JSON
         return new StringResponse("Deactivated " + path(TenantResource.API_PATH, tenantName,

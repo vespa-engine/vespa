@@ -346,23 +346,13 @@ public class InternalStepRunner implements StepRunner {
 
     private Status deactivateReal(RunId id, ByteArrayLogger logger) {
         logger.log("Deactivating deployment of " + id.application() + " in " + zone(id.type()) + " ...");
-        Status status = deactivate(id.application(), id.type());
-        if (status == succeeded)
-            controller.applications().lockOrThrow(id.application(), application ->
-                    controller.applications().store(application.withoutDeploymentIn(zone(id.type()))));
-        return status;
+        controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+        return succeeded;
     }
 
     private Status deactivateTester(RunId id, ByteArrayLogger logger) {
         logger.log("Deactivating tester of " + id.application() + " in " + zone(id.type()) + " ...");
-        return deactivate(testerOf(id.application()), id.type());
-    }
-
-    private Status deactivate(ApplicationId id, JobType type) {
-        try {
-            controller.configServer().deactivate(new DeploymentId(id, zone(type)));
-        }
-        catch (NoInstanceException e) { }
+        controller.jobController().deactivateTester(id.application(), id.type());
         return succeeded;
     }
 
