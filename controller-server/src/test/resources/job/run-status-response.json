@@ -5,7 +5,12 @@
     "end":"2018-06-27T10:13:19Z",
     "id":1,
     "targetPlatform": "1.2.3",
-    "targetApplication": "1.0.321-bada55",
+    "targetApplication": {
+      "build": 321,
+      "repository": "repo",
+      "branch": "branch",
+      "commit": "bada55"
+    },
     "steps":[
       {
         "deployInitialReal":"succeeded"
@@ -48,7 +53,12 @@
     "start":"2018-06-27T10:12:35Z",
     "id":2,
     "targetPlatform": "1.2.3",
-    "targetApplication": "1.0.321-bada55",
+    "targetApplication": {
+      "build": 321,
+      "repository": "repo",
+      "branch": "branch",
+      "commit": "bada55"
+    },
     "steps":[
       {
         "deployInitialReal":"succeeded"
@@ -92,7 +102,12 @@
     "end":"2018-06-27T10:13:05Z",
     "id":3,
     "targetPlatform": "1.2.3",
-    "targetApplication": "1.0.321-bada55",
+    "targetApplication": {
+      "build": 321,
+      "repository": "repo",
+      "branch": "branch",
+      "commit": "bada55"
+    },
     "steps":[
       {
         "deployInitialReal":"succeeded"
