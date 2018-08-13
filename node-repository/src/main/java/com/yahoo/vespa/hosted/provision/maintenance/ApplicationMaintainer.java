@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public abstract class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
-    private final List<ApplicationId> pendingDeployments = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<ApplicationId> pendingDeployments = new CopyOnWriteArrayList<>();
 
     // Use a fixed thread pool to avoid overload on config servers. Resource usage when deploying varies
     // a lot between applications, so doing one by one avoids issues where one or more resource-demanding
@@ -66,13 +66,11 @@ public abstract class ApplicationMaintainer extends Maintainer {
      * even when deployments are slow.
      */
     protected void deploy(ApplicationId application) {
-        if (pendingDeployments.contains(application)) {
-            return;// Avoid queuing multiple deployments for same application
+        if (pendingDeployments.addIfAbsent(application)) { // Avoid queuing multiple deployments for same application
+            log.log(LogLevel.INFO, application + " will be deployed, last deploy time " +
+                                   getLastDeployTime(application));
+            deploymentExecutor.execute(() -> deployWithLock(application));
         }
-        log.log(LogLevel.INFO, application + " will be deployed, last deploy time " +
-                               getLastDeployTime(application));
-        pendingDeployments.add(application);
-        deploymentExecutor.execute(() -> deployWithLock(application));
     }
 
     protected Deployer deployer() { return deployer; }

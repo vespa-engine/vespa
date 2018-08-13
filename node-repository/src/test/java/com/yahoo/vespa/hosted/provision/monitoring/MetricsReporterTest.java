@@ -70,6 +70,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.inactiveHosts", 0L);
         expectedMetrics.put("hostedVespa.dirtyHosts", 0L);
         expectedMetrics.put("hostedVespa.failedHosts", 0L);
+        expectedMetrics.put("hostedVespa.pendingRedeployments", 42);
         expectedMetrics.put("hostedVespa.docker.totalCapacityDisk", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityMem", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityCpu", 0.0);
@@ -100,8 +101,10 @@ public class MetricsReporterTest {
                 metric,
                 orchestrator,
                 serviceMonitor,
+                () -> 42,
                 Duration.ofMinutes(1),
-                new JobControl(nodeRepository.database()));
+                new JobControl(nodeRepository.database())
+        );
         metricsReporter.maintain();
 
         assertEquals(expectedMetrics, metric.values);
@@ -144,7 +147,15 @@ public class MetricsReporterTest {
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());
 
         TestMetric metric = new TestMetric();
-        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
+        MetricsReporter metricsReporter = new MetricsReporter(
+                nodeRepository,
+                metric,
+                orchestrator,
+                serviceMonitor,
+                () -> 42,
+                Duration.ofMinutes(1),
+                new JobControl(nodeRepository.database())
+        );
         metricsReporter.maintain();
 
         assertEquals(0L, metric.values.get("hostedVespa.readyHosts")); /** Only tenants counts **/
