@@ -11,8 +11,8 @@ import com.yahoo.vespa.config.server.RequestHandler;
  */
 public class MockTenantProvider implements TenantHandlerProvider {
 
-    final MockRequestHandler requestHandler;
-    final MockReloadHandler reloadHandler;
+    private final MockRequestHandler requestHandler;
+    private final MockReloadHandler reloadHandler;
 
     public MockTenantProvider() {
         this(false);

@@ -97,7 +97,6 @@ public class RpcServerTest extends TestWithRpc {
     }
 
     private void testGetConfig() {
-        ((MockRequestHandler)tenantProvider.getRequestHandler()).throwException = false;
         ConfigKey<?> key = new ConfigKey<>(SimpletypesConfig.class, "brim");
         ((MockRequestHandler)tenantProvider.getRequestHandler()).responses.put(ApplicationId.defaultId(), createResponse(true));
         JRTClientConfigRequest req = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, SimpletypesConfig.CONFIG_DEF_MD5),
