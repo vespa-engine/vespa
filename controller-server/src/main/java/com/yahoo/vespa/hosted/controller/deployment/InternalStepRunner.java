@@ -119,18 +119,18 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Status deployInitialReal(RunId id, ByteArrayLogger logger) {
-        JobStatus.JobRun triggering = triggering(id.application(), id.type());
+        Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " +
-                         triggering.sourcePlatform().orElse(triggering.platform()) +
-                        " and application version " +
-                         triggering.sourceApplication().orElse(triggering.application()).id() + " ...");
+                   versions.sourcePlatform().orElse(versions.targetPlatform()) +
+                   " and application version " +
+                   versions.sourceApplication().orElse(versions.targetApplication()).id() + " ...");
         return deployReal(id, true, logger);
     }
 
     private Status deployReal(RunId id, ByteArrayLogger logger) {
-        JobStatus.JobRun triggering = triggering(id.application(), id.type());
-        logger.log("Deploying platform version " + triggering.platform() +
-                         " and application version " + triggering.application().id() + " ...");
+        Versions versions = controller.jobController().run(id).get().versions();
+        logger.log("Deploying platform version " + versions.targetPlatform() +
+                         " and application version " + versions.targetApplication().id() + " ...");
         return deployReal(id, false, logger);
     }
 
@@ -211,25 +211,25 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Status installInitialReal(RunId id, ByteArrayLogger logger) {
-        return installReal(id.application(), id.type(), true, logger);
+        return installReal(id, true, logger);
     }
 
     private Status installReal(RunId id, ByteArrayLogger logger) {
-        return installReal(id.application(), id.type(), false, logger);
+        return installReal(id, false, logger);
     }
 
-    private Status installReal(ApplicationId id, JobType type, boolean setTheStage, ByteArrayLogger logger) {
-        JobStatus.JobRun triggering = triggering(id, type);
-        Version platform = setTheStage ? triggering.sourcePlatform().orElse(triggering.platform()) : triggering.platform();
-        ApplicationVersion application = setTheStage ? triggering.sourceApplication().orElse(triggering.application()) : triggering.application();
+    private Status installReal(RunId id, boolean setTheStage, ByteArrayLogger logger) {
+        Versions versions = controller.jobController().run(id).get().versions();
+        Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
+        ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
         logger.log("Checking installation of " + platform + " and " + application + " ...");
 
-        if (nodesConverged(id, type, platform, logger) && servicesConverged(id, type)) {
+        if (nodesConverged(id.application(), id.type(), platform, logger) && servicesConverged(id.application(), id.type())) {
             logger.log("Installation succeeded!");
             return succeeded;
         }
 
-        if (timedOut(id, type, installationTimeout)) {
+        if (timedOut(id.application(), id.type(), installationTimeout)) {
             logger.log(INFO, "Installation failed to complete within " + installationTimeout.toMinutes() + " minutes!");
             return failed;
         }
