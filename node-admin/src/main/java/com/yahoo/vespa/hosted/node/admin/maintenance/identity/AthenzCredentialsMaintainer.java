@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
@@ -12,7 +10,6 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.client.InstanceCsrGenerator;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
@@ -53,9 +50,9 @@ public class AthenzCredentialsMaintainer {
 
     private static final Duration EXPIRY_MARGIN = Duration.ofDays(1);
     private static final Duration REFRESH_PERIOD = Duration.ofDays(1);
-    private static final Path CONTAINER_SIA_DIRECTORY = Paths.get("/var/lib/sia");
+    private static final Duration REFRESH_BACKOFF = Duration.ofHours(1); // Backoff when refresh fails to ensure ZTS is not DDoS'ed.
 
-    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final Path CONTAINER_SIA_DIRECTORY = Paths.get("/var/lib/sia");
 
     private final boolean enabled;
     private final PrefixLogger log;
@@ -71,6 +68,8 @@ public class AthenzCredentialsMaintainer {
     private final IdentityDocumentClient identityDocumentClient;
     private final InstanceCsrGenerator csrGenerator;
     private final AthenzService configserverIdentity;
+
+    private Instant lastRefreshAttempt = Instant.EPOCH; // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
 
     public AthenzCredentialsMaintainer(String hostname,
                                        Environment environment,
@@ -97,14 +96,11 @@ public class AthenzCredentialsMaintainer {
         this.clock = Clock.systemUTC();
     }
 
-    /**
-     * @return Returns true if credentials were updated
-     */
-    public boolean converge() {
+    public void converge() {
         try {
             if (!enabled) {
                 log.debug("Feature disabled on this host - not fetching certificate");
-                return false;
+                return;
             }
             log.debug("Checking certificate");
             Instant now = clock.instant();
@@ -114,23 +110,29 @@ public class AthenzCredentialsMaintainer {
                 Files.createDirectories(certificateFile.getParent());
                 Files.createDirectories(identityDocumentFile.getParent());
                 registerIdentity();
-                return true;
+                return;
             }
             X509Certificate certificate = readCertificateFromFile();
             Instant expiry = certificate.getNotAfter().toInstant();
             if (isCertificateExpired(expiry, now)) {
                 log.info(String.format("Certificate has expired (expiry=%s)", expiry.toString()));
                 registerIdentity();
-                return true;
+                return;
             }
             Duration age = Duration.between(certificate.getNotBefore().toInstant(), now);
             if (shouldRefreshCredentials(age)) {
                 log.info(String.format("Certificate is ready to be refreshed (age=%s)", age.toString()));
-                refreshIdentity();
-                return true;
+                if (shouldThrottleRefreshAttempts(now)) {
+                    log.warning(String.format("Skipping refresh attempt as last refresh was on %s (less than %s ago)",
+                                              lastRefreshAttempt.toString(), REFRESH_BACKOFF.toString()));
+                    return;
+                } else {
+                    lastRefreshAttempt = now;
+                    refreshIdentity();
+                    return;
+                }
             }
             log.debug("Certificate is still valid");
-            return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -152,6 +154,10 @@ public class AthenzCredentialsMaintainer {
 
     private boolean shouldRefreshCredentials(Duration age) {
         return age.compareTo(REFRESH_PERIOD) >= 0;
+    }
+
+    private boolean shouldThrottleRefreshAttempts(Instant now) {
+        return REFRESH_BACKOFF.compareTo(Duration.between(lastRefreshAttempt, now)) > 0;
     }
 
     private X509Certificate readCertificateFromFile() throws IOException {
@@ -177,7 +183,7 @@ public class AthenzCredentialsMaintainer {
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             false,
                             csr);
-            writeIdentityDocument(signedIdentityDocument);
+            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
             writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
             log.info("Instance successfully registered and credentials written to file");
         } catch (IOException e) {
@@ -186,7 +192,7 @@ public class AthenzCredentialsMaintainer {
     }
 
     private void refreshIdentity() {
-        SignedIdentityDocument identityDocument = readIdentityDocument();
+        SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         Pkcs10Csr csr = csrGenerator.generateCsr(containerIdentity, identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
         SSLContext containerIdentitySslContext =
@@ -194,45 +200,27 @@ public class AthenzCredentialsMaintainer {
                         .withKeyStore(privateKeyFile.toFile(), certificateFile.toFile())
                         .withTrustStore(trustStorePath.toFile(), KeyStoreType.JKS)
                         .build();
-        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentity, containerIdentitySslContext)) {
-            InstanceIdentity instanceIdentity =
-                    ztsClient.refreshInstance(
-                            configserverIdentity,
-                            containerIdentity,
-                            identityDocument.providerUniqueId().asDottedString(),
-                            false,
-                            csr);
-            writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
-            log.info("Instance successfully refreshed and credentials written to file");
-        } catch (ZtsClientException e) {
-            // TODO Find out why certificate was revoked and hopefully remove this workaround
-            if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
-                log.error("Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
-                registerIdentity();
+        try {
+            try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentity, containerIdentitySslContext)) {
+                InstanceIdentity instanceIdentity =
+                        ztsClient.refreshInstance(
+                                configserverIdentity,
+                                containerIdentity,
+                                identityDocument.providerUniqueId().asDottedString(),
+                                false,
+                                csr);
+                writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
+                log.info("Instance successfully refreshed and credentials written to file");
+            } catch (ZtsClientException e) {
+                if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
+                    log.error("Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
+                    registerIdentity();
+                } else {
+                    throw e;
+                }
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private SignedIdentityDocument readIdentityDocument() {
-        try {
-            SignedIdentityDocumentEntity entity = mapper.readValue(identityDocumentFile.toFile(), SignedIdentityDocumentEntity.class);
-            return EntityBindingsMapper.toSignedIdentityDocument(entity);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private void writeIdentityDocument(SignedIdentityDocument signedIdentityDocument) {
-        try {
-            SignedIdentityDocumentEntity entity =
-                    EntityBindingsMapper.toSignedIdentityDocumentEntity(signedIdentityDocument);
-            Path tempIdentityDocumentFile = toTempPath(identityDocumentFile);
-            mapper.writeValue(tempIdentityDocumentFile.toFile(), entity);
-            Files.move(tempIdentityDocumentFile, identityDocumentFile, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (Exception e) {
+            log.error("Certificate refresh failed: " + e.getMessage(), e);
         }
     }
 

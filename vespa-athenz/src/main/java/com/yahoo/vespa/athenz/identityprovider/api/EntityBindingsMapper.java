@@ -11,7 +11,10 @@ import com.yahoo.vespa.athenz.identityprovider.api.bindings.VespaUniqueInstanceI
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Base64;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.fromDottedString;
@@ -116,7 +119,9 @@ public class EntityBindingsMapper {
     public static void writeSignedIdentityDocumentToFile(Path file, SignedIdentityDocument document) {
         try {
             SignedIdentityDocumentEntity entity = EntityBindingsMapper.toSignedIdentityDocumentEntity(document);
-            mapper.writeValue(file.toFile(), entity);
+            Path tempFile = Paths.get(file.toAbsolutePath().toString() + ".tmp");
+            mapper.writeValue(tempFile.toFile(), entity);
+            Files.move(tempFile, file, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
