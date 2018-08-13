@@ -6,6 +6,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Inspector;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -29,6 +32,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -323,6 +327,16 @@ public class InternalStepRunnerTest {
         RunId id = startSystemTestTests();
         runner.run();
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
+        assertEquals(URI.create(routing.endpoints(new DeploymentId(testerOf(appId), JobType.systemTest.zone(tester.controller().system()))).get(0).getEndpoint()),
+                     cloud.testerUrl());
+        Inspector configObject = SlimeUtils.jsonToSlime(cloud.config()).get();
+        assertEquals(appId.serializedForm(), configObject.field("application").asString());
+        assertEquals(JobType.systemTest.zone(tester.controller().system()).value(), configObject.field("zone").asString());
+        assertEquals(tester.controller().system().name(), configObject.field("system").asString());
+        assertEquals(1, configObject.field("endpoints").children());
+        assertEquals(1, configObject.field("endpoints").field(JobType.systemTest.zone(tester.controller().system()).value()).entries());
+        configObject.field("endpoints").field(JobType.systemTest.zone(tester.controller().system()).value()).traverse((ArrayTraverser) (__, endpoint) ->
+                assertEquals(routing.endpoints(new DeploymentId(appId, JobType.systemTest.zone(tester.controller().system()))).get(0).getEndpoint(), endpoint.asString()));
 
         cloud.set("Success!".getBytes(), TesterCloud.Status.SUCCESS);
         runner.run();

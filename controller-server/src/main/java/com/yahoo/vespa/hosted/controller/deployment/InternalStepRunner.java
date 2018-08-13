@@ -381,10 +381,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
-        ApplicationVersion version = application(id.application()).deploymentJobs()
-                                                                  .statusOf(id.type()).get()
-                                                                  .lastTriggered().get()
-                                                                  .application();
+        ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
 
         byte[] testPackage = controller.applications().artifacts().getTesterPackage(testerOf(id.application()), version.id());
         byte[] servicesXml = servicesXml(controller.system());
