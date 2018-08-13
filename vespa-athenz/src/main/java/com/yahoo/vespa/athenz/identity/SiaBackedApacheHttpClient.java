@@ -10,7 +10,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -20,7 +19,7 @@ import java.util.function.Supplier;
  */
 public class SiaBackedApacheHttpClient implements AutoCloseable {
 
-    private final Object clientReferenceLock = new Object();
+    private final Object clientLock = new Object();
     private final Supplier<SSLContext> sslContextSupplier;
     private final HttpClientFactory httpClientFactory;
     private HttpClientHolder client;
@@ -39,9 +38,7 @@ public class SiaBackedApacheHttpClient implements AutoCloseable {
                                      HttpClientFactory httpClientFactory) {
         this.sslContextSupplier = sslContextSupplier;
         this.httpClientFactory = httpClientFactory;
-        synchronized (clientReferenceLock) {
-            this.client = new HttpClientHolder(httpClientFactory, sslContextSupplier);
-        }
+        this.client = new HttpClientHolder(httpClientFactory, sslContextSupplier);
     }
 
     public <T> T execute(HttpUriRequest request, ResponseHandler<T> responseHandler) {
@@ -52,36 +49,34 @@ public class SiaBackedApacheHttpClient implements AutoCloseable {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } finally {
-            client.release();
+            synchronized (clientLock) {
+                client.release();
+            }
         }
     }
 
     private HttpClientHolder getClient() {
-        HttpClientHolder client;
-        synchronized (clientReferenceLock) {
-            if (sslContextSupplier.get() != this.client.sslContext) {
-                this.client.release();
-                this.client = new HttpClientHolder(httpClientFactory, sslContextSupplier);
+        synchronized (clientLock) {
+            if (sslContextSupplier.get() != client.sslContext) {
+                client.release();
+                client = new HttpClientHolder(httpClientFactory, sslContextSupplier);
             }
-            client = this.client;
+            return client.refer();
         }
-        return client.refer();
     }
 
     @Override
     public void close() {
-        HttpClientHolder client;
-        synchronized (clientReferenceLock) {
-            client = this.client;
+        synchronized (clientLock) {
+            client.release();
         }
-        client.release();
     }
 
     private static class HttpClientHolder {
         final Supplier<SSLContext> sslContextSupplier;
         final CloseableHttpClient apacheClient;
         final SSLContext sslContext;
-        final AtomicInteger referenceCount = new AtomicInteger(1); // Owner's reference implicitly counted
+        int referenceCount = 1; // Owner's reference implicitly counted
 
         HttpClientHolder(HttpClientFactory clientBuilder, Supplier<SSLContext> sslContextSupplier) {
             SSLContext sslContext = sslContextSupplier.get();
@@ -91,13 +86,14 @@ public class SiaBackedApacheHttpClient implements AutoCloseable {
         }
 
         HttpClientHolder refer() {
-            if (referenceCount.get() == 0) throw new IllegalStateException("Client already closed!");
-            referenceCount.incrementAndGet();
+            if (referenceCount == 0) throw new IllegalStateException("Client already closed!");
+            ++referenceCount;
             return this;
         }
 
         void release() {
-            if (referenceCount.decrementAndGet() == 0) {
+            --referenceCount;
+            if (referenceCount == 0) {
                 try {
                     apacheClient.close();
                 } catch (IOException e) {
