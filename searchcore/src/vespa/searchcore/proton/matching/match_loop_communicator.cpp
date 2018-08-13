@@ -33,24 +33,25 @@ MatchLoopCommunicator::EstimateMatchFrequency::mingle()
 }
 
 MatchLoopCommunicator::SelectBest::SelectBest(size_t n, size_t topN_in, std::unique_ptr<IDiversifier> diversifier)
-    : vespalib::Rendezvous<Hits, Hits>(n),
+    : vespalib::Rendezvous<SortedHitSequence, Hits>(n),
       topN(topN_in),
-      _indexes(n, 0),
       _diversifier(std::move(diversifier))
 {}
 MatchLoopCommunicator::SelectBest::~SelectBest() = default;
 
 template<typename Q, typename F>
 void
-MatchLoopCommunicator::SelectBest::mingle(Q & queue, F && accept) {
+MatchLoopCommunicator::SelectBest::mingle(Q &queue, F &&accept)
+{
     for (size_t picked = 0; picked < topN && !queue.empty(); ) {
         uint32_t i = queue.front();
-        const Hit & hit = in(i)[_indexes[i]];
+        const Hit & hit = in(i).get();
         if (accept(hit.first)) {
             out(i).push_back(hit);
             ++picked;
         }
-        if (in(i).size() > ++_indexes[i]) {
+        in(i).next();
+        if (in(i).valid()) {
             queue.adjust();
         } else {
             queue.pop_front();
@@ -61,11 +62,11 @@ MatchLoopCommunicator::SelectBest::mingle(Q & queue, F && accept) {
 void
 MatchLoopCommunicator::SelectBest::mingle()
 {
+    size_t est_out = (topN / size()) + 16;
     vespalib::PriorityQueue<uint32_t, SelectCmp> queue(SelectCmp(*this));
     for (size_t i = 0; i < size(); ++i) {
-        if (!in(i).empty()) {
-            out(i).reserve(std::min(topN, in(i).size()));
-            _indexes[i] = 0;
+        if (in(i).valid()) {
+            out(i).reserve(est_out);
             queue.push(i);
         }
     }

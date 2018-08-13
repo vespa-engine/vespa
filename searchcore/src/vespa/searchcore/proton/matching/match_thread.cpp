@@ -66,16 +66,6 @@ LazyValue get_score_feature(const RankProgram &rankProgram) {
     return resolver.resolve(0);
 }
 
-std::vector<HitCollector::Hit> extract_hits(SortedHitSequence seq, size_t size_hint) {
-    std::vector<HitCollector::Hit> ret;
-    ret.reserve(size_hint);
-    while (seq.valid()) {
-        ret.push_back(seq.get());
-        seq.next();
-    }
-    return ret;
-}
-
 } // namespace proton::matching::<unnamed>
 
 //-----------------------------------------------------------------------------
@@ -277,9 +267,9 @@ MatchThread::findMatches(MatchTools &tools)
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_hits = extract_hits(hits.getSortedHitSequence(matchParams.heapSize), matchParams.heapSize);
+            auto sorted_hit_seq = hits.getSortedHitSequence(matchParams.heapSize);
             WaitTimer select_best_timer(wait_time_s);
-            auto kept_hits = communicator.selectBest(std::move(sorted_hits));
+            auto kept_hits = communicator.selectBest(sorted_hit_seq);
             select_best_timer.done();
             DocumentScorer scorer(tools.rank_program(), tools.search());
             if (tools.getHardDoom().doom()) {
