@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -28,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -70,6 +68,11 @@ public class InternalStepRunnerTest {
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller(), cloud));
         routing.putEndpoints(new DeploymentId(null, null), Collections.emptyList()); // Turn off default behaviour for the mock.
+
+        // Get deployment job logs to stderr.
+        Logger.getLogger(InternalStepRunner.class.getName()).setLevel(DEBUG);
+        Logger.getLogger("").setLevel(DEBUG);
+        Logger.getLogger("").getHandlers()[0].setLevel(DEBUG);
     }
 
 
@@ -145,10 +148,6 @@ public class InternalStepRunnerTest {
     }
 
     private void runJob(JobType type) {
-        Logger.getLogger(InternalStepRunner.class.getName()).setLevel(DEBUG);
-        Logger.getLogger("").setLevel(DEBUG);
-        Logger.getLogger("").getHandlers()[0].setLevel(DEBUG);
-
         tester.readyJobTrigger().maintain();
         RunStatus run = jobs.active().stream()
                             .filter(r -> r.id().type() == type)
