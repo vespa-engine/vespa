@@ -306,8 +306,8 @@ public class InternalStepRunner implements StepRunner {
             return succeeded;
         }
 
-        if (timedOut(id.application(), id.type(), installationTimeout)) {
-            logger.log(WARNING, "Endpoint for tester failed to show up within " + installationTimeout.toMinutes() + " minutes of real deployment!");
+        if (timedOut(id.application(), id.type(), endpointTimeout)) {
+            logger.log(WARNING, "Endpoint for tester failed to show up within " + endpointTimeout.toMinutes() + " minutes of real deployment!");
             return failed;
         }
 

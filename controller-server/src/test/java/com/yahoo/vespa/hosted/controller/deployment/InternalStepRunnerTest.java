@@ -36,6 +36,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
@@ -214,6 +216,8 @@ public class InternalStepRunnerTest {
         runner.run();
         assertTrue(jobs.run(run.id()).get().hasEnded());
         assertFalse(jobs.run(run.id()).get().hasFailed());
+        assertEquals(type.isProduction(), app().deployments().containsKey(zone));
+        assertTrue(tester.configServer().nodeRepository().list(zone, testerOf(appId)).isEmpty());
 
         if ( ! app().deployments().containsKey(zone))
             routing.removeEndpoints(deployment);
@@ -260,13 +264,95 @@ public class InternalStepRunnerTest {
         runner.run();
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
 
-        tester.configServer().nodeRepository().doReboot(new DeploymentId(appId, zone), Optional.of(host));
+        tester.clock().advance(InternalStepRunner.installationTimeout.plus(Duration.ofSeconds(1)));
         runner.run();
-        assertEquals(succeeded, jobs.run(id).get().steps().get(Step.installReal));
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.installReal));
+    }
+
+    @Test
+    public void waitsForEndpointsAndTimesOut() {
+        newRun(JobType.systemTest);
+
+        runner.run();
+        tester.configServer().convergeServices(appId, JobType.stagingTest.zone(tester.controller().system()));
+        runner.run();
+        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(appId, JobType.stagingTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(testerOf(appId), JobType.stagingTest.zone(tester.controller().system()));
+        runner.run();
+
+        // Tester fails to show up for system tests, and the real deployment for staging tests.
+        setEndpoints(appId, JobType.systemTest.zone(tester.controller().system()));
+        setEndpoints(testerOf(appId), JobType.stagingTest.zone(tester.controller().system()));
+
+        tester.clock().advance(InternalStepRunner.endpointTimeout.plus(Duration.ofSeconds(1)));
+        runner.run();
+        assertEquals(failed, jobs.last(appId, JobType.systemTest).get().steps().get(Step.startTests));
+        assertEquals(failed, jobs.last(appId, JobType.stagingTest).get().steps().get(Step.startTests));
+    }
+
+    @Test
+    public void testsFailIfEndpointsAreGone() {
+        RunId id = startSystemTestTests();
+        cloud.set(new byte[0], TesterCloud.Status.NOT_STARTED);
+        runner.run();
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
+    }
+
+    @Test
+    public void testsFailIfTestsFailRemotely() {
+        RunId id = startSystemTestTests();
+        cloud.set("Failure!".getBytes(), TesterCloud.Status.FAILURE);
+        runner.run();
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
+        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tests failed.", "Failure!");
+    }
+
+    @Test
+    public void testsFailIfTestsErr() {
+        RunId id = startSystemTestTests();
+        cloud.set("Error!".getBytes(), TesterCloud.Status.ERROR);
+        runner.run();
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
+        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tester failed running its tests!", "Error!");
+    }
+
+    @Test
+    public void testsSucceedWhenTheyDoRemotely() {
+        RunId id = startSystemTestTests();
+        runner.run();
+        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
+
+        cloud.set("Success!".getBytes(), TesterCloud.Status.SUCCESS);
+        runner.run();
+        assertEquals(succeeded, jobs.run(id).get().steps().get(Step.endTests));
+        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tests still running ...", "Tests completed successfully.", "Success!");
+    }
+
+    private void assertLogMessages(RunId id, Step step, String... messages) {
+        String pattern = Stream.of(messages)
+                               .map(message -> "\\[[^]]*] : " + message + "\n")
+                               .collect(Collectors.joining());
+        String logs = new String(jobs.details(id).get().get(step).get());
+        if ( ! logs.matches(pattern))
+            throw new AssertionError("Expected a match for\n'''\n" + pattern + "\n'''\nbut got\n'''\n" + logs + "\n'''");
+    }
+
+    private RunId startSystemTestTests() {
+        RunId id = newRun(JobType.systemTest);
+        runner.run();
+        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        setEndpoints(appId, JobType.systemTest.zone(tester.controller().system()));
+        setEndpoints(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        runner.run();
+        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
+        return id;
     }
 
     private RunId newRun(JobType type) {
-        assertTrue(jobs.runs(appId, type).isEmpty()); // Use this only once per test.
+        assertFalse(app().deploymentJobs().builtInternally()); // Use this only once per test.
         jobs.register(appId);
         newSubmission(appId);
         tester.readyJobTrigger().maintain();
@@ -283,10 +369,6 @@ public class InternalStepRunnerTest {
                             .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         return run.id();
     }
-
-    // Catch and retry on various exceptions, in different steps.
-    // Wait for convergence of various kinds.
-    // Verify deactivation post-job-death?
 
     @Test
     public void generates_correct_services_xml_test() {
