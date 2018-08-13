@@ -169,6 +169,8 @@ class NodesResponse extends HttpResponse {
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
+        node.status().osVersion().ifPresent(version -> object.setString("currentOsVersion", version.toFullString()));
+        nodeRepository.osVersions().targetFor(node.type()).ifPresent(version -> object.setString("wantedOsVersion", version.toFullString()));
         node.status().vespaVersion()
                 .filter(version -> !version.isEmpty())
                 .ifPresent(version -> {
@@ -231,7 +233,7 @@ class NodesResponse extends HttpResponse {
             path = path.substring(0, path.length()-1);
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return path;
-        return path.substring(lastSlash+1, path.length());
+        return path.substring(lastSlash+1);
     }
 
     private static Node.State stateFromString(String stateString) {

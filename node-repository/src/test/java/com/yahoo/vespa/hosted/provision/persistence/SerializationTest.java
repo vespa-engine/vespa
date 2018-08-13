@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
@@ -240,7 +239,7 @@ public class SerializationTest {
     }
 
     @Test
-    public void serialize_additional_ip_addresses() throws IOException {
+    public void serialize_additional_ip_addresses() {
         Node node = createNode();
 
         // Test round-trip with additional addresses
@@ -326,7 +325,7 @@ public class SerializationTest {
     }
 
     @Test
-    public void vespa_version_serialization() throws Exception {
+    public void vespa_version_serialization() {
         String nodeWithWantedVespaVersion =
                 "{\n" +
                         "   \"type\" : \"tenant\",\n" +
@@ -341,6 +340,18 @@ public class SerializationTest {
                         "}";
         Node node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeWithWantedVespaVersion));
         assertEquals("6.42.2", node.allocation().get().membership().cluster().vespaVersion().toString());
+    }
+
+    @Test
+    public void os_version_serialization() {
+        Node serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(createNode()));
+        assertFalse(serialized.status().osVersion().isPresent());
+
+        // Update OS version
+        serialized = serialized.with(serialized.status()
+                                               .withOsVersion(Version.fromString("7.1")));
+        serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(serialized));
+        assertEquals(Version.fromString("7.1"), serialized.status().osVersion().get());
     }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {
