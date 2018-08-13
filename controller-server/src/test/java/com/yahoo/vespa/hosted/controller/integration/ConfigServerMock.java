@@ -195,6 +195,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                         : new ConfigChangeActions(Collections.emptyList(),
                                                   Collections.emptyList());
                 prepareResponse.tenant = new TenantId("tenant");
+                prepareResponse.log = Collections.emptyList();
                 return prepareResponse;
             }
 

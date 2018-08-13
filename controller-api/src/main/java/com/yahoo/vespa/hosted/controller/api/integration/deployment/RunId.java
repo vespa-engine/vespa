@@ -48,7 +48,7 @@ public class RunId {
 
     @Override
     public String toString() {
-        return "Run " + number + " of " + type + " for " + application;
+        return "run " + number + " of " + type + " for " + application;
     }
 
 }

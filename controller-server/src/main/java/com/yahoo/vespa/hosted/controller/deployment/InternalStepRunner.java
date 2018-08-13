@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -111,7 +110,7 @@ public class InternalStepRunner implements StepRunner {
             }
         }
         catch (RuntimeException e) {
-            logger.log(INFO, "Unexpected exception: " + Exceptions.toMessageString(e));
+            logger.log(INFO, "Unexpected exception running " + id, e);
             return failed;
         }
         finally {

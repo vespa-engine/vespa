@@ -75,7 +75,6 @@ public class InternalStepRunnerTest {
         Logger.getLogger("").getHandlers()[0].setLevel(DEBUG);
     }
 
-
     @Test
     public void canRegisterAndRunDirectly() {
         jobs.register(appId);
@@ -84,7 +83,6 @@ public class InternalStepRunnerTest {
 
         deployNewPlatform(new Version("7.1"));
     }
-
 
     @Test
     public void canSwitchFromScrewdriver() {
@@ -119,6 +117,7 @@ public class InternalStepRunnerTest {
                                                                            false)));
     }
 
+    /** Completely deploys a new submission. */
     private void deployNewSubmission() {
         assertTrue(app().deploymentJobs().builtInternally());
         ApplicationVersion applicationVersion = newSubmission(appId);
@@ -133,6 +132,7 @@ public class InternalStepRunnerTest {
         runJob(JobType.productionUsWest1);
     }
 
+    /** Completely deploys the given, new platform. */
     private void deployNewPlatform(Version version) {
         assertTrue(app().deploymentJobs().builtInternally());
 
@@ -147,6 +147,7 @@ public class InternalStepRunnerTest {
         runJob(JobType.productionUsWest1);
     }
 
+    /** Runs the whole of the given job, successfully. */
     private void runJob(JobType type) {
         tester.readyJobTrigger().maintain();
         RunStatus run = jobs.active().stream()
