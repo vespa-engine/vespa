@@ -20,11 +20,16 @@ else
     exit 1
 fi
 
+if [ -z "$VESPA_LLVM_VERSION" ]; then
+    VESPA_LLVM_VERSION=5.0
+fi
+
 cmake3 \
     -DCMAKE_INSTALL_PREFIX=/opt/vespa \
     -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
-    -DEXTRA_LINK_DIRECTORY="/opt/vespa-gtest/lib;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm3.9/lib" \
-    -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-gtest/include;/opt/vespa-boost/include;/opt/vespa-cppunit/include;/usr/include/llvm3.9" \
-    -DCMAKE_INSTALL_RPATH="/opt/vespa/lib64;/opt/vespa-gtest/lib;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/lib64/llvm3.9/lib" \
+    -DEXTRA_LINK_DIRECTORY="/opt/vespa-gtest/lib;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
+    -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-gtest/include;/opt/vespa-boost/include;/opt/vespa-cppunit/include;/usr/include/llvm$VESPA_LLVM_VERSION" \
+    -DCMAKE_INSTALL_RPATH="/opt/vespa/lib64;/opt/vespa-gtest/lib;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
     ${EXTRA_CMAKE_ARGS} \
+    -DVESPA_LLVM_VERSION=$VESPA_LLVM_VERSION \
     "${SOURCE_DIR}"
