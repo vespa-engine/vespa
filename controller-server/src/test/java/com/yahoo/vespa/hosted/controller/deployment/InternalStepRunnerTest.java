@@ -4,10 +4,12 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -38,6 +40,7 @@ import java.util.logging.Logger;
 import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -223,12 +226,32 @@ public class InternalStepRunnerTest {
         runner.run();
 
         assertEquals(failed, jobs.run(id).get().steps().get(Step.deployReal));
-        assertTrue(jobs.run(id).get().hasFailed());
     }
 
     @Test
-    public void restartsServicesWhenExpectedTo() {
+    public void restartsServicesAndWaitsForRestart() {
+        RunId id = newRun(JobType.productionUsWest1);
+        ZoneId zone = id.type().zone(tester.controller().system());
+        HostName host = tester.configServer().hostFor(appId, zone);
+        tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.singletonList(new RestartAction("cluster",
+                                                                                                                         "container",
+                                                                                                                         "search",
+                                                                                                                         Collections.singletonList(new ServiceInfo("queries",
+                                                                                                                                                                   "search",
+                                                                                                                                                                   "config",
+                                                                                                                                                                   host.value())),
+                                                                                                                         Collections.singletonList("Restart it!"))),
+                                                                             Collections.emptyList()));
+        runner.run();
+        assertEquals(succeeded, jobs.run(id).get().steps().get(Step.deployReal));
 
+        tester.configServer().convergeServices(appId, zone);
+        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
+
+        tester.configServer().nodeRepository().doRestart(new DeploymentId(appId, zone),
+                                                         Optional.of(host));
+        runner.run();
+        assertEquals(succeeded, jobs.run(id).get().steps().get(Step.installReal));
     }
 
     private RunId newRun(JobType type) {

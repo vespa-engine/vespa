@@ -60,18 +60,23 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all());
     }
 
+    /** Sets the ConfigChangeActions that will be returned on next deployment. */
     public void setConfigChangeActions(ConfigChangeActions configChangeActions) {
         this.configChangeActions = configChangeActions;
     }
 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
     public void provision(ZoneId zone, ApplicationId application) {
-        nodeRepository().putByHostname(zone, new Node(HostName.from("host-" + application.serializedForm()),
+        nodeRepository().putByHostname(zone, new Node(hostFor(application, zone),
                                                       Node.State.reserved,
                                                       NodeType.tenant,
                                                       Optional.of(application),
                                                       initialVersion,
                                                       initialVersion));
+    }
+
+    public HostName hostFor(ApplicationId application, ZoneId zone) {
+        return HostName.from("host-" + application.serializedForm() + "-" + zone.value());
     }
 
     public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
@@ -194,6 +199,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                         ? configChangeActions
                         : new ConfigChangeActions(Collections.emptyList(),
                                                   Collections.emptyList());
+                setConfigChangeActions(null);
                 prepareResponse.tenant = new TenantId("tenant");
                 prepareResponse.log = Collections.emptyList();
                 return prepareResponse;
