@@ -28,7 +28,10 @@ public class GroupingRequestTestCase {
         assertTrue(req.continuations().isEmpty());
 
         Continuation foo = new Continuation() {
-
+            @Override
+            public Continuation copy() {
+                return null;
+            }
         };
         req.continuations().add(foo);
         assertEquals(Arrays.asList(foo), req.continuations());
@@ -107,19 +110,22 @@ public class GroupingRequestTestCase {
     @Test
     public void requireThatGetRequestsReturnsAllRequests() {
         Query query = new Query();
-        assertEquals(Collections.emptyList(), GroupingRequest.getRequests(query));
+        assertEquals(Collections.emptyList(), query.getSelect().getGrouping());
 
         GroupingRequest foo = GroupingRequest.newInstance(query);
-        assertEquals(Arrays.asList(foo), GroupingRequest.getRequests(query));
+        assertEquals(Arrays.asList(foo), query.getSelect().getGrouping());
 
         GroupingRequest bar = GroupingRequest.newInstance(query);
-        assertEquals(Arrays.asList(foo, bar), GroupingRequest.getRequests(query));
+        assertEquals(Arrays.asList(foo, bar), query.getSelect().getGrouping());
     }
     
 
     private static RootGroup newRootGroup(int id) {
         return new RootGroup(id, new Continuation() {
-
+            @Override
+            public Continuation copy() {
+                return null;
+            }
         });
     }
 }

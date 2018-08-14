@@ -6,13 +6,22 @@ package com.yahoo.search.grouping.request;
  * there are in the input.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class CountAggregator extends AggregatorNode {
 
-    /**
-     * Constructs a new instance of this class.
-     */
+    /** Constructs a new instance of this class. */
     public CountAggregator() {
-        super("count");
+        this(null, null);
     }
+
+    private CountAggregator(String label, Integer level) {
+        super("count", label, level);
+    }
+
+    @Override
+    public CountAggregator copy() {
+        return new CountAggregator(getLabel(), getLevelOrNull());
+    }
+
 }

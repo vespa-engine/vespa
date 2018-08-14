@@ -23,7 +23,7 @@ public abstract class GroupingOperation extends GroupingNode {
     private final List<GroupingExpression> orderBy = new ArrayList<>();
     private final List<GroupingExpression> outputs = new ArrayList<>();
     private final List<GroupingOperation> children = new ArrayList<>();
-    private final Map<String, GroupingExpression> alias = LazyMap.newHashMap();
+    private final Map<String, GroupingExpression> aliases = LazyMap.newHashMap();
     private final Set<String> hints = LazySet.newHashSet();
 
     private GroupingExpression groupBy = null;
@@ -35,9 +35,43 @@ public abstract class GroupingOperation extends GroupingNode {
     private int level = -1;
     private int max = -1;
 
-    protected GroupingOperation(String image) {
-        super(image);
+    protected GroupingOperation(String image, String label) {
+        super(image, label);
     }
+
+    protected GroupingOperation(GroupingOperation parentOfCopy,
+                                String image,
+                                String label,
+                                List<GroupingExpression> orderBy,
+                                List<GroupingExpression> outputs,
+                                List<GroupingOperation> children,
+                                Map<String, GroupingExpression> aliases,
+                                Set<String> hints,
+                                GroupingExpression groupBy,
+                                String where,
+                                boolean forceSinglePass,
+                                double accuracy,
+                                int precision,
+                                int level,
+                                int max) {
+        super(image, label);
+        this.parent = parentOfCopy;
+        orderBy.forEach(item -> this.orderBy.add(item.copy()));
+        outputs.forEach(item -> this.outputs.add(item.copy()));
+        children.forEach(item -> this.children.add(item.copy(this)));
+        aliases.forEach((key, value) -> this.aliases.put(key, value.copy()));
+        this.hints.addAll(hints);
+        if (groupBy != null) this.groupBy = groupBy.copy();
+        this.where = where;
+        this.forceSinglePass = forceSinglePass;
+        this.accuracy = accuracy;
+        this.precision = precision;
+        this.level = level;
+        this.max = max;
+    }
+
+    /** Returns a deep copy of this */
+    public abstract GroupingOperation copy(GroupingOperation parentOfCopy);
 
     /**
      * Registers an alias with this operation. An alias is made available to expressions in both this node and all child
@@ -48,7 +82,7 @@ public abstract class GroupingOperation extends GroupingNode {
      * @return This, to allow chaining.
      */
     public GroupingOperation putAlias(String id, GroupingExpression exp) {
-        alias.put(id, exp);
+        aliases.put(id, exp);
         return this;
     }
 
@@ -60,13 +94,18 @@ public abstract class GroupingOperation extends GroupingNode {
      * @return The expression associated with the id.
      */
     public GroupingExpression getAlias(String id) {
-        if (alias.containsKey(id)) {
-            return alias.get(id);
+        if (aliases.containsKey(id)) {
+            return aliases.get(id);
         } else if (parent != null) {
             return parent.getAlias(id);
         } else {
             return null;
         }
+    }
+
+    /** Returns a direct, mutable copy of the aliases of this, never null */
+    protected Map<String, GroupingExpression> getAliases() {
+        return aliases;
     }
 
     /**
@@ -224,6 +263,9 @@ public abstract class GroupingOperation extends GroupingNode {
             child.resolveLevel(level);
         }
     }
+
+    /** Returns the parent of this, or null if none */
+    protected GroupingOperation getParent() { return parent; }
 
     public GroupingOperation setForceSinglePass(boolean forceSinglePass) {
         this.forceSinglePass = forceSinglePass;
@@ -446,7 +488,7 @@ public abstract class GroupingOperation extends GroupingNode {
      * @param visitor The visitor to call.
      */
     public void visitExpressions(ExpressionVisitor visitor) {
-        for (GroupingExpression exp : alias.values()) {
+        for (GroupingExpression exp : aliases.values()) {
             exp.visit(visitor);
         }
         for (GroupingExpression exp : outputs) {

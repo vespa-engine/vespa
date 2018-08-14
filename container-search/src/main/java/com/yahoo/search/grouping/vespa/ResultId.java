@@ -4,6 +4,8 @@ package com.yahoo.search.grouping.vespa;
 import java.util.Arrays;
 
 /**
+ * Immutable
+ *
  * @author Simon Thoresen Hult
  */
 class ResultId {

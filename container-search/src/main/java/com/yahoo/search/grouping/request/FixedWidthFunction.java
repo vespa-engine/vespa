@@ -18,7 +18,17 @@ public class FixedWidthFunction extends FunctionNode {
      * @param width The width of each bucket.
      */
     public FixedWidthFunction(GroupingExpression exp, Number width) {
-        super("fixedwidth", Arrays.asList(exp, width instanceof Double ? new DoubleValue(width.doubleValue()) : new LongValue(width.longValue())));
+        this(null, null, exp,
+             width instanceof Double ? new DoubleValue(width.doubleValue()) : new LongValue(width.longValue()));
+    }
+
+    private FixedWidthFunction(String label, Integer level, GroupingExpression exp, ConstantValue width) {
+        super("fixedwidth", label, level, Arrays.asList(exp, width));
+    }
+
+    @Override
+    public FixedWidthFunction copy() {
+        return new FixedWidthFunction(getLabel(), getLevelOrNull(), getArg(0).copy(), (ConstantValue)getArg(1).copy());
     }
 
     /**

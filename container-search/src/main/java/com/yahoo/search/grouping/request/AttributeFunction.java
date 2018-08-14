@@ -6,6 +6,7 @@ package com.yahoo.search.grouping.request;
  * named attribute in the input {@link com.yahoo.search.result.Hit}.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class AttributeFunction extends DocumentValue {
 
@@ -17,8 +18,17 @@ public class AttributeFunction extends DocumentValue {
      * @param attributeName the attribute name to assign to this.
      */
     public AttributeFunction(String attributeName) {
-        super("attribute(" + attributeName + ")");
-        name = attributeName;
+        this(null, null, attributeName);
+    }
+
+    private AttributeFunction(String label, Integer level, String attributeName) {
+        super("attribute(" + attributeName + ")", label, level);
+        this.name = attributeName;
+    }
+
+    @Override
+    public AttributeFunction copy() {
+        return new AttributeFunction(getLabel(), getLevelOrNull(), getAttributeName());
     }
 
     /**

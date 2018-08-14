@@ -7,10 +7,11 @@ import java.util.Comparator;
  * This class compares two constant values, and takes into account that one of
  * the arguments may be the very special infinity value.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 @SuppressWarnings("rawtypes")
 public class ConstantValueComparator implements Comparator<ConstantValue> {
+
     @SuppressWarnings("unchecked")
     @Override
     public int compare(ConstantValue lhs, ConstantValue rhs) {
