@@ -463,7 +463,7 @@
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>3.4.12</version>
+                <version>3.4.13</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
