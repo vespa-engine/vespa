@@ -17,9 +17,8 @@ import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
+import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
@@ -36,20 +35,19 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test running rpc server.
+ * Tester for running rpc server.
  *
  * @author Ulf Lilleengen
  */
-// TODO: Make this a Tester instead of a superclass
-public class TestWithRpc {
+public class RpcTester implements AutoCloseable {
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochMilli(100));
     private final String myHostname = HostName.getLocalhost();
     private final HostLivenessTracker hostLivenessTracker = new ConfigRequestHostLivenessTracker(clock);
 
-    protected RpcServer rpcServer;
-    protected MockTenantProvider tenantProvider;
-    protected GenerationCounter generationCounter;
+    private RpcServer rpcServer;
+    private MockTenantProvider tenantProvider;
+    private GenerationCounter generationCounter;
     private Thread t;
     private Supervisor sup;
     private Spec spec;
@@ -57,40 +55,37 @@ public class TestWithRpc {
 
     private List<Integer> allocatedPorts;
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    private final TemporaryFolder temporaryFolder;
 
-    @Before
-    public void setupRpc() throws InterruptedException, IOException {
+    RpcTester(TemporaryFolder temporaryFolder) throws InterruptedException, IOException {
+        this.temporaryFolder = temporaryFolder;
         allocatedPorts = new ArrayList<>();
         port = allocatePort();
         spec = createSpec(port);
         tenantProvider = new MockTenantProvider();
         generationCounter = new MemoryGenerationCounter();
-        createAndStartRpcServer(false);
+        createAndStartRpcServer();
         assertFalse(hostLivenessTracker.lastRequestFrom(myHostname).isPresent());
     }
 
-    @After
-    public void teardownPortAllocator() {
+    public void close() {
         for (Integer port : allocatedPorts) {
             PortRangeAllocator.releasePort(port);
         }
     }
 
-    protected int allocatePort() throws InterruptedException {
+    private int allocatePort() throws InterruptedException {
         int port = PortRangeAllocator.findAvailablePort();
         allocatedPorts.add(port);
         return port;
     }
 
-    protected void createAndStartRpcServer(boolean hostedVespa) throws IOException {
+    void createAndStartRpcServer() throws IOException {
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                  .rpcport(port)
                                                                  .numRpcThreads(1)
-                                                                 .maxgetconfigclients(1)
-                                                                 .hostedVespa(hostedVespa)),
+                                                                 .maxgetconfigclients(1)),
                                   new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                                configserverConfig,
                                                                new SuperModelManager(
@@ -131,10 +126,22 @@ public class TestWithRpc {
         assertThat(req.returnValues().get(0).asInt32(), is(0));
     }
 
-    protected void performRequest(Request req) {
+    void performRequest(Request req) {
         clock.advance(Duration.ofMillis(10));
         sup.connect(spec).invokeSync(req, 120.0);
         if (req.methodName().equals(RpcServer.getConfigMethodName))
             assertEquals(clock.instant(), hostLivenessTracker.lastRequestFrom(myHostname).get());
+    }
+
+    RpcServer rpcServer() {
+        return rpcServer;
+    }
+
+    TenantHandlerProvider tenantProvider() {
+        return tenantProvider;
+    }
+
+    GenerationCounter generationCounter() {
+        return generationCounter;
     }
 }

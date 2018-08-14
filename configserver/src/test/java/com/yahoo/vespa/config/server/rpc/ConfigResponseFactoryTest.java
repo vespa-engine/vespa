@@ -30,7 +30,7 @@ public class ConfigResponseFactoryTest {
     }
 
     @Test
-    public void testUncompressedFacory() {
+    public void testUncompressedFactory() {
         UncompressedConfigResponseFactory responseFactory = new UncompressedConfigResponseFactory();
         ConfigResponse response = responseFactory.createResponse(ConfigPayload.empty(), def, 3, false);
         assertEquals(CompressionType.UNCOMPRESSED, response.getCompressionInfo().getCompressionType());
@@ -39,7 +39,7 @@ public class ConfigResponseFactoryTest {
     }
 
     @Test
-    public void testLZ4CompressedFacory() {
+    public void testLZ4CompressedFactory() {
         LZ4ConfigResponseFactory responseFactory = new LZ4ConfigResponseFactory();
         ConfigResponse response = responseFactory.createResponse(ConfigPayload.empty(), def, 3, false);
         assertEquals(CompressionType.LZ4, response.getCompressionInfo().getCompressionType());

@@ -20,10 +20,8 @@ import java.util.*;
  */
 public class MockRequestHandler implements RequestHandler, ReloadHandler, TenantHandlerProvider {
 
-    volatile boolean throwException = false;
     private Set<ConfigKey<?>> allConfigs = new HashSet<>();
-    public volatile ConfigResponse responseConfig = null; // for some v1 mocking
-    public Map<ApplicationId, ConfigResponse> responses = new LinkedHashMap<>(); // for v3 mocking
+    public Map<ApplicationId, ConfigResponse> responses = new LinkedHashMap<>();
     private final boolean pretendToHaveLoadedAnyApplication;
 
     public MockRequestHandler() {
@@ -36,10 +34,6 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
 
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
-        if (appId==null) {
-            checkThrow();
-            return responseConfig;
-        }
         return responses.get(appId);
     }
 
@@ -55,15 +49,7 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
     public void removeApplicationsExcept(Set<ApplicationId> applicationIds) { }
 
     @Override
-    public void reloadConfig(ApplicationSet application) {
-        checkThrow();
-    }
-
-    private void checkThrow() {
-        if (throwException) {
-            throw new RuntimeException("foo");
-        }
-    }
+    public void reloadConfig(ApplicationSet application) { }
 
     @Override
     public Set<ConfigKey<?>> listNamedConfigs(ApplicationId appId, Optional<Version> vespaVersion, ConfigKey<?> key, boolean recursive) {
