@@ -110,8 +110,7 @@ public class HealthClientTest {
         HttpEntity httpEntity = mock(HttpEntity.class);
         when(response.getEntity()).thenReturn(httpEntity);
 
-        try (HealthClient healthClient = new HealthClient(endpoint, () -> client, entry -> content)) {
-            healthClient.start();
+        try (HealthClient healthClient = new HealthClient(endpoint, client, entry -> content)) {
 
             when(httpEntity.getContentLength()).thenReturn((long) content.length());
             return healthClient.getHealthInfo();
@@ -125,8 +124,7 @@ public class HealthClientTest {
 
         when(client.execute(any())).thenThrow(new ConnectTimeoutException("exception string"));
 
-        try (HealthClient healthClient = new HealthClient(endpoint, () -> client, entry -> "")) {
-            healthClient.start();
+        try (HealthClient healthClient = new HealthClient(endpoint, client, entry -> "")) {
             HealthInfo info = healthClient.getHealthInfo();
             assertFalse(info.isHealthy());
             assertEquals(ServiceStatus.DOWN, info.toServiceStatus());
@@ -152,8 +150,7 @@ public class HealthClientTest {
         when(response.getEntity()).thenReturn(httpEntity);
 
         String content = "{}";
-        try (HealthClient healthClient = new HealthClient(endpoint, () -> client, entry -> content)) {
-            healthClient.start();
+        try (HealthClient healthClient = new HealthClient(endpoint, client, entry -> content)) {
 
             when(httpEntity.getContentLength()).thenReturn((long) content.length());
             HealthInfo info = healthClient.getHealthInfo();
