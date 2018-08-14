@@ -69,7 +69,7 @@ class JobControllerApiHandlerHelper {
     }
 
     private static void runToSlime(Cursor cursor, Run run, URI baseUriForJobType) {
-        run.result().ifPresent(result -> cursor.setString("result", result.name()));
+        cursor.setString("status", run.status().name());
         run.end().ifPresent(instant -> cursor.setString("end", instant.toString()));
 
         Cursor stepsArray = cursor.setArray("steps");

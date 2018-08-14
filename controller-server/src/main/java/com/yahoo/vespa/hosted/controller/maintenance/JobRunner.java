@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import org.jetbrains.annotations.TestOnly;
@@ -63,17 +64,18 @@ public class JobRunner extends Maintainer {
     }
 
     /** Advances each of the ready steps for the given run, or marks it as finished, and stashes it. */
-    void advance(Run run) {
+    private void advance(Run run) {
         List<Step> steps = run.readySteps();
         steps.forEach(step -> executors.execute(() -> advance(run.id(), step)));
         if (steps.isEmpty())
             jobs.finish(run.id());
-        else if (run.start().isBefore(controller().clock().instant().minus(jobTimeout)))
+        else if (   run.status() != RunStatus.aborted
+                 && run.start().isBefore(controller().clock().instant().minus(jobTimeout)))
             jobs.abort(run.id());
     }
 
     /** Attempts to advance the status of the given step, for the given run. */
-    void advance(RunId id, Step step) {
+    private void advance(RunId id, Step step) {
         try {
             AtomicBoolean changed = new AtomicBoolean(false);
             jobs.locked(id.application(), id.type(), step, lockedStep -> {
@@ -81,11 +83,10 @@ public class JobRunner extends Maintainer {
                     if ( ! run.readySteps().contains(step))
                         return; // Someone may have updated the run status, making this step obsolete, so we bail out.
 
-                    Step.Status status = runner.run(lockedStep, run.id());
-                    if (run.steps().get(step) != status) {
+                    runner.run(lockedStep, run.id()).ifPresent(status -> {
                         jobs.update(run.id(), status, lockedStep);
                         changed.set(true);
-                    }
+                    });
                 });
             });
             if (changed.get())

@@ -6,11 +6,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static java.util.Objects.requireNonNull;
@@ -27,49 +30,51 @@ public class Run {
     private final Versions versions;
     private final Instant start;
     private final Optional<Instant> end;
-    private final boolean aborted;
+    private final RunStatus status;
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, Step.Status> steps, Versions versions,
-               Instant start, Optional<Instant> end, boolean aborted) {
+               Instant start, Optional<Instant> end, RunStatus status) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
         this.start = start;
         this.end = end;
-        this.aborted = aborted;
+        this.status = status;
     }
 
     public static Run initial(RunId id, Versions versions, Instant now) {
         EnumMap<Step, Step.Status> steps = new EnumMap<>(Step.class);
         JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, unfinished));
-        return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), false);
+        return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running);
     }
 
-    public Run with(Step.Status status, LockedStep step) {
+    /** Returns a new Run with the new status, and with the status of the given, completed step set accordingly. */
+    public Run with(RunStatus status, LockedStep step) {
         if (hasEnded())
             throw new AssertionError("This run ended at " + end.get() + " -- it can't be further modified!");
+
         if (steps.get(step.get()) != unfinished)
             throw new AssertionError("Step '" + step.get() + "' can't be set to '" + status + "'" +
                                      " -- it already completed with status '" + steps.get(step.get()) + "'!");
 
         EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
-        steps.put(step.get(), requireNonNull(status));
-        return new Run(id, steps, versions, start, end, aborted);
+        steps.put(step.get(), Step.Status.of(status));
+        return new Run(id, steps, versions, start, end, this.status == running ? status : this.status); // Keep first terminal status.
     }
 
     public Run finished(Instant now) {
         if (hasEnded())
             throw new AssertionError("This run ended at " + end.get() + " -- it can't be ended again!");
 
-        return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), aborted);
+        return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), status == running ? success : status);
     }
 
     public Run aborted() {
         if (hasEnded())
             throw new AssertionError("This run ended at " + end.get() + " -- it can't be aborted now!");
 
-        return new Run(id, new EnumMap<>(steps), versions, start, end, true);
+        return new Run(id, new EnumMap<>(steps), versions, start, end, aborted);
     }
 
     /** Returns the id of this run. */
@@ -82,16 +87,8 @@ public class Run {
         return steps;
     }
 
-    /** Returns the final result of this run, if it has ended. */
-    public Optional<RunStatus> result() {
-
-        // No result of not finished yet
-        if ( ! hasEnded()) return Optional.empty();
-
-        // If any steps has failed - then we need to figure out what - for now return fixed error result
-        if (hasFailed()) return Optional.of(RunStatus.testError);
-
-        return Optional.of(RunStatus.success);
+    public RunStatus status() {
+        return status;
     }
 
     /** Returns the instant at which this run began. */
@@ -106,12 +103,7 @@ public class Run {
 
     /** Returns whether the run has failed, and should switch to its run-always steps. */
     public boolean hasFailed() {
-        return aborted || steps.values().contains(failed);
-    }
-
-    /** Returns whether the run has been forcefully aborted. */
-    public boolean isAborted() {
-        return aborted;
+        return status != running && status != success;
     }
 
     /** Returns whether the run has ended, i.e., has become inactive, and can no longer be updated. */
@@ -146,7 +138,7 @@ public class Run {
                ", versions=" + versions +
                ", start=" + start +
                ", end=" + end +
-               ", aborted=" + aborted +
+               ", status=" + status +
                ", steps=" + steps +
                '}';
     }

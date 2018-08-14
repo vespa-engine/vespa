@@ -45,6 +45,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -175,7 +176,7 @@ public class InternalStepRunnerTest {
                       .findAny()
                       .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         assertFalse(run.hasFailed());
-        assertFalse(run.isAborted());
+        assertFalse(run.status() == aborted);
 
         ZoneId zone = type.zone(tester.controller().system());
         DeploymentId deployment = new DeploymentId(appId, zone);

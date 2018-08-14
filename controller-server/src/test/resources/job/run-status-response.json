@@ -1,6 +1,6 @@
 {
   "1":{
-    "result":"success",
+    "status":"success",
     "start":"2018-06-27T10:12:35Z",
     "end":"2018-06-27T10:13:19Z",
     "id":1,
@@ -42,9 +42,8 @@
     "logs":"https://domain.tld/application/v4/tenant/sometenant/application/someapp/instance/usuallydefault/job/systemtest/run/1"
   },
   "2":{
-    "result":"testError",
+    "status":"error",
     "start":"2018-06-27T10:12:35Z",
-    "end":"2018-06-27T10:13:31Z",
     "id":2,
     "steps":[
       {
@@ -84,7 +83,7 @@
     "logs":"https://domain.tld/application/v4/tenant/sometenant/application/someapp/instance/usuallydefault/job/systemtest/run/2"
   },
   "3":{
-    "result":"success",
+    "status":"success",
     "start":"2018-06-27T10:12:35Z",
     "end":"2018-06-27T10:13:05Z",
     "id":3,

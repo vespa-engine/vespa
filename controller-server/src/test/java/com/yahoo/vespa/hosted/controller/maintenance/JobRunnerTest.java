@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
@@ -36,6 +37,10 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -71,7 +76,7 @@ public class JobRunnerTest {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         // Fail the installation of the initial version of the real application in staging tests, and succeed everything else.
-        StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? failed : succeeded;
+        StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? Optional.of(error) : Optional.of(running);
         CountDownLatch latch = new CountDownLatch(19); // Number of steps that will run, below: all but endTests in staging and all 9 in system.
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          Executors.newFixedThreadPool(32), notifying(stepRunner, latch));
@@ -105,7 +110,7 @@ public class JobRunnerTest {
     public void stepLogic() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
-        Map<Step, Status> outcomes = new EnumMap<>(Step.class);
+        Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), mappedRunner(outcomes));
 
@@ -121,28 +126,28 @@ public class JobRunnerTest {
         assertEquals(steps, run.get().steps());
         assertEquals(Arrays.asList(deployReal, deployTester), run.get().readySteps());
 
-        outcomes.put(deployReal, succeeded);
+        outcomes.put(deployReal, running);
         runner.maintain();
         assertEquals(Arrays.asList(installReal, deployTester), run.get().readySteps());
 
-        outcomes.put(installReal, succeeded);
+        outcomes.put(installReal, running);
         runner.maintain();
         assertEquals(Arrays.asList(deployTester), run.get().readySteps());
 
-        outcomes.put(deployTester, succeeded);
+        outcomes.put(deployTester, running);
         runner.maintain();
         assertEquals(Arrays.asList(installTester), run.get().readySteps());
 
-        outcomes.put(installTester, succeeded);
+        outcomes.put(installTester, running);
         runner.maintain();
         assertEquals(Arrays.asList(startTests), run.get().readySteps());
 
-        outcomes.put(startTests, succeeded);
+        outcomes.put(startTests, running);
         runner.maintain();
         assertEquals(Arrays.asList(endTests), run.get().readySteps());
 
         // Failure ending tests fails the run, but run-always steps continue.
-        outcomes.put(endTests, failed);
+        outcomes.put(endTests, testFailure);
         runner.maintain();
         assertTrue(run.get().hasFailed());
         assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
@@ -152,24 +157,24 @@ public class JobRunnerTest {
         runner.maintain();
         assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
 
-        outcomes.put(deactivateReal, succeeded);
-        outcomes.put(deactivateTester, succeeded);
-        outcomes.put(report, succeeded);
+        outcomes.put(deactivateReal, running);
+        outcomes.put(deactivateTester, running);
+        outcomes.put(report, running);
         runner.maintain();
         assertTrue(run.get().hasFailed());
         assertTrue(run.get().hasEnded());
-        assertTrue(run.get().isAborted());
+        assertTrue(run.get().status() == aborted);
 
         // A new run is attempted.
         jobs.start(id, systemTest, versions);
         assertEquals(first.number() + 1, run.get().id().number());
 
         // Run fails on tester deployment -- remaining run-always steps succeed, and the run finishes.
-        outcomes.put(deployTester, failed);
+        outcomes.put(deployTester, error);
         runner.maintain();
         assertTrue(run.get().hasEnded());
         assertTrue(run.get().hasFailed());
-        assertFalse(run.get().isAborted());
+        assertFalse(run.get().status() == aborted);
         assertEquals(failed, run.get().steps().get(deployTester));
         assertEquals(unfinished, run.get().steps().get(installTester));
         assertEquals(succeeded, run.get().steps().get(report));
@@ -226,7 +231,7 @@ public class JobRunnerTest {
     public void timeout() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
-        Map<Step, Status> outcomes = new EnumMap<>(Step.class);
+        Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), mappedRunner(outcomes));
 
@@ -236,7 +241,7 @@ public class JobRunnerTest {
         jobs.start(id, systemTest, versions);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));
         runner.run();
-        assertTrue(jobs.last(id, systemTest).get().isAborted());
+        assertTrue(jobs.last(id, systemTest).get().status() == aborted);
     }
 
     public static ExecutorService inThreadExecutor() {
@@ -253,7 +258,7 @@ public class JobRunnerTest {
 
     private static StepRunner notifying(StepRunner runner, CountDownLatch latch) {
         return (step, id) -> {
-            Status status = runner.run(step, id);
+            Optional<RunStatus> status = runner.run(step, id);
             synchronized (latch) {
                 assertTrue(latch.getCount() > 0);
                 latch.countDown();
@@ -262,8 +267,8 @@ public class JobRunnerTest {
         };
     }
 
-    private static StepRunner mappedRunner(Map<Step, Status> outcomes) {
-        return (step, id) -> outcomes.getOrDefault(step.get(), Status.unfinished);
+    private static StepRunner mappedRunner(Map<Step, RunStatus> outcomes) {
+        return (step, id) -> Optional.ofNullable(outcomes.get(step.get()));
     }
 
     private static StepRunner waitingRunner(CyclicBarrier barrier) {
@@ -278,7 +283,7 @@ public class JobRunnerTest {
             catch (InterruptedException | BrokenBarrierException e) {
                 throw new AssertionError(e);
             }
-            return succeeded;
+            return Optional.of(running);
         };
     }
 

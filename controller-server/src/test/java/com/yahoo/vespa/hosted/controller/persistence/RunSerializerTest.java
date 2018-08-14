@@ -6,6 +6,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
 
@@ -16,6 +17,8 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -49,7 +52,10 @@ public class RunSerializerTest {
             assertEquals(step, RunSerializer.stepOf(RunSerializer.valueOf(step)));
 
         for (Step.Status status : Step.Status.values())
-            assertEquals(status, RunSerializer.statusOf(RunSerializer.valueOf(status)));
+            assertEquals(status, RunSerializer.stepStatusOf(RunSerializer.valueOf(status)));
+
+        for (RunStatus status : RunStatus.values())
+            assertEquals(status, RunSerializer.runStatusOf(RunSerializer.valueOf(status)));
 
         // The purpose of this serialised data is to ensure a new format does not break everything, so keep it up to date!
         Run run = serializer.runsFromSlime(SlimeUtils.jsonToSlime(Files.readAllBytes(runFile))).get(id);
@@ -59,7 +65,7 @@ public class RunSerializerTest {
         assertEquals(id, run.id());
         assertEquals(start, run.start());
         assertFalse(run.hasEnded());
-        assertFalse(run.isAborted());
+        assertEquals(running, run.status());
         assertEquals(ImmutableMap.<Step, Step.Status>builder()
                              .put(deployInitialReal, unfinished)
                              .put(installInitialReal, failed)
@@ -76,14 +82,14 @@ public class RunSerializerTest {
                      run.steps());
 
         run = run.aborted().finished(Instant.now());
-        assertTrue(run.isAborted());
+        assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());
 
         Run phoenix = serializer.runsFromSlime(serializer.toSlime(Collections.singleton(run))).get(id);
         assertEquals(run.id(), phoenix.id());
         assertEquals(run.start(), phoenix.start());
         assertEquals(run.end(), phoenix.end());
-        assertEquals(run.isAborted(), phoenix.isAborted());
+        assertEquals(run.status(), phoenix.status());
         assertEquals(run.steps(), phoenix.steps());
     }
 

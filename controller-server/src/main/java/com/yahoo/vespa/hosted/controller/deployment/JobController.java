@@ -143,7 +143,7 @@ public class JobController {
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
-    public void update(RunId id, Step.Status status, LockedStep step) {
+    public void update(RunId id, RunStatus status, LockedStep step) {
         locked(id, run -> run.with(status, step));
     }
 

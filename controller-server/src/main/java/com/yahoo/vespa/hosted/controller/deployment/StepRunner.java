@@ -2,6 +2,8 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
+import java.util.Optional;
+
 /**
  * Advances a given job run by running the appropriate {@link Step}s, based on their current status.
  *
@@ -13,8 +15,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
  */
 public interface StepRunner {
 
-    /** Attempts to run the given locked step in the given run, and returns its new status. */
-    Step.Status run(LockedStep step, RunId id);
+    /** Attempts to run the given step in the given run, and returns the new status of the run, if the step completed. */
+    Optional<RunStatus> run(LockedStep step, RunId id);
 
 }
 
