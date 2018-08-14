@@ -57,7 +57,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
-        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all());
+        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all(), Optional.empty());
     }
 
     /** Sets the ConfigChangeActions that will be returned on next deployment. */
@@ -80,18 +80,22 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
-        bootstrap(zones, Arrays.asList(applications));
+        bootstrap(zones, Arrays.asList(applications), Optional.empty());
     }
 
-    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications) {
+    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
         nodeRepository().clear();
+        addNodes(zones, applications, type);
+    }
+
+    public void addNodes(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
         for (ZoneId zone : zones) {
             for (SystemApplication application : applications) {
                 List<Node> nodes = IntStream.rangeClosed(1, 3)
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()
                                                                                                  .value()),
-                                                    Node.State.active, application.nodeType(),
+                                                    Node.State.active, type.orElseGet(() -> application.nodeTypes().iterator().next()),
                                                     Optional.of(application.id()),
                                                     initialVersion,
                                                     initialVersion

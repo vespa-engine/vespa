@@ -93,6 +93,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public UpgradePolicy osUpgradePolicy() {
+        return upgradePolicy;
+    }
+
+    @Override
     public boolean hasZone(ZoneId zoneId) {
         return zones.contains(zoneId);
     }

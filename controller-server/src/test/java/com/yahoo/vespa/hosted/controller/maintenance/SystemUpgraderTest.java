@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -183,7 +184,7 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4), SystemApplication.all());
+        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4), SystemApplication.all(), Optional.empty());
         tester.upgradeSystem(version1);
         systemUpgrader.maintain();
         assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);

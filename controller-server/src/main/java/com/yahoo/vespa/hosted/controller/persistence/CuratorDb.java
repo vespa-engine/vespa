@@ -149,6 +149,10 @@ public class CuratorDb {
         return lock(lockRoot.append("openStackServerPoolLock"), Duration.ofSeconds(1));
     }
 
+    public Lock lockOsTargetVersion() {
+        return lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
+    }
+
     // -------------- Helpers ------------------------------------------
 
     /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
@@ -233,6 +237,16 @@ public class CuratorDb {
         return readSlime(controllerPath(hostname.value()))
                 .map(versionSerializer::fromSlime)
                 .orElse(Vtag.currentVersion);
+    }
+
+    // Infrastructure upgrades
+
+    public void writeOsTargetVersion(Version version) {
+        curator.set(osTargetVersionPath(), asJson(versionSerializer.toSlime(version)));
+    }
+
+    public Optional<Version> readOsTargetVersion() {
+        return readSlime(osTargetVersionPath()).map(versionSerializer::fromSlime);
     }
 
     // -------------- Tenant --------------------------------------------------
@@ -433,6 +447,10 @@ public class CuratorDb {
 
     private static Path confidenceOverridesPath() {
         return root.append("upgrader").append("confidenceOverrides");
+    }
+
+    private static Path osTargetVersionPath() {
+        return root.append("osUpgrader").append("targetVersion");
     }
 
     private static Path versionStatusPath() {

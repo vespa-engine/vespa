@@ -40,6 +40,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
     private final DnsMaintainer dnsMaintainer;
     private final SystemUpgrader systemUpgrader;
+    private final OsUpgrader osUpgrader;
     private final JobRunner jobRunner;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
@@ -63,6 +64,7 @@ public class ControllerMaintenance extends AbstractComponent {
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
         jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl, new InternalStepRunner(controller, testerCloud));
+        osUpgrader = new OsUpgrader(controller, Duration.ofMinutes(1), jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -85,6 +87,7 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationOwnershipConfirmer.deconstruct();
         dnsMaintainer.deconstruct();
         systemUpgrader.deconstruct();
+        osUpgrader.deconstruct();
         jobRunner.deconstruct();
     }
 

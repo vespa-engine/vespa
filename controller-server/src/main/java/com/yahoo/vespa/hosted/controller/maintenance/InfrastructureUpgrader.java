@@ -77,7 +77,7 @@ public abstract class InfrastructureUpgrader extends Maintainer {
     /** Upgrade components to target version. Implementation should be idempotent */
     protected abstract void upgrade(Version target, SystemApplication application, ZoneId zone);
 
-    /** Returns whether application has converged to target verison in zone */
+    /** Returns whether application has converged to target version in zone */
     protected abstract boolean convergedOn(Version target, SystemApplication application, ZoneId zone);
 
     /** Returns target version for components upgraded by this */

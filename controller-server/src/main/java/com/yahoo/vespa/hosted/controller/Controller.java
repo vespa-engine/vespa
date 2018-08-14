@@ -214,6 +214,19 @@ public class Controller extends AbstractComponent {
                 .orElse(Vtag.currentVersion);
     }
 
+    /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS
+     * upgrades to this version */
+    public Optional<Version> osVersion() {
+        return curator.readOsTargetVersion();
+    }
+
+    /** Set the target OS version for infrastructure in this system. */
+    public void upgradeOs(Version version) {
+        try (Lock lock = curator.lockOsTargetVersion()) {
+            curator.writeOsTargetVersion(version);
+        }
+    }
+
     /** Returns the hostname of this controller */
     public HostName hostname() {
         return HostName.from(hostnameSupplier.get());

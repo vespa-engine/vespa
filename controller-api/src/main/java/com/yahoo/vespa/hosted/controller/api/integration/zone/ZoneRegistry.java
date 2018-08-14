@@ -52,4 +52,10 @@ public interface ZoneRegistry {
     /** Returns the Vespa upgrade policy to use for zones in this registry */
     UpgradePolicy upgradePolicy();
 
+    /** Returns the OS upgrade policy to use for zones in this registry */
+    // TODO: Remove default once internal code implements this
+    default UpgradePolicy osUpgradePolicy() {
+        return upgradePolicy();
+    }
+
 }

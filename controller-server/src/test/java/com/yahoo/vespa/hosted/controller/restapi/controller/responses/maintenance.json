@@ -28,6 +28,9 @@
       "name": "MetricsReporter"
     },
     {
+      "name": "OsUpgrader"
+    },
+    {
       "name": "OutstandingChangeDeployer"
     },
     {
