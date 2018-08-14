@@ -22,11 +22,11 @@ import com.yahoo.vespa.athenz.client.zts.bindings.RoleTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.TenantDomainsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.utils.IdentityCsrGenerator;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.athenz.identity.SiaBackedApacheHttpClient;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.ContentType;
@@ -45,9 +45,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
@@ -65,27 +63,21 @@ public class DefaultZtsClient implements ZtsClient {
     private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final URI ztsUrl;
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final SiaBackedApacheHttpClient client;
     private final AthenzIdentity identity;
-    private final ServiceIdentityProvider identityProvider;
-    private final ServiceIdentityProviderListener identityListener;
-    private volatile CloseableHttpClient client;
 
     public DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, SSLContext sslContext) {
-        this.ztsUrl = addTrailingSlash(ztsUrl);
-        this.client = createHttpClient(sslContext);
-        this.identity = identity;
-        this.identityProvider = null;
-        this.identityListener = null;
+        this(ztsUrl, identity, () -> sslContext);
     }
 
     public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider) {
+        this(ztsUrl, identityProvider.identity(), identityProvider::getIdentitySslContext);
+    }
+
+    private DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, Supplier<SSLContext> sslContextSupplier) {
         this.ztsUrl = addTrailingSlash(ztsUrl);
-        this.client = createHttpClient(identityProvider.getIdentitySslContext());
-        this.identity = identityProvider.identity();
-        this.identityProvider = identityProvider;
-        this.identityListener = new ServiceIdentityProviderListener();
-        identityProvider.addIdentityListener(this.identityListener);
+        this.identity = identity;
+        this.client = new SiaBackedApacheHttpClient(sslContextSupplier, DefaultZtsClient::createHttpClient);
     }
 
     @Override
@@ -101,11 +93,7 @@ public class DefaultZtsClient implements ZtsClient {
                 .setUri(ztsUrl.resolve("instance/"))
                 .setEntity(toJsonStringEntity(payload))
                 .build();
-        return withClient(client -> {
-            try (CloseableHttpResponse response = client.execute(request)) {
-                return getInstanceIdentity(response);
-            }
-        });
+        return client.execute(request, DefaultZtsClient::getInstanceIdentity);
     }
 
     @Override
@@ -125,11 +113,7 @@ public class DefaultZtsClient implements ZtsClient {
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(payload))
                 .build();
-        return withClient(client -> {
-            try (CloseableHttpResponse response = client.execute(request)) {
-                return getInstanceIdentity(response);
-            }
-        });
+        return client.execute(request, DefaultZtsClient::getInstanceIdentity);
     }
 
     @Override
@@ -139,11 +123,9 @@ public class DefaultZtsClient implements ZtsClient {
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(new IdentityRefreshRequestEntity(csr, keyId)))
                 .build();
-        return withClient(client -> {
-            try (CloseableHttpResponse response = client.execute(request)) {
-                IdentityResponseEntity entity = readEntity(response, IdentityResponseEntity.class);
-                return new Identity(entity.certificate(), entity.caCertificateBundle());
-            }
+        return client.execute(request, response -> {
+            IdentityResponseEntity entity = readEntity(response, IdentityResponseEntity.class);
+            return new Identity(entity.certificate(), entity.caCertificateBundle());
         });
     }
 
@@ -171,11 +153,9 @@ public class DefaultZtsClient implements ZtsClient {
             requestBuilder.addParameter("role", roleName);
         }
         HttpUriRequest request = requestBuilder.build();
-        return withClient(client -> {
-            try (CloseableHttpResponse response = client.execute(request)) {
-                RoleTokenResponseEntity roleTokenResponseEntity = readEntity(response, RoleTokenResponseEntity.class);
-                return roleTokenResponseEntity.token;
-            }
+        return client.execute(request, response -> {
+            RoleTokenResponseEntity roleTokenResponseEntity = readEntity(response, RoleTokenResponseEntity.class);
+            return roleTokenResponseEntity.token;
         });
     }
 
@@ -194,11 +174,9 @@ public class DefaultZtsClient implements ZtsClient {
         HttpUriRequest request = RequestBuilder.post(uri)
                 .setEntity(toJsonStringEntity(requestEntity))
                 .build();
-        return withClient(client -> {
-            try (CloseableHttpResponse response = client.execute(request)) {
-                RoleCertificateResponseEntity responseEntity = readEntity(response, RoleCertificateResponseEntity.class);
-                return responseEntity.certificate;
-            }
+        return client.execute(request, response -> {
+            RoleCertificateResponseEntity responseEntity = readEntity(response, RoleCertificateResponseEntity.class);
+            return responseEntity.certificate;
         });
     }
 
@@ -217,11 +195,9 @@ public class DefaultZtsClient implements ZtsClient {
                 .addParameter("roleName", roleName)
                 .addParameter("serviceName", providerIdentity.getName())
                 .build();
-        return withClient(client -> {
-            try (CloseableHttpResponse response = client.execute(request)) {
-                TenantDomainsResponseEntity entity = readEntity(response, TenantDomainsResponseEntity.class);
-                return entity.tenantDomainNames.stream().map(AthenzDomain::new).collect(toList());
-            }
+        return client.execute(request, response -> {
+            TenantDomainsResponseEntity entity = readEntity(response, TenantDomainsResponseEntity.class);
+            return entity.tenantDomainNames.stream().map(AthenzDomain::new).collect(toList());
         });
     }
 
@@ -256,37 +232,6 @@ public class DefaultZtsClient implements ZtsClient {
         }
     }
 
-    private <T> T withClient(RequestHandler<T> handler) {
-        Lock lock = this.lock.readLock();
-        lock.lock();
-        try {
-            return handler.doRequest(this.client);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    private void setClient(CloseableHttpClient newClient) {
-        Lock lock = this.lock.writeLock();
-        lock.lock();
-        CloseableHttpClient oldClient;
-        try {
-            oldClient = this.client;
-            this.client = newClient;
-        } finally {
-            lock.unlock();
-        }
-        if (oldClient != null) {
-            try {
-                oldClient.close();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
-
     private static CloseableHttpClient createHttpClient(SSLContext sslContext) {
         return HttpClientBuilder.create()
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
@@ -302,21 +247,7 @@ public class DefaultZtsClient implements ZtsClient {
 
     @Override
     public void close() {
-        if (identityProvider != null && identityListener != null) {
-            identityProvider.removeIdentityListener(identityListener);
-        }
-        setClient(null);
+        this.client.close();
     }
 
-    private class ServiceIdentityProviderListener implements ServiceIdentityProvider.Listener {
-        @Override
-        public void onCredentialsUpdate(SSLContext sslContext, AthenzService identity) {
-            setClient(createHttpClient(sslContext));
-        }
-    }
-
-    @FunctionalInterface
-    private interface RequestHandler<T> {
-        T doRequest(CloseableHttpClient client) throws IOException;
-    }
 }
