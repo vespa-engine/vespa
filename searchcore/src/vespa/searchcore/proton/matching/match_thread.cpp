@@ -2,15 +2,17 @@
 
 #include "match_thread.h"
 #include "document_scorer.h"
+#include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
+#include <vespa/searchcore/grouping/groupingmanager.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
+#include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
-#include <vespa/searchcore/grouping/groupingmanager.h>
-#include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_thread");
@@ -245,7 +247,55 @@ MatchThread::match_loop_helper(MatchTools &tools, HitCollector &hits)
     }
 }
 
-//-----------------------------------------------------------------------------
+namespace {
+
+template <typename T>
+struct UpdateNumberFast {
+    T * attr;
+    typedef typename T::LoadedValueType ValueType;
+    UpdateNumberFast(search::attribute::IAttributeVector &attr_in) : attr(dynamic_cast<T *>(&attr_in)) {}
+    void inc(uint32_t docid) { attr->set(docid, attr->getFast(docid)); }
+    bool valid() const { return (attr != nullptr); }
+};
+
+using UpdateCountFast = UpdateNumberFast<search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t>>>;
+
+class CountHits : public IAttributeFunctor {
+public:
+    CountHits(search::ResultSet::UP result) : _result(std::move(result)) {}
+
+    void operator()(const search::AttributeVector &attributeVector) override {
+        UpdateCountFast updateFast(const_cast<search::AttributeVector &>(attributeVector));
+        if (updateFast.valid()) {
+            search::RankedHit *hits      = _result->getArray();
+            size_t             numHits   = _result->getArrayUsed();
+            std::for_each(hits, hits+numHits,  [&update=updateFast](search::RankedHit hit) { update.inc(hit.getDocId()); });
+            if (_result->getBitOverflow()) {
+                _result->getBitOverflow()->foreach_truebit([&update=updateFast](uint32_t docId) { update.inc(docId); });
+            }
+        }
+    }
+private:
+    search::ResultSet::UP _result;
+};
+
+class CountReRanked : public IAttributeFunctor {
+public:
+    using Hit = search::queryeval::HitCollector::Hit;
+    CountReRanked(std::vector<Hit> reRanked) : _reRanked(std::move(reRanked)) {}
+
+    void operator()(const search::AttributeVector &attributeVector) override {
+        UpdateCountFast updateFast(const_cast<search::AttributeVector &>(attributeVector));
+        if (updateFast.valid()) {
+            std::for_each(_reRanked.begin(), _reRanked.end(),
+                          [&update=updateFast](Hit hit) { update.inc(hit.first); });
+        }
+    }
+private:
+    std::vector<Hit> _reRanked;
+};
+
+}
 
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &tools)
@@ -274,6 +324,9 @@ MatchThread::findMatches(MatchTools &tools)
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
+            if (matchToolsFactory.isReRankCountingEnabled()) {
+                matchToolsFactory.reRankCounting(std::make_shared<CountReRanked>(hits.getReRankedHits()));
+            }
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling
@@ -339,6 +392,9 @@ MatchThread::processResult(const Doom & hardDoom,
                 pr.add(search::RankedHit(bitId));
             }
         }
+    }
+    if (matchToolsFactory.isMatchCountingEnabled() ) {
+        matchToolsFactory.matchCounting(std::make_shared<CountHits>(std::move(result)));
     }
     if (hasGrouping) {
         context.grouping->setDistributionKey(_distributionKey);

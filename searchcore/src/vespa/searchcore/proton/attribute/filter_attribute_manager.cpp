@@ -69,7 +69,7 @@ FilterAttributeManager::FilterAttributeManager(const AttributeSet &acceptedAttri
     }
 }
 
-FilterAttributeManager::~FilterAttributeManager() { }
+FilterAttributeManager::~FilterAttributeManager() = default;
 
 search::attribute::IAttributeContext::UP
 FilterAttributeManager::createContext() const {
@@ -185,14 +185,12 @@ FilterAttributeManager::getWritableAttributes() const
 }
 
 void
-FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
-                                        func) const
+FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
 {
     // Run by document db master thread
     std::vector<AttributeGuard> completeList;
     _mgr->getAttributeList(completeList);
-    search::ISequencedTaskExecutor &attributeFieldWriter =
-        getAttributeFieldWriter();
+    search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
     for (auto &guard : completeList) {
         search::AttributeVector::SP attrsp = guard.getSP();
         // Name must be extracted in document db master thread or attribute
@@ -200,6 +198,18 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
         attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
                                      [attrsp, func]() { (*func)(*attrsp); });
     }
+}
+
+void
+FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const {
+    AttributeGuard::UP attr = _mgr->getAttribute(name);
+    if (!attr) { return; }
+    search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
+    attributeFieldWriter.execute(attributeFieldWriter.getExecutorId((*attr)->getNamePrefix()),
+                                  [attr=std::move(attr), func]() mutable {
+                                      (*func)(dynamic_cast<const search::AttributeVector&>(*attr));
+                                  });
+
 }
 
 ExclusiveAttributeReadAccessor::UP

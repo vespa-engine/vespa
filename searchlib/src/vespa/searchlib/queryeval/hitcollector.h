@@ -172,6 +172,8 @@ public:
      */
     std::vector<Hit> getSortedHeapHits();
 
+    const std::vector<Hit> & getReRankedHits() const { return _reRankedHits; }
+
     /**
      * Re-ranks the m (=maxHeapSize) best hits by invoking the score()
      * method on the given document scorer. The best m hits are sorted on doc id
