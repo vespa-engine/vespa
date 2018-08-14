@@ -83,15 +83,15 @@ public class Run {
     }
 
     /** Returns the final result of this run, if it has ended. */
-    public Optional<RunResult> result() {
+    public Optional<RunStatus> result() {
 
         // No result of not finished yet
         if ( ! hasEnded()) return Optional.empty();
 
         // If any steps has failed - then we need to figure out what - for now return fixed error result
-        if (hasFailed()) return Optional.of(RunResult.testError);
+        if (hasFailed()) return Optional.of(RunStatus.testError);
 
-        return Optional.of(RunResult.success);
+        return Optional.of(RunStatus.success);
     }
 
     /** Returns the instant at which this run began. */
