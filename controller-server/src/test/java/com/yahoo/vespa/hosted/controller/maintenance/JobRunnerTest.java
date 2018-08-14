@@ -141,12 +141,8 @@ public class JobRunnerTest {
         runner.maintain();
         assertEquals(Arrays.asList(endTests), run.get().readySteps());
 
-        outcomes.put(endTests, succeeded);
-        runner.maintain();
-        assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());
-
-        // Failure deactivating real fails the run, but run-always steps continue.
-        outcomes.put(deactivateReal, failed);
+        // Failure ending tests fails the run, but run-always steps continue.
+        outcomes.put(endTests, failed);
         runner.maintain();
         assertTrue(run.get().hasFailed());
         assertEquals(Arrays.asList(deactivateReal, deactivateTester), run.get().readySteps());

@@ -48,7 +48,10 @@ public class Run {
 
     public Run with(Step.Status status, LockedStep step) {
         if (hasEnded())
-            throw new AssertionError("This step ended at " + end.get() + " -- it can't be further modified!");
+            throw new AssertionError("This run ended at " + end.get() + " -- it can't be further modified!");
+        if (steps.get(step.get()) != unfinished)
+            throw new AssertionError("Step '" + step.get() + "' can't be set to '" + status + "'" +
+                                     " -- it already completed with status '" + steps.get(step.get()) + "'!");
 
         EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), requireNonNull(status));
@@ -57,14 +60,14 @@ public class Run {
 
     public Run finished(Instant now) {
         if (hasEnded())
-            throw new AssertionError("This step ended at " + end.get() + " -- it can't be ended again!");
+            throw new AssertionError("This run ended at " + end.get() + " -- it can't be ended again!");
 
         return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), aborted);
     }
 
     public Run aborted() {
         if (hasEnded())
-            throw new AssertionError("This step ended at " + end.get() + " -- it can't be aborted now!");
+            throw new AssertionError("This run ended at " + end.get() + " -- it can't be aborted now!");
 
         return new Run(id, new EnumMap<>(steps), versions, start, end, true);
     }
