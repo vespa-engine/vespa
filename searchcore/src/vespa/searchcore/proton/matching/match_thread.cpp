@@ -254,7 +254,7 @@ struct UpdateNumberFast {
     T * attr;
     typedef typename T::LoadedValueType ValueType;
     UpdateNumberFast(search::attribute::IAttributeVector &attr_in) : attr(dynamic_cast<T *>(&attr_in)) {}
-    void inc(uint32_t docid) { attr->set(docid, attr->getFast(docid)); }
+    void inc(uint32_t docid) { attr->set(docid, attr->getFast(docid)+1); }
     bool valid() const { return (attr != nullptr); }
 };
 

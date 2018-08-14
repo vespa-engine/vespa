@@ -304,7 +304,7 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
     transferExtraAttributes(currMgr);
 }
 
-AttributeManager::~AttributeManager() { }
+AttributeManager::~AttributeManager() = default;
 
 AttributeVector::SP
 AttributeManager::addAttribute(const AttributeSpec &spec, uint64_t serialNum)
