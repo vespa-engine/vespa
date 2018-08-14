@@ -57,13 +57,13 @@ public class SiaBackedApacheHttpClient extends CloseableHttpClient {
         this.sslContextSupplier = sslContextSupplier;
         this.httpClientFactory = httpClientFactory;
         this.client = new HttpClientHolder(httpClientFactory, sslContextSupplier, clientLock);
-        this.client.refer(); // owner ref
+        this.client.acquire(); // owner ref
     }
 
     @Override
     protected CloseableHttpResponse doExecute(HttpHost target, HttpRequest request, HttpContext context) throws IOException, ClientProtocolException {
         HttpClientHolder client = getClient();
-        client.refer(); // request ref
+        client.acquire(); // request ref
         try {
             CloseableHttpResponse response = client.apacheClient.execute(target, request, context);
             return new ResponseHolder(response, client);
@@ -102,7 +102,7 @@ public class SiaBackedApacheHttpClient extends CloseableHttpClient {
             if (sslContextSupplier.get() != client.sslContext) {
                 client.release(); // owner ref
                 client = new HttpClientHolder(httpClientFactory, sslContextSupplier, clientLock);
-                client.refer(); // owner ref
+                client.acquire(); // owner ref
             }
             return client;
         }
@@ -122,7 +122,7 @@ public class SiaBackedApacheHttpClient extends CloseableHttpClient {
             this.clientLock = clientLock;
         }
 
-        void refer() {
+        void acquire() {
             synchronized (clientLock) {
                 if (closed) throw new IllegalStateException("Client already closed!");
                 ++referenceCount;
@@ -146,7 +146,7 @@ public class SiaBackedApacheHttpClient extends CloseableHttpClient {
         final HttpClientHolder clientHolder;
 
         ResponseHolder(CloseableHttpResponse response, HttpClientHolder clientHolder) {
-            clientHolder.refer(); // response ref
+            clientHolder.acquire(); // response ref
             this.response = response;
             this.clientHolder = clientHolder;
         }
