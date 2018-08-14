@@ -229,11 +229,11 @@ MatchToolsFactory::matchCounting(std::shared_ptr<IAttributeFunctor> count) const
 }
 bool
 MatchToolsFactory::isReRankCountingEnabled() const {
-    return !execute::onmatch::AttributeToIncrement::lookup(_queryEnv.getProperties()).empty();
+    return !execute::onrerank::AttributeToIncrement::lookup(_queryEnv.getProperties()).empty();
 }
 void
 MatchToolsFactory::reRankCounting(std::shared_ptr<IAttributeFunctor> count) const {
-    _attrExec.asyncForAttribute(execute::onmatch::AttributeToIncrement::lookup(_queryEnv.getProperties()), std::move(count));
+    _attrExec.asyncForAttribute(execute::onrerank::AttributeToIncrement::lookup(_queryEnv.getProperties()), std::move(count));
 }
 
 }
