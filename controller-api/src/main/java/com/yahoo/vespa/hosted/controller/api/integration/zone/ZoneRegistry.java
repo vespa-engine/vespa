@@ -49,7 +49,7 @@ public interface ZoneRegistry {
     /** Return the configserver's Athenz service identity */
     AthenzService getConfigServerAthenzService(ZoneId zoneId);
 
-    /** Returns the upgrade policy to use for zones in this registry */
+    /** Returns the Vespa upgrade policy to use for zones in this registry */
     UpgradePolicy upgradePolicy();
 
 }
