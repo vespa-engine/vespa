@@ -20,7 +20,6 @@ import java.util.List;
  */
 public enum SystemApplication {
 
-    // Note that the enum declaration order decides the upgrade order
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
     configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
@@ -71,11 +70,6 @@ public enum SystemApplication {
     /** All known system applications */
     public static List<SystemApplication> all() {
         return Arrays.asList(values());
-    }
-
-    /** Node states to consider when upgrading */
-    public static List<Node.State> activeStates() {
-        return Arrays.asList(Node.State.active, Node.State.reserved);
     }
 
     @Override

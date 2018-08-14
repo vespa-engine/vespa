@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -20,6 +22,8 @@ import java.util.logging.Logger;
 public class SystemUpgrader extends InfrastructureUpgrader {
 
     private static final Logger log = Logger.getLogger(SystemUpgrader.class.getName());
+
+    private static final Set<Node.State> upgradableNodeStates = ImmutableSet.of(Node.State.active, Node.State.reserved);
 
     public SystemUpgrader(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl, controller.zoneRegistry().upgradePolicy());
@@ -41,7 +45,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected boolean requireUpgradeOf(Node node, SystemApplication application) {
-        return SystemApplication.activeStates().contains(node.state());
+        return eligibleForUpgrade(node);
     }
 
     @Override
@@ -57,6 +61,11 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     private Version currentVersion(ZoneId zone, SystemApplication application, Version defaultVersion) {
         return minVersion(zone, application, Node::currentVersion).orElse(defaultVersion);
+    }
+
+    /** Returns whether node in application should be upgraded by this */
+    public static boolean eligibleForUpgrade(Node node) {
+        return upgradableNodeStates.contains(node.state());
     }
 
 }

@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -245,7 +246,7 @@ public class SystemUpgraderTest {
     private void completeUpgrade(SystemApplication application, Version version, ZoneId... zones) {
         assertWantedVersion(application, version, zones);
         for (ZoneId zone : zones) {
-            for (Node node : nodeRepository().list(zone, application.id(), SystemApplication.activeStates())) {
+            for (Node node : listNodes(zone, application)) {
                 nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
                                                               node.wantedVersion(), node.wantedVersion()));
             }
@@ -301,10 +302,16 @@ public class SystemUpgraderTest {
     private void assertVersion(SystemApplication application, Version version, Function<Node, Version> versionField,
                                ZoneId... zones) {
         for (ZoneId zone : zones) {
-            for (Node node : nodeRepository().list(zone, application.id(), SystemApplication.activeStates())) {
+            for (Node node : listNodes(zone, application)) {
                 assertEquals(application + " version", version, versionField.apply(node));
             }
         }
+    }
+
+    private List<Node> listNodes(ZoneId zone, SystemApplication application) {
+        return nodeRepository().list(zone, application.id()).stream()
+                               .filter(SystemUpgrader::eligibleForUpgrade)
+                               .collect(Collectors.toList());
     }
 
     private NodeRepositoryMock nodeRepository() {
