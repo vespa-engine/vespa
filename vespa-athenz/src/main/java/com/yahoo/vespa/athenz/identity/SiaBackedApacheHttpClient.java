@@ -23,6 +23,7 @@ public class SiaBackedApacheHttpClient implements AutoCloseable {
     private final Supplier<SSLContext> sslContextSupplier;
     private final HttpClientFactory httpClientFactory;
     private HttpClientHolder client;
+    private boolean closed = false;
 
     public SiaBackedApacheHttpClient(ServiceIdentityProvider identityProvider,
                                      HttpClientFactory httpClientFactory) {
@@ -57,6 +58,7 @@ public class SiaBackedApacheHttpClient implements AutoCloseable {
 
     private HttpClientHolder getClient() {
         synchronized (clientLock) {
+            if (closed) throw new IllegalStateException("Client has been closed!");
             if (sslContextSupplier.get() != client.sslContext) {
                 client.release();
                 client = new HttpClientHolder(httpClientFactory, sslContextSupplier);
@@ -65,10 +67,15 @@ public class SiaBackedApacheHttpClient implements AutoCloseable {
         }
     }
 
+    /**
+     * Thread-safe and idempotent.
+     */
     @Override
     public void close() {
         synchronized (clientLock) {
+            if (closed) return;
             client.release();
+            closed = true;
         }
     }
 
@@ -92,6 +99,7 @@ public class SiaBackedApacheHttpClient implements AutoCloseable {
         }
 
         void release() {
+            if (referenceCount == 0) throw new IllegalStateException("Client already closed!");
             --referenceCount;
             if (referenceCount == 0) {
                 try {
