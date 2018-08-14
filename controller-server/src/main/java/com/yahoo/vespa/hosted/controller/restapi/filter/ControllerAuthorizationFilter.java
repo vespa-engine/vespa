@@ -135,6 +135,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     private static boolean isTenantPipelineOperation(Path path, Method method) {
         if (isTenantAdminOperation(path, method)) return false;
         return path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport") ||
+                path.matches("/application/v4/tenant/{tenant}/application/{application}/submit") ||
                 path.matches("/application/v4/tenant/{tenant}/application/{application}/promote") ||
                 path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}") ||
                 path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}") ||
