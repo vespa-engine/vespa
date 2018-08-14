@@ -68,7 +68,7 @@ SubSubMetricSet::SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& lo
     averageSum.addMetricToSum(average1);
     averageSum.addMetricToSum(average2);
 }
-SubSubMetricSet::~SubSubMetricSet() { }
+SubSubMetricSet::~SubSubMetricSet() = default;
 
 MetricSet*
 SubSubMetricSet::clone(std::vector<Metric::UP> &ownerList,
@@ -130,7 +130,7 @@ SubMetricSet::SubMetricSet(vespalib::stringref name, const LoadTypeSet& loadType
     setSum.addMetricToSum(set1);
     setSum.addMetricToSum(set2);
 }
-SubMetricSet::~SubMetricSet() { }
+SubMetricSet::~SubMetricSet() = default;
 
 MetricSet*
 SubMetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
@@ -177,7 +177,7 @@ TestMetricSet::TestMetricSet(vespalib::stringref name, const LoadTypeSet& loadTy
     setSum.addMetricToSum(set1);
     setSum.addMetricToSum(set2);
 }
-TestMetricSet::~TestMetricSet() { }
+TestMetricSet::~TestMetricSet() = default;
 
 void
 TestMetricSet::incValues() {
@@ -196,15 +196,13 @@ struct FakeTimer : public MetricManager::Timer {
 
 } // End of anonymous namespace
 
-#define ASSERT_VALUE(value, snapshot, name) \
-{ \
-    const Metric* _metricValue_((snapshot).getMetrics().getMetric(name)); \
-    if (_metricValue_ == 0) { \
-        CPPUNIT_FAIL("Metric value '" + std::string(name) \
-                     + "' not found in snapshot"); \
-    } \
-    CPPUNIT_ASSERT_EQUAL(value, \
-                         int32_t(_metricValue_->getLongValue("value"))); \
+void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *name)
+{
+    const Metric* _metricValue_((snapshot).getMetrics().getMetric(name));
+    if (_metricValue_ == 0) {
+        CPPUNIT_FAIL("Metric value '" + std::string(name) + "' not found in snapshot");
+    }
+    CPPUNIT_ASSERT_EQUAL(value, int32_t(_metricValue_->getLongValue("value")));
 }
 
 void SnapshotTest::testSnapshotTwoDays()
