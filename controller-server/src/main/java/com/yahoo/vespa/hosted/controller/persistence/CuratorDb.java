@@ -16,7 +16,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -307,19 +307,19 @@ public class CuratorDb {
 
     // -------------- Job Runs ------------------------------------------------
 
-    public void writeLastRun(RunStatus run) {
+    public void writeLastRun(Run run) {
         curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(runSerializer.toSlime(run)));
     }
 
-    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<RunStatus> runs) {
+    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs) {
         curator.set(jobPath(id, type), asJson(runSerializer.toSlime(runs)));
     }
 
-    public Optional<RunStatus> readLastRun(ApplicationId id, JobType type) {
+    public Optional<Run> readLastRun(ApplicationId id, JobType type) {
         return readSlime(lastRunPath(id, type)).map(runSerializer::runFromSlime);
     }
 
-    public Map<RunId, RunStatus> readHistoricRuns(ApplicationId id, JobType type) {
+    public Map<RunId, Run> readHistoricRuns(ApplicationId id, JobType type) {
         // TODO jvenstad: Add, somewhere, a retention filter based on age or count.
         return readSlime(jobPath(id, type)).map(runSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
     }

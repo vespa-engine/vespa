@@ -20,7 +20,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @author jonmv
  */
-public class RunStatus {
+public class Run {
 
     private final RunId id;
     private final Map<Step, Step.Status> steps;
@@ -30,8 +30,8 @@ public class RunStatus {
     private final boolean aborted;
 
     // For deserialisation only -- do not use!
-    public RunStatus(RunId id, Map<Step, Step.Status> steps, Versions versions,
-                     Instant start, Optional<Instant> end, boolean aborted) {
+    public Run(RunId id, Map<Step, Step.Status> steps, Versions versions,
+               Instant start, Optional<Instant> end, boolean aborted) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -40,33 +40,33 @@ public class RunStatus {
         this.aborted = aborted;
     }
 
-    public static RunStatus initial(RunId id, Versions versions, Instant now) {
+    public static Run initial(RunId id, Versions versions, Instant now) {
         EnumMap<Step, Step.Status> steps = new EnumMap<>(Step.class);
         JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, unfinished));
-        return new RunStatus(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), false);
+        return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), false);
     }
 
-    public RunStatus with(Step.Status status, LockedStep step) {
+    public Run with(Step.Status status, LockedStep step) {
         if (hasEnded())
             throw new AssertionError("This step ended at " + end.get() + " -- it can't be further modified!");
 
         EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), requireNonNull(status));
-        return new RunStatus(id, steps, versions, start, end, aborted);
+        return new Run(id, steps, versions, start, end, aborted);
     }
 
-    public RunStatus finished(Instant now) {
+    public Run finished(Instant now) {
         if (hasEnded())
             throw new AssertionError("This step ended at " + end.get() + " -- it can't be ended again!");
 
-        return new RunStatus(id, new EnumMap<>(steps), versions, start, Optional.of(now), aborted);
+        return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), aborted);
     }
 
-    public RunStatus aborted() {
+    public Run aborted() {
         if (hasEnded())
             throw new AssertionError("This step ended at " + end.get() + " -- it can't be aborted now!");
 
-        return new RunStatus(id, new EnumMap<>(steps), versions, start, end, true);
+        return new Run(id, new EnumMap<>(steps), versions, start, end, true);
     }
 
     /** Returns the id of this run. */
@@ -126,11 +126,11 @@ public class RunStatus {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if ( ! (o instanceof RunStatus)) return false;
+        if ( ! (o instanceof Run)) return false;
 
-        RunStatus status = (RunStatus) o;
+        Run run = (Run) o;
 
-        return id.equals(status.id);
+        return id.equals(run.id);
     }
 
     @Override

@@ -4,7 +4,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import org.jetbrains.annotations.TestOnly;
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
- * Advances the set of {@link RunStatus}es for a {@link JobController}.
+ * Advances the set of {@link Run}s for a {@link JobController}.
  *
  * @author jonmv
  */
@@ -63,7 +63,7 @@ public class JobRunner extends Maintainer {
     }
 
     /** Advances each of the ready steps for the given run, or marks it as finished, and stashes it. */
-    void advance(RunStatus run) {
+    void advance(Run run) {
         List<Step> steps = run.readySteps();
         steps.forEach(step -> executors.execute(() -> advance(run.id(), step)));
         if (steps.isEmpty())

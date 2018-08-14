@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
@@ -59,35 +59,35 @@ public class RunSerializer {
     private static final String buildField = "build";
     private static final String sourceField = "source";
 
-    RunStatus runFromSlime(Slime slime) {
+    Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
     }
 
-    Map<RunId, RunStatus> runsFromSlime(Slime slime) {
-        Map<RunId, RunStatus> runs = new LinkedHashMap<>();
+    Map<RunId, Run> runsFromSlime(Slime slime) {
+        Map<RunId, Run> runs = new LinkedHashMap<>();
         Inspector runArray = slime.get();
         runArray.traverse((ArrayTraverser) (__, runObject) -> {
-            RunStatus run = runFromSlime(runObject);
+            Run run = runFromSlime(runObject);
             runs.put(run.id(), run);
         });
         return runs;
     }
 
-    private RunStatus runFromSlime(Inspector runObject) {
+    private Run runFromSlime(Inspector runObject) {
         EnumMap<Step, Status> steps = new EnumMap<>(Step.class);
         runObject.field(stepsField).traverse((ObjectTraverser) (step, status) -> {
             steps.put(stepOf(step), statusOf(status.asString()));
         });
-        return new RunStatus(new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
-                                       JobType.fromJobName(runObject.field(jobTypeField).asString()),
-                                       runObject.field(numberField).asLong()),
-                             steps,
-                             versionsFromSlime(runObject.field(versionsField)),
-                             Instant.ofEpochMilli(runObject.field(startField).asLong()),
-                             Optional.of(runObject.field(endField))
+        return new Run(new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
+                                 JobType.fromJobName(runObject.field(jobTypeField).asString()),
+                                 runObject.field(numberField).asLong()),
+                       steps,
+                       versionsFromSlime(runObject.field(versionsField)),
+                       Instant.ofEpochMilli(runObject.field(startField).asLong()),
+                       Optional.of(runObject.field(endField))
                                      .filter(Inspector::valid)
                                      .map(end -> Instant.ofEpochMilli(end.asLong())),
-                             runObject.field(abortedField).asBool());
+                       runObject.field(abortedField).asBool());
     }
 
     private Versions versionsFromSlime(Inspector versionsObject) {
@@ -109,20 +109,20 @@ public class RunSerializer {
         return new Versions(targetPlatformVersion, targetApplicationVersion, sourcePlatformVersion, sourceApplicationVersion);
     }
 
-    Slime toSlime(Iterable<RunStatus> runs) {
+    Slime toSlime(Iterable<Run> runs) {
         Slime slime = new Slime();
         Cursor runArray = slime.setArray();
         runs.forEach(run -> toSlime(run, runArray.addObject()));
         return slime;
     }
 
-    Slime toSlime(RunStatus run) {
+    Slime toSlime(Run run) {
         Slime slime = new Slime();
         toSlime(run, slime.setObject());
         return slime;
     }
 
-    private void toSlime(RunStatus run, Cursor runObject) {
+    private void toSlime(Run run, Cursor runObject) {
         runObject.setString(applicationField, run.id().application().serializedForm());
         runObject.setString(jobTypeField, run.id().type().jobName());
         runObject.setLong(numberField, run.id().number());

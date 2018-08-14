@@ -370,7 +370,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns a generated job report for the given run. */
-    private DeploymentJobs.JobReport report(RunStatus run) {
+    private DeploymentJobs.JobReport report(Run run) {
         return new DeploymentJobs.JobReport(run.id().application(),
                                             run.id().type(),
                                             1,

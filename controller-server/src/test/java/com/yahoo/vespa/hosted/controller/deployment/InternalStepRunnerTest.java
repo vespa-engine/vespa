@@ -170,10 +170,10 @@ public class InternalStepRunnerTest {
     /** Runs the whole of the given job, successfully. */
     private void runJob(JobType type) {
         tester.readyJobTrigger().maintain();
-        RunStatus run = jobs.active().stream()
-                            .filter(r -> r.id().type() == type)
-                            .findAny()
-                            .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
+        Run run = jobs.active().stream()
+                      .filter(r -> r.id().type() == type)
+                      .findAny()
+                      .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         assertFalse(run.hasFailed());
         assertFalse(run.isAborted());
 
@@ -377,10 +377,10 @@ public class InternalStepRunnerTest {
             tester.readyJobTrigger().maintain();
         }
 
-        RunStatus run = jobs.active().stream()
-                            .filter(r -> r.id().type() == type)
-                            .findAny()
-                            .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
+        Run run = jobs.active().stream()
+                      .filter(r -> r.id().type() == type)
+                      .findAny()
+                      .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         return run.id();
     }
 

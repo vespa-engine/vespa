@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
 
@@ -52,7 +52,7 @@ public class RunSerializerTest {
             assertEquals(status, RunSerializer.statusOf(RunSerializer.valueOf(status)));
 
         // The purpose of this serialised data is to ensure a new format does not break everything, so keep it up to date!
-        RunStatus run = serializer.runsFromSlime(SlimeUtils.jsonToSlime(Files.readAllBytes(runFile))).get(id);
+        Run run = serializer.runsFromSlime(SlimeUtils.jsonToSlime(Files.readAllBytes(runFile))).get(id);
         for (Step step : Step.values())
             assertTrue(run.steps().containsKey(step));
 
@@ -79,7 +79,7 @@ public class RunSerializerTest {
         assertTrue(run.isAborted());
         assertTrue(run.hasEnded());
 
-        RunStatus phoenix = serializer.runsFromSlime(serializer.toSlime(Collections.singleton(run))).get(id);
+        Run phoenix = serializer.runsFromSlime(serializer.toSlime(Collections.singleton(run))).get(id);
         assertEquals(run.id(), phoenix.id());
         assertEquals(run.start(), phoenix.start());
         assertEquals(run.end(), phoenix.end());

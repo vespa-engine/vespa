@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
@@ -111,7 +111,7 @@ public class JobRunnerTest {
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
         jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
-        Supplier<RunStatus> run = () -> jobs.last(id, systemTest).get();
+        Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
         jobs.start(id, systemTest, versions);
         RunId first = run.get().id();
