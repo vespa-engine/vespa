@@ -273,7 +273,7 @@ public class ApplicationRepositoryTest {
         assertEquals(3, new ArrayList<>(sessions).get(0).getSessionId());
 
         // There should be no expired remote sessions in the common case
-        assertEquals(0, applicationRepository.deleteExpiredRemoteSessions(Duration.ofSeconds(0), true));
+        assertEquals(0, applicationRepository.deleteExpiredRemoteSessions(Duration.ofSeconds(0)));
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {

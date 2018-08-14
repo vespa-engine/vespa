@@ -555,11 +555,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         listApplications().forEach(app -> tenantRepository.getTenant(app.tenant()).getLocalSessionRepo().purgeOldSessions());
     }
 
-    public int deleteExpiredRemoteSessions(Duration expiryTime, boolean deleteFromZooKeeper ) {
+    public int deleteExpiredRemoteSessions(Duration expiryTime) {
         return listApplications()
                 .stream()
-                .map(app -> tenantRepository.getTenant(app.tenant()).getRemoteSessionRepo()
-                        .deleteExpiredSessions(expiryTime, deleteFromZooKeeper))
+                .map(app -> tenantRepository.getTenant(app.tenant()).getRemoteSessionRepo().deleteExpiredSessions(expiryTime))
                 .mapToInt(i -> i)
                 .sum();
     }
