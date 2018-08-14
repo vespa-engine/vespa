@@ -121,6 +121,10 @@ public class ControllerAuthorizationFilterTest {
 
         testApiAccess(POST, "/application/v4/tenant/mytenant/application/myapp/promote",
                       allowed, forbidden, filter);
+
+        testApiAccess(POST, "/application/v4/tenant/mytenant/application/myapp/submit",
+                      allowed, forbidden, filter);
+
     }
 
     private static void testApiAccess(Method method,
