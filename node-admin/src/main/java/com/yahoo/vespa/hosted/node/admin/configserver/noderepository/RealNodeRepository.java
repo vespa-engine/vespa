@@ -209,6 +209,8 @@ public class RealNodeRepository implements NodeRepository {
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
         node.vespaVersion = nodeAttributes.getVespaVersion().orElse(null);
         node.hardwareDivergence = nodeAttributes.getHardwareDivergence().orElse(null);
+        node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
+        node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
         return node;
     }
 }
