@@ -23,7 +23,7 @@ Rendezvous<IN, OUT>::~Rendezvous() = default;
 
 template <typename IN, typename OUT>
 OUT
-Rendezvous<IN, OUT>::rendezvous(const IN &input)
+Rendezvous<IN, OUT>::rendezvous(IN input)
 {
     OUT ret = OUT();
     if (_size == 1) {
