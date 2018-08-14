@@ -22,6 +22,7 @@ public class ExpressionTransforms {
     private final List<ExpressionTransformer> transforms =
             ImmutableList.of(new TensorFlowFeatureConverter(),
                              new OnnxFeatureConverter(),
+                             new XgboostFeatureConverter(),
                              new ConstantDereferencer(),
                              new ConstantTensorTransformer(),
                              new MacroInliner(),
