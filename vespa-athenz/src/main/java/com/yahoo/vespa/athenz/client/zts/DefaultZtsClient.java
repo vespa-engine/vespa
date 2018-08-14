@@ -26,6 +26,7 @@ import com.yahoo.vespa.athenz.identity.SiaBackedApacheHttpClient;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -63,7 +64,7 @@ public class DefaultZtsClient implements ZtsClient {
     private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final URI ztsUrl;
-    private final SiaBackedApacheHttpClient client;
+    private final CloseableHttpClient client;
     private final AthenzIdentity identity;
 
     public DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, SSLContext sslContext) {
@@ -93,7 +94,7 @@ public class DefaultZtsClient implements ZtsClient {
                 .setUri(ztsUrl.resolve("instance/"))
                 .setEntity(toJsonStringEntity(payload))
                 .build();
-        return client.execute(request, DefaultZtsClient::getInstanceIdentity);
+        return execute(request, DefaultZtsClient::getInstanceIdentity);
     }
 
     @Override
@@ -113,7 +114,7 @@ public class DefaultZtsClient implements ZtsClient {
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(payload))
                 .build();
-        return client.execute(request, DefaultZtsClient::getInstanceIdentity);
+        return execute(request, DefaultZtsClient::getInstanceIdentity);
     }
 
     @Override
@@ -123,7 +124,7 @@ public class DefaultZtsClient implements ZtsClient {
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(new IdentityRefreshRequestEntity(csr, keyId)))
                 .build();
-        return client.execute(request, response -> {
+        return execute(request, response -> {
             IdentityResponseEntity entity = readEntity(response, IdentityResponseEntity.class);
             return new Identity(entity.certificate(), entity.caCertificateBundle());
         });
@@ -153,7 +154,7 @@ public class DefaultZtsClient implements ZtsClient {
             requestBuilder.addParameter("role", roleName);
         }
         HttpUriRequest request = requestBuilder.build();
-        return client.execute(request, response -> {
+        return execute(request, response -> {
             RoleTokenResponseEntity roleTokenResponseEntity = readEntity(response, RoleTokenResponseEntity.class);
             return roleTokenResponseEntity.token;
         });
@@ -174,7 +175,7 @@ public class DefaultZtsClient implements ZtsClient {
         HttpUriRequest request = RequestBuilder.post(uri)
                 .setEntity(toJsonStringEntity(requestEntity))
                 .build();
-        return client.execute(request, response -> {
+        return execute(request, response -> {
             RoleCertificateResponseEntity responseEntity = readEntity(response, RoleCertificateResponseEntity.class);
             return responseEntity.certificate;
         });
@@ -195,10 +196,18 @@ public class DefaultZtsClient implements ZtsClient {
                 .addParameter("roleName", roleName)
                 .addParameter("serviceName", providerIdentity.getName())
                 .build();
-        return client.execute(request, response -> {
+        return execute(request, response -> {
             TenantDomainsResponseEntity entity = readEntity(response, TenantDomainsResponseEntity.class);
             return entity.tenantDomainNames.stream().map(AthenzDomain::new).collect(toList());
         });
+    }
+
+    private <T> T execute(HttpUriRequest request, ResponseHandler<T> responseHandler) {
+        try {
+            return client.execute(request, responseHandler);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static InstanceIdentity getInstanceIdentity(HttpResponse response) throws IOException {
@@ -247,7 +256,11 @@ public class DefaultZtsClient implements ZtsClient {
 
     @Override
     public void close() {
-        this.client.close();
+        try {
+            this.client.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }
