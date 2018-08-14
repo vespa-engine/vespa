@@ -10,9 +10,18 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.jrt.Request;
-import com.yahoo.vespa.config.*;
-import com.yahoo.vespa.config.protocol.*;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.ConfigPayloadApplier;
+import com.yahoo.vespa.config.ErrorCode;
+import com.yahoo.vespa.config.RawConfig;
+import com.yahoo.vespa.config.protocol.CompressionType;
+import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
+import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
+import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
+import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
@@ -20,7 +29,8 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.*;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 
@@ -34,43 +44,45 @@ import static org.junit.Assert.*;
 /**
  * @author Ulf Lilleengen
  */
-public class RpcServerTest extends TestWithRpc {
+public class RpcServerTest {
 
     @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void testRpcServer() throws IOException, SAXException, InterruptedException {
-        testPrintStatistics();
-        testGetConfig();
-        testEnabled();
-        testEmptyConfigHostedVespa();
+        try (RpcTester tester = new RpcTester(temporaryFolder)) {
+            testPrintStatistics(tester);
+            testGetConfig(tester);
+            testEnabled(tester);
+            testEmptyConfigHostedVespa(tester);
+        }
     }
 
-    private void testEmptyConfigHostedVespa() throws InterruptedException, IOException {
-        rpcServer.onTenantDelete(TenantName.defaultName());
-        rpcServer.onTenantsLoaded();
+    private void testEmptyConfigHostedVespa(RpcTester tester) throws InterruptedException, IOException {
+        tester.rpcServer().onTenantDelete(TenantName.defaultName());
+        tester.rpcServer().onTenantsLoaded();
         JRTClientConfigRequest clientReq = createSimpleRequest();
-        performRequest(clientReq.getRequest());
+        tester.performRequest(clientReq.getRequest());
         assertFalse(clientReq.validateResponse());
         assertThat(clientReq.errorCode(), is(ErrorCode.APPLICATION_NOT_LOADED));
-        stopRpc();
-        createAndStartRpcServer(true);
-        rpcServer.onTenantsLoaded();
+        tester.stopRpc();
+        tester.createAndStartRpcServer();
+        tester.rpcServer().onTenantsLoaded();
         clientReq = createSimpleRequest();
-        performRequest(clientReq.getRequest());
+        tester.performRequest(clientReq.getRequest());
         assertTrue(clientReq.validateResponse());
     }
 
     private JRTClientConfigRequest createSimpleRequest() {
         ConfigKey<?> key = new ConfigKey<>(SimpletypesConfig.class, "");
-        JRTClientConfigRequest clientReq = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, SimpletypesConfig.CONFIG_DEF_MD5), 120_000, Trace.createDummy(), CompressionType.UNCOMPRESSED, Optional.empty());
+        JRTClientConfigRequest clientReq = createRequest(new RawConfig(key, SimpletypesConfig.getDefMd5()));
         assertTrue(clientReq.validateParameters());
         return clientReq;
     }
 
-    private void testEnabled() throws IOException, SAXException {
-        generationCounter.increment();
+    private void testEnabled(RpcTester tester) throws IOException, SAXException {
+        tester.generationCounter().increment();
         Application app = new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                           new ServerCache(),
                                           2L,
@@ -79,33 +91,29 @@ public class RpcServerTest extends TestWithRpc {
                                           MetricUpdater.createTestUpdater(),
                                           ApplicationId.defaultId());
         ApplicationSet appSet = ApplicationSet.fromSingle(app);
-        rpcServer.configActivated(appSet);
+        tester.rpcServer().configActivated(appSet);
         ConfigKey<?> key = new ConfigKey<>(LbServicesConfig.class, "*");
-        JRTClientConfigRequest clientReq = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, LbServicesConfig.CONFIG_DEF_MD5), 120_000, Trace.createDummy(), CompressionType.UNCOMPRESSED, Optional.empty());
+        JRTClientConfigRequest clientReq  = createRequest(new RawConfig(key, LbServicesConfig.getDefMd5()));
         assertTrue(clientReq.validateParameters());
-        performRequest(clientReq.getRequest());
+        tester.performRequest(clientReq.getRequest());
         assertFalse(clientReq.validateResponse());
         assertThat(clientReq.errorCode(), is(ErrorCode.APPLICATION_NOT_LOADED));
 
-        rpcServer.onTenantsLoaded();
-        clientReq = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, LbServicesConfig.CONFIG_DEF_MD5), 120_000, Trace.createDummy(), CompressionType.UNCOMPRESSED, Optional.empty());
+        tester.rpcServer().onTenantsLoaded();
+        clientReq = createRequest(new RawConfig(key, LbServicesConfig.getDefMd5()));
         assertTrue(clientReq.validateParameters());
-        performRequest(clientReq.getRequest());
+        tester.performRequest(clientReq.getRequest());
         boolean validResponse = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), validResponse);
         assertThat(clientReq.errorCode(), is(0));
     }
 
-    private void testGetConfig() {
+    private void testGetConfig(RpcTester tester) {
         ConfigKey<?> key = new ConfigKey<>(SimpletypesConfig.class, "brim");
-        ((MockRequestHandler)tenantProvider.getRequestHandler()).responses.put(ApplicationId.defaultId(), createResponse(true));
-        JRTClientConfigRequest req = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, SimpletypesConfig.CONFIG_DEF_MD5),
-                                                                            120_000,
-                                                                            Trace.createDummy(),
-                                                                            CompressionType.UNCOMPRESSED,
-                                                                            Optional.empty());
+        JRTClientConfigRequest req = createRequest(new RawConfig(key, SimpletypesConfig.getDefMd5()));
+        ((MockRequestHandler)tester.tenantProvider().getRequestHandler()).responses.put(ApplicationId.defaultId(), createResponse());
         assertTrue(req.validateParameters());
-        performRequest(req.getRequest());
+        tester.performRequest(req.getRequest());
         assertThat(req.errorCode(), is(0));
         assertTrue(req.validateResponse());
         assertTrue(req.responseIsInternalRedeploy());
@@ -117,7 +125,7 @@ public class RpcServerTest extends TestWithRpc {
         assertThat(config.intval(), is(123));
     }
 
-    private ConfigResponse createResponse(boolean internalRedeploy) {
+    private ConfigResponse createResponse() {
         SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
         builder.intval(123);
         SimpletypesConfig responseConfig = new SimpletypesConfig(builder);
@@ -128,14 +136,18 @@ public class RpcServerTest extends TestWithRpc {
         return SlimeConfigResponse.fromConfigPayload(responsePayload,
                                                      targetDef,
                                                      3L,
-                                                     internalRedeploy,
+                                                     true, /* internalRedeploy */
                                                      ConfigUtils.getMd5(responsePayload));
     }
 
-    private void testPrintStatistics() {
+    private void testPrintStatistics(RpcTester tester) {
         Request req = new Request("printStatistics");
-        rpcServer.printStatistics(req);
+        tester.rpcServer().printStatistics(req);
         assertThat(req.returnValues().get(0).asString(), is("Delayed responses queue size: 0"));
+    }
+
+    private JRTClientConfigRequest createRequest(RawConfig config) {
+        return JRTClientConfigRequestV3.createFromRaw(config, 120_000, Trace.createDummy(), CompressionType.UNCOMPRESSED, Optional.empty());
     }
 
 }
