@@ -167,7 +167,9 @@ public class JobController {
                 controller.applications().store(application.withBuiltInternally(true)));
     }
 
-    /** Accepts and stores a new application package and test jar pair under a generated application version key. */
+    /**
+     * Accepts and stores a new application package and test jar pair under a generated application version key.
+     */
     public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
                                      byte[] applicationPackage, byte[] applicationTestPackage) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
@@ -175,16 +177,16 @@ public class JobController {
             long run = nextBuild(id);
             version.set(ApplicationVersion.from(revision, run));
 
-            controller.applications().artifacts().putApplicationPackage(id,
-                                                                        version.get().id(),
-                                                                        applicationPackage);
-            controller.applications().artifacts().putTesterPackage(InternalStepRunner.testerOf(id),
-                                                                   version.get().id(),
-                                                                   applicationTestPackage);
+            controller.applications().applicationStore().putApplicationPackage(id,
+                    version.get().id(),
+                    applicationPackage);
+            controller.applications().applicationStore().putTesterPackage(InternalStepRunner.testerOf(id),
+                    version.get().id(),
+                    applicationTestPackage);
 
             application = application.withBuiltInternally(true);
             controller.applications().store(controller.applications().withUpdatedConfig(application,
-                                                                                        new ApplicationPackage(applicationPackage)));
+                    new ApplicationPackage(applicationPackage)));
 
             notifyOfNewSubmission(id, revision, run);
         });
