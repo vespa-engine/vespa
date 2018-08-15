@@ -174,6 +174,8 @@ public:
      */
     SortedHitSequence getSortedHitSequence(size_t max_hits);
 
+    const std::vector<Hit> & getReRankedHits() const { return _reRankedHits; }
+
     /**
      * Re-ranks the given hits by invoking the score() method on the
      * given document scorer. The hits are sorted on doc id so that

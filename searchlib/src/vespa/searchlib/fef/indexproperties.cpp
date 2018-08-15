@@ -108,6 +108,32 @@ SecondPhase::lookup(const Properties &props)
 
 } // namespace rank
 
+namespace execute::onmatch {
+    
+const vespalib::string AttributeToIncrement::NAME("vespa.execute.onmatch.incrementattribute");
+const vespalib::string AttributeToIncrement::DEFAULT_VALUE("");
+
+vespalib::string
+AttributeToIncrement::lookup(const Properties &props, const vespalib::string & defaultValue)
+{
+    return lookupString(props, NAME, defaultValue);
+}
+    
+}
+
+namespace execute::onrerank {
+
+const vespalib::string AttributeToIncrement::NAME("vespa.execute.onrerank.incrementattribute");
+const vespalib::string AttributeToIncrement::DEFAULT_VALUE("");
+
+vespalib::string
+AttributeToIncrement::lookup(const Properties &props, const vespalib::string & defaultValue)
+{
+    return lookupString(props, NAME, defaultValue);
+}
+
+}
+
 namespace summary {
 
 const vespalib::string Feature::NAME("vespa.summary.feature");

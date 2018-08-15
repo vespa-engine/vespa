@@ -16,6 +16,7 @@ using search::attribute::diversity::DiversityFilter;
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
 using namespace search::fef::indexproperties::matching;
+using namespace search::fef::indexproperties;
 using search::IDocumentMetaStore;
 
 namespace proton::matching {
@@ -150,6 +151,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   vespalib::stringref          queryStack,
                   const vespalib::string     & location,
                   const ViewResolver         & viewResolver,
+                  const IAttributeExecutor   & attrExec,
                   const IDocumentMetaStore   & metaStore,
                   const IIndexEnvironment    & indexEnv,
                   const RankSetup            & rankSetup,
@@ -162,6 +164,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties),
       _mdl(),
+      _attrExec(attrExec),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
       _diversityParams(),
@@ -199,7 +202,8 @@ MatchToolsFactory::createMatchTools() const
                                         *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
 }
 
-std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
+std::unique_ptr<IDiversifier>
+MatchToolsFactory::createDiversifier() const
 {
     if ( !_diversityParams.enabled() ) {
         return std::unique_ptr<IDiversifier>();
@@ -212,6 +216,24 @@ std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
     size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams.min_groups;
     return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams.min_groups,
                                    _diversityParams.cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
+}
+
+bool
+MatchToolsFactory::isMatchCountingEnabled() const {
+    return !execute::onmatch::AttributeToIncrement::lookup(_queryEnv.getProperties()).empty();
+}
+
+void
+MatchToolsFactory::matchCounting(std::shared_ptr<IAttributeFunctor> count) const {
+    _attrExec.asyncForAttribute(execute::onmatch::AttributeToIncrement::lookup(_queryEnv.getProperties()), std::move(count));
+}
+bool
+MatchToolsFactory::isReRankCountingEnabled() const {
+    return !execute::onrerank::AttributeToIncrement::lookup(_queryEnv.getProperties()).empty();
+}
+void
+MatchToolsFactory::reRankCounting(std::shared_ptr<IAttributeFunctor> count) const {
+    _attrExec.asyncForAttribute(execute::onrerank::AttributeToIncrement::lookup(_queryEnv.getProperties()), std::move(count));
 }
 
 }
