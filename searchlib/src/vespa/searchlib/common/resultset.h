@@ -41,7 +41,7 @@ public:
     void mergeWithBitOverflow(HitRank default_value = default_rank_value);
 
     /* isEmpty() is allowed to return false even if bitmap has no hits */
-    bool isEmpty() const { return (_bitOverflow == NULL && _elemsUsedInRankedHitsArray == 0); }
+    bool isEmpty() const { return (_bitOverflow && (_elemsUsedInRankedHitsArray == 0)); }
 };
 
 } // namespace search
