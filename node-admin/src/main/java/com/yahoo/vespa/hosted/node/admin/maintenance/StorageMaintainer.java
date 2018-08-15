@@ -271,7 +271,6 @@ public class StorageMaintainer {
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", qrsDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
-                .withArgument("fileNameRegex", ".*QueryAccessLog.*")
                 .withArgument("recursive", false);
 
         Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(
