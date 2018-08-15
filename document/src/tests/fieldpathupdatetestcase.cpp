@@ -38,6 +38,7 @@ struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
     void testRemoveField();
     void testApplyRemoveEntireListField();
     void testApplyRemoveMultiList();
+    void testApplyRemoveMultiList2();
     void testApplyRemoveMultiWset();
     void testApplyAssignSingle();
     void testApplyAssignMath();
@@ -79,6 +80,7 @@ struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
     CPPUNIT_TEST(testRemoveField);
     CPPUNIT_TEST(testApplyRemoveEntireListField);
     CPPUNIT_TEST(testApplyRemoveMultiList);
+    CPPUNIT_TEST(testApplyRemoveMultiList2);
     CPPUNIT_TEST(testApplyRemoveMultiWset);
     CPPUNIT_TEST(testApplyAssignSingle);
     CPPUNIT_TEST(testApplyAssignMath);
@@ -416,6 +418,32 @@ FieldPathUpdateTestCase::testApplyRemoveMultiList()
         CPPUNIT_ASSERT_EQUAL(std::size_t(2), strArray->size());
         CPPUNIT_ASSERT_EQUAL(vespalib::string("crouching tiger, hidden field"), (*strArray)[0].getAsString());
         CPPUNIT_ASSERT_EQUAL(vespalib::string("hello hello"), (*strArray)[1].getAsString());
+    }
+}
+
+void
+FieldPathUpdateTestCase::testApplyRemoveMultiList2()
+{
+    Document::UP doc(new Document(_foobar_type, DocumentId("doc:things:thangs")));
+    doc->setRepo(*_repo);
+    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    {
+        ArrayFieldValue strArray(doc->getType().getField("strarray").getDataType());
+        strArray.add(StringFieldValue("remove val 1"));
+        strArray.add(StringFieldValue("remove val 1"));
+        strArray.add(StringFieldValue("hello hello"));
+        doc->setValue("strarray", strArray);
+    }
+    CPPUNIT_ASSERT(doc->hasValue("strarray"));
+    //doc->print(std::cerr, true, "");
+    DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
+            new RemoveFieldPathUpdate("strarray[$x]", "foobar.strarray[$x] == \"remove val 1\"")));
+    docUp.applyTo(*doc);
+    {
+        std::unique_ptr<ArrayFieldValue> strArray = doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
+        CPPUNIT_ASSERT_EQUAL(std::size_t(1), strArray->size());
+        CPPUNIT_ASSERT_EQUAL(vespalib::string("hello hello"), (*strArray)[0].getAsString());
     }
 }
 

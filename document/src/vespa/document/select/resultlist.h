@@ -14,6 +14,7 @@ public:
     typedef std::vector<ResultPair> Results;
     typedef Results::iterator iterator;
     typedef Results::const_iterator const_iterator;
+    using const_reverse_iterator = Results::const_reverse_iterator;
 
     ResultList();
     ResultList(ResultList &&) = default;
@@ -45,6 +46,8 @@ public:
     const_iterator end() const { return _results.end(); }
     iterator begin() { return _results.begin(); }
     iterator end() { return _results.end(); }
+    const_reverse_iterator rbegin() const { return _results.rbegin(); }
+    const_reverse_iterator rend() const { return _results.rend(); }
 
 private:
     Results _results;
