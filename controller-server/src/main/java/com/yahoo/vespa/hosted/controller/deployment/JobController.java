@@ -176,10 +176,10 @@ public class JobController {
             version.set(ApplicationVersion.from(revision, run));
 
             controller.applications().artifacts().putApplicationPackage(id,
-                                                                        version.toString(),
+                                                                        version.get().id(),
                                                                         applicationPackage);
             controller.applications().artifacts().putTesterPackage(InternalStepRunner.testerOf(id),
-                                                                   version.toString(),
+                                                                   version.get().id(),
                                                                    applicationTestPackage);
 
             application = application.withBuiltInternally(true);

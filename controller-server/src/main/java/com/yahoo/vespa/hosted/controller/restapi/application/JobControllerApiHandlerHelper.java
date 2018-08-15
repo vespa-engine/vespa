@@ -82,6 +82,20 @@ class JobControllerApiHandlerHelper {
         cursor.setLong("id", run.id().number());
         String logsPath = baseUriForJobType.getPath() + "/run/" + run.id().number();
         cursor.setString("logs", baseUriForJobType.resolve(logsPath).toString());
+
+        cursor.setString("wantedPlatform", run.versions().targetPlatform().toString());
+        applicationVersionToSlime(cursor.setObject("wantedApplication"), run.versions().targetApplication());
+        run.versions().sourcePlatform().ifPresent(version -> cursor.setString("currentPlatform", version.toString()));
+        run.versions().sourceApplication().ifPresent(version -> applicationVersionToSlime(cursor.setObject("currentApplication"), version));
+
+    }
+
+    private static void applicationVersionToSlime(Cursor cursor, ApplicationVersion version) {
+        cursor.setString("id", version.id());
+        cursor.setLong("build", version.buildNumber().get());
+        cursor.setString("repository", version.source().get().repository());
+        cursor.setString("branch", version.source().get().branch());
+        cursor.setString("commit", version.source().get().commit());
     }
 
     /**
