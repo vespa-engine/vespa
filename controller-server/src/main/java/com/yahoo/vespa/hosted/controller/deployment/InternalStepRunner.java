@@ -392,7 +392,7 @@ public class InternalStepRunner implements StepRunner {
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
 
-        byte[] testPackage = controller.applications().artifacts().getTesterPackage(testerOf(id.application()), version.id());
+        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(testerOf(id.application()), version.id());
         byte[] servicesXml = servicesXml(controller.system());
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
